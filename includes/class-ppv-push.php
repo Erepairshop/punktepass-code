@@ -6,7 +6,12 @@
  * USE CASE: Händler (active stores) can send weekly promotional messages to their customers
  * LIMIT: 1 push notification per store per week
  *
- * Setup: Add these constants to wp-config.php:
+ * Setup: Add ONE of these to wp-config.php:
+ *
+ * Option 1 - FCM V1 API (Recommended):
+ *   define('PPV_FCM_SERVICE_ACCOUNT', '/path/to/firebase-service-account.json');
+ *
+ * Option 2 - Legacy API (Deprecated, no longer works as of June 2024):
  *   define('PPV_FCM_SERVER_KEY', 'your_firebase_server_key');
  *
  * @package PunktePass
@@ -17,8 +22,20 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_Push {
 
-    /** @var string FCM Legacy API endpoint */
-    private static $fcm_url = 'https://fcm.googleapis.com/fcm/send';
+    /** @var string FCM V1 API endpoint template */
+    private static $fcm_v1_url = 'https://fcm.googleapis.com/v1/projects/%s/messages:send';
+
+    /** @var string FCM Legacy API endpoint (deprecated) */
+    private static $fcm_legacy_url = 'https://fcm.googleapis.com/fcm/send';
+
+    /** @var string|null Cached access token */
+    private static $access_token = null;
+
+    /** @var int Access token expiry timestamp */
+    private static $token_expiry = 0;
+
+    /** @var array|null Cached service account data */
+    private static $service_account = null;
 
     /** @var int Weekly push limit per store */
     const WEEKLY_LIMIT = 1;
@@ -27,7 +44,107 @@ class PPV_Push {
      * Check if Push Notifications are enabled
      * ============================================================ */
     public static function is_enabled() {
+        // V1 API (recommended)
+        if (defined('PPV_FCM_SERVICE_ACCOUNT') && file_exists(PPV_FCM_SERVICE_ACCOUNT)) {
+            return true;
+        }
+        // Legacy API (deprecated)
         return defined('PPV_FCM_SERVER_KEY') && !empty(PPV_FCM_SERVER_KEY);
+    }
+
+    /**
+     * Check if using V1 API
+     */
+    private static function is_v1_api() {
+        return defined('PPV_FCM_SERVICE_ACCOUNT') && file_exists(PPV_FCM_SERVICE_ACCOUNT);
+    }
+
+    /**
+     * Get service account data
+     */
+    private static function get_service_account() {
+        if (self::$service_account !== null) {
+            return self::$service_account;
+        }
+
+        if (!self::is_v1_api()) {
+            return null;
+        }
+
+        $json = file_get_contents(PPV_FCM_SERVICE_ACCOUNT);
+        self::$service_account = json_decode($json, true);
+
+        return self::$service_account;
+    }
+
+    /**
+     * Get OAuth2 access token for FCM V1 API
+     */
+    private static function get_access_token() {
+        // Return cached token if still valid
+        if (self::$access_token && time() < self::$token_expiry - 60) {
+            return self::$access_token;
+        }
+
+        $service_account = self::get_service_account();
+        if (!$service_account) {
+            return null;
+        }
+
+        // Create JWT
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'RS256']);
+        $now = time();
+        $claims = json_encode([
+            'iss' => $service_account['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'iat' => $now,
+            'exp' => $now + 3600
+        ]);
+
+        $base64_header = rtrim(strtr(base64_encode($header), '+/', '-_'), '=');
+        $base64_claims = rtrim(strtr(base64_encode($claims), '+/', '-_'), '=');
+        $signature_input = $base64_header . '.' . $base64_claims;
+
+        // Sign with private key
+        $private_key = openssl_pkey_get_private($service_account['private_key']);
+        openssl_sign($signature_input, $signature, $private_key, OPENSSL_ALGO_SHA256);
+        $base64_signature = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
+
+        $jwt = $signature_input . '.' . $base64_signature;
+
+        // Exchange JWT for access token
+        $response = wp_remote_post('https://oauth2.googleapis.com/token', [
+            'body' => [
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt
+            ]
+        ]);
+
+        if (is_wp_error($response)) {
+            ppv_log('[PPV_Push] OAuth error: ' . $response->get_error_message());
+            return null;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (empty($body['access_token'])) {
+            ppv_log('[PPV_Push] OAuth failed: ' . print_r($body, true));
+            return null;
+        }
+
+        self::$access_token = $body['access_token'];
+        self::$token_expiry = $now + ($body['expires_in'] ?? 3600);
+
+        return self::$access_token;
+    }
+
+    /**
+     * Get FCM Project ID
+     */
+    private static function get_project_id() {
+        $service_account = self::get_service_account();
+        return $service_account['project_id'] ?? null;
     }
 
     /** ============================================================
@@ -607,10 +724,103 @@ class PPV_Push {
     }
 
     /**
-     * Send FCM request
+     * Send FCM request (V1 or Legacy API)
      */
     private static function send_fcm_request($message) {
-        $response = wp_remote_post(self::$fcm_url, [
+        if (self::is_v1_api()) {
+            return self::send_fcm_v1_request($message);
+        }
+        return self::send_fcm_legacy_request($message);
+    }
+
+    /**
+     * Send FCM V1 API request
+     */
+    private static function send_fcm_v1_request($message) {
+        $access_token = self::get_access_token();
+        if (!$access_token) {
+            return ['success' => false, 'message' => 'Failed to get access token'];
+        }
+
+        $project_id = self::get_project_id();
+        if (!$project_id) {
+            return ['success' => false, 'message' => 'Project ID not found'];
+        }
+
+        // Convert legacy message format to V1 format
+        $v1_message = [
+            'message' => [
+                'token' => $message['to'],
+                'notification' => [
+                    'title' => $message['notification']['title'] ?? 'PunktePass',
+                    'body' => $message['notification']['body'] ?? ''
+                ],
+                'data' => array_map('strval', $message['data'] ?? []),
+                'android' => [
+                    'priority' => 'high',
+                    'notification' => [
+                        'sound' => 'default',
+                        'channel_id' => 'punktepass_notifications'
+                    ]
+                ],
+                'apns' => [
+                    'payload' => [
+                        'aps' => [
+                            'sound' => 'default',
+                            'badge' => 1
+                        ]
+                    ]
+                ],
+                'webpush' => [
+                    'notification' => [
+                        'icon' => '/icons/icon-192x192.png'
+                    ]
+                ]
+            ]
+        ];
+
+        $url = sprintf(self::$fcm_v1_url, $project_id);
+
+        $response = wp_remote_post($url, [
+            'method'  => 'POST',
+            'timeout' => 15,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $access_token,
+                'Content-Type'  => 'application/json'
+            ],
+            'body' => json_encode($v1_message)
+        ]);
+
+        if (is_wp_error($response)) {
+            ppv_log('[PPV_Push] V1 API error: ' . $response->get_error_message());
+            return ['success' => false, 'message' => $response->get_error_message()];
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $code = wp_remote_retrieve_response_code($response);
+
+        if ($code === 200) {
+            return ['success' => true];
+        }
+
+        // Check for invalid token errors
+        $error_code = $body['error']['details'][0]['errorCode'] ?? $body['error']['status'] ?? 'Unknown';
+        $error_msg = $body['error']['message'] ?? 'HTTP ' . $code;
+
+        ppv_log("[PPV_Push] V1 API failed: {$error_msg} (code: {$error_code})");
+
+        return [
+            'success' => false,
+            'message' => $error_msg,
+            'invalid_token' => in_array($error_code, ['UNREGISTERED', 'INVALID_ARGUMENT'])
+        ];
+    }
+
+    /**
+     * Send FCM Legacy API request (deprecated - no longer works)
+     */
+    private static function send_fcm_legacy_request($message) {
+        $response = wp_remote_post(self::$fcm_legacy_url, [
             'method'  => 'POST',
             'timeout' => 10,
             'headers' => [

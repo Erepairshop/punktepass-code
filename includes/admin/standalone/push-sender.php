@@ -192,6 +192,8 @@ class PPV_Standalone_Push_Sender {
      */
     private static function render_html($subscriptions, $stores, $stats, $message, $message_type) {
         $fcm_enabled = class_exists('PPV_Push') && PPV_Push::is_enabled();
+        $using_v1 = defined('PPV_FCM_SERVICE_ACCOUNT') && file_exists(PPV_FCM_SERVICE_ACCOUNT);
+        $using_legacy = defined('PPV_FCM_SERVER_KEY') && !empty(PPV_FCM_SERVER_KEY);
         ?>
         <!DOCTYPE html>
         <html lang="de">
@@ -366,7 +368,25 @@ class PPV_Standalone_Push_Sender {
                     <i class="ri-alert-line"></i>
                     <div>
                         <strong>FCM nicht konfiguriert!</strong><br>
-                        Bitte <code>PPV_FCM_SERVER_KEY</code> in wp-config.php setzen.
+                        Bitte <code>PPV_FCM_SERVICE_ACCOUNT</code> in wp-config.php setzen:<br>
+                        <code style="font-size: 12px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">
+                            define('PPV_FCM_SERVICE_ACCOUNT', '/path/to/firebase-service-account.json');
+                        </code>
+                    </div>
+                </div>
+                <?php elseif ($using_v1): ?>
+                <div class="alert alert-success">
+                    <i class="ri-check-circle-line"></i>
+                    <div>
+                        <strong>FCM V1 API aktiv</strong> - Service Account konfiguriert
+                    </div>
+                </div>
+                <?php elseif ($using_legacy): ?>
+                <div class="alert alert-warning">
+                    <i class="ri-alert-line"></i>
+                    <div>
+                        <strong>Legacy API (veraltet)</strong><br>
+                        Die Legacy API funktioniert nicht mehr. Bitte auf V1 API mit Service Account umstellen.
                     </div>
                 </div>
                 <?php endif; ?>
@@ -549,14 +569,20 @@ class PPV_Standalone_Push_Sender {
 
                 <!-- Setup Guide -->
                 <div class="card">
-                    <div class="card-title"><i class="ri-book-open-line"></i> Setup Guide</div>
+                    <div class="card-title"><i class="ri-book-open-line"></i> Setup Guide (FCM V1 API)</div>
 
                     <div style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">
-                        <p><strong>1. Firebase Console:</strong> Firebase-Projekt erstellen und FCM aktivieren</p>
-                        <p><strong>2. Server Key:</strong> In wp-config.php einfügen:</p>
-                        <pre style="background: var(--bg); padding: 10px; border-radius: 6px; margin: 10px 0; overflow-x: auto;">define('PPV_FCM_SERVER_KEY', 'AAAA...Ihr_Server_Key');</pre>
-                        <p><strong>3. iOS App:</strong> GoogleService-Info.plist bereits konfiguriert</p>
-                        <p><strong>4. Testen:</strong> Push über diese Oberfläche an registrierte Geräte senden</p>
+                        <p><strong>1. Firebase Console:</strong> <a href="https://console.firebase.google.com" target="_blank" style="color: var(--primary);">console.firebase.google.com</a> öffnen</p>
+                        <p><strong>2. Service Account erstellen:</strong></p>
+                        <ul style="margin: 8px 0 8px 20px;">
+                            <li>Projekteinstellungen → Dienstkonten</li>
+                            <li>"Neuen privaten Schlüssel generieren" klicken</li>
+                            <li>JSON-Datei herunterladen</li>
+                        </ul>
+                        <p><strong>3. JSON auf Server hochladen:</strong> z.B. <code>/var/www/firebase-service-account.json</code></p>
+                        <p><strong>4. wp-config.php konfigurieren:</strong></p>
+                        <pre style="background: var(--bg); padding: 10px; border-radius: 6px; margin: 10px 0; overflow-x: auto;">define('PPV_FCM_SERVICE_ACCOUNT', '/var/www/firebase-service-account.json');</pre>
+                        <p><strong>5. Testen:</strong> Push über diese Oberfläche an registrierte Geräte senden</p>
                     </div>
                 </div>
             </div>
