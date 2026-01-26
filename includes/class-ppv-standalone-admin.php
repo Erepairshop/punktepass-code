@@ -1478,6 +1478,9 @@ class PPV_Standalone_Admin {
                     <a href="/admin/email-sender" class="<?php echo $current_page === 'email-sender' ? 'active' : ''; ?>">
                         <i class="ri-mail-send-line"></i> Email Sender
                     </a>
+                    <a href="/admin/push-sender" class="<?php echo $current_page === 'push-sender' ? 'active' : ''; ?>">
+                        <i class="ri-notification-3-line"></i> Push Sender
+                    </a>
                     <a href="/admin/sales-map" class="<?php echo $current_page === 'sales-map' ? 'active' : ''; ?>">
                         <i class="ri-map-pin-line"></i> Sales Map
                     </a>

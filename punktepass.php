@@ -443,6 +443,31 @@ add_action('wp_enqueue_scripts', function() {
 add_action('wp_enqueue_scripts', function() {
     if (ppv_is_login_page()) return;
 
+    // Firebase SDK for Web Push (FCM)
+    wp_enqueue_script(
+        'firebase-app',
+        'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+        [],
+        '9.23.0',
+        true
+    );
+    wp_enqueue_script(
+        'firebase-messaging',
+        'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js',
+        ['firebase-app'],
+        '9.23.0',
+        true
+    );
+
+    // Firebase Messaging Integration
+    wp_enqueue_script(
+        'ppv-firebase-messaging',
+        PPV_PLUGIN_URL . 'assets/js/ppv-firebase-messaging.js',
+        ['firebase-app', 'firebase-messaging'],
+        PPV_VERSION,
+        true
+    );
+
     // Push Notification Bridge (iOS/Android/Web)
     wp_enqueue_script(
         'ppv-push-bridge',
@@ -472,6 +497,11 @@ add_action('wp_enqueue_scripts', function() {
         ]);
         // Also set global for backwards compatibility
         wp_add_inline_script('ppv-push-bridge', 'window.ppvUserId = ' . $ppv_user_id . ';', 'before');
+
+        // VAPID public key for Web Push
+        if (defined('PPV_VAPID_PUBLIC_KEY')) {
+            wp_add_inline_script('ppv-push-bridge', 'window.ppvVapidKey = "' . esc_js(PPV_VAPID_PUBLIC_KEY) . '";', 'before');
+        }
     }
 
     // 🚀 Turbo.js - TEMPORARILY DISABLED for debugging
