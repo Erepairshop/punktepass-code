@@ -472,6 +472,11 @@ add_action('wp_enqueue_scripts', function() {
         ]);
         // Also set global for backwards compatibility
         wp_add_inline_script('ppv-push-bridge', 'window.ppvUserId = ' . $ppv_user_id . ';', 'before');
+
+        // VAPID public key for Web Push
+        if (defined('PPV_VAPID_PUBLIC_KEY')) {
+            wp_add_inline_script('ppv-push-bridge', 'window.ppvVapidKey = "' . esc_js(PPV_VAPID_PUBLIC_KEY) . '";', 'before');
+        }
     }
 
     // 🚀 Turbo.js - TEMPORARILY DISABLED for debugging

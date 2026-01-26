@@ -49,6 +49,16 @@
                 }, 1000);
             }
 
+            // For Web/PWA/TWA: Auto-request permission if user is logged in
+            if (this.platform === 'web' && (window.ppvUserId || window.ppv_user_id)) {
+                ppvLog('[PPV Push] Web platform detected with logged-in user, checking push support...');
+                setTimeout(() => {
+                    if (this.isSupported() && window.ppvVapidKey) {
+                        this.requestPermission();
+                    }
+                }, 2000);
+            }
+
             this.initialized = true;
             ppvLog('[PPV Push] Bridge initialized');
         },
@@ -369,13 +379,107 @@
         },
 
         /**
-         * Subscribe to Web Push (for PWA)
+         * Subscribe to Web Push (for PWA/TWA)
          */
         subscribeWebPush: function() {
-            // TODO: Implement Web Push subscription
-            // Requires VAPID keys and service worker setup
-            ppvLog('[PPV Push] Web Push subscription not yet implemented');
-            return Promise.resolve(false);
+            const self = this;
+
+            // Check if Web Push is supported
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                ppvLog('[PPV Push] Web Push not supported');
+                return Promise.resolve(false);
+            }
+
+            // Get VAPID public key from window (set by PHP) or use default
+            const vapidKey = window.ppvVapidKey || window.PPV_VAPID_PUBLIC_KEY;
+            if (!vapidKey) {
+                ppvLog('[PPV Push] VAPID public key not configured');
+                return Promise.resolve(false);
+            }
+
+            return navigator.serviceWorker.ready
+                .then(function(registration) {
+                    ppvLog('[PPV Push] Service worker ready, subscribing...');
+
+                    // Convert VAPID key to Uint8Array
+                    const applicationServerKey = self.urlBase64ToUint8Array(vapidKey);
+
+                    return registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: applicationServerKey
+                    });
+                })
+                .then(function(subscription) {
+                    ppvLog('[PPV Push] Web Push subscription created');
+
+                    // Extract the endpoint and keys
+                    const subscriptionJson = subscription.toJSON();
+
+                    // Register with backend using the endpoint as token
+                    const userId = window.ppvUserId || window.ppv_user_id || null;
+
+                    if (!userId) {
+                        ppvLog('[PPV Push] No user ID, cannot register web push');
+                        return false;
+                    }
+
+                    const data = {
+                        token: subscriptionJson.endpoint,
+                        platform: 'web',
+                        user_id: userId,
+                        language: window.ppvLang || document.documentElement.lang || 'de',
+                        device_name: self.getDeviceName(),
+                        // Include keys for server-side encryption
+                        web_push_keys: {
+                            p256dh: subscriptionJson.keys.p256dh,
+                            auth: subscriptionJson.keys.auth,
+                            endpoint: subscriptionJson.endpoint
+                        }
+                    };
+
+                    return fetch('/wp-json/punktepass/v1/push/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                        credentials: 'include'
+                    })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            ppvLog('[PPV Push] Web Push registered successfully');
+                            self.token = subscriptionJson.endpoint;
+                            try {
+                                localStorage.setItem('ppv_push_token', subscriptionJson.endpoint);
+                                localStorage.setItem('ppv_push_registered', Date.now().toString());
+                            } catch (e) {}
+                            return true;
+                        }
+                        ppvLog.error('[PPV Push] Web Push registration failed:', result.message);
+                        return false;
+                    });
+                })
+                .catch(function(error) {
+                    ppvLog.error('[PPV Push] Web Push subscription failed:', error);
+                    return false;
+                });
+        },
+
+        /**
+         * Convert URL-safe base64 to Uint8Array (for VAPID key)
+         */
+        urlBase64ToUint8Array: function(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
         },
 
         /**
