@@ -809,7 +809,7 @@ function ppv_format_device_info_json($device_info_json) {
 <body>
     <div class="container">
         <!-- Vissza gomb -->
-        <a href="?ppv_admin=1" style="display: inline-flex; align-items: center; gap: 8px; color: #00d4ff; text-decoration: none; margin-bottom: 20px; font-size: 14px;">
+        <a href="/admin" style="display: inline-flex; align-items: center; gap: 8px; color: #00d4ff; text-decoration: none; margin-bottom: 20px; font-size: 14px;">
             <i class="ri-arrow-left-line"></i> Vissza az admin főoldalra
         </a>
 
