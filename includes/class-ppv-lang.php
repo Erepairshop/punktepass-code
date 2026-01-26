@@ -104,40 +104,63 @@ if (!$lang && !empty($_GET['lang'])) {
             ppv_log("🌍 [PPV_Lang] Using session → {$lang}");
         }
 
-        // 5️⃣ Browser Accept-Language fallback (FREE, instant, no API call!)
-        // 🔧 FIX: Skip browser detection if user previously selected a language manually
+        // 5️⃣ Domain-based language detection (for punktepass.ro, punktepass.hu)
         if (!$lang) {
             // Check if user ever manually selected a language
             $manual_selection = !empty($_COOKIE['ppv_lang_manual']);
 
             if ($manual_selection) {
-                // User previously chose a language manually, don't use browser detection
-                // Just use default (German) - the manual cookie was probably cleared by some issue
+                // User previously chose a language manually, don't use domain/browser detection
                 $lang = 'de';
                 ppv_log("🌍 [PPV_Lang] Manual flag exists but no lang cookie - using default → {$lang}");
-            } elseif (!empty($_SESSION['ppv_browser_lang'])) {
-                // Check session cache first
-                $lang = $_SESSION['ppv_browser_lang'];
-                ppv_log("🌍 [PPV_Lang] Browser lang from session → {$lang}");
             } else {
-                // Parse Accept-Language header (e.g. "hu-HU,hu;q=0.9,de;q=0.8")
-                $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-                $lang = 'de'; // Default
+                // Check multiple sources for original domain (handles redirects)
+                $check_domains = [
+                    $domain,
+                    $_SERVER['HTTP_X_FORWARDED_HOST'] ?? '',
+                    $_SERVER['HTTP_REFERER'] ?? '',
+                    $_SERVER['HTTP_ORIGIN'] ?? ''
+                ];
+                $domain_lang = null;
 
-                if ($accept) {
-                    // Check for Hungarian
-                    if (preg_match('/\bhu\b/i', $accept)) {
-                        $lang = 'hu';
-                    }
-                    // Check for Romanian
-                    elseif (preg_match('/\bro\b/i', $accept)) {
-                        $lang = 'ro';
+                foreach ($check_domains as $check) {
+                    if (strpos($check, 'punktepass.ro') !== false) {
+                        $domain_lang = 'ro';
+                        ppv_log("🌍 [PPV_Lang] Domain detection → punktepass.ro found in: {$check}");
+                        break;
+                    } elseif (strpos($check, 'punktepass.hu') !== false) {
+                        $domain_lang = 'hu';
+                        ppv_log("🌍 [PPV_Lang] Domain detection → punktepass.hu found in: {$check}");
+                        break;
                     }
                 }
 
-                // Cache in session
-                $_SESSION['ppv_browser_lang'] = $lang;
-                ppv_log("🌍 [PPV_Lang] Browser Accept-Language → {$lang}");
+                if ($domain_lang) {
+                    $lang = $domain_lang;
+                } elseif (!empty($_SESSION['ppv_browser_lang'])) {
+                    // Check session cache for browser lang
+                    $lang = $_SESSION['ppv_browser_lang'];
+                    ppv_log("🌍 [PPV_Lang] Browser lang from session → {$lang}");
+                } else {
+                    // Parse Accept-Language header (e.g. "hu-HU,hu;q=0.9,de;q=0.8")
+                    $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+                    $lang = 'de'; // Default
+
+                    if ($accept) {
+                        // Check for Hungarian
+                        if (preg_match('/\bhu\b/i', $accept)) {
+                            $lang = 'hu';
+                        }
+                        // Check for Romanian
+                        elseif (preg_match('/\bro\b/i', $accept)) {
+                            $lang = 'ro';
+                        }
+                    }
+
+                    // Cache in session
+                    $_SESSION['ppv_browser_lang'] = $lang;
+                    ppv_log("🌍 [PPV_Lang] Browser Accept-Language → {$lang}");
+                }
             }
         }
 
