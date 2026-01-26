@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) exit;
 class PPV_Lang {
 
     public static $strings = [];
-    public static $active  = 'de';
+    public static $active  = 'ro';
 
     /** ============================================================
      *  🔹 Init
@@ -111,7 +111,7 @@ if (!$lang && !empty($_GET['lang'])) {
 
             if ($manual_selection) {
                 // User previously chose a language manually, don't use domain/browser detection
-                $lang = 'de';
+                $lang = 'ro';
                 ppv_log("🌍 [PPV_Lang] Manual flag exists but no lang cookie - using default → {$lang}");
             } else {
                 // Check multiple sources for original domain (handles redirects)
@@ -144,16 +144,16 @@ if (!$lang && !empty($_GET['lang'])) {
                 } else {
                     // Parse Accept-Language header (e.g. "hu-HU,hu;q=0.9,de;q=0.8")
                     $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-                    $lang = 'de'; // Default
+                    $lang = 'ro'; // Default Romanian
 
                     if ($accept) {
-                        // Check for Hungarian
-                        if (preg_match('/\bhu\b/i', $accept)) {
-                            $lang = 'hu';
+                        // Check for German
+                        if (preg_match('/\bde\b/i', $accept)) {
+                            $lang = 'de';
                         }
-                        // Check for Romanian
-                        elseif (preg_match('/\bro\b/i', $accept)) {
-                            $lang = 'ro';
+                        // Check for Hungarian
+                        elseif (preg_match('/\bhu\b/i', $accept)) {
+                            $lang = 'hu';
                         }
                     }
 
@@ -233,7 +233,7 @@ public static function load($lang) {
      *  🔹 Get active language
      * ============================================================ */
     public static function current() {
-        return self::$active ?? 'de';
+        return self::$active ?? 'ro';
         
         
     }
