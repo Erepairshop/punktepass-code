@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * PunktePass - Weekly Report Email System
- * Sends weekly scan statistics to store owners every Monday morning
+ * Sends weekly scan statistics to store owners every Monday at 8:00 AM
  * Language is determined by store's country setting
  */
 class PPV_Weekly_Report {
@@ -17,14 +17,14 @@ class PPV_Weekly_Report {
     }
 
     /**
-     * Schedule weekly cron event (every Friday at 12:00 noon)
+     * Schedule weekly cron event (every Monday at 8:00 AM)
      */
     public static function schedule_cron() {
         if (!wp_next_scheduled('ppv_weekly_report')) {
-            // Next Friday at 12:00 noon server time
-            $next_friday = strtotime('next friday 12:00:00');
-            wp_schedule_event($next_friday, 'weekly', 'ppv_weekly_report');
-            ppv_log("📧 [Weekly Report] Cron scheduled for: " . date('Y-m-d H:i:s', $next_friday));
+            // Next Monday at 8:00 AM server time
+            $next_monday = strtotime('next monday 08:00:00');
+            wp_schedule_event($next_monday, 'weekly', 'ppv_weekly_report');
+            ppv_log("📧 [Weekly Report] Cron scheduled for: " . date('Y-m-d H:i:s', $next_monday));
         }
     }
 
@@ -319,7 +319,8 @@ class PPV_Weekly_Report {
         global $wpdb;
 
         $store = $wpdb->get_row($wpdb->prepare("
-            SELECT vip_enabled, google_review_enabled, google_review_url,
+            SELECT vip_enabled, vip_fix_enabled, vip_streak_enabled, vip_daily_enabled,
+                   google_review_enabled, google_review_url,
                    whatsapp_marketing_enabled, whatsapp_enabled,
                    comeback_enabled, birthday_bonus_enabled
             FROM {$wpdb->prefix}ppv_stores
@@ -338,8 +339,14 @@ class PPV_Weekly_Report {
             WHERE vendor_store_id = %d AND user_type = 'scanner' AND active = 1
         ", $store_id));
 
+        // VIP is enabled if ANY of the VIP features are enabled
+        $vip_enabled = !empty($store->vip_enabled) ||
+                       !empty($store->vip_fix_enabled) ||
+                       !empty($store->vip_streak_enabled) ||
+                       !empty($store->vip_daily_enabled);
+
         return [
-            'vip_enabled' => !empty($store->vip_enabled),
+            'vip_enabled' => $vip_enabled,
             'google_review_enabled' => !empty($store->google_review_enabled) && !empty($store->google_review_url),
             'whatsapp_marketing' => !empty($store->whatsapp_marketing_enabled),
             'whatsapp_enabled' => !empty($store->whatsapp_enabled),
@@ -668,7 +675,7 @@ class PPV_Weekly_Report {
                 'suspicious_scans' => 'Verdächtige Scans',
                 'view_details' => 'Anzeigen',
                 'summary_text' => 'Diese Woche: %s Scans, %s Punkte eingelöst',
-                'footer_text' => 'Dieser Bericht wird automatisch jeden Freitag versendet.',
+                'footer_text' => 'Dieser Bericht wird automatisch jeden Montag versendet.',
                 'filiale_breakdown' => 'Statistiken nach Filiale',
                 'main_store' => 'Hauptgeschäft',
                 'customer_insights' => 'Kundenanalyse',
@@ -700,7 +707,7 @@ class PPV_Weekly_Report {
                 'suspicious_scans' => 'Gyanús scanek',
                 'view_details' => 'Megtekintés',
                 'summary_text' => 'Ezen a héten: %s scan, %s pont beváltva',
-                'footer_text' => 'Ez a jelentés automatikusan kerül kiküldésre minden pénteken.',
+                'footer_text' => 'Ez a jelentés automatikusan kerül kiküldésre minden hétfőn.',
                 'filiale_breakdown' => 'Statisztikák filiálék szerint',
                 'main_store' => 'Főüzlet',
                 'customer_insights' => 'Vásárlói elemzés',
@@ -732,7 +739,7 @@ class PPV_Weekly_Report {
                 'suspicious_scans' => 'Scanări suspecte',
                 'view_details' => 'Vizualizare',
                 'summary_text' => 'Săptămâna aceasta: %s scanări, %s puncte răscumpărate',
-                'footer_text' => 'Acest raport este trimis automat în fiecare vineri.',
+                'footer_text' => 'Acest raport este trimis automat în fiecare luni.',
                 'filiale_breakdown' => 'Statistici pe filiale',
                 'main_store' => 'Magazin principal',
                 'customer_insights' => 'Analiza clienților',
