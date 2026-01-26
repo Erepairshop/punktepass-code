@@ -155,13 +155,16 @@ document.addEventListener("DOMContentLoaded", () => {
       let lang = localStorage.getItem(LANG_KEY) ||
                  document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1];
 
-      // If no language set, detect by timezone and set cookie
+      // If no language set, detect by timezone and set cookie + reload
       if (!lang) {
         lang = detectCountryLang();
         // Set cookie so PHP can use it on next request
         document.cookie = `ppv_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
         localStorage.setItem(LANG_KEY, lang);
-        console.log('🌍 [PPV] Auto-detected language by timezone:', lang);
+        console.log('🌍 [PPV] Auto-detected language by timezone:', lang, '- reloading...');
+        // Reload page so PHP can use the new cookie
+        window.location.reload();
+        return;
       }
 
       translateMenu(lang);
