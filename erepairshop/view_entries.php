@@ -593,7 +593,8 @@ foreach ($alleEintraege as $entry) {
                                         'problem' => $problemText,
                                         'other' => $entry['other'] ?? '',
                                         'pin' => $entry['pin'] ?? '',
-                                        'muster_path' => $entry['muster_image_path'] ?? ''
+                                        'muster_path' => $entry['muster_image_path'] ?? '',
+                                        'signature_path' => $entry['signature_image_path'] ?? ''
                                     ])); ?>">
                                 <i class="ri-printer-line"></i> Ausdrucken
                             </button>
@@ -789,45 +790,48 @@ foreach ($alleEintraege as $entry) {
         var w = window.open('', '_blank', 'width=800,height=900');
         if (!w) { alert('Popup blocked!'); return; }
 
-        var musterHtml = data.muster_path ? '<div class="field"><span class="label">Entsperrmuster:</span><img src="/formular/' + data.muster_path + '" style="max-width:150px;border:1px solid #ddd;border-radius:8px;margin-top:8px"></div>' : '';
+        var musterHtml = data.muster_path ? '<div class="field"><span class="label">Muster:</span><img src="/formular/' + data.muster_path + '" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>' : '';
         var pinHtml = data.pin ? '<div class="field"><span class="label">PIN:</span><span class="value highlight">' + data.pin + '</span></div>' : '';
         var otherHtml = data.other ? '<div class="field"><span class="label">Details:</span><span class="value">' + data.other + '</span></div>' : '';
+        var signatureHtml = data.signature_path ? '<div class="sig-img"><img src="/formular/' + data.signature_path + '" style="max-height:40px"></div>' : '<div class="signature-line"></div>';
 
         var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reparaturauftrag</title>' +
-        '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;padding:40px;color:#1f2937;line-height:1.5}' +
-        '.header{display:flex;justify-content:space-between;border-bottom:3px solid #3b82f6;padding-bottom:20px;margin-bottom:30px}' +
-        '.logo{font-size:28px;font-weight:700;color:#3b82f6}.logo span{color:#1f2937}' +
-        '.header-info{text-align:right;font-size:13px;color:#6b7280}.header-info strong{color:#1f2937;display:block}' +
-        '.title{text-align:center;margin-bottom:30px;padding:16px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border-radius:12px}' +
-        '.title h1{font-size:22px;margin-bottom:4px}.title p{font-size:14px;opacity:.9}' +
-        '.section{background:#f9fafb;border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid #e5e7eb}' +
-        '.section-title{font-size:14px;font-weight:600;color:#3b82f6;text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #e5e7eb}' +
-        '.field{display:flex;margin-bottom:12px}.label{width:140px;font-weight:500;color:#6b7280;font-size:13px}' +
-        '.value{flex:1;font-size:15px;color:#1f2937}.value.highlight{color:#3b82f6;font-weight:600;font-size:18px}' +
-        '.datenschutz{background:#fef3c7;border:1px solid #f59e0b;border-radius:12px;padding:20px;margin-top:30px}' +
-        '.datenschutz-title{font-weight:600;color:#92400e;margin-bottom:12px;font-size:13px;text-transform:uppercase}' +
-        '.datenschutz-text{font-size:11px;color:#78350f;line-height:1.6}.datenschutz-text ul{margin:8px 0;padding-left:20px}' +
-        '.signature-area{display:flex;gap:40px;margin-top:40px;padding-top:20px;border-top:1px dashed #d1d5db}' +
-        '.signature-box{flex:1}.signature-box label{display:block;font-size:12px;color:#6b7280;margin-bottom:8px}' +
-        '.signature-line{border-bottom:1px solid #1f2937;height:50px}' +
-        '.footer{text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af}' +
-        '@media print{body{padding:20px}}</style></head><body>' +
+        '<style>*{margin:0;padding:0;box-sizing:border-box}' +
+        'body{font-family:Arial,sans-serif;padding:15px 20px;color:#1f2937;line-height:1.3;font-size:11px}' +
+        '.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #3b82f6;padding-bottom:8px;margin-bottom:12px}' +
+        '.logo{font-size:18px;font-weight:700;color:#3b82f6}.logo span{color:#1f2937}' +
+        '.header-info{text-align:right;font-size:10px;color:#6b7280}.header-info strong{color:#1f2937}' +
+        '.title{text-align:center;margin-bottom:12px;padding:8px;background:#3b82f6;color:#fff;border-radius:6px}' +
+        '.title h1{font-size:14px;margin:0}.title p{font-size:10px;margin-top:2px;opacity:.9}' +
+        '.two-col{display:flex;gap:12px;margin-bottom:10px}' +
+        '.section{background:#f9fafb;border-radius:6px;padding:10px 12px;border:1px solid #e5e7eb;flex:1}' +
+        '.section-title{font-size:9px;font-weight:600;color:#3b82f6;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb}' +
+        '.field{display:flex;margin-bottom:4px}.label{width:55px;font-weight:500;color:#6b7280;font-size:10px}' +
+        '.value{flex:1;font-size:11px;color:#1f2937}.value.highlight{color:#3b82f6;font-weight:600}' +
+        '.datenschutz{background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:8px 10px;margin-bottom:10px}' +
+        '.datenschutz-title{font-weight:600;color:#92400e;margin-bottom:4px;font-size:9px;text-transform:uppercase}' +
+        '.datenschutz-text{font-size:8px;color:#78350f;line-height:1.4}.datenschutz-text ul{margin:4px 0;padding-left:14px}' +
+        '.signature-area{display:flex;gap:20px;margin-top:10px;padding-top:8px;border-top:1px dashed #d1d5db}' +
+        '.signature-box{flex:1}.signature-box label{display:block;font-size:9px;color:#6b7280;margin-bottom:4px}' +
+        '.signature-line{border-bottom:1px solid #1f2937;height:35px}' +
+        '.sig-img{height:35px;display:flex;align-items:flex-end;border-bottom:1px solid #ccc}' +
+        '.footer{text-align:center;margin-top:8px;font-size:9px;color:#9ca3af}' +
+        '@media print{body{padding:10px 15px}@page{margin:10mm}}</style></head><body>' +
         '<div class="header"><div class="logo">E<span>repairshop</span></div>' +
-        '<div class="header-info"><strong>Reparaturannahme</strong>Siedlungsring 51<br>89415 Lauingen<br>Tel: 0176 98479520</div></div>' +
-        '<div class="title"><h1>Reparaturauftrag</h1><p>Datum: ' + data.datum + '</p></div>' +
-        '<div class="section"><div class="section-title">Kundendaten</div>' +
+        '<div class="header-info"><strong>Reparaturannahme</strong> Siedlungsring 51, 89415 Lauingen | Tel: 0176 98479520</div></div>' +
+        '<div class="title"><h1>Reparaturauftrag</h1><p>' + data.datum + '</p></div>' +
+        '<div class="two-col">' +
+        '<div class="section"><div class="section-title">Kunde</div>' +
         '<div class="field"><span class="label">Name:</span><span class="value">' + data.name + '</span></div>' +
         '<div class="field"><span class="label">Telefon:</span><span class="value highlight">' + data.telefon + '</span></div></div>' +
-        '<div class="section"><div class="section-title">Geraeteinformationen</div>' +
-        '<div class="field"><span class="label">Geraet:</span><span class="value">' + data.marke + ' ' + data.modell + '</span></div>' +
+        '<div class="section"><div class="section-title">Geraet</div>' +
+        '<div class="field"><span class="label">Modell:</span><span class="value">' + data.marke + ' ' + data.modell + '</span></div>' +
         '<div class="field"><span class="label">Problem:</span><span class="value">' + data.problem + '</span></div>' +
-        otherHtml + pinHtml + musterHtml + '</div>' +
-        '<div class="datenschutz"><div class="datenschutz-title">Datenschutzhinweis (vom Kunden bestaetigt)</div>' +
-        '<div class="datenschutz-text">Der Kunde hat der Verarbeitung folgender Daten zugestimmt:<ul>' +
-        '<li>Kontaktdaten zur Benachrichtigung</li><li>Geraeteinformationen zur Reparatur</li>' +
-        '<li>PIN/Entsperrmuster zur Funktionspruefung</li></ul>' +
-        '<strong>PIN/Muster wird nach Geraeteabholung sofort geloescht.</strong><br>Datenschutz: erepairshop.de/datenschutz</div></div>' +
-        '<div class="signature-area"><div class="signature-box"><label>Unterschrift Kunde:</label><div class="signature-line"></div></div>' +
+        otherHtml + pinHtml + musterHtml + '</div></div>' +
+        '<div class="datenschutz"><div class="datenschutz-title">Datenschutz (bestaetigt)</div>' +
+        '<div class="datenschutz-text">Einwilligung zur Verarbeitung: Kontaktdaten, Geraetedaten, PIN/Muster zur Funktionspruefung. ' +
+        '<strong>PIN/Muster wird nach Abholung geloescht.</strong> Info: erepairshop.de/datenschutz</div></div>' +
+        '<div class="signature-area"><div class="signature-box"><label>Unterschrift Kunde:</label>' + signatureHtml + '</div>' +
         '<div class="signature-box"><label>Unterschrift Mitarbeiter:</label><div class="signature-line"></div></div></div>' +
         '<div class="footer">Erepairshop - info@erepairshop.de - erepairshop.de</div>' +
         '<script>window.onload=function(){window.print();}<\/script></body></html>';
