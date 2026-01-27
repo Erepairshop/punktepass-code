@@ -371,12 +371,62 @@
             align-items: center;
         }
 
-        #musterCanvas {
+        #musterCanvas, #signatureCanvas {
             border: 3px solid var(--gray-300);
             border-radius: var(--radius);
             background: white;
             touch-action: none;
             cursor: crosshair;
+        }
+
+        /* Signature Section */
+        .signature-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-200);
+        }
+
+        .signature-section label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 14px;
+        }
+
+        .signature-section label i {
+            margin-right: 6px;
+            color: var(--primary);
+        }
+
+        .signature-canvas-container {
+            background: white;
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #signatureCanvas {
+            width: 100%;
+            max-width: 400px;
+            height: 150px;
+        }
+
+        .signature-hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--gray-500);
+            text-align: center;
+        }
+
+        .signature-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
         }
 
         .canvas-hint {
@@ -404,6 +454,47 @@
 
         .reset-btn:hover {
             background: var(--gray-300);
+        }
+
+        /* Datenschutz Checkbox */
+        .datenschutz-check {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-200);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            margin-top: 2px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .checkbox-text {
+            color: var(--gray-600);
+        }
+
+        .checkbox-text a {
+            color: var(--primary);
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .checkbox-text a:hover {
+            color: var(--primary-dark);
         }
 
         /* Submit Button */
@@ -819,6 +910,32 @@
                     <input type="hidden" name="muster" id="musterData">
                 </div>
 
+                <!-- Datenschutz Checkbox -->
+                <div class="form-group datenschutz-check">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="datenschutzCheck" name="datenschutz" required>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">
+                            Ich habe die <a href="datenschutz.php#reparatur-formular" target="_blank">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Daten einschließlich PIN/Entsperrmuster zur Durchführung der Reparatur zu.
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Signature -->
+                <div class="form-group signature-section">
+                    <label><i class="ri-edit-line"></i> Unterschrift des Kunden</label>
+                    <div class="signature-canvas-container">
+                        <canvas id="signatureCanvas" width="400" height="150"></canvas>
+                        <p class="signature-hint">Bitte unterschreiben Sie mit dem Finger oder der Maus</p>
+                        <div class="signature-actions">
+                            <button type="button" class="reset-btn" onclick="clearSignature()">
+                                <i class="ri-refresh-line"></i> Löschen
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="signature" id="signatureData">
+                </div>
+
                 <!-- Submit -->
                 <button type="button" class="submit-btn" onclick="submitForm()">
                     <i class="ri-send-plane-fill"></i> Auftrag absenden
@@ -1066,6 +1183,77 @@
         canvas.addEventListener('touchend', stopDrawing);
 
         createGrid();
+
+        // Signature Canvas
+        const sigCanvas = document.getElementById('signatureCanvas');
+        const sigCtx = sigCanvas.getContext('2d');
+        let sigDrawing = false;
+        let sigLastX = 0;
+        let sigLastY = 0;
+
+        function initSignatureCanvas() {
+            sigCtx.fillStyle = 'white';
+            sigCtx.fillRect(0, 0, sigCanvas.width, sigCanvas.height);
+            sigCtx.strokeStyle = '#1f2937';
+            sigCtx.lineWidth = 2;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+        }
+
+        initSignatureCanvas();
+
+        function getSigCoordinates(event) {
+            const rect = sigCanvas.getBoundingClientRect();
+            const scaleX = sigCanvas.width / rect.width;
+            const scaleY = sigCanvas.height / rect.height;
+            if (event.touches) {
+                return {
+                    x: (event.touches[0].clientX - rect.left) * scaleX,
+                    y: (event.touches[0].clientY - rect.top) * scaleY
+                };
+            }
+            return {
+                x: (event.clientX - rect.left) * scaleX,
+                y: (event.clientY - rect.top) * scaleY
+            };
+        }
+
+        function startSigDrawing(e) {
+            sigDrawing = true;
+            const coords = getSigCoordinates(e);
+            sigLastX = coords.x;
+            sigLastY = coords.y;
+            e.preventDefault();
+        }
+
+        function drawSig(e) {
+            if (!sigDrawing) return;
+            const coords = getSigCoordinates(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(sigLastX, sigLastY);
+            sigCtx.lineTo(coords.x, coords.y);
+            sigCtx.stroke();
+            sigLastX = coords.x;
+            sigLastY = coords.y;
+            e.preventDefault();
+        }
+
+        function stopSigDrawing() {
+            sigDrawing = false;
+        }
+
+        sigCanvas.addEventListener('mousedown', startSigDrawing);
+        sigCanvas.addEventListener('mousemove', drawSig);
+        sigCanvas.addEventListener('mouseup', stopSigDrawing);
+        sigCanvas.addEventListener('mouseout', stopSigDrawing);
+        sigCanvas.addEventListener('touchstart', startSigDrawing);
+        sigCanvas.addEventListener('touchmove', drawSig);
+        sigCanvas.addEventListener('touchend', stopSigDrawing);
+
+        window.clearSignature = function() {
+            initSignatureCanvas();
+            document.getElementById('signatureData').value = '';
+        };
     });
 
     function submitForm() {
@@ -1076,16 +1264,27 @@
         const brand = document.querySelector('input[name="brand"]:checked');
         const model = document.getElementById('model').value;
         const problem = document.querySelector('input[name="problem"]:checked');
+        const datenschutz = document.getElementById('datenschutzCheck').checked;
 
         if (!name || !phone || !brand || !model || !problem) {
             alert('Bitte füllen Sie alle Pflichtfelder aus.');
             return;
         }
 
-        // Get canvas data
+        if (!datenschutz) {
+            alert('Bitte bestätigen Sie die Datenschutzerklärung.');
+            return;
+        }
+
+        // Get muster canvas data
         const canvas = document.getElementById('musterCanvas');
         const canvasData = canvas.toDataURL();
         document.getElementById('musterData').value = canvasData;
+
+        // Get signature canvas data
+        const sigCanvas = document.getElementById('signatureCanvas');
+        const sigData = sigCanvas.toDataURL();
+        document.getElementById('signatureData').value = sigData;
 
         // Submit
         form.submit();

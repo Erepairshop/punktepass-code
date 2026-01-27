@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/db_config.php';
 
+// Set timezone to Germany
+date_default_timezone_set('Europe/Berlin');
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Empfangen der Formulardaten
     $name = htmlspecialchars($_POST['name'] ?? '');
@@ -23,10 +26,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         file_put_contents(__DIR__ . '/' . $muster_image_path, $muster_data);
     }
 
+    // Empfangen und Verarbeiten der Unterschrift
+    $signature_base64 = isset($_POST['signature']) ? $_POST['signature'] : '';
+    $signature_image_path = '';
+
+    // Unterschrift speichern wenn vorhanden
+    if (!empty($signature_base64) && strpos($signature_base64, 'data:image') === 0) {
+        $signature_data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $signature_base64));
+        $signature_image_path = 'uploads/sig_' . uniqid() . '.png';
+        file_put_contents(__DIR__ . '/' . $signature_image_path, $signature_data);
+    }
+
     // Speichern der Daten in der Datenbank
     try {
         $pdo = getDB();
-        $stmt = $pdo->prepare("INSERT INTO entries (datum, name, telefon, marke, modell, problem, other, pin, muster_image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO entries (datum, name, telefon, marke, modell, problem, other, pin, muster_image_path, signature_image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             date("Y-m-d H:i:s"),
             $name,
@@ -36,7 +50,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $problem,
             $other,
             $pin,
-            $muster_image_path
+            $muster_image_path,
+            $signature_image_path
         ]);
     } catch (Exception $e) {
         error_log("Fehler beim Speichern: " . $e->getMessage());

@@ -10,16 +10,27 @@ if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
     // Mark ALL as done
     if (isset($_POST['markAllAsDone'])) {
         try {
-            // Get all phone numbers from entries that are not yet marked as done
-            $stmt = $pdo->query("SELECT DISTINCT telefon FROM entries WHERE telefon NOT IN (SELECT telefon FROM erledigt_status)");
-            $openEntries = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            // Get all entries that are not yet marked as done
+            $stmt = $pdo->query("SELECT DISTINCT telefon, muster_image_path FROM entries WHERE telefon NOT IN (SELECT telefon FROM erledigt_status)");
+            $openEntries = $stmt->fetchAll();
 
             $newlyMarked = [];
             $insertStmt = $pdo->prepare("INSERT IGNORE INTO erledigt_status (telefon) VALUES (?)");
+            $clearStmt = $pdo->prepare("UPDATE entries SET pin = NULL, muster_image_path = NULL WHERE telefon = ?");
 
-            foreach ($openEntries as $telefon) {
+            foreach ($openEntries as $entry) {
+                $telefon = $entry['telefon'];
                 $insertStmt->execute([$telefon]);
                 if ($insertStmt->rowCount() > 0) {
+                    // Delete muster file if exists
+                    if (!empty($entry['muster_image_path'])) {
+                        $filePath = __DIR__ . '/' . $entry['muster_image_path'];
+                        if (file_exists($filePath)) {
+                            unlink($filePath);
+                        }
+                    }
+                    // Clear PIN and muster in database
+                    $clearStmt->execute([$telefon]);
                     $newlyMarked[] = $telefon;
                 }
             }
@@ -47,9 +58,27 @@ if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
                 $deleteStmt->execute([$identifikator]);
                 $nowErledigt = false;
             } else {
-                // Mark as done
+                // Mark as done - also delete PIN and Muster for GDPR compliance
                 $insertStmt = $pdo->prepare("INSERT INTO erledigt_status (telefon) VALUES (?)");
                 $insertStmt->execute([$identifikator]);
+
+                // Get muster image path before deleting
+                $getStmt = $pdo->prepare("SELECT muster_image_path FROM entries WHERE telefon = ?");
+                $getStmt->execute([$identifikator]);
+                $entry = $getStmt->fetch();
+
+                // Delete muster file if exists
+                if ($entry && !empty($entry['muster_image_path'])) {
+                    $filePath = __DIR__ . '/' . $entry['muster_image_path'];
+                    if (file_exists($filePath)) {
+                        unlink($filePath);
+                    }
+                }
+
+                // Clear PIN and muster_image_path in database
+                $clearStmt = $pdo->prepare("UPDATE entries SET pin = NULL, muster_image_path = NULL WHERE telefon = ?");
+                $clearStmt->execute([$identifikator]);
+
                 $nowErledigt = true;
             }
 
@@ -102,6 +131,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
+}
+
+// Auto-cleanup: Delete PIN/Muster from entries that are already marked as erledigt
+try {
+    $cleanupStmt = $pdo->query("SELECT e.telefon, e.muster_image_path FROM entries e
+        INNER JOIN erledigt_status es ON e.telefon = es.telefon
+        WHERE e.pin IS NOT NULL OR e.muster_image_path IS NOT NULL");
+    $toClean = $cleanupStmt->fetchAll();
+
+    if (!empty($toClean)) {
+        $clearStmt = $pdo->prepare("UPDATE entries SET pin = NULL, muster_image_path = NULL WHERE telefon = ?");
+        foreach ($toClean as $entry) {
+            // Delete muster file if exists
+            if (!empty($entry['muster_image_path'])) {
+                $filePath = __DIR__ . '/' . $entry['muster_image_path'];
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+            }
+            $clearStmt->execute([$entry['telefon']]);
+        }
+    }
+} catch (Exception $e) {
+    error_log("Cleanup error: " . $e->getMessage());
 }
 
 // Load entries - Offen first, then Erledigt
@@ -583,6 +636,22 @@ foreach ($alleEintraege as $entry) {
                                 <?php echo $istErledigt ? 'Rückgängig' : 'Als erledigt markieren'; ?>
                             </button>
 
+                            <button type="button" class="btn btn-outline print-btn"
+                                    data-entry="<?php echo base64_encode(json_encode([
+                                        'name' => $entry['name'],
+                                        'telefon' => $telefon,
+                                        'datum' => $entry['datum'],
+                                        'marke' => ucfirst($entry['marke']),
+                                        'modell' => $entry['modell'],
+                                        'problem' => $problemText,
+                                        'other' => $entry['other'] ?? '',
+                                        'pin' => $entry['pin'] ?? '',
+                                        'muster_path' => $entry['muster_image_path'] ?? '',
+                                        'signature_path' => $entry['signature_image_path'] ?? ''
+                                    ])); ?>">
+                                <i class="ri-printer-line"></i> Ausdrucken
+                            </button>
+
                             <form action="loesche_eintrag.php" method="post" style="display: inline;"
                                   onsubmit="return confirm('Möchten Sie diesen Auftrag wirklich löschen?');">
                                 <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
@@ -760,7 +829,68 @@ foreach ($alleEintraege as $entry) {
         scrollTopBtn.addEventListener('click', function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
+
+        // Print button handlers
+        document.querySelectorAll('.print-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const data = JSON.parse(atob(this.dataset.entry));
+                printEntry(data);
+            });
+        });
     });
+
+    function printEntry(data) {
+        var w = window.open('', '_blank', 'width=800,height=900');
+        if (!w) { alert('Popup blocked!'); return; }
+
+        var musterHtml = data.muster_path ? '<div class="field"><span class="label">Muster:</span><img src="/formular/' + data.muster_path + '" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>' : '';
+        var pinHtml = data.pin ? '<div class="field"><span class="label">PIN:</span><span class="value highlight">' + data.pin + '</span></div>' : '';
+        var otherHtml = data.other ? '<div class="field"><span class="label">Details:</span><span class="value">' + data.other + '</span></div>' : '';
+        var signatureHtml = data.signature_path ? '<div class="sig-img"><img src="/formular/' + data.signature_path + '" style="max-height:40px"></div>' : '<div class="signature-line"></div>';
+
+        var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reparaturauftrag</title>' +
+        '<style>*{margin:0;padding:0;box-sizing:border-box}' +
+        'body{font-family:Arial,sans-serif;padding:15px 20px;color:#1f2937;line-height:1.3;font-size:11px}' +
+        '.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #3b82f6;padding-bottom:8px;margin-bottom:12px}' +
+        '.logo{font-size:18px;font-weight:700;color:#3b82f6}.logo span{color:#1f2937}' +
+        '.header-info{text-align:right;font-size:10px;color:#6b7280}.header-info strong{color:#1f2937}' +
+        '.title{text-align:center;margin-bottom:12px;padding:8px;background:#3b82f6;color:#fff;border-radius:6px}' +
+        '.title h1{font-size:14px;margin:0}.title p{font-size:10px;margin-top:2px;opacity:.9}' +
+        '.two-col{display:flex;gap:12px;margin-bottom:10px}' +
+        '.section{background:#f9fafb;border-radius:6px;padding:10px 12px;border:1px solid #e5e7eb;flex:1}' +
+        '.section-title{font-size:9px;font-weight:600;color:#3b82f6;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb}' +
+        '.field{display:flex;margin-bottom:4px}.label{width:55px;font-weight:500;color:#6b7280;font-size:10px}' +
+        '.value{flex:1;font-size:11px;color:#1f2937}.value.highlight{color:#3b82f6;font-weight:600}' +
+        '.datenschutz{background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:8px 10px;margin-bottom:10px}' +
+        '.datenschutz-title{font-weight:600;color:#92400e;margin-bottom:4px;font-size:9px;text-transform:uppercase}' +
+        '.datenschutz-text{font-size:8px;color:#78350f;line-height:1.4}.datenschutz-text ul{margin:4px 0;padding-left:14px}' +
+        '.signature-area{display:flex;gap:20px;margin-top:10px;padding-top:8px;border-top:1px dashed #d1d5db}' +
+        '.signature-box{flex:1}.signature-box label{display:block;font-size:9px;color:#6b7280;margin-bottom:4px}' +
+        '.signature-line{border-bottom:1px solid #1f2937;height:35px}' +
+        '.sig-img{height:35px;display:flex;align-items:flex-end;border-bottom:1px solid #ccc}' +
+        '.footer{text-align:center;margin-top:8px;font-size:9px;color:#9ca3af}' +
+        '@media print{body{padding:10px 15px}@page{margin:10mm}}</style></head><body>' +
+        '<div class="header"><div class="logo">E<span>repairshop</span></div>' +
+        '<div class="header-info"><strong>Reparaturannahme</strong> Siedlungsring 51, 89415 Lauingen | Tel: 0176 98479520</div></div>' +
+        '<div class="title"><h1>Reparaturauftrag</h1><p>' + data.datum + '</p></div>' +
+        '<div class="two-col">' +
+        '<div class="section"><div class="section-title">Kunde</div>' +
+        '<div class="field"><span class="label">Name:</span><span class="value">' + data.name + '</span></div>' +
+        '<div class="field"><span class="label">Telefon:</span><span class="value highlight">' + data.telefon + '</span></div></div>' +
+        '<div class="section"><div class="section-title">Geraet</div>' +
+        '<div class="field"><span class="label">Modell:</span><span class="value">' + data.marke + ' ' + data.modell + '</span></div>' +
+        '<div class="field"><span class="label">Problem:</span><span class="value">' + data.problem + '</span></div>' +
+        otherHtml + pinHtml + musterHtml + '</div></div>' +
+        '<div class="datenschutz"><div class="datenschutz-title">Datenschutz (bestaetigt)</div>' +
+        '<div class="datenschutz-text">Einwilligung zur Verarbeitung: Kontaktdaten, Geraetedaten, PIN/Muster zur Funktionspruefung. ' +
+        '<strong>PIN/Muster wird nach Abholung geloescht.</strong> Info: erepairshop.de/datenschutz</div></div>' +
+        '<div class="signature-area"><div class="signature-box" style="max-width:250px"><label>Unterschrift Kunde (Einwilligung Datenschutz):</label>' + signatureHtml + '</div></div>' +
+        '<div class="footer">Erepairshop - info@erepairshop.de - erepairshop.de</div>' +
+        '<script>window.onload=function(){window.print();}<\/script></body></html>';
+
+        w.document.write(html);
+        w.document.close();
+    }
     </script>
 </body>
 </html>
