@@ -5,6 +5,11 @@ struct Cookie {
     var value: String
 }
 
+// Global namespace for app-wide properties
+struct PunktePass {
+    static var webView: WKWebView!
+}
+
 let gcmMessageIDKey = "00000000000" // update this with actual ID if using Firebase 
 
 // URL for first launch
