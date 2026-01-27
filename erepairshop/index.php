@@ -616,7 +616,14 @@
             <div class="grid lg:grid-cols-2 gap-12">
                 <!-- Contact Form -->
                 <div class="glass rounded-2xl p-8">
-                    <form action="contact.php" method="post" enctype="multipart/form-data" class="space-y-6">
+                    <form action="contact.php" method="post" enctype="multipart/form-data" class="space-y-6" id="contactForm">
+                        <!-- Honeypot - hidden from humans, bots fill it -->
+                        <div style="position:absolute;left:-9999px;opacity:0;height:0;overflow:hidden;" aria-hidden="true">
+                            <input type="text" name="website" tabindex="-1" autocomplete="off">
+                        </div>
+                        <!-- Timestamp for bot detection -->
+                        <input type="hidden" name="form_time" value="<?php echo time(); ?>">
+
                         <div>
                             <label for="name" class="block text-sm font-medium mb-2">Ihr Name *</label>
                             <input type="text" id="name" name="name" required
