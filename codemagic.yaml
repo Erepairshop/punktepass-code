@@ -38,6 +38,9 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
+          app-store-connect fetch-signing-files "de.erepairshop.punktepass" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
 
       - name: Increment build number
         script: |
@@ -48,7 +51,6 @@ workflows:
       - name: Build iOS app
         script: |
           cd Xcode
-          xcode-project use-profiles
 
           # Archive
           xcodebuild -workspace "$XCODE_WORKSPACE" \
