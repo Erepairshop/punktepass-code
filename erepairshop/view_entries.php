@@ -583,17 +583,18 @@ foreach ($alleEintraege as $entry) {
                                 <?php echo $istErledigt ? 'Rückgängig' : 'Als erledigt markieren'; ?>
                             </button>
 
-                            <button type="button" class="btn btn-outline" onclick="printEntry(<?php echo htmlspecialchars(json_encode([
-                                'name' => $entry['name'],
-                                'telefon' => $telefon,
-                                'datum' => $entry['datum'],
-                                'marke' => ucfirst($entry['marke']),
-                                'modell' => $entry['modell'],
-                                'problem' => $problemText,
-                                'other' => $entry['other'] ?? '',
-                                'pin' => $entry['pin'] ?? '',
-                                'muster_path' => $entry['muster_image_path'] ?? ''
-                            ])); ?>)">
+                            <button type="button" class="btn btn-outline print-btn"
+                                    data-entry='<?php echo htmlspecialchars(json_encode([
+                                        'name' => $entry['name'],
+                                        'telefon' => $telefon,
+                                        'datum' => $entry['datum'],
+                                        'marke' => ucfirst($entry['marke']),
+                                        'modell' => $entry['modell'],
+                                        'problem' => $problemText,
+                                        'other' => $entry['other'] ?? '',
+                                        'pin' => $entry['pin'] ?? '',
+                                        'muster_path' => $entry['muster_image_path'] ?? ''
+                                    ], JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>'>
                                 <i class="ri-printer-line"></i> Ausdrucken
                             </button>
 
@@ -773,6 +774,14 @@ foreach ($alleEintraege as $entry) {
         });
         scrollTopBtn.addEventListener('click', function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Print button handlers
+        document.querySelectorAll('.print-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const data = JSON.parse(this.dataset.entry);
+                printEntry(data);
+            });
         });
     });
 
