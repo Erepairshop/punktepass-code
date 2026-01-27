@@ -147,7 +147,7 @@
 
                 <h3 class="font-semibold text-white mt-4 mb-2">Rechtsgrundlage</h3>
                 <p class="text-gray-300">
-                    Die Verarbeitung erfolgt auf Grundlage Ihrer ausdrücklichen Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO, die Sie durch Bestätigung im Reparatur-Formular erteilen.
+                    Die Verarbeitung erfolgt auf Grundlage Ihrer ausdrücklichen Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO, die Sie durch Bestätigung im Reparatur-Formular erteilen. Die Einwilligung wird durch Ihre digitale Unterschrift dokumentiert.
                 </p>
 
                 <h3 class="font-semibold text-white mt-4 mb-2">Widerruf</h3>

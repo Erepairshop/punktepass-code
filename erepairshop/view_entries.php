@@ -884,8 +884,8 @@ foreach ($alleEintraege as $entry) {
         '<div class="datenschutz"><div class="datenschutz-title">Datenschutz (bestaetigt)</div>' +
         '<div class="datenschutz-text">Einwilligung zur Verarbeitung: Kontaktdaten, Geraetedaten, PIN/Muster zur Funktionspruefung. ' +
         '<strong>PIN/Muster wird nach Abholung geloescht.</strong> Info: erepairshop.de/datenschutz</div></div>' +
-        '<div class="signature-area"><div class="signature-box"><label>Unterschrift Kunde:</label>' + signatureHtml + '</div>' +
-        '<div class="signature-box"><label>Unterschrift Mitarbeiter:</label><div class="signature-line"></div></div></div>' +
+        '<div class="signature-area"><div class="signature-box"><label>Kunde (Einwilligung Datenschutz):</label>' + signatureHtml + '</div>' +
+        '<div class="signature-box"><label>Mitarbeiter (Annahme):</label><div class="signature-line"></div></div></div>' +
         '<div class="footer">Erepairshop - info@erepairshop.de - erepairshop.de</div>' +
         '<script>window.onload=function(){window.print();}<\/script></body></html>';
 
