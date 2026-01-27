@@ -59,32 +59,18 @@ workflows:
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=2694KKB97H
 
-          # Create custom export_options.plist with correct certificate type
-          cat > export_options.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store-connect</string>
-            <key>teamID</key>
-            <string>2694KKB97H</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>signingCertificate</key>
-            <string>Apple Distribution</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>de.erepairshop.punktepass</key>
-              <string>PunktePass-AppStore</string>
-            </dict>
-          </dict>
-          </plist>
-          EOF
+          # Create export_options.plist - let Xcode auto-select certificate
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > export_options.plist
+          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> export_options.plist
+          echo '<plist version="1.0"><dict>' >> export_options.plist
+          echo '<key>method</key><string>app-store-connect</string>' >> export_options.plist
+          echo '<key>teamID</key><string>2694KKB97H</string>' >> export_options.plist
+          echo '<key>provisioningProfiles</key><dict>' >> export_options.plist
+          echo '<key>de.erepairshop.punktepass</key><string>PunktePass-AppStore</string>' >> export_options.plist
+          echo '</dict></dict></plist>' >> export_options.plist
 
-          echo "=== export_options.plist content ==="
+          echo "=== export_options.plist ==="
           cat export_options.plist
-          echo "==================================="
 
           # Export IPA
           xcodebuild -exportArchive \
