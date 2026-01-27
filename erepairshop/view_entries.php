@@ -584,7 +584,7 @@ foreach ($alleEintraege as $entry) {
                             </button>
 
                             <button type="button" class="btn btn-outline print-btn"
-                                    data-entry='<?php echo htmlspecialchars(json_encode([
+                                    data-entry="<?php echo base64_encode(json_encode([
                                         'name' => $entry['name'],
                                         'telefon' => $telefon,
                                         'datum' => $entry['datum'],
@@ -594,7 +594,7 @@ foreach ($alleEintraege as $entry) {
                                         'other' => $entry['other'] ?? '',
                                         'pin' => $entry['pin'] ?? '',
                                         'muster_path' => $entry['muster_image_path'] ?? ''
-                                    ], JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>'>
+                                    ])); ?>">
                                 <i class="ri-printer-line"></i> Ausdrucken
                             </button>
 
@@ -779,7 +779,7 @@ foreach ($alleEintraege as $entry) {
         // Print button handlers
         document.querySelectorAll('.print-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const data = JSON.parse(this.dataset.entry);
+                const data = JSON.parse(atob(this.dataset.entry));
                 printEntry(data);
             });
         });
