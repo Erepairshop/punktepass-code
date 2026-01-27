@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/db_config.php';
 
+// Set timezone to Germany
+date_default_timezone_set('Europe/Berlin');
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Empfangen der Formulardaten
     $name = htmlspecialchars($_POST['name'] ?? '');
