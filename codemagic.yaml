@@ -38,6 +38,8 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
+          app-store-connect fetch-signing-files "de.erepairshop.punktepass" --type IOS_APP_STORE --create
+          keychain add-certificates
 
       - name: Increment build number
         script: |
