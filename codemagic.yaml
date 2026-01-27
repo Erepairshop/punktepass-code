@@ -52,7 +52,7 @@ workflows:
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
-            --archive-flags="-destination 'generic/platform=iOS'"
+            --archive-flags="-destination 'generic/platform=iOS' CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='Apple Distribution'"
 
     artifacts:
       - Xcode/build/ios/ipa/*.ipa
