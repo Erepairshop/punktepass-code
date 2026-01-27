@@ -10,16 +10,27 @@ if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
     // Mark ALL as done
     if (isset($_POST['markAllAsDone'])) {
         try {
-            // Get all phone numbers from entries that are not yet marked as done
-            $stmt = $pdo->query("SELECT DISTINCT telefon FROM entries WHERE telefon NOT IN (SELECT telefon FROM erledigt_status)");
-            $openEntries = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            // Get all entries that are not yet marked as done
+            $stmt = $pdo->query("SELECT DISTINCT telefon, muster_image_path FROM entries WHERE telefon NOT IN (SELECT telefon FROM erledigt_status)");
+            $openEntries = $stmt->fetchAll();
 
             $newlyMarked = [];
             $insertStmt = $pdo->prepare("INSERT IGNORE INTO erledigt_status (telefon) VALUES (?)");
+            $clearStmt = $pdo->prepare("UPDATE entries SET pin = NULL, muster_image_path = NULL WHERE telefon = ?");
 
-            foreach ($openEntries as $telefon) {
+            foreach ($openEntries as $entry) {
+                $telefon = $entry['telefon'];
                 $insertStmt->execute([$telefon]);
                 if ($insertStmt->rowCount() > 0) {
+                    // Delete muster file if exists
+                    if (!empty($entry['muster_image_path'])) {
+                        $filePath = __DIR__ . '/' . $entry['muster_image_path'];
+                        if (file_exists($filePath)) {
+                            unlink($filePath);
+                        }
+                    }
+                    // Clear PIN and muster in database
+                    $clearStmt->execute([$telefon]);
                     $newlyMarked[] = $telefon;
                 }
             }
@@ -47,9 +58,27 @@ if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
                 $deleteStmt->execute([$identifikator]);
                 $nowErledigt = false;
             } else {
-                // Mark as done
+                // Mark as done - also delete PIN and Muster for GDPR compliance
                 $insertStmt = $pdo->prepare("INSERT INTO erledigt_status (telefon) VALUES (?)");
                 $insertStmt->execute([$identifikator]);
+
+                // Get muster image path before deleting
+                $getStmt = $pdo->prepare("SELECT muster_image_path FROM entries WHERE telefon = ?");
+                $getStmt->execute([$identifikator]);
+                $entry = $getStmt->fetch();
+
+                // Delete muster file if exists
+                if ($entry && !empty($entry['muster_image_path'])) {
+                    $filePath = __DIR__ . '/' . $entry['muster_image_path'];
+                    if (file_exists($filePath)) {
+                        unlink($filePath);
+                    }
+                }
+
+                // Clear PIN and muster_image_path in database
+                $clearStmt = $pdo->prepare("UPDATE entries SET pin = NULL, muster_image_path = NULL WHERE telefon = ?");
+                $clearStmt->execute([$identifikator]);
+
                 $nowErledigt = true;
             }
 
@@ -102,6 +131,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
+}
+
+// Auto-cleanup: Delete PIN/Muster from entries that are already marked as erledigt
+try {
+    $cleanupStmt = $pdo->query("SELECT e.telefon, e.muster_image_path FROM entries e
+        INNER JOIN erledigt_status es ON e.telefon = es.telefon
+        WHERE e.pin IS NOT NULL OR e.muster_image_path IS NOT NULL");
+    $toClean = $cleanupStmt->fetchAll();
+
+    if (!empty($toClean)) {
+        $clearStmt = $pdo->prepare("UPDATE entries SET pin = NULL, muster_image_path = NULL WHERE telefon = ?");
+        foreach ($toClean as $entry) {
+            // Delete muster file if exists
+            if (!empty($entry['muster_image_path'])) {
+                $filePath = __DIR__ . '/' . $entry['muster_image_path'];
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+            }
+            $clearStmt->execute([$entry['telefon']]);
+        }
+    }
+} catch (Exception $e) {
+    error_log("Cleanup error: " . $e->getMessage());
 }
 
 // Load entries - Offen first, then Erledigt
