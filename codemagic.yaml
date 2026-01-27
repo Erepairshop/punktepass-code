@@ -48,21 +48,11 @@ workflows:
       - name: Build iOS app
         script: |
           cd Xcode
-          xcodebuild -workspace "$XCODE_WORKSPACE" \
-            -scheme "$XCODE_SCHEME" \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath build/PunktePass.xcarchive \
-            archive
-
-      - name: Export IPA
-        script: |
-          cd Xcode
           xcode-project use-profiles
-          xcodebuild -exportArchive \
-            -archivePath build/PunktePass.xcarchive \
-            -exportPath build/ios/ipa \
-            -exportOptionsPlist ~/export_options.plist
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --archive-flags="-destination 'generic/platform=iOS'"
 
     artifacts:
       - Xcode/build/ios/ipa/*.ipa
