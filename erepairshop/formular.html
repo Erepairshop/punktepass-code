@@ -406,6 +406,47 @@
             background: var(--gray-300);
         }
 
+        /* Datenschutz Checkbox */
+        .datenschutz-check {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-200);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            margin-top: 2px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .checkbox-text {
+            color: var(--gray-600);
+        }
+
+        .checkbox-text a {
+            color: var(--primary);
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .checkbox-text a:hover {
+            color: var(--primary-dark);
+        }
+
         /* Submit Button */
         .submit-btn {
             width: 100%;
@@ -819,6 +860,17 @@
                     <input type="hidden" name="muster" id="musterData">
                 </div>
 
+                <!-- Datenschutz Checkbox -->
+                <div class="form-group datenschutz-check">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="datenschutzCheck" name="datenschutz" required>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">
+                            Ich habe die <a href="datenschutz.php#reparatur-formular" target="_blank">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Daten einschließlich PIN/Entsperrmuster zur Durchführung der Reparatur zu.
+                        </span>
+                    </label>
+                </div>
+
                 <!-- Submit -->
                 <button type="button" class="submit-btn" onclick="submitForm()">
                     <i class="ri-send-plane-fill"></i> Auftrag absenden
@@ -1076,9 +1128,15 @@
         const brand = document.querySelector('input[name="brand"]:checked');
         const model = document.getElementById('model').value;
         const problem = document.querySelector('input[name="problem"]:checked');
+        const datenschutz = document.getElementById('datenschutzCheck').checked;
 
         if (!name || !phone || !brand || !model || !problem) {
             alert('Bitte füllen Sie alle Pflichtfelder aus.');
+            return;
+        }
+
+        if (!datenschutz) {
+            alert('Bitte bestätigen Sie die Datenschutzerklärung.');
             return;
         }
 

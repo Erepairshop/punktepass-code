@@ -111,8 +111,53 @@
                 </p>
             </section>
 
+            <section id="reparatur-formular">
+                <h2 class="text-xl font-bold mb-4 text-primary">4. Reparatur-Formular (Vor-Ort im Geschäft)</h2>
+
+                <h3 class="font-semibold text-white mt-4 mb-2">Erhobene Daten</h3>
+                <p class="text-gray-300">
+                    Bei der Nutzung unseres Reparatur-Formulars im Geschäft erheben wir folgende Daten:
+                </p>
+                <ul class="list-disc list-inside text-gray-300 mt-2 space-y-1">
+                    <li><strong class="text-white">Kontaktdaten:</strong> Name und Telefonnummer</li>
+                    <li><strong class="text-white">Geräteinformationen:</strong> Marke, Modell, Problembeschreibung</li>
+                    <li><strong class="text-white">Zugangsdaten:</strong> Geräte-PIN oder Entsperrmuster (falls angegeben)</li>
+                </ul>
+
+                <h3 class="font-semibold text-white mt-4 mb-2">Zweck der Datenerhebung</h3>
+                <p class="text-gray-300">
+                    <strong class="text-white">Kontaktdaten:</strong> Zur Benachrichtigung über den Reparaturstatus und Rückfragen.<br>
+                    <strong class="text-white">Geräteinformationen:</strong> Zur korrekten Durchführung der Reparatur.<br>
+                    <strong class="text-white">PIN/Entsperrmuster:</strong> Ausschließlich zur Funktionsprüfung des Geräts nach der Reparatur.
+                </p>
+
+                <h3 class="font-semibold text-white mt-4 mb-2">Besondere Sicherheitsmaßnahmen für PIN/Muster</h3>
+                <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mt-2">
+                    <p class="text-gray-300">
+                        <i class="ri-shield-check-line text-yellow-500 mr-2"></i>
+                        Ihre PIN bzw. Ihr Entsperrmuster wird:
+                    </p>
+                    <ul class="list-disc list-inside text-gray-300 mt-2 space-y-1 ml-4">
+                        <li>Nur für die Dauer der Reparatur gespeichert</li>
+                        <li>Unmittelbar nach Geräteabholung unwiderruflich gelöscht</li>
+                        <li>Nur von autorisierten Technikern zur Funktionsprüfung eingesehen</li>
+                        <li>Niemals an Dritte weitergegeben</li>
+                    </ul>
+                </div>
+
+                <h3 class="font-semibold text-white mt-4 mb-2">Rechtsgrundlage</h3>
+                <p class="text-gray-300">
+                    Die Verarbeitung erfolgt auf Grundlage Ihrer ausdrücklichen Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO, die Sie durch Bestätigung im Reparatur-Formular erteilen.
+                </p>
+
+                <h3 class="font-semibold text-white mt-4 mb-2">Widerruf</h3>
+                <p class="text-gray-300">
+                    Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen. Kontaktieren Sie uns hierzu unter den oben genannten Kontaktdaten.
+                </p>
+            </section>
+
             <section>
-                <h2 class="text-xl font-bold mb-4 text-primary">4. Cookies</h2>
+                <h2 class="text-xl font-bold mb-4 text-primary">5. Cookies</h2>
                 <p class="text-gray-300">
                     Unsere Website verwendet Cookies. Das sind kleine Textdateien, die Ihr Webbrowser auf Ihrem Endgerat speichert.
                 </p>
@@ -125,7 +170,7 @@
             </section>
 
             <section>
-                <h2 class="text-xl font-bold mb-4 text-primary">5. Google Maps</h2>
+                <h2 class="text-xl font-bold mb-4 text-primary">6. Google Maps</h2>
                 <p class="text-gray-300">
                     Diese Seite nutzt uber eine API den Kartendienst Google Maps. Anbieter ist die Google Ireland Limited ("Google"), Gordon House, Barrow Street, Dublin 4, Irland.
                 </p>
@@ -139,7 +184,7 @@
             </section>
 
             <section>
-                <h2 class="text-xl font-bold mb-4 text-primary">6. WhatsApp Kontakt</h2>
+                <h2 class="text-xl font-bold mb-4 text-primary">7. WhatsApp Kontakt</h2>
                 <p class="text-gray-300">
                     Wenn Sie uns uber WhatsApp kontaktieren, werden Ihre Nachrichten und Kontaktdaten von WhatsApp (Meta Platforms Ireland Limited) verarbeitet. Die Nutzung erfolgt auf Grundlage Ihrer Einwilligung.
                 </p>
@@ -150,7 +195,7 @@
             </section>
 
             <section>
-                <h2 class="text-xl font-bold mb-4 text-primary">7. Ihre Rechte</h2>
+                <h2 class="text-xl font-bold mb-4 text-primary">8. Ihre Rechte</h2>
                 <p class="text-gray-300">
                     Sie haben jederzeit das Recht:
                 </p>
@@ -168,21 +213,21 @@
             </section>
 
             <section>
-                <h2 class="text-xl font-bold mb-4 text-primary">8. SSL-Verschlusselung</h2>
+                <h2 class="text-xl font-bold mb-4 text-primary">9. SSL-Verschlüsselung</h2>
                 <p class="text-gray-300">
                     Diese Seite nutzt aus Sicherheitsgrunden und zum Schutz der Ubertragung vertraulicher Inhalte eine SSL-Verschlusselung. Eine verschlusselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von "http://" auf "https://" wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.
                 </p>
             </section>
 
             <section>
-                <h2 class="text-xl font-bold mb-4 text-primary">9. Speicherdauer</h2>
+                <h2 class="text-xl font-bold mb-4 text-primary">10. Speicherdauer</h2>
                 <p class="text-gray-300">
                     Personenbezogene Daten werden nur so lange gespeichert, wie es fur den jeweiligen Zweck erforderlich ist oder gesetzliche Aufbewahrungsfristen bestehen. Nach Ablauf der Fristen werden die Daten geloscht.
                 </p>
             </section>
 
             <section>
-                <h2 class="text-xl font-bold mb-4 text-primary">10. Anderungen</h2>
+                <h2 class="text-xl font-bold mb-4 text-primary">11. Änderungen</h2>
                 <p class="text-gray-300">
                     Wir behalten uns vor, diese Datenschutzerklarung anzupassen, damit sie stets den aktuellen rechtlichen Anforderungen entspricht oder um Anderungen unserer Leistungen in der Datenschutzerklarung umzusetzen.
                 </p>
