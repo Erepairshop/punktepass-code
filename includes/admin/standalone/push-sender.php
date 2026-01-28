@@ -48,7 +48,10 @@ class PPV_Standalone_Push_Sender {
         // Get stores for dropdown
         $stores = $wpdb->get_results("SELECT id, company_name FROM {$wpdb->prefix}ppv_stores ORDER BY company_name");
 
-        self::render_html($subscriptions, $stores, $stats, $message, $message_type);
+        // Get Händler with push subscriptions for dropdown
+        $handlers = PPV_Push::get_handlers_with_subscriptions();
+
+        self::render_html($subscriptions, $stores, $stats, $message, $message_type, $handlers);
     }
 
     /**
@@ -66,7 +69,8 @@ class PPV_Standalone_Push_Sender {
             'ios' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND platform = 'ios'"),
             'android' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND platform = 'android'"),
             'web' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND platform = 'web'"),
-            'stores' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND store_id IS NOT NULL"),
+            'stores' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND store_id IS NOT NULL AND store_id > 0"),
+            'handlers' => (int)$wpdb->get_var("SELECT COUNT(DISTINCT store_id) FROM {$table} WHERE is_active = 1 AND store_id IS NOT NULL AND store_id > 0"),
             'users' => (int)$wpdb->get_var("SELECT COUNT(DISTINCT user_id) FROM {$table} WHERE is_active = 1"),
             'user_list' => $user_list,
         ];
@@ -85,6 +89,7 @@ class PPV_Standalone_Push_Sender {
         $target = sanitize_text_field($_POST['target'] ?? '');
         $store_id = intval($_POST['store_id'] ?? 0);
         $user_ids = $_POST['user_ids'] ?? '';
+        $handler_ids = $_POST['handler_ids'] ?? [];
 
         if (empty($title) || empty($body)) {
             return ['success' => false, 'message' => 'Titel und Nachricht sind erforderlich'];
@@ -151,9 +156,20 @@ class PPV_Standalone_Push_Sender {
             case 'stores_pos':
                 // Send to all POS devices
                 global $wpdb;
-                $pos_user_ids = $wpdb->get_col("SELECT DISTINCT user_id FROM {$wpdb->prefix}ppv_push_subscriptions WHERE is_active = 1 AND store_id IS NOT NULL");
+                $pos_user_ids = $wpdb->get_col("SELECT DISTINCT user_id FROM {$wpdb->prefix}ppv_push_subscriptions WHERE is_active = 1 AND store_id IS NOT NULL AND store_id > 0");
                 foreach ($pos_user_ids as $uid) {
                     $results[] = PPV_Push::send_to_user($uid, $payload);
+                }
+                break;
+
+            case 'handlers':
+                // Send to Händler (store owners)
+                if (!empty($handler_ids) && is_array($handler_ids)) {
+                    $store_ids = array_map('intval', $handler_ids);
+                    $results[] = PPV_Push::send_to_handlers($payload, $store_ids);
+                } else {
+                    // Send to all Händler
+                    $results[] = PPV_Push::send_to_handlers($payload);
                 }
                 break;
 
@@ -212,7 +228,7 @@ class PPV_Standalone_Push_Sender {
     /**
      * Render HTML
      */
-    private static function render_html($subscriptions, $stores, $stats, $message, $message_type) {
+    private static function render_html($subscriptions, $stores, $stats, $message, $message_type, $handlers = []) {
         $fcm_enabled = class_exists('PPV_Push') && PPV_Push::is_enabled();
         $using_v1 = defined('PPV_FCM_SERVICE_ACCOUNT') && file_exists(PPV_FCM_SERVICE_ACCOUNT);
         $using_legacy = defined('PPV_FCM_SERVER_KEY') && !empty(PPV_FCM_SERVER_KEY);
@@ -446,6 +462,10 @@ class PPV_Standalone_Push_Sender {
                         <div class="number"><?php echo $stats['stores']; ?></div>
                         <div class="label">POS Geräte</div>
                     </div>
+                    <div class="stat-card" style="border-color: var(--warning);">
+                        <div class="number" style="color: var(--warning);"><?php echo $stats['handlers']; ?></div>
+                        <div class="label"><i class="ri-store-3-line"></i> Händler</div>
+                    </div>
                 </div>
 
                 <!-- Send Push Form -->
@@ -477,6 +497,10 @@ class PPV_Standalone_Push_Sender {
                                         <input type="radio" name="target" value="stores_pos" onchange="toggleTargetFields()">
                                         <i class="ri-tablet-line"></i> POS Geräte
                                     </label>
+                                    <label class="target-option">
+                                        <input type="radio" name="target" value="handlers" onchange="toggleTargetFields()">
+                                        <i class="ri-store-3-line"></i> Händler
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -501,6 +525,26 @@ class PPV_Standalone_Push_Sender {
                             <?php else: ?>
                             <small style="color: #f59e0b; display: block; margin-top: 5px;">
                                 ⚠️ Keine User mit Push-Abo gefunden
+                            </small>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="form-group" id="handler-select" style="display:none;">
+                            <label>Händler auswählen (optional - leer = alle)</label>
+                            <?php if (!empty($handlers)): ?>
+                            <select name="handler_ids[]" multiple style="min-height: 120px;">
+                                <?php foreach ($handlers as $handler): ?>
+                                <option value="<?php echo $handler->store_id; ?>">
+                                    <?php echo esc_html($handler->company_name ?: $handler->store_name); ?> (Store #<?php echo $handler->store_id; ?>)
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small style="color: #64748b; display: block; margin-top: 5px;">
+                                Mehrfachauswahl mit Strg/Cmd + Klick. Leer lassen um an alle Händler zu senden.
+                            </small>
+                            <?php else: ?>
+                            <small style="color: #f59e0b; display: block; margin-top: 5px;">
+                                ⚠️ Keine Händler mit Push-Abo gefunden
                             </small>
                             <?php endif; ?>
                         </div>
@@ -623,6 +667,7 @@ class PPV_Standalone_Push_Sender {
                     const target = document.querySelector('input[name="target"]:checked').value;
                     document.getElementById('store-select').style.display = target === 'store' ? 'block' : 'none';
                     document.getElementById('user-ids').style.display = target === 'users' ? 'block' : 'none';
+                    document.getElementById('handler-select').style.display = target === 'handlers' ? 'block' : 'none';
 
                     // Update active state
                     document.querySelectorAll('.target-option').forEach(opt => {
