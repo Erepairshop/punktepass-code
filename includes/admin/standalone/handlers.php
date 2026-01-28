@@ -196,6 +196,50 @@ if (isset($_POST['set_main_email']) && check_admin_referer('ppv_set_main_email',
     }
 }
 
+// Link existing user to a store
+if (isset($_POST['link_existing_user']) && check_admin_referer('ppv_link_existing', 'ppv_link_existing_nonce')) {
+    $user_id = intval($_POST['existing_user_id'] ?? 0);
+    $store_id = intval($_POST['store_id'] ?? 0);
+
+    if (!$user_id || !$store_id) {
+        $link_error = '⚠️ Válassz ki egy felhasználót és egy händlert!';
+    } else {
+        // Get user info
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+            $user_id
+        ));
+
+        if (!$user) {
+            $link_error = '⚠️ A felhasználó nem található!';
+        } elseif ($user->vendor_store_id) {
+            $link_error = '⚠️ Ez a felhasználó már hozzá van rendelve egy händlerhez!';
+        } else {
+            // Get store info
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                $store_id
+            ));
+
+            if (!$store) {
+                $link_error = '⚠️ A händler nem található!';
+            } else {
+                // Link the user to the store
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_users",
+                    ['vendor_store_id' => $store_id, 'user_type' => 'store'],
+                    ['id' => $user_id],
+                    ['%d', '%s'],
+                    ['%d']
+                );
+
+                $link_success = '✅ Felhasználó hozzáadva: <strong>' . esc_html($user->email) . '</strong> → <strong>' . esc_html($store->name) . '</strong>';
+                ppv_log("✅ [PPV_Admin] Linked existing user #{$user_id} ({$user->email}) to store #{$store_id} ({$store->name})");
+            }
+        }
+    }
+}
+
 // Get stores with their access users (users who have vendor_store_id pointing to them)
 $stores_with_access_users = $wpdb->get_results("
     SELECT
@@ -1466,6 +1510,67 @@ function ppv_format_device_info_json($device_info_json) {
 
                     <button type="submit" name="add_access_user" class="btn btn-primary">
                         <i class="ri-user-add-line"></i> Hozzáférés létrehozása
+                    </button>
+                </form>
+            </div>
+
+            <!-- Link Existing User -->
+            <div class="card">
+                <h2><i class="ri-user-shared-line"></i> Meglévő felhasználó hozzáadása</h2>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Válassz ki egy már regisztrált felhasználót és rendeld hozzá egy händlerhez.
+                </p>
+
+                <form method="POST" id="linkExistingForm">
+                    <?php wp_nonce_field('ppv_link_existing', 'ppv_link_existing_nonce'); ?>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label style="color: #00d4ff; font-weight: 600;">
+                                <i class="ri-user-line"></i> Meglévő felhasználó
+                            </label>
+                            <select name="existing_user_id" required
+                                    style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                                <option value="">-- Válassz felhasználót --</option>
+                                <?php
+                                // Get users without vendor_store_id (regular users who can be linked)
+                                $linkable_users = $wpdb->get_results("
+                                    SELECT id, email, username, user_type
+                                    FROM {$wpdb->prefix}ppv_users
+                                    WHERE (vendor_store_id IS NULL OR vendor_store_id = 0)
+                                    AND user_type NOT IN ('admin')
+                                    AND active = 1
+                                    ORDER BY email ASC
+                                ");
+                                foreach ($linkable_users as $u):
+                                ?>
+                                    <option value="<?php echo $u->id; ?>">
+                                        <?php echo esc_html($u->email); ?>
+                                        <?php if ($u->username): ?>(<?php echo esc_html($u->username); ?>)<?php endif; ?>
+                                        [<?php echo $u->user_type ?: 'user'; ?>]
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small style="color: #888;">Csak händlerhez még nem rendelt felhasználók</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="color: #34d399; font-weight: 600;">
+                                <i class="ri-store-2-line"></i> Händler fiók
+                            </label>
+                            <select name="store_id" required
+                                    style="width: 100%; padding: 12px 15px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                                <option value="">-- Válassz händlert --</option>
+                                <?php foreach ($handlers_overview as $h): ?>
+                                    <option value="<?php echo $h->id; ?>"><?php echo esc_html($h->name); ?> (<?php echo esc_html($h->email ?? 'nincs email'); ?>)</option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small style="color: #888;">A kiválasztott händler fiókjához kap hozzáférést</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" name="link_existing_user" class="btn btn-primary" style="margin-top: 15px;">
+                        <i class="ri-link"></i> Felhasználó hozzárendelése
                     </button>
                 </form>
             </div>
