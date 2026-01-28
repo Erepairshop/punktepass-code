@@ -1248,13 +1248,19 @@ function ppv_format_device_info_json($device_info_json) {
                                 $current_main = $lh->main_id;
                         ?>
                             <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 15px; margin-top: 10px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                                    <i class="ri-vip-crown-2-fill" style="color: #fbbf24; font-size: 20px;"></i>
-                                    <div>
-                                        <strong style="color: #34d399; font-size: 14px;">Fő händler:</strong>
-                                        <span style="color: #fff; font-weight: 600;"><?php echo esc_html($lh->main_name); ?></span>
-                                        <span style="color: #888; font-size: 12px; margin-left: 8px;"><?php echo esc_html($lh->main_email); ?></span>
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <i class="ri-vip-crown-2-fill" style="color: #fbbf24; font-size: 20px;"></i>
+                                        <div>
+                                            <strong style="color: #34d399; font-size: 14px;">Fő händler:</strong>
+                                            <span style="color: #fff; font-weight: 600;"><?php echo esc_html($lh->main_name); ?></span>
+                                            <span style="color: #888; font-size: 12px; margin-left: 8px;"><?php echo esc_html($lh->main_email); ?></span>
+                                        </div>
                                     </div>
+                                    <button type="button" onclick="openQuickLinkModal(<?php echo $lh->main_id; ?>, '<?php echo esc_js($lh->main_name); ?>')"
+                                            class="btn" style="background: rgba(0,212,255,0.2); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3); padding: 6px 12px; font-size: 12px;">
+                                        <i class="ri-add-line"></i> Händler hozzáadása
+                                    </button>
                                 </div>
                                 <div style="margin-left: 30px; font-size: 12px; color: #888; margin-bottom: 8px;">
                                     <i class="ri-arrow-right-down-line"></i> Az alábbi händlerek a fő händler fiókját látják:
@@ -1785,6 +1791,66 @@ function ppv_format_device_info_json($device_info_json) {
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
         });
+
+        // Quick Link Modal - add handler to existing main handler
+        function openQuickLinkModal(mainHandlerId, mainHandlerName) {
+            document.getElementById('quickLinkMainId').value = mainHandlerId;
+            document.getElementById('quickLinkMainName').textContent = mainHandlerName;
+            document.getElementById('quickLinkModal').classList.add('active');
+        }
+
+        function closeQuickLinkModal() {
+            document.getElementById('quickLinkModal').classList.remove('active');
+        }
+
+        document.getElementById('quickLinkModal').addEventListener('click', function(e) {
+            if (e.target === this) closeQuickLinkModal();
+        });
     </script>
+
+    <!-- Quick Link Modal -->
+    <div id="quickLinkModal" class="handler-modal-overlay">
+        <div class="handler-modal" style="max-width: 500px;">
+            <div class="handler-modal-header">
+                <h2 style="color: #00d4ff;"><i class="ri-link"></i> Händler hozzáadása</h2>
+                <button class="handler-modal-close" onclick="closeQuickLinkModal()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="handler-modal-body">
+                <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #34d399; font-size: 13px;">
+                        <i class="ri-vip-crown-2-fill" style="color: #fbbf24;"></i> Fő händler: <strong id="quickLinkMainName" style="color: #fff;"></strong>
+                    </p>
+                </div>
+
+                <form method="POST">
+                    <?php wp_nonce_field('ppv_link_handlers', 'ppv_link_nonce'); ?>
+                    <input type="hidden" name="main_handler_id" id="quickLinkMainId">
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 10px;">
+                            <i class="ri-user-add-line"></i> Válassz händlert a hozzáadáshoz:
+                        </label>
+                        <select name="linked_handler_id" required
+                                style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                            <option value="">-- Válassz händlert --</option>
+                            <?php foreach ($handlers_overview as $h):
+                                $is_linked = !empty($h->linked_to_store_id);
+                                if ($is_linked) continue;
+                            ?>
+                                <option value="<?php echo $h->id; ?>"><?php echo esc_html($h->name); ?> (<?php echo esc_html($h->email ?? 'nincs email'); ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="closeQuickLinkModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Mégse</button>
+                        <button type="submit" name="link_to_main" class="btn btn-primary">
+                            <i class="ri-link"></i> Hozzákapcsolás
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
