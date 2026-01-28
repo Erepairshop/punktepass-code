@@ -141,9 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
                  localStorage.getItem(LANG_KEY) ||
                  'ro'; // Default Romanian
 
-        localStorage.setItem(LANG_KEY, lang);
-      }
-
+      localStorage.setItem(LANG_KEY, lang);
       translateMenu(lang);
     }
 
