@@ -76,13 +76,32 @@ class PPV_API {
         global $wpdb;
 
         $api_key = '';
+        // Try header first (X-Api-Key)
         if ($request) $api_key = $request->get_header('x-api-key');
-        if (empty($api_key)) return false;
+        // Fallback: JSON body api_key
+        if (empty($api_key) && $request) {
+            $params = $request->get_json_params();
+            $api_key = sanitize_text_field($params['api_key'] ?? '');
+        }
+        // Fallback: GET parameter
+        if (empty($api_key) && isset($_GET['api_key'])) {
+            $api_key = sanitize_text_field($_GET['api_key']);
+        }
+
+        if (empty($api_key)) {
+            ppv_log("❌ [PPV_API] verify_store_api_key: No API key found in header/body/GET");
+            return false;
+        }
 
         $exists = (int)$wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE pos_api_key=%s AND active=1",
             $api_key
         ));
+
+        if (!$exists) {
+            ppv_log("❌ [PPV_API] verify_store_api_key: Invalid API key: " . substr($api_key, 0, 8) . "...");
+        }
+
         return $exists > 0;
     }
 

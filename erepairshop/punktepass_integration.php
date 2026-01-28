@@ -23,16 +23,21 @@ define('REPAIR_BONUS_POINTS', 2);
  */
 function punktepass_process_repair($email, $name = '') {
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        error_log("[PunktePass] Invalid email: '{$email}'");
         return ['success' => false, 'message' => 'Ungültige E-Mail-Adresse'];
     }
 
+    // Include api_key in body as fallback (some shared hosts strip custom headers)
     $payload = json_encode([
         'email'     => $email,
         'name'      => $name,
         'store_id'  => EREPAIRSHOP_STORE_ID,
         'points'    => REPAIR_BONUS_POINTS,
         'reference' => 'Reparatur-Formular Bonus',
+        'api_key'   => PUNKTEPASS_API_KEY,
     ]);
+
+    error_log("[PunktePass] Calling API: " . PUNKTEPASS_API_URL . " for email: {$email}");
 
     $ch = curl_init(PUNKTEPASS_API_URL);
     curl_setopt_array($ch, [
@@ -46,25 +51,32 @@ function punktepass_process_repair($email, $name = '') {
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_FOLLOWLOCATION => true,
     ]);
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curl_error = curl_error($ch);
+    $effective_url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
     curl_close($ch);
 
+    error_log("[PunktePass] Response HTTP {$http_code} from {$effective_url}");
+    error_log("[PunktePass] Response body: " . substr($response ?: '(empty)', 0, 500));
+
     if ($curl_error) {
-        error_log("[PunktePass Integration] cURL error: {$curl_error}");
+        error_log("[PunktePass] cURL error: {$curl_error}");
         return ['success' => false, 'message' => 'Verbindungsfehler: ' . $curl_error];
     }
 
     $data = json_decode($response, true);
 
     if ($http_code !== 200 || !$data || ($data['status'] ?? '') !== 'ok') {
-        $msg = $data['message'] ?? "HTTP {$http_code}";
-        error_log("[PunktePass Integration] API error: {$msg} (HTTP {$http_code})");
+        $msg = $data['message'] ?? $data['code'] ?? "HTTP {$http_code}";
+        error_log("[PunktePass] API error: {$msg} (HTTP {$http_code})");
         return ['success' => false, 'message' => $msg];
     }
+
+    error_log("[PunktePass] Success! user_id={$data['user_id']}, new=" . ($data['is_new_user'] ? 'yes' : 'no') . ", total={$data['total_points']}");
 
     return [
         'success'      => true,
