@@ -1989,6 +1989,7 @@ return [
     'push_not_configured' => 'Notificările push nu sunt configurate',
     'push_no_subscribers' => 'Încă nu aveți abonați',
     'push_no_subscribers_hint' => 'Clienții care scanează la dvs. se pot abona la notificări push.',
+    'push_sender' => 'Expeditor',
     'push_title' => 'Titlu',
     'push_title_placeholder' => 'ex. Promoție nouă!',
     'push_message' => 'Mesaj',

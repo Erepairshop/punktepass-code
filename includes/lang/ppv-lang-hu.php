@@ -1985,6 +1985,7 @@ return [
     'push_not_configured' => 'A push értesítések nincsenek beállítva',
     'push_no_subscribers' => 'Még nincsenek feliratkozók',
     'push_no_subscribers_hint' => 'Az Önnél vásárló ügyfelek feliratkozhatnak a push értesítésekre.',
+    'push_sender' => 'Feladó',
     'push_title' => 'Cím',
     'push_title_placeholder' => 'pl. Új akció!',
     'push_message' => 'Üzenet',

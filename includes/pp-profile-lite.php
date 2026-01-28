@@ -946,6 +946,11 @@ if (!empty($store->gallery)) {
                     <?php else: ?>
                     <!-- Push Form -->
                     <div id="push-form-container" style="<?php echo $push_remaining <= 0 ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                        <!-- Store Name (read-only sender info) -->
+                        <div style="margin-bottom: 12px; padding: 10px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px;">
+                            <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html(PPV_Lang::t('push_sender') ?: 'Absender'); ?></label>
+                            <span style="font-size: 14px; font-weight: 600; color: #6366f1;"><?php echo esc_html($store->company_name ?: $store->name ?: 'Shop'); ?></span>
+                        </div>
                         <div style="margin-bottom: 12px;">
                             <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_title') ?: 'Titel'); ?> <span style="color: #888;">(max. 50)</span></label>
                             <input type="text" id="push-title" maxlength="50" placeholder="<?php echo esc_attr(PPV_Lang::t('push_title_placeholder') ?: 'z.B. Neue Aktion!'); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: #f1f5f9; font-size: 14px;">
