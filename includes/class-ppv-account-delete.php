@@ -335,9 +335,9 @@ class PPV_Account_Delete {
             $lang = substr(get_locale(), 0, 2);
         }
 
-        // Validate (only allow de, hu, ro)
+        // Validate (only allow de, hu, ro) - default Romanian
         if (!in_array($lang, ['de', 'hu', 'ro'])) {
-            $lang = 'de';
+            $lang = 'ro';
         }
 
         return $lang;

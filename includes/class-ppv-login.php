@@ -94,9 +94,9 @@ class PPV_Login {
             $lang = self::detect_language_by_country();
         }
 
-        // Validate (only allow de, hu, ro)
+        // Validate (only allow de, hu, ro) - default to Romanian
         if (!in_array($lang, ['de', 'hu', 'ro'])) {
-            $lang = 'de';
+            $lang = 'ro';
         }
 
         return $lang;

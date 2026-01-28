@@ -493,7 +493,7 @@ add_action('wp_enqueue_scripts', function() {
         wp_localize_script('ppv-push-bridge', 'ppvPushConfig', [
             'userId' => $ppv_user_id,
             'storeId' => !empty($_SESSION['ppv_store_id']) ? intval($_SESSION['ppv_store_id']) : 0,
-            'lang' => isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de',
+            'lang' => isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'ro',
         ]);
         // Also set global for backwards compatibility
         wp_add_inline_script('ppv-push-bridge', 'window.ppvUserId = ' . $ppv_user_id . ';', 'before');

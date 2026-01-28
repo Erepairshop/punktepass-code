@@ -58,7 +58,7 @@ class PPV_Signup {
         }
 
         if (!in_array($lang, ['de', 'hu', 'ro'])) {
-            $lang = 'de';
+            $lang = 'ro'; // Default Romanian
         }
 
         return $lang;
@@ -1416,8 +1416,8 @@ class PPV_Signup {
         $device_info = sanitize_text_field($_POST['device_info'] ?? '');
 
         // Get user language from cookie
-        $language = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
-        if (!in_array($language, ['de', 'hu', 'en'])) $language = 'de';
+        $language = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'ro';
+        if (!in_array($language, ['de', 'hu', 'ro', 'en'])) $language = 'ro';
 
         // Validate category
         $valid_categories = ['bug', 'feature', 'question', 'rating'];
