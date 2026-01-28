@@ -37,9 +37,12 @@ function punktepass_process_repair($email, $name = '') {
         'api_key'   => PUNKTEPASS_API_KEY,
     ]);
 
-    error_log("[PunktePass] Calling API: " . PUNKTEPASS_API_URL . " for email: {$email}");
+    // Append api_key as URL query param (most reliable for shared hosting WAF/proxy)
+    $api_url = PUNKTEPASS_API_URL . '?api_key=' . urlencode(PUNKTEPASS_API_KEY);
 
-    $ch = curl_init(PUNKTEPASS_API_URL);
+    error_log("[PunktePass] Calling API: " . $api_url . " for email: {$email}");
+
+    $ch = curl_init($api_url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,

@@ -76,22 +76,38 @@ class PPV_API {
         global $wpdb;
 
         $api_key = '';
-        // Try header first (X-Api-Key)
+        // 1) Header (X-Api-Key)
         if ($request) $api_key = $request->get_header('x-api-key');
-        // Fallback: JSON body api_key
+        // 2) WP get_param - searches GET, POST, JSON, URL params
+        if (empty($api_key) && $request) {
+            $api_key = sanitize_text_field($request->get_param('api_key') ?? '');
+        }
+        // 3) JSON body explicitly
         if (empty($api_key) && $request) {
             $params = $request->get_json_params();
             $api_key = sanitize_text_field($params['api_key'] ?? '');
         }
-        // Fallback: GET parameter
+        // 4) Raw $_GET fallback
         if (empty($api_key) && isset($_GET['api_key'])) {
             $api_key = sanitize_text_field($_GET['api_key']);
         }
+        // 5) Raw php://input fallback (if Content-Type was stripped)
+        if (empty($api_key)) {
+            $raw = file_get_contents('php://input');
+            if ($raw) {
+                $body = json_decode($raw, true);
+                if ($body && !empty($body['api_key'])) {
+                    $api_key = sanitize_text_field($body['api_key']);
+                }
+            }
+        }
 
         if (empty($api_key)) {
-            ppv_log("❌ [PPV_API] verify_store_api_key: No API key found in header/body/GET");
+            ppv_log("❌ [PPV_API] verify_store_api_key: No API key found (header/param/body/GET/raw)");
             return false;
         }
+
+        ppv_log("[PPV_API] verify_store_api_key: key=" . substr($api_key, 0, 8) . "... (len=" . strlen($api_key) . ")");
 
         $exists = (int)$wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE pos_api_key=%s AND active=1",
