@@ -216,6 +216,17 @@ if (isset($_POST['convert_to_handler']) && check_admin_referer('ppv_convert_hand
 
             if ($result) {
                 $new_store_id = $wpdb->insert_id;
+
+                // ✅ FIX: Update user_type in ppv_users table so login recognizes them as handler
+                // Also set vendor_store_id so session gets the store_id on login
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_users",
+                    ['user_type' => 'store', 'vendor_store_id' => $new_store_id],
+                    ['id' => $user->id],
+                    ['%s', '%d'],
+                    ['%d']
+                );
+
                 ppv_log("✅ [PPV_Admin] User #{$user->ID} ({$user->user_email}) zu Handler konvertiert. Store ID: {$new_store_id}");
                 $success_message = "✅ User '{$user->display_name}' ({$user->user_email}) sikeresen handler-ré lett téve!<br>
                                     <strong>Store ID:</strong> {$new_store_id}<br>
@@ -276,6 +287,16 @@ if (isset($_POST['quick_convert']) && check_admin_referer('ppv_quick_convert', '
 
             if ($result) {
                 $new_store_id = $wpdb->insert_id;
+
+                // ✅ FIX: Update user_type in ppv_users table so login recognizes them as handler
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_users",
+                    ['user_type' => 'store', 'vendor_store_id' => $new_store_id],
+                    ['id' => $user->id],
+                    ['%s', '%d'],
+                    ['%d']
+                );
+
                 $success_message = "✅ User '{$user->username}' (ID: {$user->id}) handler-ré téve! (Store ID: {$new_store_id})";
                 ppv_log("✅ [PPV_Admin] Quick Convert: PPV User #{$user->id} ({$user->email}) → Handler Store #{$new_store_id}");
             } else {
