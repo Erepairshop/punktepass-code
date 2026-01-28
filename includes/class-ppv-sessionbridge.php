@@ -64,15 +64,15 @@ class PPV_SessionBridge {
 
                 if ($store && $store->email) {
                     $user = $wpdb->get_row($wpdb->prepare(
-                        "SELECT id FROM {$prefix}ppv_users WHERE email=%s AND user_type='vendor' LIMIT 1",
+                        "SELECT id FROM {$prefix}ppv_users WHERE email=%s AND user_type IN ('vendor', 'store', 'handler') LIMIT 1",
                         $store->email
                     ));
 
                     if ($user) {
                         $_SESSION['ppv_user_id'] = $user->id;
-                        ppv_log("✅ [PPV_SessionBridge] Vendor user ID restored: {$user->id}");
+                        ppv_log("✅ [PPV_SessionBridge] Store owner user ID restored: {$user->id}");
                     } else {
-                        ppv_log("⚠️ [PPV_SessionBridge] Vendor user not found for email: {$store->email}");
+                        ppv_log("⚠️ [PPV_SessionBridge] Store owner user not found for email: {$store->email}");
                     }
                 }
             }
@@ -104,14 +104,14 @@ class PPV_SessionBridge {
                 // If user_type is NULL/empty in DB, try to detect from vendor_store_id
                 $user_type = $user->user_type;
                 if (empty($user_type) && !empty($user->vendor_store_id)) {
-                    // User has vendor_store_id but no user_type - assume 'vendor'
-                    $user_type = 'vendor';
-                    ppv_log("⚠️ [PPV_SessionBridge] user_type was empty, detected as 'vendor' from vendor_store_id");
+                    // User has vendor_store_id but no user_type - assume 'store'
+                    $user_type = 'store';
+                    ppv_log("⚠️ [PPV_SessionBridge] user_type was empty, detected as 'store' from vendor_store_id");
                 }
                 $_SESSION['ppv_user_type'] = $user_type ?: 'user';
 
-                // Vendor/Scanner user esetén restore store is
-                if (in_array($user_type, ['vendor', 'scanner']) && !empty($user->vendor_store_id)) {
+                // Vendor/Store/Handler/Scanner user esetén restore store is
+                if (in_array($user_type, ['vendor', 'store', 'handler', 'scanner']) && !empty($user->vendor_store_id)) {
                     $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
 
                     // 🔹 FILIALE SUPPORT: Only restore if ppv_current_filiale_id is NOT set
