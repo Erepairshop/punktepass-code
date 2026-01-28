@@ -151,6 +151,26 @@ $wpdb->insert("{$prefix}ppv_points", [
     'created'   => current_time('mysql'),
 ], ['%d','%d','%d','%s','%s','%s']);
 
+// Log to ppv_pos_log so it appears in QR Center "Letzte Scans"
+$wpdb->insert("{$prefix}ppv_pos_log", [
+    'store_id'      => $store_id,
+    'user_id'       => $user_id,
+    'email'         => $email,
+    'message'       => '+' . $points . ' Punkte (Reparatur-Bonus)',
+    'type'          => 'qr_scan',
+    'points_change' => $points,
+    'status'        => 'ok',
+    'ip_address'    => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '',
+    'user_agent'    => $_SERVER['HTTP_USER_AGENT'] ?? '',
+    'metadata'      => json_encode([
+        'timestamp'   => current_time('mysql'),
+        'type'        => 'repair_bonus',
+        'reference'   => $reference,
+        'is_new_user' => $is_new_user,
+    ]),
+    'created_at'    => current_time('mysql'),
+]);
+
 // Update lifetime_points
 if (class_exists('PPV_User_Level') && $points > 0) {
     PPV_User_Level::add_lifetime_points($user_id, $points);

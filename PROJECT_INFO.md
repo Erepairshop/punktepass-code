@@ -478,6 +478,62 @@ workflows:
 - Beta Testers csoport értesítése
 - Email notifikáció: borota25@gmail.com
 
+## 🔗 Külső API Integráció - TANULSÁG (eRepairShop)
+
+### Probléma
+Az eRepairShop (erepairshop.de) repair form-ból kell PunktePass API-t hívni (punktepass.de) cross-domain cURL-lel.
+
+### Mi NEM működött:
+1. **WordPress REST API** (`/wp-json/punktepass/v1/repair-bonus`) → **HTTP 401**
+   - Ok: A `punktepass.php` fájlban van egy **globális `rest_authentication_errors` filter** (141-216 sor)
+   - Ez MINDEN nem autentikált REST API kérést BLOKKOL
+   - Van `$anon_endpoints` whitelist, de OPcache miatt nem mindig frissül
+   - **Hostinger shared hosting** esetén a WAF/proxy is strip-eli a custom headereket
+
+2. **API key küldés többféleképpen** (URL param, header, body) → szintén 401, mert a filter a route előtt fut
+
+### Mi MŰKÖDIK:
+**Standalone PHP endpoint**: `api-repair-bonus.php`
+- Közvetlenül tölti be a `wp-load.php`-t → WordPress DB + wp_mail() elérhető
+- **MEGKERÜLI a teljes WP REST API-t** (nincs middleware, nincs filter)
+- Saját API key validáció közvetlenül a `ppv_stores` táblából
+- URL: `https://punktepass.de/wp-content/plugins/punktepass/api-repair-bonus.php`
+
+### Szabály:
+> **Külső domain-ről érkező API hívásokhoz MINDIG standalone PHP endpointot használj,
+> NE WordPress REST API-t!** A globális auth filter miatt a REST API nem használható
+> külső, nem-autentikált kérésekhez (még whitelist-tel sem megbízhatóan).
+
+### Fájlok:
+| Fájl | Hely | Funkció |
+|------|------|---------|
+| `api-repair-bonus.php` | Plugin gyökér | Standalone API endpoint (szerveren) |
+| `erepairshop/punktepass_integration.php` | eRepairShop | cURL kliens (hívó oldal) |
+| `erepairshop/send_mail.php` | eRepairShop | Form handler + debug output |
+
+### API paraméterek:
+```php
+POST https://punktepass.de/wp-content/plugins/punktepass/api-repair-bonus.php?api_key=XXX
+Content-Type: application/json
+{
+    "email": "customer@example.com",
+    "name": "Customer Name",
+    "store_id": 9,
+    "points": 2,
+    "reference": "Reparatur-Formular Bonus",
+    "api_key": "XXX"
+}
+```
+
+### Store 9 = eRepairShop
+- API key: `7b6e6938a91011f0bca9a33a376863b7`
+- Bonus pontok: 2 pont reparáturánként
+- 4 pont = 10 EUR kedvezmény
+
+### QR Center megjelenés:
+A `api-repair-bonus.php` a `ppv_pos_log` táblába is ír (`type = 'qr_scan'`),
+így a repair bonus megjelenik a QR Center "Letzte Scans" listájában is.
+
 ---
 
 **Utolsó frissítés**: 2026-01-28
