@@ -476,3 +476,27 @@ class PPV_API {
 add_action('plugins_loaded', function() {
     if (class_exists('PPV_API')) PPV_API::hooks();
 });
+
+// ============================================================
+// 🔧 One-time: ensure eRepairShop (store 9) has its API key set
+// ============================================================
+add_action('admin_init', function() {
+    if (get_option('ppv_erepairshop_apikey_set')) return;
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'ppv_stores';
+    $store_id = 9;
+    $desired_key = '7b6e6938a91011f0bca9a33a376863b7';
+
+    // Check current key
+    $current = $wpdb->get_var($wpdb->prepare(
+        "SELECT pos_api_key FROM {$table} WHERE id = %d", $store_id
+    ));
+
+    if ($current !== $desired_key) {
+        $wpdb->update($table, ['pos_api_key' => $desired_key], ['id' => $store_id]);
+        ppv_log("[PPV_API] eRepairShop API key set for store #{$store_id} (was: " . ($current ?: 'NULL') . ")");
+    }
+
+    update_option('ppv_erepairshop_apikey_set', 1);
+});
