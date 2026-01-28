@@ -1518,7 +1518,7 @@ function ppv_format_device_info_json($device_info_json) {
             <div class="card">
                 <h2><i class="ri-user-shared-line"></i> Meglévő felhasználó hozzáadása</h2>
                 <p style="color: #94a3b8; margin-bottom: 20px;">
-                    Válassz ki egy már regisztrált felhasználót és rendeld hozzá egy händlerhez.
+                    Keress rá egy már regisztrált felhasználóra email vagy felhasználónév alapján, majd rendeld hozzá egy händlerhez.
                 </p>
 
                 <form method="POST" id="linkExistingForm">
@@ -1527,31 +1527,25 @@ function ppv_format_device_info_json($device_info_json) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div class="form-group">
                             <label style="color: #00d4ff; font-weight: 600;">
-                                <i class="ri-user-line"></i> Meglévő felhasználó
+                                <i class="ri-search-line"></i> Felhasználó keresése
                             </label>
-                            <select name="existing_user_id" required
-                                    style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
-                                <option value="">-- Válassz felhasználót --</option>
-                                <?php
-                                // Get users without vendor_store_id (regular users who can be linked)
-                                $linkable_users = $wpdb->get_results("
-                                    SELECT id, email, username, user_type
-                                    FROM {$wpdb->prefix}ppv_users
-                                    WHERE (vendor_store_id IS NULL OR vendor_store_id = 0)
-                                    AND user_type NOT IN ('admin')
-                                    AND active = 1
-                                    ORDER BY email ASC
-                                ");
-                                foreach ($linkable_users as $u):
-                                ?>
-                                    <option value="<?php echo $u->id; ?>">
-                                        <?php echo esc_html($u->email); ?>
-                                        <?php if ($u->username): ?>(<?php echo esc_html($u->username); ?>)<?php endif; ?>
-                                        [<?php echo $u->user_type ?: 'user'; ?>]
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <small style="color: #888;">Csak händlerhez még nem rendelt felhasználók</small>
+                            <div style="position: relative;">
+                                <input type="text" id="linkUserSearch" placeholder="Email vagy felhasználónév..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 12px 15px; padding-right: 40px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                                <i class="ri-search-line" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #00d4ff; opacity: 0.5;"></i>
+                                <div id="linkUserResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 100; background: #1a1a2e; border: 1px solid rgba(0,212,255,0.3); border-top: none; border-radius: 0 0 10px 10px; max-height: 250px; overflow-y: auto;"></div>
+                            </div>
+                            <input type="hidden" name="existing_user_id" id="linkSelectedUserId" required>
+                            <div id="linkSelectedUser" style="display: none; margin-top: 10px; padding: 10px 15px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; font-size: 13px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span id="linkSelectedUserText" style="color: #34d399;"></span>
+                                    <button type="button" onclick="clearLinkUserSelection()" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 16px; padding: 0 4px;">
+                                        <i class="ri-close-line"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <small style="color: #888;">Írj be legalább 2 karaktert a kereséshez</small>
                         </div>
 
                         <div class="form-group">
@@ -2022,14 +2016,162 @@ function ppv_format_device_info_json($device_info_json) {
             if (e.target === this) closeDeleteModal();
         });
 
-        // Add Access Modal - add new access user to a store
+        // ============================================================
+        // USER SEARCH FUNCTIONALITY
+        // ============================================================
+
+        let searchTimeout = null;
+
+        async function searchUsers(searchTerm, resultsContainerId, selectFnName) {
+            const resultsDiv = document.getElementById(resultsContainerId);
+
+            if (searchTerm.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch('/wp-json/punktepass/v1/admin/search-users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ search: searchTerm })
+                });
+
+                const data = await response.json();
+
+                if (!data.success || !data.users.length) {
+                    resultsDiv.innerHTML = '<div style="padding: 12px 15px; color: #94a3b8; font-size: 13px; text-align: center;">Nincs találat</div>';
+                    resultsDiv.style.display = 'block';
+                    return;
+                }
+
+                let html = '';
+                data.users.forEach(user => {
+                    const linkedBadge = user.linked
+                        ? '<span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 1px 6px; border-radius: 4px; font-size: 10px; margin-left: 6px;">Hozzárendelve</span>'
+                        : '';
+                    const typeBadge = '<span style="background: rgba(0,212,255,0.15); color: #00d4ff; padding: 1px 6px; border-radius: 4px; font-size: 10px; margin-left: 6px;">' + user.user_type + '</span>';
+                    const safeEmail = user.email.replace(/'/g, "\\'");
+                    const safeUsername = (user.username || '').replace(/'/g, "\\'");
+
+                    html += '<div onclick="' + selectFnName + '(' + user.id + ', \'' + safeEmail + '\', \'' + safeUsername + '\', ' + user.linked + ')"'
+                        + ' style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;"'
+                        + ' onmouseenter="this.style.background=\'rgba(0,212,255,0.1)\'"'
+                        + ' onmouseleave="this.style.background=\'transparent\'">'
+                        + '<div style="color: #fff; font-size: 13px; font-weight: 500;">' + user.email + typeBadge + linkedBadge + '</div>'
+                        + (user.username ? '<div style="color: #888; font-size: 11px; margin-top: 2px;">@' + user.username + '</div>' : '')
+                        + '</div>';
+                });
+
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            } catch (err) {
+                resultsDiv.innerHTML = '<div style="padding: 12px 15px; color: #f87171; font-size: 13px;">Hiba a keresés során</div>';
+                resultsDiv.style.display = 'block';
+            }
+        }
+
+        function setupUserSearch(inputId, resultsId, selectFnName) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            input.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchUsers(this.value.trim(), resultsId, selectFnName);
+                }, 300);
+            });
+
+            // Close results on outside click
+            document.addEventListener('click', function(e) {
+                const resultsDiv = document.getElementById(resultsId);
+                if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        // --- Link Existing User search ---
+        function selectLinkUser(id, email, username, linked) {
+            if (linked) {
+                if (!confirm('Ez a felhasználó már hozzá van rendelve egy händlerhez. Biztosan kiválasztod?')) return;
+            }
+            document.getElementById('linkSelectedUserId').value = id;
+            document.getElementById('linkSelectedUserText').innerHTML = '<i class="ri-user-line"></i> ' + email + (username ? ' (@' + username + ')' : '');
+            document.getElementById('linkSelectedUser').style.display = 'block';
+            document.getElementById('linkUserSearch').value = '';
+            document.getElementById('linkUserResults').style.display = 'none';
+        }
+
+        function clearLinkUserSelection() {
+            document.getElementById('linkSelectedUserId').value = '';
+            document.getElementById('linkSelectedUser').style.display = 'none';
+            document.getElementById('linkUserSearch').value = '';
+        }
+
+        // --- Modal search ---
+        function selectModalUser(id, email, username, linked) {
+            if (linked) {
+                if (!confirm('Ez a felhasználó már hozzá van rendelve egy händlerhez. Biztosan kiválasztod?')) return;
+            }
+            document.getElementById('modalSelectedUserId').value = id;
+            document.getElementById('modalSelectedUserText').innerHTML = '<i class="ri-user-line"></i> ' + email + (username ? ' (@' + username + ')' : '');
+            document.getElementById('modalSelectedUser').style.display = 'block';
+            document.getElementById('modalUserSearch').value = '';
+            document.getElementById('modalUserResults').style.display = 'none';
+        }
+
+        function clearModalUserSelection() {
+            document.getElementById('modalSelectedUserId').value = '';
+            document.getElementById('modalSelectedUser').style.display = 'none';
+            document.getElementById('modalUserSearch').value = '';
+        }
+
+        // Modal mode switching (new user vs existing user search)
+        function switchModalMode(mode) {
+            const newBtn = document.getElementById('modalModeNew');
+            const existingBtn = document.getElementById('modalModeExisting');
+            const newForm = document.getElementById('modalNewUserForm');
+            const existingForm = document.getElementById('modalExistingUserForm');
+
+            if (mode === 'new') {
+                newBtn.style.border = '1px solid rgba(0,212,255,0.4)';
+                newBtn.style.background = 'rgba(0,212,255,0.15)';
+                newBtn.style.color = '#00d4ff';
+                existingBtn.style.border = '1px solid rgba(255,255,255,0.1)';
+                existingBtn.style.background = 'rgba(255,255,255,0.05)';
+                existingBtn.style.color = '#94a3b8';
+                newForm.style.display = 'block';
+                existingForm.style.display = 'none';
+            } else {
+                existingBtn.style.border = '1px solid rgba(0,212,255,0.4)';
+                existingBtn.style.background = 'rgba(0,212,255,0.15)';
+                existingBtn.style.color = '#00d4ff';
+                newBtn.style.border = '1px solid rgba(255,255,255,0.1)';
+                newBtn.style.background = 'rgba(255,255,255,0.05)';
+                newBtn.style.color = '#94a3b8';
+                existingForm.style.display = 'block';
+                newForm.style.display = 'none';
+            }
+        }
+
+        // Initialize search fields
+        document.addEventListener('DOMContentLoaded', function() {
+            setupUserSearch('linkUserSearch', 'linkUserResults', 'selectLinkUser');
+            setupUserSearch('modalUserSearch', 'modalUserResults', 'selectModalUser');
+        });
+
+        // Add Access Modal
         function openAddAccessModal(storeId, storeName) {
             document.getElementById('addAccessStoreId').value = storeId;
+            document.getElementById('addAccessStoreIdExisting').value = storeId;
             document.getElementById('addAccessStoreName').textContent = storeName;
             document.getElementById('addAccessModal').classList.add('active');
             // Clear previous values
             document.getElementById('addAccessEmail').value = '';
             document.getElementById('addAccessPassword').value = '';
+            clearModalUserSelection();
+            switchModalMode('new');
         }
 
         function closeAddAccessModal() {
@@ -2043,7 +2185,7 @@ function ppv_format_device_info_json($device_info_json) {
 
     <!-- Add Access Modal -->
     <div id="addAccessModal" class="handler-modal-overlay">
-        <div class="handler-modal" style="max-width: 500px;">
+        <div class="handler-modal" style="max-width: 550px;">
             <div class="handler-modal-header">
                 <h2 style="color: #00d4ff;"><i class="ri-user-add-line"></i> Új hozzáférés hozzáadása</h2>
                 <button class="handler-modal-close" onclick="closeAddAccessModal()"><i class="ri-close-line"></i></button>
@@ -2055,34 +2197,87 @@ function ppv_format_device_info_json($device_info_json) {
                     </p>
                 </div>
 
-                <form method="POST">
-                    <?php wp_nonce_field('ppv_add_access', 'ppv_access_nonce'); ?>
-                    <input type="hidden" name="store_id" id="addAccessStoreId">
+                <!-- Mode Toggle -->
+                <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                    <button type="button" id="modalModeNew" onclick="switchModalMode('new')"
+                            style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(0,212,255,0.4); background: rgba(0,212,255,0.15); color: #00d4ff; font-weight: 600; cursor: pointer; font-size: 13px;">
+                        <i class="ri-user-add-line"></i> Új felhasználó
+                    </button>
+                    <button type="button" id="modalModeExisting" onclick="switchModalMode('existing')"
+                            style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #94a3b8; font-weight: 600; cursor: pointer; font-size: 13px;">
+                        <i class="ri-search-line"></i> Meglévő keresése
+                    </button>
+                </div>
 
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 8px;">
-                            <i class="ri-mail-line"></i> Email cím *
-                        </label>
-                        <input type="email" name="access_email" id="addAccessEmail" required placeholder="munkatars@email.de"
-                               style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
-                    </div>
+                <!-- Mode: New User -->
+                <div id="modalNewUserForm">
+                    <form method="POST">
+                        <?php wp_nonce_field('ppv_add_access', 'ppv_access_nonce'); ?>
+                        <input type="hidden" name="store_id" id="addAccessStoreId">
 
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 8px;">
-                            <i class="ri-lock-line"></i> Jelszó *
-                        </label>
-                        <input type="text" name="access_password" id="addAccessPassword" required placeholder="jelszo123" minlength="4"
-                               style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
-                        <small style="color: #888; font-size: 11px;">Minimum 4 karakter</small>
-                    </div>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 8px;">
+                                <i class="ri-mail-line"></i> Email cím *
+                            </label>
+                            <input type="email" name="access_email" id="addAccessEmail" required placeholder="munkatars@email.de"
+                                   style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                        </div>
 
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" onclick="closeAddAccessModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Mégse</button>
-                        <button type="submit" name="add_access_user" class="btn btn-primary">
-                            <i class="ri-user-add-line"></i> Hozzáférés létrehozása
-                        </button>
-                    </div>
-                </form>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 8px;">
+                                <i class="ri-lock-line"></i> Jelszó *
+                            </label>
+                            <input type="text" name="access_password" id="addAccessPassword" required placeholder="jelszo123" minlength="4"
+                                   style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                            <small style="color: #888; font-size: 11px;">Minimum 4 karakter</small>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" onclick="closeAddAccessModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Mégse</button>
+                            <button type="submit" name="add_access_user" class="btn btn-primary">
+                                <i class="ri-user-add-line"></i> Hozzáférés létrehozása
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Mode: Search Existing User -->
+                <div id="modalExistingUserForm" style="display: none;">
+                    <form method="POST">
+                        <?php wp_nonce_field('ppv_link_existing', 'ppv_link_existing_nonce'); ?>
+                        <input type="hidden" name="store_id" id="addAccessStoreIdExisting">
+
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 8px;">
+                                <i class="ri-search-line"></i> Felhasználó keresése
+                            </label>
+                            <div style="position: relative;">
+                                <input type="text" id="modalUserSearch" placeholder="Email vagy felhasználónév..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 12px 15px; padding-right: 40px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                                <i class="ri-search-line" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #00d4ff; opacity: 0.5;"></i>
+                                <div id="modalUserResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 100; background: #1a1a2e; border: 1px solid rgba(0,212,255,0.3); border-top: none; border-radius: 0 0 10px 10px; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                            <input type="hidden" name="existing_user_id" id="modalSelectedUserId" required>
+                            <div id="modalSelectedUser" style="display: none; margin-top: 10px; padding: 10px 15px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; font-size: 13px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span id="modalSelectedUserText" style="color: #34d399;"></span>
+                                    <button type="button" onclick="clearModalUserSelection()" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 16px; padding: 0 4px;">
+                                        <i class="ri-close-line"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <small style="color: #888; font-size: 11px;">Írj be legalább 2 karaktert a kereséshez</small>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" onclick="closeAddAccessModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Mégse</button>
+                            <button type="submit" name="link_existing_user" class="btn btn-primary">
+                                <i class="ri-link"></i> Felhasználó hozzárendelése
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
