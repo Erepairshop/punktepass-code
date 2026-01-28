@@ -38,7 +38,7 @@ class PPV_Stats {
             $lang = substr(get_locale(), 0, 2);
         }
 
-        return $lang ?: 'de';
+        return $lang ?: 'ro'; // Default Romanian
     }
 
     // ========================================

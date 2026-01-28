@@ -45,7 +45,7 @@ class PPV_Legal {
         $locale = get_locale();
         if (strpos($locale, 'hu') !== false) return 'hu';
         if (strpos($locale, 'ro') !== false) return 'ro';
-        return 'de';
+        return 'ro'; // Default Romanian
     }
 
     /** ============================================================

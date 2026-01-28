@@ -61,7 +61,7 @@ class PPV_User_Dashboard {
             $lang = substr(get_locale(), 0, 2);
         }
 
-        return in_array($lang, ['de', 'hu', 'ro']) ? $lang : 'de';
+        return in_array($lang, ['de', 'hu', 'ro']) ? $lang : 'ro'; // Default Romanian
     }
 
     private static function get_safe_user_id() {
