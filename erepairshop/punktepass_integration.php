@@ -8,8 +8,8 @@
  * - Send email (handled by PunktePass server)
  */
 
-// PunktePass API configuration
-define('PUNKTEPASS_API_URL', 'https://punktepass.de/wp-json/punktepass/v1/repair-bonus');
+// PunktePass API configuration (standalone endpoint - bypasses WP REST API filters)
+define('PUNKTEPASS_API_URL', 'https://punktepass.de/wp-content/plugins/punktepass/api-repair-bonus.php');
 define('PUNKTEPASS_API_KEY', '7b6e6938a91011f0bca9a33a376863b7'); // Store 9 API key
 define('EREPAIRSHOP_STORE_ID', 9);
 define('REPAIR_BONUS_POINTS', 2);
