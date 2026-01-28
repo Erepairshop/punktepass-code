@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/punktepass_integration.php';
 
 // Set timezone to Germany
 date_default_timezone_set('Europe/Berlin');
@@ -8,6 +9,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Empfangen der Formulardaten
     $name = htmlspecialchars($_POST['name'] ?? '');
     $phone = htmlspecialchars($_POST['phone'] ?? '');
+    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
     $brand = htmlspecialchars($_POST['brand'] ?? '');
     $model = htmlspecialchars($_POST['model'] ?? '');
     $problem = htmlspecialchars($_POST['problem'] ?? '');
@@ -68,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Erstellen der Nachricht
     $message = "--" . $boundary . "\r\n";
     $message .= "Content-type: text/plain;charset=utf-8\r\n\r\n";
-    $message .= "Name: $name\nTelefonnummer: $phone\nMarke: $brand\nModell: $model\nProblem: $problem\nWeitere Problembeschreibung: $other\nPIN: $pin\n\n";
+    $message .= "Name: $name\nTelefonnummer: $phone\nE-Mail: " . ($email ?: 'nicht angegeben') . "\nMarke: $brand\nModell: $model\nProblem: $problem\nWeitere Problembeschreibung: $other\nPIN: $pin\n\n";
 
     // Hinzufügen des Musterbildes als Anhang, falls vorhanden
     if (!empty($muster_image_path)) {
@@ -89,14 +91,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Senden der E-Mail-Nachricht
 
 if (mail($to, $subject, $message, $headers)) {
+
+        // PunktePass Integration: Add bonus points if email provided
+        $pp_result = null;
+        if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $pp_result = punktepass_process_repair($email, $name);
+        }
+
+        // Build PunktePass bonus section HTML
+        $pp_section = '';
+        if ($pp_result && $pp_result['success']) {
+            $points_to_reward = max(0, 4 - $pp_result['total_points']);
+            $progress_pct = min(100, ($pp_result['total_points'] / 4) * 100);
+
+            $pp_section = '
+            <div class="bonus-card" style="animation: fadeUp 0.6s ease 0.8s both;">
+                <div class="bonus-header">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+                    </svg>
+                    <span>+' . $pp_result['points_added'] . ' Treuepunkte</span>
+                </div>
+                <div class="bonus-body">
+                    <div class="points-bar-bg">
+                        <div class="points-bar-fill" style="width: ' . $progress_pct . '%;"></div>
+                    </div>
+                    <div class="points-text">
+                        <span>' . $pp_result['total_points'] . ' / 4 Punkte</span>
+                        <span>' . ($points_to_reward > 0 ? 'Noch ' . $points_to_reward . ' bis 10&euro; Rabatt' : '10&euro; Rabatt einlösbar!') . '</span>
+                    </div>';
+
+            if ($pp_result['is_new_user']) {
+                $pp_section .= '
+                    <div class="bonus-info">Zugangsdaten wurden an <strong>' . htmlspecialchars($email) . '</strong> gesendet</div>';
+            } else {
+                $pp_section .= '
+                    <div class="bonus-info">Gutgeschrieben auf <strong>' . htmlspecialchars($email) . '</strong></div>';
+            }
+
+            $pp_section .= '
+                </div>
+            </div>';
+        }
+
         // Modern in-store success page with confetti
         echo '<!DOCTYPE html>
         <html lang="de">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="refresh" content="5;url=https://erepairshop.de/formular/formular.html">
-            <title>✓ Gespeichert!</title>
+            <meta http-equiv="refresh" content="8;url=https://erepairshop.de/formular/formular.html">
+            <title>Gespeichert!</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -114,18 +159,19 @@ if (mail($to, $subject, $message, $headers)) {
                 .container {
                     text-align: center;
                     z-index: 10;
+                    padding: 20px;
                 }
 
                 .success-icon {
-                    width: 160px;
-                    height: 160px;
-                    margin: 0 auto 40px;
+                    width: 130px;
+                    height: 130px;
+                    margin: 0 auto 30px;
                     position: relative;
                 }
 
                 .circle-bg {
-                    width: 160px;
-                    height: 160px;
+                    width: 130px;
+                    height: 130px;
                     border-radius: 50%;
                     background: linear-gradient(135deg, #00d26a 0%, #00ff88 100%);
                     position: absolute;
@@ -148,8 +194,8 @@ if (mail($to, $subject, $message, $headers)) {
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
-                    width: 70px;
-                    height: 70px;
+                    width: 60px;
+                    height: 60px;
                     stroke: white;
                     stroke-width: 4;
                     fill: none;
@@ -166,16 +212,16 @@ if (mail($to, $subject, $message, $headers)) {
                 }
 
                 h1 {
-                    font-size: 48px;
+                    font-size: 40px;
                     font-weight: 800;
                     color: white;
-                    margin-bottom: 16px;
+                    margin-bottom: 10px;
                     animation: fadeUp 0.6s ease 0.3s both;
                     text-shadow: 0 4px 20px rgba(0,0,0,0.3);
                 }
 
                 .subtitle {
-                    font-size: 20px;
+                    font-size: 18px;
                     color: rgba(255,255,255,0.7);
                     animation: fadeUp 0.6s ease 0.5s both;
                 }
@@ -183,6 +229,78 @@ if (mail($to, $subject, $message, $headers)) {
                 @keyframes fadeUp {
                     from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
+                }
+
+                /* PunktePass Bonus Card */
+                .bonus-card {
+                    max-width: 380px;
+                    margin: 28px auto 0;
+                    background: rgba(255,255,255,0.08);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255,255,255,0.12);
+                    border-radius: 16px;
+                    overflow: hidden;
+                    text-align: left;
+                }
+
+                .bonus-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 16px 20px;
+                    background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.15));
+                    border-bottom: 1px solid rgba(16,185,129,0.2);
+                    color: #34d399;
+                    font-weight: 700;
+                    font-size: 16px;
+                }
+
+                .bonus-body {
+                    padding: 18px 20px;
+                }
+
+                .points-bar-bg {
+                    height: 10px;
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 10px;
+                    overflow: hidden;
+                    margin-bottom: 10px;
+                }
+
+                .points-bar-fill {
+                    height: 100%;
+                    background: linear-gradient(90deg, #10b981, #34d399);
+                    border-radius: 10px;
+                    transition: width 1s ease;
+                    animation: barGrow 1.2s ease 1s both;
+                }
+
+                @keyframes barGrow {
+                    from { width: 0 !important; }
+                }
+
+                .points-text {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 12px;
+                    color: rgba(255,255,255,0.6);
+                    margin-bottom: 14px;
+                }
+
+                .points-text span:last-child {
+                    color: #34d399;
+                    font-weight: 600;
+                }
+
+                .bonus-info {
+                    font-size: 12px;
+                    color: rgba(255,255,255,0.5);
+                    padding-top: 12px;
+                    border-top: 1px solid rgba(255,255,255,0.08);
+                }
+
+                .bonus-info strong {
+                    color: rgba(255,255,255,0.8);
                 }
 
                 /* Confetti */
@@ -247,7 +365,7 @@ if (mail($to, $subject, $message, $headers)) {
                     stroke-dasharray: 126;
                     stroke-dashoffset: 126;
                     stroke-linecap: round;
-                    animation: progressRing 5s linear forwards;
+                    animation: progressRing 8s linear forwards;
                 }
 
                 @keyframes progressRing {
@@ -292,6 +410,8 @@ if (mail($to, $subject, $message, $headers)) {
 
                 <h1>Gespeichert!</h1>
                 <p class="subtitle">Auftrag wurde erfolgreich angelegt</p>
+
+                ' . $pp_section . '
             </div>
 
             <div class="progress-ring">

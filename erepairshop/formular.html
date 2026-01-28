@@ -530,6 +530,37 @@
             font-size: 20px;
         }
 
+        /* PunktePass Hint */
+        .punktepass-hint {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-top: 10px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border: 1px solid #bbf7d0;
+            border-radius: var(--radius);
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--gray-700);
+        }
+
+        .punktepass-hint-icon {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .punktepass-hint strong {
+            color: #059669;
+        }
+
         /* Hidden */
         .hidden {
             display: none !important;
@@ -790,6 +821,24 @@
                     <div class="form-group">
                         <label for="phone"><i class="ri-phone-line"></i> Telefonnummer</label>
                         <input type="tel" id="phone" name="phone" placeholder="0170 1234567" required inputmode="numeric">
+                    </div>
+                </div>
+
+                <!-- PunktePass Email -->
+                <div class="form-group">
+                    <label for="email"><i class="ri-gift-line"></i> E-Mail-Adresse <span style="font-weight: 400; color: var(--gray-400);">(optional)</span></label>
+                    <input type="email" id="email" name="email" placeholder="ihre@email.de" inputmode="email">
+                    <div class="punktepass-hint">
+                        <div class="punktepass-hint-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <strong>Treuepunkte sammeln!</strong>
+                            Geben Sie Ihre E-Mail an und erhalten Sie <strong>2 Bonuspunkte</strong> auf Ihr PunktePass-Konto.
+                            Bei 4 Punkten erhalten Sie <strong>10&euro; Rabatt</strong> auf Ihre nächste Reparatur!
+                        </div>
                     </div>
                 </div>
 
