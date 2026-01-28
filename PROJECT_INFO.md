@@ -171,9 +171,23 @@ git fetch origin claude/scanner-login-name-support-fpzvP && git checkout FETCH_H
 ## 🌐 Nyelvek
 
 ### Támogatott nyelvek:
-- 🇩🇪 Német (DE) - alapértelmezett
+- 🇷🇴 Román (RO) - **alapértelmezett** (2026-01-28-tól)
+- 🇩🇪 Német (DE)
 - 🇭🇺 Magyar (HU)
-- 🇷🇴 Román (RO)
+
+### Nyelv detektálás prioritás:
+1. REST header (X-PPV-Lang) - API hívásokhoz
+2. GET param (?lang=ro) - redirect vagy manuális váltás
+3. Cookie (ppv_lang)
+4. Session
+5. **Browser Accept-Language** (q-value prioritással!)
+6. Default: **Román**
+
+### Fontos: Browser nyelvfelismerés
+A rendszer figyelembe veszi az Accept-Language header q-értékeit:
+```
+hu-HU,hu;q=0.9,de;q=0.8 → Magyar lesz (nem német!)
+```
 
 ### Fordítások helye:
 ```php
@@ -416,8 +430,56 @@ public function check_logged_in_user() {
 - **Git commit**: Angol
 - **Hosting**: Hostinger (LiteSpeed szerver)
 
+## 📱 iOS App - Codemagic CI/CD
+
+### Sikeres Build: 2026-01-28
+- **Verzió**: 1.5
+- **Build szám**: automatikusan növelve
+- **Platform**: Mac mini M2
+- **Workflow**: iOS Build & TestFlight
+
+### Codemagic Konfiguráció
+Fájl: `codemagic.yaml`
+
+```yaml
+workflows:
+  ios-workflow:
+    name: iOS Build & TestFlight
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Punktepass
+    scripts:
+      - keychain initialize
+      - app-store-connect fetch-signing-files "de.erepairshop.punktepass" --type IOS_APP_STORE --create
+      - keychain add-certificates
+      - xcode-project use-profiles
+      - xcodebuild archive...
+      - xcodebuild -exportArchive...
+    publishing:
+      app_store_connect:
+        submit_to_testflight: true
+```
+
+### Push Notifications - Firebase Setup
+1. **Firebase Console**: Project Settings → Cloud Messaging
+2. **APNs Authentication Key** (.p8 fájl) feltöltve
+   - Key ID: `B5G6757QMH`
+   - Team ID: `2694KKB97H`
+3. **FCM V1 API** használatban (Service Account)
+
+### Fontos fájlok:
+- `Xcode/PunktePass.xcworkspace` - Xcode projekt
+- `Xcode/PunktePass/Info.plist` - App konfiguráció
+- `Xcode/PunktePass/AppDelegate.swift` - Firebase init, push handling
+- `Xcode/PunktePass/PushNotifications.swift` - FCM token kezelés
+
+### TestFlight
+- Automatikus feltöltés sikeres build után
+- Beta Testers csoport értesítése
+- Email notifikáció: borota25@gmail.com
+
 ---
 
-**Utolsó frissítés**: 2026-01-17
+**Utolsó frissítés**: 2026-01-28
 **Készítette**: Claude Code
 **Projekt**: PunktePass (Erepairshop/punktepass-code)
