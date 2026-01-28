@@ -119,6 +119,7 @@ class PPV_Standalone_Push_Sender {
                 break;
 
             case 'users':
+                global $wpdb;
                 if (empty($user_ids)) {
                     return ['success' => false, 'message' => 'Bitte User IDs eingeben'];
                 }
