@@ -58,6 +58,9 @@ class PPV_Standalone_Push_Sender {
         global $wpdb;
         $table = $wpdb->prefix . 'ppv_push_subscriptions';
 
+        // Get list of user IDs with active subscriptions for the UI
+        $user_list = $wpdb->get_col("SELECT DISTINCT user_id FROM {$table} WHERE is_active = 1 ORDER BY user_id ASC");
+
         return [
             'total' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1"),
             'ios' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND platform = 'ios'"),
@@ -65,6 +68,7 @@ class PPV_Standalone_Push_Sender {
             'web' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND platform = 'web'"),
             'stores' => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE is_active = 1 AND store_id IS NOT NULL"),
             'users' => (int)$wpdb->get_var("SELECT COUNT(DISTINCT user_id) FROM {$table} WHERE is_active = 1"),
+            'user_list' => $user_list,
         ];
     }
 
@@ -115,14 +119,32 @@ class PPV_Standalone_Push_Sender {
                 break;
 
             case 'users':
+                global $wpdb;
                 if (empty($user_ids)) {
                     return ['success' => false, 'message' => 'Bitte User IDs eingeben'];
                 }
                 $ids = array_map('intval', explode(',', $user_ids));
+                $users_without_push = [];
                 foreach ($ids as $uid) {
                     if ($uid > 0) {
-                        $results[] = PPV_Push::send_to_user($uid, $payload);
+                        // Check if user has any push subscriptions
+                        $has_subs = $wpdb->get_var($wpdb->prepare(
+                            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_push_subscriptions WHERE user_id = %d AND is_active = 1",
+                            $uid
+                        ));
+                        if ($has_subs == 0) {
+                            $users_without_push[] = $uid;
+                        } else {
+                            $results[] = PPV_Push::send_to_user($uid, $payload);
+                        }
                     }
+                }
+                // Return early with helpful message if no users have subscriptions
+                if (empty($results) && !empty($users_without_push)) {
+                    return [
+                        'success' => false,
+                        'message' => 'User ID(s) ' . implode(', ', $users_without_push) . ' haben keine Push-Abos. Nur User mit aktivem Push-Abo können benachrichtigt werden.'
+                    ];
                 }
                 break;
 
@@ -472,6 +494,15 @@ class PPV_Standalone_Push_Sender {
                         <div class="form-group" id="user-ids" style="display:none;">
                             <label>User IDs (kommagetrennt)</label>
                             <input type="text" name="user_ids" placeholder="z.B. 123, 456, 789">
+                            <?php if (!empty($stats['user_list'])): ?>
+                            <small style="color: #64748b; display: block; margin-top: 5px;">
+                                <strong>Verfügbare IDs mit Push-Abo:</strong> <?php echo implode(', ', $stats['user_list']); ?>
+                            </small>
+                            <?php else: ?>
+                            <small style="color: #f59e0b; display: block; margin-top: 5px;">
+                                ⚠️ Keine User mit Push-Abo gefunden
+                            </small>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">

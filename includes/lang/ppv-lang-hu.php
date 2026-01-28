@@ -1974,4 +1974,25 @@ return [
     'csv_creating' => 'CSV létrehozása...',
     'csv_downloaded' => 'CSV letöltve',
     'error' => 'Hiba',
+
+    // ============================================================
+    // Push Notifications (Kereskedői Marketing)
+    // ============================================================
+    'push_marketing_title' => 'Push értesítések',
+    'push_marketing_desc' => 'Hetente egy üzenetet küldhet vásárlóinak',
+    'limit_reached' => 'Limit elérve',
+    'subscribers' => 'Feliratkozó',
+    'push_not_configured' => 'A push értesítések nincsenek beállítva',
+    'push_no_subscribers' => 'Még nincsenek feliratkozók',
+    'push_no_subscribers_hint' => 'Az Önnél vásárló ügyfelek feliratkozhatnak a push értesítésekre.',
+    'push_sender' => 'Feladó',
+    'shop_name' => 'Üzletnév',
+    'push_title' => 'Cím',
+    'push_title_placeholder' => 'pl. Új akció!',
+    'push_message' => 'Üzenet',
+    'push_message_placeholder' => 'Az üzenete a vásárlóknak...',
+    'last_sent' => 'Utoljára küldve',
+    'send_push' => 'Push küldése',
+    'push_limit_reached_msg' => 'Ezen a héten már küldött egy push üzenetet.',
+    'next_available' => 'Következő lehetőség',
 ];

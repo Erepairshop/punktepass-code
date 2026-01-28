@@ -324,9 +324,10 @@ class PPV_Push {
     public static function api_send_promotion($request) {
         $params = $request->get_json_params();
 
-        $store_id = intval($params['store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
-        $title    = sanitize_text_field($params['title'] ?? '');
-        $body     = sanitize_text_field($params['body'] ?? '');
+        $store_id    = intval($params['store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+        $title       = sanitize_text_field($params['title'] ?? '');
+        $body        = sanitize_text_field($params['body'] ?? '');
+        $sender_name = sanitize_text_field($params['sender_name'] ?? '');
 
         if (!$store_id) {
             return new WP_REST_Response(['success' => false, 'message' => 'Store ID fehlt'], 400);
@@ -351,23 +352,41 @@ class PPV_Push {
             ], 429);
         }
 
-        // Get store info for logging
+        // Get store info for logging and logo
         global $wpdb;
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT company_name FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            "SELECT company_name, name, logo FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
 
-        // Send to all store customers
-        $result = self::send_to_store_customers($store_id, [
+        // Use sender_name from request, or fallback to company_name/name
+        $display_name = $sender_name ?: ($store->company_name ?: $store->name ?: '');
+
+        // Get store logo URL if available
+        $logo_url = null;
+        if (!empty($store->logo)) {
+            $logo_url = home_url('/wp-content/uploads/ppv-logos/' . $store->logo);
+        }
+
+        // Prepare notification payload
+        $notification_data = [
             'title' => $title,
             'body'  => $body,
             'data'  => [
                 'type'     => 'promotion',
                 'store_id' => $store_id,
-                'store'    => $store->company_name ?? ''
+                'store'    => $display_name
             ]
-        ]);
+        ];
+
+        // Add store logo as notification image/icon if available
+        if ($logo_url) {
+            $notification_data['image'] = $logo_url;
+            $notification_data['icon'] = $logo_url;
+        }
+
+        // Send to all store customers
+        $result = self::send_to_store_customers($store_id, $notification_data);
 
         // Log the send
         if ($result['sent'] > 0) {
@@ -660,14 +679,24 @@ class PPV_Push {
             return ['success' => false, 'message' => 'FCM not configured'];
         }
 
+        $notification = [
+            'title' => $payload['title'] ?? 'PunktePass',
+            'body'  => $payload['body'] ?? '',
+            'sound' => 'default',
+            'badge' => 1
+        ];
+
+        // Add image/icon if provided (for store logo)
+        if (!empty($payload['image'])) {
+            $notification['image'] = $payload['image'];
+        }
+        if (!empty($payload['icon'])) {
+            $notification['icon'] = $payload['icon'];
+        }
+
         $message = [
             'to' => $token,
-            'notification' => [
-                'title' => $payload['title'] ?? 'PunktePass',
-                'body'  => $payload['body'] ?? '',
-                'sound' => 'default',
-                'badge' => 1
-            ],
+            'notification' => $notification,
             'data' => $payload['data'] ?? [],
             'priority' => 'high',
             'content_available' => true
@@ -756,36 +785,65 @@ class PPV_Push {
         }
 
         // Convert legacy message format to V1 format
+        $notification_base = [
+            'title' => $message['notification']['title'] ?? 'PunktePass',
+            'body' => $message['notification']['body'] ?? ''
+        ];
+
+        // Add image to notification if provided
+        if (!empty($message['notification']['image'])) {
+            $notification_base['image'] = $message['notification']['image'];
+        }
+
+        // Determine icon for webpush
+        $web_icon = !empty($message['notification']['icon'])
+            ? $message['notification']['icon']
+            : '/icons/icon-192x192.png';
+
         $v1_message = [
             'message' => [
                 'token' => $message['to'],
-                'notification' => [
-                    'title' => $message['notification']['title'] ?? 'PunktePass',
-                    'body' => $message['notification']['body'] ?? ''
-                ],
+                'notification' => $notification_base,
                 'data' => array_map('strval', $message['data'] ?? []),
                 'android' => [
                     'priority' => 'high',
                     'notification' => [
                         'sound' => 'default',
-                        'channel_id' => 'punktepass_notifications'
+                        'channel_id' => 'punktepass_notifications',
+                        'image' => $message['notification']['image'] ?? null
                     ]
                 ],
                 'apns' => [
                     'payload' => [
                         'aps' => [
                             'sound' => 'default',
-                            'badge' => 1
+                            'badge' => 1,
+                            'mutable-content' => 1
                         ]
+                    ],
+                    'fcm_options' => [
+                        'image' => $message['notification']['image'] ?? null
                     ]
                 ],
                 'webpush' => [
                     'notification' => [
-                        'icon' => '/icons/icon-192x192.png'
+                        'icon' => $web_icon,
+                        'image' => $message['notification']['image'] ?? null
                     ]
                 ]
             ]
         ];
+
+        // Remove null values from android/apns/webpush to avoid API errors
+        if (empty($v1_message['message']['android']['notification']['image'])) {
+            unset($v1_message['message']['android']['notification']['image']);
+        }
+        if (empty($v1_message['message']['apns']['fcm_options']['image'])) {
+            unset($v1_message['message']['apns']['fcm_options']);
+        }
+        if (empty($v1_message['message']['webpush']['notification']['image'])) {
+            unset($v1_message['message']['webpush']['notification']['image']);
+        }
 
         $url = sprintf(self::$fcm_v1_url, $project_id);
 

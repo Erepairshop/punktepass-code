@@ -902,34 +902,101 @@ if (!empty($store->gallery)) {
                 </div>
 
                 <!-- ============================================================
-                     WHATSAPP CLOUD API
+                     PUSH NOTIFICATIONS (Händler Marketing)
                      ============================================================ -->
-                <div class="ppv-marketing-card" style="background: linear-gradient(135deg, rgba(37, 211, 102, 0.08), rgba(37, 211, 102, 0.02)); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <?php
+                $push_enabled = class_exists('PPV_Push') && PPV_Push::is_enabled();
+                $push_remaining = $push_enabled ? PPV_Push::get_weekly_remaining($store->id) : 0;
+                $push_customers = $push_enabled ? PPV_Push::get_customer_subscription_count($store->id) : 0;
+                $push_last_sent = $push_enabled ? PPV_Push::get_last_send_date($store->id) : null;
+                ?>
+                <div class="ppv-marketing-card" id="push-notification-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.02)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <div>
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">💬</span>
-                                <span>WhatsApp Business</span>
-                                <?php if (!empty($store->whatsapp_enabled)): ?>
-                                <span style="background: #25D366; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;" data-i18n="status_active"><?php echo esc_html(PPV_Lang::t('status_active')); ?></span>
-                                <?php else: ?>
-                                <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;" data-i18n="status_inactive"><?php echo esc_html(PPV_Lang::t('status_inactive')); ?></span>
+                                <span style="font-size: 24px;">🔔</span>
+                                <span data-i18n="push_marketing_title"><?php echo esc_html(PPV_Lang::t('push_marketing_title') ?: 'Push Benachrichtigungen'); ?></span>
+                                <?php if ($push_enabled && $push_remaining > 0): ?>
+                                <span style="background: #6366f1; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo $push_remaining; ?>/<?php echo PPV_Push::WEEKLY_LIMIT; ?> <?php echo esc_html(PPV_Lang::t('this_week') ?: 'diese Woche'); ?></span>
+                                <?php elseif ($push_enabled): ?>
+                                <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo esc_html(PPV_Lang::t('limit_reached') ?: 'Limit erreicht'); ?></span>
                                 <?php endif; ?>
                             </h3>
-                            <small style="color: #888;" data-i18n="whatsapp_desc"><?php echo esc_html(PPV_Lang::t('whatsapp_desc')); ?></small>
+                            <small style="color: #888;" data-i18n="push_marketing_desc"><?php echo esc_html(PPV_Lang::t('push_marketing_desc') ?: 'Senden Sie wöchentlich eine Nachricht an Ihre Kunden'); ?></small>
                         </div>
-                        <label class="ppv-toggle">
-                            <input type="checkbox" name="whatsapp_enabled" value="1" <?php checked($store->whatsapp_enabled ?? 0, 1); ?>>
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
+                        <div style="text-align: right;">
+                            <span style="font-size: 24px; font-weight: bold; color: #6366f1;"><?php echo $push_customers; ?></span>
+                            <small style="display: block; color: #888;"><?php echo esc_html(PPV_Lang::t('subscribers') ?: 'Abonnenten'); ?></small>
+                        </div>
                     </div>
-                    <?php if (empty($store->whatsapp_phone_id)): ?>
-                    <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px;">
+
+                    <?php if (!$push_enabled): ?>
+                    <div style="padding: 15px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px;">
                         <p style="margin: 0; color: #ff9800; font-size: 13px;">
-                            <strong>⚠️ <?php echo esc_html(PPV_Lang::t('whatsapp_not_configured')); ?></strong><br>
-                            <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('whatsapp_managed_by_team')); ?></span>
+                            <strong>⚠️ <?php echo esc_html(PPV_Lang::t('push_not_configured') ?: 'Push-Benachrichtigungen sind nicht konfiguriert'); ?></strong>
                         </p>
                     </div>
+                    <?php elseif ($push_customers === 0): ?>
+                    <div style="padding: 15px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px;">
+                        <p style="margin: 0; color: #6366f1; font-size: 13px;">
+                            <strong>📱 <?php echo esc_html(PPV_Lang::t('push_no_subscribers') ?: 'Noch keine Abonnenten'); ?></strong><br>
+                            <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('push_no_subscribers_hint') ?: 'Kunden die bei Ihnen scannen, können Push-Benachrichtigungen abonnieren.'); ?></span>
+                        </p>
+                    </div>
+                    <?php else: ?>
+                    <!-- Push Form -->
+                    <?php
+                    // Check if both names exist and are different
+                    $has_shop_name = !empty($store->name);
+                    $has_company_name = !empty($store->company_name);
+                    $has_both_names = $has_shop_name && $has_company_name && ($store->name !== $store->company_name);
+                    $default_sender = $store->company_name ?: $store->name ?: 'Shop';
+                    ?>
+                    <div id="push-form-container" style="<?php echo $push_remaining <= 0 ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                        <!-- Store Name (sender selection) -->
+                        <div style="margin-bottom: 12px; padding: 10px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px;">
+                            <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html(PPV_Lang::t('push_sender') ?: 'Absender'); ?></label>
+                            <?php if ($has_both_names): ?>
+                            <select id="push-sender-name" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; background: rgba(0,0,0,0.2); color: #6366f1; font-size: 14px; font-weight: 600; cursor: pointer;">
+                                <option value="<?php echo esc_attr($store->company_name); ?>"><?php echo esc_html($store->company_name); ?> (<?php echo esc_html(PPV_Lang::t('company_name') ?: 'Firmenname'); ?>)</option>
+                                <option value="<?php echo esc_attr($store->name); ?>"><?php echo esc_html($store->name); ?> (<?php echo esc_html(PPV_Lang::t('shop_name') ?: 'Geschäftsname'); ?>)</option>
+                            </select>
+                            <?php else: ?>
+                            <input type="hidden" id="push-sender-name" value="<?php echo esc_attr($default_sender); ?>">
+                            <span style="font-size: 14px; font-weight: 600; color: #6366f1;"><?php echo esc_html($default_sender); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_title') ?: 'Titel'); ?> <span style="color: #888;">(max. 50)</span></label>
+                            <input type="text" id="push-title" maxlength="50" placeholder="<?php echo esc_attr(PPV_Lang::t('push_title_placeholder') ?: 'z.B. Neue Aktion!'); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: #f1f5f9; font-size: 14px;">
+                            <small style="color: #64748b;"><span id="push-title-count">0</span>/50</small>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_message') ?: 'Nachricht'); ?> <span style="color: #888;">(max. 200)</span></label>
+                            <textarea id="push-body" maxlength="200" rows="3" placeholder="<?php echo esc_attr(PPV_Lang::t('push_message_placeholder') ?: 'Ihre Nachricht an die Kunden...'); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: #f1f5f9; font-size: 14px; resize: vertical;"></textarea>
+                            <small style="color: #64748b;"><span id="push-body-count">0</span>/200</small>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <small style="color: #64748b;">
+                                <?php if ($push_last_sent): ?>
+                                <?php echo esc_html(PPV_Lang::t('last_sent') ?: 'Zuletzt gesendet'); ?>: <?php echo date('d.m.Y H:i', strtotime($push_last_sent)); ?>
+                                <?php endif; ?>
+                            </small>
+                            <button type="button" id="push-send-btn" class="ppv-btn-primary" style="background: #6366f1; border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;" <?php echo $push_remaining <= 0 ? 'disabled' : ''; ?>>
+                                <span>🚀</span>
+                                <span><?php echo esc_html(PPV_Lang::t('send_push') ?: 'Push senden'); ?></span>
+                            </button>
+                        </div>
+                        <div id="push-result" style="margin-top: 10px; display: none;"></div>
+                    </div>
+                    <?php if ($push_remaining <= 0): ?>
+                    <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; text-align: center;">
+                        <p style="margin: 0; color: #ff9800; font-size: 13px;">
+                            ⏳ <?php echo esc_html(PPV_Lang::t('push_limit_reached_msg') ?: 'Sie haben diese Woche bereits eine Push-Nachricht gesendet.'); ?><br>
+                            <strong><?php echo esc_html(PPV_Lang::t('next_available') ?: 'Nächste Möglichkeit'); ?>: <?php echo PPV_Push::get_next_available_date($store->id); ?></strong>
+                        </p>
+                    </div>
+                    <?php endif; ?>
                     <?php endif; ?>
                 </div>
 
@@ -1330,90 +1397,86 @@ if (!empty($store->gallery)) {
                     });
                 }
 
-                // WhatsApp toggle
-                const whatsappToggle = document.querySelector('input[name="whatsapp_enabled"]');
-                const whatsappSettings = document.getElementById('whatsapp-settings');
-                if (whatsappToggle && whatsappSettings) {
-                    whatsappToggle.addEventListener('change', function() {
-                        whatsappSettings.style.opacity = this.checked ? '1' : '0.5';
-                        whatsappSettings.style.pointerEvents = this.checked ? 'auto' : 'none';
+                // Push Notification - Character counters
+                const pushTitle = document.getElementById('push-title');
+                const pushBody = document.getElementById('push-body');
+                const pushTitleCount = document.getElementById('push-title-count');
+                const pushBodyCount = document.getElementById('push-body-count');
+
+                if (pushTitle && pushTitleCount) {
+                    pushTitle.addEventListener('input', function() {
+                        pushTitleCount.textContent = this.value.length;
+                    });
+                }
+                if (pushBody && pushBodyCount) {
+                    pushBody.addEventListener('input', function() {
+                        pushBodyCount.textContent = this.value.length;
                     });
                 }
 
-                // WhatsApp Verify Connection Button
-                const waVerifyBtn = document.getElementById('whatsapp-verify-btn');
-                const waVerifyResult = document.getElementById('whatsapp-verify-result');
-                if (waVerifyBtn && waVerifyResult) {
-                    waVerifyBtn.addEventListener('click', function() {
-                        waVerifyBtn.disabled = true;
-                        waVerifyBtn.innerHTML = '⏳ Prüfe...';
-                        waVerifyResult.style.display = 'inline-block';
-                        waVerifyResult.style.background = 'rgba(255,255,255,0.1)';
-                        waVerifyResult.innerHTML = '<span style="color: #888;">Verbindung wird geprüft...</span>';
+                // Push Notification - Send Button
+                const pushSendBtn = document.getElementById('push-send-btn');
+                const pushResult = document.getElementById('push-result');
+                const pushSenderName = document.getElementById('push-sender-name');
+                if (pushSendBtn && pushResult) {
+                    pushSendBtn.addEventListener('click', function() {
+                        const title = pushTitle ? pushTitle.value.trim() : '';
+                        const body = pushBody ? pushBody.value.trim() : '';
+                        const senderName = pushSenderName ? pushSenderName.value : '';
 
-                        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: 'action=ppv_whatsapp_verify_connection&nonce=' + window.ppvWhatsAppNonce + '&store_id=' + window.ppvWhatsAppStoreId
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            waVerifyBtn.disabled = false;
-                            waVerifyBtn.innerHTML = '✓ Verbindung testen';
-                            if (data.success) {
-                                waVerifyResult.style.background = 'rgba(34, 197, 94, 0.2)';
-                                waVerifyResult.innerHTML = '<span style="color: #22c55e;">✅ ' + data.data.message + '</span>';
-                            } else {
-                                waVerifyResult.style.background = 'rgba(239, 68, 68, 0.2)';
-                                waVerifyResult.innerHTML = '<span style="color: #ef4444;">❌ ' + (data.data.message || 'Fehler') + '</span>';
-                            }
-                        })
-                        .catch(error => {
-                            waVerifyBtn.disabled = false;
-                            waVerifyBtn.innerHTML = '✓ Verbindung testen';
-                            waVerifyResult.style.background = 'rgba(239, 68, 68, 0.2)';
-                            waVerifyResult.innerHTML = '<span style="color: #ef4444;">❌ Netzwerkfehler</span>';
-                        });
-                    });
-                }
-
-                // WhatsApp Test Message Button
-                const waTestBtn = document.getElementById('whatsapp-test-btn');
-                const waTestPhone = document.getElementById('whatsapp-test-phone');
-                const waTestResult = document.getElementById('whatsapp-test-result');
-                if (waTestBtn && waTestPhone && waTestResult) {
-                    waTestBtn.addEventListener('click', function() {
-                        const phone = waTestPhone.value.trim();
-                        if (!phone) {
-                            waTestResult.style.display = 'block';
-                            waTestResult.innerHTML = '<span style="color: #ef4444;">⚠️ Bitte Telefonnummer eingeben!</span>';
+                        if (!title || !body) {
+                            pushResult.style.display = 'block';
+                            pushResult.innerHTML = '<span style="color: #ef4444; padding: 8px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">⚠️ Bitte Titel und Nachricht eingeben!</span>';
                             return;
                         }
 
-                        waTestBtn.disabled = true;
-                        waTestBtn.innerHTML = '⏳ Sende...';
-                        waTestResult.style.display = 'block';
-                        waTestResult.innerHTML = '<span style="color: #888;">Nachricht wird gesendet...</span>';
+                        // Confirm before sending
+                        if (!confirm('Push-Nachricht an alle Ihre Kunden senden?')) {
+                            return;
+                        }
 
-                        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                        pushSendBtn.disabled = true;
+                        pushSendBtn.innerHTML = '<span>⏳</span><span>Wird gesendet...</span>';
+                        pushResult.style.display = 'block';
+                        pushResult.innerHTML = '<span style="color: #888; padding: 8px; display: block;">Push wird gesendet...</span>';
+
+                        fetch('/wp-json/punktepass/v1/push/promotion', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: 'action=ppv_whatsapp_send_test&nonce=' + window.ppvWhatsAppNonce + '&store_id=' + window.ppvWhatsAppStoreId + '&phone=' + encodeURIComponent(phone)
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                store_id: <?php echo intval($store->id ?? 0); ?>,
+                                title: title,
+                                body: body,
+                                sender_name: senderName
+                            })
                         })
                         .then(response => response.json())
                         .then(data => {
-                            waTestBtn.disabled = false;
-                            waTestBtn.innerHTML = '📱 Test senden';
+                            pushSendBtn.innerHTML = '<span>🚀</span><span>Push senden</span>';
                             if (data.success) {
-                                waTestResult.innerHTML = '<span style="color: #22c55e;">✅ ' + data.data.message + '</span>';
+                                pushResult.innerHTML = '<span style="color: #22c55e; padding: 10px; background: rgba(34,197,94,0.1); border-radius: 6px; display: block;">✅ ' + data.message + '</span>';
+                                // Disable form after successful send
+                                const formContainer = document.getElementById('push-form-container');
+                                if (formContainer) {
+                                    formContainer.style.opacity = '0.5';
+                                    formContainer.style.pointerEvents = 'none';
+                                }
+                                pushSendBtn.disabled = true;
+                                // Clear inputs
+                                if (pushTitle) pushTitle.value = '';
+                                if (pushBody) pushBody.value = '';
+                                if (pushTitleCount) pushTitleCount.textContent = '0';
+                                if (pushBodyCount) pushBodyCount.textContent = '0';
                             } else {
-                                waTestResult.innerHTML = '<span style="color: #ef4444;">❌ ' + (data.data.message || 'Fehler') + '</span>';
+                                pushSendBtn.disabled = false;
+                                pushResult.innerHTML = '<span style="color: #ef4444; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">❌ ' + (data.message || 'Fehler beim Senden') + '</span>';
                             }
                         })
                         .catch(error => {
-                            waTestBtn.disabled = false;
-                            waTestBtn.innerHTML = '📱 Test senden';
-                            waTestResult.innerHTML = '<span style="color: #ef4444;">❌ Netzwerkfehler</span>';
+                            pushSendBtn.disabled = false;
+                            pushSendBtn.innerHTML = '<span>🚀</span><span>Push senden</span>';
+                            pushResult.innerHTML = '<span style="color: #ef4444; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">❌ Netzwerkfehler: ' + error.message + '</span>';
                         });
                     });
                 }

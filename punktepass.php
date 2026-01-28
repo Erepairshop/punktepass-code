@@ -498,6 +498,10 @@ add_action('wp_enqueue_scripts', function() {
         // Also set global for backwards compatibility
         wp_add_inline_script('ppv-push-bridge', 'window.ppvUserId = ' . $ppv_user_id . ';', 'before');
 
+        // Set user ID and language for Firebase messaging (runs before push-bridge)
+        $ppv_lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'ro';
+        wp_add_inline_script('ppv-firebase-messaging', 'window.ppvUserId = ' . $ppv_user_id . '; window.ppvLang = "' . esc_js($ppv_lang) . '";', 'before');
+
         // VAPID public key for Web Push
         if (defined('PPV_VAPID_PUBLIC_KEY')) {
             wp_add_inline_script('ppv-push-bridge', 'window.ppvVapidKey = "' . esc_js(PPV_VAPID_PUBLIC_KEY) . '";', 'before');

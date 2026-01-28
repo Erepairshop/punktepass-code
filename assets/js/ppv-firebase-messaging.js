@@ -164,8 +164,75 @@
     window.PPVFirebaseMessaging = {
         init: initFirebase,
         getToken: getToken,
-        register: registerToken
+        register: registerToken,
+        showOptIn: showPushOptIn,
+        needsPermission: needsPushPermission
     };
+
+    /**
+     * Check if push permission is needed
+     */
+    function needsPushPermission() {
+        if (!('Notification' in window)) return false;
+        if (Notification.permission === 'granted') return false;
+        if (Notification.permission === 'denied') return false;
+        if (localStorage.getItem('ppv_push_dismissed')) return false;
+        return true;
+    }
+
+    /**
+     * Show push opt-in banner
+     */
+    function showPushOptIn() {
+        // Don't show if not needed or already shown
+        if (!needsPushPermission()) return;
+        if (document.getElementById('ppv-push-optin')) return;
+
+        const lang = window.ppvLang || 'de';
+        const texts = {
+            de: { title: '🔔 Push-Benachrichtigungen', desc: 'Erhalten Sie Benachrichtigungen über neue Angebote und Punkte', btn: 'Aktivieren', dismiss: 'Später' },
+            hu: { title: '🔔 Push értesítések', desc: 'Kapjon értesítéseket új ajánlatokról és pontokról', btn: 'Engedélyezés', dismiss: 'Később' },
+            ro: { title: '🔔 Notificări Push', desc: 'Primiți notificări despre oferte și puncte noi', btn: 'Activare', dismiss: 'Mai târziu' }
+        };
+        const t = texts[lang] || texts.de;
+
+        const banner = document.createElement('div');
+        banner.id = 'ppv-push-optin';
+        banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:15px 20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;gap:15px;max-width:90%;width:400px;font-family:system-ui,sans-serif;';
+
+        banner.innerHTML = `
+            <div style="flex:1;">
+                <div style="font-weight:600;margin-bottom:4px;">${t.title}</div>
+                <div style="font-size:13px;opacity:0.9;">${t.desc}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+                <button id="ppv-push-enable" style="background:white;color:#6366f1;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;">${t.btn}</button>
+                <button id="ppv-push-dismiss" style="background:transparent;color:white;border:1px solid rgba(255,255,255,0.5);padding:8px 12px;border-radius:8px;cursor:pointer;opacity:0.8;">✕</button>
+            </div>
+        `;
+
+        document.body.appendChild(banner);
+
+        // Enable button - triggers permission request
+        document.getElementById('ppv-push-enable').addEventListener('click', async function() {
+            this.textContent = '...';
+            this.disabled = true;
+            const success = await registerToken();
+            if (success) {
+                banner.innerHTML = '<div style="text-align:center;padding:10px;">✅ Push aktiviert!</div>';
+                setTimeout(() => banner.remove(), 2000);
+            } else {
+                banner.innerHTML = '<div style="text-align:center;padding:10px;">❌ Konnte nicht aktiviert werden</div>';
+                setTimeout(() => banner.remove(), 3000);
+            }
+        });
+
+        // Dismiss button
+        document.getElementById('ppv-push-dismiss').addEventListener('click', function() {
+            localStorage.setItem('ppv_push_dismissed', Date.now().toString());
+            banner.remove();
+        });
+    }
 
     // Auto-initialize when user is logged in
     document.addEventListener('DOMContentLoaded', async function() {
@@ -177,11 +244,17 @@
             setTimeout(async () => {
                 if (await initFirebase()) {
                     setupMessageHandler();
-                    // Auto-register if not already registered
-                    const lastRegistered = localStorage.getItem('ppv_fcm_registered');
-                    const oneDay = 24 * 60 * 60 * 1000;
-                    if (!lastRegistered || (Date.now() - parseInt(lastRegistered)) > oneDay) {
-                        registerToken();
+
+                    // Check if already granted - then just refresh token
+                    if (Notification.permission === 'granted') {
+                        const lastRegistered = localStorage.getItem('ppv_fcm_registered');
+                        const oneDay = 24 * 60 * 60 * 1000;
+                        if (!lastRegistered || (Date.now() - parseInt(lastRegistered)) > oneDay) {
+                            registerToken();
+                        }
+                    } else {
+                        // Show opt-in banner for users who haven't decided yet
+                        showPushOptIn();
                     }
                 }
             }, 2000);
