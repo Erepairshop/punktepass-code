@@ -168,6 +168,34 @@ if (isset($_POST['remove_access_user']) && check_admin_referer('ppv_remove_acces
     }
 }
 
+// Set as main email
+if (isset($_POST['set_main_email']) && check_admin_referer('ppv_set_main_email', 'ppv_main_email_nonce')) {
+    $user_id = intval($_POST['user_id']);
+    $store_id = intval($_POST['store_id']);
+
+    // Get user info
+    $user = $wpdb->get_row($wpdb->prepare(
+        "SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d AND vendor_store_id = %d",
+        $user_id, $store_id
+    ));
+
+    if ($user) {
+        // Update store email to this user's email
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['email' => $user->email],
+            ['id' => $store_id],
+            ['%s'],
+            ['%d']
+        );
+
+        $link_success = '✅ Fő email megváltoztatva: <strong>' . esc_html($user->email) . '</strong>';
+        ppv_log("✅ [PPV_Admin] Changed main email for store #{$store_id} to {$user->email}");
+    } else {
+        $link_error = '⚠️ A felhasználó nem található!';
+    }
+}
+
 // Get stores with their access users (users who have vendor_store_id pointing to them)
 $stores_with_access_users = $wpdb->get_results("
     SELECT
@@ -1346,23 +1374,35 @@ function ppv_format_device_info_json($device_info_json) {
                                     <i class="ri-user-line"></i> <?php echo count($store->parsed_users); ?> bejelentkezési email:
                                 </div>
                                 <div style="margin-left: 30px; display: grid; gap: 8px;">
-                                    <?php foreach ($store->parsed_users as $index => $user): ?>
+                                    <?php foreach ($store->parsed_users as $index => $user):
+                                        $is_main_email = (strtolower($user['email']) === strtolower($store->store_email));
+                                    ?>
                                         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px;">
                                             <div>
                                                 <strong style="color: #00e6ff; font-size: 13px;"><?php echo esc_html($user['email']); ?></strong>
-                                                <?php if ($index === 0): ?>
+                                                <?php if ($is_main_email): ?>
                                                     <span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 8px;">Fő email</span>
                                                 <?php endif; ?>
                                             </div>
-                                            <?php if ($index > 0): // Don't allow removing the main email ?>
-                                                <form method="POST" style="margin: 0;" onsubmit="return confirm('Eltávolítod a hozzáférést? A felhasználó ezután nem fog tudni bejelentkezni ebbe a fiókba.');">
-                                                    <?php wp_nonce_field('ppv_remove_access', 'ppv_remove_access_nonce'); ?>
-                                                    <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
-                                                    <input type="hidden" name="store_id" value="<?php echo $store->store_id; ?>">
-                                                    <button type="submit" name="remove_access_user" class="btn" style="background: rgba(244,67,54,0.2); color: #f87171; border: 1px solid rgba(244,67,54,0.3); padding: 4px 10px; font-size: 11px;">
-                                                        <i class="ri-close-line"></i> Eltávolít
-                                                    </button>
-                                                </form>
+                                            <?php if (!$is_main_email): // Only show actions for non-main emails ?>
+                                                <div style="display: flex; gap: 6px;">
+                                                    <form method="POST" style="margin: 0;">
+                                                        <?php wp_nonce_field('ppv_set_main_email', 'ppv_main_email_nonce'); ?>
+                                                        <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
+                                                        <input type="hidden" name="store_id" value="<?php echo $store->store_id; ?>">
+                                                        <button type="submit" name="set_main_email" class="btn" style="background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); padding: 4px 10px; font-size: 11px;">
+                                                            <i class="ri-star-line"></i> Fő email
+                                                        </button>
+                                                    </form>
+                                                    <form method="POST" style="margin: 0;" onsubmit="return confirm('Eltávolítod a hozzáférést? A felhasználó ezután nem fog tudni bejelentkezni ebbe a fiókba.');">
+                                                        <?php wp_nonce_field('ppv_remove_access', 'ppv_remove_access_nonce'); ?>
+                                                        <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
+                                                        <input type="hidden" name="store_id" value="<?php echo $store->store_id; ?>">
+                                                        <button type="submit" name="remove_access_user" class="btn" style="background: rgba(244,67,54,0.2); color: #f87171; border: 1px solid rgba(244,67,54,0.3); padding: 4px 10px; font-size: 11px;">
+                                                            <i class="ri-close-line"></i> Eltávolít
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
