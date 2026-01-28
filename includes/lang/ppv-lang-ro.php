@@ -1978,4 +1978,23 @@ return [
     'csv_creating' => 'Se creează CSV...',
     'csv_downloaded' => 'CSV descărcat',
     'error' => 'Eroare',
+
+    // ============================================================
+    // Push Notifications (Marketing Comerciant)
+    // ============================================================
+    'push_marketing_title' => 'Notificări Push',
+    'push_marketing_desc' => 'Trimiteți săptămânal un mesaj clienților dvs.',
+    'limit_reached' => 'Limită atinsă',
+    'subscribers' => 'Abonați',
+    'push_not_configured' => 'Notificările push nu sunt configurate',
+    'push_no_subscribers' => 'Încă nu aveți abonați',
+    'push_no_subscribers_hint' => 'Clienții care scanează la dvs. se pot abona la notificări push.',
+    'push_title' => 'Titlu',
+    'push_title_placeholder' => 'ex. Promoție nouă!',
+    'push_message' => 'Mesaj',
+    'push_message_placeholder' => 'Mesajul dvs. pentru clienți...',
+    'last_sent' => 'Ultima trimitere',
+    'send_push' => 'Trimite push',
+    'push_limit_reached_msg' => 'Ați trimis deja un mesaj push în această săptămână.',
+    'next_available' => 'Următoarea posibilitate',
 ];

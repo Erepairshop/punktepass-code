@@ -1997,5 +1997,24 @@ return [
     'csv_creating' => 'CSV wird erstellt...',
     'csv_downloaded' => 'CSV heruntergeladen',
     'error' => 'Fehler',
+
+    // ============================================================
+    // Push Notifications (Händler Marketing)
+    // ============================================================
+    'push_marketing_title' => 'Push Benachrichtigungen',
+    'push_marketing_desc' => 'Senden Sie wöchentlich eine Nachricht an Ihre Kunden',
+    'limit_reached' => 'Limit erreicht',
+    'subscribers' => 'Abonnenten',
+    'push_not_configured' => 'Push-Benachrichtigungen sind nicht konfiguriert',
+    'push_no_subscribers' => 'Noch keine Abonnenten',
+    'push_no_subscribers_hint' => 'Kunden die bei Ihnen scannen, können Push-Benachrichtigungen abonnieren.',
+    'push_title' => 'Titel',
+    'push_title_placeholder' => 'z.B. Neue Aktion!',
+    'push_message' => 'Nachricht',
+    'push_message_placeholder' => 'Ihre Nachricht an die Kunden...',
+    'last_sent' => 'Zuletzt gesendet',
+    'send_push' => 'Push senden',
+    'push_limit_reached_msg' => 'Sie haben diese Woche bereits eine Push-Nachricht gesendet.',
+    'next_available' => 'Nächste Möglichkeit',
 ];
 
