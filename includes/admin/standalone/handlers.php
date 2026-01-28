@@ -1331,7 +1331,7 @@ function ppv_format_device_info_json($device_info_json) {
                                             <?php echo esc_html($h->wp_email); ?>
                                         </small>
                                     </td>
-                                    <td><?php echo $h->country; ?> <?php if ($h->currency): ?>(<?php echo $h->currency; ?>)<?php endif; ?></td>
+                                    <td><?php echo $h->country; ?> <?php if (!empty($h->currency)): ?>(<?php echo $h->currency; ?>)<?php endif; ?></td>
                                     <td>
                                         <?php if ($h->active == 1): ?>
                                             <span class="badge badge-active">✅ Aktív</span>
