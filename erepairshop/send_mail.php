@@ -89,8 +89,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $message .= "--" . $boundary . "--";
 
     // Senden der E-Mail-Nachricht
+    error_log("[eRepairShop] Sending mail to: {$to}, subject: {$subject}");
+    $mail_sent = @mail($to, $subject, $message, $headers);
+    $mail_error = error_get_last();
+    if (!$mail_sent) {
+        error_log("[eRepairShop] mail() FAILED. Error: " . ($mail_error['message'] ?? 'unknown'));
+        error_log("[eRepairShop] Headers: " . substr($headers, 0, 200));
+    }
 
-if (mail($to, $subject, $message, $headers)) {
+if ($mail_sent) {
 
         // PunktePass Integration: Add bonus points if email provided
         $pp_result = null;
@@ -497,7 +504,8 @@ if (mail($to, $subject, $message, $headers)) {
         </html>';
     } else {
         // Fehlerbehandlung, falls die E-Mail nicht gesendet werden konnte
-        echo "Es gab ein Problem beim Senden Ihrer Anfrage. Bitte versuchen Sie es später erneut.";
+        $err_detail = $mail_error['message'] ?? 'mail() returned false';
+        echo "Es gab ein Problem beim Senden Ihrer Anfrage. Bitte versuchen Sie es später erneut.<br><small style='color:#999;'>Debug: " . htmlspecialchars($err_detail) . "</small>";
     }
 }
 ?>
