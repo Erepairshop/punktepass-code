@@ -1049,16 +1049,16 @@ public static function render_landing_page($atts) {
             // Clear any store session
             unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
-            // ✅ FIX: Respect actual user_type from database (vendor, scanner, user)
+            // ✅ FIX: Respect actual user_type from database (vendor, scanner, user, store)
             $db_user_type = $user->user_type ?? 'user';
 
-            // 🏪 VENDOR LOGIN: Handle vendor users separately
-            if ($db_user_type === 'vendor') {
-                ppv_log("🏪 [PPV_Login] Vendor user detected: #{$user->id}");
+            // 🏪 VENDOR/STORE/HANDLER LOGIN: Handle store owner users
+            if (in_array($db_user_type, ['vendor', 'store', 'handler'])) {
+                ppv_log("🏪 [PPV_Login] {$db_user_type} user detected: #{$user->id}");
 
-                // Set vendor session
+                // Set store session
                 $_SESSION['ppv_user_id'] = $user->id;
-                $_SESSION['ppv_user_type'] = 'vendor';
+                $_SESSION['ppv_user_type'] = $db_user_type;
                 $_SESSION['ppv_user_email'] = $user->email;
 
                 // Set store session if vendor_store_id exists
@@ -1066,19 +1066,19 @@ public static function render_landing_page($atts) {
                     $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
                     $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                     $_SESSION['ppv_active_store'] = $user->vendor_store_id;
-                    ppv_log("✅ [PPV_Login] Vendor store_id set: {$user->vendor_store_id}");
+                    ppv_log("✅ [PPV_Login] Store owner store_id set: {$user->vendor_store_id}");
                 } else {
-                    ppv_log("⚠️ [PPV_Login] Vendor has no vendor_store_id - might need onboarding");
+                    ppv_log("⚠️ [PPV_Login] Store owner has no vendor_store_id - might need onboarding");
                 }
 
-                $GLOBALS['ppv_role'] = 'vendor';
+                $GLOBALS['ppv_role'] = 'handler';
 
                 // Generate/reuse token
                 $token = $user->login_token;
                 if (empty($token)) {
-                    $token = md5(uniqid('ppv_vendor_', true));
+                    $token = md5(uniqid('ppv_handler_', true));
                     $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
-                    ppv_log("🔑 [PPV_Login] New token generated for vendor #{$user->id}");
+                    ppv_log("🔑 [PPV_Login] New token generated for {$db_user_type} #{$user->id}");
                 }
 
                 // Set cookie
@@ -1099,11 +1099,11 @@ public static function render_landing_page($atts) {
                     setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', '', is_ssl(), false);
                 }
 
-                ppv_log("✅ [PPV_Login] Vendor logged in (#{$user->id}, store={$user->vendor_store_id}, lang={$browser_lang})");
+                ppv_log("✅ [PPV_Login] {$db_user_type} logged in (#{$user->id}, store={$user->vendor_store_id}, lang={$browser_lang})");
 
                 wp_send_json_success([
                     'message' => PPV_Lang::t('login_success'),
-                    'role' => 'vendor',
+                    'role' => 'handler',
                     'user_id' => (int)$user->id,
                     'store_id' => (int)($user->vendor_store_id ?? 0),
                     'user_token' => $token,
@@ -1578,15 +1578,15 @@ public static function render_landing_page($atts) {
 
         unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
-        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user)
+        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user, store)
         $db_user_type = $user->user_type ?? 'user';
         $redirect_url = home_url('/user_dashboard');
         $role = 'user';
 
-        if ($db_user_type === 'vendor') {
-            // 🏪 VENDOR: Set vendor session
+        if (in_array($db_user_type, ['vendor', 'store', 'handler'])) {
+            // 🏪 VENDOR/STORE/HANDLER: Set store session
             $_SESSION['ppv_user_id'] = $user->id;
-            $_SESSION['ppv_user_type'] = 'vendor';
+            $_SESSION['ppv_user_type'] = $db_user_type;
             $_SESSION['ppv_user_email'] = $user->email;
 
             if (!empty($user->vendor_store_id)) {
@@ -1595,10 +1595,10 @@ public static function render_landing_page($atts) {
                 $_SESSION['ppv_active_store'] = $user->vendor_store_id;
             }
 
-            $GLOBALS['ppv_role'] = 'vendor';
+            $GLOBALS['ppv_role'] = 'handler';
             $redirect_url = home_url('/qr-center');
-            $role = 'vendor';
-            ppv_log("🏪 [PPV_Login] Google vendor login: user_id={$user->id}, store_id=" . ($user->vendor_store_id ?? 'none'));
+            $role = 'handler';
+            ppv_log("🏪 [PPV_Login] Google {$db_user_type} login: user_id={$user->id}, store_id=" . ($user->vendor_store_id ?? 'none'));
 
         } elseif ($db_user_type === 'scanner') {
             // 👤 SCANNER: Set scanner session
@@ -1842,23 +1842,24 @@ public static function render_landing_page($atts) {
 
         unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
-        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user)
+        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user, store)
         $db_user_type = $user->user_type ?? 'user';
         $redirect_url = home_url('/user_dashboard');
         $role = 'user';
 
-        if ($db_user_type === 'vendor') {
+        if (in_array($db_user_type, ['vendor', 'store', 'handler'])) {
             $_SESSION['ppv_user_id'] = $user->id;
-            $_SESSION['ppv_user_type'] = 'vendor';
+            $_SESSION['ppv_user_type'] = $db_user_type;
             $_SESSION['ppv_user_email'] = $user->email;
             if (!empty($user->vendor_store_id)) {
                 $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
                 $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                 $_SESSION['ppv_active_store'] = $user->vendor_store_id;
             }
-            $GLOBALS['ppv_role'] = 'vendor';
+            $GLOBALS['ppv_role'] = 'handler';
             $redirect_url = home_url('/qr-center');
-            $role = 'vendor';
+            $role = 'handler';
+            ppv_log("🏪 [PPV_Login] Apple {$db_user_type} login: user_id={$user->id}, store_id=" . ($user->vendor_store_id ?? 'none'));
         } elseif ($db_user_type === 'scanner') {
             $_SESSION['ppv_user_id'] = $user->id;
             $_SESSION['ppv_user_type'] = 'scanner';
@@ -2063,23 +2064,24 @@ public static function render_landing_page($atts) {
 
         unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
-        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user)
+        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user, store)
         $db_user_type = $user->user_type ?? 'user';
         $redirect_url = home_url('/user_dashboard');
         $role = 'user';
 
-        if ($db_user_type === 'vendor') {
+        if (in_array($db_user_type, ['vendor', 'store', 'handler'])) {
             $_SESSION['ppv_user_id'] = $user->id;
-            $_SESSION['ppv_user_type'] = 'vendor';
+            $_SESSION['ppv_user_type'] = $db_user_type;
             $_SESSION['ppv_user_email'] = $user->email;
             if (!empty($user->vendor_store_id)) {
                 $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
                 $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                 $_SESSION['ppv_active_store'] = $user->vendor_store_id;
             }
-            $GLOBALS['ppv_role'] = 'vendor';
+            $GLOBALS['ppv_role'] = 'handler';
             $redirect_url = home_url('/qr-center');
-            $role = 'vendor';
+            $role = 'handler';
+            ppv_log("🏪 [PPV_Login] Facebook {$db_user_type} login: user_id={$user->id}, store_id=" . ($user->vendor_store_id ?? 'none'));
         } elseif ($db_user_type === 'scanner') {
             $_SESSION['ppv_user_id'] = $user->id;
             $_SESSION['ppv_user_type'] = 'scanner';
@@ -2229,23 +2231,24 @@ public static function render_landing_page($atts) {
 
         unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
-        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user)
+        // ✅ FIX: Respect actual user_type from database (vendor, scanner, user, store)
         $db_user_type = $user->user_type ?? 'user';
         $redirect_url = home_url('/user_dashboard');
         $role = 'user';
 
-        if ($db_user_type === 'vendor') {
+        if (in_array($db_user_type, ['vendor', 'store', 'handler'])) {
             $_SESSION['ppv_user_id'] = $user->id;
-            $_SESSION['ppv_user_type'] = 'vendor';
+            $_SESSION['ppv_user_type'] = $db_user_type;
             $_SESSION['ppv_user_email'] = $user->email;
             if (!empty($user->vendor_store_id)) {
                 $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
                 $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                 $_SESSION['ppv_active_store'] = $user->vendor_store_id;
             }
-            $GLOBALS['ppv_role'] = 'vendor';
+            $GLOBALS['ppv_role'] = 'handler';
             $redirect_url = home_url('/qr-center');
-            $role = 'vendor';
+            $role = 'handler';
+            ppv_log("🏪 [PPV_Login] TikTok {$db_user_type} login: user_id={$user->id}, store_id=" . ($user->vendor_store_id ?? 'none'));
         } elseif ($db_user_type === 'scanner') {
             $_SESSION['ppv_user_id'] = $user->id;
             $_SESSION['ppv_user_type'] = 'scanner';

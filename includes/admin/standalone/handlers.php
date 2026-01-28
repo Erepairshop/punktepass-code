@@ -31,110 +31,252 @@ if (!$last_active_col) {
 }
 
 // ============================================================
-// TAB 3: HANDLER LINKING - FORM SUBMISSIONS
+// TAB 3: ADDITIONAL ACCESS USERS - FORM SUBMISSIONS
 // ============================================================
 
-// Link handler to main handler
-if (isset($_POST['link_to_main']) && check_admin_referer('ppv_link_handlers', 'ppv_link_nonce')) {
-    $main_handler_id = intval($_POST['main_handler_id'] ?? 0);
-    $linked_handler_id = intval($_POST['linked_handler_id'] ?? 0);
+// MIGRATION: Convert old linked_to_store_id to new vendor_store_id system
+$old_linked_stores = $wpdb->get_results("
+    SELECT s.id, s.user_id, s.email, s.linked_to_store_id
+    FROM {$wpdb->prefix}ppv_stores s
+    WHERE s.linked_to_store_id IS NOT NULL
+");
 
-    if (!$main_handler_id || !$linked_handler_id) {
-        $link_error = '⚠️ Válaszd ki a fő händlert és a hozzákapcsolandó händlert!';
-    } elseif ($main_handler_id === $linked_handler_id) {
-        $link_error = '⚠️ A fő händler és a hozzákapcsolandó händler nem lehet ugyanaz!';
-    } else {
-        // Check if the linked handler is already linked somewhere
-        $already_linked = $wpdb->get_var($wpdb->prepare(
-            "SELECT linked_to_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-            $linked_handler_id
+if (!empty($old_linked_stores)) {
+    ppv_log("🔄 [PPV_Admin] Migrating " . count($old_linked_stores) . " old linked stores to new access user system");
+
+    foreach ($old_linked_stores as $linked_store) {
+        // Find the user in ppv_users by email
+        $access_user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
+            $linked_store->email
         ));
 
-        if ($already_linked) {
-            $link_error = '⚠️ Ez a händler már hozzá van kapcsolva egy másik fő händlerhez! Először válaszd le.';
-        } else {
-            // Get handler names for confirmation message
-            $main_handler = $wpdb->get_row($wpdb->prepare(
-                "SELECT name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $main_handler_id
-            ));
-            $linked_handler = $wpdb->get_row($wpdb->prepare(
-                "SELECT name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $linked_handler_id
-            ));
-
-            // Link the handler
+        if ($access_user) {
+            // Update the user's vendor_store_id to point to the main store
             $wpdb->update(
-                "{$wpdb->prefix}ppv_stores",
-                ['linked_to_store_id' => $main_handler_id],
-                ['id' => $linked_handler_id],
-                ['%d'],
+                "{$wpdb->prefix}ppv_users",
+                [
+                    'vendor_store_id' => $linked_store->linked_to_store_id,
+                    'user_type' => 'store'
+                ],
+                ['id' => $access_user->id],
+                ['%d', '%s'],
                 ['%d']
             );
+            ppv_log("✅ [PPV_Admin] Migrated user #{$access_user->id} ({$linked_store->email}) to access main store #{$linked_store->linked_to_store_id}");
+        }
 
-            // Create notifications for both parties
-            if (class_exists('PPV_Handler_Notifications')) {
-                // Notification for the main handler (someone was linked to them)
-                PPV_Handler_Notifications::create_link_notification($main_handler_id, $linked_handler_id, true);
-                // Notification for the linked handler (they were linked to main)
-                PPV_Handler_Notifications::create_link_notification($linked_handler_id, $main_handler_id, false);
+        // Clear linked_to_store_id from the old store (keep the store but it's no longer "linked")
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['linked_to_store_id' => null],
+            ['id' => $linked_store->id],
+            ['%s'],
+            ['%d']
+        );
+    }
+
+    $link_success = "✅ " . count($old_linked_stores) . " régi összekapcsolás migrálva az új rendszerre!";
+}
+
+// Add new access user to a store
+if (isset($_POST['add_access_user']) && check_admin_referer('ppv_add_access', 'ppv_access_nonce')) {
+    $store_id = intval($_POST['store_id'] ?? 0);
+    $access_email = sanitize_email($_POST['access_email'] ?? '');
+    $access_password = $_POST['access_password'] ?? '';
+
+    if (!$store_id || !$access_email || !$access_password) {
+        $link_error = '⚠️ Minden mezőt ki kell tölteni!';
+    } elseif (strlen($access_password) < 4) {
+        $link_error = '⚠️ A jelszónak legalább 4 karakter hosszúnak kell lennie!';
+    } else {
+        // Check if email already exists
+        $existing_user = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
+            $access_email
+        ));
+
+        if ($existing_user) {
+            $link_error = '⚠️ Ez az email cím már használatban van!';
+        } else {
+            // Get store info for confirmation message
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                $store_id
+            ));
+
+            if (!$store) {
+                $link_error = '⚠️ A kiválasztott händler nem található!';
+            } else {
+                // Create new access user
+                $password_hash = password_hash($access_password, PASSWORD_DEFAULT);
+                $login_token = bin2hex(random_bytes(32));
+
+                $result = $wpdb->insert(
+                    "{$wpdb->prefix}ppv_users",
+                    [
+                        'email' => $access_email,
+                        'password' => $password_hash,
+                        'user_type' => 'store',
+                        'vendor_store_id' => $store_id,
+                        'login_token' => $login_token,
+                        'active' => 1,
+                        'created_at' => current_time('mysql'),
+                        'updated_at' => current_time('mysql'),
+                    ],
+                    ['%s', '%s', '%s', '%d', '%s', '%d', '%s', '%s']
+                );
+
+                if ($result) {
+                    $new_user_id = $wpdb->insert_id;
+                    $link_success = '✅ Új hozzáférés létrehozva: <strong>' . esc_html($access_email) . '</strong> → <strong>' . esc_html($store->name) . '</strong>';
+                    ppv_log("✅ [PPV_Admin] Created access user #{$new_user_id} ({$access_email}) for store #{$store_id} ({$store->name})");
+                } else {
+                    $link_error = '❌ Hiba történt: ' . $wpdb->last_error;
+                    ppv_log("❌ [PPV_Admin] Failed to create access user: " . $wpdb->last_error);
+                }
             }
-
-            $link_success = '✅ <strong>' . esc_html($linked_handler->name) . '</strong> mostantól a <strong>' . esc_html($main_handler->name) . '</strong> fiókját látja!';
-            ppv_log("✅ [PPV_Admin] Linked handler #{$linked_handler_id} ({$linked_handler->name}) → main handler #{$main_handler_id} ({$main_handler->name})");
         }
     }
 }
 
-// Unlink a handler
-if (isset($_POST['unlink_handler']) && check_admin_referer('ppv_unlink_handler', 'ppv_unlink_nonce')) {
-    $handler_id = intval($_POST['handler_id']);
+// Remove access user
+if (isset($_POST['remove_access_user']) && check_admin_referer('ppv_remove_access', 'ppv_remove_access_nonce')) {
+    $user_id = intval($_POST['user_id']);
+    $store_id = intval($_POST['store_id']);
 
-    // Get the linked_to_store_id before unlinking (for notification)
-    $was_linked_to = $wpdb->get_var($wpdb->prepare(
-        "SELECT linked_to_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-        $handler_id
+    // Get user info before removal
+    $user = $wpdb->get_row($wpdb->prepare(
+        "SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d AND vendor_store_id = %d",
+        $user_id, $store_id
     ));
 
-    $wpdb->update(
-        "{$wpdb->prefix}ppv_stores",
-        ['linked_to_store_id' => null],
-        ['id' => $handler_id],
-        ['%s'],
-        ['%d']
-    );
+    if ($user) {
+        // Don't delete the user, just remove their store access
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_users",
+            ['vendor_store_id' => null, 'user_type' => 'user'],
+            ['id' => $user_id],
+            ['%s', '%s'],
+            ['%d']
+        );
 
-    // Create unlink notification for the handler
-    if ($was_linked_to && class_exists('PPV_Handler_Notifications')) {
-        PPV_Handler_Notifications::create_unlink_notification($handler_id, $was_linked_to);
+        $link_success = '✅ Hozzáférés eltávolítva: ' . esc_html($user->email);
+        ppv_log("✅ [PPV_Admin] Removed store access for user #{$user_id} ({$user->email})");
+    } else {
+        $link_error = '⚠️ A felhasználó nem található!';
     }
-
-    $link_success = '✅ Händler sikeresen leválasztva! Most már a saját fiókját látja.';
-    ppv_log("✅ [PPV_Admin] Unlinked handler #{$handler_id} - now sees own store");
 }
 
-// Get main handlers with their linked handlers
-$main_handlers_with_links = $wpdb->get_results("
+// Set as main email
+if (isset($_POST['set_main_email']) && check_admin_referer('ppv_set_main_email', 'ppv_main_email_nonce')) {
+    $user_id = intval($_POST['user_id']);
+    $store_id = intval($_POST['store_id']);
+
+    // Get user info
+    $user = $wpdb->get_row($wpdb->prepare(
+        "SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d AND vendor_store_id = %d",
+        $user_id, $store_id
+    ));
+
+    if ($user) {
+        // Update store email to this user's email
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['email' => $user->email],
+            ['id' => $store_id],
+            ['%s'],
+            ['%d']
+        );
+
+        $link_success = '✅ Fő email megváltoztatva: <strong>' . esc_html($user->email) . '</strong>';
+        ppv_log("✅ [PPV_Admin] Changed main email for store #{$store_id} to {$user->email}");
+    } else {
+        $link_error = '⚠️ A felhasználó nem található!';
+    }
+}
+
+// Link existing user to a store
+if (isset($_POST['link_existing_user']) && check_admin_referer('ppv_link_existing', 'ppv_link_existing_nonce')) {
+    $user_id = intval($_POST['existing_user_id'] ?? 0);
+    $store_id = intval($_POST['store_id'] ?? 0);
+
+    if (!$user_id || !$store_id) {
+        $link_error = '⚠️ Válassz ki egy felhasználót és egy händlert!';
+    } else {
+        // Get user info
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+            $user_id
+        ));
+
+        if (!$user) {
+            $link_error = '⚠️ A felhasználó nem található!';
+        } elseif ($user->vendor_store_id) {
+            $link_error = '⚠️ Ez a felhasználó már hozzá van rendelve egy händlerhez!';
+        } else {
+            // Get store info
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                $store_id
+            ));
+
+            if (!$store) {
+                $link_error = '⚠️ A händler nem található!';
+            } else {
+                // Link the user to the store
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_users",
+                    ['vendor_store_id' => $store_id, 'user_type' => 'store'],
+                    ['id' => $user_id],
+                    ['%d', '%s'],
+                    ['%d']
+                );
+
+                $link_success = '✅ Felhasználó hozzáadva: <strong>' . esc_html($user->email) . '</strong> → <strong>' . esc_html($store->name) . '</strong>';
+                ppv_log("✅ [PPV_Admin] Linked existing user #{$user_id} ({$user->email}) to store #{$store_id} ({$store->name})");
+            }
+        }
+    }
+}
+
+// Get stores with their access users (users who have vendor_store_id pointing to them)
+$stores_with_access_users = $wpdb->get_results("
     SELECT
-        m.id as main_id,
-        m.name as main_name,
-        m.email as main_email,
-        m.company_name as main_company,
-        m.city as main_city,
-        COUNT(l.id) as linked_count
-    FROM {$wpdb->prefix}ppv_stores m
-    INNER JOIN {$wpdb->prefix}ppv_stores l ON l.linked_to_store_id = m.id
-    WHERE (m.parent_store_id IS NULL OR m.parent_store_id = 0)
-    GROUP BY m.id
-    ORDER BY m.name ASC
+        s.id as store_id,
+        s.name as store_name,
+        s.email as store_email,
+        s.company_name,
+        s.city,
+        GROUP_CONCAT(
+            CONCAT(u.id, ':', u.email, ':', IFNULL(u.username, ''))
+            SEPARATOR '||'
+        ) as access_users,
+        COUNT(u.id) as user_count
+    FROM {$wpdb->prefix}ppv_stores s
+    INNER JOIN {$wpdb->prefix}ppv_users u ON u.vendor_store_id = s.id AND u.user_type IN ('store', 'handler', 'vendor')
+    WHERE (s.parent_store_id IS NULL OR s.parent_store_id = 0)
+    GROUP BY s.id
+    HAVING user_count > 1
+    ORDER BY s.name ASC
 ");
 
-// Get all linked handlers for display
-$linked_handlers_list = $wpdb->get_results("
-    SELECT s.id, s.name, s.email, s.city, m.id as main_id, m.name as main_name, m.email as main_email
-    FROM {$wpdb->prefix}ppv_stores s
-    INNER JOIN {$wpdb->prefix}ppv_stores m ON s.linked_to_store_id = m.id
-    WHERE s.linked_to_store_id IS NOT NULL
-    ORDER BY m.name, s.name
-");
+// Parse access users into structured array
+foreach ($stores_with_access_users as &$store) {
+    $users_raw = explode('||', $store->access_users);
+    $store->parsed_users = [];
+    foreach ($users_raw as $user_data) {
+        $parts = explode(':', $user_data);
+        if (count($parts) >= 2) {
+            $store->parsed_users[] = [
+                'id' => $parts[0],
+                'email' => $parts[1],
+                'username' => $parts[2] ?? ''
+            ];
+        }
+    }
+}
+unset($store);
 
 // ============================================================
 // TAB 1: HANDLER OVERVIEW DATA
@@ -216,6 +358,17 @@ if (isset($_POST['convert_to_handler']) && check_admin_referer('ppv_convert_hand
 
             if ($result) {
                 $new_store_id = $wpdb->insert_id;
+
+                // ✅ FIX: Update user_type in ppv_users table so login recognizes them as handler
+                // Also set vendor_store_id so session gets the store_id on login
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_users",
+                    ['user_type' => 'store', 'vendor_store_id' => $new_store_id],
+                    ['id' => $user->id],
+                    ['%s', '%d'],
+                    ['%d']
+                );
+
                 ppv_log("✅ [PPV_Admin] User #{$user->ID} ({$user->user_email}) zu Handler konvertiert. Store ID: {$new_store_id}");
                 $success_message = "✅ User '{$user->display_name}' ({$user->user_email}) sikeresen handler-ré lett téve!<br>
                                     <strong>Store ID:</strong> {$new_store_id}<br>
@@ -276,6 +429,16 @@ if (isset($_POST['quick_convert']) && check_admin_referer('ppv_quick_convert', '
 
             if ($result) {
                 $new_store_id = $wpdb->insert_id;
+
+                // ✅ FIX: Update user_type in ppv_users table so login recognizes them as handler
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_users",
+                    ['user_type' => 'store', 'vendor_store_id' => $new_store_id],
+                    ['id' => $user->id],
+                    ['%s', '%d'],
+                    ['%d']
+                );
+
                 $success_message = "✅ User '{$user->username}' (ID: {$user->id}) handler-ré téve! (Store ID: {$new_store_id})";
                 ppv_log("✅ [PPV_Admin] Quick Convert: PPV User #{$user->id} ({$user->email}) → Handler Store #{$new_store_id}");
             } else {
@@ -849,7 +1012,7 @@ function ppv_format_device_info_json($device_info_json) {
                 <i class="ri-user-add-line"></i> User → Händler
             </button>
             <button class="tab-button" onclick="switchTab('linking')">
-                <i class="ri-link"></i> Összekapcsolás
+                <i class="ri-team-line"></i> Hozzáférések
             </button>
         </div>
 
@@ -1204,116 +1367,210 @@ function ppv_format_device_info_json($device_info_json) {
         </div>
 
         <!-- ============================================================ -->
-        <!-- TAB 3: HANDLER LINKING -->
+        <!-- TAB 3: ADDITIONAL ACCESS USERS -->
         <!-- ============================================================ -->
         <div id="tab-linking" class="tab-content">
-            <!-- Existing Links -->
-            <div class="card" style="margin-bottom: 25px;">
-                <h2><i class="ri-group-line"></i> Összekapcsolt händlerek (<?php echo count($linked_handlers_list); ?>)</h2>
+            <!-- Info Card -->
+            <div class="card" style="margin-bottom: 25px; background: rgba(0,212,255,0.05); border-color: rgba(0,212,255,0.2);">
+                <div style="display: flex; align-items: flex-start; gap: 15px;">
+                    <i class="ri-information-line" style="font-size: 24px; color: #00d4ff;"></i>
+                    <div>
+                        <h3 style="margin: 0 0 8px 0; color: #00d4ff; font-size: 16px;">Több bejelentkezés ugyanahhoz a fiókhoz</h3>
+                        <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">
+                            Adj hozzá további email címeket egy händler fiókhoz. Minden hozzáférési email ugyanazt a store-t,
+                            statisztikákat és beállításokat látja - csak különböző email/jelszó párossal jelentkeznek be.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-                <?php if (empty($linked_handlers_list)): ?>
+            <!-- Existing Access Users -->
+            <div class="card" style="margin-bottom: 25px;">
+                <h2><i class="ri-team-line"></i> Többszörös hozzáféréssel rendelkező händlerek (<?php echo count($stores_with_access_users); ?>)</h2>
+
+                <?php if (empty($stores_with_access_users)): ?>
                     <p style="text-align: center; color: #94a3b8; padding: 30px;">
-                        <i class="ri-link-unlink" style="font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
-                        Még nincs összekapcsolt händler.
+                        <i class="ri-user-shared-line" style="font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
+                        Még nincs händler több hozzáféréssel.<br>
+                        <small>Adj hozzá egy új hozzáférési emailt az alábbi űrlappal!</small>
                     </p>
                 <?php else: ?>
-                    <div style="display: grid; gap: 10px;">
-                        <?php
-                        $current_main = null;
-                        foreach ($linked_handlers_list as $lh):
-                            // Group header for main handler
-                            if ($current_main !== $lh->main_id):
-                                if ($current_main !== null) echo '</div>'; // Close previous group
-                                $current_main = $lh->main_id;
-                        ?>
-                            <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 15px; margin-top: 10px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                                    <i class="ri-vip-crown-2-fill" style="color: #fbbf24; font-size: 20px;"></i>
-                                    <div>
-                                        <strong style="color: #34d399; font-size: 14px;">Fő händler:</strong>
-                                        <span style="color: #fff; font-weight: 600;"><?php echo esc_html($lh->main_name); ?></span>
-                                        <span style="color: #888; font-size: 12px; margin-left: 8px;"><?php echo esc_html($lh->main_email); ?></span>
+                    <div style="display: grid; gap: 15px;">
+                        <?php foreach ($stores_with_access_users as $store): ?>
+                            <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 15px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <i class="ri-store-2-line" style="color: #34d399; font-size: 20px;"></i>
+                                        <div>
+                                            <strong style="color: #fff; font-size: 15px;"><?php echo esc_html($store->store_name); ?></strong>
+                                            <?php if ($store->company_name): ?>
+                                                <span style="color: #888; font-size: 12px; margin-left: 8px;"><?php echo esc_html($store->company_name); ?></span>
+                                            <?php endif; ?>
+                                            <div style="color: #00d4ff; font-size: 12px;"><?php echo esc_html($store->store_email); ?></div>
+                                        </div>
                                     </div>
+                                    <button type="button" onclick="openAddAccessModal(<?php echo $store->store_id; ?>, '<?php echo esc_js($store->store_name); ?>')"
+                                            class="btn" style="background: rgba(0,212,255,0.2); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3); padding: 6px 12px; font-size: 12px;">
+                                        <i class="ri-add-line"></i> Új hozzáférés
+                                    </button>
                                 </div>
                                 <div style="margin-left: 30px; font-size: 12px; color: #888; margin-bottom: 8px;">
-                                    <i class="ri-arrow-right-down-line"></i> Az alábbi händlerek a fő händler fiókját látják:
+                                    <i class="ri-user-line"></i> <?php echo count($store->parsed_users); ?> bejelentkezési email:
                                 </div>
-                        <?php endif; ?>
-
-                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; margin-left: 30px;">
-                                <div>
-                                    <strong style="color: #fff;"><?php echo esc_html($lh->name); ?></strong>
-                                    <div style="color: #00d4ff; font-size: 12px;"><?php echo esc_html($lh->email); ?></div>
-                                    <?php if ($lh->city): ?>
-                                        <div style="color: #888; font-size: 11px;"><i class="ri-map-pin-line"></i> <?php echo esc_html($lh->city); ?></div>
-                                    <?php endif; ?>
+                                <div style="margin-left: 30px; display: grid; gap: 8px;">
+                                    <?php foreach ($store->parsed_users as $index => $user):
+                                        $is_main_email = (strtolower($user['email']) === strtolower($store->store_email));
+                                    ?>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px;">
+                                            <div>
+                                                <strong style="color: #00e6ff; font-size: 13px;"><?php echo esc_html($user['email']); ?></strong>
+                                                <?php if ($is_main_email): ?>
+                                                    <span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 8px;">Fő email</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!$is_main_email): // Only show actions for non-main emails ?>
+                                                <div style="display: flex; gap: 6px;">
+                                                    <form method="POST" style="margin: 0;">
+                                                        <?php wp_nonce_field('ppv_set_main_email', 'ppv_main_email_nonce'); ?>
+                                                        <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
+                                                        <input type="hidden" name="store_id" value="<?php echo $store->store_id; ?>">
+                                                        <button type="submit" name="set_main_email" class="btn" style="background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); padding: 4px 10px; font-size: 11px;">
+                                                            <i class="ri-star-line"></i> Fő email
+                                                        </button>
+                                                    </form>
+                                                    <form method="POST" style="margin: 0;" onsubmit="return confirm('Eltávolítod a hozzáférést? A felhasználó ezután nem fog tudni bejelentkezni ebbe a fiókba.');">
+                                                        <?php wp_nonce_field('ppv_remove_access', 'ppv_remove_access_nonce'); ?>
+                                                        <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
+                                                        <input type="hidden" name="store_id" value="<?php echo $store->store_id; ?>">
+                                                        <button type="submit" name="remove_access_user" class="btn" style="background: rgba(244,67,54,0.2); color: #f87171; border: 1px solid rgba(244,67,54,0.3); padding: 4px 10px; font-size: 11px;">
+                                                            <i class="ri-close-line"></i> Eltávolít
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
-                                <form method="POST" style="margin: 0;" onsubmit="return confirm('Leválasztod? Ezután a saját fiókját fogja látni.');">
-                                    <?php wp_nonce_field('ppv_unlink_handler', 'ppv_unlink_nonce'); ?>
-                                    <input type="hidden" name="handler_id" value="<?php echo $lh->id; ?>">
-                                    <button type="submit" name="unlink_handler" class="btn" style="background: rgba(244,67,54,0.2); color: #f87171; border: 1px solid rgba(244,67,54,0.3); padding: 6px 12px; font-size: 12px;">
-                                        <i class="ri-link-unlink"></i> Leválaszt
-                                    </button>
-                                </form>
                             </div>
-
                         <?php endforeach; ?>
-                        <?php if ($current_main !== null) echo '</div>'; // Close last group ?>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <!-- Link New Handler -->
+            <!-- Add New Access User -->
             <div class="card">
-                <h2><i class="ri-link"></i> Händler hozzákapcsolása fő händlerhez</h2>
+                <h2><i class="ri-user-add-line"></i> Új hozzáférés létrehozása</h2>
                 <p style="color: #94a3b8; margin-bottom: 20px;">
-                    Válaszd ki a <strong>fő händlert</strong> (akinek a fiókját látni fogják), majd a <strong>hozzákapcsolandó händlert</strong>.
+                    Válaszd ki a händlert és add meg az új bejelentkezési email címet és jelszót.
                 </p>
 
-                <form method="POST" id="linkForm">
-                    <?php wp_nonce_field('ppv_link_handlers', 'ppv_link_nonce'); ?>
+                <form method="POST" id="addAccessForm">
+                    <?php wp_nonce_field('ppv_add_access', 'ppv_access_nonce'); ?>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <!-- Main Handler Selection -->
-                        <div>
-                            <label style="display: block; color: #34d399; font-weight: 600; margin-bottom: 10px;">
-                                <i class="ri-vip-crown-2-fill" style="color: #fbbf24;"></i> Fő händler (akinek a fiókját látják)
+                    <div class="form-group">
+                        <label style="color: #34d399; font-weight: 600;">
+                            <i class="ri-store-2-line"></i> Händler fiók
+                        </label>
+                        <select name="store_id" id="accessStoreSelect" required
+                                style="width: 100%; padding: 12px 15px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                            <option value="">-- Válassz händlert --</option>
+                            <?php foreach ($handlers_overview as $h): ?>
+                                <option value="<?php echo $h->id; ?>"><?php echo esc_html($h->name); ?> (<?php echo esc_html($h->email ?? 'nincs email'); ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small style="color: #888;">A kiválasztott händler fiókjához kap hozzáférést az új felhasználó</small>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label style="color: #00d4ff; font-weight: 600;">
+                                <i class="ri-mail-line"></i> Új email cím *
                             </label>
-                            <select name="main_handler_id" id="mainHandlerSelect" required
+                            <input type="email" name="access_email" required placeholder="munkatars@email.de"
+                                   style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                            <small style="color: #888;">Ezzel az email címmel tud bejelentkezni</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="color: #00d4ff; font-weight: 600;">
+                                <i class="ri-lock-line"></i> Jelszó *
+                            </label>
+                            <input type="text" name="access_password" required placeholder="jelszo123" minlength="4"
+                                   style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                            <small style="color: #888;">Minimum 4 karakter</small>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 15px; margin: 20px 0;">
+                        <p style="margin: 0; color: #fbbf24; font-size: 13px;">
+                            <i class="ri-information-line"></i> Az új felhasználó pontosan ugyanazt a store-t fogja látni mint a händler tulajdonosa -
+                            statisztikák, QR kódok, beállítások mind közösek!
+                        </p>
+                    </div>
+
+                    <button type="submit" name="add_access_user" class="btn btn-primary">
+                        <i class="ri-user-add-line"></i> Hozzáférés létrehozása
+                    </button>
+                </form>
+            </div>
+
+            <!-- Link Existing User -->
+            <div class="card">
+                <h2><i class="ri-user-shared-line"></i> Meglévő felhasználó hozzáadása</h2>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Válassz ki egy már regisztrált felhasználót és rendeld hozzá egy händlerhez.
+                </p>
+
+                <form method="POST" id="linkExistingForm">
+                    <?php wp_nonce_field('ppv_link_existing', 'ppv_link_existing_nonce'); ?>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label style="color: #00d4ff; font-weight: 600;">
+                                <i class="ri-user-line"></i> Meglévő felhasználó
+                            </label>
+                            <select name="existing_user_id" required
+                                    style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                                <option value="">-- Válassz felhasználót --</option>
+                                <?php
+                                // Get users without vendor_store_id (regular users who can be linked)
+                                $linkable_users = $wpdb->get_results("
+                                    SELECT id, email, username, user_type
+                                    FROM {$wpdb->prefix}ppv_users
+                                    WHERE (vendor_store_id IS NULL OR vendor_store_id = 0)
+                                    AND user_type NOT IN ('admin')
+                                    AND active = 1
+                                    ORDER BY email ASC
+                                ");
+                                foreach ($linkable_users as $u):
+                                ?>
+                                    <option value="<?php echo $u->id; ?>">
+                                        <?php echo esc_html($u->email); ?>
+                                        <?php if ($u->username): ?>(<?php echo esc_html($u->username); ?>)<?php endif; ?>
+                                        [<?php echo $u->user_type ?: 'user'; ?>]
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small style="color: #888;">Csak händlerhez még nem rendelt felhasználók</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="color: #34d399; font-weight: 600;">
+                                <i class="ri-store-2-line"></i> Händler fiók
+                            </label>
+                            <select name="store_id" required
                                     style="width: 100%; padding: 12px 15px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
-                                <option value="">-- Válassz fő händlert --</option>
+                                <option value="">-- Válassz händlert --</option>
                                 <?php foreach ($handlers_overview as $h): ?>
                                     <option value="<?php echo $h->id; ?>"><?php echo esc_html($h->name); ?> (<?php echo esc_html($h->email ?? 'nincs email'); ?>)</option>
                                 <?php endforeach; ?>
                             </select>
-                        </div>
-
-                        <!-- Linked Handler Selection -->
-                        <div>
-                            <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 10px;">
-                                <i class="ri-user-add-line"></i> Hozzákapcsolandó händler
-                            </label>
-                            <select name="linked_handler_id" id="linkedHandlerSelect" required
-                                    style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
-                                <option value="">-- Válassz händlert --</option>
-                                <?php foreach ($handlers_overview as $h):
-                                    $is_linked = !empty($h->linked_to_store_id);
-                                    if ($is_linked) continue; // Don't show already linked handlers
-                                ?>
-                                    <option value="<?php echo $h->id; ?>"><?php echo esc_html($h->name); ?> (<?php echo esc_html($h->email ?? 'nincs email'); ?>)</option>
-                                <?php endforeach; ?>
-                            </select>
+                            <small style="color: #888;">A kiválasztott händler fiókjához kap hozzáférést</small>
                         </div>
                     </div>
 
-                    <div style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                        <p style="margin: 0; color: #fbbf24; font-size: 13px;">
-                            <i class="ri-information-line"></i> <strong>Fontos:</strong> A hozzákapcsolt händler a fő händler store-jait, filiáléit és statisztikáit fogja látni, nem a sajátját!
-                        </p>
-                    </div>
-
-                    <button type="submit" name="link_to_main" class="btn btn-primary">
-                        <i class="ri-link"></i> Összekapcsolás
+                    <button type="submit" name="link_existing_user" class="btn btn-primary" style="margin-top: 15px;">
+                        <i class="ri-link"></i> Felhasználó hozzárendelése
                     </button>
                 </form>
             </div>
@@ -1764,6 +2021,70 @@ function ppv_format_device_info_json($device_info_json) {
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
         });
+
+        // Add Access Modal - add new access user to a store
+        function openAddAccessModal(storeId, storeName) {
+            document.getElementById('addAccessStoreId').value = storeId;
+            document.getElementById('addAccessStoreName').textContent = storeName;
+            document.getElementById('addAccessModal').classList.add('active');
+            // Clear previous values
+            document.getElementById('addAccessEmail').value = '';
+            document.getElementById('addAccessPassword').value = '';
+        }
+
+        function closeAddAccessModal() {
+            document.getElementById('addAccessModal').classList.remove('active');
+        }
+
+        document.getElementById('addAccessModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddAccessModal();
+        });
     </script>
+
+    <!-- Add Access Modal -->
+    <div id="addAccessModal" class="handler-modal-overlay">
+        <div class="handler-modal" style="max-width: 500px;">
+            <div class="handler-modal-header">
+                <h2 style="color: #00d4ff;"><i class="ri-user-add-line"></i> Új hozzáférés hozzáadása</h2>
+                <button class="handler-modal-close" onclick="closeAddAccessModal()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="handler-modal-body">
+                <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #34d399; font-size: 13px;">
+                        <i class="ri-store-2-line" style="color: #34d399;"></i> Händler: <strong id="addAccessStoreName" style="color: #fff;"></strong>
+                    </p>
+                </div>
+
+                <form method="POST">
+                    <?php wp_nonce_field('ppv_add_access', 'ppv_access_nonce'); ?>
+                    <input type="hidden" name="store_id" id="addAccessStoreId">
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 8px;">
+                            <i class="ri-mail-line"></i> Email cím *
+                        </label>
+                        <input type="email" name="access_email" id="addAccessEmail" required placeholder="munkatars@email.de"
+                               style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 8px;">
+                            <i class="ri-lock-line"></i> Jelszó *
+                        </label>
+                        <input type="text" name="access_password" id="addAccessPassword" required placeholder="jelszo123" minlength="4"
+                               style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                        <small style="color: #888; font-size: 11px;">Minimum 4 karakter</small>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="closeAddAccessModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Mégse</button>
+                        <button type="submit" name="add_access_user" class="btn btn-primary">
+                            <i class="ri-user-add-line"></i> Hozzáférés létrehozása
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

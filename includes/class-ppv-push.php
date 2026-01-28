@@ -270,6 +270,7 @@ class PPV_Push {
         $device_name  = sanitize_text_field($params['device_name'] ?? '');
         $user_id      = intval($params['user_id'] ?? 0);
         $language     = sanitize_text_field($params['language'] ?? 'de');
+        $store_id     = intval($params['store_id'] ?? 0);
 
         if (empty($device_token)) {
             return new WP_REST_Response(['success' => false, 'message' => 'Token is required'], 400);
@@ -284,11 +285,16 @@ class PPV_Push {
             $user_id = intval($_SESSION['ppv_user_id']);
         }
 
+        // Get store_id from session if not provided (for Händler)
+        if (!$store_id && !empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        }
+
         if (!$user_id) {
             return new WP_REST_Response(['success' => false, 'message' => 'User ID is required'], 400);
         }
 
-        $result = self::subscribe($user_id, $device_token, $platform, $device_name, $language);
+        $result = self::subscribe($user_id, $device_token, $platform, $device_name, $language, $store_id);
 
         if ($result) {
             ppv_log("[PPV_Push] Token registered for user {$user_id} ({$platform})");
@@ -608,7 +614,7 @@ class PPV_Push {
     /**
      * Subscribe user to push notifications
      */
-    public static function subscribe($user_id, $device_token, $platform = 'web', $device_name = '', $language = 'de') {
+    public static function subscribe($user_id, $device_token, $platform = 'web', $device_name = '', $language = 'de', $store_id = 0) {
         global $wpdb;
         $table = $wpdb->prefix . 'ppv_push_subscriptions';
 
@@ -618,30 +624,29 @@ class PPV_Push {
             $device_token
         ));
 
-        if ($existing) {
-            return $wpdb->update(
-                $table,
-                [
-                    'user_id'     => $user_id,
-                    'platform'    => $platform,
-                    'device_name' => $device_name,
-                    'language'    => $language,
-                    'is_active'   => 1,
-                    'updated_at'  => current_time('mysql')
-                ],
-                ['id' => $existing->id]
-            );
+        $data = [
+            'user_id'     => $user_id,
+            'platform'    => $platform,
+            'device_name' => $device_name,
+            'language'    => $language,
+            'is_active'   => 1,
+            'updated_at'  => current_time('mysql')
+        ];
+
+        // Add store_id if provided (for Händler)
+        if ($store_id > 0) {
+            $data['store_id'] = $store_id;
         }
 
-        return $wpdb->insert($table, [
-            'user_id'      => $user_id,
-            'device_token' => $device_token,
-            'platform'     => $platform,
-            'device_name'  => $device_name,
-            'language'     => $language,
-            'is_active'    => 1,
-            'created_at'   => current_time('mysql')
-        ]);
+        if ($existing) {
+            return $wpdb->update($table, $data, ['id' => $existing->id]);
+        }
+
+        $data['device_token'] = $device_token;
+        $data['created_at'] = current_time('mysql');
+        unset($data['updated_at']);
+
+        return $wpdb->insert($table, $data);
     }
 
     /**
@@ -758,6 +763,53 @@ class PPV_Push {
         }
 
         return $results;
+    }
+
+    /**
+     * Send to all Händler (store owners with push subscriptions)
+     */
+    public static function send_to_handlers($payload, $store_ids = []) {
+        global $wpdb;
+
+        // If specific store_ids provided, send only to those
+        if (!empty($store_ids)) {
+            $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+            $user_ids = $wpdb->get_col($wpdb->prepare(
+                "SELECT DISTINCT user_id FROM {$wpdb->prefix}ppv_push_subscriptions
+                 WHERE is_active = 1 AND store_id IN ({$placeholders})",
+                ...$store_ids
+            ));
+        } else {
+            // Get all Händler (subscriptions with store_id)
+            $user_ids = $wpdb->get_col(
+                "SELECT DISTINCT user_id FROM {$wpdb->prefix}ppv_push_subscriptions
+                 WHERE is_active = 1 AND store_id IS NOT NULL AND store_id > 0"
+            );
+        }
+
+        $results = ['total_handlers' => count($user_ids), 'sent' => 0, 'failed' => 0];
+
+        foreach ($user_ids as $uid) {
+            $result = self::send_to_user($uid, $payload);
+            $results['sent'] += $result['sent'] ?? 0;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get Händler with push subscriptions
+     */
+    public static function get_handlers_with_subscriptions() {
+        global $wpdb;
+
+        return $wpdb->get_results("
+            SELECT DISTINCT ps.store_id, ps.user_id, s.company_name, s.name as store_name
+            FROM {$wpdb->prefix}ppv_push_subscriptions ps
+            INNER JOIN {$wpdb->prefix}ppv_stores s ON ps.store_id = s.id
+            WHERE ps.is_active = 1 AND ps.store_id IS NOT NULL AND ps.store_id > 0
+            ORDER BY s.company_name ASC
+        ");
     }
 
     /**
