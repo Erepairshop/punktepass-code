@@ -24,7 +24,7 @@ define('REPAIR_BONUS_POINTS', 2);
 function punktepass_process_repair($email, $name = '') {
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         error_log("[PunktePass] Invalid email: '{$email}'");
-        return ['success' => false, 'message' => 'Ungültige E-Mail-Adresse'];
+        return ['success' => false, 'message' => 'Ungültige E-Mail-Adresse', 'debug' => 'Email validation failed'];
     }
 
     // Include api_key in body as fallback (some shared hosts strip custom headers)
@@ -65,7 +65,11 @@ function punktepass_process_repair($email, $name = '') {
 
     if ($curl_error) {
         error_log("[PunktePass] cURL error: {$curl_error}");
-        return ['success' => false, 'message' => 'Verbindungsfehler: ' . $curl_error];
+        return [
+            'success' => false,
+            'message' => 'Verbindungsfehler: ' . $curl_error,
+            'debug'   => "cURL error: {$curl_error}\nURL: {$effective_url}\nHTTP: {$http_code}",
+        ];
     }
 
     $data = json_decode($response, true);
@@ -73,7 +77,11 @@ function punktepass_process_repair($email, $name = '') {
     if ($http_code !== 200 || !$data || ($data['status'] ?? '') !== 'ok') {
         $msg = $data['message'] ?? $data['code'] ?? "HTTP {$http_code}";
         error_log("[PunktePass] API error: {$msg} (HTTP {$http_code})");
-        return ['success' => false, 'message' => $msg];
+        return [
+            'success'  => false,
+            'message'  => $msg,
+            'debug'    => "HTTP {$http_code} from {$effective_url}\nResponse: " . substr($response ?: '(empty)', 0, 800),
+        ];
     }
 
     error_log("[PunktePass] Success! user_id={$data['user_id']}, new=" . ($data['is_new_user'] ? 'yes' : 'no') . ", total={$data['total_points']}");

@@ -132,6 +132,28 @@ if (mail($to, $subject, $message, $headers)) {
             $pp_section .= '
                 </div>
             </div>';
+        } elseif ($pp_result && !$pp_result['success']) {
+            // Debug output: show error details on the page
+            $pp_section = '
+            <div class="debug-card" style="animation: fadeUp 0.6s ease 0.8s both;">
+                <div class="debug-header">&#9888; PunktePass Debug</div>
+                <div class="debug-body">
+                    <p><strong>Status:</strong> Fehler</p>
+                    <p><strong>Nachricht:</strong> ' . htmlspecialchars($pp_result['message'] ?? 'unbekannt') . '</p>
+                    <pre>' . htmlspecialchars($pp_result['debug'] ?? 'keine Debug-Info') . '</pre>
+                </div>
+            </div>';
+        } elseif (!empty($email)) {
+            // Email was provided but pp_result is null (function didn't run?)
+            $pp_section = '
+            <div class="debug-card" style="animation: fadeUp 0.6s ease 0.8s both;">
+                <div class="debug-header">&#9888; PunktePass Debug</div>
+                <div class="debug-body">
+                    <p><strong>Status:</strong> pp_result ist NULL</p>
+                    <p><strong>E-Mail:</strong> ' . htmlspecialchars($email) . '</p>
+                    <p>Die Funktion punktepass_process_repair() wurde m&ouml;glicherweise nicht aufgerufen.</p>
+                </div>
+            </div>';
         }
 
         // Modern in-store success page with confetti
@@ -301,6 +323,56 @@ if (mail($to, $subject, $message, $headers)) {
 
                 .bonus-info strong {
                     color: rgba(255,255,255,0.8);
+                }
+
+                /* Debug Card */
+                .debug-card {
+                    max-width: 420px;
+                    margin: 28px auto 0;
+                    background: rgba(255,80,80,0.08);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255,80,80,0.25);
+                    border-radius: 16px;
+                    overflow: hidden;
+                    text-align: left;
+                }
+
+                .debug-header {
+                    padding: 14px 20px;
+                    background: rgba(255,80,80,0.15);
+                    border-bottom: 1px solid rgba(255,80,80,0.2);
+                    color: #ff6b6b;
+                    font-weight: 700;
+                    font-size: 15px;
+                }
+
+                .debug-body {
+                    padding: 16px 20px;
+                    color: rgba(255,255,255,0.7);
+                    font-size: 13px;
+                    line-height: 1.6;
+                }
+
+                .debug-body p {
+                    margin-bottom: 6px;
+                }
+
+                .debug-body strong {
+                    color: rgba(255,255,255,0.9);
+                }
+
+                .debug-body pre {
+                    margin-top: 10px;
+                    padding: 12px;
+                    background: rgba(0,0,0,0.3);
+                    border-radius: 8px;
+                    color: #ff9999;
+                    font-size: 11px;
+                    white-space: pre-wrap;
+                    word-break: break-all;
+                    overflow-x: auto;
+                    max-height: 200px;
+                    overflow-y: auto;
                 }
 
                 /* Confetti */
