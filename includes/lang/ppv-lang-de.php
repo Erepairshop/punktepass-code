@@ -2009,6 +2009,7 @@ return [
     'push_no_subscribers' => 'Noch keine Abonnenten',
     'push_no_subscribers_hint' => 'Kunden die bei Ihnen scannen, können Push-Benachrichtigungen abonnieren.',
     'push_sender' => 'Absender',
+    'shop_name' => 'Geschäftsname',
     'push_title' => 'Titel',
     'push_title_placeholder' => 'z.B. Neue Aktion!',
     'push_message' => 'Nachricht',

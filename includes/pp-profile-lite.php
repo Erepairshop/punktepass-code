@@ -945,11 +945,26 @@ if (!empty($store->gallery)) {
                     </div>
                     <?php else: ?>
                     <!-- Push Form -->
+                    <?php
+                    // Check if both names exist and are different
+                    $has_shop_name = !empty($store->name);
+                    $has_company_name = !empty($store->company_name);
+                    $has_both_names = $has_shop_name && $has_company_name && ($store->name !== $store->company_name);
+                    $default_sender = $store->company_name ?: $store->name ?: 'Shop';
+                    ?>
                     <div id="push-form-container" style="<?php echo $push_remaining <= 0 ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
-                        <!-- Store Name (read-only sender info) -->
+                        <!-- Store Name (sender selection) -->
                         <div style="margin-bottom: 12px; padding: 10px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px;">
-                            <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html(PPV_Lang::t('push_sender') ?: 'Absender'); ?></label>
-                            <span style="font-size: 14px; font-weight: 600; color: #6366f1;"><?php echo esc_html($store->company_name ?: $store->name ?: 'Shop'); ?></span>
+                            <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html(PPV_Lang::t('push_sender') ?: 'Absender'); ?></label>
+                            <?php if ($has_both_names): ?>
+                            <select id="push-sender-name" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; background: rgba(0,0,0,0.2); color: #6366f1; font-size: 14px; font-weight: 600; cursor: pointer;">
+                                <option value="<?php echo esc_attr($store->company_name); ?>"><?php echo esc_html($store->company_name); ?> (<?php echo esc_html(PPV_Lang::t('company_name') ?: 'Firmenname'); ?>)</option>
+                                <option value="<?php echo esc_attr($store->name); ?>"><?php echo esc_html($store->name); ?> (<?php echo esc_html(PPV_Lang::t('shop_name') ?: 'Geschäftsname'); ?>)</option>
+                            </select>
+                            <?php else: ?>
+                            <input type="hidden" id="push-sender-name" value="<?php echo esc_attr($default_sender); ?>">
+                            <span style="font-size: 14px; font-weight: 600; color: #6366f1;"><?php echo esc_html($default_sender); ?></span>
+                            <?php endif; ?>
                         </div>
                         <div style="margin-bottom: 12px;">
                             <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_title') ?: 'Titel'); ?> <span style="color: #888;">(max. 50)</span></label>
@@ -1402,10 +1417,12 @@ if (!empty($store->gallery)) {
                 // Push Notification - Send Button
                 const pushSendBtn = document.getElementById('push-send-btn');
                 const pushResult = document.getElementById('push-result');
+                const pushSenderName = document.getElementById('push-sender-name');
                 if (pushSendBtn && pushResult) {
                     pushSendBtn.addEventListener('click', function() {
                         const title = pushTitle ? pushTitle.value.trim() : '';
                         const body = pushBody ? pushBody.value.trim() : '';
+                        const senderName = pushSenderName ? pushSenderName.value : '';
 
                         if (!title || !body) {
                             pushResult.style.display = 'block';
@@ -1430,7 +1447,8 @@ if (!empty($store->gallery)) {
                             body: JSON.stringify({
                                 store_id: <?php echo intval($store->id ?? 0); ?>,
                                 title: title,
-                                body: body
+                                body: body,
+                                sender_name: senderName
                             })
                         })
                         .then(response => response.json())
