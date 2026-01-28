@@ -122,20 +122,38 @@ class PPV_Login {
 
     /** ============================================================
      * 🌍 Detect Language by Browser (Accept-Language header)
+     * Respects q-values for proper priority detection
      * ============================================================ */
     private static function detect_language_by_country() {
-        // Use browser's Accept-Language header (FREE, instant, no API!)
         $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-        $detected_lang = 'de'; // Default German
+        $detected_lang = 'ro'; // Default Romanian
 
         if ($accept) {
-            // Check for Hungarian (hu, hu-HU)
-            if (preg_match('/\bhu\b/i', $accept)) {
-                $detected_lang = 'hu';
+            $supported = ['de', 'hu', 'ro'];
+            $langs = [];
+
+            // Parse Accept-Language with q-values
+            foreach (explode(',', $accept) as $part) {
+                $part = trim($part);
+                if (empty($part)) continue;
+
+                // Match: hu-HU, hu, hu;q=0.9, hu-HU;q=0.8
+                if (preg_match('/^([a-z]{2})(?:-[A-Za-z]{2})?(?:\s*;\s*q=([0-9.]+))?$/i', $part, $m)) {
+                    $code = strtolower($m[1]);
+                    $q = isset($m[2]) ? floatval($m[2]) : 1.0;
+
+                    if (in_array($code, $supported, true)) {
+                        if (!isset($langs[$code]) || $langs[$code] < $q) {
+                            $langs[$code] = $q;
+                        }
+                    }
+                }
             }
-            // Check for Romanian (ro, ro-RO)
-            elseif (preg_match('/\bro\b/i', $accept)) {
-                $detected_lang = 'ro';
+
+            // Get highest priority language
+            if (!empty($langs)) {
+                arsort($langs);
+                $detected_lang = array_key_first($langs);
             }
         }
 
