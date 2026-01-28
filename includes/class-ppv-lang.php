@@ -93,24 +93,15 @@ class PPV_Lang {
             }
         }
 
-        // 5️⃣ Browser Accept-Language detection
+        // 5️⃣ Browser Accept-Language detection (respects priority/q-values)
         if (!$lang) {
             $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
             if ($accept) {
-                // Check for German (de, de-DE, de-AT, de-CH)
-                if (preg_match('/\bde\b/i', $accept)) {
-                    $lang = 'de';
-                    ppv_log("🌍 [PPV_Lang] Browser detection → de");
-                }
-                // Check for Hungarian (hu, hu-HU)
-                elseif (preg_match('/\bhu\b/i', $accept)) {
-                    $lang = 'hu';
-                    ppv_log("🌍 [PPV_Lang] Browser detection → hu");
-                }
-                // Check for Romanian (ro, ro-RO)
-                elseif (preg_match('/\bro\b/i', $accept)) {
-                    $lang = 'ro';
-                    ppv_log("🌍 [PPV_Lang] Browser detection → ro");
+                $supported = ['de', 'hu', 'ro'];
+                $detected = self::parse_accept_language($accept, $supported);
+                if ($detected) {
+                    $lang = $detected;
+                    ppv_log("🌍 [PPV_Lang] Browser detection → {$lang}");
                 }
             }
         }
@@ -138,6 +129,42 @@ class PPV_Lang {
     private static function set_cookie_all($lang, $domain, $secure) {
         @setcookie('ppv_lang', $lang, time() + 31536000, '/', '', $secure, false);
         $_COOKIE['ppv_lang'] = $lang;
+    }
+
+    /** ============================================================
+     *  🔹 Parse Accept-Language header with priority (q-values)
+     *  Example: "hu-HU,hu;q=0.9,de;q=0.8,en;q=0.7"
+     *  Returns the highest priority supported language or null
+     * ============================================================ */
+    private static function parse_accept_language($header, $supported) {
+        $langs = [];
+
+        // Parse header into array with priorities
+        foreach (explode(',', $header) as $part) {
+            $part = trim($part);
+            if (empty($part)) continue;
+
+            // Extract language and q-value
+            if (preg_match('/^([a-z]{2})(?:-[A-Za-z]{2})?(?:;q=([0-9.]+))?$/i', $part, $m)) {
+                $code = strtolower($m[1]);
+                $q = isset($m[2]) ? floatval($m[2]) : 1.0;
+
+                // Only track if supported and higher priority than existing
+                if (in_array($code, $supported, true)) {
+                    if (!isset($langs[$code]) || $langs[$code] < $q) {
+                        $langs[$code] = $q;
+                    }
+                }
+            }
+        }
+
+        if (empty($langs)) {
+            return null;
+        }
+
+        // Sort by priority (descending) and return highest
+        arsort($langs);
+        return array_key_first($langs);
     }
 
     /** ============================================================
