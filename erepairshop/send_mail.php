@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/db_config.php';
 require_once __DIR__ . '/punktepass_integration.php';
+require_once __DIR__ . '/vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
 // Set timezone to Germany
 date_default_timezone_set('Europe/Berlin');
@@ -59,42 +63,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         error_log("Fehler beim Speichern: " . $e->getMessage());
     }
 
-    // Vorbereitung der E-Mail-Nachricht
+    // Senden der E-Mail via SMTP (PHPMailer)
     $to = 'borota25@gmail.com';
     $subject = 'Neuer Reparaturauftrag';
-    $boundary = uniqid('np');
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "From: noreply@erepairshop.de\r\n";
-    $headers .= "Content-Type: multipart/mixed;boundary=\"" . $boundary . "\"\r\n";
+    $mail_sent = false;
+    $mail_error_msg = '';
 
-    // Erstellen der Nachricht
-    $message = "--" . $boundary . "\r\n";
-    $message .= "Content-type: text/plain;charset=utf-8\r\n\r\n";
-    $message .= "Name: $name\nTelefonnummer: $phone\nE-Mail: " . ($email ?: 'nicht angegeben') . "\nMarke: $brand\nModell: $model\nProblem: $problem\nWeitere Problembeschreibung: $other\nPIN: $pin\n\n";
+    try {
+        $mailer = new PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host       = 'smtp.hostinger.com';
+        $mailer->SMTPAuth   = true;
+        $mailer->Username   = 'info@erepairshop.de';
+        $mailer->Password   = 'Brtegk84047+_';
+        $mailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mailer->Port       = 465;
+        $mailer->CharSet    = 'UTF-8';
 
-    // Hinzufügen des Musterbildes als Anhang, falls vorhanden
-    if (!empty($muster_image_path)) {
-        $file_name = basename($muster_image_path);
-        $file_content = file_get_contents(__DIR__ . '/' . $muster_image_path);
-        $file_encoded = chunk_split(base64_encode($file_content));
+        $mailer->setFrom('info@erepairshop.de', 'eRepairShop');
+        $mailer->addAddress($to);
+        $mailer->Subject = $subject;
+        $mailer->Body    = "Name: $name\nTelefonnummer: $phone\nE-Mail: " . ($email ?: 'nicht angegeben') . "\nMarke: $brand\nModell: $model\nProblem: $problem\nWeitere Problembeschreibung: $other\nPIN: $pin";
 
-        $message .= "--" . $boundary . "\r\n";
-        $message .= "Content-Type: application/octet-stream; name=\"" . $file_name . "\"\r\n";
-        $message .= "Content-Transfer-Encoding: base64\r\n";
-        $message .= "Content-Disposition: attachment; filename=\"" . $file_name . "\"\r\n\r\n";
-        $message .= $file_encoded . "\r\n";
-    }
+        // Musterbild als Anhang
+        if (!empty($muster_image_path)) {
+            $mailer->addAttachment(__DIR__ . '/' . $muster_image_path);
+        }
 
-    // Abschluss der MIME-E-Mail
-    $message .= "--" . $boundary . "--";
-
-    // Senden der E-Mail-Nachricht
-    error_log("[eRepairShop] Sending mail to: {$to}, subject: {$subject}");
-    $mail_sent = @mail($to, $subject, $message, $headers);
-    $mail_error = error_get_last();
-    if (!$mail_sent) {
-        error_log("[eRepairShop] mail() FAILED. Error: " . ($mail_error['message'] ?? 'unknown'));
-        error_log("[eRepairShop] Headers: " . substr($headers, 0, 200));
+        $mailer->send();
+        $mail_sent = true;
+        error_log("[eRepairShop] SMTP mail sent successfully to {$to}");
+    } catch (PHPMailerException $e) {
+        $mail_error_msg = $mailer->ErrorInfo;
+        error_log("[eRepairShop] SMTP FAILED: " . $mail_error_msg);
     }
 
 if ($mail_sent) {
@@ -504,8 +505,7 @@ if ($mail_sent) {
         </html>';
     } else {
         // Fehlerbehandlung, falls die E-Mail nicht gesendet werden konnte
-        $err_detail = $mail_error['message'] ?? 'mail() returned false';
-        echo "Es gab ein Problem beim Senden Ihrer Anfrage. Bitte versuchen Sie es später erneut.<br><small style='color:#999;'>Debug: " . htmlspecialchars($err_detail) . "</small>";
+        echo "Es gab ein Problem beim Senden Ihrer Anfrage. Bitte versuchen Sie es später erneut.<br><small style='color:#999;'>Debug: " . htmlspecialchars($mail_error_msg ?: 'unknown error') . "</small>";
     }
 }
 ?>
