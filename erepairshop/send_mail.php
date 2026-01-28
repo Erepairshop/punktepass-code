@@ -64,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $subject = 'Neuer Reparaturauftrag';
     $boundary = uniqid('np');
     $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "From: webmaster@example.com\r\n";
+    $headers .= "From: noreply@erepairshop.de\r\n";
     $headers .= "Content-Type: multipart/mixed;boundary=\"" . $boundary . "\"\r\n";
 
     // Erstellen der Nachricht
