@@ -1909,104 +1909,81 @@ async function initUserDashboard() {
       userLng = parseFloat(cachedLng);
     }
 
-    // 1️⃣ Helper: fetch and render stores with given coordinates
-    const fetchAndRender = async (lat, lng) => {
+    // 1️⃣ If no cached location: run GPS + address-location API IN PARALLEL (race)
+    if (!userLat && !userLng) {
+      // GPS promise (3s timeout - fast fail)
+      const geoPromise = new Promise((resolve) => {
+        if (!navigator.geolocation) { resolve(null); return; }
+        const to = setTimeout(() => resolve(null), 3000);
+        navigator.geolocation.getCurrentPosition(
+          (p) => {
+            clearTimeout(to);
+            localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+            localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+            resolve({ lat: p.coords.latitude, lng: p.coords.longitude });
+          },
+          () => { clearTimeout(to); resolve(null); },
+          { timeout: 3000, maximumAge: 600000, enableHighAccuracy: false }
+        );
+      });
+
+      // Address-location API promise (runs in parallel with GPS)
+      const addrPromise = fetch(API + 'user/address-location', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.success && d.lat && d.lng) {
+            window.PPV_LOCATION_SOURCE = 'address';
+            return { lat: d.lat, lng: d.lng };
+          }
+          if (d?.has_address === false) window.PPV_NO_ADDRESS = true;
+          return null;
+        })
+        .catch(() => null);
+
+      // Race: use whichever resolves with coordinates first
+      const results = await Promise.all([geoPromise, addrPromise]);
+      // Prefer GPS over address
+      const geoResult = results[0];
+      const addrResult = results[1];
+      const best = geoResult || addrResult;
+      if (best) {
+        userLat = best.lat;
+        userLng = best.lng;
+      }
+    }
+
+    // 2️⃣ Fetch and render stores with best available coordinates
+    try {
       const currentDist = window.PPV_CURRENT_DISTANCE || 10;
       let url = API + 'stores/list-optimized';
-      if (lat && lng) {
-        url += `?lat=${lat}&lng=${lng}&max_distance=${currentDist}`;
+      if (userLat && userLng) {
+        url += `?lat=${userLat}&lng=${userLng}&max_distance=${currentDist}`;
       }
+
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const stores = await res.json();
       if (!Array.isArray(stores) || stores.length === 0) {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
       } else {
-        renderStoreList(box, stores, lat, lng);
+        renderStoreList(box, stores, userLat, userLng);
       }
-      return stores;
-    };
+    } catch (e) {
+      ppvLog.error('❌ [Stores] Load failed:', e.message);
+      box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
+    }
 
-    // 2️⃣ FAST PATH: If we have cached coordinates, fetch immediately
-    if (userLat && userLng) {
-      try {
-        await fetchAndRender(userLat, userLng);
-      } catch (e) {
-        ppvLog.error('❌ [Stores] Load failed:', e.message);
-        box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
-      }
-
-      // Refresh GPS in background (non-blocking, short timeout)
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (p) => {
-            localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
-            localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
-          },
-          () => {},
-          { timeout: 3000, maximumAge: 600000, enableHighAccuracy: false }
-        );
-      }
-
-    } else {
-      // 3️⃣ NO CACHED LOCATION: Fetch stores immediately WITHOUT coordinates (shows all)
-      //    Then try to get location in parallel and re-fetch if found
-      try {
-        await fetchAndRender(null, null);
-      } catch (e) {
-        ppvLog.error('❌ [Stores] Load failed:', e.message);
-        box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
-      }
-
-      // Try geolocation in background - if found, re-render with distance sorting
-      const tryGeoAndRefresh = async () => {
-        let lat = null, lng = null;
-
-        // Try browser geolocation (max 5s)
-        if (navigator.geolocation) {
-          const pos = await new Promise((resolve) => {
-            const to = setTimeout(() => resolve(null), 5000);
-            navigator.geolocation.getCurrentPosition(
-              (p) => { clearTimeout(to); resolve(p); },
-              () => { clearTimeout(to); resolve(null); },
-              { timeout: 5000, maximumAge: 600000, enableHighAccuracy: false }
-            );
-          });
-          if (pos?.coords) {
-            lat = pos.coords.latitude;
-            lng = pos.coords.longitude;
-            localStorage.setItem('ppv_user_lat', lat.toString());
-            localStorage.setItem('ppv_user_lng', lng.toString());
-          }
-        }
-
-        // Fallback: address-location API
-        if (!lat && !lng) {
-          try {
-            const addrRes = await fetch(API + 'user/address-location', { cache: 'no-store' });
-            if (addrRes.ok) {
-              const addrData = await addrRes.json();
-              if (addrData.success && addrData.lat && addrData.lng) {
-                lat = addrData.lat;
-                lng = addrData.lng;
-                window.PPV_LOCATION_SOURCE = 'address';
-              } else if (addrData.has_address === false) {
-                window.PPV_NO_ADDRESS = true;
-              }
-            }
-          } catch (e) { /* silent */ }
-        }
-
-        // Re-render with coordinates if we got them
-        if (lat && lng) {
-          try {
-            await fetchAndRender(lat, lng);
-          } catch (e) { /* keep existing list */ }
-        }
-      };
-
-      // Fire and forget - don't block
-      tryGeoAndRefresh();
+    // 3️⃣ Refresh GPS in background for next visit (non-blocking)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+          localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+        },
+        () => {},
+        { timeout: 5000, maximumAge: 600000, enableHighAccuracy: false }
+      );
     }
 
     const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
