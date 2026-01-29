@@ -1909,91 +1909,104 @@ async function initUserDashboard() {
       userLng = parseFloat(cachedLng);
     }
 
-    // 1️⃣ Start geo request in background (non-blocking)
-    // ✅ FIX: Use longer timeout when no cached location (first-time users need time for permission prompt)
-    const geoTimeoutMs = (cachedLat && cachedLng) ? 2000 : 8000;
-    const geoPromise = new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve(null);
-        return;
-      }
-      const timeout = setTimeout(() => {
-        resolve(null);
-      }, geoTimeoutMs);
-
-      navigator.geolocation.getCurrentPosition(
-        (p) => {
-          clearTimeout(timeout);
-          // Cache for next time
-          localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
-          localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
-          resolve(p);
-        },
-        (err) => {
-          clearTimeout(timeout);
-          // Track if permission denied for tip display
-          if (err.code === 1) window.PPV_GEO_DENIED = true;
-          resolve(null);
-        },
-        { timeout: geoTimeoutMs, maximumAge: 600000, enableHighAccuracy: false }
-      );
-    });
-
-    // 2️⃣ OPTIMIZED: Wait for geo first if no cached location, then fetch ONCE
-    try {
-      // If no cached location, wait for geo promise first (max 8s)
-      if (!cachedLat && !cachedLng) {
-        const freshPos = await geoPromise;
-        if (freshPos?.coords) {
-          userLat = freshPos.coords.latitude;
-          userLng = freshPos.coords.longitude;
-        }
-      }
-
-      // 3️⃣ GPS fallback: Use user's address if no GPS coordinates available
-      if (!userLat && !userLng) {
-        try {
-          const addrRes = await fetch(API + 'user/address-location', { cache: 'no-store' });
-          if (addrRes.ok) {
-            const addrData = await addrRes.json();
-            if (addrData.success && addrData.lat && addrData.lng) {
-              userLat = addrData.lat;
-              userLng = addrData.lng;
-              window.PPV_LOCATION_SOURCE = 'address'; // Track source for UI hints
-            } else if (addrData.has_address === false) {
-              window.PPV_NO_ADDRESS = true; // User has no address set
-            }
-          }
-        } catch (addrErr) {
-          // Silent fail - continue without address location
-        }
-      }
-
-      // Now make ONE fetch with best available coordinates
+    // 1️⃣ Helper: fetch and render stores with given coordinates
+    const fetchAndRender = async (lat, lng) => {
       const currentDist = window.PPV_CURRENT_DISTANCE || 10;
       let url = API + 'stores/list-optimized';
-      if (userLat && userLng) {
-        url += `?lat=${userLat}&lng=${userLng}&max_distance=${currentDist}`;
+      if (lat && lng) {
+        url += `?lat=${lat}&lng=${lng}&max_distance=${currentDist}`;
       }
-
       const res = await fetch(url, { cache: "no-store" });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const stores = await res.json();
-
-      // Render stores
       if (!Array.isArray(stores) || stores.length === 0) {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
       } else {
-        renderStoreList(box, stores, userLat, userLng);
+        renderStoreList(box, stores, lat, lng);
+      }
+      return stores;
+    };
+
+    // 2️⃣ FAST PATH: If we have cached coordinates, fetch immediately
+    if (userLat && userLng) {
+      try {
+        await fetchAndRender(userLat, userLng);
+      } catch (e) {
+        ppvLog.error('❌ [Stores] Load failed:', e.message);
+        box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
       }
 
-    } catch (e) {
-      ppvLog.error('❌ [Stores] Load failed:', e.message);
-      box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
+      // Refresh GPS in background (non-blocking, short timeout)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (p) => {
+            localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+            localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+          },
+          () => {},
+          { timeout: 3000, maximumAge: 600000, enableHighAccuracy: false }
+        );
+      }
+
+    } else {
+      // 3️⃣ NO CACHED LOCATION: Fetch stores immediately WITHOUT coordinates (shows all)
+      //    Then try to get location in parallel and re-fetch if found
+      try {
+        await fetchAndRender(null, null);
+      } catch (e) {
+        ppvLog.error('❌ [Stores] Load failed:', e.message);
+        box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
+      }
+
+      // Try geolocation in background - if found, re-render with distance sorting
+      const tryGeoAndRefresh = async () => {
+        let lat = null, lng = null;
+
+        // Try browser geolocation (max 5s)
+        if (navigator.geolocation) {
+          const pos = await new Promise((resolve) => {
+            const to = setTimeout(() => resolve(null), 5000);
+            navigator.geolocation.getCurrentPosition(
+              (p) => { clearTimeout(to); resolve(p); },
+              () => { clearTimeout(to); resolve(null); },
+              { timeout: 5000, maximumAge: 600000, enableHighAccuracy: false }
+            );
+          });
+          if (pos?.coords) {
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+            localStorage.setItem('ppv_user_lat', lat.toString());
+            localStorage.setItem('ppv_user_lng', lng.toString());
+          }
+        }
+
+        // Fallback: address-location API
+        if (!lat && !lng) {
+          try {
+            const addrRes = await fetch(API + 'user/address-location', { cache: 'no-store' });
+            if (addrRes.ok) {
+              const addrData = await addrRes.json();
+              if (addrData.success && addrData.lat && addrData.lng) {
+                lat = addrData.lat;
+                lng = addrData.lng;
+                window.PPV_LOCATION_SOURCE = 'address';
+              } else if (addrData.has_address === false) {
+                window.PPV_NO_ADDRESS = true;
+              }
+            }
+          } catch (e) { /* silent */ }
+        }
+
+        // Re-render with coordinates if we got them
+        if (lat && lng) {
+          try {
+            await fetchAndRender(lat, lng);
+          } catch (e) { /* keep existing list */ }
+        }
+      };
+
+      // Fire and forget - don't block
+      tryGeoAndRefresh();
     }
 
     const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
