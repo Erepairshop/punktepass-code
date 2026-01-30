@@ -189,6 +189,23 @@ if ($is_new_user) {
     // Welcome email with credentials
     $points_to_reward = max(0, 4 - $total_points);
     $subject = "Willkommen bei PunktePass – {$points} Bonuspunkte von {$store->name}!";
+
+    // Reward claim section (when 4+ points reached)
+    $reward_section = '';
+    if ($total_points >= 4) {
+        $reward_section = '
+    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:12px;padding:20px;margin:0 0 24px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">🎉🏆</div>
+        <div style="font-size:18px;font-weight:700;color:#92400e;margin-bottom:8px;">Sie haben 10€ Rabatt gewonnen!</div>
+        <p style="font-size:13px;color:#78350f;margin:0 0 16px;line-height:1.5;">
+            Melden Sie sich bei <strong>PunktePass</strong> an, zeigen Sie Ihren QR-Code im Geschäft vor und lösen Sie Ihre Prämie ein!
+        </p>
+        <a href="https://punktepass.de" target="_blank" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
+            Prämie einlösen &rarr;
+        </a>
+    </div>';
+    }
+
     $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">
 <div style="max-width:560px;margin:0 auto;padding:20px;">
@@ -203,6 +220,7 @@ if ($is_new_user) {
         <div style="font-size:36px;font-weight:800;color:#059669;">+' . $points . ' Punkte</div>
         <div style="font-size:13px;color:#6b7280;margin-top:4px;">Gesamt: ' . $total_points . ' / 4 Punkte' . ($points_to_reward > 0 ? ' — noch ' . $points_to_reward . ' bis 10€ Rabatt!' : ' — 10€ Rabatt einlösbar!') . '</div>
     </div>
+    ' . $reward_section . '
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:0 0 24px;">
         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;">IHRE ZUGANGSDATEN</div>
         <p style="margin:4px 0;font-size:14px;"><strong>E-Mail:</strong> ' . esc_html($email) . '</p>
@@ -215,7 +233,26 @@ if ($is_new_user) {
 } else {
     // Points notification email
     $points_to_reward = max(0, 4 - $total_points);
-    $subject = "+{$points} Bonuspunkte auf Ihr PunktePass-Konto!";
+
+    // Reward claim section (when 4+ points reached)
+    $reward_section = '';
+    if ($total_points >= 4) {
+        $subject = "🏆 Sie haben 10€ Rabatt bei {$store->name} gewonnen!";
+        $reward_section = '
+    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:12px;padding:20px;margin:0 0 24px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">🎉🏆</div>
+        <div style="font-size:18px;font-weight:700;color:#92400e;margin-bottom:8px;">Sie haben 10€ Rabatt gewonnen!</div>
+        <p style="font-size:13px;color:#78350f;margin:0 0 16px;line-height:1.5;">
+            Melden Sie sich bei <strong>PunktePass</strong> an, zeigen Sie Ihren QR-Code im Geschäft vor und lösen Sie Ihre Prämie ein!
+        </p>
+        <a href="https://punktepass.de" target="_blank" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
+            Prämie einlösen &rarr;
+        </a>
+    </div>';
+    } else {
+        $subject = "+{$points} Bonuspunkte auf Ihr PunktePass-Konto!";
+    }
+
     $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">
 <div style="max-width:560px;margin:0 auto;padding:20px;">
@@ -230,6 +267,7 @@ if ($is_new_user) {
         <div style="font-size:36px;font-weight:800;color:#059669;">' . $total_points . ' Punkte</div>
         <div style="font-size:13px;color:#374151;margin-top:8px;">' . ($points_to_reward > 0 ? 'Noch ' . $points_to_reward . ' bis 10€ Rabatt!' : '10€ Rabatt einlösbar!') . '</div>
     </div>
+    ' . $reward_section . '
     <div style="text-align:center;"><a href="https://punktepass.de" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Punkte ansehen</a></div>
 </div>
 </div></body></html>';
