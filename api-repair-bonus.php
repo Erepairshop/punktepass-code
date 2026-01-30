@@ -141,6 +141,32 @@ if (!$user) {
     $user_id = (int) $user->id;
 }
 
+// ✅ Duplicate protection: max 1 repair bonus per email per store per day
+$today = current_time('Y-m-d');
+$already_awarded = (int) $wpdb->get_var($wpdb->prepare(
+    "SELECT COUNT(*) FROM {$prefix}ppv_points
+     WHERE user_id = %d AND store_id = %d AND type = 'bonus' AND reference = %s
+       AND DATE(created) = %s",
+    $user_id, $store_id, $reference, $today
+));
+
+if ($already_awarded > 0) {
+    // Already got bonus today - return success silently (no duplicate points, no duplicate email)
+    $total_points = (int)$wpdb->get_var($wpdb->prepare(
+        "SELECT COALESCE(SUM(points),0) FROM {$prefix}ppv_points WHERE user_id=%d AND store_id=%d",
+        $user_id, $store_id
+    ));
+    echo json_encode([
+        'status'       => 'ok',
+        'is_new_user'  => $is_new_user,
+        'user_id'      => $user_id,
+        'points_added' => 0,
+        'total_points' => $total_points,
+        'duplicate'    => true,
+    ]);
+    exit;
+}
+
 // Add bonus points
 $wpdb->insert("{$prefix}ppv_points", [
     'user_id'   => $user_id,

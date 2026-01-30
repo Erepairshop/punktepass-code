@@ -108,7 +108,7 @@ if ($mail_sent) {
 
         // Build PunktePass bonus section HTML
         $pp_section = '';
-        if ($pp_result && $pp_result['success']) {
+        if ($pp_result && $pp_result['success'] && ($pp_result['points_added'] ?? 0) > 0) {
             $points_to_reward = max(0, 4 - $pp_result['total_points']);
             $progress_pct = min(100, ($pp_result['total_points'] / 4) * 100);
 
