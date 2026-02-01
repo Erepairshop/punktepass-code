@@ -254,6 +254,30 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '1.0');
         }
+
+        // v1.1: PunktePass toggle, reward settings, form customization
+        if (version_compare($version, '1.1', '<')) {
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+            $new_columns = [
+                'repair_punktepass_enabled' => "TINYINT(1) DEFAULT 1",
+                'repair_reward_name'        => "VARCHAR(255) DEFAULT '10 Euro Rabatt'",
+                'repair_reward_description' => "VARCHAR(500) DEFAULT '10 Euro Rabatt auf Ihre nächste Reparatur'",
+                'repair_required_points'    => "INT DEFAULT 4",
+                'repair_form_title'         => "VARCHAR(255) DEFAULT 'Reparaturauftrag'",
+                'repair_form_subtitle'      => "VARCHAR(500) NULL",
+                'repair_service_type'       => "VARCHAR(100) DEFAULT 'Allgemein'",
+                'repair_field_config'       => "TEXT NULL",
+            ];
+
+            foreach ($new_columns as $col => $definition) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$stores_table} LIKE '{$col}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN {$col} {$definition}");
+                }
+            }
+
+            update_option('ppv_repair_migration_version', '1.1');
+        }
     }
 
     /** ============================================================
@@ -333,14 +357,20 @@ class PPV_Repair_Core {
             $store_id
         ));
 
-        $points = intval($store->repair_points_per_form ?: 2);
-        $bonus_result = self::award_repair_bonus($store, $email, $name, $points);
+        $bonus_result = ['user_id' => 0, 'points_added' => 0, 'total_points' => 0, 'is_new_user' => false];
 
-        if ($bonus_result && !empty($bonus_result['user_id'])) {
-            $wpdb->update("{$prefix}ppv_repairs", [
-                'user_id'        => $bonus_result['user_id'],
-                'points_awarded' => $bonus_result['points_added'],
-            ], ['id' => $repair_id]);
+        // Only award points if PunktePass is enabled for this store
+        $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
+        if ($pp_enabled) {
+            $points = intval($store->repair_points_per_form ?: 2);
+            $bonus_result = self::award_repair_bonus($store, $email, $name, $points);
+
+            if ($bonus_result && !empty($bonus_result['user_id'])) {
+                $wpdb->update("{$prefix}ppv_repairs", [
+                    'user_id'        => $bonus_result['user_id'],
+                    'points_awarded' => $bonus_result['points_added'],
+                ], ['id' => $repair_id]);
+            }
         }
 
         self::notify_store_owner($store, [
@@ -647,14 +677,36 @@ class PPV_Repair_Core {
         if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
 
         global $wpdb;
-        $fields = ['repair_points_per_form', 'repair_company_name', 'repair_owner_name', 'repair_tax_id', 'repair_color', 'name', 'phone', 'address', 'plz', 'city'];
+
+        // Text fields
+        $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'name', 'phone', 'address', 'plz', 'city',
+                        'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type'];
+        // Integer fields
+        $int_fields = ['repair_points_per_form', 'repair_required_points'];
+        // Toggle fields (0/1)
+        $toggle_fields = ['repair_punktepass_enabled'];
+
         $update = [];
-        foreach ($fields as $f) {
-            if (!isset($_POST[$f])) continue;
-            if ($f === 'repair_points_per_form') { $update[$f] = max(0, intval($_POST[$f])); }
-            elseif ($f === 'repair_color') { $update[$f] = sanitize_hex_color($_POST[$f]) ?: '#667eea'; }
-            else { $update[$f] = sanitize_text_field($_POST[$f]); }
+        foreach ($text_fields as $f) {
+            if (isset($_POST[$f])) $update[$f] = sanitize_text_field($_POST[$f]);
         }
+        foreach ($int_fields as $f) {
+            if (isset($_POST[$f])) $update[$f] = max(0, intval($_POST[$f]));
+        }
+        foreach ($toggle_fields as $f) {
+            if (isset($_POST[$f])) $update[$f] = intval($_POST[$f]) ? 1 : 0;
+        }
+        if (isset($_POST['repair_color'])) {
+            $update['repair_color'] = sanitize_hex_color($_POST['repair_color']) ?: '#667eea';
+        }
+        // Field config (JSON)
+        if (isset($_POST['repair_field_config'])) {
+            $config = json_decode(stripslashes($_POST['repair_field_config']), true);
+            if (is_array($config)) {
+                $update['repair_field_config'] = wp_json_encode($config);
+            }
+        }
+
         if (!empty($update)) $wpdb->update($wpdb->prefix . 'ppv_stores', $update, ['id' => $store_id]);
         wp_send_json_success(['message' => 'Einstellungen gespeichert']);
     }

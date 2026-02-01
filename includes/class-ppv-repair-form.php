@@ -24,6 +24,16 @@ class PPV_Repair_Form {
         $store_id   = intval($store->id);
         $address    = esc_html(trim(($store->address ?: '') . ' ' . ($store->plz ?: '') . ' ' . ($store->city ?: '')));
 
+        $pp_enabled   = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
+        $form_title   = esc_html($store->repair_form_title ?? 'Reparaturauftrag');
+        $form_subtitle = esc_html($store->repair_form_subtitle ?? '');
+        $service_type  = esc_html($store->repair_service_type ?? 'Allgemein');
+        $reward_name   = esc_html($store->repair_reward_name ?? '10 Euro Rabatt');
+        $required_pts  = intval($store->repair_required_points ?? 4);
+        $field_config  = json_decode($store->repair_field_config ?? '', true) ?: [];
+        $fc_defaults   = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon']];
+        foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
+
         $nonce = wp_create_nonce('ppv_repair_form');
         $ajax_url = admin_url('admin-ajax.php');
 
@@ -34,8 +44,8 @@ class PPV_Repair_Form {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <title>Reparaturformular - <?php echo $store_name; ?></title>
-    <meta name="description" content="Digitales Reparaturformular von <?php echo $store_name; ?> - Jetzt ausfüllen und Bonuspunkte sammeln!">
+    <title><?php echo $form_title; ?> - <?php echo $store_name; ?></title>
+    <meta name="description" content="<?php echo $form_title; ?> von <?php echo $store_name; ?><?php echo $pp_enabled ? ' - Bonuspunkte sammeln!' : ''; ?>">
     <meta name="theme-color" content="<?php echo $color; ?>">
     <link rel="icon" href="<?php echo $logo; ?>" type="image/png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
@@ -72,11 +82,13 @@ class PPV_Repair_Form {
     </div>
 
     <?php else: ?>
+    <?php if ($pp_enabled): ?>
     <!-- Bonus badge -->
     <div class="repair-bonus-badge">
         <i class="ri-gift-line"></i>
         <span>+<?php echo $points; ?> PunktePass Bonuspunkte f&uuml;r dieses Formular!</span>
     </div>
+    <?php endif; ?>
 
     <!-- Form -->
     <form id="repair-form" class="repair-form" autocomplete="off">
@@ -101,78 +113,84 @@ class PPV_Repair_Form {
                 <input type="email" id="rf-email" name="customer_email" required placeholder="ihre@email.de">
             </div>
 
+            <?php if (!empty($field_config['customer_phone']['enabled'])): ?>
             <div class="repair-field">
-                <label for="rf-phone">Telefon</label>
+                <label for="rf-phone"><?php echo esc_html($field_config['customer_phone']['label'] ?? 'Telefon'); ?></label>
                 <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789">
             </div>
+            <?php endif; ?>
         </div>
 
-        <!-- Step 2: Device info -->
+        <!-- Step 2: Informationen -->
+        <?php
+        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']);
+        if ($has_device_fields):
+        ?>
         <div class="repair-section" id="step-device">
             <div class="repair-section-title">
                 <span class="repair-step-num">2</span>
-                <h2>Ger&auml;teinformationen</h2>
+                <h2><?php echo ($service_type !== 'Allgemein') ? esc_html($service_type) : 'Weitere Angaben'; ?></h2>
             </div>
 
+            <?php if (!empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled'])): ?>
             <div class="repair-row">
+                <?php if (!empty($field_config['device_brand']['enabled'])): ?>
                 <div class="repair-field">
-                    <label for="rf-brand">Marke</label>
-                    <select id="rf-brand" name="device_brand">
-                        <option value="">Bitte w&auml;hlen</option>
-                        <option value="Apple">Apple</option>
-                        <option value="Samsung">Samsung</option>
-                        <option value="Huawei">Huawei</option>
-                        <option value="Xiaomi">Xiaomi</option>
-                        <option value="Google">Google</option>
-                        <option value="OnePlus">OnePlus</option>
-                        <option value="Sony">Sony</option>
-                        <option value="OPPO">OPPO</option>
-                        <option value="Nokia">Nokia</option>
-                        <option value="Motorola">Motorola</option>
-                        <option value="LG">LG</option>
-                        <option value="Andere">Andere</option>
-                    </select>
+                    <label for="rf-brand"><?php echo esc_html($field_config['device_brand']['label'] ?? 'Marke'); ?></label>
+                    <input type="text" id="rf-brand" name="device_brand" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? 'Marke'); ?>">
                 </div>
+                <?php endif; ?>
+                <?php if (!empty($field_config['device_model']['enabled'])): ?>
                 <div class="repair-field">
-                    <label for="rf-model">Modell</label>
-                    <input type="text" id="rf-model" name="device_model" placeholder="z.B. iPhone 15 Pro">
+                    <label for="rf-model"><?php echo esc_html($field_config['device_model']['label'] ?? 'Modell'); ?></label>
+                    <input type="text" id="rf-model" name="device_model" placeholder="<?php echo esc_attr($field_config['device_model']['label'] ?? 'Modell'); ?>">
                 </div>
+                <?php endif; ?>
             </div>
+            <?php endif; ?>
 
+            <?php if (!empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled'])): ?>
             <div class="repair-row">
+                <?php if (!empty($field_config['device_imei']['enabled'])): ?>
                 <div class="repair-field">
-                    <label for="rf-imei">IMEI (optional)</label>
-                    <input type="text" id="rf-imei" name="device_imei" placeholder="15-stellige IMEI-Nummer">
+                    <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?></label>
+                    <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?>">
                 </div>
+                <?php endif; ?>
+                <?php if (!empty($field_config['device_pattern']['enabled'])): ?>
                 <div class="repair-field">
-                    <label for="rf-pattern">Entsperrcode / Muster</label>
-                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="PIN oder Muster">
+                    <label for="rf-pattern"><?php echo esc_html($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN'); ?></label>
+                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN'); ?>">
                 </div>
+                <?php endif; ?>
             </div>
+            <?php endif; ?>
         </div>
+        <?php endif; ?>
 
-        <!-- Step 3: Problem -->
+        <!-- Step <?php echo $has_device_fields ? '3' : '2'; ?>: Problem -->
         <div class="repair-section" id="step-problem">
             <div class="repair-section-title">
-                <span class="repair-step-num">3</span>
-                <h2>Problembeschreibung</h2>
+                <span class="repair-step-num"><?php echo $has_device_fields ? '3' : '2'; ?></span>
+                <h2>Beschreibung</h2>
             </div>
 
             <div class="repair-field">
-                <label for="rf-problem">Was ist kaputt? *</label>
+                <label for="rf-problem">Was soll repariert werden? *</label>
                 <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="Beschreiben Sie das Problem m&ouml;glichst genau..."></textarea>
             </div>
 
+            <?php if (!empty($field_config['accessories']['enabled'])): ?>
             <div class="repair-field">
-                <label>Mitgegebenes Zubeh&ouml;r</label>
+                <label><?php echo esc_html($field_config['accessories']['label'] ?? 'Mitgegebenes Zubehör'); ?></label>
                 <div class="repair-accessories">
                     <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="charger"> Ladekabel</label>
                     <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="case"> H&uuml;lle / Case</label>
-                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="sim"> SIM-Karte</label>
-                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="sd"> SD-Karte</label>
-                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="screen_protector"> Schutzfolie</label>
+                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="keys"> Schl&uuml;ssel</label>
+                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="other"> Sonstiges</label>
                 </div>
             </div>
+            <?php endif; ?>
         </div>
 
         <!-- Terms -->
@@ -185,7 +203,7 @@ class PPV_Repair_Form {
 
         <!-- Submit -->
         <button type="submit" id="rf-submit" class="repair-submit">
-            <span class="repair-submit-text"><i class="ri-send-plane-fill"></i> Reparatur einreichen</span>
+            <span class="repair-submit-text"><i class="ri-send-plane-fill"></i> <?php echo $form_title; ?> einreichen</span>
             <span class="repair-submit-loading" style="display:none"><i class="ri-loader-4-line ri-spin"></i> Wird gesendet...</span>
         </button>
 
@@ -199,8 +217,9 @@ class PPV_Repair_Form {
             <div class="repair-success-check">&#10003;</div>
         </div>
         <h2>Vielen Dank!</h2>
-        <p>Ihr Reparaturauftrag wurde erfolgreich eingereicht.</p>
+        <p>Ihr <?php echo $form_title; ?> wurde erfolgreich eingereicht.</p>
 
+        <?php if ($pp_enabled): ?>
         <div id="repair-points-card" class="repair-points-card" style="display:none">
             <div class="repair-points-badge">
                 <span class="repair-points-plus">+</span>
@@ -209,8 +228,9 @@ class PPV_Repair_Form {
             <div class="repair-points-label">PunktePass Bonuspunkte</div>
             <div id="repair-points-total" class="repair-points-total"></div>
         </div>
+        <?php endif; ?>
 
-        <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail. Wir melden uns, sobald Ihr Ger&auml;t fertig ist.</p>
+        <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail.</p>
 
         <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
     </div>
@@ -274,21 +294,26 @@ class PPV_Repair_Form {
             if (data.success) {
                 // Hide form, show success
                 form.style.display = 'none';
-                document.querySelector('.repair-bonus-badge').style.display = 'none';
+                var bonusBadge = document.querySelector('.repair-bonus-badge');
+                if (bonusBadge) bonusBadge.style.display = 'none';
                 successDiv.style.display = 'block';
 
                 // Show points card
+                <?php if ($pp_enabled): ?>
                 var d = data.data;
                 if (d.points_added > 0) {
                     document.getElementById('repair-points-card').style.display = 'block';
                     document.getElementById('repair-points-count').textContent = d.points_added;
                     if (d.total_points) {
-                        var remaining = Math.max(0, 4 - d.total_points);
+                        var reqPts = <?php echo $required_pts; ?>;
+                        var rwName = <?php echo json_encode($reward_name); ?>;
+                        var remaining = Math.max(0, reqPts - d.total_points);
                         document.getElementById('repair-points-total').textContent =
-                            'Gesamt: ' + d.total_points + ' / 4 Punkte' +
-                            (remaining > 0 ? ' — noch ' + remaining + ' bis 10€ Rabatt!' : ' — 10€ Rabatt einlösbar!');
+                            'Gesamt: ' + d.total_points + ' / ' + reqPts + ' Punkte' +
+                            (remaining > 0 ? ' — noch ' + remaining + ' bis ' + rwName + '!' : ' — ' + rwName + ' einlösbar!');
                     }
                 }
+                <?php endif; ?>
 
                 // Confetti effect
                 createConfetti();

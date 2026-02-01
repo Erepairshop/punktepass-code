@@ -184,6 +184,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $store_slug  = esc_attr($store->store_slug);
         $store_color = esc_attr($store->repair_color ?: '#667eea');
 
+        $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
+        $reward_name = esc_attr($store->repair_reward_name ?? '10 Euro Rabatt');
+        $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
+        $required_points = intval($store->repair_required_points ?? 4);
+        $form_title = esc_attr($store->repair_form_title ?? 'Reparaturauftrag');
+        $form_subtitle = esc_attr($store->repair_form_subtitle ?? '');
+        $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
+        $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
+        $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon']];
+        foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
+
         // Build repairs HTML
         $repairs_html = '';
         if (empty($recent)) {
@@ -338,6 +349,27 @@ a:hover{text-decoration:underline}
     .ra-filters select{width:100%}
     .ra-title{font-size:18px}
 }
+/* ========== Toggle Switch ========== */
+.ra-toggle{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.ra-toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0}
+.ra-toggle-switch input{opacity:0;width:0;height:0}
+.ra-toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:24px;transition:.3s}
+.ra-toggle-slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.ra-toggle-switch input:checked+.ra-toggle-slider{background:#667eea}
+.ra-toggle-switch input:checked+.ra-toggle-slider:before{transform:translateX(20px)}
+.ra-toggle-label{font-size:14px;font-weight:600;color:#374151}
+.ra-toggle-desc{font-size:12px;color:#6b7280;font-weight:400}
+/* ========== Section Divider ========== */
+.ra-section-divider{border:none;border-top:1px solid #f0f0f0;margin:24px 0}
+.ra-section-title{font-size:15px;font-weight:700;color:#111827;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+/* ========== Field Config ========== */
+.ra-field-config{display:flex;flex-direction:column;gap:10px}
+.ra-field-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0}
+.ra-field-row label.ra-fc-toggle{display:flex;align-items:center;gap:8px;flex-shrink:0;cursor:pointer}
+.ra-field-row input[type="checkbox"]{width:18px;height:18px;accent-color:#667eea;cursor:pointer}
+.ra-field-row input[type="text"]{flex:1;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none;min-width:0}
+.ra-field-row input[type="text"]:focus{border-color:#667eea}
+.ra-fc-name{font-size:12px;font-weight:600;color:#6b7280;min-width:60px}
 </style>
 </head>
 <body>
@@ -418,14 +450,12 @@ a:hover{text-decoration:underline}
         echo '<div id="ra-settings" class="ra-settings ra-hidden">
         <h3><i class="ri-settings-3-line"></i> Einstellungen</h3>
         <form id="ra-settings-form">
+            <!-- Allgemein -->
+            <div class="ra-section-title"><i class="ri-store-2-line"></i> Allgemein</div>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Firmenname</label>
                     <input type="text" name="name" value="' . esc_attr($store->name) . '">
-                </div>
-                <div class="field">
-                    <label>Bonuspunkte pro Formular</label>
-                    <input type="number" name="repair_points_per_form" value="' . intval($store->repair_points_per_form) . '" min="0" max="10">
                 </div>
                 <div class="field">
                     <label>Adresse</label>
@@ -442,18 +472,6 @@ a:hover{text-decoration:underline}
                 <div class="field">
                     <label>Telefon</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
-                </div>
-                <div class="field">
-                    <label>Firmenname (Impressum)</label>
-                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '">
-                </div>
-                <div class="field">
-                    <label>Inhaber (Impressum)</label>
-                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '">
-                </div>
-                <div class="field">
-                    <label>USt-IdNr.</label>
-                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
                 </div>
                 <div class="field">
                     <label>Akzentfarbe</label>
@@ -479,6 +497,119 @@ a:hover{text-decoration:underline}
                         <i class="ri-upload-2-line"></i> Logo hochladen
                     </button>
                 </div>
+            </div>
+
+            <hr class="ra-section-divider">
+
+            <!-- Impressum -->
+            <div class="ra-section-title"><i class="ri-file-list-3-line"></i> Impressum / Rechtliches</div>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Firmenname (Impressum)</label>
+                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '">
+                </div>
+                <div class="field">
+                    <label>Inhaber (Impressum)</label>
+                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '">
+                </div>
+                <div class="field">
+                    <label>USt-IdNr.</label>
+                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
+                </div>
+            </div>
+
+            <hr class="ra-section-divider">
+
+            <!-- PunktePass Integration -->
+            <div class="ra-section-title"><i class="ri-star-line"></i> PunktePass Integration</div>
+            <div class="ra-toggle">
+                <label class="ra-toggle-switch">
+                    <input type="checkbox" id="ra-pp-toggle" ' . ($pp_enabled ? 'checked' : '') . '>
+                    <span class="ra-toggle-slider"></span>
+                </label>
+                <div>
+                    <div class="ra-toggle-label">PunktePass aktivieren</div>
+                    <div class="ra-toggle-desc">Kunden sammeln Bonuspunkte bei jeder Formularabgabe</div>
+                </div>
+            </div>
+            <input type="hidden" name="repair_punktepass_enabled" id="ra-pp-enabled-val" value="' . $pp_enabled . '">
+
+            <div id="ra-pp-settings" ' . ($pp_enabled ? '' : 'style="display:none"') . '>
+                <div class="ra-settings-grid">
+                    <div class="field">
+                        <label>Punkte pro Formular</label>
+                        <input type="number" name="repair_points_per_form" value="' . intval($store->repair_points_per_form) . '" min="0" max="50">
+                    </div>
+                    <div class="field">
+                        <label>Ben&ouml;tigte Punkte f&uuml;r Belohnung</label>
+                        <input type="number" name="repair_required_points" value="' . $required_points . '" min="1" max="100">
+                    </div>
+                    <div class="field">
+                        <label>Belohnung</label>
+                        <input type="text" name="repair_reward_name" value="' . $reward_name . '" placeholder="z.B. 10 Euro Rabatt">
+                    </div>
+                    <div class="field">
+                        <label>Belohnungsbeschreibung</label>
+                        <input type="text" name="repair_reward_description" value="' . $reward_desc . '" placeholder="z.B. 10 Euro Rabatt auf Ihre n&auml;chste Reparatur">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="ra-section-divider">
+
+            <!-- Formular anpassen -->
+            <div class="ra-section-title"><i class="ri-edit-line"></i> Formular anpassen</div>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Formulartitel</label>
+                    <input type="text" name="repair_form_title" value="' . $form_title . '" placeholder="Reparaturauftrag">
+                </div>
+                <div class="field">
+                    <label>Untertitel</label>
+                    <input type="text" name="repair_form_subtitle" value="' . $form_subtitle . '" placeholder="Optional">
+                </div>
+                <div class="field">
+                    <label>Branche / Service-Typ</label>
+                    <select name="repair_service_type" class="ra-status-select" style="max-width:none">
+                        <option value="Allgemein" ' . ($service_type === 'Allgemein' ? 'selected' : '') . '>Allgemein</option>
+                        <option value="Handy-Reparatur" ' . ($service_type === 'Handy-Reparatur' ? 'selected' : '') . '>Handy-Reparatur</option>
+                        <option value="Computer-Reparatur" ' . ($service_type === 'Computer-Reparatur' ? 'selected' : '') . '>Computer-Reparatur</option>
+                        <option value="Fahrrad-Reparatur" ' . ($service_type === 'Fahrrad-Reparatur' ? 'selected' : '') . '>Fahrrad-Reparatur</option>
+                        <option value="KFZ-Reparatur" ' . ($service_type === 'KFZ-Reparatur' ? 'selected' : '') . '>KFZ-Reparatur</option>
+                        <option value="Schmuck-Reparatur" ' . ($service_type === 'Schmuck-Reparatur' ? 'selected' : '') . '>Schmuck-Reparatur</option>
+                        <option value="Elektro-Reparatur" ' . ($service_type === 'Elektro-Reparatur' ? 'selected' : '') . '>Elektro-Reparatur</option>
+                        <option value="Uhren-Reparatur" ' . ($service_type === 'Uhren-Reparatur' ? 'selected' : '') . '>Uhren-Reparatur</option>
+                        <option value="Schuh-Reparatur" ' . ($service_type === 'Schuh-Reparatur' ? 'selected' : '') . '>Schuh-Reparatur</option>
+                        <option value="Sonstige" ' . ($service_type === 'Sonstige' ? 'selected' : '') . '>Sonstige</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top:16px">
+                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:10px">FORMULARFELDER</label>
+                <div class="ra-field-config" id="ra-field-config">';
+
+// Field config rows
+$fc_field_names = [
+    'device_brand' => 'Marke',
+    'device_model' => 'Modell',
+    'device_imei' => 'Seriennummer',
+    'device_pattern' => 'Entsperrcode',
+    'accessories' => 'Zubeh&ouml;r',
+    'customer_phone' => 'Telefon',
+];
+foreach ($fc_field_names as $fk => $fn) {
+    $fc = $field_config[$fk] ?? $fc_defaults[$fk];
+    $checked = !empty($fc['enabled']) ? 'checked' : '';
+    $label = esc_attr($fc['label'] ?? $fc_defaults[$fk]['label']);
+    echo '<div class="ra-field-row">
+        <label class="ra-fc-toggle"><input type="checkbox" data-field="' . $fk . '" ' . $checked . '></label>
+        <span class="ra-fc-name">' . $fn . '</span>
+        <input type="text" data-field-label="' . $fk . '" value="' . $label . '" placeholder="Feldbezeichnung">
+    </div>';
+}
+
+echo '          </div>
             </div>
 
             <div class="ra-settings-save">
@@ -710,10 +841,27 @@ a:hover{text-decoration:underline}
     function pad(n){return n<10?"0"+n:n}
     function esc(s){if(!s)return"";var d=document.createElement("div");d.textContent=s;return d.innerHTML}
 
+    /* ===== PunktePass Toggle ===== */
+    document.getElementById("ra-pp-toggle").addEventListener("change",function(){
+        var val=this.checked?1:0;
+        document.getElementById("ra-pp-enabled-val").value=val;
+        document.getElementById("ra-pp-settings").style.display=this.checked?"":"none";
+    });
+
     /* ===== Settings Form ===== */
     document.getElementById("ra-settings-form").addEventListener("submit",function(e){
         e.preventDefault();
         var fd=new FormData(this);
+        // Collect field config
+        var fc={};
+        document.querySelectorAll("#ra-field-config .ra-field-row").forEach(function(row){
+            var cb=row.querySelector("input[type=checkbox]");
+            var inp=row.querySelector("input[type=text]");
+            if(cb&&inp){
+                fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
+            }
+        });
+        fd.append("repair_field_config",JSON.stringify(fc));
         fd.append("action","ppv_repair_save_settings");
         fd.append("nonce",NONCE);
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})

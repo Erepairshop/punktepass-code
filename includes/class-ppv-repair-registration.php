@@ -36,8 +36,8 @@ class PPV_Repair_Registration {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reparaturformular registrieren - PunktePass</title>
-    <meta name="description" content="Erstellen Sie Ihr digitales Reparaturformular mit automatischen Bonuspunkten. Kostenlos starten mit PunktePass.">
+    <title>Reparaturformular erstellen - PunktePass</title>
+    <meta name="description" content="Erstellen Sie Ihr digitales Reparaturformular f&uuml;r jede Branche. Felder anpassbar, Bonuspunkte optional. Kostenlos starten mit PunktePass.">
     <meta name="robots" content="index, follow">
     <link rel="icon" href="https://punktepass.de/wp-content/uploads/2025/04/cropped-ppfavicon-32x32.png" sizes="32x32">
     <style>
@@ -449,8 +449,8 @@ class PPV_Repair_Registration {
 <!-- Header -->
 <div class="pp-reg-header">
     <img src="<?php echo esc_url($logo_url); ?>" alt="PunktePass" class="pp-reg-header-logo">
-    <h1>Reparaturformular registrieren</h1>
-    <p>Erstellen Sie Ihr digitales Reparaturformular mit automatischen Bonuspunkten f&uuml;r Ihre Kunden</p>
+    <h1>Reparaturformular erstellen</h1>
+    <p>Erstellen Sie Ihr digitales Reparaturformular &ndash; f&uuml;r jede Branche anpassbar, mit optionalen Bonuspunkten f&uuml;r Ihre Kunden</p>
 </div>
 
 <div class="pp-reg-container">
@@ -461,14 +461,14 @@ class PPV_Repair_Registration {
             <span class="pp-reg-feature-icon">&#128736;</span>
             <div>
                 <strong>Digitales Reparaturformular</strong>
-                <span>Kunden f&uuml;llen das Formular online aus</span>
+                <span>Kunden f&uuml;llen das Formular bequem online aus</span>
             </div>
         </div>
         <div class="pp-reg-feature">
             <span class="pp-reg-feature-icon">&#11088;</span>
             <div>
-                <strong>Automatische Bonuspunkte</strong>
-                <span>Kunden sammeln Punkte bei jeder Reparatur</span>
+                <strong>Bonuspunkte (optional)</strong>
+                <span>Kunden sammeln Punkte &ndash; PunktePass ein-/ausschaltbar</span>
             </div>
         </div>
         <div class="pp-reg-feature">
@@ -481,8 +481,8 @@ class PPV_Repair_Registration {
         <div class="pp-reg-feature">
             <span class="pp-reg-feature-icon">&#9989;</span>
             <div>
-                <strong>Kostenlos starten</strong>
-                <span>Bis zu 50 Formulare gratis</span>
+                <strong>Jede Branche</strong>
+                <span>Handy, Computer, Fahrrad, KFZ, Schmuck &amp; mehr</span>
             </div>
         </div>
     </div>
@@ -499,7 +499,7 @@ class PPV_Repair_Registration {
 
                 <div class="pp-reg-field">
                     <label for="rr-shop-name">Firmenname / Shopname *</label>
-                    <input type="text" id="rr-shop-name" name="shop_name" required placeholder="z.B. HandyDoktor Lauingen">
+                    <input type="text" id="rr-shop-name" name="shop_name" required placeholder="z.B. Meister Reparatur Berlin">
                 </div>
 
                 <div class="pp-reg-field">
