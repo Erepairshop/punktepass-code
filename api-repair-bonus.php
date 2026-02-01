@@ -57,12 +57,13 @@ if (empty($api_key)) {
 global $wpdb;
 $prefix = $wpdb->prefix;
 
-$store_check = (int)$wpdb->get_var($wpdb->prepare(
-    "SELECT COUNT(*) FROM {$prefix}ppv_stores WHERE pos_api_key=%s AND active=1",
+// Look up store by API key
+$api_store = $wpdb->get_row($wpdb->prepare(
+    "SELECT id, name, email as store_email FROM {$prefix}ppv_stores WHERE pos_api_key=%s AND active=1 LIMIT 1",
     $api_key
 ));
 
-if (!$store_check) {
+if (!$api_store) {
     http_response_code(401);
     echo json_encode(['status' => 'error', 'message' => 'Invalid API key']);
     exit;
@@ -74,6 +75,11 @@ $name      = sanitize_text_field($params['name'] ?? '');
 $store_id  = intval($params['store_id'] ?? 0);
 $points    = intval($params['points'] ?? 2);
 $reference = sanitize_text_field($params['reference'] ?? 'Reparatur-Formular Bonus');
+
+// Auto-detect store_id from API key if not provided
+if (!$store_id) {
+    $store_id = (int) $api_store->id;
+}
 
 if (empty($email) || !is_email($email)) {
     http_response_code(400);
