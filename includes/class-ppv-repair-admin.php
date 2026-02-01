@@ -191,6 +191,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $form_title = esc_attr($store->repair_form_title ?? 'Reparaturauftrag');
         $form_subtitle = esc_attr($store->repair_form_subtitle ?? '');
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
+        $reward_type = esc_attr($store->repair_reward_type ?? 'discount_fixed');
+        $reward_value = floatval($store->repair_reward_value ?? 10);
+        $reward_product = esc_attr($store->repair_reward_product ?? '');
+        $inv_prefix = esc_attr($store->repair_invoice_prefix ?? 'RE-');
+        $inv_next = intval($store->repair_invoice_next_number ?? 1);
+        $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
+        $vat_rate = floatval($store->repair_vat_rate ?? 19);
         $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
         $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon']];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
@@ -370,6 +377,44 @@ a:hover{text-decoration:underline}
 .ra-field-row input[type="text"]{flex:1;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none;min-width:0}
 .ra-field-row input[type="text"]:focus{border-color:#667eea}
 .ra-fc-name{font-size:12px;font-weight:600;color:#6b7280;min-width:60px}
+/* ========== Tabs ========== */
+.ra-tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ra-tab{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;white-space:nowrap}
+.ra-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent}
+.ra-tab:hover:not(.active){border-color:#667eea;color:#667eea}
+.ra-tab-content{display:none}
+.ra-tab-content.active{display:block}
+/* ========== Invoice List ========== */
+.ra-inv-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
+.ra-inv-filters .field{margin:0}
+.ra-inv-filters .field label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px}
+.ra-inv-filters .field input{padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none}
+.ra-inv-filters .field input:focus{border-color:#667eea}
+.ra-inv-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.ra-inv-summary-card{background:#fff;border-radius:12px;padding:14px;text-align:center;border:1px solid #f0f0f0}
+.ra-inv-summary-val{font-size:22px;font-weight:800;color:#111827}
+.ra-inv-summary-label{font-size:11px;color:#6b7280;margin-top:2px}
+.ra-inv-table{width:100%;background:#fff;border-radius:14px;border:1px solid #f0f0f0;overflow:hidden}
+.ra-inv-table th{background:#f9fafb;padding:10px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0}
+.ra-inv-table td{padding:10px 14px;font-size:13px;color:#374151;border-bottom:1px solid #f0f0f0}
+.ra-inv-table tr:last-child td{border-bottom:none}
+.ra-inv-table tr:hover td{background:#f9fafb}
+.ra-inv-status{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.ra-inv-status-draft{background:#fef3c7;color:#92400e}
+.ra-inv-status-sent{background:#dbeafe;color:#1d4ed8}
+.ra-inv-status-paid{background:#d1fae5;color:#065f46}
+.ra-inv-status-cancelled{background:#fecaca;color:#991b1b}
+.ra-inv-actions{display:flex;gap:6px}
+.ra-inv-btn{padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;display:inline-flex;align-items:center;gap:4px;text-decoration:none}
+.ra-inv-btn:hover{border-color:#667eea;color:#667eea}
+.ra-inv-btn-pdf{color:#dc2626;border-color:#fecaca}
+.ra-inv-btn-pdf:hover{background:#fef2f2;border-color:#dc2626}
+@media(max-width:640px){
+    .ra-inv-summary{grid-template-columns:1fr}
+    .ra-inv-filters{flex-direction:column}
+    .ra-inv-table{font-size:12px}
+    .ra-inv-table th,.ra-inv-table td{padding:8px 10px}
+}
 </style>
 </head>
 <body>
@@ -612,6 +657,67 @@ foreach ($fc_field_names as $fk => $fn) {
 echo '          </div>
             </div>
 
+            <hr class="ra-section-divider">
+
+            <!-- Rechnungen / Invoice Settings -->
+            <div class="ra-section-title"><i class="ri-file-list-3-line"></i> Rechnungen</div>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Rechnungsnr. Pr&auml;fix</label>
+                    <input type="text" name="repair_invoice_prefix" value="' . $inv_prefix . '" placeholder="RE-">
+                </div>
+                <div class="field">
+                    <label>N&auml;chste Rechnungsnr.</label>
+                    <input type="number" name="repair_invoice_next_number" value="' . $inv_next . '" min="1">
+                </div>
+            </div>
+
+            <div style="margin-top:14px">
+                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px">BELOHNUNG (PunktePass Einl&ouml;sung)</label>
+                <div class="ra-settings-grid">
+                    <div class="field">
+                        <label>Belohnungstyp</label>
+                        <select name="repair_reward_type" class="ra-status-select" style="max-width:none" id="ra-reward-type">
+                            <option value="discount_fixed" ' . ($reward_type === 'discount_fixed' ? 'selected' : '') . '>Fester Rabatt (&euro;)</option>
+                            <option value="discount_percent" ' . ($reward_type === 'discount_percent' ? 'selected' : '') . '>Prozent-Rabatt (%)</option>
+                            <option value="free_product" ' . ($reward_type === 'free_product' ? 'selected' : '') . '>Gratis Produkt</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Wert</label>
+                        <input type="number" name="repair_reward_value" value="' . $reward_value . '" min="0" step="0.01" placeholder="10.00">
+                    </div>
+                    <div class="field" id="ra-reward-product-field" ' . ($reward_type === 'free_product' ? '' : 'style="display:none"') . '>
+                        <label>Gratis-Produkt Name</label>
+                        <input type="text" name="repair_reward_product" value="' . $reward_product . '" placeholder="z.B. Panzerglasfolie">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="ra-section-divider">
+
+            <!-- MwSt / VAT Settings -->
+            <div class="ra-section-title"><i class="ri-percent-line"></i> Umsatzsteuer (MwSt)</div>
+            <div class="ra-toggle">
+                <label class="ra-toggle-switch">
+                    <input type="checkbox" id="ra-vat-toggle" ' . ($vat_enabled ? 'checked' : '') . '>
+                    <span class="ra-toggle-slider"></span>
+                </label>
+                <div>
+                    <div class="ra-toggle-label">Umsatzsteuerpflichtig</div>
+                    <div class="ra-toggle-desc">Deaktivieren f&uuml;r Kleinunternehmer gem. &sect;19 UStG</div>
+                </div>
+            </div>
+            <input type="hidden" name="repair_vat_enabled" id="ra-vat-enabled-val" value="' . $vat_enabled . '">
+            <div id="ra-vat-settings" ' . ($vat_enabled ? '' : 'style="display:none"') . '>
+                <div class="ra-settings-grid">
+                    <div class="field">
+                        <label>MwSt-Satz (%)</label>
+                        <input type="number" name="repair_vat_rate" value="' . $vat_rate . '" min="0" max="100" step="0.01" placeholder="19.00">
+                    </div>
+                </div>
+            </div>
+
             <div class="ra-settings-save">
                 <button type="submit" class="ra-btn ra-btn-primary">
                     <i class="ri-save-line"></i> Speichern
@@ -634,6 +740,15 @@ echo '          </div>
             </a>
         </div>
     </div>';
+
+        // Tabs: Reparaturen | Rechnungen
+        echo '<div class="ra-tabs">
+        <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> Reparaturen</div>
+        <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnungen</div>
+    </div>';
+
+        // ========== TAB: Reparaturen ==========
+        echo '<div class="ra-tab-content active" id="ra-tab-repairs">';
 
         // Search & Filters
         echo '<div class="ra-toolbar">
@@ -661,6 +776,71 @@ echo '          </div>
         if ($total_repairs > 20) {
             echo '<div class="ra-load-more"><button class="ra-btn ra-btn-outline" id="ra-load-more" data-page="1">Mehr laden</button></div>';
         }
+
+        echo '</div>'; // end ra-tab-repairs
+
+        // ========== TAB: Rechnungen ==========
+        echo '<div class="ra-tab-content" id="ra-tab-invoices">';
+
+        // Filters
+        echo '<div class="ra-inv-filters">
+            <div class="field">
+                <label>Von</label>
+                <input type="date" id="ra-inv-from">
+            </div>
+            <div class="field">
+                <label>Bis</label>
+                <input type="date" id="ra-inv-to">
+            </div>
+            <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-filter-btn">
+                <i class="ri-filter-line"></i> Filtern
+            </button>
+            <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-csv-btn">
+                <i class="ri-file-excel-2-line"></i> CSV Export
+            </button>
+        </div>';
+
+        // Summary cards
+        echo '<div class="ra-inv-summary" id="ra-inv-summary">
+            <div class="ra-inv-summary-card">
+                <div class="ra-inv-summary-val" id="ra-inv-count">-</div>
+                <div class="ra-inv-summary-label">Rechnungen</div>
+            </div>
+            <div class="ra-inv-summary-card">
+                <div class="ra-inv-summary-val" id="ra-inv-revenue">-</div>
+                <div class="ra-inv-summary-label">Umsatz</div>
+            </div>
+            <div class="ra-inv-summary-card">
+                <div class="ra-inv-summary-val" id="ra-inv-discounts">-</div>
+                <div class="ra-inv-summary-label">Rabatte</div>
+            </div>
+        </div>';
+
+        // Invoice table
+        echo '<div style="overflow-x:auto">
+        <table class="ra-inv-table">
+            <thead>
+                <tr>
+                    <th>Nr.</th>
+                    <th>Datum</th>
+                    <th>Kunde</th>
+                    <th>Netto</th>
+                    <th>MwSt</th>
+                    <th>Gesamt</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="ra-inv-body">
+                <tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Rechnungen werden geladen...</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="ra-load-more" id="ra-inv-load-more" style="display:none">
+            <button class="ra-btn ra-btn-outline" id="ra-inv-more-btn" data-page="1">Mehr laden</button>
+        </div>';
+
+        echo '</div>'; // end ra-tab-invoices
 
         // Toast notification
         echo '<div class="ra-toast" id="ra-toast"></div>';
@@ -846,6 +1026,132 @@ echo '          </div>
         var val=this.checked?1:0;
         document.getElementById("ra-pp-enabled-val").value=val;
         document.getElementById("ra-pp-settings").style.display=this.checked?"":"none";
+    });
+
+    /* ===== VAT Toggle ===== */
+    document.getElementById("ra-vat-toggle").addEventListener("change",function(){
+        var val=this.checked?1:0;
+        document.getElementById("ra-vat-enabled-val").value=val;
+        document.getElementById("ra-vat-settings").style.display=this.checked?"":"none";
+    });
+
+    /* ===== Reward Type Toggle ===== */
+    document.getElementById("ra-reward-type").addEventListener("change",function(){
+        var pf=document.getElementById("ra-reward-product-field");
+        pf.style.display=this.value==="free_product"?"":"none";
+    });
+
+    /* ===== Tab Switching ===== */
+    document.querySelectorAll(".ra-tab").forEach(function(tab){
+        tab.addEventListener("click",function(){
+            document.querySelectorAll(".ra-tab").forEach(function(t){t.classList.remove("active")});
+            document.querySelectorAll(".ra-tab-content").forEach(function(c){c.classList.remove("active")});
+            this.classList.add("active");
+            var target=this.getAttribute("data-tab");
+            document.getElementById("ra-tab-"+target).classList.add("active");
+            if(target==="invoices"&&!invoicesLoaded){loadInvoices(1);invoicesLoaded=true;}
+        });
+    });
+
+    /* ===== Invoices ===== */
+    var invoicesLoaded=false;
+
+    function fmtEur(n){return parseFloat(n||0).toFixed(2).replace(".",",")+" \u20ac"}
+
+    function loadInvoices(page){
+        page=page||1;
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoices_list");
+        fd.append("nonce",NONCE);
+        fd.append("page",page);
+        var df=document.getElementById("ra-inv-from").value;
+        var dt=document.getElementById("ra-inv-to").value;
+        if(df)fd.append("date_from",df);
+        if(dt)fd.append("date_to",dt);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(!data.success)return;
+            var d=data.data;
+            // Summary
+            document.getElementById("ra-inv-count").textContent=d.summary.count||"0";
+            document.getElementById("ra-inv-revenue").textContent=fmtEur(d.summary.revenue);
+            document.getElementById("ra-inv-discounts").textContent=fmtEur(d.summary.discounts);
+
+            // Table
+            var tbody=document.getElementById("ra-inv-body");
+            if(page===1)tbody.innerHTML="";
+            if(!d.invoices||d.invoices.length===0){
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Keine Rechnungen vorhanden.</td></tr>\';
+            }else{
+                d.invoices.forEach(function(inv){
+                    var statusMap={draft:["Entwurf","ra-inv-status-draft"],sent:["Gesendet","ra-inv-status-sent"],paid:["Bezahlt","ra-inv-status-paid"],cancelled:["Storniert","ra-inv-status-cancelled"]};
+                    var st=statusMap[inv.status]||["?",""];
+                    var date=inv.created_at?new Date(inv.created_at.replace(/-/g,"/")):"";
+                    var dateStr=date?pad(date.getDate())+"."+pad(date.getMonth()+1)+"."+date.getFullYear():"";
+                    var vatCol=parseInt(inv.is_kleinunternehmer)?"<span style=\'font-size:11px;color:#9ca3af\'>Kl.Unt.</span>":fmtEur(inv.vat_amount);
+                    var pdfUrl=AJAX+"?action=ppv_repair_invoice_pdf&invoice_id="+inv.id+"&nonce="+NONCE;
+
+                    var row=document.createElement("tr");
+                    row.innerHTML=\'<td><strong>\'+esc(inv.invoice_number)+\'</strong></td>\'+
+                        \'<td>\'+dateStr+\'</td>\'+
+                        \'<td>\'+esc(inv.customer_name)+\'</td>\'+
+                        \'<td>\'+fmtEur(inv.net_amount)+\'</td>\'+
+                        \'<td>\'+vatCol+\'</td>\'+
+                        \'<td><strong>\'+fmtEur(inv.total)+\'</strong></td>\'+
+                        \'<td><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
+                        \'<td><div class="ra-inv-actions">\'+
+                            \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
+                            \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
+                                \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>Entwurf</option>\'+
+                                \'<option value="sent" \'+(inv.status==="sent"?"selected":"")+\'>Gesendet</option>\'+
+                                \'<option value="paid" \'+(inv.status==="paid"?"selected":"")+\'>Bezahlt</option>\'+
+                                \'<option value="cancelled" \'+(inv.status==="cancelled"?"selected":"")+\'>Storniert</option>\'+
+                            \'</select>\'+
+                        \'</div></td>\';
+                    tbody.appendChild(row);
+                });
+                // Bind status change
+                tbody.querySelectorAll(".ra-inv-status-sel").forEach(function(sel){
+                    sel.addEventListener("change",function(){
+                        var iid=this.getAttribute("data-inv-id"),ns=this.value;
+                        var fd2=new FormData();
+                        fd2.append("action","ppv_repair_invoice_update");
+                        fd2.append("nonce",NONCE);
+                        fd2.append("invoice_id",iid);
+                        fd2.append("status",ns);
+                        fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                        .then(function(r){return r.json()})
+                        .then(function(res){toast(res.success?"Status aktualisiert":"Fehler")});
+                    });
+                });
+            }
+            // Load more
+            var lm=document.getElementById("ra-inv-load-more");
+            if(d.page<d.pages){
+                lm.style.display="";
+                document.getElementById("ra-inv-more-btn").setAttribute("data-page",d.page);
+            }else{
+                lm.style.display="none";
+            }
+        });
+    }
+
+    // Invoice filter
+    document.getElementById("ra-inv-filter-btn").addEventListener("click",function(){loadInvoices(1)});
+    // Invoice load more
+    document.getElementById("ra-inv-more-btn").addEventListener("click",function(){
+        loadInvoices(parseInt(this.getAttribute("data-page"))+1);
+    });
+    // CSV export
+    document.getElementById("ra-inv-csv-btn").addEventListener("click",function(){
+        var df=document.getElementById("ra-inv-from").value;
+        var dt=document.getElementById("ra-inv-to").value;
+        var url=AJAX+"?action=ppv_repair_invoice_csv&nonce="+NONCE;
+        if(df)url+="&date_from="+df;
+        if(dt)url+="&date_to="+dt;
+        window.open(url,"_blank");
     });
 
     /* ===== Settings Form ===== */

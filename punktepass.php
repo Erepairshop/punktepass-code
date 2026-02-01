@@ -295,6 +295,7 @@ $core_modules = [
     'includes/class-ppv-repair-form.php',
     'includes/class-ppv-repair-registration.php',
     'includes/class-ppv-repair-admin.php',
+    'includes/class-ppv-repair-invoice.php',
 ];
 
 // Debug only if enabled

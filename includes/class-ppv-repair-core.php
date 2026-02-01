@@ -44,6 +44,12 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_search', [__CLASS__, 'ajax_search_repairs']);
         add_action('wp_ajax_ppv_repair_save_settings', [__CLASS__, 'ajax_save_settings']);
         add_action('wp_ajax_ppv_repair_upload_logo', [__CLASS__, 'ajax_upload_logo']);
+
+        // AJAX: invoice actions
+        add_action('wp_ajax_ppv_repair_invoice_pdf', ['PPV_Repair_Invoice', 'ajax_download_pdf']);
+        add_action('wp_ajax_ppv_repair_invoice_csv', ['PPV_Repair_Invoice', 'ajax_export_csv']);
+        add_action('wp_ajax_ppv_repair_invoices_list', ['PPV_Repair_Invoice', 'ajax_list_invoices']);
+        add_action('wp_ajax_ppv_repair_invoice_update', ['PPV_Repair_Invoice', 'ajax_update_invoice']);
     }
 
     /** ============================================================
@@ -277,6 +283,67 @@ class PPV_Repair_Core {
             }
 
             update_option('ppv_repair_migration_version', '1.1');
+        }
+
+        // v1.2: Invoice system + reward types
+        if (version_compare($version, '1.2', '<')) {
+            $charset = $wpdb->get_charset_collate();
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$inv_table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                store_id BIGINT(20) UNSIGNED NOT NULL,
+                repair_id BIGINT(20) UNSIGNED NOT NULL,
+                invoice_number VARCHAR(50) NOT NULL,
+                customer_name VARCHAR(255) NOT NULL,
+                customer_email VARCHAR(255) NOT NULL,
+                customer_phone VARCHAR(50) NULL,
+                device_info VARCHAR(500) NULL,
+                description TEXT NULL,
+                subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+                discount_type ENUM('none','discount_fixed','discount_percent','free_product') DEFAULT 'none',
+                discount_value DECIMAL(10,2) DEFAULT 0,
+                discount_description VARCHAR(255) NULL,
+                net_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+                vat_rate DECIMAL(5,2) DEFAULT 0,
+                vat_amount DECIMAL(10,2) DEFAULT 0,
+                total DECIMAL(10,2) NOT NULL DEFAULT 0,
+                is_kleinunternehmer TINYINT(1) DEFAULT 0,
+                punktepass_reward_applied TINYINT(1) DEFAULT 0,
+                points_used INT DEFAULT 0,
+                notes TEXT NULL,
+                status ENUM('draft','sent','paid','cancelled') DEFAULT 'draft',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                paid_at DATETIME NULL,
+                PRIMARY KEY (id),
+                KEY idx_store (store_id),
+                KEY idx_repair (repair_id),
+                KEY idx_number (store_id, invoice_number),
+                KEY idx_created (store_id, created_at DESC)
+            ) {$charset};";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+            $inv_columns = [
+                'repair_invoice_prefix'      => "VARCHAR(20) DEFAULT 'RE-'",
+                'repair_invoice_next_number'  => "INT UNSIGNED DEFAULT 1",
+                'repair_reward_type'          => "VARCHAR(30) DEFAULT 'discount_fixed'",
+                'repair_reward_value'         => "DECIMAL(10,2) DEFAULT 10.00",
+                'repair_reward_product'       => "VARCHAR(255) NULL",
+                'repair_vat_enabled'         => "TINYINT(1) DEFAULT 1",
+                'repair_vat_rate'            => "DECIMAL(5,2) DEFAULT 19.00",
+            ];
+
+            foreach ($inv_columns as $col => $definition) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$stores_table} LIKE '{$col}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN {$col} {$definition}");
+                }
+            }
+
+            update_option('ppv_repair_migration_version', '1.2');
         }
     }
 
@@ -633,7 +700,22 @@ class PPV_Repair_Core {
         if ($new_status === 'delivered') $update['delivered_at'] = current_time('mysql');
 
         $wpdb->update($wpdb->prefix . 'ppv_repairs', $update, ['id' => $repair_id]);
-        wp_send_json_success(['message' => 'Status aktualisiert']);
+
+        // Auto-generate invoice when status = done
+        $invoice_id = null;
+        if ($new_status === 'done' && class_exists('PPV_Repair_Invoice')) {
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
+            ));
+            if ($store) {
+                $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, floatval($_POST['final_cost'] ?? $repair->estimated_cost ?? 0));
+            }
+        }
+
+        wp_send_json_success([
+            'message' => 'Status aktualisiert',
+            'invoice_id' => $invoice_id,
+        ]);
     }
 
     /** AJAX: Search Repairs */
@@ -680,11 +762,14 @@ class PPV_Repair_Core {
 
         // Text fields
         $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'name', 'phone', 'address', 'plz', 'city',
-                        'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type'];
+                        'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type',
+                        'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product'];
         // Integer fields
-        $int_fields = ['repair_points_per_form', 'repair_required_points'];
+        $int_fields = ['repair_points_per_form', 'repair_required_points', 'repair_invoice_next_number'];
+        // Decimal fields
+        $decimal_fields = ['repair_reward_value', 'repair_vat_rate'];
         // Toggle fields (0/1)
-        $toggle_fields = ['repair_punktepass_enabled'];
+        $toggle_fields = ['repair_punktepass_enabled', 'repair_vat_enabled'];
 
         $update = [];
         foreach ($text_fields as $f) {
@@ -692,6 +777,9 @@ class PPV_Repair_Core {
         }
         foreach ($int_fields as $f) {
             if (isset($_POST[$f])) $update[$f] = max(0, intval($_POST[$f]));
+        }
+        foreach ($decimal_fields as $f) {
+            if (isset($_POST[$f])) $update[$f] = max(0, round(floatval($_POST[$f]), 2));
         }
         foreach ($toggle_fields as $f) {
             if (isset($_POST[$f])) $update[$f] = intval($_POST[$f]) ? 1 : 0;
