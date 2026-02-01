@@ -131,7 +131,7 @@ class PPV_Repair_Core {
         $slug = sanitize_title($slug);
 
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE slug = %s AND repair_enabled = 1 AND active = 1",
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE store_slug = %s AND repair_enabled = 1 AND active = 1",
             $slug
         ));
 
@@ -161,7 +161,7 @@ class PPV_Repair_Core {
 
         // Find user
         $user = $wpdb->get_row($wpdb->prepare(
-            "SELECT u.*, s.id AS store_id, s.name AS store_name, s.slug AS store_slug
+            "SELECT u.*, s.id AS store_id, s.name AS store_name, s.store_slug
              FROM {$prefix}ppv_users u
              JOIN {$prefix}ppv_stores s ON s.user_id = u.id AND s.repair_enabled = 1
              WHERE u.email = %s AND u.active = 1
@@ -512,7 +512,7 @@ class PPV_Repair_Core {
         $slug = sanitize_title($shop_name);
         $base_slug = $slug;
         $counter = 1;
-        while ($wpdb->get_var($wpdb->prepare("SELECT id FROM {$prefix}ppv_stores WHERE slug=%s", $slug))) {
+        while ($wpdb->get_var($wpdb->prepare("SELECT id FROM {$prefix}ppv_stores WHERE store_slug=%s", $slug))) {
             $slug = $base_slug . '-' . $counter++;
         }
 
@@ -531,7 +531,7 @@ class PPV_Repair_Core {
         $api_key = bin2hex(random_bytes(16));
         $wpdb->insert("{$prefix}ppv_stores", [
             'user_id' => $user_id, 'store_key' => wp_generate_password(16, false, false),
-            'name' => $shop_name, 'slug' => $slug, 'address' => $address, 'plz' => $plz,
+            'name' => $shop_name, 'store_slug' => $slug, 'address' => $address, 'plz' => $plz,
             'city' => $city, 'phone' => $phone, 'email' => $email,
             'qr_secret' => wp_generate_password(32, false, false), 'pos_api_key' => $api_key,
             'active' => 1, 'visible' => 1,
@@ -718,7 +718,7 @@ class PPV_Repair_Core {
         $tx = esc_html($store->repair_tax_id ?: '');
         $co = esc_attr($store->repair_color ?: '#667eea');
         $lg = esc_url($store->logo ?: '');
-        $sl = esc_attr($store->slug);
+        $sl = esc_attr($store->store_slug);
 
         $titles = ['datenschutz' => 'Datenschutzerkl&auml;rung', 'agb' => 'AGB', 'impressum' => 'Impressum'];
         $title = $titles[$page_type] ?? '';

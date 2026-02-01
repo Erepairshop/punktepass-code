@@ -173,7 +173,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             "SELECT * FROM {$prefix}ppv_repairs WHERE store_id = %d ORDER BY created_at DESC LIMIT 20", $store->id
         ));
 
-        $form_url   = home_url("/formular/{$store->slug}");
+        $form_url   = home_url("/formular/{$store->store_slug}");
         $ajax_url   = admin_url('admin-ajax.php');
         $nonce      = wp_create_nonce('ppv_repair_admin');
         $is_premium = !empty($store->repair_premium);
@@ -181,7 +181,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 
         $store_name  = esc_html($store->name);
         $store_logo  = esc_url($store->logo ?: '');
-        $store_slug  = esc_attr($store->slug);
+        $store_slug  = esc_attr($store->store_slug);
         $store_color = esc_attr($store->repair_color ?: '#667eea');
 
         // Build repairs HTML

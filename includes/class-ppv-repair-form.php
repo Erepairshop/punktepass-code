@@ -19,7 +19,7 @@ class PPV_Repair_Form {
         $store_name = esc_html($store->repair_company_name ?: $store->name);
         $color      = esc_attr($store->repair_color ?: '#667eea');
         $logo       = esc_url($store->logo ?: PPV_PLUGIN_URL . 'assets/img/punktepass-logo.png');
-        $slug       = esc_attr($store->slug);
+        $slug       = esc_attr($store->store_slug);
         $points     = intval($store->repair_points_per_form ?: 2);
         $store_id   = intval($store->id);
         $address    = esc_html(trim(($store->address ?: '') . ' ' . ($store->plz ?: '') . ' ' . ($store->city ?: '')));
