@@ -39,18 +39,30 @@ class PPV_Repair_Core {
         add_action('wp_ajax_nopriv_ppv_repair_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_ppv_repair_login', [__CLASS__, 'ajax_login']);
 
-        // AJAX: repair admin actions
-        add_action('wp_ajax_ppv_repair_update_status', [__CLASS__, 'ajax_update_status']);
-        add_action('wp_ajax_ppv_repair_search', [__CLASS__, 'ajax_search_repairs']);
-        add_action('wp_ajax_ppv_repair_save_settings', [__CLASS__, 'ajax_save_settings']);
-        add_action('wp_ajax_ppv_repair_upload_logo', [__CLASS__, 'ajax_upload_logo']);
-        add_action('wp_ajax_ppv_repair_logout', [__CLASS__, 'ajax_logout']);
+        // AJAX: repair admin actions (need nopriv because repair admin uses session auth, not WP login)
+        $admin_actions = [
+            'ppv_repair_update_status'  => [__CLASS__, 'ajax_update_status'],
+            'ppv_repair_search'         => [__CLASS__, 'ajax_search_repairs'],
+            'ppv_repair_save_settings'  => [__CLASS__, 'ajax_save_settings'],
+            'ppv_repair_upload_logo'    => [__CLASS__, 'ajax_upload_logo'],
+            'ppv_repair_logout'         => [__CLASS__, 'ajax_logout'],
+        ];
+        foreach ($admin_actions as $action => $callback) {
+            add_action("wp_ajax_{$action}", $callback);
+            add_action("wp_ajax_nopriv_{$action}", $callback);
+        }
 
-        // AJAX: invoice actions
-        add_action('wp_ajax_ppv_repair_invoice_pdf', ['PPV_Repair_Invoice', 'ajax_download_pdf']);
-        add_action('wp_ajax_ppv_repair_invoice_csv', ['PPV_Repair_Invoice', 'ajax_export_csv']);
-        add_action('wp_ajax_ppv_repair_invoices_list', ['PPV_Repair_Invoice', 'ajax_list_invoices']);
-        add_action('wp_ajax_ppv_repair_invoice_update', ['PPV_Repair_Invoice', 'ajax_update_invoice']);
+        // AJAX: invoice actions (also need nopriv for session-based auth)
+        $invoice_actions = [
+            'ppv_repair_invoice_pdf'    => ['PPV_Repair_Invoice', 'ajax_download_pdf'],
+            'ppv_repair_invoice_csv'    => ['PPV_Repair_Invoice', 'ajax_export_csv'],
+            'ppv_repair_invoices_list'  => ['PPV_Repair_Invoice', 'ajax_list_invoices'],
+            'ppv_repair_invoice_update' => ['PPV_Repair_Invoice', 'ajax_update_invoice'],
+        ];
+        foreach ($invoice_actions as $action => $callback) {
+            add_action("wp_ajax_{$action}", $callback);
+            add_action("wp_ajax_nopriv_{$action}", $callback);
+        }
     }
 
     /** ============================================================
