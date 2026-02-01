@@ -44,6 +44,7 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_search', [__CLASS__, 'ajax_search_repairs']);
         add_action('wp_ajax_ppv_repair_save_settings', [__CLASS__, 'ajax_save_settings']);
         add_action('wp_ajax_ppv_repair_upload_logo', [__CLASS__, 'ajax_upload_logo']);
+        add_action('wp_ajax_ppv_repair_logout', [__CLASS__, 'ajax_logout']);
 
         // AJAX: invoice actions
         add_action('wp_ajax_ppv_repair_invoice_pdf', ['PPV_Repair_Invoice', 'ajax_download_pdf']);
@@ -704,11 +705,21 @@ class PPV_Repair_Core {
         // Auto-generate invoice when status = done
         $invoice_id = null;
         if ($new_status === 'done' && class_exists('PPV_Repair_Invoice')) {
-            $store = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
-            ));
-            if ($store) {
-                $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, floatval($_POST['final_cost'] ?? $repair->estimated_cost ?? 0));
+            try {
+                // Ensure invoice table exists (run migration if needed)
+                $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ppv_repair_invoices'");
+                if (!$table_exists) {
+                    self::run_migrations();
+                }
+                $store = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
+                ));
+                if ($store) {
+                    $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, floatval($_POST['final_cost'] ?? $repair->estimated_cost ?? 0));
+                }
+            } catch (\Exception $e) {
+                // Invoice generation failed, but status update should still succeed
+                error_log('PPV Repair Invoice Error: ' . $e->getMessage());
             }
         }
 
@@ -834,6 +845,19 @@ class PPV_Repair_Core {
         return (int)$wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d AND repair_enabled=1 LIMIT 1", $user_id
         ));
+    }
+
+    /** ============================================================
+     * AJAX: Logout from Repair Admin
+     * ============================================================ */
+    public static function ajax_logout() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+        unset($_SESSION['ppv_repair_store_id']);
+        unset($_SESSION['ppv_repair_store_name']);
+        unset($_SESSION['ppv_repair_store_slug']);
+        wp_send_json_success(['message' => 'Abgemeldet']);
     }
 
     /** ============================================================
