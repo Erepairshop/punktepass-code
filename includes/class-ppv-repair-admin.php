@@ -409,11 +409,32 @@ a:hover{text-decoration:underline}
 .ra-inv-btn:hover{border-color:#667eea;color:#667eea}
 .ra-inv-btn-pdf{color:#dc2626;border-color:#fecaca}
 .ra-inv-btn-pdf:hover{background:#fef2f2;border-color:#dc2626}
+/* ========== Invoice Modal ========== */
+.ra-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;padding:16px}
+.ra-modal-overlay.show{display:flex}
+.ra-modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);position:relative}
+.ra-modal h3{font-size:18px;font-weight:700;color:#111827;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.ra-modal-sub{font-size:13px;color:#6b7280;margin-bottom:20px}
+.ra-inv-lines{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.ra-inv-line{display:flex;gap:8px;align-items:center}
+.ra-inv-line-desc{flex:1;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;color:#1f2937;background:#fafafa;outline:none;min-width:0}
+.ra-inv-line-desc:focus{border-color:#667eea;background:#fff}
+.ra-inv-line-amount{width:100px;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;color:#1f2937;background:#fafafa;outline:none;text-align:right}
+.ra-inv-line-amount:focus{border-color:#667eea;background:#fff}
+.ra-inv-line-remove{background:none;border:none;font-size:18px;color:#d1d5db;cursor:pointer;padding:4px 8px;flex-shrink:0}
+.ra-inv-line-remove:hover{color:#dc2626}
+.ra-inv-add{background:none;border:1.5px dashed #d1d5db;border-radius:8px;padding:10px;font-size:13px;color:#6b7280;cursor:pointer;width:100%;text-align:center;transition:all .2s;margin-bottom:16px}
+.ra-inv-add:hover{border-color:#667eea;color:#667eea}
+.ra-inv-totals{border-top:1px solid #e5e7eb;padding-top:12px;margin-bottom:20px}
+.ra-inv-total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:#374151}
+.ra-inv-total-final{font-size:16px;font-weight:700;color:#111827;border-top:2px solid #111827;padding-top:8px;margin-top:4px}
 @media(max-width:640px){
     .ra-inv-summary{grid-template-columns:1fr}
     .ra-inv-filters{flex-direction:column}
     .ra-inv-table{font-size:12px}
     .ra-inv-table th,.ra-inv-table td{padding:8px 10px}
+    .ra-inv-line{flex-wrap:wrap}
+    .ra-inv-line-amount{width:100%}
 }
 </style>
 </head>
@@ -598,6 +619,26 @@ a:hover{text-decoration:underline}
                         <input type="text" name="repair_reward_description" value="' . $reward_desc . '" placeholder="z.B. 10 Euro Rabatt auf Ihre n&auml;chste Reparatur">
                     </div>
                 </div>
+                <hr style="border:none;border-top:1px solid #f0f0f0;margin:16px 0">
+                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px">BELOHNUNG BEI EINL&Ouml;SUNG</label>
+                <div class="ra-settings-grid">
+                    <div class="field">
+                        <label>Belohnungstyp</label>
+                        <select name="repair_reward_type" class="ra-status-select" style="max-width:none" id="ra-reward-type">
+                            <option value="discount_fixed" ' . ($reward_type === 'discount_fixed' ? 'selected' : '') . '>Fester Rabatt (&euro;)</option>
+                            <option value="discount_percent" ' . ($reward_type === 'discount_percent' ? 'selected' : '') . '>Prozent-Rabatt (%)</option>
+                            <option value="free_product" ' . ($reward_type === 'free_product' ? 'selected' : '') . '>Gratis Produkt</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Wert</label>
+                        <input type="number" name="repair_reward_value" value="' . $reward_value . '" min="0" step="0.01" placeholder="10.00">
+                    </div>
+                    <div class="field" id="ra-reward-product-field" ' . ($reward_type === 'free_product' ? '' : 'style="display:none"') . '>
+                        <label>Gratis-Produkt Name</label>
+                        <input type="text" name="repair_reward_product" value="' . $reward_product . '" placeholder="z.B. Panzerglasfolie">
+                    </div>
+                </div>
             </div>
 
             <hr class="ra-section-divider">
@@ -669,28 +710,6 @@ echo '          </div>
                 <div class="field">
                     <label>N&auml;chste Rechnungsnr.</label>
                     <input type="number" name="repair_invoice_next_number" value="' . $inv_next . '" min="1">
-                </div>
-            </div>
-
-            <div style="margin-top:14px">
-                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px">BELOHNUNG (PunktePass Einl&ouml;sung)</label>
-                <div class="ra-settings-grid">
-                    <div class="field">
-                        <label>Belohnungstyp</label>
-                        <select name="repair_reward_type" class="ra-status-select" style="max-width:none" id="ra-reward-type">
-                            <option value="discount_fixed" ' . ($reward_type === 'discount_fixed' ? 'selected' : '') . '>Fester Rabatt (&euro;)</option>
-                            <option value="discount_percent" ' . ($reward_type === 'discount_percent' ? 'selected' : '') . '>Prozent-Rabatt (%)</option>
-                            <option value="free_product" ' . ($reward_type === 'free_product' ? 'selected' : '') . '>Gratis Produkt</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Wert</label>
-                        <input type="number" name="repair_reward_value" value="' . $reward_value . '" min="0" step="0.01" placeholder="10.00">
-                    </div>
-                    <div class="field" id="ra-reward-product-field" ' . ($reward_type === 'free_product' ? '' : 'style="display:none"') . '>
-                        <label>Gratis-Produkt Name</label>
-                        <input type="text" name="repair_reward_product" value="' . $reward_product . '" placeholder="z.B. Panzerglasfolie">
-                    </div>
                 </div>
             </div>
 
@@ -845,6 +864,45 @@ echo '          </div>
         // Toast notification
         echo '<div class="ra-toast" id="ra-toast"></div>';
 
+        // Invoice modal (shown when status changes to "Fertig")
+        echo '<div class="ra-modal-overlay" id="ra-invoice-modal">
+    <div class="ra-modal">
+        <h3><i class="ri-file-list-3-line"></i> Reparatur abschlie&szlig;en</h3>
+        <p class="ra-modal-sub">Leistungen und Betr&auml;ge f&uuml;r die Rechnung eingeben</p>
+        <div id="ra-inv-modal-info" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;display:none"></div>
+        <div class="ra-inv-lines" id="ra-inv-lines">
+            <div class="ra-inv-line">
+                <input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc">
+                <input type="number" placeholder="0.00" step="0.01" min="0" class="ra-inv-line-amount">
+                <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+            </div>
+        </div>
+        <button type="button" class="ra-inv-add" id="ra-inv-add-line">
+            <i class="ri-add-line"></i> Weitere Position hinzuf&uuml;gen
+        </button>
+        <div class="ra-inv-totals">
+            <div class="ra-inv-total-row">
+                <span>Netto:</span>
+                <span id="ra-inv-modal-net">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row" id="ra-inv-modal-vat-row">
+                <span>MwSt <span id="ra-inv-modal-vat-pct">' . intval($vat_rate) . '</span>%:</span>
+                <span id="ra-inv-modal-vat">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row ra-inv-total-final">
+                <span>Gesamt:</span>
+                <span id="ra-inv-modal-total">0,00 &euro;</span>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-inv-modal-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-inv-modal-submit">
+                <i class="ri-check-line"></i> Abschlie&szlig;en &amp; Rechnung
+            </button>
+        </div>
+    </div>
+</div>';
+
         // Footer
         echo '<div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;">
         <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">Powered by <a href="https://punktepass.de" target="_blank" style="color:#667eea;">PunktePass</a></div>
@@ -860,6 +918,8 @@ echo '          </div>
     var AJAX="' . esc_url($ajax_url) . '",
         NONCE="' . esc_attr($nonce) . '",
         STORE=' . intval($store->id) . ',
+        VAT_ENABLED=!!parseInt("' . $vat_enabled . '"),
+        VAT_RATE=parseFloat("' . $vat_rate . '"),
         searchTimer=null,
         currentPage=1;
 
@@ -885,20 +945,28 @@ echo '          </div>
     /* ===== Status Change ===== */
     function bindStatusSelects(container){
         container.querySelectorAll(".ra-status-select").forEach(function(sel){
+            sel.setAttribute("data-prev",sel.value);
             sel.addEventListener("change",function(){
                 var rid=this.getAttribute("data-repair-id"),
-                    st=this.value,
-                    fd=new FormData();
+                    st=this.value;
+                // If "done" → show invoice modal instead of immediate AJAX
+                if(st==="done"){
+                    showInvoiceModal(rid,this);
+                    return;
+                }
+                var fd=new FormData();
                 fd.append("action","ppv_repair_update_status");
                 fd.append("nonce",NONCE);
                 fd.append("repair_id",rid);
                 fd.append("status",st);
+                var self=this;
                 fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
                 .then(function(r){return r.json()})
                 .then(function(data){
                     if(data.success){
                         toast("Status aktualisiert");
-                        updateBadge(sel.closest(".ra-repair-card"),st);
+                        updateBadge(self.closest(".ra-repair-card"),st);
+                        self.setAttribute("data-prev",st);
                     }else{
                         toast(data.data&&data.data.message?data.data.message:"Fehler");
                     }
@@ -1020,6 +1088,131 @@ echo '          </div>
     }
     function pad(n){return n<10?"0"+n:n}
     function esc(s){if(!s)return"";var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+
+    /* ===== Invoice Modal (Fertig status) ===== */
+    var invoiceModal=document.getElementById("ra-invoice-modal"),
+        invoiceRepairId=null,
+        invoiceSelect=null;
+
+    // Hide VAT row if Kleinunternehmer
+    if(!VAT_ENABLED){document.getElementById("ra-inv-modal-vat-row").style.display="none"}
+
+    function showInvoiceModal(repairId,selectEl){
+        invoiceRepairId=repairId;
+        invoiceSelect=selectEl;
+        // Show device info
+        var card=selectEl.closest(".ra-repair-card");
+        var info=document.getElementById("ra-inv-modal-info");
+        if(card){
+            var cname=card.querySelector(".ra-repair-customer strong");
+            var cdev=card.querySelector(".ra-repair-device");
+            var txt=(cname?cname.textContent:"")+(cdev?" \u2013 "+cdev.textContent.trim():"");
+            if(txt){info.textContent=txt;info.style.display="block"}else{info.style.display="none"}
+        }
+        // Reset lines
+        var lines=document.getElementById("ra-inv-lines");
+        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc"><input type="number" placeholder="0.00" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        recalcInvoiceModal();
+        invoiceModal.classList.add("show");
+        lines.querySelector(".ra-inv-line-desc").focus();
+    }
+
+    function hideInvoiceModal(){
+        invoiceModal.classList.remove("show");
+        invoiceRepairId=null;
+        invoiceSelect=null;
+    }
+
+    function recalcInvoiceModal(){
+        var amounts=document.querySelectorAll("#ra-inv-lines .ra-inv-line-amount");
+        var net=0;
+        amounts.forEach(function(a){net+=parseFloat(a.value)||0});
+        var vat=VAT_ENABLED?Math.round(net*(VAT_RATE/100)*100)/100:0;
+        var total=Math.round((net+vat)*100)/100;
+        document.getElementById("ra-inv-modal-net").textContent=fmtEur(net);
+        document.getElementById("ra-inv-modal-vat").textContent=fmtEur(vat);
+        document.getElementById("ra-inv-modal-total").textContent=fmtEur(total);
+    }
+
+    // Line items: delegated events
+    document.getElementById("ra-inv-lines").addEventListener("click",function(e){
+        var rm=e.target.closest(".ra-inv-line-remove");
+        if(rm){
+            var line=rm.closest(".ra-inv-line");
+            if(document.querySelectorAll("#ra-inv-lines .ra-inv-line").length>1){
+                line.remove();
+            }else{
+                line.querySelector(".ra-inv-line-desc").value="";
+                line.querySelector(".ra-inv-line-amount").value="";
+            }
+            recalcInvoiceModal();
+        }
+    });
+    document.getElementById("ra-inv-lines").addEventListener("input",function(e){
+        if(e.target.classList.contains("ra-inv-line-amount"))recalcInvoiceModal();
+    });
+
+    document.getElementById("ra-inv-add-line").addEventListener("click",function(){
+        var lines=document.getElementById("ra-inv-lines");
+        var line=document.createElement("div");
+        line.className="ra-inv-line";
+        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="0.00" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        lines.appendChild(line);
+        line.querySelector(".ra-inv-line-desc").focus();
+    });
+
+    document.getElementById("ra-inv-modal-cancel").addEventListener("click",function(){
+        if(invoiceSelect)invoiceSelect.value=invoiceSelect.getAttribute("data-prev")||"in_progress";
+        hideInvoiceModal();
+    });
+
+    document.getElementById("ra-inv-modal-submit").addEventListener("click",function(){
+        var items=[];
+        document.querySelectorAll("#ra-inv-lines .ra-inv-line").forEach(function(line){
+            var desc=line.querySelector(".ra-inv-line-desc").value.trim();
+            var amt=parseFloat(line.querySelector(".ra-inv-line-amount").value)||0;
+            if(desc||amt>0)items.push({description:desc,amount:amt});
+        });
+        if(items.length===0){toast("Bitte mindestens eine Position eingeben");return}
+        var totalAmt=0;
+        items.forEach(function(i){totalAmt+=i.amount});
+
+        var fd=new FormData();
+        fd.append("action","ppv_repair_update_status");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",invoiceRepairId);
+        fd.append("status","done");
+        fd.append("final_cost",totalAmt);
+        fd.append("line_items",JSON.stringify(items));
+
+        var btn=document.getElementById("ra-inv-modal-submit");
+        btn.disabled=true;
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                toast("Reparatur abgeschlossen & Rechnung erstellt");
+                if(invoiceSelect){
+                    updateBadge(invoiceSelect.closest(".ra-repair-card"),"done");
+                    invoiceSelect.setAttribute("data-prev","done");
+                }
+                hideInvoiceModal();
+            }else{
+                toast(data.data&&data.data.message?data.data.message:"Fehler");
+            }
+        })
+        .catch(function(){toast("Verbindungsfehler")})
+        .finally(function(){btn.disabled=false});
+    });
+
+    // Close on overlay click
+    invoiceModal.addEventListener("click",function(e){
+        if(e.target===invoiceModal){
+            if(invoiceSelect)invoiceSelect.value=invoiceSelect.getAttribute("data-prev")||"in_progress";
+            hideInvoiceModal();
+        }
+    });
 
     /* ===== PunktePass Toggle ===== */
     document.getElementById("ra-pp-toggle").addEventListener("change",function(){

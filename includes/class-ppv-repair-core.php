@@ -358,6 +358,16 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '1.2');
         }
+
+        // v1.3: Line items for invoices
+        if (version_compare($version, '1.3', '<')) {
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+            $exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE 'line_items'");
+            if (!$exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN line_items TEXT NULL AFTER description");
+            }
+            update_option('ppv_repair_migration_version', '1.3');
+        }
     }
 
     /** ============================================================
@@ -727,7 +737,13 @@ class PPV_Repair_Core {
                     "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
                 ));
                 if ($store) {
-                    $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, floatval($_POST['final_cost'] ?? $repair->estimated_cost ?? 0));
+                    $final_cost = floatval($_POST['final_cost'] ?? $repair->estimated_cost ?? 0);
+                    $line_items = [];
+                    if (!empty($_POST['line_items'])) {
+                        $line_items = json_decode(stripslashes($_POST['line_items']), true);
+                        if (!is_array($line_items)) $line_items = [];
+                    }
+                    $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items);
                 }
             } catch (\Exception $e) {
                 // Invoice generation failed, but status update should still succeed

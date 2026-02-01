@@ -21,7 +21,7 @@ class PPV_Repair_Invoice {
      * @param float  $amount - The repair cost (from final_cost POST or estimated_cost)
      * @return int|null - Invoice ID or null on failure
      */
-    public static function generate_invoice($store, $repair, $amount = 0) {
+    public static function generate_invoice($store, $repair, $amount = 0, $line_items = []) {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
@@ -123,6 +123,7 @@ class PPV_Repair_Invoice {
             'customer_phone'            => $repair->customer_phone ?: '',
             'device_info'               => $device,
             'description'               => $repair->problem_description,
+            'line_items'                => !empty($line_items) ? wp_json_encode($line_items) : null,
             'subtotal'                  => $subtotal,
             'discount_type'             => $discount_type,
             'discount_value'            => $discount_value,
@@ -430,6 +431,23 @@ class PPV_Repair_Invoice {
 
         $notes_section = $notes ? '<div style="margin-top:16px;"><strong style="font-size:12px;color:#6b7280;">Anmerkungen:</strong><p style="font-size:12px;color:#374151;margin-top:4px;">' . $notes . '</p></div>' : '';
 
+        // Build line items rows
+        $line_items = json_decode($invoice->line_items ?? '', true);
+        $items_html = '';
+        if (!empty($line_items) && is_array($line_items)) {
+            foreach ($line_items as $item) {
+                $item_desc = esc_html($item['description'] ?? 'Position');
+                $item_amt = number_format(floatval($item['amount'] ?? 0), 2, ',', '.');
+                $items_html .= '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">' . $item_desc . '</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $item_amt . ' &euro;</td></tr>';
+            }
+            if (count($line_items) > 1) {
+                $items_html .= '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;"><strong>Zwischensumme</strong></td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;"><strong>' . $subtotal . ' &euro;</strong></td></tr>';
+            }
+        } else {
+            // Fallback: single line for legacy invoices
+            $items_html = '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;"><strong>Reparatur' . ($device ? ': ' . $device : '') . '</strong><br><span style="font-size:12px;color:#6b7280;">' . $desc . '</span></td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $subtotal . ' &euro;</td></tr>';
+        }
+
         return '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1f2937;font-size:13px;line-height:1.5;margin:0;padding:0}
 .inv-wrap{max-width:700px;margin:0 auto;padding:32px}
@@ -461,7 +479,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,san
 </div>
 <table class="inv-table">
 <tr><th>Beschreibung</th><th>Betrag</th></tr>
-<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;"><strong>Reparatur' . ($device ? ': ' . $device : '') . '</strong><br><span style="font-size:12px;color:#6b7280;">' . $desc . '</span></td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $subtotal . ' &euro;</td></tr>
+' . $items_html . '
 ' . $discount_row . '
 <tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;"><strong>Nettobetrag</strong></td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $net_amount . ' &euro;</td></tr>
 ' . ($is_klein
