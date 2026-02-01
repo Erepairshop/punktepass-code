@@ -616,7 +616,6 @@ $whitelist = [
     'remixicons',       // Remix icons CDN
     'google-platform',
     'ppv-login-js',
-    'ppv-repair-admin-css', // Repair module
 ];
     
     foreach ($wp_styles->queue as $handle) {
@@ -659,10 +658,8 @@ if (class_exists('PPV_Push')) PPV_Push::hooks(); // Push notifications (FCM)
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
 
-// Repair Form Module
+// Repair Form Module (standalone: only Core has hooks for routing + AJAX)
 if (class_exists('PPV_Repair_Core')) PPV_Repair_Core::hooks();
-if (class_exists('PPV_Repair_Registration')) PPV_Repair_Registration::hooks();
-if (class_exists('PPV_Repair_Admin')) PPV_Repair_Admin::hooks();
 
 // Vendor/User Signup
 foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
@@ -1009,11 +1006,6 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_tag('%ppv_landing%', '1');
     add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
     add_rewrite_tag('%ppv_demo_haendler%', '1');
-    // Repair form module
-    add_rewrite_rule('^repair/([^/]+)/(datenschutz|agb|impressum)/?$', 'index.php?ppv_repair_shop=$matches[1]&ppv_repair_legal=$matches[2]', 'top');
-    add_rewrite_rule('^repair/([^/]+)/?$', 'index.php?ppv_repair_shop=$matches[1]', 'top');
-    add_rewrite_tag('%ppv_repair_shop%', '([^/]+)');
-    add_rewrite_tag('%ppv_repair_legal%', '([^/]+)');
     flush_rewrite_rules();
 });
 

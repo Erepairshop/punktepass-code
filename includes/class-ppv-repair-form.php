@@ -2,7 +2,7 @@
 /**
  * PunktePass - Public Repair Form (Standalone Page)
  * Renders a complete branded repair form for each store
- * URL: /repair/{shopslug}
+ * URL: /formular/{shopslug}
  *
  * Author: Erik Borota / PunktePass
  */
@@ -179,7 +179,7 @@ class PPV_Repair_Form {
         <div class="repair-terms">
             <label class="repair-checkbox">
                 <input type="checkbox" id="rf-terms" required>
-                Ich akzeptiere die <a href="/repair/<?php echo $slug; ?>/datenschutz" target="_blank">Datenschutzerkl&auml;rung</a> und <a href="/repair/<?php echo $slug; ?>/agb" target="_blank">AGB</a>
+                Ich akzeptiere die <a href="/formular/<?php echo $slug; ?>/datenschutz" target="_blank">Datenschutzerkl&auml;rung</a> und <a href="/formular/<?php echo $slug; ?>/agb" target="_blank">AGB</a>
             </label>
         </div>
 
@@ -212,15 +212,15 @@ class PPV_Repair_Form {
 
         <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail. Wir melden uns, sobald Ihr Ger&auml;t fertig ist.</p>
 
-        <a href="/repair/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
+        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
     </div>
 
     <!-- Footer -->
     <div class="repair-footer">
         <div class="repair-footer-links">
-            <a href="/repair/<?php echo $slug; ?>/datenschutz">Datenschutz</a>
-            <a href="/repair/<?php echo $slug; ?>/agb">AGB</a>
-            <a href="/repair/<?php echo $slug; ?>/impressum">Impressum</a>
+            <a href="/formular/<?php echo $slug; ?>/datenschutz">Datenschutz</a>
+            <a href="/formular/<?php echo $slug; ?>/agb">AGB</a>
+            <a href="/formular/<?php echo $slug; ?>/impressum">Impressum</a>
         </div>
         <div class="repair-footer-powered">
             Powered by <a href="https://punktepass.de" target="_blank">PunktePass</a>
