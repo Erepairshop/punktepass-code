@@ -874,8 +874,9 @@ class PPV_QR {
         // ─── Scanner user check ───
         $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
 
-        // ─── Dark mode ───
-        $is_dark = isset($_COOKIE['ppv_handler_theme']) && $_COOKIE['ppv_handler_theme'] === 'dark';
+        // ─── Dark mode (ppv_theme cookie used by theme-loader.js) ───
+        $theme_cookie = $_COOKIE['ppv_theme'] ?? ($_COOKIE['ppv_handler_theme'] ?? 'light');
+        $is_dark = ($theme_cookie === 'dark');
 
         // ─── Capture tab content from trait render methods ───
         ob_start();
@@ -922,6 +923,7 @@ class PPV_QR {
 
         // ─── Body classes ───
         $body_classes = ['ppv-standalone', 'ppv-app-mode', 'ppv-handler-mode'];
+        $body_classes[] = $is_dark ? 'ppv-dark' : 'ppv-light';
         if ($is_dark) $body_classes[] = 'ppv-dark-mode';
         $body_class = implode(' ', $body_classes);
 
@@ -1048,6 +1050,7 @@ class PPV_QR {
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-hidden-scan.js?v=<?php echo esc_attr($js_version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-rewards-management.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-vip-settings.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
 </body>
 </html>
 <?php
