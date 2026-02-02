@@ -158,6 +158,7 @@ class PPV_Login {
         @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
     </style>
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-login-light.css?ver=<?php echo esc_attr($css_ver); ?>">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 </head>
 <body>
 <?php echo $page_html; ?>
