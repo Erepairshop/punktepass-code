@@ -19,6 +19,7 @@ if (!defined('ABSPATH')) exit;
 class PPV_Rewards {
 
     public static function hooks() {
+        add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
         add_shortcode('ppv_rewards', [__CLASS__, 'render_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
@@ -192,6 +193,142 @@ class PPV_Rewards {
         ", $base_store_id, $base_store_id, $base_store_id));
 
         return $filialen ?: [];
+    }
+
+    // ============================================================
+    // 🚀 STANDALONE RENDERING (bypasses WordPress theme)
+    // ============================================================
+
+    /** Intercept /rewards URL at init and render standalone page */
+    public static function maybe_render_standalone() {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = rtrim($path, '/');
+        if ($path !== '/rewards') return;
+
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
+        if (!class_exists('PPV_Permissions')) {
+            header('Location: /login');
+            exit;
+        }
+
+        $auth_check = PPV_Permissions::check_handler();
+        if (is_wp_error($auth_check)) {
+            header('Location: /login');
+            exit;
+        }
+
+        self::render_standalone_page();
+        exit;
+    }
+
+    /** Render complete standalone HTML page for Rewards */
+    private static function render_standalone_page() {
+        global $wpdb;
+
+        $plugin_url = PPV_PLUGIN_URL;
+        $version    = PPV_VERSION;
+        $site_url   = get_site_url();
+
+        // ─── Language ───
+        if (class_exists('PPV_Lang')) {
+            $lang    = PPV_Lang::$active ?: 'de';
+            $strings = PPV_Lang::$strings ?: [];
+        } else {
+            $lang    = 'de';
+            $strings = [];
+        }
+
+        // ─── Theme ───
+        $theme_cookie = $_COOKIE['ppv_theme'] ?? ($_COOKIE['ppv_handler_theme'] ?? 'light');
+        $is_dark = ($theme_cookie === 'dark');
+
+        // ─── Page content (render_page returns HTML string) ───
+        $page_html = self::render_page();
+
+        // ─── Ably config (render_page inline script doesn't include it) ───
+        $ably_enabled = class_exists('PPV_Ably') && PPV_Ably::is_enabled();
+        $ably_patch = '';
+        if ($ably_enabled) {
+            $store_id = self::get_store_id();
+            $ably_patch = 'if(window.ppv_rewards_config){window.ppv_rewards_config.ably=' . wp_json_encode([
+                'key'     => PPV_Ably::get_key(),
+                'channel' => 'store-' . $store_id,
+            ]) . ';}';
+        }
+
+        // ─── Global header ───
+        $global_header = '';
+        if (class_exists('PPV_User_Dashboard')) {
+            ob_start();
+            PPV_User_Dashboard::render_global_header();
+            $global_header = ob_get_clean();
+        }
+
+        // ─── Bottom nav context ───
+        $bottom_nav_context = '';
+        if (class_exists('PPV_Bottom_Nav')) {
+            ob_start();
+            PPV_Bottom_Nav::inject_context();
+            $bottom_nav_context = ob_get_clean();
+        }
+
+        // ─── Body classes ───
+        $body_classes = ['ppv-standalone', 'ppv-app-mode', 'ppv-handler-mode'];
+        $body_classes[] = $is_dark ? 'ppv-dark' : 'ppv-light';
+        $body_class = implode(' ', $body_classes);
+
+        header('Content-Type: text/html; charset=utf-8');
+        ?>
+<!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Einlösungen - PunktePass</title>
+    <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
+    <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+<?php if ($is_dark): ?>
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
+<?php endif; ?>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script>
+    var ajaxurl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+    window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
+    </script>
+    <style>
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7)}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
+    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    </style>
+</head>
+<body class="<?php echo esc_attr($body_class); ?>">
+<?php echo $global_header; ?>
+<div class="ppv-standalone-wrap">
+<?php echo $page_html; ?>
+</div>
+<?php echo $bottom_nav_context; ?>
+<?php if (!empty($ably_patch)): ?>
+<script><?php echo $ably_patch; ?></script>
+<?php endif; ?>
+<?php if ($ably_enabled): ?>
+<script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-ably-manager.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php endif; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-rewards.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
+</body>
+</html>
+<?php
     }
 
     /** ============================================================
