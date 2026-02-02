@@ -431,6 +431,9 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-geocoding.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-init.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php if (class_exists('PPV_Bottom_Nav')): ?>
+<script><?php echo PPV_Bottom_Nav::inline_js(); ?></script>
+<?php endif; ?>
 </body>
 </html>
 <?php

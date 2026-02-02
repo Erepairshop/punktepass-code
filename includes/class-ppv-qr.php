@@ -1051,6 +1051,9 @@ class PPV_QR {
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-rewards-management.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-vip-settings.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php if (class_exists('PPV_Bottom_Nav')): ?>
+<script><?php echo PPV_Bottom_Nav::inline_js(); ?></script>
+<?php endif; ?>
 </body>
 </html>
 <?php
