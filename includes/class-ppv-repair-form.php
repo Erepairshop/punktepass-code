@@ -37,6 +37,13 @@ class PPV_Repair_Form {
         $nonce = wp_create_nonce('ppv_repair_form');
         $ajax_url = admin_url('admin-ajax.php');
 
+        // Prefill from query params (for "Nochmal Anliegen" button)
+        $pf_name  = esc_attr($_GET['name'] ?? '');
+        $pf_email = esc_attr($_GET['email'] ?? '');
+        $pf_phone = esc_attr($_GET['phone'] ?? '');
+        $pf_brand = esc_attr($_GET['brand'] ?? '');
+        $pf_model = esc_attr($_GET['model'] ?? '');
+
         ob_start();
         ?>
 <!DOCTYPE html>
@@ -105,18 +112,18 @@ class PPV_Repair_Form {
 
             <div class="repair-field">
                 <label for="rf-name">Name *</label>
-                <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname">
+                <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>">
             </div>
 
             <div class="repair-field">
                 <label for="rf-email">E-Mail *</label>
-                <input type="email" id="rf-email" name="customer_email" required placeholder="ihre@email.de">
+                <input type="email" id="rf-email" name="customer_email" required placeholder="ihre@email.de" value="<?php echo $pf_email; ?>">
             </div>
 
             <?php if (!empty($field_config['customer_phone']['enabled'])): ?>
             <div class="repair-field">
                 <label for="rf-phone"><?php echo esc_html($field_config['customer_phone']['label'] ?? 'Telefon'); ?></label>
-                <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789">
+                <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>">
             </div>
             <?php endif; ?>
         </div>
@@ -137,13 +144,13 @@ class PPV_Repair_Form {
                 <?php if (!empty($field_config['device_brand']['enabled'])): ?>
                 <div class="repair-field">
                     <label for="rf-brand"><?php echo esc_html($field_config['device_brand']['label'] ?? 'Marke'); ?></label>
-                    <input type="text" id="rf-brand" name="device_brand" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? 'Marke'); ?>">
+                    <input type="text" id="rf-brand" name="device_brand" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? 'Marke'); ?>" value="<?php echo $pf_brand; ?>">
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($field_config['device_model']['enabled'])): ?>
                 <div class="repair-field">
                     <label for="rf-model"><?php echo esc_html($field_config['device_model']['label'] ?? 'Modell'); ?></label>
-                    <input type="text" id="rf-model" name="device_model" placeholder="<?php echo esc_attr($field_config['device_model']['label'] ?? 'Modell'); ?>">
+                    <input type="text" id="rf-model" name="device_model" placeholder="<?php echo esc_attr($field_config['device_model']['label'] ?? 'Modell'); ?>" value="<?php echo $pf_model; ?>">
                 </div>
                 <?php endif; ?>
             </div>

@@ -331,6 +331,8 @@ a:hover{text-decoration:underline}
 .ra-repair-actions{display:flex;align-items:center;gap:8px}
 .ra-status-select{padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:auto;width:100%;max-width:200px}
 .ra-status-select:focus{border-color:#667eea}
+.ra-btn-resubmit{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #c7d2fe;background:#eef2ff;color:#667eea;display:inline-flex;align-items:center;gap:4px;transition:all .2s;white-space:nowrap}
+.ra-btn-resubmit:hover{background:#667eea;color:#fff;border-color:#667eea}
 
 /* ========== Empty & Load More ========== */
 .ra-empty{text-align:center;padding:48px 20px;color:#9ca3af}
@@ -409,6 +411,8 @@ a:hover{text-decoration:underline}
 .ra-inv-btn:hover{border-color:#667eea;color:#667eea}
 .ra-inv-btn-pdf{color:#dc2626;border-color:#fecaca}
 .ra-inv-btn-pdf:hover{background:#fef2f2;border-color:#dc2626}
+.ra-inv-btn-edit{color:#667eea;border-color:#c7d2fe;background:none;cursor:pointer;padding:5px 8px;font-size:14px}
+.ra-inv-btn-edit:hover{background:#eef2ff;border-color:#667eea}
 .ra-inv-btn-del{color:#dc2626;border-color:#fecaca;background:none;cursor:pointer;padding:5px 8px;font-size:14px}
 .ra-inv-btn-del:hover{background:#fef2f2;border-color:#dc2626}
 /* ========== Invoice Modal ========== */
@@ -869,8 +873,8 @@ echo '          </div>
         // Invoice modal (shown when status changes to "Fertig")
         echo '<div class="ra-modal-overlay" id="ra-invoice-modal">
     <div class="ra-modal">
-        <h3><i class="ri-file-list-3-line"></i> Reparatur abschlie&szlig;en</h3>
-        <p class="ra-modal-sub">Leistungen und Bruttobetr&auml;ge f&uuml;r die Rechnung eingeben</p>
+        <h3 id="ra-inv-modal-title"><i class="ri-file-list-3-line"></i> Reparatur abschlie&szlig;en</h3>
+        <p class="ra-modal-sub" id="ra-inv-modal-subtitle">Leistungen und Bruttobetr&auml;ge f&uuml;r die Rechnung eingeben</p>
         <div id="ra-inv-modal-info" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;display:none"></div>
         <div class="ra-inv-lines" id="ra-inv-lines">
             <div class="ra-inv-line">
@@ -920,6 +924,7 @@ echo '          </div>
     var AJAX="' . esc_url($ajax_url) . '",
         NONCE="' . esc_attr($nonce) . '",
         STORE=' . intval($store->id) . ',
+        SLUG="' . esc_attr($store_slug) . '",
         VAT_ENABLED=!!parseInt("' . $vat_enabled . '"),
         VAT_RATE=parseFloat("' . $vat_rate . '"),
         searchTimer=null,
@@ -995,6 +1000,21 @@ echo '          </div>
     }
 
     bindStatusSelects(document);
+
+    /* ===== Nochmal Anliegen ===== */
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-btn-resubmit");
+        if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
+        var params=new URLSearchParams();
+        if(card.dataset.name)params.set("name",card.dataset.name);
+        if(card.dataset.email)params.set("email",card.dataset.email);
+        if(card.dataset.phone)params.set("phone",card.dataset.phone);
+        if(card.dataset.brand)params.set("brand",card.dataset.brand);
+        if(card.dataset.model)params.set("model",card.dataset.model);
+        window.open("/formular/"+SLUG+"?"+params.toString(),"_blank");
+    });
 
     /* ===== Search & Filter ===== */
     var searchInput=document.getElementById("ra-search-input"),
@@ -1077,7 +1097,7 @@ echo '          </div>
         }
         var phone=r.customer_phone?(" &middot; "+esc(r.customer_phone)):"";
         var deviceHtml=device?\'<div class="ra-repair-device"><i class="ri-smartphone-line"></i> \'+esc(device)+\'</div>\':"";
-        return \'<div class="ra-repair-card" data-id="\'+r.id+\'">\'+
+        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
                 \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span></div>\'+
@@ -1085,7 +1105,7 @@ echo '          </div>
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
             \'</div>\'+
-            \'<div class="ra-repair-actions"><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
+            \'<div class="ra-repair-actions"><button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
         \'</div>\';
     }
     function pad(n){return n<10?"0"+n:n}
@@ -1094,14 +1114,24 @@ echo '          </div>
     /* ===== Invoice Modal (Fertig status) ===== */
     var invoiceModal=document.getElementById("ra-invoice-modal"),
         invoiceRepairId=null,
-        invoiceSelect=null;
+        invoiceSelect=null,
+        invoiceEditId=null;
 
     // Hide VAT row if Kleinunternehmer
     if(!VAT_ENABLED){document.getElementById("ra-inv-modal-vat-row").style.display="none"}
 
+    function buildLineHtml(desc,amt){
+        return \'<div class="ra-inv-line"><input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc" value="\'+esc(desc||"")+\'"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount" value="\'+(amt||"")+\'"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+    }
+
     function showInvoiceModal(repairId,selectEl){
         invoiceRepairId=repairId;
         invoiceSelect=selectEl;
+        invoiceEditId=null;
+        // Title for create mode
+        document.getElementById("ra-inv-modal-title").innerHTML=\'<i class="ri-file-list-3-line"></i> Reparatur abschlie&szlig;en\';
+        document.getElementById("ra-inv-modal-subtitle").textContent="Leistungen und Bruttobetr\u00e4ge f\u00fcr die Rechnung eingeben";
+        document.getElementById("ra-inv-modal-submit").innerHTML=\'<i class="ri-check-line"></i> Abschlie\u00dfen & Rechnung\';
         // Show device info
         var card=selectEl.closest(".ra-repair-card");
         var info=document.getElementById("ra-inv-modal-info");
@@ -1112,17 +1142,42 @@ echo '          </div>
             if(txt){info.textContent=txt;info.style.display="block"}else{info.style.display="none"}
         }
         // Reset lines
-        var lines=document.getElementById("ra-inv-lines");
-        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        document.getElementById("ra-inv-lines").innerHTML=buildLineHtml("","");
         recalcInvoiceModal();
         invoiceModal.classList.add("show");
-        lines.querySelector(".ra-inv-line-desc").focus();
+        document.querySelector("#ra-inv-lines .ra-inv-line-desc").focus();
+    }
+
+    function showEditInvoiceModal(invId,itemsJson,subtotal,customer,device){
+        invoiceRepairId=null;
+        invoiceSelect=null;
+        invoiceEditId=invId;
+        // Title for edit mode
+        document.getElementById("ra-inv-modal-title").innerHTML=\'<i class="ri-pencil-line"></i> Rechnung bearbeiten\';
+        document.getElementById("ra-inv-modal-subtitle").textContent="Positionen und Bruttobetr\u00e4ge bearbeiten";
+        document.getElementById("ra-inv-modal-submit").innerHTML=\'<i class="ri-save-line"></i> Speichern\';
+        // Info
+        var info=document.getElementById("ra-inv-modal-info");
+        var txt=customer+(device?" \u2013 "+device:"");
+        if(txt){info.textContent=txt;info.style.display="block"}else{info.style.display="none"}
+        // Fill line items
+        var lines=document.getElementById("ra-inv-lines");
+        var items=[];
+        try{items=JSON.parse(itemsJson)}catch(e){}
+        if(items&&items.length>0){
+            lines.innerHTML=items.map(function(it){return buildLineHtml(it.description,it.amount)}).join("");
+        }else{
+            lines.innerHTML=buildLineHtml("",subtotal||"");
+        }
+        recalcInvoiceModal();
+        invoiceModal.classList.add("show");
     }
 
     function hideInvoiceModal(){
         invoiceModal.classList.remove("show");
         invoiceRepairId=null;
         invoiceSelect=null;
+        invoiceEditId=null;
     }
 
     function recalcInvoiceModal(){
@@ -1186,12 +1241,22 @@ echo '          </div>
         items.forEach(function(i){totalAmt+=i.amount});
 
         var fd=new FormData();
-        fd.append("action","ppv_repair_update_status");
         fd.append("nonce",NONCE);
-        fd.append("repair_id",invoiceRepairId);
-        fd.append("status","done");
-        fd.append("final_cost",totalAmt);
-        fd.append("line_items",JSON.stringify(items));
+
+        if(invoiceEditId){
+            // Edit mode
+            fd.append("action","ppv_repair_invoice_update");
+            fd.append("invoice_id",invoiceEditId);
+            fd.append("subtotal",totalAmt);
+            fd.append("line_items",JSON.stringify(items));
+        }else{
+            // Create mode
+            fd.append("action","ppv_repair_update_status");
+            fd.append("repair_id",invoiceRepairId);
+            fd.append("status","done");
+            fd.append("final_cost",totalAmt);
+            fd.append("line_items",JSON.stringify(items));
+        }
 
         var btn=document.getElementById("ra-inv-modal-submit");
         btn.disabled=true;
@@ -1200,13 +1265,19 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                toast("Reparatur abgeschlossen & Rechnung erstellt");
-                if(invoiceSelect){
-                    updateBadge(invoiceSelect.closest(".ra-repair-card"),"done");
-                    invoiceSelect.setAttribute("data-prev","done");
+                if(invoiceEditId){
+                    toast("Rechnung aktualisiert");
+                }else{
+                    toast("Reparatur abgeschlossen & Rechnung erstellt");
+                    if(invoiceSelect){
+                        updateBadge(invoiceSelect.closest(".ra-repair-card"),"done");
+                        invoiceSelect.setAttribute("data-prev","done");
+                    }
                 }
                 invoicesLoaded=false;
                 hideInvoiceModal();
+                // Reload invoices tab if visible
+                if(document.getElementById("ra-tab-invoices").classList.contains("active")){loadInvoices(1)}
             }else{
                 toast(data.data&&data.data.message?data.data.message:"Fehler");
             }
@@ -1305,6 +1376,7 @@ echo '          </div>
                         \'<td><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
                         \'<td><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
+                            \'<button class="ra-inv-btn ra-inv-btn-edit" data-inv-id="\'+inv.id+\'" data-inv-items="\'+esc(inv.line_items||"")+\'" data-inv-subtotal="\'+inv.subtotal+\'" data-inv-customer="\'+esc(inv.customer_name)+\'" data-inv-device="\'+esc(inv.device_info||"")+\'" title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
                             \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
                                 \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>Entwurf</option>\'+
                                 \'<option value="sent" \'+(inv.status==="sent"?"selected":"")+\'>Gesendet</option>\'+
@@ -1327,6 +1399,18 @@ echo '          </div>
                         fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
                         .then(function(r){return r.json()})
                         .then(function(res){toast(res.success?"Status aktualisiert":"Fehler")});
+                    });
+                });
+                // Bind edit
+                tbody.querySelectorAll(".ra-inv-btn-edit").forEach(function(btn){
+                    btn.addEventListener("click",function(){
+                        showEditInvoiceModal(
+                            this.getAttribute("data-inv-id"),
+                            this.getAttribute("data-inv-items"),
+                            this.getAttribute("data-inv-subtotal"),
+                            this.getAttribute("data-inv-customer"),
+                            this.getAttribute("data-inv-device")
+                        );
                     });
                 });
                 // Bind delete
@@ -1457,7 +1541,12 @@ echo '          </div>
             $options .= '<option value="' . esc_attr($key) . '"' . $sel . '>' . esc_html($label[0]) . '</option>';
         }
 
-        return '<div class="ra-repair-card" data-id="' . intval($r->id) . '">'
+        return '<div class="ra-repair-card" data-id="' . intval($r->id) . '"'
+            . ' data-name="' . esc_attr($r->customer_name) . '"'
+            . ' data-email="' . esc_attr($r->customer_email) . '"'
+            . ' data-phone="' . esc_attr($r->customer_phone) . '"'
+            . ' data-brand="' . esc_attr($r->device_brand) . '"'
+            . ' data-model="' . esc_attr($r->device_model) . '">'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
                 . '<span class="ra-status ' . esc_attr($st[1]) . '">' . esc_html($st[0]) . '</span>'
@@ -1472,6 +1561,7 @@ echo '          </div>
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . '</div>'
             . '</div>'
             . '<div class="ra-repair-actions">'
+                . '<button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button>'
                 . '<select class="ra-status-select" data-repair-id="' . intval($r->id) . '">' . $options . '</select>'
             . '</div>'
         . '</div>';

@@ -373,6 +373,12 @@ class PPV_Repair_Invoice {
                 $update['vat_amount'] = round($brutto - $net, 2);
             }
         }
+        if (isset($_POST['line_items'])) {
+            $items = json_decode(stripslashes($_POST['line_items']), true);
+            if (is_array($items)) {
+                $update['line_items'] = wp_json_encode($items);
+            }
+        }
         if (isset($_POST['notes'])) {
             $update['notes'] = sanitize_textarea_field($_POST['notes']);
         }
