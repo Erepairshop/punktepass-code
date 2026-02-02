@@ -306,7 +306,7 @@ class PPV_Rewards {
     window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7)}
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
     .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
     .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
     </style>
