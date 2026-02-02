@@ -53,6 +53,11 @@ class PPV_Standalone_Shell {
 
     /** Check if current URL matches a known route and render standalone */
     public static function maybe_render_standalone() {
+        // DISABLED: Needs more work before production use.
+        // The shortcodes depend on wp_enqueue_script/style + wp_head/wp_footer
+        // which don't work properly in standalone mode.
+        return;
+
         $path = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
         if (empty($path)) $path = '/';
 
