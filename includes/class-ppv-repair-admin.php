@@ -212,18 +212,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             }
         }
 
-        // Last PunktePass point awards for this store
-        $last_scans = $wpdb->get_results($wpdb->prepare(
-            "SELECT p.points, p.created, u.display_name, u.first_name, u.last_name, u.email,
-                    (SELECT COALESCE(SUM(p2.points),0) FROM {$prefix}ppv_points p2 WHERE p2.user_id = p.user_id AND p2.store_id = p.store_id) AS total_points
-             FROM {$prefix}ppv_points p
-             JOIN {$prefix}ppv_users u ON u.id = p.user_id
-             WHERE p.store_id = %d AND p.type = 'bonus'
-             ORDER BY p.created DESC
-             LIMIT 5",
-            $store->id
-        ));
-
         // Account status
         $account_status = 'trial'; // trial / active / limit_reached
         if ($is_premium) {
@@ -429,21 +417,9 @@ a:hover{text-decoration:underline}
 .ra-inv-btn:hover{border-color:#667eea;color:#667eea}
 .ra-inv-btn-pdf{color:#dc2626;border-color:#fecaca}
 .ra-inv-btn-pdf:hover{background:#fef2f2;border-color:#dc2626}
-/* ========== Last Scan Widget ========== */
-.ra-last-scan{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:14px;border:1px solid #f0f0f0}
-.ra-last-scan-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.ra-last-scan-list{display:flex;flex-direction:column;gap:8px}
-.ra-scan-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fafafa;border-radius:10px;transition:background .2s}
-.ra-scan-item:first-child{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0}
-.ra-scan-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
-.ra-scan-info{flex:1;min-width:0}
-.ra-scan-name{font-size:14px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ra-scan-meta{font-size:12px;color:#6b7280;display:flex;gap:8px;flex-wrap:wrap}
-.ra-scan-points{font-size:14px;font-weight:700;color:#059669;flex-shrink:0;text-align:right}
-.ra-scan-total{font-size:11px;color:#6b7280;text-align:right}
-.ra-scan-empty{padding:20px;text-align:center;font-size:13px;color:#9ca3af}
-
 /* ========== Konto Tab ========== */
+.ra-scan-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+
 .ra-konto{background:#fff;border-radius:14px;padding:24px;margin-bottom:16px;border:1px solid #f0f0f0}
 .ra-konto-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
 .ra-konto-plan{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:700}
@@ -834,35 +810,6 @@ echo '          </div>
 
         // ========== TAB: Reparaturen ==========
         echo '<div class="ra-tab-content active" id="ra-tab-repairs">';
-
-        // Last Scan / PunktePass widget
-        if ($pp_enabled) {
-            echo '<div class="ra-last-scan">
-            <div class="ra-last-scan-title"><i class="ri-gift-line"></i> Letzte Punktevergabe</div>';
-            if (!empty($last_scans)) {
-                echo '<div class="ra-last-scan-list">';
-                foreach ($last_scans as $scan) {
-                    $scan_name = esc_html($scan->display_name ?: $scan->first_name ?: explode('@', $scan->email)[0]);
-                    $scan_initials = mb_strtoupper(mb_substr($scan_name, 0, 1));
-                    $scan_time = human_time_diff(strtotime($scan->created), current_time('timestamp'));
-                    echo '<div class="ra-scan-item">
-                        <div class="ra-scan-avatar">' . $scan_initials . '</div>
-                        <div class="ra-scan-info">
-                            <div class="ra-scan-name">' . $scan_name . '</div>
-                            <div class="ra-scan-meta"><span>vor ' . $scan_time . '</span></div>
-                        </div>
-                        <div>
-                            <div class="ra-scan-points">+' . intval($scan->points) . ' Pkt</div>
-                            <div class="ra-scan-total">Gesamt: ' . intval($scan->total_points) . '</div>
-                        </div>
-                    </div>';
-                }
-                echo '</div>';
-            } else {
-                echo '<div class="ra-scan-empty"><i class="ri-emotion-line"></i> Noch keine Punkte vergeben</div>';
-            }
-            echo '</div>';
-        }
 
         // Search & Filters
         echo '<div class="ra-toolbar">
