@@ -409,6 +409,8 @@ a:hover{text-decoration:underline}
 .ra-inv-btn:hover{border-color:#667eea;color:#667eea}
 .ra-inv-btn-pdf{color:#dc2626;border-color:#fecaca}
 .ra-inv-btn-pdf:hover{background:#fef2f2;border-color:#dc2626}
+.ra-inv-btn-del{color:#dc2626;border-color:#fecaca;background:none;cursor:pointer;padding:5px 8px;font-size:14px}
+.ra-inv-btn-del:hover{background:#fef2f2;border-color:#dc2626}
 /* ========== Invoice Modal ========== */
 .ra-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;padding:16px}
 .ra-modal-overlay.show{display:flex}
@@ -1309,6 +1311,7 @@ echo '          </div>
                                 \'<option value="paid" \'+(inv.status==="paid"?"selected":"")+\'>Bezahlt</option>\'+
                                 \'<option value="cancelled" \'+(inv.status==="cancelled"?"selected":"")+\'>Storniert</option>\'+
                             \'</select>\'+
+                            \'<button class="ra-inv-btn ra-inv-btn-del" data-inv-id="\'+inv.id+\'" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>\'+
                         \'</div></td>\';
                     tbody.appendChild(row);
                 });
@@ -1324,6 +1327,24 @@ echo '          </div>
                         fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
                         .then(function(r){return r.json()})
                         .then(function(res){toast(res.success?"Status aktualisiert":"Fehler")});
+                    });
+                });
+                // Bind delete
+                tbody.querySelectorAll(".ra-inv-btn-del").forEach(function(btn){
+                    btn.addEventListener("click",function(){
+                        if(!confirm("Rechnung wirklich l\u00f6schen?"))return;
+                        var iid=this.getAttribute("data-inv-id");
+                        var row=this.closest("tr");
+                        var fd2=new FormData();
+                        fd2.append("action","ppv_repair_invoice_delete");
+                        fd2.append("nonce",NONCE);
+                        fd2.append("invoice_id",iid);
+                        fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                        .then(function(r){return r.json()})
+                        .then(function(res){
+                            if(res.success){row.remove();toast("Rechnung gel\u00f6scht");invoicesLoaded=false;loadInvoices(1)}
+                            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+                        });
                     });
                 });
             }

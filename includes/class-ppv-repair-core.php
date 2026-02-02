@@ -59,6 +59,7 @@ class PPV_Repair_Core {
             'ppv_repair_invoice_csv'    => ['PPV_Repair_Invoice', 'ajax_export_csv'],
             'ppv_repair_invoices_list'  => ['PPV_Repair_Invoice', 'ajax_list_invoices'],
             'ppv_repair_invoice_update' => ['PPV_Repair_Invoice', 'ajax_update_invoice'],
+            'ppv_repair_invoice_delete' => ['PPV_Repair_Invoice', 'ajax_delete_invoice'],
         ];
         foreach ($invoice_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);

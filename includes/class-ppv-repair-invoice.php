@@ -385,6 +385,33 @@ class PPV_Repair_Invoice {
     }
 
     /**
+     * AJAX: Delete invoice
+     */
+    public static function ajax_delete_invoice() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $invoice_id = intval($_POST['invoice_id'] ?? 0);
+        if (!$invoice_id) wp_send_json_error(['message' => 'Ungültige Rechnung']);
+
+        global $wpdb;
+        $deleted = $wpdb->delete($wpdb->prefix . 'ppv_repair_invoices', [
+            'id' => $invoice_id,
+            'store_id' => $store_id,
+        ]);
+
+        if ($deleted) {
+            wp_send_json_success(['message' => 'Rechnung gelöscht']);
+        } else {
+            wp_send_json_error(['message' => 'Rechnung nicht gefunden']);
+        }
+    }
+
+    /**
      * Build the HTML for invoice PDF
      */
     private static function build_invoice_html($store, $invoice) {
