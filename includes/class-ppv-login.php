@@ -19,10 +19,14 @@ class PPV_Login {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('wp_head', [__CLASS__, 'inject_head_assets'], 999); // ✅ Priority 999 = LAST, overrides theme CSS!
         add_action('wp_ajax_nopriv_ppv_login', [__CLASS__, 'ajax_login']);
+        add_action('wp_ajax_ppv_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_nopriv_ppv_google_login', [__CLASS__, 'ajax_google_login']);
+        add_action('wp_ajax_ppv_google_login', [__CLASS__, 'ajax_google_login']);
         add_action('wp_ajax_nopriv_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
+        add_action('wp_ajax_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
         // add_action('wp_ajax_nopriv_ppv_tiktok_login', [__CLASS__, 'ajax_tiktok_login']); // TikTok login disabled
         add_action('wp_ajax_nopriv_ppv_apple_login', [__CLASS__, 'ajax_apple_login']);
+        add_action('wp_ajax_ppv_apple_login', [__CLASS__, 'ajax_apple_login']);
         add_action('template_redirect', [__CLASS__, 'check_already_logged_in'], 1);
     }
 
@@ -159,6 +163,7 @@ class PPV_Login {
     </style>
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-login-light.css?ver=<?php echo esc_attr($css_ver); ?>">
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?ver=<?php echo esc_attr($version); ?>"></script>
 </head>
 <body>
 <?php echo $page_html; ?>
