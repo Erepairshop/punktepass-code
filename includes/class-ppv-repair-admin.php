@@ -868,12 +868,12 @@ echo '          </div>
         echo '<div class="ra-modal-overlay" id="ra-invoice-modal">
     <div class="ra-modal">
         <h3><i class="ri-file-list-3-line"></i> Reparatur abschlie&szlig;en</h3>
-        <p class="ra-modal-sub">Leistungen und Betr&auml;ge f&uuml;r die Rechnung eingeben</p>
+        <p class="ra-modal-sub">Leistungen und Bruttobetr&auml;ge f&uuml;r die Rechnung eingeben</p>
         <div id="ra-inv-modal-info" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;display:none"></div>
         <div class="ra-inv-lines" id="ra-inv-lines">
             <div class="ra-inv-line">
                 <input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc">
-                <input type="number" placeholder="0.00" step="0.01" min="0" class="ra-inv-line-amount">
+                <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
                 <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
             </div>
         </div>
@@ -1111,7 +1111,7 @@ echo '          </div>
         }
         // Reset lines
         var lines=document.getElementById("ra-inv-lines");
-        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc"><input type="number" placeholder="0.00" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
         recalcInvoiceModal();
         invoiceModal.classList.add("show");
         lines.querySelector(".ra-inv-line-desc").focus();
@@ -1125,13 +1125,19 @@ echo '          </div>
 
     function recalcInvoiceModal(){
         var amounts=document.querySelectorAll("#ra-inv-lines .ra-inv-line-amount");
-        var net=0;
-        amounts.forEach(function(a){net+=parseFloat(a.value)||0});
-        var vat=VAT_ENABLED?Math.round(net*(VAT_RATE/100)*100)/100:0;
-        var total=Math.round((net+vat)*100)/100;
+        var brutto=0;
+        amounts.forEach(function(a){brutto+=parseFloat(a.value)||0});
+        var net,vat;
+        if(VAT_ENABLED){
+            net=Math.round(brutto/(1+VAT_RATE/100)*100)/100;
+            vat=Math.round((brutto-net)*100)/100;
+        }else{
+            net=brutto;
+            vat=0;
+        }
         document.getElementById("ra-inv-modal-net").textContent=fmtEur(net);
         document.getElementById("ra-inv-modal-vat").textContent=fmtEur(vat);
-        document.getElementById("ra-inv-modal-total").textContent=fmtEur(total);
+        document.getElementById("ra-inv-modal-total").textContent=fmtEur(brutto);
     }
 
     // Line items: delegated events
@@ -1156,7 +1162,7 @@ echo '          </div>
         var lines=document.getElementById("ra-inv-lines");
         var line=document.createElement("div");
         line.className="ra-inv-line";
-        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="0.00" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
         lines.appendChild(line);
         line.querySelector(".ra-inv-line-desc").focus();
     });

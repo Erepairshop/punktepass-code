@@ -99,17 +99,20 @@ class PPV_Repair_Invoice {
         $vat_rate_pct = floatval($store->repair_vat_rate ?: 19.00);
         $is_klein = $vat_enabled ? 0 : 1;
 
-        $net_amount = max(0, $subtotal - $discount_value);
+        // Amount entered is brutto (gross) - reverse-calculate net from brutto
+        $brutto_after_discount = max(0, $subtotal - $discount_value);
 
         if ($vat_enabled) {
-            // MwSt-pflichtig: net + VAT = total
-            $vat_amount = round($net_amount * ($vat_rate_pct / 100), 2);
-            $total = round($net_amount + $vat_amount, 2);
+            // MwSt-pflichtig: brutto includes VAT, calculate net backwards
+            $net_amount = round($brutto_after_discount / (1 + $vat_rate_pct / 100), 2);
+            $vat_amount = round($brutto_after_discount - $net_amount, 2);
+            $total = $brutto_after_discount;
             $stored_vat_rate = $vat_rate_pct;
         } else {
-            // Kleinunternehmer §19 UStG: no VAT
+            // Kleinunternehmer §19 UStG: no VAT, brutto = net
+            $net_amount = $brutto_after_discount;
             $vat_amount = 0;
-            $total = $net_amount;
+            $total = $brutto_after_discount;
             $stored_vat_rate = 0;
         }
 
@@ -356,18 +359,18 @@ class PPV_Repair_Invoice {
                 $update['discount_value'] = $discount;
             }
 
-            // Recalculate VAT
-            $net = max(0, $subtotal - $discount);
-            $update['net_amount'] = $net;
+            // Recalculate from brutto (subtotal is brutto)
+            $brutto = max(0, $subtotal - $discount);
+            $update['total'] = $brutto;
 
             if ($invoice->is_kleinunternehmer) {
+                $update['net_amount'] = $brutto;
                 $update['vat_amount'] = 0;
-                $update['total'] = $net;
             } else {
                 $vat_rate = floatval($invoice->vat_rate ?: 19);
-                $vat = round($net * ($vat_rate / 100), 2);
-                $update['vat_amount'] = $vat;
-                $update['total'] = round($net + $vat, 2);
+                $net = round($brutto / (1 + $vat_rate / 100), 2);
+                $update['net_amount'] = $net;
+                $update['vat_amount'] = round($brutto - $net, 2);
             }
         }
         if (isset($_POST['notes'])) {
