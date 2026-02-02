@@ -929,7 +929,7 @@ class PPV_QR {
         header('Content-Type: text/html; charset=utf-8');
         ?>
 <!DOCTYPE html>
-<html lang="<?php echo esc_attr($lang); ?>">
+<html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
