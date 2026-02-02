@@ -212,14 +212,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             }
         }
 
-        // Account status
-        $account_status = 'trial'; // trial / active / limit_reached
-        if ($is_premium) {
-            $account_status = 'active';
-        } elseif ($store->repair_form_count >= $store->repair_form_limit) {
-            $account_status = 'limit_reached';
-        }
-
         echo '<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -417,39 +409,6 @@ a:hover{text-decoration:underline}
 .ra-inv-btn:hover{border-color:#667eea;color:#667eea}
 .ra-inv-btn-pdf{color:#dc2626;border-color:#fecaca}
 .ra-inv-btn-pdf:hover{background:#fef2f2;border-color:#dc2626}
-/* ========== Konto Tab ========== */
-.ra-scan-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
-
-.ra-konto{background:#fff;border-radius:14px;padding:24px;margin-bottom:16px;border:1px solid #f0f0f0}
-.ra-konto-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
-.ra-konto-plan{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:700}
-.ra-konto-trial{background:#fef3c7;color:#92400e}
-.ra-konto-active{background:#dcfce7;color:#166534}
-.ra-konto-expired{background:#fef2f2;color:#991b1b}
-.ra-konto-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-.ra-konto-card{background:#fafafa;border-radius:12px;padding:16px;text-align:center}
-.ra-konto-card-val{font-size:28px;font-weight:800;color:#111827}
-.ra-konto-card-label{font-size:12px;color:#6b7280;margin-top:2px}
-.ra-konto-progress{margin-bottom:20px}
-.ra-konto-progress-info{display:flex;justify-content:space-between;font-size:13px;color:#374151;margin-bottom:6px}
-.ra-konto-progress-bar{height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden}
-.ra-konto-progress-fill{height:100%;border-radius:99px;transition:width .6s}
-.ra-konto-info{background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px;font-size:13px;color:#0369a1;line-height:1.6}
-.ra-konto-info strong{color:#0c4a6e}
-.ra-konto-contact{margin-top:16px;text-align:center}
-.ra-konto-search{margin-top:24px;border-top:1px solid #f0f0f0;padding-top:20px}
-.ra-konto-search-title{font-size:14px;font-weight:700;color:#111827;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.ra-user-search-row{display:flex;gap:8px;margin-bottom:12px}
-.ra-user-search-input{flex:1;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#1f2937;background:#fafafa;outline:none}
-.ra-user-search-input:focus{border-color:#667eea;background:#fff}
-.ra-user-result{display:none;background:#fafafa;border-radius:12px;padding:16px}
-.ra-user-result.show{display:block}
-.ra-user-result-name{font-size:16px;font-weight:700;color:#111827;margin-bottom:4px}
-.ra-user-result-email{font-size:13px;color:#6b7280;margin-bottom:12px}
-.ra-user-result-points{display:flex;align-items:center;gap:12px}
-.ra-user-result-points-val{font-size:28px;font-weight:800;color:#059669}
-.ra-user-result-points-label{font-size:13px;color:#6b7280}
-
 /* ========== Invoice Modal ========== */
 .ra-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;padding:16px}
 .ra-modal-overlay.show{display:flex}
@@ -801,11 +760,10 @@ echo '          </div>
         </div>
     </div>';
 
-        // Tabs: Reparaturen | Rechnungen | Konto
+        // Tabs: Reparaturen | Rechnungen
         echo '<div class="ra-tabs">
         <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> Reparaturen</div>
         <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnungen</div>
-        <div class="ra-tab" data-tab="konto"><i class="ri-user-settings-line"></i> Konto</div>
     </div>';
 
         // ========== TAB: Reparaturen ==========
@@ -902,93 +860,6 @@ echo '          </div>
         </div>';
 
         echo '</div>'; // end ra-tab-invoices
-
-        // ========== TAB: Konto ==========
-        echo '<div class="ra-tab-content" id="ra-tab-konto">';
-
-        // Account Status Card
-        echo '<div class="ra-konto">
-            <div class="ra-konto-header">
-                <div>
-                    <div style="font-size:17px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px"><i class="ri-user-settings-line"></i> Kontostatus</div>
-                </div>';
-
-        if ($account_status === 'active') {
-            echo '<span class="ra-konto-plan ra-konto-active"><i class="ri-vip-crown-line"></i> Premium aktiv</span>';
-        } elseif ($account_status === 'limit_reached') {
-            echo '<span class="ra-konto-plan ra-konto-expired"><i class="ri-error-warning-line"></i> Limit erreicht</span>';
-        } else {
-            echo '<span class="ra-konto-plan ra-konto-trial"><i class="ri-time-line"></i> Testphase</span>';
-        }
-        echo '</div>';
-
-        // Stats grid
-        echo '<div class="ra-konto-grid">
-                <div class="ra-konto-card">
-                    <div class="ra-konto-card-val">' . intval($store->repair_form_count) . '</div>
-                    <div class="ra-konto-card-label">Formulare eingegangen</div>
-                </div>
-                <div class="ra-konto-card">
-                    <div class="ra-konto-card-val">' . intval($store->repair_form_limit) . '</div>
-                    <div class="ra-konto-card-label">Formulare im Paket</div>
-                </div>
-            </div>';
-
-        // Progress bar (only for non-premium)
-        if (!$is_premium) {
-            $form_count = intval($store->repair_form_count);
-            $form_limit = intval($store->repair_form_limit);
-            $progress_pct = $form_limit > 0 ? min(100, round(($form_count / $form_limit) * 100)) : 0;
-            $bar_color = $progress_pct >= 90 ? '#dc2626' : ($progress_pct >= 70 ? '#f59e0b' : 'linear-gradient(90deg,#667eea,#764ba2)');
-
-            echo '<div class="ra-konto-progress">
-                <div class="ra-konto-progress-info">
-                    <span>Verbrauch</span>
-                    <span><strong>' . $form_count . '</strong> / ' . $form_limit . ' Formulare</span>
-                </div>
-                <div class="ra-konto-progress-bar">
-                    <div class="ra-konto-progress-fill" style="width:' . $progress_pct . '%;background:' . $bar_color . '"></div>
-                </div>
-            </div>';
-
-            if ($account_status === 'limit_reached') {
-                echo '<div class="ra-konto-info" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
-                    <strong><i class="ri-error-warning-line"></i> Formularlimit erreicht!</strong><br>
-                    Ihr Testpaket mit ' . $form_limit . ' Formularen ist aufgebraucht. Neue Kunden k&ouml;nnen keine Reparaturauftr&auml;ge mehr einreichen.
-                    Aktivieren Sie Ihr Konto, um unbegrenzt Formulare zu empfangen.
-                </div>';
-            } else {
-                echo '<div class="ra-konto-info">
-                    <strong>Testphase aktiv</strong><br>
-                    Ihr Testpaket enth&auml;lt ' . $form_limit . ' Formulare. Nach Verbrauch k&ouml;nnen Sie Ihr Konto aktivieren, um unbegrenzt weiterzumachen.
-                </div>';
-            }
-
-            echo '<div class="ra-konto-contact">
-                <a href="mailto:info@punktepass.de?subject=Konto%20aktivieren%20-%20' . urlencode($store->name) . '" class="ra-btn ra-btn-primary">
-                    <i class="ri-mail-send-line"></i> Konto aktivieren / verl&auml;ngern
-                </a>
-            </div>';
-        } else {
-            echo '<div class="ra-konto-info" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534">
-                <strong><i class="ri-vip-crown-line"></i> Premium aktiv</strong><br>
-                Ihr Konto ist aktiviert. Sie k&ouml;nnen unbegrenzt Reparaturformulare empfangen.
-            </div>';
-        }
-
-        // User search (PunktePass Kunde suchen)
-        echo '<div class="ra-konto-search">
-                <div class="ra-konto-search-title"><i class="ri-search-2-line"></i> Kunde suchen (PunktePass)</div>
-                <div class="ra-user-search-row">
-                    <input type="text" class="ra-user-search-input" id="ra-user-search" placeholder="Name oder E-Mail eingeben...">
-                    <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-user-search-btn"><i class="ri-search-line"></i> Suchen</button>
-                </div>
-                <div class="ra-user-result" id="ra-user-result"></div>
-            </div>';
-
-        echo '</div>'; // end ra-konto
-
-        echo '</div>'; // end ra-tab-konto
 
         // Toast notification
         echo '<div class="ra-toast" id="ra-toast"></div>';
@@ -1342,51 +1213,6 @@ echo '          </div>
             hideInvoiceModal();
         }
     });
-
-    /* ===== User Search (PunktePass) ===== */
-    var userSearchBtn=document.getElementById("ra-user-search-btn"),
-        userSearchInput=document.getElementById("ra-user-search"),
-        userResult=document.getElementById("ra-user-result");
-
-    if(userSearchBtn){
-        function doUserSearch(){
-            var q=userSearchInput.value.trim();
-            if(!q){toast("Bitte Name oder E-Mail eingeben");return}
-            userSearchBtn.disabled=true;
-            var fd=new FormData();
-            fd.append("action","ppv_repair_user_search");
-            fd.append("nonce",NONCE);
-            fd.append("query",q);
-            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-            .then(function(r){return r.json()})
-            .then(function(data){
-                if(data.success&&data.data.user){
-                    var u=data.data.user;
-                    var name=esc(u.display_name||u.first_name||u.email);
-                    var initials=name.charAt(0).toUpperCase();
-                    var rp=parseInt(u.required_points)||4;
-                    var tp=parseInt(u.total_points)||0;
-                    var ptsLeft=Math.max(0,rp-tp);
-                    var pbar=rp>0?Math.min(100,Math.round((tp/rp)*100)):0;
-                    userResult.innerHTML=\'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><div class="ra-scan-avatar" style="width:44px;height:44px;font-size:18px">\'+initials+\'</div><div><div class="ra-user-result-name">\'+name+\'</div><div class="ra-user-result-email">\'+esc(u.email)+\'</div></div></div>\'+
-                        \'<div class="ra-user-result-points"><div class="ra-user-result-points-val">\'+tp+\'</div><div class="ra-user-result-points-label">Punkte bei Ihrem Shop</div></div>\'+
-                        \'<div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;margin-bottom:4px"><span>Fortschritt zur Belohnung</span><span>\'+tp+\' / \'+rp+\'</span></div>\'+
-                        \'<div class="ra-konto-progress-bar"><div class="ra-konto-progress-fill" style="width:\'+pbar+\'%;background:linear-gradient(90deg,#059669,#10b981)"></div></div>\'+
-                        \'<div style="font-size:12px;color:#6b7280;margin-top:4px">\'+
-                        (ptsLeft>0? \'Noch \'+ptsLeft+\' Punkte bis zur Belohnung\' : \'<span style="color:#059669;font-weight:700">Belohnung einl&ouml;sbar!</span>\')+
-                        \'</div></div>\';
-                    userResult.classList.add("show");
-                }else{
-                    userResult.innerHTML=\'<div style="text-align:center;padding:16px;color:#6b7280"><i class="ri-user-search-line" style="font-size:24px;display:block;margin-bottom:8px"></i>Kein Kunde gefunden</div>\';
-                    userResult.classList.add("show");
-                }
-            })
-            .catch(function(){toast("Verbindungsfehler")})
-            .finally(function(){userSearchBtn.disabled=false});
-        }
-        userSearchBtn.addEventListener("click",doUserSearch);
-        userSearchInput.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();doUserSearch()}});
-    }
 
     /* ===== PunktePass Toggle ===== */
     document.getElementById("ra-pp-toggle").addEventListener("change",function(){

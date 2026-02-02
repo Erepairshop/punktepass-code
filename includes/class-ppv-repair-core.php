@@ -204,6 +204,12 @@ class PPV_Repair_Core {
         $_SESSION['ppv_repair_store_name'] = $user->store_name;
         $_SESSION['ppv_repair_store_slug'] = $user->store_slug;
 
+        // Also set PunktePass session vars so QR Center / Händler pages work
+        $_SESSION['ppv_store_id'] = $user->store_id;
+        $_SESSION['ppv_vendor_store_id'] = $user->store_id;
+        $_SESSION['ppv_active_store'] = $user->store_id;
+        $_SESSION['ppv_current_filiale_id'] = $user->store_id;
+
         wp_send_json_success(['redirect' => '/formular/admin']);
     }
 
@@ -368,6 +374,18 @@ class PPV_Repair_Core {
                 $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN line_items TEXT NULL AFTER description");
             }
             update_option('ppv_repair_migration_version', '1.3');
+        }
+
+        // v1.4: Fix existing formular stores missing subscription_status
+        if (version_compare($version, '1.4', '<')) {
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+            $wpdb->query(
+                "UPDATE {$stores_table}
+                 SET subscription_status = 'trial'
+                 WHERE repair_enabled = 1
+                   AND (subscription_status IS NULL OR subscription_status = '')"
+            );
+            update_option('ppv_repair_migration_version', '1.4');
         }
     }
 
@@ -660,6 +678,7 @@ class PPV_Repair_Core {
             'repair_form_count' => 0, 'repair_form_limit' => 50, 'repair_premium' => 0,
             'repair_company_name' => $shop_name, 'repair_owner_name' => $owner_name,
             'repair_tax_id' => $tax_id, 'repair_color' => '#667eea',
+            'subscription_status' => 'trial',
             'trial_ends_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
             'created_at' => current_time('mysql'),
         ]);
