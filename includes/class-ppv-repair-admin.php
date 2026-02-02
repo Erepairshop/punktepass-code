@@ -1203,6 +1203,7 @@ echo '          </div>
                     updateBadge(invoiceSelect.closest(".ra-repair-card"),"done");
                     invoiceSelect.setAttribute("data-prev","done");
                 }
+                invoicesLoaded=false;
                 hideInvoiceModal();
             }else{
                 toast(data.data&&data.data.message?data.data.message:"Fehler");
