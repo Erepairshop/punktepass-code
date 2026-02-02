@@ -290,6 +290,8 @@ $core_modules = [
     'includes/class-ppv-push.php',
     'includes/class-ppv-weekly-report.php',
     'includes/class-ppv-whatsapp.php',
+    // Standalone Shell (lightweight page rendering without WP theme)
+    'includes/class-ppv-standalone-shell.php',
     // Repair Form Module
     'includes/class-ppv-repair-core.php',
     'includes/class-ppv-repair-form.php',
@@ -658,6 +660,9 @@ if (class_exists('PPV_SMTP')) PPV_SMTP::hooks(); // SMTP email configuration
 if (class_exists('PPV_Push')) PPV_Push::hooks(); // Push notifications (FCM)
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
+
+// Standalone Shell (renders PunktePass pages without WP theme for speed)
+if (class_exists('PPV_Standalone_Shell')) PPV_Standalone_Shell::hooks();
 
 // Repair Form Module (standalone: only Core has hooks for routing + AJAX)
 if (class_exists('PPV_Repair_Core')) PPV_Repair_Core::hooks();
