@@ -1909,67 +1909,51 @@ async function initUserDashboard() {
       userLng = parseFloat(cachedLng);
     }
 
-    // 1️⃣ Start geo request in background (non-blocking)
-    // ✅ FIX: Use longer timeout when no cached location (first-time users need time for permission prompt)
-    const geoTimeoutMs = (cachedLat && cachedLng) ? 2000 : 8000;
-    const geoPromise = new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve(null);
-        return;
-      }
-      const timeout = setTimeout(() => {
-        resolve(null);
-      }, geoTimeoutMs);
+    // 1️⃣ If no cached location: run GPS + address-location API IN PARALLEL (race)
+    if (!userLat && !userLng) {
+      // GPS promise (3s timeout - fast fail)
+      const geoPromise = new Promise((resolve) => {
+        if (!navigator.geolocation) { resolve(null); return; }
+        const to = setTimeout(() => resolve(null), 3000);
+        navigator.geolocation.getCurrentPosition(
+          (p) => {
+            clearTimeout(to);
+            localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+            localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+            resolve({ lat: p.coords.latitude, lng: p.coords.longitude });
+          },
+          () => { clearTimeout(to); resolve(null); },
+          { timeout: 3000, maximumAge: 600000, enableHighAccuracy: false }
+        );
+      });
 
-      navigator.geolocation.getCurrentPosition(
-        (p) => {
-          clearTimeout(timeout);
-          // Cache for next time
-          localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
-          localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
-          resolve(p);
-        },
-        (err) => {
-          clearTimeout(timeout);
-          // Track if permission denied for tip display
-          if (err.code === 1) window.PPV_GEO_DENIED = true;
-          resolve(null);
-        },
-        { timeout: geoTimeoutMs, maximumAge: 600000, enableHighAccuracy: false }
-      );
-    });
-
-    // 2️⃣ OPTIMIZED: Wait for geo first if no cached location, then fetch ONCE
-    try {
-      // If no cached location, wait for geo promise first (max 8s)
-      if (!cachedLat && !cachedLng) {
-        const freshPos = await geoPromise;
-        if (freshPos?.coords) {
-          userLat = freshPos.coords.latitude;
-          userLng = freshPos.coords.longitude;
-        }
-      }
-
-      // 3️⃣ GPS fallback: Use user's address if no GPS coordinates available
-      if (!userLat && !userLng) {
-        try {
-          const addrRes = await fetch(API + 'user/address-location', { cache: 'no-store' });
-          if (addrRes.ok) {
-            const addrData = await addrRes.json();
-            if (addrData.success && addrData.lat && addrData.lng) {
-              userLat = addrData.lat;
-              userLng = addrData.lng;
-              window.PPV_LOCATION_SOURCE = 'address'; // Track source for UI hints
-            } else if (addrData.has_address === false) {
-              window.PPV_NO_ADDRESS = true; // User has no address set
-            }
+      // Address-location API promise (runs in parallel with GPS)
+      const addrPromise = fetch(API + 'user/address-location', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.success && d.lat && d.lng) {
+            window.PPV_LOCATION_SOURCE = 'address';
+            return { lat: d.lat, lng: d.lng };
           }
-        } catch (addrErr) {
-          // Silent fail - continue without address location
-        }
-      }
+          if (d?.has_address === false) window.PPV_NO_ADDRESS = true;
+          return null;
+        })
+        .catch(() => null);
 
-      // Now make ONE fetch with best available coordinates
+      // Race: use whichever resolves with coordinates first
+      const results = await Promise.all([geoPromise, addrPromise]);
+      // Prefer GPS over address
+      const geoResult = results[0];
+      const addrResult = results[1];
+      const best = geoResult || addrResult;
+      if (best) {
+        userLat = best.lat;
+        userLng = best.lng;
+      }
+    }
+
+    // 2️⃣ Fetch and render stores with best available coordinates
+    try {
       const currentDist = window.PPV_CURRENT_DISTANCE || 10;
       let url = API + 'stores/list-optimized';
       if (userLat && userLng) {
@@ -1977,23 +1961,29 @@ async function initUserDashboard() {
       }
 
       const res = await fetch(url, { cache: "no-store" });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const stores = await res.json();
-
-      // Render stores
       if (!Array.isArray(stores) || stores.length === 0) {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
       } else {
         renderStoreList(box, stores, userLat, userLng);
       }
-
     } catch (e) {
       ppvLog.error('❌ [Stores] Load failed:', e.message);
       box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
+    }
+
+    // 3️⃣ Refresh GPS in background for next visit (non-blocking)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+          localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+        },
+        () => {},
+        { timeout: 5000, maximumAge: 600000, enableHighAccuracy: false }
+      );
     }
 
     const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });

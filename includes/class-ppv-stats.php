@@ -16,6 +16,7 @@ class PPV_Stats {
     // 🔧 HOOKS
     // ========================================
     public static function hooks() {
+        add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
         add_shortcode('ppv_stats_dashboard', [__CLASS__, 'render_stats_dashboard']);
         add_action('rest_api_init', [__CLASS__, 'register_rest']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 1);
@@ -298,6 +299,149 @@ class PPV_Stats {
         ]);
 
         ppv_log("✅ [PPV_Stats] ALL REST routes OK");
+    }
+
+    // ========================================
+    // 🚀 STANDALONE RENDERING (bypasses WordPress theme)
+    // ========================================
+
+    public static function maybe_render_standalone() {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = rtrim($path, '/');
+        if ($path !== '/statistik') return;
+
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
+        if (!class_exists('PPV_Permissions')) {
+            header('Location: /login');
+            exit;
+        }
+
+        $auth_check = PPV_Permissions::check_handler();
+        if (is_wp_error($auth_check)) {
+            header('Location: /login');
+            exit;
+        }
+
+        self::render_standalone_page();
+        exit;
+    }
+
+    private static function render_standalone_page() {
+        $plugin_url = PPV_PLUGIN_URL;
+        $version    = PPV_VERSION;
+        $site_url   = get_site_url();
+
+        // ─── Language ───
+        if (class_exists('PPV_Lang')) {
+            $lang    = PPV_Lang::$active ?: 'de';
+            $strings = PPV_Lang::$strings ?: [];
+        } else {
+            $lang    = self::get_user_lang();
+            $strings = [];
+        }
+
+        // ─── Theme ───
+        $theme_cookie = $_COOKIE['ppv_theme'] ?? ($_COOKIE['ppv_handler_theme'] ?? 'light');
+        $is_dark = ($theme_cookie === 'dark');
+
+        // ─── Page content (render_stats_dashboard returns HTML) ───
+        $page_html = self::render_stats_dashboard();
+
+        // ─── Localized data for ppv-stats.js ───
+        $store_id = self::get_handler_store_id();
+        $filialen = self::get_handler_filialen();
+
+        $stats_data = [
+            'ajax_url'          => esc_url(rest_url('punktepass/v1/stats')),
+            'export_url'        => esc_url(rest_url('punktepass/v1/stats/export')),
+            'trend_url'         => esc_url(rest_url('punktepass/v1/stats/trend')),
+            'spending_url'      => esc_url(rest_url('punktepass/v1/stats/spending')),
+            'conversion_url'    => esc_url(rest_url('punktepass/v1/stats/conversion')),
+            'export_adv_url'    => esc_url(rest_url('punktepass/v1/stats/export-advanced')),
+            'scanner_url'       => esc_url(rest_url('punktepass/v1/stats/scanners')),
+            'suspicious_url'    => esc_url(rest_url('punktepass/v1/stats/suspicious')),
+            'device_activity_url' => esc_url(rest_url('punktepass/v1/stats/device-activity')),
+            'nonce'             => wp_create_nonce('wp_rest'),
+            'store_id'          => intval($store_id ?? 0),
+            'filialen'          => $filialen,
+            'lang'              => $lang,
+            'translations'      => $strings,
+            'debug'             => defined('WP_DEBUG') && WP_DEBUG,
+        ];
+
+        // ─── Global header ───
+        $global_header = '';
+        if (class_exists('PPV_User_Dashboard')) {
+            ob_start();
+            PPV_User_Dashboard::render_global_header();
+            $global_header = ob_get_clean();
+        }
+
+        // ─── Bottom nav context ───
+        $bottom_nav_context = '';
+        if (class_exists('PPV_Bottom_Nav')) {
+            ob_start();
+            PPV_Bottom_Nav::inject_context();
+            $bottom_nav_context = ob_get_clean();
+        }
+
+        // ─── Body classes ───
+        $body_classes = ['ppv-standalone', 'ppv-app-mode', 'ppv-handler-mode'];
+        $body_classes[] = $is_dark ? 'ppv-dark' : 'ppv-light';
+        $body_class = implode(' ', $body_classes);
+
+        header('Content-Type: text/html; charset=utf-8');
+        ?>
+<!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Statistik - PunktePass</title>
+    <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
+    <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+<?php if ($is_dark): ?>
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
+<?php endif; ?>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    var ajaxurl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+    window.ppvStats = <?php echo wp_json_encode($stats_data); ?>;
+    window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
+    </script>
+    <style>
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
+    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    </style>
+</head>
+<body class="<?php echo esc_attr($body_class); ?>">
+<?php echo $global_header; ?>
+<div class="ppv-standalone-wrap">
+<?php echo $page_html; ?>
+</div>
+<?php echo $bottom_nav_context; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-global.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-stats.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php if (class_exists('PPV_Bottom_Nav')): ?>
+<script><?php echo PPV_Bottom_Nav::inline_js(); ?></script>
+<?php endif; ?>
+</body>
+</html>
+<?php
     }
 
     // ========================================

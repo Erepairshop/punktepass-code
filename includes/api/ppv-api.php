@@ -61,6 +61,64 @@ class PPV_API {
             'callback' => [__CLASS__, 'get_mypoints'],
             'permission_callback' => [__CLASS__, 'verify_pos_or_user']
         ]);
+
+        register_rest_route('punktepass/v1', '/repair-bonus', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'repair_bonus'],
+            'permission_callback' => [__CLASS__, 'verify_store_api_key']
+        ]);
+    }
+
+    /** ============================================================
+     * 🔐 Verify store API key (for external integrations)
+     * ============================================================ */
+    public static function verify_store_api_key($request = null) {
+        global $wpdb;
+
+        $api_key = '';
+        // 1) Header (X-Api-Key)
+        if ($request) $api_key = $request->get_header('x-api-key');
+        // 2) WP get_param - searches GET, POST, JSON, URL params
+        if (empty($api_key) && $request) {
+            $api_key = sanitize_text_field($request->get_param('api_key') ?? '');
+        }
+        // 3) JSON body explicitly
+        if (empty($api_key) && $request) {
+            $params = $request->get_json_params();
+            $api_key = sanitize_text_field($params['api_key'] ?? '');
+        }
+        // 4) Raw $_GET fallback
+        if (empty($api_key) && isset($_GET['api_key'])) {
+            $api_key = sanitize_text_field($_GET['api_key']);
+        }
+        // 5) Raw php://input fallback (if Content-Type was stripped)
+        if (empty($api_key)) {
+            $raw = file_get_contents('php://input');
+            if ($raw) {
+                $body = json_decode($raw, true);
+                if ($body && !empty($body['api_key'])) {
+                    $api_key = sanitize_text_field($body['api_key']);
+                }
+            }
+        }
+
+        if (empty($api_key)) {
+            ppv_log("❌ [PPV_API] verify_store_api_key: No API key found (header/param/body/GET/raw)");
+            return false;
+        }
+
+        ppv_log("[PPV_API] verify_store_api_key: key=" . substr($api_key, 0, 8) . "... (len=" . strlen($api_key) . ")");
+
+        $exists = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE pos_api_key=%s AND active=1",
+            $api_key
+        ));
+
+        if (!$exists) {
+            ppv_log("❌ [PPV_API] verify_store_api_key: Invalid API key: " . substr($api_key, 0, 8) . "...");
+        }
+
+        return $exists > 0;
     }
 
     /** ============================================================
@@ -157,7 +215,219 @@ class PPV_API {
     }
 
     /** ============================================================
-     * 🔹 3️⃣ MyPoints data + translations
+     * 🔹 3️⃣ Repair Bonus (external integration)
+     * Creates user if needed, adds bonus points, sends email
+     * ============================================================ */
+    public static function repair_bonus($req) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $params = $req->get_json_params();
+        $email     = sanitize_email($params['email'] ?? '');
+        $name      = sanitize_text_field($params['name'] ?? '');
+        $store_id  = intval($params['store_id'] ?? 0);
+        $points    = intval($params['points'] ?? 2);
+        $reference = sanitize_text_field($params['reference'] ?? 'Reparatur-Formular Bonus');
+
+        if (empty($email) || !is_email($email)) {
+            return new WP_REST_Response(['status' => 'error', 'message' => 'Invalid email'], 400);
+        }
+        if (!$store_id) {
+            return new WP_REST_Response(['status' => 'error', 'message' => 'Missing store_id'], 400);
+        }
+
+        // Verify store exists
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, name, email as store_email FROM {$prefix}ppv_stores WHERE id=%d AND active=1", $store_id
+        ));
+        if (!$store) {
+            return new WP_REST_Response(['status' => 'error', 'message' => 'Store not found'], 404);
+        }
+
+        // Check if user exists
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, first_name FROM {$prefix}ppv_users WHERE email=%s LIMIT 1", $email
+        ));
+
+        $is_new_user = false;
+        $generated_password = null;
+
+        if (!$user) {
+            // Create new user
+            $is_new_user = true;
+            $generated_password = wp_generate_password(8, false, false);
+            $password_hash = password_hash($generated_password, PASSWORD_DEFAULT);
+            $qr_token = wp_generate_password(10, false, false);
+            $login_token = bin2hex(random_bytes(32));
+
+            $name_parts = explode(' ', trim($name), 2);
+            $first_name = $name_parts[0] ?? '';
+            $last_name  = $name_parts[1] ?? '';
+
+            $wpdb->insert("{$prefix}ppv_users", [
+                'email'        => $email,
+                'password'     => $password_hash,
+                'first_name'   => $first_name,
+                'last_name'    => $last_name,
+                'display_name' => trim($name) ?: $first_name,
+                'qr_token'     => $qr_token,
+                'login_token'  => $login_token,
+                'user_type'    => 'user',
+                'active'       => 1,
+                'created_at'   => current_time('mysql'),
+                'updated_at'   => current_time('mysql'),
+            ], ['%s','%s','%s','%s','%s','%s','%s','%s','%d','%s','%s']);
+
+            $user_id = $wpdb->insert_id;
+
+            if (!$user_id) {
+                ppv_log("❌ [PPV_API] repair_bonus: Failed to create user: " . $wpdb->last_error);
+                return new WP_REST_Response(['status' => 'error', 'message' => 'User creation failed'], 500);
+            }
+
+            ppv_log("✅ [PPV_API] repair_bonus: Created user #{$user_id} ({$email}) for store #{$store_id}");
+        } else {
+            $user_id = (int) $user->id;
+        }
+
+        // Add bonus points
+        $wpdb->insert("{$prefix}ppv_points", [
+            'user_id'   => $user_id,
+            'store_id'  => $store_id,
+            'points'    => $points,
+            'type'      => 'bonus',
+            'reference' => $reference,
+            'created'   => current_time('mysql'),
+        ], ['%d','%d','%d','%s','%s','%s']);
+
+        // Update lifetime_points
+        if (class_exists('PPV_User_Level') && $points > 0) {
+            PPV_User_Level::add_lifetime_points($user_id, $points);
+        }
+
+        // Get total points for this store
+        $total_points = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points),0) FROM {$prefix}ppv_points WHERE user_id=%d AND store_id=%d",
+            $user_id, $store_id
+        ));
+
+        ppv_log("✅ [PPV_API] repair_bonus: +{$points} points for user #{$user_id} at store #{$store_id} (total: {$total_points})");
+
+        // Send email
+        $first_name = $is_new_user ? (explode(' ', trim($name))[0] ?: 'Kunde') : ($user->first_name ?: 'Kunde');
+        if ($is_new_user) {
+            self::send_repair_welcome_email($email, $first_name, $generated_password, $points, $total_points, $store->name);
+        } else {
+            self::send_repair_points_email($email, $first_name, $points, $total_points, $store->name);
+        }
+
+        return new WP_REST_Response([
+            'status'       => 'ok',
+            'is_new_user'  => $is_new_user,
+            'user_id'      => $user_id,
+            'points_added' => $points,
+            'total_points' => $total_points,
+        ]);
+    }
+
+    /** ============================================================
+     * 📧 Welcome email for new repair bonus user
+     * ============================================================ */
+    private static function send_repair_welcome_email($email, $first_name, $password, $points, $total_points, $store_name) {
+        $points_to_reward = max(0, 4 - $total_points);
+
+        $subject = "Willkommen bei PunktePass – {$points} Bonuspunkte von {$store_name}!";
+
+        $body = '<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:20px;">
+<div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px 16px 0 0;padding:32px 28px;text-align:center;">
+    <h1 style="color:#fff;font-size:24px;margin:0 0 8px;">Willkommen bei PunktePass!</h1>
+    <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0;">Ihr Treuekonto bei ' . esc_html($store_name) . '</p>
+</div>
+<div style="background:#fff;padding:32px 28px;border-radius:0 0 16px 16px;">
+    <p style="font-size:16px;color:#1f2937;margin:0 0 20px;">Hallo <strong>' . esc_html($first_name) . '</strong>,</p>
+    <p style="font-size:14px;color:#4b5563;line-height:1.6;margin:0 0 24px;">
+        vielen Dank für Ihren Reparaturauftrag bei ' . esc_html($store_name) . '! Wir haben automatisch ein
+        <strong>PunktePass-Konto</strong> für Sie erstellt, mit dem Sie bei jedem Besuch Treuepunkte sammeln können.
+    </p>
+    <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;">
+        <div style="font-size:36px;font-weight:800;color:#059669;">+' . $points . ' Punkte</div>
+        <div style="font-size:13px;color:#6b7280;margin-top:4px;">wurden Ihrem Konto gutgeschrieben</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #d1fae5;font-size:13px;color:#374151;">
+            Gesamt: <strong>' . $total_points . ' / 4 Punkte</strong>'
+            . ($points_to_reward > 0 ? ' &mdash; noch ' . $points_to_reward . ' bis zum <strong>10&euro; Rabatt!</strong>' : ' &mdash; <strong style="color:#059669;">10&euro; Rabatt einlösbar!</strong>')
+        . '</div>
+    </div>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:0 0 24px;">
+        <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Ihre Zugangsdaten</div>
+        <table style="width:100%;font-size:14px;color:#1f2937;">
+            <tr><td style="padding:6px 0;color:#6b7280;width:100px;">E-Mail:</td><td style="padding:6px 0;font-weight:600;">' . esc_html($email) . '</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Passwort:</td><td style="padding:6px 0;font-weight:600;font-family:monospace;letter-spacing:1px;">' . esc_html($password) . '</td></tr>
+        </table>
+    </div>
+    <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 24px;">
+        Mit der PunktePass-App können Sie Ihren QR-Code vorzeigen und bei jedem Besuch Punkte sammeln.
+        Melden Sie sich einfach auf <strong>punktepass.de</strong> mit Ihren Zugangsdaten an.
+    </p>
+    <div style="text-align:center;">
+        <a href="https://punktepass.de" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px;">
+            Jetzt bei PunktePass anmelden
+        </a>
+    </div>
+</div>
+<div style="text-align:center;padding:20px;font-size:12px;color:#9ca3af;">
+    <p>' . esc_html($store_name) . ' &middot; powered by PunktePass</p>
+</div>
+</div></body></html>';
+
+        wp_mail($email, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+    }
+
+    /** ============================================================
+     * 📧 Points notification email for existing user
+     * ============================================================ */
+    private static function send_repair_points_email($email, $first_name, $points, $total_points, $store_name) {
+        $points_to_reward = max(0, 4 - $total_points);
+
+        $subject = "+{$points} Bonuspunkte auf Ihr PunktePass-Konto!";
+
+        $body = '<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:20px;">
+<div style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);border-radius:16px 16px 0 0;padding:32px 28px;text-align:center;">
+    <div style="font-size:48px;font-weight:800;color:#fff;">+' . $points . '</div>
+    <p style="color:rgba(255,255,255,0.9);font-size:15px;margin:8px 0 0;font-weight:500;">Bonuspunkte gutgeschrieben</p>
+</div>
+<div style="background:#fff;padding:32px 28px;border-radius:0 0 16px 16px;">
+    <p style="font-size:16px;color:#1f2937;margin:0 0 20px;">Hallo <strong>' . esc_html($first_name) . '</strong>,</p>
+    <p style="font-size:14px;color:#4b5563;line-height:1.6;margin:0 0 24px;">
+        vielen Dank für Ihren Reparaturauftrag bei ' . esc_html($store_name) . '! Wir haben
+        <strong>' . $points . ' Bonuspunkte</strong> auf Ihr PunktePass-Konto gutgeschrieben.
+    </p>
+    <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;">
+        <div style="font-size:13px;color:#6b7280;margin-bottom:4px;">Ihr Punktestand bei ' . esc_html($store_name) . '</div>
+        <div style="font-size:36px;font-weight:800;color:#059669;">' . $total_points . ' Punkte</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #d1fae5;font-size:13px;color:#374151;">'
+            . ($points_to_reward > 0 ? 'Noch ' . $points_to_reward . ' Punkte bis zum <strong>10&euro; Rabatt!</strong>' : '<strong style="color:#059669;">10&euro; Rabatt einlösbar!</strong>')
+        . '</div>
+    </div>
+    <div style="text-align:center;">
+        <a href="https://punktepass.de" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px;">Punkte ansehen</a>
+    </div>
+</div>
+<div style="text-align:center;padding:20px;font-size:12px;color:#9ca3af;">
+    <p>' . esc_html($store_name) . ' &middot; powered by PunktePass</p>
+</div>
+</div></body></html>';
+
+        wp_mail($email, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+    }
+
+    /** ============================================================
+     * 🔹 4️⃣ MyPoints data + translations
      * ============================================================ */
     public static function get_mypoints($req) {
         global $wpdb;
@@ -221,4 +491,28 @@ class PPV_API {
 // ============================================================
 add_action('plugins_loaded', function() {
     if (class_exists('PPV_API')) PPV_API::hooks();
+});
+
+// ============================================================
+// 🔧 One-time: ensure eRepairShop (store 9) has its API key set
+// ============================================================
+add_action('admin_init', function() {
+    if (get_option('ppv_erepairshop_apikey_set')) return;
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'ppv_stores';
+    $store_id = 9;
+    $desired_key = '7b6e6938a91011f0bca9a33a376863b7';
+
+    // Check current key
+    $current = $wpdb->get_var($wpdb->prepare(
+        "SELECT pos_api_key FROM {$table} WHERE id = %d", $store_id
+    ));
+
+    if ($current !== $desired_key) {
+        $wpdb->update($table, ['pos_api_key' => $desired_key], ['id' => $store_id]);
+        ppv_log("[PPV_API] eRepairShop API key set for store #{$store_id} (was: " . ($current ?: 'NULL') . ")");
+    }
+
+    update_option('ppv_erepairshop_apikey_set', 1);
 });

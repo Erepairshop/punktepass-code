@@ -160,6 +160,7 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/punktepass/v1/pos/dock',
             '/wp-json/punktepass/v1/push/register',
             '/wp-json/punktepass/v1/push/unregister',
+            '/wp-json/punktepass/v1/repair-bonus',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
@@ -289,6 +290,14 @@ $core_modules = [
     'includes/class-ppv-push.php',
     'includes/class-ppv-weekly-report.php',
     'includes/class-ppv-whatsapp.php',
+    // Standalone Shell (lightweight page rendering without WP theme)
+    'includes/class-ppv-standalone-shell.php',
+    // Repair Form Module
+    'includes/class-ppv-repair-core.php',
+    'includes/class-ppv-repair-form.php',
+    'includes/class-ppv-repair-registration.php',
+    'includes/class-ppv-repair-admin.php',
+    'includes/class-ppv-repair-invoice.php',
 ];
 
 // Debug only if enabled
@@ -609,7 +618,7 @@ $whitelist = [
     'remix-icons',      // Icons for VIP settings
     'remixicons',       // Remix icons CDN
     'google-platform',
-    'ppv-login-js'
+    'ppv-login-js',
 ];
     
     foreach ($wp_styles->queue as $handle) {
@@ -652,6 +661,11 @@ if (class_exists('PPV_Push')) PPV_Push::hooks(); // Push notifications (FCM)
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
 
+// Standalone Shell (renders PunktePass pages without WP theme for speed)
+if (class_exists('PPV_Standalone_Shell')) PPV_Standalone_Shell::hooks();
+
+// Repair Form Module (standalone: only Core has hooks for routing + AJAX)
+if (class_exists('PPV_Repair_Core')) PPV_Repair_Core::hooks();
 
 // Vendor/User Signup
 foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {

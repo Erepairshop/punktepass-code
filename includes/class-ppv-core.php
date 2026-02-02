@@ -415,7 +415,7 @@ class PPV_Core {
         }
 
         // Migration 2.6: Add WhatsApp-related columns to ppv_users
-        if (version_compare($current_version, '2.6', '<')) {
+        if (version_compare($migration_version, '2.6', '<')) {
             $users_table = $wpdb->prefix . 'ppv_users';
 
             // Add phone_number column
@@ -444,7 +444,7 @@ class PPV_Core {
         }
 
         // Migration 2.7: Add user settings columns to ppv_users
-        if (version_compare($current_version, '2.7', '<')) {
+        if (version_compare($migration_version, '2.7', '<')) {
             $users_table = $wpdb->prefix . 'ppv_users';
 
             // Notification settings columns

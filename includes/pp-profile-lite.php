@@ -17,6 +17,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         const NONCE_NAME = 'ppv_nonce';
 
         public static function hooks() {
+            add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
             add_action('wp_head', [__CLASS__, 'add_turbo_no_cache_meta'], 1);
             add_action('init', [__CLASS__, 'track_handler_activity_on_page_load'], 20); // 📊 Track handler activity
             add_action('wp_ajax_ppv_get_strings', [__CLASS__, 'ajax_get_strings']);
@@ -294,6 +295,148 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
             $strings = include $file;
             wp_send_json_success($strings);
+        }
+
+        // ============================================================
+        // 🚀 STANDALONE RENDERING (bypasses WordPress theme)
+        // ============================================================
+
+        public static function maybe_render_standalone() {
+            $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+            $path = rtrim($path, '/');
+            if ($path !== '/mein-profil') return;
+
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+                @session_start();
+            }
+
+            if (!class_exists('PPV_Permissions')) {
+                header('Location: /login');
+                exit;
+            }
+
+            $auth_check = PPV_Permissions::check_handler();
+            if (is_wp_error($auth_check)) {
+                header('Location: /login');
+                exit;
+            }
+
+            self::render_standalone_page();
+            exit;
+        }
+
+        private static function render_standalone_page() {
+            $plugin_url = PPV_PLUGIN_URL;
+            $version    = PPV_VERSION;
+            $site_url   = get_site_url();
+
+            // ─── Language ───
+            if (class_exists('PPV_Lang')) {
+                $lang    = PPV_Lang::$active ?: 'de';
+                $strings = PPV_Lang::$strings ?: [];
+            } else {
+                $lang    = 'de';
+                $strings = [];
+            }
+
+            // ─── Theme ───
+            $theme_cookie = $_COOKIE['ppv_theme'] ?? ($_COOKIE['ppv_handler_theme'] ?? 'light');
+            $is_dark = ($theme_cookie === 'dark');
+
+            // ─── Page content (render_form echoes, capture with ob) ───
+            ob_start();
+            self::render_form();
+            $page_html = ob_get_clean();
+
+            // ─── Localized data for JS modules ───
+            $profile_data = [
+                'ajaxUrl'       => admin_url('admin-ajax.php'),
+                'nonce'         => wp_create_nonce(self::NONCE_ACTION),
+                'strings'       => $strings,
+                'lang'          => $lang,
+                'googleMapsKey' => defined('PPV_GOOGLE_MAPS_KEY') ? PPV_GOOGLE_MAPS_KEY : '',
+            ];
+
+            // ─── Global header ───
+            $global_header = '';
+            if (class_exists('PPV_User_Dashboard')) {
+                ob_start();
+                PPV_User_Dashboard::render_global_header();
+                $global_header = ob_get_clean();
+            }
+
+            // ─── Bottom nav context ───
+            $bottom_nav_context = '';
+            if (class_exists('PPV_Bottom_Nav')) {
+                ob_start();
+                PPV_Bottom_Nav::inject_context();
+                $bottom_nav_context = ob_get_clean();
+            }
+
+            // ─── Body classes ───
+            $body_classes = ['ppv-standalone', 'ppv-app-mode', 'ppv-handler-mode'];
+            $body_classes[] = $is_dark ? 'ppv-dark' : 'ppv-light';
+            $body_class = implode(' ', $body_classes);
+
+            header('Content-Type: text/html; charset=utf-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+            ?>
+<!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="turbo-cache-control" content="no-cache">
+    <title>Profil - PunktePass</title>
+    <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
+    <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+<?php if ($is_dark): ?>
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
+<?php endif; ?>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script>
+    var ajaxurl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+    var ppv_profile = <?php echo wp_json_encode($profile_data); ?>;
+    window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
+    </script>
+    <style>
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
+    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    </style>
+</head>
+<body class="<?php echo esc_attr($body_class); ?>">
+<?php echo $global_header; ?>
+<div class="ppv-standalone-wrap">
+<?php echo $page_html; ?>
+</div>
+<?php echo $bottom_nav_context; ?>
+<?php if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY): ?>
+<script src="https://maps.googleapis.com/maps/api/js?key=<?php echo esc_attr(PPV_GOOGLE_MAPS_KEY); ?>"></script>
+<?php endif; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-global.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-core.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-tabs.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-form.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-media.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-geocoding.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-init.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php if (class_exists('PPV_Bottom_Nav')): ?>
+<script><?php echo PPV_Bottom_Nav::inline_js(); ?></script>
+<?php endif; ?>
+</body>
+</html>
+<?php
         }
 
         public static function enqueue_assets() {

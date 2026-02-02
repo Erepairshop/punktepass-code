@@ -304,7 +304,7 @@ class PPV_Bottom_Nav {
     /** ============================================================
      * JS – Aktív ikon kijelölés + Turbo Navigation + Feedback Modal
      * ============================================================ */
-    private static function inline_js() {
+    public static function inline_js() {
         $ajax_url = admin_url('admin-ajax.php');
         $nonce = wp_create_nonce('ppv_feedback_nonce');
 

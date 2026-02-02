@@ -16,6 +16,7 @@ class PPV_User_Dashboard {
     const CACHE_TTL = 3600;
 
     public static function hooks() {
+        add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
         add_shortcode('ppv_user_dashboard', [__CLASS__, 'render_dashboard']);
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
@@ -1025,9 +1026,153 @@ private static function get_today_hours($opening_hours) {
         return $boot;
     }
 
+    // ========================================
+    // 🚀 STANDALONE RENDERING (bypasses WordPress theme)
+    // ========================================
+
+    public static function maybe_render_standalone() {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = rtrim($path, '/');
+        if ($path !== '/user_dashboard') return;
+
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
+        // Customer auth: check ppv_user_id in session
+        $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
+        if ($user_id <= 0) {
+            header('Location: /login');
+            exit;
+        }
+
+        self::render_standalone_page();
+        exit;
+    }
+
+    private static function render_standalone_page() {
+        $plugin_url = PPV_PLUGIN_URL;
+        $version    = PPV_VERSION;
+        $site_url   = get_site_url();
+
+        // ─── Language ───
+        if (class_exists('PPV_Lang')) {
+            $lang    = PPV_Lang::$active ?: 'de';
+            $strings = PPV_Lang::$strings ?: [];
+        } else {
+            $lang    = self::get_user_lang();
+            $strings = [];
+        }
+
+        // ─── Theme ───
+        $theme_cookie = $_COOKIE['ppv_theme'] ?? 'light';
+        $is_dark = ($theme_cookie === 'dark');
+
+        // ─── Boot payload (user data, QR, points, rewards, Ably) ───
+        $boot = self::build_boot_payload();
+
+        // ─── Dashboard config ───
+        $dashboard_data = [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('ppv_store_rating_nonce'),
+            'lang'     => $lang,
+        ];
+
+        // ─── Tips config ───
+        $tips_config = [
+            'restBase' => esc_url_raw(rest_url('ppv/v1/')),
+            'nonce'    => wp_create_nonce('wp_rest'),
+        ];
+
+        // ─── Ably ───
+        $ably_enabled = class_exists('PPV_Ably') && PPV_Ably::is_enabled();
+
+        // ─── Page content (render_dashboard echoes + returns) ───
+        ob_start();
+        $page_html = self::render_dashboard();
+        $echoed = ob_get_clean();
+        // render_dashboard echoes a script + returns HTML
+        $page_html = $echoed . $page_html;
+
+        // ─── Global header ───
+        ob_start();
+        self::render_global_header();
+        $global_header = ob_get_clean();
+
+        // ─── Bottom nav context ───
+        $bottom_nav_context = '';
+        if (class_exists('PPV_Bottom_Nav')) {
+            ob_start();
+            PPV_Bottom_Nav::inject_context();
+            $bottom_nav_context = ob_get_clean();
+        }
+
+        // ─── Body classes ───
+        $body_classes = ['ppv-standalone', 'ppv-app-mode', 'ppv-user-dashboard'];
+        $body_classes[] = $is_dark ? 'ppv-dark' : 'ppv-light';
+        $body_class = implode(' ', $body_classes);
+
+        header('Content-Type: text/html; charset=utf-8');
+        ?>
+<!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Dashboard - PunktePass</title>
+    <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
+    <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+<?php if ($is_dark): ?>
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
+<?php endif; ?>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script>
+    var ajaxurl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+    window.ppv_boot = <?php echo wp_json_encode($boot); ?>;
+    window.ppv_dashboard = <?php echo wp_json_encode($dashboard_data); ?>;
+    window.ppvConfig = <?php echo wp_json_encode($tips_config); ?>;
+    window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
+    </script>
+    <style>
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
+    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    </style>
+</head>
+<body class="<?php echo esc_attr($body_class); ?>">
+<?php echo $global_header; ?>
+<div class="ppv-standalone-wrap">
+<?php echo $page_html; ?>
+</div>
+<?php echo $bottom_nav_context; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-global.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/vendor/qrcode-generator.min.js"></script>
+<?php if ($ably_enabled): ?>
+<script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-ably-manager.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php endif; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-user-dashboard.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-user-tips.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php if (class_exists('PPV_Bottom_Nav')): ?>
+<script><?php echo PPV_Bottom_Nav::inline_js(); ?></script>
+<?php endif; ?>
+</body>
+</html>
+<?php
+    }
+
 public static function render_dashboard() {
     echo '<script>document.body.classList.add("ppv-user-dashboard");</script>';
-    
+
     return '<div id="ppv-dashboard-root"></div>' . do_shortcode('[ppv_bottom_nav]');
 }
 

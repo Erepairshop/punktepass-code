@@ -889,6 +889,12 @@ class PPV_Standalone_Admin {
             'callback' => [__CLASS__, 'rest_change_password'],
             'permission_callback' => '__return_true'
         ]);
+
+        register_rest_route('punktepass/v1', '/admin/search-users', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_search_users'],
+            'permission_callback' => '__return_true'
+        ]);
     }
 
     /**
@@ -923,6 +929,53 @@ class PPV_Standalone_Admin {
 
         ppv_log("🔐 [Admin] Jelszó módosítva: {$email}");
         return new WP_REST_Response(['success' => true, 'message' => 'Jelszó módosítva']);
+    }
+
+    /**
+     * Felhasználó keresés (AJAX)
+     */
+    public static function rest_search_users(WP_REST_Request $request) {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_admin_logged_in'])) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Nincs bejelentkezve'], 401);
+        }
+
+        global $wpdb;
+        $data = $request->get_json_params();
+        $search_term = sanitize_text_field($data['search'] ?? '');
+
+        if (strlen($search_term) < 2) {
+            return new WP_REST_Response(['success' => true, 'users' => []]);
+        }
+
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        $users = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, email, username, user_type, vendor_store_id
+             FROM {$wpdb->prefix}ppv_users
+             WHERE (email LIKE %s OR username LIKE %s)
+             AND user_type NOT IN ('admin')
+             AND active = 1
+             ORDER BY email ASC
+             LIMIT 20",
+            $like, $like
+        ));
+
+        $results = [];
+        foreach ($users as $u) {
+            $results[] = [
+                'id' => (int) $u->id,
+                'email' => $u->email,
+                'username' => $u->username ?: '',
+                'user_type' => $u->user_type ?: 'user',
+                'linked' => !empty($u->vendor_store_id) && $u->vendor_store_id > 0
+            ];
+        }
+
+        return new WP_REST_Response(['success' => true, 'users' => $results]);
     }
 
     /**

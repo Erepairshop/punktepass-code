@@ -28,6 +28,8 @@ class PPV_QR {
     // 🔹 INITIALIZATION
     // ============================================================
     public static function hooks() {
+        // Standalone route: intercept /qr-center before WP theme loads
+        add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
         add_shortcode('ppv_qr_center', [__CLASS__, 'render_qr_center']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
@@ -718,7 +720,347 @@ class PPV_QR {
     }
 
     // ============================================================
-    // 🎨 FRONTEND RENDERING
+    // 🚀 STANDALONE RENDERING (bypasses WordPress theme)
+    // ============================================================
+
+    /** Intercept /qr-center URL at init and render standalone page */
+    public static function maybe_render_standalone() {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = rtrim($path, '/');
+        if ($path !== '/qr-center') return;
+
+        // Start session
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
+        // Auth check
+        if (!class_exists('PPV_Permissions')) {
+            header('Location: /login');
+            exit;
+        }
+
+        $auth_check = PPV_Permissions::check_handler();
+        if (is_wp_error($auth_check)) {
+            header('Location: /login');
+            exit;
+        }
+
+        self::render_standalone_page();
+        exit;
+    }
+
+    /** Render complete standalone HTML page for QR Center */
+    private static function render_standalone_page() {
+        global $wpdb;
+
+        $plugin_url = PPV_PLUGIN_URL;
+        $version    = PPV_VERSION;
+        $site_url   = get_site_url();
+        $js_version = '6.5.1';
+
+        // ─── Language detection (same as render_qr_center) ───
+        $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+        if (empty($lang) && isset($_GET['lang'])) {
+            $lang = sanitize_text_field($_GET['lang']);
+        }
+        if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) && !empty($_SESSION['ppv_user_id'])) {
+            $user_lang = $wpdb->get_var($wpdb->prepare(
+                "SELECT language FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+                intval($_SESSION['ppv_user_id'])
+            ));
+            if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro'])) {
+                $lang = $user_lang;
+            }
+        }
+        if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
+            $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
+        }
+
+        $lang_file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
+        if (!file_exists($lang_file)) {
+            $lang_file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php";
+        }
+        $strings = include $lang_file;
+        $GLOBALS['ppv_current_lang'] = $strings;
+
+        // Set PPV_Lang strings for components that read them
+        if (class_exists('PPV_Lang')) {
+            PPV_Lang::$strings = $strings;
+            PPV_Lang::$active  = $lang;
+        }
+
+        // ─── Store ID resolution (same as enqueue_assets) ───
+        $store_id  = 0;
+        $store_key = '';
+
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_active_store'])) {
+            $store_id = intval($_SESSION['ppv_active_store']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        if ($store_id > 0) {
+            $store_key = $wpdb->get_var($wpdb->prepare(
+                "SELECT store_key FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $store_id
+            )) ?: '';
+        }
+
+        // ─── Build JS data objects ───
+        $store_data = [
+            'store_id'   => intval($store_id),
+            'store_key'  => $store_key,
+            'plugin_url' => $plugin_url,
+        ];
+
+        // Scanner user info
+        if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner' && !empty($_SESSION['ppv_user_id'])) {
+            $scanner_id   = intval($_SESSION['ppv_user_id']);
+            $scanner_user = $wpdb->get_row($wpdb->prepare(
+                "SELECT display_name, username, first_name, last_name, email FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+                $scanner_id
+            ));
+            $scanner_name = '';
+            if ($scanner_user) {
+                if (!empty($scanner_user->display_name))    $scanner_name = $scanner_user->display_name;
+                elseif (!empty($scanner_user->username))    $scanner_name = $scanner_user->username;
+                elseif (!empty($scanner_user->first_name))  $scanner_name = trim($scanner_user->first_name . ' ' . ($scanner_user->last_name ?? ''));
+                elseif (!empty($scanner_user->email))       $scanner_name = $scanner_user->email;
+            }
+            $store_data['scanner_id']   = $scanner_id;
+            $store_data['scanner_name'] = $scanner_name ?: sanitize_email($_SESSION['ppv_user_email'] ?? '');
+        }
+
+        // Ably
+        $ably_enabled = class_exists('PPV_Ably') && PPV_Ably::is_enabled();
+        if ($ably_enabled) {
+            $store_data['ably'] = ['key' => PPV_Ably::get_key()];
+        }
+
+        $scan_data = [
+            'rest_url'   => esc_url(rest_url('punktepass/v1/pos/scan')),
+            'store_key'  => $store_key,
+            'plugin_url' => $plugin_url,
+            'lang'       => substr($lang, 0, 2),
+        ];
+
+        // Rewards management data
+        $ably_config_rewards = null;
+        if ($ably_enabled) {
+            $ably_config_rewards = [
+                'key'     => PPV_Ably::get_key(),
+                'channel' => 'store-' . $store_id
+            ];
+        }
+        $rewards_mgmt_data = [
+            'base'     => esc_url(rest_url('ppv/v1/')),
+            'nonce'    => wp_create_nonce('wp_rest'),
+            'store_id' => intval($store_id),
+            'ably'     => $ably_config_rewards
+        ];
+
+        // VIP settings data
+        $vip_data = [
+            'base'     => esc_url(rest_url('ppv/v1/')),
+            'nonce'    => wp_create_nonce('wp_rest'),
+            'store_id' => intval($store_id)
+        ];
+
+        // ─── Scanner user check ───
+        $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
+
+        // ─── Dark mode (ppv_theme cookie used by theme-loader.js) ───
+        $theme_cookie = $_COOKIE['ppv_theme'] ?? ($_COOKIE['ppv_handler_theme'] ?? 'light');
+        $is_dark = ($theme_cookie === 'dark');
+
+        // ─── Capture tab content from trait render methods ───
+        ob_start();
+        self::render_pos_scanner();
+        $scanner_html = ob_get_clean();
+
+        ob_start();
+        self::render_user_devices($is_scanner);
+        $devices_html = ob_get_clean();
+
+        $rewards_html = '';
+        $scanner_users_html = '';
+        $vip_html = '';
+        if (!$is_scanner) {
+            if (class_exists('PPV_Rewards_Management')) {
+                $rewards_html = PPV_Rewards_Management::render_management_page();
+            }
+            ob_start();
+            self::render_scanner_users();
+            $scanner_users_html = ob_get_clean();
+
+            if (class_exists('PPV_VIP_Settings')) {
+                $vip_html = PPV_VIP_Settings::render_settings_page();
+            }
+        }
+
+        // ─── Global header ───
+        $global_header = '';
+        if (class_exists('PPV_User_Dashboard')) {
+            ob_start();
+            PPV_User_Dashboard::render_global_header();
+            $global_header = ob_get_clean();
+        }
+
+        // ─── Bottom nav ───
+        $bottom_nav = '';
+        $bottom_nav_context = '';
+        if (class_exists('PPV_Bottom_Nav')) {
+            $bottom_nav = PPV_Bottom_Nav::render_nav();
+            ob_start();
+            PPV_Bottom_Nav::inject_context();
+            $bottom_nav_context = ob_get_clean();
+        }
+
+        // ─── Body classes ───
+        $body_classes = ['ppv-standalone', 'ppv-app-mode', 'ppv-handler-mode'];
+        $body_classes[] = $is_dark ? 'ppv-dark' : 'ppv-light';
+        if ($is_dark) $body_classes[] = 'ppv-dark-mode';
+        $body_class = implode(' ', $body_classes);
+
+        // ─── Output complete HTML ───
+        header('Content-Type: text/html; charset=utf-8');
+        ?>
+<!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>QR Center - PunktePass</title>
+    <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
+    <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+<?php if ($is_dark): ?>
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
+<?php endif; ?>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script>
+    var ajaxurl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+    var PPV_STORE_DATA = <?php echo wp_json_encode($store_data); ?>;
+    var PPV_SCAN_DATA = <?php echo wp_json_encode($scan_data); ?>;
+    window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
+    window.ppv_rewards_mgmt = <?php echo wp_json_encode($rewards_mgmt_data); ?>;
+    window.ppv_vip = <?php echo wp_json_encode($vip_data); ?>;
+    </script>
+    <style>
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
+    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    </style>
+</head>
+<body class="<?php echo esc_attr($body_class); ?>">
+<?php echo $global_header; ?>
+<div class="ppv-standalone-wrap">
+    <div class="ppv-qr-wrapper glass-card">
+        <h2 style="font-size:18px;margin-bottom:16px;">
+            <i class="ri-broadcast-line" style="margin-right:6px;"></i><?php echo esc_html($strings['qrcamp_title'] ?? 'Kassenscanner & Kampagnen'); ?>
+        </h2>
+
+        <div class="ppv-tabs">
+            <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
+                <i class="ri-qr-scan-2-line"></i> <?php echo esc_html($strings['tab_scanner'] ?? 'Kassenscanner'); ?>
+            </button>
+            <button class="ppv-tab" data-tab="devices" id="ppv-tab-devices">
+                <i class="ri-smartphone-line"></i> <?php echo esc_html($strings['tab_devices'] ?? 'Geräte'); ?>
+            </button>
+<?php if (!$is_scanner): ?>
+            <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
+                <i class="ri-gift-line"></i> <?php echo esc_html($strings['tab_rewards'] ?? 'Prämien'); ?>
+            </button>
+            <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
+                <i class="ri-team-line"></i> <?php echo esc_html($strings['tab_scanner_users'] ?? 'Scanner Benutzer'); ?>
+            </button>
+            <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
+                <i class="ri-vip-crown-line"></i> <?php echo esc_html($strings['tab_vip'] ?? 'VIP Einstellungen'); ?>
+            </button>
+<?php endif; ?>
+        </div>
+
+        <div class="ppv-tab-content active" id="tab-scanner" style="border:none;box-shadow:none;padding:8px 0;background:transparent;">
+            <?php echo $scanner_html; ?>
+        </div>
+
+        <div class="ppv-tab-content" id="tab-devices" style="border:none;box-shadow:none;padding:8px 0;background:transparent;">
+            <?php echo $devices_html; ?>
+        </div>
+
+<?php if (!$is_scanner): ?>
+        <div class="ppv-tab-content" id="tab-rewards" style="border:none;box-shadow:none;padding:8px 0;background:transparent;">
+            <?php echo $rewards_html; ?>
+        </div>
+
+        <div class="ppv-tab-content" id="tab-scanner-users" style="border:none;box-shadow:none;padding:8px 0;background:transparent;">
+            <?php echo $scanner_users_html; ?>
+        </div>
+
+        <div class="ppv-tab-content" id="tab-vip" style="border:none;box-shadow:none;padding:8px 0;background:transparent;">
+            <?php echo $vip_html; ?>
+        </div>
+<?php endif; ?>
+    </div>
+
+    <script>
+    jQuery(document).ready(function($){
+        var savedTab = localStorage.getItem('ppv_active_tab');
+        var $savedTabBtn = $(".ppv-tab[data-tab='" + savedTab + "']");
+        if (savedTab && $savedTabBtn.length) {
+            $(".ppv-tab").removeClass("active");
+            $savedTabBtn.addClass("active");
+            $(".ppv-tab-content").removeClass("active");
+            $("#tab-" + savedTab).addClass("active");
+        }
+        $(".ppv-tab").on("click", function(){
+            var tabName = $(this).data("tab");
+            localStorage.setItem('ppv_active_tab', tabName);
+            $(".ppv-tab").removeClass("active");
+            $(this).addClass("active");
+            $(".ppv-tab-content").removeClass("active");
+            $("#tab-" + tabName).addClass("active");
+        });
+    });
+    </script>
+</div>
+<?php echo $bottom_nav; ?>
+<?php echo $bottom_nav_context; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-qr-core.js?v=<?php echo esc_attr($js_version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-qr-ui.js?v=<?php echo esc_attr($js_version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-qr-sync.js?v=<?php echo esc_attr($js_version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-qr-campaigns.js?v=<?php echo esc_attr($js_version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-qr-camera.js?v=<?php echo esc_attr($js_version); ?>"></script>
+<?php if ($ably_enabled): ?>
+<script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-ably-manager.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php endif; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-qr-init.js?v=<?php echo esc_attr($js_version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-hidden-scan.js?v=<?php echo esc_attr($js_version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-rewards-management.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-vip-settings.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-theme-loader.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php if (class_exists('PPV_Bottom_Nav')): ?>
+<script><?php echo PPV_Bottom_Nav::inline_js(); ?></script>
+<?php endif; ?>
+</body>
+</html>
+<?php
+    }
+
+    // ============================================================
+    // 🎨 FRONTEND RENDERING (WordPress shortcode - fallback)
     // ============================================================
     public static function render_qr_center() {
         global $wpdb;
