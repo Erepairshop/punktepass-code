@@ -46,6 +46,7 @@ class PPV_Repair_Core {
             'ppv_repair_save_settings'  => [__CLASS__, 'ajax_save_settings'],
             'ppv_repair_upload_logo'    => [__CLASS__, 'ajax_upload_logo'],
             'ppv_repair_logout'         => [__CLASS__, 'ajax_logout'],
+            'ppv_repair_user_search'    => [__CLASS__, 'ajax_user_search'],
         ];
         foreach ($admin_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -873,6 +874,70 @@ class PPV_Repair_Core {
         return (int)$wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d AND repair_enabled=1 LIMIT 1", $user_id
         ));
+    }
+
+    /** ============================================================
+     * AJAX: User Search (PunktePass customer lookup)
+     * ============================================================ */
+    public static function ajax_user_search() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $query = sanitize_text_field($_POST['query'] ?? '');
+
+        if (empty($query) || strlen($query) < 2) {
+            wp_send_json_error(['message' => 'Bitte mindestens 2 Zeichen eingeben']);
+        }
+
+        $like = '%' . $wpdb->esc_like($query) . '%';
+
+        // Search user by name or email
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, first_name, last_name, display_name
+             FROM {$prefix}ppv_users
+             WHERE (email LIKE %s OR display_name LIKE %s OR first_name LIKE %s OR last_name LIKE %s)
+               AND active = 1
+             ORDER BY
+               CASE WHEN email = %s THEN 0
+                    WHEN email LIKE %s THEN 1
+                    ELSE 2 END,
+               display_name ASC
+             LIMIT 1",
+            $like, $like, $like, $like,
+            $query, $like
+        ));
+
+        if (!$user) {
+            wp_send_json_error(['message' => 'Kein Kunde gefunden']);
+        }
+
+        // Get total points for this store
+        $total_points = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points), 0) FROM {$prefix}ppv_points WHERE user_id = %d AND store_id = %d",
+            $user->id, $store_id
+        ));
+
+        // Get store's required points for reward
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT repair_required_points FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        $required_points = intval($store->repair_required_points ?? 4);
+
+        wp_send_json_success([
+            'user' => [
+                'display_name'    => $user->display_name ?: $user->first_name,
+                'first_name'      => $user->first_name,
+                'email'           => $user->email,
+                'total_points'    => $total_points,
+                'required_points' => $required_points,
+            ],
+        ]);
     }
 
     /** ============================================================
