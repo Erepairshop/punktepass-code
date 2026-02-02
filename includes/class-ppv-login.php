@@ -14,7 +14,8 @@ class PPV_Login {
      * 🔹 Hooks
      * ============================================================ */
     public static function hooks() {
-        add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
+        // Standalone disabled - login uses WordPress theme rendering via shortcode
+        // add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
         add_shortcode('ppv_login_form', [__CLASS__, 'render_landing_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('wp_head', [__CLASS__, 'inject_head_assets'], 999); // ✅ Priority 999 = LAST, overrides theme CSS!
