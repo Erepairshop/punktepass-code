@@ -422,6 +422,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 <?php if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY): ?>
 <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo esc_attr(PPV_GOOGLE_MAPS_KEY); ?>"></script>
 <?php endif; ?>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?v=<?php echo esc_attr($version); ?>"></script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-global.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-core.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-tabs.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/pp-profile-form.js?v=<?php echo esc_attr($version); ?>"></script>
