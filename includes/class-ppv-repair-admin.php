@@ -154,6 +154,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             exit;
         }
 
+        // Auto-generate store_slug if missing
+        if (empty($store->store_slug)) {
+            $base_slug = sanitize_title($store->name ?: 'store-' . $store->id);
+            $slug = $base_slug;
+            $counter = 1;
+            // Ensure unique slug
+            while ($wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$prefix}ppv_stores WHERE store_slug = %s AND id != %d",
+                $slug, $store->id
+            ))) {
+                $slug = $base_slug . '-' . $counter++;
+            }
+            $wpdb->update("{$prefix}ppv_stores", ['store_slug' => $slug], ['id' => $store->id]);
+            $store->store_slug = $slug;
+        }
+
         // Stats
         $total_repairs = (int)$wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$prefix}ppv_repairs WHERE store_id = %d", $store->id
