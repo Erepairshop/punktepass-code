@@ -1007,6 +1007,10 @@ class PPV_Repair_Invoice {
 
         $inv_nr = esc_html($invoice->invoice_number);
         $inv_date = date('d.m.Y', strtotime($invoice->created_at));
+        $doc_type = $invoice->doc_type ?? 'rechnung';
+        $is_angebot = ($doc_type === 'angebot');
+        $doc_type_label = $is_angebot ? 'Angebot' : 'Rechnung';
+        $valid_until = ($is_angebot && !empty($invoice->valid_until)) ? date('d.m.Y', strtotime($invoice->valid_until)) : '';
         $cust_name = esc_html($invoice->customer_name);
         $cust_email = esc_html($invoice->customer_email);
         $cust_phone = esc_html($invoice->customer_phone ?: '');
@@ -1120,7 +1124,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,san
 <div class="inv-wrap">
 <div class="inv-header">
 <div class="inv-logo">' . $logo_html . '<div><div class="inv-company">' . $company . '</div><div style="font-size:12px;color:#6b7280;">' . $owner . '</div></div></div>
-<div class="inv-meta"><div class="inv-nr">' . $inv_nr . '</div><div class="inv-date">Datum: ' . $inv_date . '</div></div>
+<div class="inv-meta"><div style="font-size:14px;font-weight:600;color:#6b7280;margin-bottom:2px;">' . $doc_type_label . '</div><div class="inv-nr">' . $inv_nr . '</div><div class="inv-date">Datum: ' . $inv_date . '</div>' . ($valid_until ? '<div class="inv-date">G&uuml;ltig bis: ' . $valid_until . '</div>' : '') . '</div>
 </div>
 <div class="inv-parties">
 <div class="inv-from"><div class="inv-label">Von</div><div class="inv-addr"><strong>' . $company . '</strong><br>' . $owner . '<br>' . $addr . '<br>' . $plz_city . $phone_line . '<br>E-Mail: ' . $email . $tax_line . '</div></div>
@@ -1200,10 +1204,18 @@ Powered by PunktePass &middot; punktepass.de
         // Prepare email
         $company_name = $store->repair_company_name ?: $store->name;
         $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+        $doc_type = $invoice->doc_type ?? 'rechnung';
+        $is_angebot = ($doc_type === 'angebot');
+        $doc_type_label = $is_angebot ? 'Angebot' : 'Rechnung';
+        $doc_type_label_lower = $is_angebot ? 'Angebot' : 'Rechnung';
 
-        // Get email template from store settings
-        $subject = $store->repair_invoice_email_subject ?: 'Ihre Rechnung {invoice_number}';
-        $body = $store->repair_invoice_email_body ?: "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
+        // Get email template from store settings - use document type
+        $default_subject = $is_angebot ? 'Ihr Angebot {invoice_number}' : 'Ihre Rechnung {invoice_number}';
+        $default_body = $is_angebot
+            ? "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihr Angebot {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}"
+            : "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
+        $subject = $store->repair_invoice_email_subject ?: $default_subject;
+        $body = $store->repair_invoice_email_body ?: $default_body;
 
         // Replace placeholders
         $replacements = [
@@ -1241,7 +1253,7 @@ Powered by PunktePass &middot; punktepass.de
             if ($invoice->status === 'draft') {
                 $wpdb->update($prefix . 'ppv_repair_invoices', ['status' => 'sent'], ['id' => $invoice_id]);
             }
-            wp_send_json_success(['message' => 'Rechnung wurde an ' . $invoice->customer_email . ' gesendet']);
+            wp_send_json_success(['message' => $doc_type_label . ' wurde an ' . $invoice->customer_email . ' gesendet']);
         } else {
             wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
         }

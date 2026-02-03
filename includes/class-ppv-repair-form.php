@@ -226,6 +226,18 @@ class PPV_Repair_Form {
         <h2>Vielen Dank!</h2>
         <p>Ihr <?php echo $form_title; ?> wurde erfolgreich eingereicht.</p>
 
+        <!-- Tracking Card -->
+        <div id="repair-tracking-card" class="repair-tracking-card" style="display:none">
+            <div class="repair-tracking-qr" id="repair-qr-container"></div>
+            <div class="repair-tracking-info">
+                <div class="repair-tracking-label">Ihre Auftragsnummer</div>
+                <div class="repair-tracking-id" id="repair-tracking-id">#---</div>
+                <a href="#" id="repair-tracking-link" class="repair-tracking-link" target="_blank">
+                    <i class="ri-external-link-line"></i> Status verfolgen
+                </a>
+            </div>
+        </div>
+
         <?php if ($pp_enabled): ?>
         <div id="repair-points-card" class="repair-points-card" style="display:none">
             <div class="repair-points-badge">
@@ -237,7 +249,7 @@ class PPV_Repair_Form {
         </div>
         <?php endif; ?>
 
-        <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail.</p>
+        <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail mit Ihrem Tracking-Link.</p>
 
         <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
     </div>
@@ -255,6 +267,7 @@ class PPV_Repair_Form {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>
 (function() {
     var form = document.getElementById('repair-form');
@@ -265,6 +278,53 @@ class PPV_Repair_Form {
     var submitLoading = form.querySelector('.repair-submit-loading');
     var errorDiv = document.getElementById('rf-error');
     var successDiv = document.getElementById('repair-success');
+    var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
+    var storeId = <?php echo $store_id; ?>;
+
+    // Email lookup for returning customers
+    var emailField = document.getElementById('rf-email');
+    var nameField = document.getElementById('rf-name');
+    var phoneField = document.getElementById('rf-phone');
+    var brandField = document.getElementById('rf-brand');
+    var modelField = document.getElementById('rf-model');
+    var emailLookupDone = {};
+
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+            var email = emailField.value.trim();
+            if (!email || emailLookupDone[email]) return;
+
+            var fd = new FormData();
+            fd.append('action', 'ppv_repair_customer_lookup');
+            fd.append('email', email);
+            fd.append('store_id', storeId);
+
+            fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.success && res.data.found) {
+                        emailLookupDone[email] = true;
+                        // Only fill empty fields
+                        if (nameField && !nameField.value) nameField.value = res.data.name || '';
+                        if (phoneField && !phoneField.value) phoneField.value = res.data.phone || '';
+                        if (brandField && !brandField.value) brandField.value = res.data.brand || '';
+                        if (modelField && !modelField.value) modelField.value = res.data.model || '';
+                        // Show hint
+                        showEmailHint('Willkommen zurück! Ihre Daten wurden automatisch eingetragen.');
+                    }
+                })
+                .catch(function() {});
+        });
+    }
+
+    function showEmailHint(msg) {
+        var hint = document.createElement('div');
+        hint.className = 'repair-email-hint';
+        hint.innerHTML = '<i class="ri-user-heart-line"></i> ' + msg;
+        emailField.parentNode.appendChild(hint);
+        setTimeout(function() { hint.classList.add('show'); }, 10);
+        setTimeout(function() { hint.classList.remove('show'); setTimeout(function() { hint.remove(); }, 300); }, 4000);
+    }
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -291,7 +351,7 @@ class PPV_Repair_Form {
         var fd = new FormData(form);
         fd.set('accessories', JSON.stringify(accessories));
 
-        fetch('<?php echo esc_js($ajax_url); ?>', {
+        fetch(ajaxUrl, {
             method: 'POST',
             body: fd,
             credentials: 'same-origin'
@@ -305,9 +365,24 @@ class PPV_Repair_Form {
                 if (bonusBadge) bonusBadge.style.display = 'none';
                 successDiv.style.display = 'block';
 
+                // Show tracking card with QR code
+                var d = data.data;
+                if (d.tracking_url && d.repair_id) {
+                    document.getElementById('repair-tracking-card').style.display = 'flex';
+                    document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
+                    document.getElementById('repair-tracking-link').href = d.tracking_url;
+
+                    // Generate QR code
+                    if (typeof qrcode !== 'undefined') {
+                        var qr = qrcode(0, 'M');
+                        qr.addData(d.tracking_url);
+                        qr.make();
+                        document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
+                    }
+                }
+
                 // Show points card
                 <?php if ($pp_enabled): ?>
-                var d = data.data;
                 if (d.points_added > 0) {
                     document.getElementById('repair-points-card').style.display = 'block';
                     document.getElementById('repair-points-count').textContent = d.points_added;

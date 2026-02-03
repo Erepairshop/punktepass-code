@@ -31,6 +31,10 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
         add_action('wp_ajax_nopriv_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
 
+        // AJAX: customer lookup for returning customers (public, no login required)
+        add_action('wp_ajax_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
+        add_action('wp_ajax_nopriv_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
+
         // AJAX: repair registration
         add_action('wp_ajax_nopriv_ppv_repair_register', [__CLASS__, 'ajax_register']);
         add_action('wp_ajax_ppv_repair_register', [__CLASS__, 'ajax_register']);
@@ -122,6 +126,18 @@ class PPV_Repair_Core {
                 exit;
             }
             PPV_Repair_Admin::render_standalone();
+            exit;
+        }
+
+        // /formular/{slug}/status/{token} → Customer tracking page
+        if (preg_match('#^/formular/([^/]+)/status/([a-f0-9]{32})$#', $path, $m)) {
+            $store = self::get_store_by_slug($m[1]);
+            $token = $m[2];
+            if (!$store) {
+                self::send_error_page(404, 'Nicht gefunden', 'Diese Seite existiert nicht.');
+                exit;
+            }
+            echo self::render_tracking_page($store, $token);
             exit;
         }
 
@@ -538,6 +554,20 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '1.7');
         }
+
+        // v1.8: Tracking system for customers
+        if (version_compare($version, '1.8', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+
+            // Add tracking_token column
+            $exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'tracking_token'");
+            if (!$exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN tracking_token VARCHAR(64) NULL AFTER id");
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD INDEX idx_tracking_token (tracking_token)");
+            }
+
+            update_option('ppv_repair_migration_version', '1.8');
+        }
     }
 
     /** ============================================================
@@ -591,8 +621,12 @@ class PPV_Repair_Core {
             wp_send_json_error(['message' => 'Bitte beschreiben Sie das Problem']);
         }
 
+        // Generate unique tracking token
+        $tracking_token = bin2hex(random_bytes(16));
+
         $wpdb->insert("{$prefix}ppv_repairs", [
             'store_id'            => $store_id,
+            'tracking_token'      => $tracking_token,
             'customer_name'       => $name,
             'customer_email'      => $email,
             'customer_phone'      => $phone,
@@ -642,11 +676,18 @@ class PPV_Repair_Core {
             'problem'   => $problem,
         ]);
 
+        // Send tracking email to customer
+        $store_slug = $store->store_slug;
+        $tracking_url = home_url("/formular/{$store_slug}/status/{$tracking_token}");
+        self::send_tracking_email($store, $email, $name, $repair_id, $tracking_url);
+
         wp_send_json_success([
-            'repair_id'    => $repair_id,
-            'points_added' => $bonus_result['points_added'] ?? 0,
-            'total_points' => $bonus_result['total_points'] ?? 0,
-            'is_new_user'  => $bonus_result['is_new_user'] ?? false,
+            'repair_id'      => $repair_id,
+            'tracking_token' => $tracking_token,
+            'tracking_url'   => $tracking_url,
+            'points_added'   => $bonus_result['points_added'] ?? 0,
+            'total_points'   => $bonus_result['total_points'] ?? 0,
+            'is_new_user'    => $bonus_result['is_new_user'] ?? false,
         ]);
     }
 
@@ -761,6 +802,231 @@ class PPV_Repair_Core {
         $subject = "Neue Reparatur #{$data['repair_id']} - {$data['name']}";
         $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,sans-serif;"><div style="max-width:560px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:16px 16px 0 0;padding:24px 28px;text-align:center;"><h1 style="color:#fff;font-size:20px;margin:0;">Neue Reparaturanfrage</h1></div><div style="background:#fff;padding:28px;border-radius:0 0 16px 16px;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151;"><tr><td style="padding:8px 0;font-weight:600;width:120px;">Auftrag:</td><td>#' . intval($data['repair_id']) . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">Name:</td><td>' . esc_html($data['name']) . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">E-Mail:</td><td>' . esc_html($data['email']) . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">Telefon:</td><td>' . esc_html($data['phone'] ?: '-') . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">Ger&auml;t:</td><td>' . esc_html($data['device'] ?: '-') . '</td></tr></table><div style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;"><div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;">PROBLEM</div><div style="font-size:14px;color:#1f2937;line-height:1.5;">' . nl2br(esc_html($data['problem'])) . '</div></div><div style="margin-top:20px;text-align:center;"><a href="https://punktepass.de/formular/admin" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Reparatur verwalten</a></div></div></div></body></html>';
         wp_mail($store->email, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+    }
+
+    /** Send Tracking Email to Customer */
+    private static function send_tracking_email($store, $email, $name, $repair_id, $tracking_url) {
+        if (empty($email)) return;
+        $store_name = esc_html($store->repair_company_name ?: $store->name);
+        $color = esc_attr($store->repair_color ?: '#667eea');
+        $subject = "Reparaturauftrag #{$repair_id} - Bestätigung";
+        $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:20px;">
+<div style="background:linear-gradient(135deg,' . $color . ',color-mix(in srgb,' . $color . ',#000 20%));border-radius:16px 16px 0 0;padding:24px 28px;text-align:center;">
+<h1 style="color:#fff;font-size:20px;margin:0;">Reparaturauftrag bestätigt</h1>
+</div>
+<div style="background:#fff;padding:28px;border-radius:0 0 16px 16px;">
+<p style="font-size:15px;color:#374151;margin:0 0 16px 0;">Hallo ' . esc_html($name) . ',</p>
+<p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 20px 0;">vielen Dank für Ihren Reparaturauftrag bei <strong>' . $store_name . '</strong>. Wir haben Ihre Anfrage erhalten und werden uns schnellstmöglich darum kümmern.</p>
+<div style="background:#f8fafc;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">IHRE AUFTRAGSNUMMER</div>
+<div style="font-size:28px;font-weight:700;color:#1f2937;">#' . intval($repair_id) . '</div>
+</div>
+<p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 20px 0;">Mit dem folgenden Link können Sie jederzeit den Status Ihrer Reparatur einsehen:</p>
+<div style="text-align:center;margin:24px 0;">
+<a href="' . esc_url($tracking_url) . '" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,' . $color . ',color-mix(in srgb,' . $color . ',#000 20%));color:#fff;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">Status prüfen</a>
+</div>
+<p style="font-size:13px;color:#9ca3af;margin:20px 0 0 0;text-align:center;">Oder kopieren Sie diesen Link:<br><a href="' . esc_url($tracking_url) . '" style="color:' . $color . ';word-break:break-all;">' . esc_html($tracking_url) . '</a></p>
+</div>
+<div style="text-align:center;padding:16px;font-size:12px;color:#9ca3af;">' . $store_name . '</div>
+</div></body></html>';
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: ' . $store_name . ' <' . ($store->email ?: get_option('admin_email')) . '>',
+        ];
+        wp_mail($email, $subject, $body, $headers);
+    }
+
+    /** AJAX: Lookup customer by email (for form autofill) */
+    public static function ajax_customer_lookup() {
+        $email = sanitize_email($_POST['email'] ?? '');
+        $store_id = intval($_POST['store_id'] ?? 0);
+        if (empty($email) || !$store_id) {
+            wp_send_json_error(['message' => 'Missing data']);
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Search in repairs table for this store
+        $customer = $wpdb->get_row($wpdb->prepare(
+            "SELECT customer_name, customer_email, customer_phone, device_brand, device_model
+             FROM {$prefix}ppv_repairs
+             WHERE store_id = %d AND customer_email = %s
+             ORDER BY created_at DESC LIMIT 1",
+            $store_id, $email
+        ));
+
+        if ($customer) {
+            wp_send_json_success([
+                'found' => true,
+                'name' => $customer->customer_name,
+                'phone' => $customer->customer_phone,
+                'brand' => $customer->device_brand,
+                'model' => $customer->device_model,
+            ]);
+        }
+
+        wp_send_json_success(['found' => false]);
+    }
+
+    /** ============================================================
+     * Render Customer Tracking Page
+     * ============================================================ */
+    private static function render_tracking_page($store, $token) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Look up repair by tracking token
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_repairs WHERE store_id = %d AND tracking_token = %s",
+            $store->id, $token
+        ));
+
+        $store_name = esc_html($store->repair_company_name ?: $store->name);
+        $color = esc_attr($store->repair_color ?: '#667eea');
+        $logo = esc_url($store->logo ?: PPV_PLUGIN_URL . 'assets/img/punktepass-logo.png');
+
+        ob_start();
+        ?>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>Reparaturstatus - <?php echo $store_name; ?></title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="<?php echo $color; ?>">
+    <link rel="icon" href="<?php echo $logo; ?>" type="image/png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <style>
+        :root{--color-accent:<?php echo $color; ?>;}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f4f4f5;color:#1f2937;min-height:100vh;padding:20px}
+        .container{max-width:480px;margin:0 auto}
+        .card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);overflow:hidden}
+        .header{background:linear-gradient(135deg,var(--color-accent),color-mix(in srgb,var(--color-accent),#000 20%));padding:24px 20px;text-align:center}
+        .header img{height:48px;border-radius:8px;margin-bottom:12px}
+        .header h1{color:#fff;font-size:18px;font-weight:600;margin:0}
+        .header p{color:rgba(255,255,255,0.85);font-size:13px;margin-top:4px}
+        .content{padding:24px 20px}
+        .status-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:20px}
+        .status-neu{background:#fef3c7;color:#92400e}
+        .status-in-bearbeitung{background:#dbeafe;color:#1d4ed8}
+        .status-warten{background:#fce7f3;color:#9d174d}
+        .status-fertig{background:#d1fae5;color:#065f46}
+        .status-abgeholt{background:#e5e7eb;color:#374151}
+        .repair-id{font-size:32px;font-weight:700;color:#1f2937;margin-bottom:4px}
+        .repair-date{font-size:13px;color:#6b7280;margin-bottom:20px}
+        .detail-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+        .detail-row:last-child{border-bottom:none}
+        .detail-label{color:#6b7280}
+        .detail-value{font-weight:500;text-align:right}
+        .problem-box{background:#f8fafc;border-radius:12px;padding:16px;margin-top:20px}
+        .problem-label{font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;margin-bottom:8px}
+        .problem-text{font-size:14px;color:#374151;line-height:1.6}
+        .timeline{margin-top:24px;padding-top:20px;border-top:1px solid #e5e7eb}
+        .timeline-title{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:12px;text-transform:uppercase}
+        .timeline-item{display:flex;gap:12px;padding:8px 0}
+        .timeline-dot{width:10px;height:10px;border-radius:50%;background:#e5e7eb;flex-shrink:0;margin-top:5px}
+        .timeline-dot.active{background:var(--color-accent)}
+        .timeline-text{font-size:13px;color:#6b7280}
+        .timeline-text.active{color:#1f2937;font-weight:500}
+        .not-found{text-align:center;padding:40px 20px}
+        .not-found i{font-size:48px;color:#e5e7eb;margin-bottom:16px}
+        .not-found h2{font-size:18px;color:#374151;margin-bottom:8px}
+        .not-found p{font-size:14px;color:#6b7280}
+        .footer{text-align:center;padding:16px;font-size:12px;color:#9ca3af}
+        .footer a{color:var(--color-accent);text-decoration:none}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <?php if ($store->logo): ?>
+                <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>">
+            <?php endif; ?>
+            <h1><?php echo $store_name; ?></h1>
+            <p>Reparaturstatus</p>
+        </div>
+
+        <?php if (!$repair): ?>
+        <div class="not-found">
+            <i class="ri-search-line"></i>
+            <h2>Reparatur nicht gefunden</h2>
+            <p>Der angegebene Tracking-Link ist ungültig oder abgelaufen.</p>
+        </div>
+        <?php else:
+            $status_map = [
+                'neu' => ['Neu eingegangen', 'status-neu', 'ri-inbox-line'],
+                'in_bearbeitung' => ['In Bearbeitung', 'status-in-bearbeitung', 'ri-tools-line'],
+                'warten_auf_teile' => ['Warten auf Teile', 'status-warten', 'ri-time-line'],
+                'fertig' => ['Fertig', 'status-fertig', 'ri-checkbox-circle-line'],
+                'abgeholt' => ['Abgeholt', 'status-abgeholt', 'ri-check-double-line'],
+            ];
+            $current_status = $repair->status ?: 'neu';
+            $status_info = $status_map[$current_status] ?? ['Unbekannt', 'status-neu', 'ri-question-line'];
+        ?>
+        <div class="content">
+            <div class="status-badge <?php echo $status_info[1]; ?>">
+                <i class="<?php echo $status_info[2]; ?>"></i>
+                <?php echo $status_info[0]; ?>
+            </div>
+
+            <div class="repair-id">#<?php echo intval($repair->id); ?></div>
+            <div class="repair-date">Eingereicht am <?php echo date('d.m.Y', strtotime($repair->created_at)); ?></div>
+
+            <div class="detail-row">
+                <span class="detail-label">Gerät</span>
+                <span class="detail-value"><?php echo esc_html(trim(($repair->device_brand ?: '') . ' ' . ($repair->device_model ?: '')) ?: '-'); ?></span>
+            </div>
+            <?php if (!empty($repair->estimated_cost) && $repair->estimated_cost > 0): ?>
+            <div class="detail-row">
+                <span class="detail-label">Geschätzte Kosten</span>
+                <span class="detail-value"><?php echo number_format($repair->estimated_cost, 2, ',', '.'); ?> €</span>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($repair->final_cost) && $repair->final_cost > 0): ?>
+            <div class="detail-row">
+                <span class="detail-label">Endpreis</span>
+                <span class="detail-value" style="color:#059669;font-weight:600"><?php echo number_format($repair->final_cost, 2, ',', '.'); ?> €</span>
+            </div>
+            <?php endif; ?>
+
+            <div class="problem-box">
+                <div class="problem-label">Beschreibung</div>
+                <div class="problem-text"><?php echo nl2br(esc_html($repair->problem_description ?: '-')); ?></div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-title">Fortschritt</div>
+                <?php
+                $stages = ['neu', 'in_bearbeitung', 'fertig', 'abgeholt'];
+                $stage_labels = ['Eingegangen', 'In Bearbeitung', 'Fertig', 'Abgeholt'];
+                $current_idx = array_search($current_status, $stages);
+                if ($current_status === 'warten_auf_teile') $current_idx = 1; // Show as "in bearbeitung" level
+                foreach ($stages as $idx => $stage):
+                    $is_active = ($idx <= $current_idx);
+                ?>
+                <div class="timeline-item">
+                    <div class="timeline-dot <?php echo $is_active ? 'active' : ''; ?>"></div>
+                    <div class="timeline-text <?php echo $is_active ? 'active' : ''; ?>"><?php echo $stage_labels[$idx]; ?></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="footer">
+        <a href="/formular/<?php echo esc_attr($store->store_slug); ?>">Neues Anliegen melden</a>
+    </div>
+</div>
+</body>
+</html>
+        <?php
+        return ob_get_clean();
     }
 
     /** ============================================================

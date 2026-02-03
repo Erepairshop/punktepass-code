@@ -328,6 +328,90 @@
     margin-top: 8px;
 }
 
+/* Tracking card */
+.repair-tracking-card {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 1px solid #bae6fd;
+    border-radius: var(--repair-radius);
+    padding: 20px;
+    margin: 0 auto 24px;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    animation: scaleIn 0.5s ease-out 0.2s both;
+}
+.repair-tracking-qr {
+    flex-shrink: 0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.repair-tracking-qr img {
+    display: block;
+    width: 80px;
+    height: 80px;
+}
+.repair-tracking-info {
+    text-align: left;
+    flex: 1;
+}
+.repair-tracking-label {
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+.repair-tracking-id {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0369a1;
+    line-height: 1.1;
+}
+.repair-tracking-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--repair-accent);
+    text-decoration: none;
+    margin-top: 8px;
+    font-weight: 500;
+}
+.repair-tracking-link:hover {
+    text-decoration: underline;
+}
+
+/* Email hint for returning customers */
+.repair-email-hint {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: all 0.2s ease;
+}
+.repair-email-hint.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.repair-field {
+    position: relative;
+}
+
 /* Limit reached */
 .repair-limit-reached {
     text-align: center;
