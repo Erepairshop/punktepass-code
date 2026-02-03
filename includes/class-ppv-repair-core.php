@@ -86,8 +86,17 @@ class PPV_Repair_Core {
             return;
         }
 
-        // Start session for auth
+        // Start session for auth with longer lifetime (30 days)
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            $lifetime = 30 * 24 * 60 * 60; // 30 days in seconds
+            session_set_cookie_params([
+                'lifetime' => $lifetime,
+                'path' => '/',
+                'secure' => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+            ini_set('session.gc_maxlifetime', $lifetime);
             @session_start();
         }
 
@@ -199,10 +208,21 @@ class PPV_Repair_Core {
             wp_send_json_error(['message' => 'E-Mail oder Passwort falsch']);
         }
 
-        // Set session
+        // Set session with longer lifetime (30 days)
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            $lifetime = 30 * 24 * 60 * 60; // 30 days
+            session_set_cookie_params([
+                'lifetime' => $lifetime,
+                'path' => '/',
+                'secure' => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+            ini_set('session.gc_maxlifetime', $lifetime);
             @session_start();
         }
+        // Regenerate session ID on login for security
+        session_regenerate_id(true);
 
         $_SESSION['ppv_user_id'] = $user->id;
         $_SESSION['ppv_user_type'] = $user->user_type;
@@ -950,7 +970,18 @@ class PPV_Repair_Core {
 
     /** Get Current Store ID from Session */
     public static function get_current_store_id() {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            $lifetime = 30 * 24 * 60 * 60; // 30 days
+            session_set_cookie_params([
+                'lifetime' => $lifetime,
+                'path' => '/',
+                'secure' => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+            ini_set('session.gc_maxlifetime', $lifetime);
+            @session_start();
+        }
         // Try repair-specific session first
         if (!empty($_SESSION['ppv_repair_store_id'])) return (int)$_SESSION['ppv_repair_store_id'];
         // Fallback to general session
