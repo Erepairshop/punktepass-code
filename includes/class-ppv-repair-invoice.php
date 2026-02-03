@@ -1086,10 +1086,13 @@ Powered by PunktePass &middot; punktepass.de
         $subject = str_replace(array_keys($replacements), array_values($replacements), $subject);
         $body = str_replace(array_keys($replacements), array_values($replacements), $body);
 
-        // Send email
+        // Send email from store's email address
+        $store_email = $store->email ?: get_option('admin_email');
         $headers = [
             'Content-Type: text/plain; charset=UTF-8',
-            'From: ' . $company_name . ' <' . ($store->email ?: get_option('admin_email')) . '>',
+            'From: ' . $company_name . ' <' . $store_email . '>',
+            'Reply-To: ' . $company_name . ' <' . $store_email . '>',
+            'Return-Path: ' . $store_email,
         ];
 
         $sent = wp_mail(
