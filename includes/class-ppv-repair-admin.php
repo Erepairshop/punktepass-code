@@ -725,8 +725,10 @@ $fc_field_names = [
     'device_model' => 'Modell',
     'device_imei' => 'Seriennummer',
     'device_pattern' => 'Entsperrcode',
+    'muster_image' => 'Entsperrmuster',
     'accessories' => 'Zubeh&ouml;r',
     'customer_phone' => 'Telefon',
+    'customer_address' => 'Adresse',
 ];
 foreach ($fc_field_names as $fk => $fn) {
     $fc = $field_config[$fk] ?? $fc_defaults[$fk];

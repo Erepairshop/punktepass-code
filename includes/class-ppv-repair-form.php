@@ -137,7 +137,7 @@ class PPV_Repair_Form {
 
         <!-- Step 2: Informationen -->
         <?php
-        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']);
+        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']) || !empty($field_config['muster_image']['enabled']);
         if ($has_device_fields):
         ?>
         <div class="repair-section" id="step-device">
@@ -163,18 +163,38 @@ class PPV_Repair_Form {
             </div>
             <?php endif; ?>
 
-            <?php if (!empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled'])): ?>
-            <div class="repair-row">
-                <?php if (!empty($field_config['device_imei']['enabled'])): ?>
-                <div class="repair-field">
-                    <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?></label>
-                    <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?>">
+            <?php if (!empty($field_config['device_imei']['enabled'])): ?>
+            <div class="repair-field">
+                <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?></label>
+                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?>">
+            </div>
+            <?php endif; ?>
+
+            <?php
+            $show_pin = !empty($field_config['device_pattern']['enabled']);
+            $show_muster = !empty($field_config['muster_image']['enabled']);
+            if ($show_pin || $show_muster):
+            ?>
+            <div class="repair-field repair-unlock-field">
+                <label><?php echo ($show_pin && $show_muster) ? 'Entsperrmethode' : ($show_pin ? esc_html($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN') : esc_html($field_config['muster_image']['label'] ?? 'Entsperrmuster')); ?></label>
+                <?php if ($show_pin && $show_muster): ?>
+                <div class="repair-unlock-toggle">
+                    <button type="button" class="repair-unlock-btn active" data-mode="pin"><i class="ri-lock-password-line"></i> PIN / Code</button>
+                    <button type="button" class="repair-unlock-btn" data-mode="muster"><i class="ri-grid-line"></i> Muster</button>
                 </div>
                 <?php endif; ?>
-                <?php if (!empty($field_config['device_pattern']['enabled'])): ?>
-                <div class="repair-field">
-                    <label for="rf-pattern"><?php echo esc_html($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN'); ?></label>
+                <?php if ($show_pin): ?>
+                <div class="repair-unlock-content" id="repair-unlock-pin" <?php echo (!$show_muster) ? '' : ''; ?>>
                     <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN'); ?>">
+                </div>
+                <?php endif; ?>
+                <?php if ($show_muster): ?>
+                <div class="repair-unlock-content" id="repair-unlock-muster" <?php echo $show_pin ? 'style="display:none"' : ''; ?>>
+                    <div class="repair-muster-canvas-wrap">
+                        <canvas id="rf-muster-canvas" width="200" height="200"></canvas>
+                        <input type="hidden" name="muster_image" id="rf-muster-data">
+                        <button type="button" class="repair-muster-reset" id="rf-muster-reset"><i class="ri-refresh-line"></i> Zur&uuml;cksetzen</button>
+                    </div>
                 </div>
                 <?php endif; ?>
             </div>
@@ -194,19 +214,6 @@ class PPV_Repair_Form {
                 <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="Beschreiben Sie das Problem m&ouml;glichst genau..."></textarea>
             </div>
 
-            <?php if (!empty($field_config['muster_image']['enabled'])): ?>
-            <div class="repair-field">
-                <label><?php echo esc_html($field_config['muster_image']['label'] ?? 'Entsperrmuster'); ?></label>
-                <div class="repair-muster-canvas-wrap">
-                    <canvas id="rf-muster-canvas" width="240" height="240"></canvas>
-                    <input type="hidden" name="muster_image" id="rf-muster-data">
-                    <div class="repair-muster-actions">
-                        <button type="button" class="repair-muster-reset" id="rf-muster-reset"><i class="ri-refresh-line"></i> Zur&uuml;cksetzen</button>
-                    </div>
-                    <p class="repair-muster-hint">Verbinden Sie die Punkte mit dem Finger oder der Maus</p>
-                </div>
-            </div>
-            <?php endif; ?>
 
             <?php if (!empty($field_config['accessories']['enabled'])): ?>
             <div class="repair-field">
@@ -345,6 +352,28 @@ class PPV_Repair_Form {
         emailField.parentNode.appendChild(hint);
         setTimeout(function() { hint.classList.add('show'); }, 10);
         setTimeout(function() { hint.classList.remove('show'); setTimeout(function() { hint.remove(); }, 300); }, 4000);
+    }
+
+    // PIN/Muster toggle handling
+    var unlockToggleBtns = document.querySelectorAll('.repair-unlock-btn');
+    var unlockPinContent = document.getElementById('repair-unlock-pin');
+    var unlockMusterContent = document.getElementById('repair-unlock-muster');
+
+    if (unlockToggleBtns.length > 0) {
+        unlockToggleBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var mode = btn.getAttribute('data-mode');
+                unlockToggleBtns.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                if (mode === 'pin') {
+                    if (unlockPinContent) unlockPinContent.style.display = '';
+                    if (unlockMusterContent) unlockMusterContent.style.display = 'none';
+                } else {
+                    if (unlockPinContent) unlockPinContent.style.display = 'none';
+                    if (unlockMusterContent) unlockMusterContent.style.display = '';
+                }
+            });
+        });
     }
 
     // Muster pattern canvas handling (3x3 grid like Android unlock)

@@ -246,6 +246,50 @@
     text-align: center;
 }
 
+/* Unlock Method Toggle */
+.repair-unlock-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.repair-unlock-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--repair-bg);
+    border: 2px solid var(--repair-border);
+    border-radius: 8px;
+    color: var(--repair-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.repair-unlock-btn:hover {
+    border-color: var(--repair-accent);
+    color: var(--repair-accent);
+}
+.repair-unlock-btn.active {
+    background: linear-gradient(135deg, var(--repair-accent), var(--repair-accent-dark));
+    border-color: var(--repair-accent);
+    color: #fff;
+}
+.repair-unlock-btn i {
+    font-size: 16px;
+}
+.repair-unlock-content {
+    margin-top: 8px;
+}
+.repair-unlock-field .repair-muster-canvas-wrap {
+    padding: 12px;
+}
+.repair-unlock-field .repair-muster-reset {
+    margin-top: 10px;
+}
+
 /* Terms */
 .repair-terms {
     padding: 0 16px;
