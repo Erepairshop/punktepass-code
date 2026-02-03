@@ -284,12 +284,18 @@ class PPV_Repair_Invoice {
         $offset = ($page - 1) * $per_page;
         $date_from = sanitize_text_field($_POST['date_from'] ?? '');
         $date_to   = sanitize_text_field($_POST['date_to'] ?? '');
+        $doc_type  = sanitize_text_field($_POST['doc_type'] ?? '');
 
         $where = "store_id = %d";
         $params = [$store_id];
 
         if ($date_from) { $where .= " AND DATE(created_at) >= %s"; $params[] = $date_from; }
         if ($date_to) { $where .= " AND DATE(created_at) <= %s"; $params[] = $date_to; }
+        if ($doc_type && in_array($doc_type, ['rechnung', 'angebot'])) {
+            $where .= " AND (doc_type = %s OR (doc_type IS NULL AND %s = 'rechnung'))";
+            $params[] = $doc_type;
+            $params[] = $doc_type;
+        }
 
         $total = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$prefix}ppv_repair_invoices WHERE {$where}", ...$params));
 
@@ -597,6 +603,130 @@ class PPV_Repair_Invoice {
             'message' => 'Rechnung erstellt',
             'invoice_id' => $invoice_id,
             'invoice_number' => $invoice_number,
+        ]);
+    }
+
+    /**
+     * AJAX: Create Angebot (quote)
+     */
+    public static function ajax_create_angebot() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        // Customer data
+        $customer_name = sanitize_text_field($_POST['customer_name'] ?? '');
+        $customer_email = sanitize_email($_POST['customer_email'] ?? '');
+        $customer_phone = sanitize_text_field($_POST['customer_phone'] ?? '');
+        $customer_company = sanitize_text_field($_POST['customer_company'] ?? '');
+        $customer_address = sanitize_text_field($_POST['customer_address'] ?? '');
+        $customer_plz = sanitize_text_field($_POST['customer_plz'] ?? '');
+        $customer_city = sanitize_text_field($_POST['customer_city'] ?? '');
+
+        if (empty($customer_name)) {
+            wp_send_json_error(['message' => 'Kundenname ist erforderlich']);
+        }
+
+        // Line items
+        $line_items = [];
+        if (!empty($_POST['line_items'])) {
+            $items = json_decode(stripslashes($_POST['line_items']), true);
+            if (is_array($items)) {
+                foreach ($items as $item) {
+                    $line_items[] = [
+                        'description' => sanitize_text_field($item['description'] ?? ''),
+                        'amount' => floatval($item['amount'] ?? 0),
+                    ];
+                }
+            }
+        }
+
+        $subtotal = floatval($_POST['subtotal'] ?? 0);
+        $notes = sanitize_textarea_field($_POST['notes'] ?? '');
+        $valid_until = sanitize_text_field($_POST['valid_until'] ?? '');
+
+        // Generate angebot number
+        $ang_prefix = $store->repair_angebot_prefix ?: 'AG-';
+        $next_num = max(1, intval($store->repair_angebot_next_number ?: 1));
+        $angebot_number = $ang_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
+
+        // VAT calculation
+        $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
+        $vat_rate_pct = floatval($store->repair_vat_rate ?: 19.00);
+        $is_klein = $vat_enabled ? 0 : 1;
+
+        if ($vat_enabled) {
+            $net_amount = round($subtotal / (1 + $vat_rate_pct / 100), 2);
+            $vat_amount = round($subtotal - $net_amount, 2);
+            $total = $subtotal;
+            $stored_vat_rate = $vat_rate_pct;
+        } else {
+            $net_amount = $subtotal;
+            $vat_amount = 0;
+            $total = $subtotal;
+            $stored_vat_rate = 0;
+        }
+
+        // Insert angebot (using same table as invoices but with doc_type = 'angebot')
+        $wpdb->insert("{$prefix}ppv_repair_invoices", [
+            'store_id'          => $store_id,
+            'repair_id'         => null,
+            'customer_id'       => null,
+            'invoice_number'    => $angebot_number,
+            'doc_type'          => 'angebot',
+            'customer_name'     => $customer_name,
+            'customer_email'    => $customer_email,
+            'customer_phone'    => $customer_phone,
+            'customer_company'  => $customer_company,
+            'customer_tax_id'   => '',
+            'customer_address'  => $customer_address,
+            'customer_plz'      => $customer_plz,
+            'customer_city'     => $customer_city,
+            'device_info'       => '',
+            'description'       => '',
+            'line_items'        => !empty($line_items) ? wp_json_encode($line_items) : null,
+            'subtotal'          => $subtotal,
+            'discount_type'     => 'none',
+            'discount_value'    => 0,
+            'discount_description' => '',
+            'net_amount'        => $net_amount,
+            'vat_rate'          => $stored_vat_rate,
+            'vat_amount'        => $vat_amount,
+            'total'             => $total,
+            'is_kleinunternehmer' => $is_klein,
+            'punktepass_reward_applied' => 0,
+            'points_used'       => 0,
+            'notes'             => $notes,
+            'status'            => 'draft',
+            'valid_until'       => $valid_until ?: null,
+            'created_at'        => current_time('mysql'),
+        ]);
+
+        $angebot_id = $wpdb->insert_id;
+
+        // Increment next angebot number
+        if ($angebot_id) {
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$prefix}ppv_stores SET repair_angebot_next_number = %d WHERE id = %d",
+                $next_num + 1, $store_id
+            ));
+        }
+
+        wp_send_json_success([
+            'message' => 'Angebot erstellt',
+            'angebot_id' => $angebot_id,
+            'angebot_number' => $angebot_number,
         ]);
     }
 

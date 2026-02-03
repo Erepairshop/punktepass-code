@@ -63,6 +63,7 @@ class PPV_Repair_Core {
             'ppv_repair_invoice_delete'  => ['PPV_Repair_Invoice', 'ajax_delete_invoice'],
             'ppv_repair_invoice_create'  => ['PPV_Repair_Invoice', 'ajax_create_invoice'],
             'ppv_repair_invoice_email'   => ['PPV_Repair_Invoice', 'ajax_send_email'],
+            'ppv_repair_angebot_create'  => ['PPV_Repair_Invoice', 'ajax_create_angebot'],
             'ppv_repair_customer_search' => ['PPV_Repair_Invoice', 'ajax_customer_search'],
             'ppv_repair_customer_save'   => ['PPV_Repair_Invoice', 'ajax_customer_save'],
             'ppv_repair_customers_list'  => ['PPV_Repair_Invoice', 'ajax_customers_list'],
@@ -504,6 +505,38 @@ class PPV_Repair_Core {
             $wpdb->query("UPDATE {$stores_table} SET repair_invoice_email_body = 'Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}' WHERE repair_invoice_email_body IS NULL OR repair_invoice_email_body = ''");
 
             update_option('ppv_repair_migration_version', '1.6');
+        }
+
+        // v1.7: Angebot (quote) support
+        if (version_compare($version, '1.7', '<')) {
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+
+            // Add doc_type column (rechnung or angebot)
+            $exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE 'doc_type'");
+            if (!$exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN doc_type VARCHAR(20) DEFAULT 'rechnung' AFTER invoice_number");
+            }
+
+            // Add valid_until for Angebote
+            $exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE 'valid_until'");
+            if (!$exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN valid_until DATE NULL AFTER paid_at");
+            }
+
+            // Add angebot_number_prefix and next_number to stores
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+            $cols = [
+                'repair_angebot_prefix' => "VARCHAR(20) DEFAULT 'AG-'",
+                'repair_angebot_next_number' => "INT DEFAULT 1",
+            ];
+            foreach ($cols as $col => $def) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$stores_table} LIKE '{$col}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN {$col} {$def}");
+                }
+            }
+
+            update_option('ppv_repair_migration_version', '1.7');
         }
     }
 

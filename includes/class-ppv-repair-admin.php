@@ -789,10 +789,10 @@ echo '          </div>
         </div>
     </div>';
 
-        // Tabs: Reparaturen | Rechnungen | Kunden
+        // Tabs: Reparaturen | Rechnung/Angebot | Kunden
         echo '<div class="ra-tabs">
         <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> Reparaturen</div>
-        <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnungen</div>
+        <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnung / Angebot</div>
         <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> Kunden</div>
     </div>';
 
@@ -831,11 +831,19 @@ echo '          </div>
         // ========== TAB: Rechnungen ==========
         echo '<div class="ra-tab-content" id="ra-tab-invoices">';
 
-        // Filters + New Invoice button
+        // Filters + New Invoice/Angebot buttons
         echo '<div class="ra-inv-filters">
             <button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-new-invoice-btn">
                 <i class="ri-add-line"></i> Neue Rechnung
             </button>
+            <button class="ra-btn ra-btn-sm" id="ra-new-angebot-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">
+                <i class="ri-add-line"></i> Neues Angebot
+            </button>
+            <select id="ra-inv-type-filter" class="ra-input" style="padding:8px 12px;font-size:13px;min-width:120px">
+                <option value="">Alle Typen</option>
+                <option value="rechnung">Rechnungen</option>
+                <option value="angebot">Angebote</option>
+            </select>
             <div class="field">
                 <label>Von</label>
                 <input type="date" id="ra-inv-from">
@@ -1102,6 +1110,105 @@ echo '          </div>
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-ninv-cancel">Abbrechen</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-ninv-submit">
                 <i class="ri-check-line"></i> Rechnung erstellen
+            </button>
+        </div>
+    </div>
+</div>';
+
+        // New Angebot Modal (quote creation)
+        echo '<div class="ra-modal-overlay" id="ra-new-angebot-modal">
+    <div class="ra-modal" style="max-width:600px">
+        <h3 style="color:#16a34a"><i class="ri-draft-line"></i> Neues Angebot erstellen</h3>
+        <p class="ra-modal-sub">Kostenvoranschlag / Angebot f&uuml;r Kunden</p>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Kunde suchen oder neu eingeben</label>
+            <div class="ra-search" style="margin-bottom:8px">
+                <i class="ri-search-line"></i>
+                <input type="text" id="ra-nang-customer-search" placeholder="Kundenname, E-Mail oder Firma suchen..." autocomplete="off">
+            </div>
+            <div id="ra-nang-customer-results" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:200px;overflow-y:auto;position:relative;z-index:10"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                <input type="text" id="ra-nang-name" class="ra-input" placeholder="Max Mustermann" required>
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                <input type="text" id="ra-nang-company" class="ra-input" placeholder="Firma GmbH">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                <input type="email" id="ra-nang-email" class="ra-input" placeholder="email@example.de">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                <input type="text" id="ra-nang-phone" class="ra-input" placeholder="+49...">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stra&szlig;e</label>
+                <input type="text" id="ra-nang-address" class="ra-input" placeholder="Musterstra&szlig;e 1">
+            </div>
+            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px">
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <input type="text" id="ra-nang-plz" class="ra-input" placeholder="12345">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <input type="text" id="ra-nang-city" class="ra-input" placeholder="Berlin">
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Positionen</label>
+            <div class="ra-inv-lines" id="ra-nang-lines">
+                <div class="ra-inv-line">
+                    <input type="text" placeholder="Leistung" class="ra-inv-line-desc">
+                    <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
+                    <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+                </div>
+            </div>
+            <button type="button" class="ra-inv-add" id="ra-nang-add-line">
+                <i class="ri-add-line"></i> Position hinzuf&uuml;gen
+            </button>
+        </div>
+
+        <div class="ra-inv-totals" style="margin-bottom:16px">
+            <div class="ra-inv-total-row">
+                <span>Netto:</span>
+                <span id="ra-nang-net">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row" id="ra-nang-vat-row">
+                <span>MwSt ' . intval($vat_rate) . '%:</span>
+                <span id="ra-nang-vat">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row ra-inv-total-final">
+                <span>Gesamt:</span>
+                <span id="ra-nang-total">0,00 &euro;</span>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
+            <div>
+                <label style="font-size:12px;color:#16a34a;display:block;margin-bottom:4px;font-weight:600">G&uuml;ltig bis</label>
+                <input type="date" id="ra-nang-valid-until" class="ra-input" style="width:100%">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
+                <input type="text" id="ra-nang-notes" class="ra-input" placeholder="z.B. Lieferzeit 2 Wochen">
+            </div>
+        </div>
+
+        <input type="hidden" id="ra-nang-customer-id" value="">
+
+        <div style="display:flex;gap:10px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-nang-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn" style="flex:2;background:#16a34a;color:#fff" id="ra-nang-submit">
+                <i class="ri-draft-line"></i> Angebot erstellen
             </button>
         </div>
     </div>
@@ -1822,8 +1929,10 @@ echo '          </div>
         fd.append("page",page);
         var df=document.getElementById("ra-inv-from").value;
         var dt=document.getElementById("ra-inv-to").value;
+        var docType=document.getElementById("ra-inv-type-filter").value;
         if(df)fd.append("date_from",df);
         if(dt)fd.append("date_to",dt);
+        if(docType)fd.append("doc_type",docType);
 
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
@@ -1839,18 +1948,24 @@ echo '          </div>
             var tbody=document.getElementById("ra-inv-body");
             if(page===1)tbody.innerHTML="";
             if(!d.invoices||d.invoices.length===0){
-                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Keine Rechnungen vorhanden.</td></tr>\';
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Keine Eintr\u00e4ge vorhanden.</td></tr>\';
             }else{
                 d.invoices.forEach(function(inv){
-                    var statusMap={draft:["Entwurf","ra-inv-status-draft"],sent:["Gesendet","ra-inv-status-sent"],paid:["Bezahlt","ra-inv-status-paid"],cancelled:["Storniert","ra-inv-status-cancelled"]};
+                    var statusMap={draft:["Entwurf","ra-inv-status-draft"],sent:["Gesendet","ra-inv-status-sent"],paid:["Bezahlt","ra-inv-status-paid"],cancelled:["Storniert","ra-inv-status-cancelled"],accepted:["Angenommen","ra-inv-status-paid"],rejected:["Abgelehnt","ra-inv-status-cancelled"],expired:["Abgelaufen","ra-inv-status-cancelled"]};
                     var st=statusMap[inv.status]||["?",""];
                     var date=inv.created_at?new Date(inv.created_at.replace(/-/g,"/")):"";
                     var dateStr=date?pad(date.getDate())+"."+pad(date.getMonth()+1)+"."+date.getFullYear():"";
                     var vatCol=parseInt(inv.is_kleinunternehmer)?"<span style=\'font-size:11px;color:#9ca3af\'>Kl.Unt.</span>":fmtEur(inv.vat_amount);
                     var pdfUrl=AJAX+"?action=ppv_repair_invoice_pdf&invoice_id="+inv.id+"&nonce="+NONCE;
 
+                    // Doc type badge
+                    var isAngebot=inv.doc_type==="angebot";
+                    var typeBadge=isAngebot
+                        ?"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#f0fdf4;color:#16a34a;margin-left:6px\'>Angebot</span>"
+                        :"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#eff6ff;color:#2563eb;margin-left:6px\'>Rechnung</span>";
+
                     var row=document.createElement("tr");
-                    row.innerHTML=\'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong></td>\'+
+                    row.innerHTML=\'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong>\'+typeBadge+\'</td>\'+
                         \'<td data-label="Datum">\'+dateStr+\'</td>\'+
                         \'<td data-label="Kunde">\'+esc(inv.customer_name)+\'</td>\'+
                         \'<td data-label="Netto">\'+fmtEur(inv.net_amount)+\'</td>\'+
@@ -2185,6 +2300,162 @@ echo '          </div>
             if(data.success){
                 toast("Rechnung "+data.data.invoice_number+" erstellt");
                 ninvModal.classList.remove("show");
+                invoicesLoaded=false;
+                loadInvoices(1);
+            }else{
+                toast(data.data&&data.data.message?data.data.message:"Fehler");
+            }
+        })
+        .catch(function(){toast("Verbindungsfehler")});
+    });
+
+    /* ===== NEW ANGEBOT MODAL ===== */
+    var nangModal=document.getElementById("ra-new-angebot-modal");
+    var nangSearchTimer=null;
+
+    document.getElementById("ra-new-angebot-btn").addEventListener("click",function(){
+        clearNewAngebotForm();
+        nangModal.classList.add("show");
+    });
+    document.getElementById("ra-nang-cancel").addEventListener("click",function(){
+        nangModal.classList.remove("show");
+    });
+    nangModal.addEventListener("click",function(e){
+        if(e.target===nangModal)nangModal.classList.remove("show");
+    });
+
+    function clearNewAngebotForm(){
+        document.getElementById("ra-nang-customer-id").value="";
+        document.getElementById("ra-nang-name").value="";
+        document.getElementById("ra-nang-company").value="";
+        document.getElementById("ra-nang-email").value="";
+        document.getElementById("ra-nang-phone").value="";
+        document.getElementById("ra-nang-address").value="";
+        document.getElementById("ra-nang-plz").value="";
+        document.getElementById("ra-nang-city").value="";
+        document.getElementById("ra-nang-notes").value="";
+        // Default valid_until: 30 days from now
+        var d=new Date();d.setDate(d.getDate()+30);
+        document.getElementById("ra-nang-valid-until").value=d.toISOString().split("T")[0];
+        var lines=document.getElementById("ra-nang-lines");
+        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        updateNangTotals();
+    }
+
+    // Customer search for Angebot
+    document.getElementById("ra-nang-customer-search").addEventListener("input",function(){
+        var q=this.value.trim();
+        if(nangSearchTimer)clearTimeout(nangSearchTimer);
+        if(q.length<2){document.getElementById("ra-nang-customer-results").style.display="none";return;}
+        nangSearchTimer=setTimeout(function(){
+            var fd=new FormData();
+            fd.append("action","ppv_repair_customer_search");
+            fd.append("nonce",NONCE);
+            fd.append("search",q);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                var res=document.getElementById("ra-nang-customer-results");
+                if(!data.success||!data.data.customers||data.data.customers.length===0){
+                    res.style.display="none";return;
+                }
+                res.innerHTML="";
+                data.data.customers.forEach(function(c){
+                    var div=document.createElement("div");
+                    div.style.cssText="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6";
+                    div.innerHTML="<strong>"+esc(c.name)+"</strong>"+(c.company_name?" <span style=\'color:#6b7280\'>("+esc(c.company_name)+")</span>":"")+"<br><span style=\'font-size:12px;color:#9ca3af\'>"+(c.email||"")+(c.phone?" &middot; "+c.phone:"")+"</span>";
+                    div.addEventListener("click",function(){
+                        document.getElementById("ra-nang-customer-id").value=c.id||"";
+                        document.getElementById("ra-nang-name").value=c.name||"";
+                        document.getElementById("ra-nang-company").value=c.company_name||"";
+                        document.getElementById("ra-nang-email").value=c.email||"";
+                        document.getElementById("ra-nang-phone").value=c.phone||"";
+                        document.getElementById("ra-nang-address").value=c.address||"";
+                        document.getElementById("ra-nang-plz").value=c.plz||"";
+                        document.getElementById("ra-nang-city").value=c.city||"";
+                        document.getElementById("ra-nang-customer-search").value="";
+                        res.style.display="none";
+                    });
+                    div.addEventListener("mouseenter",function(){this.style.background="#f9fafb"});
+                    div.addEventListener("mouseleave",function(){this.style.background=""});
+                    res.appendChild(div);
+                });
+                res.style.display="block";
+            });
+        },300);
+    });
+
+    // Add line for Angebot
+    document.getElementById("ra-nang-add-line").addEventListener("click",function(){
+        var line=document.createElement("div");
+        line.className="ra-inv-line";
+        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        document.getElementById("ra-nang-lines").appendChild(line);
+    });
+
+    // Remove line + totals for Angebot
+    document.getElementById("ra-nang-lines").addEventListener("click",function(e){
+        if(e.target.classList.contains("ra-inv-line-remove")){
+            var lines=this.querySelectorAll(".ra-inv-line");
+            if(lines.length>1)e.target.closest(".ra-inv-line").remove();
+            updateNangTotals();
+        }
+    });
+    document.getElementById("ra-nang-lines").addEventListener("input",function(){updateNangTotals()});
+
+    function updateNangTotals(){
+        var brutto=0;
+        document.querySelectorAll("#ra-nang-lines .ra-inv-line-amount").forEach(function(inp){
+            brutto+=parseFloat(inp.value)||0;
+        });
+        var net,vat;
+        if(VAT_ENABLED){
+            net=(brutto/(1+VAT_RATE/100)).toFixed(2);
+            vat=(brutto-net).toFixed(2);
+        }else{
+            net=brutto.toFixed(2);vat="0.00";
+        }
+        document.getElementById("ra-nang-net").textContent=fmtEur(net);
+        document.getElementById("ra-nang-vat").textContent=fmtEur(vat);
+        document.getElementById("ra-nang-total").textContent=fmtEur(brutto);
+        if(!VAT_ENABLED)document.getElementById("ra-nang-vat-row").style.display="none";
+    }
+
+    // Submit new Angebot
+    document.getElementById("ra-nang-submit").addEventListener("click",function(){
+        var name=document.getElementById("ra-nang-name").value.trim();
+        if(!name){toast("Name ist erforderlich");return;}
+        var items=[];
+        document.querySelectorAll("#ra-nang-lines .ra-inv-line").forEach(function(line){
+            var d=line.querySelector(".ra-inv-line-desc").value.trim();
+            var a=parseFloat(line.querySelector(".ra-inv-line-amount").value)||0;
+            if(d||a>0)items.push({description:d,amount:a});
+        });
+        var subtotal=0;
+        items.forEach(function(i){subtotal+=i.amount});
+
+        var fd=new FormData();
+        fd.append("action","ppv_repair_angebot_create");
+        fd.append("nonce",NONCE);
+        fd.append("customer_id",document.getElementById("ra-nang-customer-id").value);
+        fd.append("customer_name",name);
+        fd.append("customer_email",document.getElementById("ra-nang-email").value);
+        fd.append("customer_phone",document.getElementById("ra-nang-phone").value);
+        fd.append("customer_company",document.getElementById("ra-nang-company").value);
+        fd.append("customer_address",document.getElementById("ra-nang-address").value);
+        fd.append("customer_plz",document.getElementById("ra-nang-plz").value);
+        fd.append("customer_city",document.getElementById("ra-nang-city").value);
+        fd.append("line_items",JSON.stringify(items));
+        fd.append("subtotal",subtotal);
+        fd.append("valid_until",document.getElementById("ra-nang-valid-until").value);
+        fd.append("notes",document.getElementById("ra-nang-notes").value);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                toast("Angebot "+data.data.angebot_number+" erstellt");
+                nangModal.classList.remove("show");
                 invoicesLoaded=false;
                 loadInvoices(1);
             }else{
