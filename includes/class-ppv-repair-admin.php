@@ -766,10 +766,11 @@ echo '          </div>
         </div>
     </div>';
 
-        // Tabs: Reparaturen | Rechnungen
+        // Tabs: Reparaturen | Rechnungen | Kunden
         echo '<div class="ra-tabs">
         <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> Reparaturen</div>
         <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnungen</div>
+        <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> Kunden</div>
     </div>';
 
         // ========== TAB: Reparaturen ==========
@@ -807,8 +808,11 @@ echo '          </div>
         // ========== TAB: Rechnungen ==========
         echo '<div class="ra-tab-content" id="ra-tab-invoices">';
 
-        // Filters
+        // Filters + New Invoice button
         echo '<div class="ra-inv-filters">
+            <button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-new-invoice-btn">
+                <i class="ri-add-line"></i> Neue Rechnung
+            </button>
             <div class="field">
                 <label>Von</label>
                 <input type="date" id="ra-inv-from">
@@ -867,6 +871,52 @@ echo '          </div>
 
         echo '</div>'; // end ra-tab-invoices
 
+        // ========== TAB: Kunden ==========
+        echo '<div class="ra-tab-content" id="ra-tab-customers">';
+
+        // Customer toolbar
+        echo '<div class="ra-inv-filters">
+            <button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-new-customer-btn">
+                <i class="ri-user-add-line"></i> Neuer Kunde
+            </button>
+            <div class="ra-search" style="flex:1;max-width:400px">
+                <i class="ri-search-line"></i>
+                <input type="text" id="ra-customer-search" placeholder="Kunde suchen...">
+            </div>
+        </div>';
+
+        // Customer summary
+        echo '<div class="ra-inv-summary" id="ra-cust-summary">
+            <div class="ra-inv-summary-card">
+                <div class="ra-inv-summary-val" id="ra-cust-count">-</div>
+                <div class="ra-inv-summary-label">Kunden</div>
+            </div>
+        </div>';
+
+        // Customer table
+        echo '<div style="overflow-x:auto">
+        <table class="ra-inv-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Firma</th>
+                    <th>E-Mail</th>
+                    <th>Telefon</th>
+                    <th>Stadt</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="ra-cust-body">
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">Kunden werden geladen...</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="ra-load-more" id="ra-cust-load-more" style="display:none">
+            <button class="ra-btn ra-btn-outline" id="ra-cust-more-btn" data-page="1">Mehr laden</button>
+        </div>';
+
+        echo '</div>'; // end ra-tab-customers
+
         // Toast notification
         echo '<div class="ra-toast" id="ra-toast"></div>';
 
@@ -904,6 +954,161 @@ echo '          </div>
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-inv-modal-cancel">Abbrechen</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-inv-modal-submit">
                 <i class="ri-check-line"></i> Abschlie&szlig;en &amp; Rechnung
+            </button>
+        </div>
+    </div>
+</div>';
+
+        // New Invoice Modal (standalone invoice creation)
+        echo '<div class="ra-modal-overlay" id="ra-new-invoice-modal">
+    <div class="ra-modal" style="max-width:600px">
+        <h3><i class="ri-file-list-3-line"></i> Neue Rechnung erstellen</h3>
+        <p class="ra-modal-sub">Rechnung ohne Reparaturauftrag erstellen</p>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Kunde suchen oder neu eingeben</label>
+            <div class="ra-search" style="margin-bottom:8px">
+                <i class="ri-search-line"></i>
+                <input type="text" id="ra-ninv-customer-search" placeholder="Kundenname, E-Mail oder Firma suchen..." autocomplete="off">
+            </div>
+            <div id="ra-ninv-customer-results" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:200px;overflow-y:auto;position:relative;z-index:10"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                <input type="text" id="ra-ninv-name" class="ra-input" placeholder="Max Mustermann" required>
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                <input type="text" id="ra-ninv-company" class="ra-input" placeholder="Firma GmbH">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                <input type="email" id="ra-ninv-email" class="ra-input" placeholder="email@example.de">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                <input type="text" id="ra-ninv-phone" class="ra-input" placeholder="+49...">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stra&szlig;e</label>
+                <input type="text" id="ra-ninv-address" class="ra-input" placeholder="Musterstra&szlig;e 1">
+            </div>
+            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px">
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <input type="text" id="ra-ninv-plz" class="ra-input" placeholder="12345">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <input type="text" id="ra-ninv-city" class="ra-input" placeholder="Berlin">
+                </div>
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">USt-IdNr.</label>
+                <input type="text" id="ra-ninv-taxid" class="ra-input" placeholder="DE123456789">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:20px">
+                <input type="checkbox" id="ra-ninv-save-customer">
+                <label for="ra-ninv-save-customer" style="font-size:13px">Kunde speichern</label>
+            </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Positionen</label>
+            <div class="ra-inv-lines" id="ra-ninv-lines">
+                <div class="ra-inv-line">
+                    <input type="text" placeholder="Leistung" class="ra-inv-line-desc">
+                    <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
+                    <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+                </div>
+            </div>
+            <button type="button" class="ra-inv-add" id="ra-ninv-add-line">
+                <i class="ri-add-line"></i> Position hinzuf&uuml;gen
+            </button>
+        </div>
+
+        <div class="ra-inv-totals" style="margin-bottom:16px">
+            <div class="ra-inv-total-row">
+                <span>Netto:</span>
+                <span id="ra-ninv-net">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row" id="ra-ninv-vat-row">
+                <span>MwSt ' . intval($vat_rate) . '%:</span>
+                <span id="ra-ninv-vat">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row ra-inv-total-final">
+                <span>Gesamt:</span>
+                <span id="ra-ninv-total">0,00 &euro;</span>
+            </div>
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
+            <textarea id="ra-ninv-notes" class="ra-input" rows="2" placeholder="Interne Notizen..."></textarea>
+        </div>
+
+        <input type="hidden" id="ra-ninv-customer-id" value="">
+
+        <div style="display:flex;gap:10px;margin-top:20px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-ninv-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-ninv-submit">
+                <i class="ri-check-line"></i> Rechnung erstellen
+            </button>
+        </div>
+    </div>
+</div>';
+
+        // Customer Modal (new/edit customer)
+        echo '<div class="ra-modal-overlay" id="ra-customer-modal">
+    <div class="ra-modal" style="max-width:500px">
+        <h3 id="ra-cust-modal-title"><i class="ri-user-add-line"></i> Neuer Kunde</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div style="grid-column:span 2">
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                <input type="text" id="ra-cust-name" class="ra-input" required>
+            </div>
+            <div style="grid-column:span 2">
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                <input type="text" id="ra-cust-company" class="ra-input">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                <input type="email" id="ra-cust-email" class="ra-input">
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                <input type="text" id="ra-cust-phone" class="ra-input">
+            </div>
+            <div style="grid-column:span 2">
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stra&szlig;e</label>
+                <input type="text" id="ra-cust-address" class="ra-input">
+            </div>
+            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px">
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <input type="text" id="ra-cust-plz" class="ra-input">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <input type="text" id="ra-cust-city" class="ra-input">
+                </div>
+            </div>
+            <div>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">USt-IdNr.</label>
+                <input type="text" id="ra-cust-taxid" class="ra-input">
+            </div>
+            <div style="grid-column:span 2">
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
+                <textarea id="ra-cust-notes" class="ra-input" rows="2"></textarea>
+            </div>
+        </div>
+        <input type="hidden" id="ra-cust-id" value="">
+        <div style="display:flex;gap:10px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-cust-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-cust-submit">
+                <i class="ri-check-line"></i> Speichern
             </button>
         </div>
     </div>
@@ -1323,6 +1528,7 @@ echo '          </div>
             var target=this.getAttribute("data-tab");
             document.getElementById("ra-tab-"+target).classList.add("active");
             if(target==="invoices"&&!invoicesLoaded){loadInvoices(1);invoicesLoaded=true;}
+            if(target==="customers"&&!customersLoaded){loadCustomers(1);customersLoaded=true;}
         });
     });
 
@@ -1502,6 +1708,324 @@ echo '          </div>
             }
         })
         .catch(function(){toast("Upload fehlgeschlagen")});
+    });
+
+    /* ===== NEW INVOICE MODAL ===== */
+    var ninvModal=document.getElementById("ra-new-invoice-modal");
+    var ninvSearchTimer=null;
+
+    document.getElementById("ra-new-invoice-btn").addEventListener("click",function(){
+        clearNewInvoiceForm();
+        ninvModal.classList.add("active");
+    });
+    document.getElementById("ra-ninv-cancel").addEventListener("click",function(){
+        ninvModal.classList.remove("active");
+    });
+    ninvModal.addEventListener("click",function(e){
+        if(e.target===ninvModal)ninvModal.classList.remove("active");
+    });
+
+    function clearNewInvoiceForm(){
+        document.getElementById("ra-ninv-customer-id").value="";
+        document.getElementById("ra-ninv-name").value="";
+        document.getElementById("ra-ninv-company").value="";
+        document.getElementById("ra-ninv-email").value="";
+        document.getElementById("ra-ninv-phone").value="";
+        document.getElementById("ra-ninv-address").value="";
+        document.getElementById("ra-ninv-plz").value="";
+        document.getElementById("ra-ninv-city").value="";
+        document.getElementById("ra-ninv-taxid").value="";
+        document.getElementById("ra-ninv-save-customer").checked=false;
+        document.getElementById("ra-ninv-notes").value="";
+        var lines=document.getElementById("ra-ninv-lines");
+        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        updateNinvTotals();
+    }
+
+    // Customer search
+    document.getElementById("ra-ninv-customer-search").addEventListener("input",function(){
+        var q=this.value.trim();
+        if(ninvSearchTimer)clearTimeout(ninvSearchTimer);
+        if(q.length<2){document.getElementById("ra-ninv-customer-results").style.display="none";return;}
+        ninvSearchTimer=setTimeout(function(){
+            var fd=new FormData();
+            fd.append("action","ppv_repair_customer_search");
+            fd.append("nonce",NONCE);
+            fd.append("search",q);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                var res=document.getElementById("ra-ninv-customer-results");
+                if(!data.success||!data.data.customers||data.data.customers.length===0){
+                    res.style.display="none";return;
+                }
+                res.innerHTML="";
+                data.data.customers.forEach(function(c){
+                    var div=document.createElement("div");
+                    div.style.cssText="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6";
+                    var isRepairSource=c.source==="repair"||parseInt(c.id)<0;
+                    var badge=isRepairSource
+                        ?"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#fef3c7;color:#92400e;margin-left:4px;\'>Formular</span>"
+                        :"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#d1fae5;color:#065f46;margin-left:4px;\'>Gespeichert</span>";
+                    div.innerHTML="<strong>"+esc(c.name)+"</strong>"+badge+(c.company_name?" <span style=\'color:#6b7280\'>("+esc(c.company_name)+")</span>":"")+"<br><span style=\'font-size:12px;color:#9ca3af\'>"+(c.email||"")+(c.phone?" &middot; "+c.phone:"")+"</span>";
+                    div.addEventListener("click",function(){
+                        // For repair-sourced customers (negative ID), don\'t set customer_id
+                        document.getElementById("ra-ninv-customer-id").value=isRepairSource?"":c.id;
+                        document.getElementById("ra-ninv-name").value=c.name||"";
+                        document.getElementById("ra-ninv-company").value=c.company_name||"";
+                        document.getElementById("ra-ninv-email").value=c.email||"";
+                        document.getElementById("ra-ninv-phone").value=c.phone||"";
+                        document.getElementById("ra-ninv-address").value=c.address||"";
+                        document.getElementById("ra-ninv-plz").value=c.plz||"";
+                        document.getElementById("ra-ninv-city").value=c.city||"";
+                        document.getElementById("ra-ninv-taxid").value=c.tax_id||"";
+                        document.getElementById("ra-ninv-customer-search").value="";
+                        res.style.display="none";
+                    });
+                    div.addEventListener("mouseenter",function(){this.style.background="#f9fafb"});
+                    div.addEventListener("mouseleave",function(){this.style.background=""});
+                    res.appendChild(div);
+                });
+                res.style.display="block";
+            });
+        },300);
+    });
+
+    // Add line
+    document.getElementById("ra-ninv-add-line").addEventListener("click",function(){
+        var line=document.createElement("div");
+        line.className="ra-inv-line";
+        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        document.getElementById("ra-ninv-lines").appendChild(line);
+    });
+
+    // Remove line + totals
+    document.getElementById("ra-ninv-lines").addEventListener("click",function(e){
+        if(e.target.classList.contains("ra-inv-line-remove")){
+            var lines=this.querySelectorAll(".ra-inv-line");
+            if(lines.length>1)e.target.closest(".ra-inv-line").remove();
+            updateNinvTotals();
+        }
+    });
+    document.getElementById("ra-ninv-lines").addEventListener("input",function(){updateNinvTotals()});
+
+    function updateNinvTotals(){
+        var brutto=0;
+        document.querySelectorAll("#ra-ninv-lines .ra-inv-line-amount").forEach(function(inp){
+            brutto+=parseFloat(inp.value)||0;
+        });
+        var net,vat;
+        if(VAT_ENABLED){
+            net=(brutto/(1+VAT_RATE/100)).toFixed(2);
+            vat=(brutto-net).toFixed(2);
+        }else{
+            net=brutto.toFixed(2);vat="0.00";
+        }
+        document.getElementById("ra-ninv-net").textContent=fmtEur(net);
+        document.getElementById("ra-ninv-vat").textContent=fmtEur(vat);
+        document.getElementById("ra-ninv-total").textContent=fmtEur(brutto);
+        if(!VAT_ENABLED)document.getElementById("ra-ninv-vat-row").style.display="none";
+    }
+
+    // Submit new invoice
+    document.getElementById("ra-ninv-submit").addEventListener("click",function(){
+        var name=document.getElementById("ra-ninv-name").value.trim();
+        if(!name){toast("Name ist erforderlich");return;}
+        var items=[];
+        document.querySelectorAll("#ra-ninv-lines .ra-inv-line").forEach(function(line){
+            var d=line.querySelector(".ra-inv-line-desc").value.trim();
+            var a=parseFloat(line.querySelector(".ra-inv-line-amount").value)||0;
+            if(d||a>0)items.push({description:d,amount:a});
+        });
+        var subtotal=0;
+        items.forEach(function(i){subtotal+=i.amount});
+
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_create");
+        fd.append("nonce",NONCE);
+        fd.append("customer_id",document.getElementById("ra-ninv-customer-id").value);
+        fd.append("customer_name",name);
+        fd.append("customer_email",document.getElementById("ra-ninv-email").value);
+        fd.append("customer_phone",document.getElementById("ra-ninv-phone").value);
+        fd.append("customer_company",document.getElementById("ra-ninv-company").value);
+        fd.append("customer_tax_id",document.getElementById("ra-ninv-taxid").value);
+        fd.append("customer_address",document.getElementById("ra-ninv-address").value);
+        fd.append("customer_plz",document.getElementById("ra-ninv-plz").value);
+        fd.append("customer_city",document.getElementById("ra-ninv-city").value);
+        fd.append("save_customer",document.getElementById("ra-ninv-save-customer").checked?"1":"");
+        fd.append("line_items",JSON.stringify(items));
+        fd.append("subtotal",subtotal);
+        fd.append("notes",document.getElementById("ra-ninv-notes").value);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                toast("Rechnung "+data.data.invoice_number+" erstellt");
+                ninvModal.classList.remove("active");
+                invoicesLoaded=false;
+                loadInvoices(1);
+            }else{
+                toast(data.data&&data.data.message?data.data.message:"Fehler");
+            }
+        })
+        .catch(function(){toast("Verbindungsfehler")});
+    });
+
+    /* ===== CUSTOMERS TAB ===== */
+    var customersLoaded=false;
+    var custSearchTimer=null;
+
+    function loadCustomers(page){
+        page=page||1;
+        var fd=new FormData();
+        fd.append("action","ppv_repair_customers_list");
+        fd.append("nonce",NONCE);
+        fd.append("page",page);
+        var q=document.getElementById("ra-customer-search").value.trim();
+        if(q)fd.append("search",q);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(!data.success)return;
+            var d=data.data;
+            document.getElementById("ra-cust-count").textContent=d.total||"0";
+            var tbody=document.getElementById("ra-cust-body");
+            if(page===1)tbody.innerHTML="";
+            if(!d.customers||d.customers.length===0){
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">Keine Kunden vorhanden.</td></tr>\';
+            }else{
+                d.customers.forEach(function(c){
+                    var row=document.createElement("tr");
+                    var isRepairSource=c.source==="repair"||parseInt(c.id)<0;
+                    var sourceBadge=isRepairSource
+                        ?\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;margin-left:6px;">Formular</span>\'
+                        :\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#d1fae5;color:#065f46;margin-left:6px;">Gespeichert</span>\';
+                    var repairCount=c.repair_count>0?\'<span style="font-size:11px;color:#6b7280;margin-left:4px;">(\'+c.repair_count+\' Auftr&auml;ge)</span>\':\'\';
+                    var actions=isRepairSource
+                        ?\'<button class="ra-inv-btn ra-cust-edit" style="background:#d1fae5;color:#065f46;" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="Als Kunde speichern"><i class="ri-save-line"></i></button>\'
+                        :\'<button class="ra-inv-btn ra-inv-btn-edit ra-cust-edit" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
+                         \'<button class="ra-inv-btn ra-inv-btn-del ra-cust-del" data-cust-id="\'+c.id+\'" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>\';
+                    row.innerHTML=\'<td><strong>\'+esc(c.name)+\'</strong>\'+sourceBadge+repairCount+\'</td>\'+
+                        \'<td>\'+esc(c.company_name||"-")+\'</td>\'+
+                        \'<td>\'+esc(c.email||"-")+\'</td>\'+
+                        \'<td>\'+esc(c.phone||"-")+\'</td>\'+
+                        \'<td>\'+esc(c.city||"-")+\'</td>\'+
+                        \'<td><div class="ra-inv-actions">\'+actions+\'</div></td>\';
+                    tbody.appendChild(row);
+                });
+            }
+            // Pagination
+            var more=document.getElementById("ra-cust-load-more");
+            var btn=document.getElementById("ra-cust-more-btn");
+            if(d.page<d.pages){
+                more.style.display="block";
+                btn.setAttribute("data-page",d.page);
+            }else{
+                more.style.display="none";
+            }
+        });
+    }
+
+    document.getElementById("ra-customer-search").addEventListener("input",function(){
+        if(custSearchTimer)clearTimeout(custSearchTimer);
+        custSearchTimer=setTimeout(function(){loadCustomers(1)},300);
+    });
+    document.getElementById("ra-cust-more-btn").addEventListener("click",function(){
+        loadCustomers(parseInt(this.getAttribute("data-page"))+1);
+    });
+
+    // Customer table actions
+    document.getElementById("ra-cust-body").addEventListener("click",function(e){
+        var editBtn=e.target.closest(".ra-cust-edit");
+        if(editBtn){
+            var c=JSON.parse(editBtn.getAttribute("data-cust"));
+            openCustomerModal(c);
+            return;
+        }
+        var delBtn=e.target.closest(".ra-cust-del");
+        if(delBtn){
+            if(!confirm("Kunde wirklich l\u00f6schen?"))return;
+            var fd=new FormData();
+            fd.append("action","ppv_repair_customer_delete");
+            fd.append("nonce",NONCE);
+            fd.append("customer_id",delBtn.getAttribute("data-cust-id"));
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success){
+                    toast("Kunde gel\u00f6scht");
+                    loadCustomers(1);
+                }else{
+                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                }
+            });
+        }
+    });
+
+    /* ===== CUSTOMER MODAL ===== */
+    var custModal=document.getElementById("ra-customer-modal");
+
+    function openCustomerModal(c){
+        // For repair-sourced customers (negative ID), clear ID so it creates a new saved record
+        var isRepairSource=c&&(c.source==="repair"||parseInt(c.id)<0);
+        var hasValidId=c&&c.id&&parseInt(c.id)>0;
+        document.getElementById("ra-cust-modal-title").innerHTML=hasValidId
+            ?\'<i class="ri-user-settings-line"></i> Kunde bearbeiten\'
+            :(isRepairSource?\'<i class="ri-save-line"></i> Als Kunde speichern\':\'<i class="ri-user-add-line"></i> Neuer Kunde\');
+        document.getElementById("ra-cust-id").value=hasValidId?c.id:"";
+        document.getElementById("ra-cust-name").value=c&&c.name?c.name:"";
+        document.getElementById("ra-cust-company").value=c&&c.company_name?c.company_name:"";
+        document.getElementById("ra-cust-email").value=c&&c.email?c.email:"";
+        document.getElementById("ra-cust-phone").value=c&&c.phone?c.phone:"";
+        document.getElementById("ra-cust-address").value=c&&c.address?c.address:"";
+        document.getElementById("ra-cust-plz").value=c&&c.plz?c.plz:"";
+        document.getElementById("ra-cust-city").value=c&&c.city?c.city:"";
+        document.getElementById("ra-cust-taxid").value=c&&c.tax_id?c.tax_id:"";
+        document.getElementById("ra-cust-notes").value=c&&c.notes?c.notes:"";
+        custModal.classList.add("active");
+    }
+
+    document.getElementById("ra-new-customer-btn").addEventListener("click",function(){
+        openCustomerModal(null);
+    });
+    document.getElementById("ra-cust-cancel").addEventListener("click",function(){
+        custModal.classList.remove("active");
+    });
+    custModal.addEventListener("click",function(e){
+        if(e.target===custModal)custModal.classList.remove("active");
+    });
+
+    document.getElementById("ra-cust-submit").addEventListener("click",function(){
+        var name=document.getElementById("ra-cust-name").value.trim();
+        if(!name){toast("Name ist erforderlich");return;}
+        var fd=new FormData();
+        fd.append("action","ppv_repair_customer_save");
+        fd.append("nonce",NONCE);
+        fd.append("customer_id",document.getElementById("ra-cust-id").value);
+        fd.append("name",name);
+        fd.append("company_name",document.getElementById("ra-cust-company").value);
+        fd.append("email",document.getElementById("ra-cust-email").value);
+        fd.append("phone",document.getElementById("ra-cust-phone").value);
+        fd.append("address",document.getElementById("ra-cust-address").value);
+        fd.append("plz",document.getElementById("ra-cust-plz").value);
+        fd.append("city",document.getElementById("ra-cust-city").value);
+        fd.append("tax_id",document.getElementById("ra-cust-taxid").value);
+        fd.append("notes",document.getElementById("ra-cust-notes").value);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                toast(data.data.message||"Kunde gespeichert");
+                custModal.classList.remove("active");
+                loadCustomers(1);
+            }else{
+                toast(data.data&&data.data.message?data.data.message:"Fehler");
+            }
+        })
+        .catch(function(){toast("Verbindungsfehler")});
     });
 
 })();

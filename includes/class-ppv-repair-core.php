@@ -55,11 +55,16 @@ class PPV_Repair_Core {
 
         // AJAX: invoice actions (also need nopriv for session-based auth)
         $invoice_actions = [
-            'ppv_repair_invoice_pdf'    => ['PPV_Repair_Invoice', 'ajax_download_pdf'],
-            'ppv_repair_invoice_csv'    => ['PPV_Repair_Invoice', 'ajax_export_csv'],
-            'ppv_repair_invoices_list'  => ['PPV_Repair_Invoice', 'ajax_list_invoices'],
-            'ppv_repair_invoice_update' => ['PPV_Repair_Invoice', 'ajax_update_invoice'],
-            'ppv_repair_invoice_delete' => ['PPV_Repair_Invoice', 'ajax_delete_invoice'],
+            'ppv_repair_invoice_pdf'     => ['PPV_Repair_Invoice', 'ajax_download_pdf'],
+            'ppv_repair_invoice_csv'     => ['PPV_Repair_Invoice', 'ajax_export_csv'],
+            'ppv_repair_invoices_list'   => ['PPV_Repair_Invoice', 'ajax_list_invoices'],
+            'ppv_repair_invoice_update'  => ['PPV_Repair_Invoice', 'ajax_update_invoice'],
+            'ppv_repair_invoice_delete'  => ['PPV_Repair_Invoice', 'ajax_delete_invoice'],
+            'ppv_repair_invoice_create'  => ['PPV_Repair_Invoice', 'ajax_create_invoice'],
+            'ppv_repair_customer_search' => ['PPV_Repair_Invoice', 'ajax_customer_search'],
+            'ppv_repair_customer_save'   => ['PPV_Repair_Invoice', 'ajax_customer_save'],
+            'ppv_repair_customers_list'  => ['PPV_Repair_Invoice', 'ajax_customers_list'],
+            'ppv_repair_customer_delete' => ['PPV_Repair_Invoice', 'ajax_customer_delete'],
         ];
         foreach ($invoice_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -387,6 +392,67 @@ class PPV_Repair_Core {
                    AND (subscription_status IS NULL OR subscription_status = '')"
             );
             update_option('ppv_repair_migration_version', '1.4');
+        }
+
+        // v1.5: Customer management + standalone invoices
+        if (version_compare($version, '1.5', '<')) {
+            $charset = $wpdb->get_charset_collate();
+
+            // Create customers table
+            $cust_table = $wpdb->prefix . 'ppv_repair_customers';
+            $sql = "CREATE TABLE IF NOT EXISTS {$cust_table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                store_id BIGINT(20) UNSIGNED NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NULL,
+                phone VARCHAR(50) NULL,
+                company_name VARCHAR(255) NULL,
+                tax_id VARCHAR(50) NULL,
+                address VARCHAR(255) NULL,
+                plz VARCHAR(20) NULL,
+                city VARCHAR(100) NULL,
+                notes TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_store (store_id),
+                KEY idx_email (store_id, email),
+                KEY idx_name (store_id, name)
+            ) {$charset};";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            // Modify invoices table for standalone invoices
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+
+            // Make repair_id nullable (for standalone invoices)
+            $wpdb->query("ALTER TABLE {$inv_table} MODIFY COLUMN repair_id BIGINT(20) UNSIGNED NULL");
+
+            // Add new columns for customer management
+            $new_inv_columns = [
+                'customer_id'      => "BIGINT(20) UNSIGNED NULL AFTER repair_id",
+                'customer_company' => "VARCHAR(255) NULL AFTER customer_phone",
+                'customer_tax_id'  => "VARCHAR(50) NULL AFTER customer_company",
+                'customer_address' => "VARCHAR(255) NULL AFTER customer_tax_id",
+                'customer_plz'     => "VARCHAR(20) NULL AFTER customer_address",
+                'customer_city'    => "VARCHAR(100) NULL AFTER customer_plz",
+            ];
+
+            foreach ($new_inv_columns as $col => $definition) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE '{$col}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN {$col} {$definition}");
+                }
+            }
+
+            // Add index for customer_id
+            $idx_exists = $wpdb->get_var("SHOW INDEX FROM {$inv_table} WHERE Key_name = 'idx_customer'");
+            if (!$idx_exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD KEY idx_customer (customer_id)");
+            }
+
+            update_option('ppv_repair_migration_version', '1.5');
         }
     }
 

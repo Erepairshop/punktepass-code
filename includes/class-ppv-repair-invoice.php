@@ -418,6 +418,409 @@ class PPV_Repair_Invoice {
     }
 
     /**
+     * AJAX: Create standalone invoice (without repair)
+     */
+    public static function ajax_create_invoice() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        // Customer data
+        $customer_id = !empty($_POST['customer_id']) ? intval($_POST['customer_id']) : null;
+        $customer_name = sanitize_text_field($_POST['customer_name'] ?? '');
+        $customer_email = sanitize_email($_POST['customer_email'] ?? '');
+        $customer_phone = sanitize_text_field($_POST['customer_phone'] ?? '');
+        $customer_company = sanitize_text_field($_POST['customer_company'] ?? '');
+        $customer_tax_id = sanitize_text_field($_POST['customer_tax_id'] ?? '');
+        $customer_address = sanitize_text_field($_POST['customer_address'] ?? '');
+        $customer_plz = sanitize_text_field($_POST['customer_plz'] ?? '');
+        $customer_city = sanitize_text_field($_POST['customer_city'] ?? '');
+
+        if (empty($customer_name)) {
+            wp_send_json_error(['message' => 'Kundenname ist erforderlich']);
+        }
+
+        // Save customer if requested
+        $save_customer = !empty($_POST['save_customer']);
+        if ($save_customer && !$customer_id) {
+            $wpdb->insert("{$prefix}ppv_repair_customers", [
+                'store_id' => $store_id,
+                'name' => $customer_name,
+                'email' => $customer_email ?: null,
+                'phone' => $customer_phone ?: null,
+                'company_name' => $customer_company ?: null,
+                'tax_id' => $customer_tax_id ?: null,
+                'address' => $customer_address ?: null,
+                'plz' => $customer_plz ?: null,
+                'city' => $customer_city ?: null,
+            ]);
+            $customer_id = $wpdb->insert_id;
+        }
+
+        // Invoice data
+        $description = sanitize_textarea_field($_POST['description'] ?? '');
+        $line_items = [];
+        if (!empty($_POST['line_items'])) {
+            $items = json_decode(stripslashes($_POST['line_items']), true);
+            if (is_array($items)) {
+                foreach ($items as $item) {
+                    $line_items[] = [
+                        'description' => sanitize_text_field($item['description'] ?? ''),
+                        'amount' => floatval($item['amount'] ?? 0),
+                    ];
+                }
+            }
+        }
+
+        $subtotal = floatval($_POST['subtotal'] ?? 0);
+        $notes = sanitize_textarea_field($_POST['notes'] ?? '');
+
+        // Generate invoice number
+        $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
+        $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
+        $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
+
+        // VAT calculation
+        $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
+        $vat_rate_pct = floatval($store->repair_vat_rate ?: 19.00);
+        $is_klein = $vat_enabled ? 0 : 1;
+
+        // Calculate from brutto
+        if ($vat_enabled) {
+            $net_amount = round($subtotal / (1 + $vat_rate_pct / 100), 2);
+            $vat_amount = round($subtotal - $net_amount, 2);
+            $total = $subtotal;
+            $stored_vat_rate = $vat_rate_pct;
+        } else {
+            $net_amount = $subtotal;
+            $vat_amount = 0;
+            $total = $subtotal;
+            $stored_vat_rate = 0;
+        }
+
+        // Insert invoice
+        $wpdb->insert("{$prefix}ppv_repair_invoices", [
+            'store_id'          => $store_id,
+            'repair_id'         => null, // Standalone invoice
+            'customer_id'       => $customer_id,
+            'invoice_number'    => $invoice_number,
+            'customer_name'     => $customer_name,
+            'customer_email'    => $customer_email,
+            'customer_phone'    => $customer_phone,
+            'customer_company'  => $customer_company,
+            'customer_tax_id'   => $customer_tax_id,
+            'customer_address'  => $customer_address,
+            'customer_plz'      => $customer_plz,
+            'customer_city'     => $customer_city,
+            'device_info'       => '',
+            'description'       => $description,
+            'line_items'        => !empty($line_items) ? wp_json_encode($line_items) : null,
+            'subtotal'          => $subtotal,
+            'discount_type'     => 'none',
+            'discount_value'    => 0,
+            'discount_description' => '',
+            'net_amount'        => $net_amount,
+            'vat_rate'          => $stored_vat_rate,
+            'vat_amount'        => $vat_amount,
+            'total'             => $total,
+            'is_kleinunternehmer' => $is_klein,
+            'punktepass_reward_applied' => 0,
+            'points_used'       => 0,
+            'notes'             => $notes,
+            'status'            => 'draft',
+            'created_at'        => current_time('mysql'),
+        ]);
+
+        $invoice_id = $wpdb->insert_id;
+
+        // Increment next invoice number
+        if ($invoice_id) {
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$prefix}ppv_stores SET repair_invoice_next_number = %d WHERE id = %d",
+                $next_num + 1, $store_id
+            ));
+        }
+
+        wp_send_json_success([
+            'message' => 'Rechnung erstellt',
+            'invoice_id' => $invoice_id,
+            'invoice_number' => $invoice_number,
+        ]);
+    }
+
+    /**
+     * AJAX: Search customers
+     * Searches both saved customers (ppv_repair_customers) and repair form customers (ppv_repairs)
+     */
+    public static function ajax_customer_search() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $search = sanitize_text_field($_POST['search'] ?? '');
+
+        if (strlen($search) < 2) {
+            wp_send_json_success(['customers' => []]);
+        }
+
+        $like = '%' . $wpdb->esc_like($search) . '%';
+
+        // 1. Search saved customers
+        $saved_customers = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, name, email, phone, company_name, tax_id, address, plz, city, notes, 'saved' as source
+             FROM {$prefix}ppv_repair_customers
+             WHERE store_id = %d
+               AND (name LIKE %s OR email LIKE %s OR phone LIKE %s OR company_name LIKE %s)
+             ORDER BY name ASC
+             LIMIT 15",
+            $store_id, $like, $like, $like, $like
+        ));
+
+        // Collect emails to exclude duplicates from repair customers
+        $saved_emails = [];
+        foreach ($saved_customers as $c) {
+            if (!empty($c->email)) {
+                $saved_emails[] = strtolower($c->email);
+            }
+        }
+
+        // 2. Search unique customers from repairs
+        $repair_customers = $wpdb->get_results($wpdb->prepare(
+            "SELECT customer_name as name, customer_email as email, customer_phone as phone,
+                    NULL as company_name, NULL as tax_id, NULL as address, NULL as plz, NULL as city, NULL as notes,
+                    'repair' as source, MAX(id) as repair_id
+             FROM {$prefix}ppv_repairs
+             WHERE store_id = %d
+               AND (customer_name LIKE %s OR customer_email LIKE %s OR customer_phone LIKE %s)
+               AND customer_name IS NOT NULL AND customer_name != ''
+             GROUP BY customer_email, customer_name, customer_phone
+             ORDER BY MAX(created_at) DESC
+             LIMIT 15",
+            $store_id, $like, $like, $like
+        ));
+
+        // Filter out duplicates (by email) and merge
+        $customers = $saved_customers;
+        foreach ($repair_customers as $rc) {
+            // Skip if email already exists in saved customers
+            if (!empty($rc->email) && in_array(strtolower($rc->email), $saved_emails)) {
+                continue;
+            }
+            // Use negative ID for repair-sourced customers (to distinguish from saved)
+            $rc->id = -intval($rc->repair_id);
+            unset($rc->repair_id);
+            $customers[] = $rc;
+        }
+
+        // Sort by name and limit
+        usort($customers, function($a, $b) {
+            return strcasecmp($a->name, $b->name);
+        });
+        $customers = array_slice($customers, 0, 20);
+
+        wp_send_json_success(['customers' => $customers]);
+    }
+
+    /**
+     * AJAX: Save customer
+     */
+    public static function ajax_customer_save() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $customer_id = !empty($_POST['customer_id']) ? intval($_POST['customer_id']) : 0;
+        $data = [
+            'name' => sanitize_text_field($_POST['name'] ?? ''),
+            'email' => sanitize_email($_POST['email'] ?? '') ?: null,
+            'phone' => sanitize_text_field($_POST['phone'] ?? '') ?: null,
+            'company_name' => sanitize_text_field($_POST['company_name'] ?? '') ?: null,
+            'tax_id' => sanitize_text_field($_POST['tax_id'] ?? '') ?: null,
+            'address' => sanitize_text_field($_POST['address'] ?? '') ?: null,
+            'plz' => sanitize_text_field($_POST['plz'] ?? '') ?: null,
+            'city' => sanitize_text_field($_POST['city'] ?? '') ?: null,
+            'notes' => sanitize_textarea_field($_POST['notes'] ?? '') ?: null,
+        ];
+
+        if (empty($data['name'])) {
+            wp_send_json_error(['message' => 'Name ist erforderlich']);
+        }
+
+        if ($customer_id) {
+            // Update existing
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$prefix}ppv_repair_customers WHERE id = %d AND store_id = %d",
+                $customer_id, $store_id
+            ));
+            if (!$exists) {
+                wp_send_json_error(['message' => 'Kunde nicht gefunden']);
+            }
+            $wpdb->update("{$prefix}ppv_repair_customers", $data, ['id' => $customer_id]);
+            wp_send_json_success(['message' => 'Kunde aktualisiert', 'customer_id' => $customer_id]);
+        } else {
+            // Create new
+            $data['store_id'] = $store_id;
+            $wpdb->insert("{$prefix}ppv_repair_customers", $data);
+            wp_send_json_success(['message' => 'Kunde gespeichert', 'customer_id' => $wpdb->insert_id]);
+        }
+    }
+
+    /**
+     * AJAX: List customers
+     * Lists both saved customers (ppv_repair_customers) and unique customers from repairs (ppv_repairs)
+     */
+    public static function ajax_customers_list() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $page = max(1, intval($_POST['page'] ?? 1));
+        $per_page = 50;
+        $offset = ($page - 1) * $per_page;
+        $search = sanitize_text_field($_POST['search'] ?? '');
+
+        // Build search conditions
+        $search_cond_saved = '';
+        $search_cond_repair = '';
+        $search_params_saved = [$store_id];
+        $search_params_repair = [$store_id];
+
+        if ($search) {
+            $like = '%' . $wpdb->esc_like($search) . '%';
+            $search_cond_saved = " AND (name LIKE %s OR email LIKE %s OR company_name LIKE %s)";
+            $search_params_saved[] = $like;
+            $search_params_saved[] = $like;
+            $search_params_saved[] = $like;
+
+            $search_cond_repair = " AND (customer_name LIKE %s OR customer_email LIKE %s OR customer_phone LIKE %s)";
+            $search_params_repair[] = $like;
+            $search_params_repair[] = $like;
+            $search_params_repair[] = $like;
+        }
+
+        // 1. Get saved customers
+        $saved_customers = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, name, email, phone, company_name, tax_id, address, plz, city, notes, created_at, 'saved' as source
+             FROM {$prefix}ppv_repair_customers
+             WHERE store_id = %d {$search_cond_saved}
+             ORDER BY name ASC",
+            ...$search_params_saved
+        ));
+
+        // Collect emails to exclude duplicates
+        $saved_emails = [];
+        foreach ($saved_customers as $c) {
+            if (!empty($c->email)) {
+                $saved_emails[] = strtolower($c->email);
+            }
+        }
+
+        // 2. Get unique customers from repairs (grouped by email+name)
+        $repair_customers = $wpdb->get_results($wpdb->prepare(
+            "SELECT customer_name as name, customer_email as email, customer_phone as phone,
+                    NULL as company_name, NULL as tax_id, NULL as address, NULL as plz, NULL as city, NULL as notes,
+                    MAX(created_at) as created_at, 'repair' as source, MAX(id) as repair_id,
+                    COUNT(*) as repair_count
+             FROM {$prefix}ppv_repairs
+             WHERE store_id = %d
+               AND customer_name IS NOT NULL AND customer_name != ''
+               {$search_cond_repair}
+             GROUP BY customer_email, customer_name, customer_phone
+             ORDER BY MAX(created_at) DESC",
+            ...$search_params_repair
+        ));
+
+        // Filter out duplicates (by email) and merge
+        $all_customers = [];
+        foreach ($saved_customers as $c) {
+            $c->repair_count = 0;
+            $all_customers[] = $c;
+        }
+
+        foreach ($repair_customers as $rc) {
+            // Skip if email already exists in saved customers
+            if (!empty($rc->email) && in_array(strtolower($rc->email), $saved_emails)) {
+                continue;
+            }
+            // Use negative ID for repair-sourced customers
+            $rc->id = -intval($rc->repair_id);
+            unset($rc->repair_id);
+            $all_customers[] = $rc;
+        }
+
+        // Sort by name
+        usort($all_customers, function($a, $b) {
+            return strcasecmp($a->name, $b->name);
+        });
+
+        $total = count($all_customers);
+
+        // Paginate
+        $customers = array_slice($all_customers, $offset, $per_page);
+
+        wp_send_json_success([
+            'customers' => $customers,
+            'total' => $total,
+            'pages' => ceil($total / $per_page),
+            'page' => $page,
+        ]);
+    }
+
+    /**
+     * AJAX: Delete customer
+     */
+    public static function ajax_customer_delete() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $customer_id = intval($_POST['customer_id'] ?? 0);
+        if (!$customer_id) wp_send_json_error(['message' => 'Ungültiger Kunde']);
+
+        global $wpdb;
+        $deleted = $wpdb->delete($wpdb->prefix . 'ppv_repair_customers', [
+            'id' => $customer_id,
+            'store_id' => $store_id,
+        ]);
+
+        if ($deleted) {
+            wp_send_json_success(['message' => 'Kunde gelöscht']);
+        } else {
+            wp_send_json_error(['message' => 'Kunde nicht gefunden']);
+        }
+    }
+
+    /**
      * Build the HTML for invoice PDF
      */
     private static function build_invoice_html($store, $invoice) {
@@ -436,6 +839,11 @@ class PPV_Repair_Invoice {
         $cust_name = esc_html($invoice->customer_name);
         $cust_email = esc_html($invoice->customer_email);
         $cust_phone = esc_html($invoice->customer_phone ?: '');
+        $cust_company = esc_html($invoice->customer_company ?? '');
+        $cust_tax_id = esc_html($invoice->customer_tax_id ?? '');
+        $cust_address = esc_html($invoice->customer_address ?? '');
+        $cust_plz = esc_html($invoice->customer_plz ?? '');
+        $cust_city = esc_html($invoice->customer_city ?? '');
         $device = esc_html($invoice->device_info ?: '');
         $desc = nl2br(esc_html($invoice->description ?: ''));
         $notes = $invoice->notes ? nl2br(esc_html($invoice->notes)) : '';
@@ -454,6 +862,11 @@ class PPV_Repair_Invoice {
         $tax_line = $tax ? '<br>USt-IdNr.: ' . $tax : '';
         $phone_line = $phone ? '<br>Tel: ' . $phone : '';
         $cust_phone_line = $cust_phone ? '<br>Tel: ' . $cust_phone : '';
+        $cust_company_line = $cust_company ? '<br>' . $cust_company : '';
+        $cust_addr_line = $cust_address ? '<br>' . $cust_address : '';
+        $cust_plz_city = trim($cust_plz . ' ' . $cust_city);
+        $cust_plz_city_line = $cust_plz_city ? '<br>' . $cust_plz_city : '';
+        $cust_tax_line = $cust_tax_id ? '<br>USt-IdNr.: ' . $cust_tax_id : '';
 
         $discount_row = '';
         if ($has_discount) {
@@ -511,7 +924,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,san
 </div>
 <div class="inv-parties">
 <div class="inv-from"><div class="inv-label">Von</div><div class="inv-addr"><strong>' . $company . '</strong><br>' . $owner . '<br>' . $addr . '<br>' . $plz_city . $phone_line . '<br>E-Mail: ' . $email . $tax_line . '</div></div>
-<div class="inv-to"><div class="inv-label">An</div><div class="inv-addr"><strong>' . $cust_name . '</strong><br>E-Mail: ' . $cust_email . $cust_phone_line . '</div></div>
+<div class="inv-to"><div class="inv-label">An</div><div class="inv-addr"><strong>' . $cust_name . '</strong>' . $cust_company_line . $cust_addr_line . $cust_plz_city_line . '<br>E-Mail: ' . $cust_email . $cust_phone_line . $cust_tax_line . '</div></div>
 </div>
 <table class="inv-table">
 <tr><th>Beschreibung</th><th>Betrag</th></tr>
