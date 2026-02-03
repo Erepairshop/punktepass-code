@@ -1898,10 +1898,8 @@ echo '          </div>
                         ?\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;margin-left:6px;">Formular</span>\'
                         :\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#d1fae5;color:#065f46;margin-left:6px;">Gespeichert</span>\';
                     var repairCount=c.repair_count>0?\'<span style="font-size:11px;color:#6b7280;margin-left:4px;">(\'+c.repair_count+\' Auftr&auml;ge)</span>\':\'\';
-                    var actions=isRepairSource
-                        ?\'<button class="ra-inv-btn ra-cust-edit" style="background:#d1fae5;color:#065f46;" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="Als Kunde speichern"><i class="ri-save-line"></i></button>\'
-                        :\'<button class="ra-inv-btn ra-inv-btn-edit ra-cust-edit" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
-                         \'<button class="ra-inv-btn ra-inv-btn-del ra-cust-del" data-cust-id="\'+c.id+\'" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>\';
+                    var actions=\'<button class="ra-inv-btn ra-inv-btn-edit ra-cust-edit" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
+                        \'<button class="ra-inv-btn ra-inv-btn-del ra-cust-del" data-cust-id="\'+c.id+\'" data-cust-source="\'+c.source+\'" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>\';
                     row.innerHTML=\'<td><strong>\'+esc(c.name)+\'</strong>\'+sourceBadge+repairCount+\'</td>\'+
                         \'<td>\'+esc(c.company_name||"-")+\'</td>\'+
                         \'<td>\'+esc(c.email||"-")+\'</td>\'+
@@ -1941,11 +1939,18 @@ echo '          </div>
         }
         var delBtn=e.target.closest(".ra-cust-del");
         if(delBtn){
+            var custId=parseInt(delBtn.getAttribute("data-cust-id"));
+            var custSource=delBtn.getAttribute("data-cust-source");
+            // Repair-sourced customers can\'t be deleted (they\'re from repair orders)
+            if(custId<0||custSource==="repair"){
+                toast("Formular-Kunden k\u00f6nnen nicht gel\u00f6scht werden");
+                return;
+            }
             if(!confirm("Kunde wirklich l\u00f6schen?"))return;
             var fd=new FormData();
             fd.append("action","ppv_repair_customer_delete");
             fd.append("nonce",NONCE);
-            fd.append("customer_id",delBtn.getAttribute("data-cust-id"));
+            fd.append("customer_id",custId);
             fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
             .then(function(r){return r.json()})
             .then(function(data){
