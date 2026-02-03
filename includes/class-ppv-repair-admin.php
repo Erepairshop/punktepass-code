@@ -1669,14 +1669,14 @@ echo '          </div>
                     var pdfUrl=AJAX+"?action=ppv_repair_invoice_pdf&invoice_id="+inv.id+"&nonce="+NONCE;
 
                     var row=document.createElement("tr");
-                    row.innerHTML=\'<td><strong>\'+esc(inv.invoice_number)+\'</strong></td>\'+
-                        \'<td>\'+dateStr+\'</td>\'+
-                        \'<td>\'+esc(inv.customer_name)+\'</td>\'+
-                        \'<td>\'+fmtEur(inv.net_amount)+\'</td>\'+
-                        \'<td>\'+vatCol+\'</td>\'+
-                        \'<td><strong>\'+fmtEur(inv.total)+\'</strong></td>\'+
-                        \'<td><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
-                        \'<td><div class="ra-inv-actions">\'+
+                    row.innerHTML=\'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong></td>\'+
+                        \'<td data-label="Datum">\'+dateStr+\'</td>\'+
+                        \'<td data-label="Kunde">\'+esc(inv.customer_name)+\'</td>\'+
+                        \'<td data-label="Netto">\'+fmtEur(inv.net_amount)+\'</td>\'+
+                        \'<td data-label="MwSt">\'+vatCol+\'</td>\'+
+                        \'<td data-label="Gesamt"><strong>\'+fmtEur(inv.total)+\'</strong></td>\'+
+                        \'<td data-label="Status"><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
+                        \'<td data-label=""><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
                             \'<button class="ra-inv-btn ra-inv-btn-edit" data-invoice=\\\'\'+JSON.stringify(inv).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
                             \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
@@ -2085,12 +2085,12 @@ echo '          </div>
                     var repairCount=c.repair_count>0?\'<span style="font-size:11px;color:#6b7280;margin-left:4px;">(\'+c.repair_count+\' Auftr&auml;ge)</span>\':\'\';
                     var actions=\'<button class="ra-inv-btn ra-inv-btn-edit ra-cust-edit" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
                         \'<button class="ra-inv-btn ra-inv-btn-del ra-cust-del" data-cust-id="\'+c.id+\'" data-cust-source="\'+c.source+\'" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>\';
-                    row.innerHTML=\'<td><strong>\'+esc(c.name)+\'</strong>\'+sourceBadge+repairCount+\'</td>\'+
-                        \'<td>\'+esc(c.company_name||"-")+\'</td>\'+
-                        \'<td>\'+esc(c.email||"-")+\'</td>\'+
-                        \'<td>\'+esc(c.phone||"-")+\'</td>\'+
-                        \'<td>\'+esc(c.city||"-")+\'</td>\'+
-                        \'<td><div class="ra-inv-actions">\'+actions+\'</div></td>\';
+                    row.innerHTML=\'<td data-label="Name"><strong>\'+esc(c.name)+\'</strong>\'+sourceBadge+repairCount+\'</td>\'+
+                        \'<td data-label="Firma">\'+esc(c.company_name||"-")+\'</td>\'+
+                        \'<td data-label="E-Mail">\'+esc(c.email||"-")+\'</td>\'+
+                        \'<td data-label="Telefon">\'+esc(c.phone||"-")+\'</td>\'+
+                        \'<td data-label="Stadt">\'+esc(c.city||"-")+\'</td>\'+
+                        \'<td data-label=""><div class="ra-inv-actions">\'+actions+\'</div></td>\';
                     tbody.appendChild(row);
                 });
             }

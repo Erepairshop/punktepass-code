@@ -1129,29 +1129,229 @@
 }
 
 /* ========================================
-   RESPONSIVE
+   RESPONSIVE - TABLET (max 768px)
+   ======================================== */
+@media (max-width: 768px) {
+    /* Touch-friendly minimum sizes */
+    button, .ra-btn, .repair-btn, input[type="submit"] {
+        min-height: 44px;
+    }
+    input, select, textarea {
+        font-size: 16px !important; /* Prevent iOS zoom */
+    }
+    /* Tables: horizontal scroll */
+    .ra-inv-table, .ra-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ========================================
+   RESPONSIVE - MOBILE (max 640px)
    ======================================== */
 @media (max-width: 640px) {
+    /* Grids to single column */
     .ra-stats {
         grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
-    .ra-settings-grid {
-        grid-template-columns: 1fr;
-    }
-    .ppv-repair-features {
-        grid-template-columns: 1fr;
-    }
-    .ppv-repair-row {
-        grid-template-columns: 1fr;
-    }
+    .ra-settings-grid,
+    .ppv-repair-features,
+    .ppv-repair-row,
     .repair-row {
         grid-template-columns: 1fr;
     }
+
+    /* Header adjustments */
     .ra-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 12px;
     }
     .ra-toolbar {
         flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Form styling */
+    .repair-page {
+        padding: 0;
+    }
+    .repair-header {
+        padding: 24px 16px 20px;
+    }
+    .repair-shop-name {
+        font-size: 20px;
+    }
+    .repair-section {
+        margin: 12px;
+        padding: 16px;
+        border-radius: 12px;
+    }
+    .repair-section-title h2 {
+        font-size: 16px;
+    }
+    .repair-field label {
+        font-size: 13px;
+    }
+    .repair-field input,
+    .repair-field select,
+    .repair-field textarea {
+        padding: 14px 12px;
+        font-size: 16px;
+    }
+    .repair-btn {
+        padding: 16px 20px;
+        font-size: 16px;
+    }
+    .repair-bonus-badge {
+        margin: 12px;
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+
+    /* Admin specific */
+    .ra-wrap {
+        padding: 12px 12px 32px;
+    }
+    .ra-title {
+        font-size: 18px;
+    }
+    .ra-tabs {
+        gap: 6px;
+        padding-bottom: 4px;
+    }
+    .ra-tab {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    .ra-card {
+        padding: 14px;
+        border-radius: 12px;
+    }
+    .ra-card-header h3 {
+        font-size: 14px;
+    }
+
+    /* Invoice/Customer tables - card view on mobile */
+    .ra-inv-table thead {
+        display: none;
+    }
+    .ra-inv-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        padding: 14px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .ra-inv-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border: none;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 14px;
+    }
+    .ra-inv-table tbody td:last-child {
+        border-bottom: none;
+        padding-top: 12px;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+    .ra-inv-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6b7280;
+        font-size: 12px;
+    }
+    .ra-inv-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .ra-inv-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    /* Filters */
+    .ra-inv-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .ra-inv-filters .field {
+        width: 100%;
+    }
+    .ra-inv-filters .field input {
+        width: 100%;
+    }
+    .ra-inv-summary {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .ra-inv-summary-card {
+        padding: 12px;
+    }
+    .ra-inv-summary-val {
+        font-size: 20px;
+    }
+
+    /* Search */
+    .ra-search {
+        max-width: 100% !important;
+    }
+    .ra-search input {
+        padding: 12px 12px 12px 40px;
+    }
+
+    /* Modals */
+    .ra-modal-overlay {
+        padding: 12px;
+        align-items: flex-start;
+        padding-top: 5vh;
+    }
+    .ra-modal {
+        max-width: 100%;
+        max-height: 85vh;
+        padding: 20px 16px;
+        border-radius: 16px;
+    }
+    .ra-modal h3 {
+        font-size: 18px;
+    }
+    .ra-inv-lines {
+        gap: 10px;
+    }
+    .ra-inv-line {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .ra-inv-line-desc {
+        width: 100%;
+    }
+    .ra-inv-line-amount {
+        flex: 1;
+    }
+}
+
+/* ========================================
+   RESPONSIVE - SMALL MOBILE (max 380px)
+   ======================================== */
+@media (max-width: 380px) {
+    .ra-stats {
+        grid-template-columns: 1fr;
+    }
+    .ra-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    .repair-shop-name {
+        font-size: 18px;
+    }
+    .repair-section {
+        margin: 8px;
+        padding: 14px;
     }
 }
