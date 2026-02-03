@@ -47,6 +47,7 @@ class PPV_Repair_Core {
             'ppv_repair_upload_logo'    => [__CLASS__, 'ajax_upload_logo'],
             'ppv_repair_logout'         => [__CLASS__, 'ajax_logout'],
             'ppv_repair_user_search'    => [__CLASS__, 'ajax_user_search'],
+            'ppv_repair_delete'         => [__CLASS__, 'ajax_delete_repair'],
         ];
         foreach ($admin_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -892,6 +893,37 @@ class PPV_Repair_Core {
             'message' => 'Status aktualisiert',
             'invoice_id' => $invoice_id,
         ]);
+    }
+
+    /** AJAX: Delete Repair */
+    public static function ajax_delete_repair() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Verify repair belongs to this store
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$prefix}ppv_repairs WHERE id = %d AND store_id = %d",
+            $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        // Delete related invoices first
+        $wpdb->delete($prefix . 'ppv_repair_invoices', ['repair_id' => $repair_id]);
+
+        // Delete the repair
+        $wpdb->delete($prefix . 'ppv_repairs', ['id' => $repair_id]);
+
+        wp_send_json_success(['message' => 'Reparatur gelöscht']);
     }
 
     /** AJAX: Search Repairs */

@@ -338,6 +338,10 @@ a:hover{text-decoration:underline}
 .ra-status-select:focus{border-color:#667eea}
 .ra-btn-resubmit{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #c7d2fe;background:#eef2ff;color:#667eea;display:inline-flex;align-items:center;gap:4px;transition:all .2s;white-space:nowrap}
 .ra-btn-resubmit:hover{background:#667eea;color:#fff;border-color:#667eea}
+.ra-btn-invoice{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bbf7d0;background:#f0fdf4;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.ra-btn-invoice:hover{background:#16a34a;color:#fff;border-color:#16a34a}
+.ra-btn-delete{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.ra-btn-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
 
 /* ========== Empty & Load More ========== */
 .ra-empty{text-align:center;padding:48px 20px;color:#9ca3af}
@@ -1363,6 +1367,50 @@ echo '          </div>
         window.open("/formular/"+SLUG+"?"+params.toString(),"_blank");
     });
 
+    /* ===== Direct Invoice Button ===== */
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-btn-invoice");
+        if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
+        var rid=card.dataset.id;
+        var sel=card.querySelector(".ra-status-select");
+        showInvoiceModal(rid,sel);
+    });
+
+    /* ===== Delete Repair ===== */
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-btn-delete");
+        if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
+        var rid=card.dataset.id;
+        if(!confirm("Reparatur #"+rid+" wirklich l\u00f6schen?"))return;
+        btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_delete");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",rid);
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            if(res.success){
+                card.remove();
+                toast("Reparatur gel\u00f6scht");
+            }else{
+                btn.disabled=false;
+                btn.innerHTML=\'<i class="ri-delete-bin-line"></i>\';
+                toast(res.data&&res.data.message?res.data.message:"Fehler beim L\u00f6schen");
+            }
+        })
+        .catch(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-delete-bin-line"></i>\';
+            toast("Verbindungsfehler");
+        });
+    });
+
     /* ===== Search & Filter ===== */
     var searchInput=document.getElementById("ra-search-input"),
         filterSelect=document.getElementById("ra-filter-status");
@@ -1452,7 +1500,7 @@ echo '          </div>
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
             \'</div>\'+
-            \'<div class="ra-repair-actions"><button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
+            \'<div class="ra-repair-actions"><button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button><button class="ra-btn-invoice" title="Rechnung erstellen"><i class="ri-file-list-3-line"></i></button><button class="ra-btn-delete" title="L\u00f6schen"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
         \'</div>\';
     }
     function pad(n){return n<10?"0"+n:n}
@@ -1850,7 +1898,7 @@ echo '          </div>
                         if(!email){toast("Keine E-Mail-Adresse vorhanden");return;}
                         if(!confirm("Rechnung per E-Mail an "+email+" senden?"))return;
                         btn.disabled=true;
-                        btn.innerHTML='<i class="ri-loader-4-line ri-spin"></i>';
+                        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
                         var fd2=new FormData();
                         fd2.append("action","ppv_repair_invoice_email");
                         fd2.append("nonce",NONCE);
@@ -1859,7 +1907,7 @@ echo '          </div>
                         .then(function(r){return r.json()})
                         .then(function(res){
                             btn.disabled=false;
-                            btn.innerHTML='<i class="ri-mail-send-line"></i>';
+                            btn.innerHTML=\'<i class="ri-mail-send-line"></i>\';
                             if(res.success){toast("E-Mail erfolgreich gesendet!");invoicesLoaded=false;loadInvoices(1)}
                             else{toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden")}
                         });
@@ -2408,6 +2456,8 @@ echo '          </div>
             . '</div>'
             . '<div class="ra-repair-actions">'
                 . '<button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button>'
+                . '<button class="ra-btn-invoice" title="Rechnung erstellen"><i class="ri-file-list-3-line"></i></button>'
+                . '<button class="ra-btn-delete" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>'
                 . '<select class="ra-status-select" data-repair-id="' . intval($r->id) . '">' . $options . '</select>'
             . '</div>'
         . '</div>';
