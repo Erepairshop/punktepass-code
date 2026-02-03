@@ -168,9 +168,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             "SELECT COUNT(DISTINCT customer_email) FROM {$prefix}ppv_repairs WHERE store_id = %d", $store->id
         ));
 
-        // Recent repairs
+        // Recent repairs - active (not done) first, then by date
         $recent = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$prefix}ppv_repairs WHERE store_id = %d ORDER BY created_at DESC LIMIT 20", $store->id
+            "SELECT * FROM {$prefix}ppv_repairs WHERE store_id = %d
+             ORDER BY CASE WHEN status IN ('done','delivered','cancelled') THEN 1 ELSE 0 END ASC,
+             created_at DESC LIMIT 50", $store->id
         ));
 
         $form_url   = home_url("/formular/{$store->store_slug}");
