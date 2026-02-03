@@ -639,6 +639,25 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '1.9');
         }
+
+        // v2.0: Add customer_address and muster_image columns
+        if (version_compare($version, '2.0', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+
+            // Add customer_address column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'customer_address'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN customer_address TEXT NULL AFTER customer_phone");
+            }
+
+            // Add muster_image column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'muster_image'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN muster_image VARCHAR(500) NULL AFTER accessories");
+            }
+
+            update_option('ppv_repair_migration_version', '2.0');
+        }
     }
 
     /** ============================================================
@@ -687,9 +706,19 @@ class PPV_Repair_Core {
         $device_pattern = sanitize_text_field($_POST['device_pattern'] ?? '');
         $problem      = sanitize_textarea_field($_POST['problem_description'] ?? '');
         $accessories  = sanitize_text_field($_POST['accessories'] ?? '[]');
+        $address      = sanitize_textarea_field($_POST['customer_address'] ?? '');
 
         if (empty($problem)) {
             wp_send_json_error(['message' => 'Bitte beschreiben Sie das Problem']);
+        }
+
+        // Handle muster pattern (base64 data URL from canvas)
+        $muster_image = '';
+        if (!empty($_POST['muster_image']) && strpos($_POST['muster_image'], 'data:image/') === 0) {
+            // Limit size to prevent abuse (max ~500KB base64)
+            if (strlen($_POST['muster_image']) <= 700000) {
+                $muster_image = $_POST['muster_image'];
+            }
         }
 
         // Generate unique tracking token
@@ -701,12 +730,14 @@ class PPV_Repair_Core {
             'customer_name'       => $name,
             'customer_email'      => $email,
             'customer_phone'      => $phone,
+            'customer_address'    => $address,
             'device_brand'        => $device_brand,
             'device_model'        => $device_model,
             'device_imei'         => $device_imei,
             'device_pattern'      => $device_pattern,
             'problem_description' => $problem,
             'accessories'         => $accessories,
+            'muster_image'        => $muster_image,
             'status'              => 'new',
             'created_at'          => current_time('mysql'),
             'updated_at'          => current_time('mysql'),

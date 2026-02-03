@@ -31,7 +31,7 @@ class PPV_Repair_Form {
         $reward_name   = esc_html($store->repair_reward_name ?? '10 Euro Rabatt');
         $required_pts  = intval($store->repair_required_points ?? 4);
         $field_config  = json_decode($store->repair_field_config ?? '', true) ?: [];
-        $fc_defaults   = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon']];
+        $fc_defaults   = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => false, 'label' => 'Adresse'], 'muster_image' => ['enabled' => false, 'label' => 'Foto des Schadens']];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
         $nonce = wp_create_nonce('ppv_repair_form');
@@ -98,7 +98,7 @@ class PPV_Repair_Form {
     <?php endif; ?>
 
     <!-- Form -->
-    <form id="repair-form" class="repair-form" autocomplete="off">
+    <form id="repair-form" class="repair-form" autocomplete="off" enctype="multipart/form-data">
         <input type="hidden" name="action" value="ppv_repair_submit">
         <input type="hidden" name="nonce" value="<?php echo $nonce; ?>">
         <input type="hidden" name="store_id" value="<?php echo $store_id; ?>">
@@ -124,6 +124,13 @@ class PPV_Repair_Form {
             <div class="repair-field">
                 <label for="rf-phone"><?php echo esc_html($field_config['customer_phone']['label'] ?? 'Telefon'); ?></label>
                 <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>">
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['customer_address']['enabled'])): ?>
+            <div class="repair-field">
+                <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
+                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort">
             </div>
             <?php endif; ?>
         </div>
@@ -186,6 +193,20 @@ class PPV_Repair_Form {
                 <label for="rf-problem">Was soll repariert werden? *</label>
                 <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="Beschreiben Sie das Problem m&ouml;glichst genau..."></textarea>
             </div>
+
+            <?php if (!empty($field_config['muster_image']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['muster_image']['label'] ?? 'Entsperrmuster'); ?></label>
+                <div class="repair-muster-canvas-wrap">
+                    <canvas id="rf-muster-canvas" width="240" height="240"></canvas>
+                    <input type="hidden" name="muster_image" id="rf-muster-data">
+                    <div class="repair-muster-actions">
+                        <button type="button" class="repair-muster-reset" id="rf-muster-reset"><i class="ri-refresh-line"></i> Zur&uuml;cksetzen</button>
+                    </div>
+                    <p class="repair-muster-hint">Verbinden Sie die Punkte mit dem Finger oder der Maus</p>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <?php if (!empty($field_config['accessories']['enabled'])): ?>
             <div class="repair-field">
@@ -324,6 +345,99 @@ class PPV_Repair_Form {
         emailField.parentNode.appendChild(hint);
         setTimeout(function() { hint.classList.add('show'); }, 10);
         setTimeout(function() { hint.classList.remove('show'); setTimeout(function() { hint.remove(); }, 300); }, 4000);
+    }
+
+    // Muster pattern canvas handling (3x3 grid like Android unlock)
+    var musterCanvas = document.getElementById('rf-muster-canvas');
+    var musterDataInput = document.getElementById('rf-muster-data');
+    var musterResetBtn = document.getElementById('rf-muster-reset');
+
+    if (musterCanvas) {
+        var mCtx = musterCanvas.getContext('2d');
+        var gridNum = 3;
+        var gridGap = musterCanvas.width / (gridNum + 1);
+        var musterPoints = [];
+        var musterDrawing = false;
+        var musterLastPointIndex = null;
+
+        function createMusterGrid() {
+            mCtx.clearRect(0, 0, musterCanvas.width, musterCanvas.height);
+            musterPoints = [];
+            mCtx.fillStyle = '#f3f4f6';
+            mCtx.fillRect(0, 0, musterCanvas.width, musterCanvas.height);
+
+            for (var i = 1; i <= gridNum; i++) {
+                for (var j = 1; j <= gridNum; j++) {
+                    var point = { x: j * gridGap, y: i * gridGap, isDrawn: false, index: ((i-1) * gridNum) + (j-1) };
+                    musterPoints.push(point);
+                    mCtx.beginPath();
+                    mCtx.arc(point.x, point.y, 18, 0, Math.PI * 2);
+                    mCtx.fillStyle = '#e5e7eb';
+                    mCtx.fill();
+                    mCtx.beginPath();
+                    mCtx.arc(point.x, point.y, 7, 0, Math.PI * 2);
+                    mCtx.fillStyle = '#6b7280';
+                    mCtx.fill();
+                }
+            }
+            musterLastPointIndex = null;
+            if (musterDataInput) musterDataInput.value = '';
+        }
+
+        function getMusterCoords(e) {
+            var rect = musterCanvas.getBoundingClientRect();
+            var scaleX = musterCanvas.width / rect.width;
+            var scaleY = musterCanvas.height / rect.height;
+            if (e.touches) {
+                return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+            }
+            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+        }
+
+        function drawMusterPoint(x, y) {
+            var idx = musterPoints.findIndex(function(p) {
+                return Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2)) < gridGap / 2 && !p.isDrawn;
+            });
+            if (idx !== -1) {
+                musterPoints[idx].isDrawn = true;
+                mCtx.beginPath();
+                mCtx.arc(musterPoints[idx].x, musterPoints[idx].y, 18, 0, Math.PI * 2);
+                mCtx.fillStyle = 'var(--repair-accent, #667eea)';
+                mCtx.fill();
+                mCtx.beginPath();
+                mCtx.arc(musterPoints[idx].x, musterPoints[idx].y, 7, 0, Math.PI * 2);
+                mCtx.fillStyle = 'white';
+                mCtx.fill();
+                if (musterLastPointIndex !== null) {
+                    mCtx.beginPath();
+                    mCtx.moveTo(musterPoints[musterLastPointIndex].x, musterPoints[musterLastPointIndex].y);
+                    mCtx.lineTo(musterPoints[idx].x, musterPoints[idx].y);
+                    mCtx.strokeStyle = 'var(--repair-accent, #667eea)';
+                    mCtx.lineWidth = 4;
+                    mCtx.lineCap = 'round';
+                    mCtx.stroke();
+                }
+                musterLastPointIndex = idx;
+            }
+        }
+
+        function startMusterDraw(e) { musterDrawing = true; var c = getMusterCoords(e); drawMusterPoint(c.x, c.y); e.preventDefault(); }
+        function moveMusterDraw(e) { if (musterDrawing) { var c = getMusterCoords(e); drawMusterPoint(c.x, c.y); e.preventDefault(); } }
+        function stopMusterDraw() { musterDrawing = false; if (musterDataInput) musterDataInput.value = musterCanvas.toDataURL(); }
+
+        musterCanvas.addEventListener('mousedown', startMusterDraw);
+        musterCanvas.addEventListener('mousemove', moveMusterDraw);
+        musterCanvas.addEventListener('mouseup', stopMusterDraw);
+        musterCanvas.addEventListener('mouseout', stopMusterDraw);
+        musterCanvas.addEventListener('touchstart', startMusterDraw);
+        musterCanvas.addEventListener('touchmove', moveMusterDraw);
+        musterCanvas.addEventListener('touchend', stopMusterDraw);
+
+        if (musterResetBtn) {
+            musterResetBtn.addEventListener('click', function() { createMusterGrid(); });
+        }
+
+        createMusterGrid();
     }
 
     form.addEventListener('submit', function(e) {

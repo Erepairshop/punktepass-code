@@ -356,6 +356,10 @@ a:hover{text-decoration:underline}
 .ra-repair-customer strong{font-size:15px;color:#111827;display:block}
 .ra-repair-meta{font-size:13px;color:#6b7280}
 .ra-repair-device{font-size:13px;color:#374151;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.ra-repair-address{font-size:12px;color:#6b7280;margin-top:4px;display:flex;align-items:center;gap:4px}
+.ra-repair-muster{margin:8px 0;padding:8px;background:#f9fafb;border-radius:8px;display:inline-block}
+.ra-repair-muster img{width:80px;height:80px;border-radius:4px;border:1px solid #e5e7eb;cursor:pointer}
+.ra-repair-muster img:hover{transform:scale(2);position:relative;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
 .ra-repair-problem{font-size:13px;color:#6b7280;margin-bottom:6px;line-height:1.5}
 .ra-repair-date{font-size:12px;color:#9ca3af;display:flex;align-items:center;gap:4px}
 .ra-repair-actions{display:flex;align-items:center;gap:8px}
@@ -1701,11 +1705,13 @@ echo '          </div>
         }
         var phone=r.customer_phone?(" &middot; "+esc(r.customer_phone)):"";
         var deviceHtml=device?\'<div class="ra-repair-device"><i class="ri-smartphone-line"></i> \'+esc(device)+\'</div>\':"";
+        var addressHtml=r.customer_address?\'<div class="ra-repair-address"><i class="ri-map-pin-line"></i> \'+esc(r.customer_address)+\'</div>\':"";
+        var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="Muster" title="Entsperrmuster"></div>\':"";
         return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
-                \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span></div>\'+
-                deviceHtml+
+                \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span>\'+addressHtml+\'</div>\'+
+                deviceHtml+musterHtml+
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
             \'</div>\'+
@@ -3052,6 +3058,18 @@ echo '          </div>
             $device_html = '<div class="ra-repair-device"><i class="ri-smartphone-line"></i> ' . esc_html($device) . '</div>';
         }
 
+        // Muster image display
+        $muster_html = '';
+        if (!empty($r->muster_image) && strpos($r->muster_image, 'data:image/') === 0) {
+            $muster_html = '<div class="ra-repair-muster"><img src="' . esc_attr($r->muster_image) . '" alt="Entsperrmuster" title="Entsperrmuster"></div>';
+        }
+
+        // Address display
+        $address_html = '';
+        if (!empty($r->customer_address)) {
+            $address_html = '<div class="ra-repair-address"><i class="ri-map-pin-line"></i> ' . esc_html($r->customer_address) . '</div>';
+        }
+
         // Status options
         $options = '';
         foreach ($status_map as $key => $label) {
@@ -3074,8 +3092,10 @@ echo '          </div>
                 . '<div class="ra-repair-customer">'
                     . '<strong>' . esc_html($r->customer_name) . '</strong>'
                     . '<span class="ra-repair-meta">' . esc_html($r->customer_email) . $phone . '</span>'
+                    . $address_html
                 . '</div>'
                 . $device_html
+                . $muster_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . '</div>'
             . '</div>'
