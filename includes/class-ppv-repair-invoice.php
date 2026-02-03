@@ -1444,4 +1444,164 @@ Powered by PunktePass &middot; punktepass.de
             'errors' => $errors,
         ]);
     }
+
+    /**
+     * AJAX: Import repairs from erepairshop database (one-time migration)
+     * Imports WITHOUT awarding any PunktePass points
+     */
+    public static function ajax_erepairshop_import() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // erepairshop database credentials
+        $er_host = 'localhost';
+        $er_db = 'u660905446_sYOnr';
+        $er_user = 'u660905446_oPLnu';
+        $er_pass = 'Brtegk84047+_';
+
+        try {
+            // Connect to erepairshop database
+            $er_pdo = new PDO(
+                "mysql:host={$er_host};dbname={$er_db};charset=utf8mb4",
+                $er_user,
+                $er_pass,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+
+            // Get all entries
+            $entries = $er_pdo->query("SELECT * FROM entries ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+            // Get erledigt (done) status - by telefon
+            $erledigt_list = [];
+            $erledigt_rows = $er_pdo->query("SELECT telefon FROM erledigt_status")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($erledigt_rows as $tel) {
+                $erledigt_list[$tel] = true;
+            }
+
+            // Get kommentare (comments) - by telefon
+            $kommentare = [];
+            $komm_rows = $er_pdo->query("SELECT telefon, kommentar FROM kommentare ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($komm_rows as $k) {
+                if (!isset($kommentare[$k['telefon']])) {
+                    $kommentare[$k['telefon']] = [];
+                }
+                $kommentare[$k['telefon']][] = $k['kommentar'];
+            }
+
+            $imported = 0;
+            $skipped = 0;
+            $errors = [];
+
+            foreach ($entries as $entry) {
+                try {
+                    $telefon = $entry['telefon'] ?? '';
+
+                    // Check if already imported (by phone + date combo to avoid duplicates)
+                    $exists = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM {$prefix}ppv_repairs
+                         WHERE store_id = %d AND customer_phone = %s AND DATE(created_at) = %s
+                         LIMIT 1",
+                        $store_id, $telefon, date('Y-m-d', strtotime($entry['datum'] ?? 'now'))
+                    ));
+
+                    if ($exists) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    // Map status
+                    $status = 'new';
+                    if (isset($erledigt_list[$telefon])) {
+                        $status = 'done';
+                    }
+
+                    // Build problem description
+                    $problem_parts = [];
+                    if (!empty($entry['problem'])) {
+                        $problem_parts[] = $entry['problem'];
+                    }
+                    if (!empty($entry['other'])) {
+                        $problem_parts[] = $entry['other'];
+                    }
+                    $problem = implode("\n", $problem_parts) ?: 'Keine Beschreibung';
+
+                    // Add kommentare as notes
+                    $notes = '';
+                    if (isset($kommentare[$telefon])) {
+                        $notes = implode("\n---\n", $kommentare[$telefon]);
+                    }
+
+                    // Parse date
+                    $created_at = $entry['created_at'] ?? null;
+                    if (empty($created_at) && !empty($entry['datum'])) {
+                        // Try to parse German date format (dd.mm.yyyy)
+                        $parts = explode('.', $entry['datum']);
+                        if (count($parts) === 3) {
+                            $created_at = "{$parts[2]}-{$parts[1]}-{$parts[0]} 12:00:00";
+                        } else {
+                            $created_at = date('Y-m-d H:i:s', strtotime($entry['datum']));
+                        }
+                    }
+                    if (empty($created_at)) {
+                        $created_at = current_time('mysql');
+                    }
+
+                    // Generate tracking token
+                    $tracking_token = bin2hex(random_bytes(16));
+
+                    // Insert into ppv_repairs - NO POINTS!
+                    $wpdb->insert("{$prefix}ppv_repairs", [
+                        'store_id'            => $store_id,
+                        'tracking_token'      => $tracking_token,
+                        'customer_name'       => $entry['name'] ?? 'Unbekannt',
+                        'customer_email'      => '', // erepairshop didn't have email
+                        'customer_phone'      => $telefon,
+                        'device_brand'        => $entry['marke'] ?? '',
+                        'device_model'        => $entry['modell'] ?? '',
+                        'device_imei'         => '',
+                        'device_pattern'      => $entry['pin'] ?? '',
+                        'problem_description' => $problem,
+                        'accessories'         => '[]',
+                        'status'              => $status,
+                        'notes'               => $notes,
+                        'user_id'             => null, // NO user = NO points
+                        'points_awarded'      => 0,    // NO points awarded
+                        'created_at'          => $created_at,
+                        'updated_at'          => $created_at,
+                    ]);
+
+                    if ($wpdb->insert_id) {
+                        $imported++;
+                    } else {
+                        $errors[] = "Insert failed for: " . ($entry['name'] ?? 'unknown');
+                    }
+
+                } catch (Exception $e) {
+                    $errors[] = $e->getMessage();
+                }
+            }
+
+            $message = "{$imported} Reparaturen importiert (ohne Punkte)";
+            if ($skipped > 0) {
+                $message .= ", {$skipped} übersprungen";
+            }
+
+            wp_send_json_success([
+                'message' => $message,
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'total_entries' => count($entries),
+            ]);
+
+        } catch (PDOException $e) {
+            wp_send_json_error(['message' => 'Datenbankfehler: ' . $e->getMessage()]);
+        }
+    }
 }

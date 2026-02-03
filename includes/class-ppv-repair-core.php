@@ -73,6 +73,7 @@ class PPV_Repair_Core {
             'ppv_repair_customers_list'  => ['PPV_Repair_Invoice', 'ajax_customers_list'],
             'ppv_repair_customer_delete' => ['PPV_Repair_Invoice', 'ajax_customer_delete'],
             'ppv_repair_billbee_import'  => ['PPV_Repair_Invoice', 'ajax_billbee_import'],
+            'ppv_repair_erepairshop_import' => ['PPV_Repair_Invoice', 'ajax_erepairshop_import'],
         ];
         foreach ($invoice_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
