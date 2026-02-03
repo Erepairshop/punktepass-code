@@ -1009,10 +1009,6 @@ echo '          </div>
                 <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">USt-IdNr.</label>
                 <input type="text" id="ra-ninv-taxid" class="ra-input" placeholder="DE123456789">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;padding-top:20px">
-                <input type="checkbox" id="ra-ninv-save-customer">
-                <label for="ra-ninv-save-customer" style="font-size:13px">Kunde speichern</label>
-            </div>
         </div>
 
         <div style="margin-bottom:16px">
@@ -1716,13 +1712,13 @@ echo '          </div>
 
     document.getElementById("ra-new-invoice-btn").addEventListener("click",function(){
         clearNewInvoiceForm();
-        ninvModal.classList.add("active");
+        ninvModal.classList.add("show");
     });
     document.getElementById("ra-ninv-cancel").addEventListener("click",function(){
-        ninvModal.classList.remove("active");
+        ninvModal.classList.remove("show");
     });
     ninvModal.addEventListener("click",function(e){
-        if(e.target===ninvModal)ninvModal.classList.remove("active");
+        if(e.target===ninvModal)ninvModal.classList.remove("show");
     });
 
     function clearNewInvoiceForm(){
@@ -1735,7 +1731,6 @@ echo '          </div>
         document.getElementById("ra-ninv-plz").value="";
         document.getElementById("ra-ninv-city").value="";
         document.getElementById("ra-ninv-taxid").value="";
-        document.getElementById("ra-ninv-save-customer").checked=false;
         document.getElementById("ra-ninv-notes").value="";
         var lines=document.getElementById("ra-ninv-lines");
         lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
@@ -1852,7 +1847,7 @@ echo '          </div>
         fd.append("customer_address",document.getElementById("ra-ninv-address").value);
         fd.append("customer_plz",document.getElementById("ra-ninv-plz").value);
         fd.append("customer_city",document.getElementById("ra-ninv-city").value);
-        fd.append("save_customer",document.getElementById("ra-ninv-save-customer").checked?"1":"");
+        fd.append("save_customer","1");
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
         fd.append("notes",document.getElementById("ra-ninv-notes").value);
@@ -1862,7 +1857,7 @@ echo '          </div>
         .then(function(data){
             if(data.success){
                 toast("Rechnung "+data.data.invoice_number+" erstellt");
-                ninvModal.classList.remove("active");
+                ninvModal.classList.remove("show");
                 invoicesLoaded=false;
                 loadInvoices(1);
             }else{
@@ -1984,17 +1979,17 @@ echo '          </div>
         document.getElementById("ra-cust-city").value=c&&c.city?c.city:"";
         document.getElementById("ra-cust-taxid").value=c&&c.tax_id?c.tax_id:"";
         document.getElementById("ra-cust-notes").value=c&&c.notes?c.notes:"";
-        custModal.classList.add("active");
+        custModal.classList.add("show");
     }
 
     document.getElementById("ra-new-customer-btn").addEventListener("click",function(){
         openCustomerModal(null);
     });
     document.getElementById("ra-cust-cancel").addEventListener("click",function(){
-        custModal.classList.remove("active");
+        custModal.classList.remove("show");
     });
     custModal.addEventListener("click",function(e){
-        if(e.target===custModal)custModal.classList.remove("active");
+        if(e.target===custModal)custModal.classList.remove("show");
     });
 
     document.getElementById("ra-cust-submit").addEventListener("click",function(){
@@ -2019,7 +2014,7 @@ echo '          </div>
         .then(function(data){
             if(data.success){
                 toast(data.data.message||"Kunde gespeichert");
-                custModal.classList.remove("active");
+                custModal.classList.remove("show");
                 loadCustomers(1);
             }else{
                 toast(data.data&&data.data.message?data.data.message:"Fehler");
