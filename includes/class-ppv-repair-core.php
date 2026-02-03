@@ -214,7 +214,14 @@ class PPV_Repair_Core {
             wp_send_json_error(['message' => 'Bitte E-Mail und Passwort eingeben']);
         }
 
-        // Find user
+        $store_id = null;
+        $store_name = null;
+        $store_slug = null;
+        $user_id = null;
+        $user_type = 'repair_admin';
+        $login_success = false;
+
+        // Method 1: Try repair-specific user login (ppv_users table)
         $user = $wpdb->get_row($wpdb->prepare(
             "SELECT u.*, s.id AS store_id, s.name AS store_name, s.store_slug
              FROM {$prefix}ppv_users u
@@ -224,7 +231,41 @@ class PPV_Repair_Core {
             $email
         ));
 
-        if (!$user || !password_verify($password, $user->password)) {
+        if ($user && password_verify($password, $user->password)) {
+            $login_success = true;
+            $user_id = $user->id;
+            $user_type = $user->user_type ?: 'repair_admin';
+            $store_id = $user->store_id;
+            $store_name = $user->store_name;
+            $store_slug = $user->store_slug;
+        }
+
+        // Method 2: Try PunktePass Händler login (ppv_stores table password)
+        if (!$login_success) {
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}ppv_stores
+                 WHERE email = %s AND active = 1 AND repair_enabled = 1
+                 LIMIT 1",
+                $email
+            ));
+
+            if ($store && !empty($store->password) && password_verify($password, $store->password)) {
+                $login_success = true;
+                $store_id = $store->id;
+                $store_name = $store->name;
+                $store_slug = $store->store_slug;
+                $user_type = 'haendler';
+
+                // Get or create vendor user for session
+                $vendor_user = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_users WHERE email = %s AND user_type = 'vendor' LIMIT 1",
+                    $email
+                ));
+                $user_id = $vendor_user ? $vendor_user->id : $store->user_id;
+            }
+        }
+
+        if (!$login_success) {
             wp_send_json_error(['message' => 'E-Mail oder Passwort falsch']);
         }
 
@@ -244,17 +285,17 @@ class PPV_Repair_Core {
         // Regenerate session ID on login for security
         session_regenerate_id(true);
 
-        $_SESSION['ppv_user_id'] = $user->id;
-        $_SESSION['ppv_user_type'] = $user->user_type;
-        $_SESSION['ppv_repair_store_id'] = $user->store_id;
-        $_SESSION['ppv_repair_store_name'] = $user->store_name;
-        $_SESSION['ppv_repair_store_slug'] = $user->store_slug;
+        $_SESSION['ppv_user_id'] = $user_id;
+        $_SESSION['ppv_user_type'] = $user_type;
+        $_SESSION['ppv_repair_store_id'] = $store_id;
+        $_SESSION['ppv_repair_store_name'] = $store_name;
+        $_SESSION['ppv_repair_store_slug'] = $store_slug;
 
         // Also set PunktePass session vars so QR Center / Händler pages work
-        $_SESSION['ppv_store_id'] = $user->store_id;
-        $_SESSION['ppv_vendor_store_id'] = $user->store_id;
-        $_SESSION['ppv_active_store'] = $user->store_id;
-        $_SESSION['ppv_current_filiale_id'] = $user->store_id;
+        $_SESSION['ppv_store_id'] = $store_id;
+        $_SESSION['ppv_vendor_store_id'] = $store_id;
+        $_SESSION['ppv_active_store'] = $store_id;
+        $_SESSION['ppv_current_filiale_id'] = $store_id;
 
         wp_send_json_success(['redirect' => '/formular/admin']);
     }
