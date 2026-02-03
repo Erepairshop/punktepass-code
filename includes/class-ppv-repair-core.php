@@ -61,6 +61,7 @@ class PPV_Repair_Core {
             'ppv_repair_invoice_update'  => ['PPV_Repair_Invoice', 'ajax_update_invoice'],
             'ppv_repair_invoice_delete'  => ['PPV_Repair_Invoice', 'ajax_delete_invoice'],
             'ppv_repair_invoice_create'  => ['PPV_Repair_Invoice', 'ajax_create_invoice'],
+            'ppv_repair_invoice_email'   => ['PPV_Repair_Invoice', 'ajax_send_email'],
             'ppv_repair_customer_search' => ['PPV_Repair_Invoice', 'ajax_customer_search'],
             'ppv_repair_customer_save'   => ['PPV_Repair_Invoice', 'ajax_customer_save'],
             'ppv_repair_customers_list'  => ['PPV_Repair_Invoice', 'ajax_customers_list'],
@@ -473,6 +474,35 @@ class PPV_Repair_Core {
             }
 
             update_option('ppv_repair_migration_version', '1.5');
+        }
+
+        // v1.6: Payment method on invoices + email template settings
+        if (version_compare($version, '1.6', '<')) {
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+
+            // Add payment_method column to invoices
+            $exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE 'payment_method'");
+            if (!$exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN payment_method VARCHAR(50) NULL AFTER paid_at");
+            }
+
+            // Add email template columns to stores
+            $email_columns = [
+                'repair_invoice_email_subject' => "VARCHAR(255) DEFAULT 'Ihre Rechnung {invoice_number}'",
+                'repair_invoice_email_body'    => "TEXT NULL",
+            ];
+            foreach ($email_columns as $col => $definition) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$stores_table} LIKE '{$col}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN {$col} {$definition}");
+                }
+            }
+
+            // Set default email body
+            $wpdb->query("UPDATE {$stores_table} SET repair_invoice_email_body = 'Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}' WHERE repair_invoice_email_body IS NULL OR repair_invoice_email_body = ''");
+
+            update_option('ppv_repair_migration_version', '1.6');
         }
     }
 
@@ -909,7 +939,9 @@ class PPV_Repair_Core {
         // Text fields
         $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'name', 'phone', 'address', 'plz', 'city',
                         'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type',
-                        'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product'];
+                        'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject'];
+        // Textarea fields (allow newlines)
+        $textarea_fields = ['repair_invoice_email_body'];
         // Integer fields
         $int_fields = ['repair_points_per_form', 'repair_required_points', 'repair_invoice_next_number'];
         // Decimal fields
@@ -920,6 +952,9 @@ class PPV_Repair_Core {
         $update = [];
         foreach ($text_fields as $f) {
             if (isset($_POST[$f])) $update[$f] = sanitize_text_field($_POST[$f]);
+        }
+        foreach ($textarea_fields as $f) {
+            if (isset($_POST[$f])) $update[$f] = sanitize_textarea_field($_POST[$f]);
         }
         foreach ($int_fields as $f) {
             if (isset($_POST[$f])) $update[$f] = max(0, intval($_POST[$f]));

@@ -342,8 +342,23 @@ class PPV_Repair_Invoice {
             $new_status = sanitize_text_field($_POST['status']);
             if (in_array($new_status, $valid)) {
                 $update['status'] = $new_status;
-                if ($new_status === 'paid') $update['paid_at'] = current_time('mysql');
+                if ($new_status === 'paid') {
+                    // Set paid_at if not already set or if provided
+                    if (!empty($_POST['paid_at'])) {
+                        $update['paid_at'] = sanitize_text_field($_POST['paid_at']);
+                    } elseif (empty($invoice->paid_at)) {
+                        $update['paid_at'] = current_time('mysql');
+                    }
+                    // Set payment method if provided
+                    if (!empty($_POST['payment_method'])) {
+                        $update['payment_method'] = sanitize_text_field($_POST['payment_method']);
+                    }
+                }
             }
+        }
+        // Allow updating payment_method independently
+        if (isset($_POST['payment_method']) && !isset($_POST['status'])) {
+            $update['payment_method'] = sanitize_text_field($_POST['payment_method']);
         }
         if (isset($_POST['subtotal'])) {
             $subtotal = max(0, round(floatval($_POST['subtotal']), 2));
@@ -906,6 +921,34 @@ class PPV_Repair_Invoice {
 
         $notes_section = $notes ? '<div style="margin-top:16px;"><strong style="font-size:12px;color:#6b7280;">Anmerkungen:</strong><p style="font-size:12px;color:#374151;margin-top:4px;">' . $notes . '</p></div>' : '';
 
+        // Payment info section (for paid invoices)
+        $payment_section = '';
+        if ($invoice->status === 'paid') {
+            $payment_method = esc_html($invoice->payment_method ?? '');
+            $paid_at = $invoice->paid_at ? date('d.m.Y', strtotime($invoice->paid_at)) : '';
+
+            $payment_method_labels = [
+                'bar' => 'Barzahlung',
+                'ec' => 'EC-Karte',
+                'kreditkarte' => 'Kreditkarte',
+                'ueberweisung' => 'Überweisung',
+                'paypal' => 'PayPal',
+            ];
+            $method_display = $payment_method_labels[$payment_method] ?? $payment_method;
+
+            if ($method_display || $paid_at) {
+                $payment_section = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:12px;color:#0369a1;">';
+                $payment_section .= '<strong style="color:#0c4a6e;">Bezahlt</strong>';
+                if ($paid_at) {
+                    $payment_section .= ' am ' . $paid_at;
+                }
+                if ($method_display) {
+                    $payment_section .= ' per ' . $method_display;
+                }
+                $payment_section .= '</div>';
+            }
+        }
+
         // Build line items rows
         $line_items = json_decode($invoice->line_items ?? '', true);
         $items_html = '';
@@ -965,6 +1008,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,san
 </table>
 ' . $reward_notice . '
 ' . $notes_section . '
+' . $payment_section . '
 <div class="inv-footer">
 ' . $company . ' &middot; ' . $addr . ' &middot; ' . $plz_city . '<br>
 E-Mail: ' . $email . ($tax ? ' &middot; USt-IdNr.: ' . $tax : '') . '<br><br>
@@ -972,5 +1016,100 @@ Powered by PunktePass &middot; punktepass.de
 </div>
 </div>
 </body></html>';
+    }
+
+    /**
+     * AJAX: Send invoice via email
+     */
+    public static function ajax_send_email() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $invoice_id = intval($_POST['invoice_id'] ?? 0);
+
+        $invoice = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_repair_invoices WHERE id = %d AND store_id = %d",
+            $invoice_id, $store_id
+        ));
+        if (!$invoice) wp_send_json_error(['message' => 'Rechnung nicht gefunden']);
+
+        if (empty($invoice->customer_email)) {
+            wp_send_json_error(['message' => 'Keine Kunden-E-Mail vorhanden']);
+        }
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        // Build PDF
+        $html = self::build_invoice_html($store, $invoice);
+        require_once(PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php');
+        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $pdf_content = $dompdf->output();
+
+        // Save PDF temporarily
+        $upload_dir = wp_upload_dir();
+        $pdf_path = $upload_dir['basedir'] . '/ppv-invoices/';
+        if (!file_exists($pdf_path)) {
+            wp_mkdir_p($pdf_path);
+        }
+        $pdf_file = $pdf_path . sanitize_file_name($invoice->invoice_number) . '.pdf';
+        file_put_contents($pdf_file, $pdf_content);
+
+        // Prepare email
+        $company_name = $store->repair_company_name ?: $store->name;
+        $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+
+        // Get email template from store settings
+        $subject = $store->repair_invoice_email_subject ?: 'Ihre Rechnung {invoice_number}';
+        $body = $store->repair_invoice_email_body ?: "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
+
+        // Replace placeholders
+        $replacements = [
+            '{customer_name}' => $invoice->customer_name,
+            '{invoice_number}' => $invoice->invoice_number,
+            '{invoice_date}' => $invoice_date,
+            '{total}' => number_format($invoice->total, 2, ',', '.'),
+            '{company_name}' => $company_name,
+        ];
+        $subject = str_replace(array_keys($replacements), array_values($replacements), $subject);
+        $body = str_replace(array_keys($replacements), array_values($replacements), $body);
+
+        // Send email
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            'From: ' . $company_name . ' <' . ($store->email ?: get_option('admin_email')) . '>',
+        ];
+
+        $sent = wp_mail(
+            $invoice->customer_email,
+            $subject,
+            $body,
+            $headers,
+            [$pdf_file]
+        );
+
+        // Clean up temp file
+        @unlink($pdf_file);
+
+        if ($sent) {
+            // Update invoice status to 'sent' if it was draft
+            if ($invoice->status === 'draft') {
+                $wpdb->update($prefix . 'ppv_repair_invoices', ['status' => 'sent'], ['id' => $invoice_id]);
+            }
+            wp_send_json_success(['message' => 'Rechnung wurde an ' . $invoice->customer_email . ' gesendet']);
+        } else {
+            wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
+        }
     }
 }

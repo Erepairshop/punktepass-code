@@ -202,6 +202,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon']];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
+        // Email template settings
+        $email_subject = esc_attr($store->repair_invoice_email_subject ?? 'Ihre Rechnung {invoice_number}');
+        $email_body_default = "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
+        $email_body = esc_textarea($store->repair_invoice_email_body ?? $email_body_default);
+
         // Build repairs HTML
         $repairs_html = '';
         if (empty($recent)) {
@@ -743,6 +748,20 @@ echo '          </div>
                 </div>
             </div>
 
+            <hr class="ra-section-divider">
+
+            <!-- Email Template Settings -->
+            <div class="ra-section-title"><i class="ri-mail-line"></i> E-Mail Vorlage</div>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Wird verwendet wenn Sie Rechnungen per E-Mail versenden. Platzhalter: {customer_name}, {invoice_number}, {invoice_date}, {total}, {company_name}</p>
+            <div class="field" style="margin-bottom:12px">
+                <label>Betreff</label>
+                <input type="text" name="repair_invoice_email_subject" value="' . $email_subject . '" placeholder="Ihre Rechnung {invoice_number}">
+            </div>
+            <div class="field">
+                <label>Nachricht</label>
+                <textarea name="repair_invoice_email_body" rows="6" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">' . $email_body . '</textarea>
+            </div>
+
             <div class="ra-settings-save">
                 <button type="submit" class="ra-btn ra-btn-primary">
                     <i class="ri-save-line"></i> Speichern
@@ -1203,6 +1222,40 @@ echo '          </div>
     </div>
 </div>';
 
+        // Payment Method Modal
+        echo '<div class="ra-modal-overlay" id="ra-payment-modal">
+    <div class="ra-modal" style="max-width:400px">
+        <h3><i class="ri-bank-card-line"></i> Zahlung erfassen</h3>
+        <p class="ra-modal-sub">Zahlungsart und Datum angeben</p>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsart</label>
+            <select id="ra-payment-method" class="ra-input" style="width:100%">
+                <option value="">-- Bitte w&auml;hlen --</option>
+                <option value="bar">Barzahlung</option>
+                <option value="ec">EC-Karte</option>
+                <option value="kreditkarte">Kreditkarte</option>
+                <option value="ueberweisung">&Uuml;berweisung</option>
+                <option value="paypal">PayPal</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom:20px">
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsdatum</label>
+            <input type="date" id="ra-payment-date" class="ra-input" style="width:100%">
+        </div>
+
+        <input type="hidden" id="ra-payment-inv-id" value="">
+
+        <div style="display:flex;gap:10px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-payment-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-payment-submit">
+                <i class="ri-check-line"></i> Best&auml;tigen
+            </button>
+        </div>
+    </div>
+</div>';
+
         // Footer
         echo '<div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;">
         <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">Powered by <a href="https://punktepass.de" target="_blank" style="color:#667eea;">PunktePass</a></div>
@@ -1481,6 +1534,39 @@ echo '          </div>
         invoiceEditId=null;
     }
 
+    // Payment modal handling
+    var paymentOnConfirm=null;
+    var paymentOnCancel=null;
+    function showPaymentModal(invId,onConfirm,onCancel){
+        paymentOnConfirm=onConfirm;
+        paymentOnCancel=onCancel;
+        document.getElementById("ra-payment-inv-id").value=invId;
+        document.getElementById("ra-payment-method").value="";
+        document.getElementById("ra-payment-date").value=new Date().toISOString().split("T")[0];
+        document.getElementById("ra-payment-modal").classList.add("show");
+    }
+    function hidePaymentModal(){
+        document.getElementById("ra-payment-modal").classList.remove("show");
+        paymentOnConfirm=null;
+        paymentOnCancel=null;
+    }
+    document.getElementById("ra-payment-cancel").addEventListener("click",function(){
+        if(paymentOnCancel)paymentOnCancel();
+        hidePaymentModal();
+    });
+    document.getElementById("ra-payment-submit").addEventListener("click",function(){
+        var method=document.getElementById("ra-payment-method").value;
+        var paidAt=document.getElementById("ra-payment-date").value;
+        if(paymentOnConfirm)paymentOnConfirm(method,paidAt);
+        hidePaymentModal();
+    });
+    document.getElementById("ra-payment-modal").addEventListener("click",function(e){
+        if(e.target===this){
+            if(paymentOnCancel)paymentOnCancel();
+            hidePaymentModal();
+        }
+    });
+
     function recalcInvoiceModal(){
         var amounts=document.querySelectorAll("#ra-inv-lines .ra-inv-line-amount");
         var brutto=0;
@@ -1678,8 +1764,9 @@ echo '          </div>
                         \'<td data-label="Status"><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
                         \'<td data-label=""><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
+                            \'<button class="ra-inv-btn ra-inv-btn-email" data-inv-id="\'+inv.id+\'" data-customer-email="\'+esc(inv.customer_email||"")+\'" title="E-Mail senden"><i class="ri-mail-send-line"></i></button>\'+
                             \'<button class="ra-inv-btn ra-inv-btn-edit" data-invoice=\\\'\'+JSON.stringify(inv).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
-                            \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
+                            \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" data-old-status="\'+inv.status+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
                                 \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>Entwurf</option>\'+
                                 \'<option value="sent" \'+(inv.status==="sent"?"selected":"")+\'>Gesendet</option>\'+
                                 \'<option value="paid" \'+(inv.status==="paid"?"selected":"")+\'>Bezahlt</option>\'+
@@ -1693,14 +1780,41 @@ echo '          </div>
                 tbody.querySelectorAll(".ra-inv-status-sel").forEach(function(sel){
                     sel.addEventListener("change",function(){
                         var iid=this.getAttribute("data-inv-id"),ns=this.value;
-                        var fd2=new FormData();
-                        fd2.append("action","ppv_repair_invoice_update");
-                        fd2.append("nonce",NONCE);
-                        fd2.append("invoice_id",iid);
-                        fd2.append("status",ns);
-                        fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
-                        .then(function(r){return r.json()})
-                        .then(function(res){toast(res.success?"Status aktualisiert":"Fehler")});
+                        var oldStatus=this.getAttribute("data-old-status");
+                        var selEl=this;
+                        if(ns==="paid"&&oldStatus!=="paid"){
+                            // Show payment method modal
+                            showPaymentModal(iid,function(paymentMethod,paidAt){
+                                var fd2=new FormData();
+                                fd2.append("action","ppv_repair_invoice_update");
+                                fd2.append("nonce",NONCE);
+                                fd2.append("invoice_id",iid);
+                                fd2.append("status",ns);
+                                if(paymentMethod)fd2.append("payment_method",paymentMethod);
+                                if(paidAt)fd2.append("paid_at",paidAt);
+                                fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                                .then(function(r){return r.json()})
+                                .then(function(res){
+                                    toast(res.success?"Bezahlt markiert":"Fehler");
+                                    if(res.success){selEl.setAttribute("data-old-status","paid");invoicesLoaded=false;loadInvoices(1)}
+                                });
+                            },function(){
+                                // Cancelled - revert select
+                                selEl.value=oldStatus;
+                            });
+                        }else{
+                            var fd2=new FormData();
+                            fd2.append("action","ppv_repair_invoice_update");
+                            fd2.append("nonce",NONCE);
+                            fd2.append("invoice_id",iid);
+                            fd2.append("status",ns);
+                            fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                            .then(function(r){return r.json()})
+                            .then(function(res){
+                                toast(res.success?"Status aktualisiert":"Fehler");
+                                if(res.success)selEl.setAttribute("data-old-status",ns);
+                            });
+                        }
                     });
                 });
                 // Bind edit
@@ -1725,6 +1839,29 @@ echo '          </div>
                         .then(function(res){
                             if(res.success){row.remove();toast("Rechnung gel\u00f6scht");invoicesLoaded=false;loadInvoices(1)}
                             else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+                        });
+                    });
+                });
+                // Bind email send
+                tbody.querySelectorAll(".ra-inv-btn-email").forEach(function(btn){
+                    btn.addEventListener("click",function(){
+                        var iid=this.getAttribute("data-inv-id");
+                        var email=this.getAttribute("data-customer-email");
+                        if(!email){toast("Keine E-Mail-Adresse vorhanden");return;}
+                        if(!confirm("Rechnung per E-Mail an "+email+" senden?"))return;
+                        btn.disabled=true;
+                        btn.innerHTML='<i class="ri-loader-4-line ri-spin"></i>';
+                        var fd2=new FormData();
+                        fd2.append("action","ppv_repair_invoice_email");
+                        fd2.append("nonce",NONCE);
+                        fd2.append("invoice_id",iid);
+                        fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                        .then(function(r){return r.json()})
+                        .then(function(res){
+                            btn.disabled=false;
+                            btn.innerHTML='<i class="ri-mail-send-line"></i>';
+                            if(res.success){toast("E-Mail erfolgreich gesendet!");invoicesLoaded=false;loadInvoices(1)}
+                            else{toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden")}
                         });
                     });
                 });
