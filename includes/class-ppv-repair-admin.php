@@ -328,6 +328,13 @@ a:hover{text-decoration:underline}
 .ra-status-done{background:#d1fae5;color:#065f46}
 .ra-status-delivered{background:#e5e7eb;color:#374151}
 .ra-status-cancelled{background:#fecaca;color:#991b1b}
+/* Card border colors by status */
+.ra-repair-card[data-status="new"]{border-left:4px solid #3b82f6}
+.ra-repair-card[data-status="in_progress"]{border-left:4px solid #f59e0b}
+.ra-repair-card[data-status="waiting_parts"]{border-left:4px solid #ec4899}
+.ra-repair-card[data-status="done"]{border-left:4px solid #10b981}
+.ra-repair-card[data-status="delivered"]{border-left:4px solid #6b7280}
+.ra-repair-card[data-status="cancelled"]{border-left:4px solid #ef4444}
 .ra-repair-body{margin-bottom:12px}
 .ra-repair-customer{margin-bottom:6px}
 .ra-repair-customer strong{font-size:15px;color:#111827;display:block}
@@ -1528,6 +1535,7 @@ echo '          </div>
             delivered:["Abgeholt","ra-status-delivered"],
             cancelled:["Storniert","ra-status-cancelled"]
         };
+        card.setAttribute("data-status",status);
         var badge=card.querySelector(".ra-status");
         if(badge&&map[status]){
             badge.className="ra-status "+map[status][1];
@@ -1677,7 +1685,7 @@ echo '          </div>
         }
         var phone=r.customer_phone?(" &middot; "+esc(r.customer_phone)):"";
         var deviceHtml=device?\'<div class="ra-repair-device"><i class="ri-smartphone-line"></i> \'+esc(device)+\'</div>\':"";
-        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'">\'+
+        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
                 \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span></div>\'+
@@ -3036,6 +3044,7 @@ echo '          </div>
         }
 
         return '<div class="ra-repair-card" data-id="' . intval($r->id) . '"'
+            . ' data-status="' . esc_attr($r->status) . '"'
             . ' data-name="' . esc_attr($r->customer_name) . '"'
             . ' data-email="' . esc_attr($r->customer_email) . '"'
             . ' data-phone="' . esc_attr($r->customer_phone) . '"'
