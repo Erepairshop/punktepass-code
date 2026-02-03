@@ -858,6 +858,9 @@ echo '          </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-csv-btn">
                 <i class="ri-file-excel-2-line"></i> CSV Export
             </button>
+            <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-billbee-import-btn" style="margin-left:auto;background:#fff7ed;color:#ea580c;border-color:#fed7aa">
+                <i class="ri-upload-cloud-line"></i> Billbee Import
+            </button>
         </div>';
 
         // Summary cards
@@ -1391,6 +1394,47 @@ echo '          </div>
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-payment-cancel">Abbrechen</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-payment-submit">
                 <i class="ri-check-line"></i> Best&auml;tigen
+            </button>
+        </div>
+    </div>
+</div>';
+
+        // Billbee Import Modal
+        echo '<div class="ra-modal-overlay" id="ra-billbee-modal">
+    <div class="ra-modal" style="max-width:500px">
+        <h3 style="color:#ea580c"><i class="ri-upload-cloud-line"></i> Billbee Import</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:20px">Importieren Sie Ihre Rechnungen aus Billbee. Exportieren Sie in Billbee als <strong>XML Datei</strong> und laden Sie diese hier hoch.</p>
+
+        <div style="border:2px dashed #fed7aa;border-radius:12px;padding:32px 20px;text-align:center;background:#fffbeb;margin-bottom:20px" id="ra-billbee-dropzone">
+            <i class="ri-file-upload-line" style="font-size:48px;color:#f97316;margin-bottom:12px;display:block"></i>
+            <p style="color:#92400e;font-weight:500;margin:0 0 8px">XML-Datei hier ablegen</p>
+            <p style="color:#a16207;font-size:12px;margin:0 0 12px">oder klicken zum Auswählen</p>
+            <input type="file" id="ra-billbee-file" accept=".xml" style="display:none">
+            <button type="button" class="ra-btn ra-btn-sm" style="background:#f97316;color:#fff" id="ra-billbee-select">Datei auswählen</button>
+        </div>
+
+        <div id="ra-billbee-selected" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:20px">
+            <div style="display:flex;align-items:center;gap:10px">
+                <i class="ri-file-text-line" style="font-size:24px;color:#16a34a"></i>
+                <div style="flex:1">
+                    <div style="font-weight:500;color:#166534" id="ra-billbee-filename">datei.xml</div>
+                    <div style="font-size:12px;color:#6b7280" id="ra-billbee-filesize">0 KB</div>
+                </div>
+                <button type="button" class="ra-btn ra-btn-sm" style="background:#fee2e2;color:#dc2626" id="ra-billbee-remove"><i class="ri-close-line"></i></button>
+            </div>
+        </div>
+
+        <div id="ra-billbee-progress" style="display:none;margin-bottom:20px">
+            <div style="display:flex;align-items:center;gap:10px;color:#ea580c">
+                <i class="ri-loader-4-line ri-spin" style="font-size:20px"></i>
+                <span>Import läuft...</span>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:10px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-billbee-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn" style="flex:2;background:#ea580c;color:#fff" id="ra-billbee-submit" disabled>
+                <i class="ri-upload-2-line"></i> Importieren
             </button>
         </div>
     </div>
@@ -2714,6 +2758,95 @@ echo '          </div>
             }
         })
         .catch(function(){toast("Verbindungsfehler")});
+    });
+
+    /* ===== Billbee Import ===== */
+    var bbModal=document.getElementById("ra-billbee-modal"),
+        bbFile=document.getElementById("ra-billbee-file"),
+        bbDropzone=document.getElementById("ra-billbee-dropzone"),
+        bbSelected=document.getElementById("ra-billbee-selected"),
+        bbFilename=document.getElementById("ra-billbee-filename"),
+        bbFilesize=document.getElementById("ra-billbee-filesize"),
+        bbProgress=document.getElementById("ra-billbee-progress"),
+        bbSubmit=document.getElementById("ra-billbee-submit"),
+        selectedFile=null;
+
+    document.getElementById("ra-billbee-import-btn").addEventListener("click",function(){
+        bbModal.classList.add("show");
+        resetBillbeeForm();
+    });
+    document.getElementById("ra-billbee-cancel").addEventListener("click",function(){
+        bbModal.classList.remove("show");
+    });
+    bbModal.addEventListener("click",function(e){if(e.target===bbModal)bbModal.classList.remove("show")});
+
+    document.getElementById("ra-billbee-select").addEventListener("click",function(){bbFile.click()});
+    bbDropzone.addEventListener("click",function(e){if(e.target===bbDropzone)bbFile.click()});
+
+    bbDropzone.addEventListener("dragover",function(e){e.preventDefault();bbDropzone.style.borderColor="#f97316"});
+    bbDropzone.addEventListener("dragleave",function(){bbDropzone.style.borderColor="#fed7aa"});
+    bbDropzone.addEventListener("drop",function(e){
+        e.preventDefault();
+        bbDropzone.style.borderColor="#fed7aa";
+        if(e.dataTransfer.files.length)handleFileSelect(e.dataTransfer.files[0]);
+    });
+
+    bbFile.addEventListener("change",function(){if(this.files.length)handleFileSelect(this.files[0])});
+
+    function handleFileSelect(file){
+        if(!file.name.toLowerCase().endsWith(".xml")){
+            toast("Nur XML-Dateien erlaubt");
+            return;
+        }
+        selectedFile=file;
+        bbFilename.textContent=file.name;
+        bbFilesize.textContent=(file.size/1024).toFixed(1)+" KB";
+        bbDropzone.style.display="none";
+        bbSelected.style.display="block";
+        bbSubmit.disabled=false;
+    }
+
+    document.getElementById("ra-billbee-remove").addEventListener("click",function(){
+        resetBillbeeForm();
+    });
+
+    function resetBillbeeForm(){
+        selectedFile=null;
+        bbFile.value="";
+        bbDropzone.style.display="block";
+        bbSelected.style.display="none";
+        bbProgress.style.display="none";
+        bbSubmit.disabled=true;
+    }
+
+    bbSubmit.addEventListener("click",function(){
+        if(!selectedFile)return;
+        bbProgress.style.display="block";
+        bbSubmit.disabled=true;
+
+        var fd=new FormData();
+        fd.append("action","ppv_repair_billbee_import");
+        fd.append("nonce",NONCE);
+        fd.append("billbee_xml",selectedFile);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            bbProgress.style.display="none";
+            if(data.success){
+                toast(data.data.message||"Import erfolgreich");
+                bbModal.classList.remove("show");
+                loadInvoices(1);
+            }else{
+                toast(data.data&&data.data.message?data.data.message:"Import fehlgeschlagen");
+                bbSubmit.disabled=false;
+            }
+        })
+        .catch(function(){
+            bbProgress.style.display="none";
+            toast("Verbindungsfehler");
+            bbSubmit.disabled=false;
+        });
     });
 
 })();

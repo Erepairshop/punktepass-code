@@ -1258,4 +1258,190 @@ Powered by PunktePass &middot; punktepass.de
             wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
         }
     }
+
+    /**
+     * AJAX: Import invoices from Billbee XML export
+     */
+    public static function ajax_billbee_import() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        if (empty($_FILES['billbee_xml']) || $_FILES['billbee_xml']['error'] !== UPLOAD_ERR_OK) {
+            wp_send_json_error(['message' => 'Keine Datei hochgeladen']);
+        }
+
+        $file = $_FILES['billbee_xml'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'xml') {
+            wp_send_json_error(['message' => 'Nur XML-Dateien erlaubt']);
+        }
+
+        $xml_content = file_get_contents($file['tmp_name']);
+        if (empty($xml_content)) {
+            wp_send_json_error(['message' => 'Datei ist leer']);
+        }
+
+        // Parse XML - handle Windows-1252 encoding
+        $xml_content = preg_replace('/encoding="Windows-1252"/', 'encoding="UTF-8"', $xml_content);
+        $xml_content = mb_convert_encoding($xml_content, 'UTF-8', 'Windows-1252');
+
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($xml_content);
+        if ($xml === false) {
+            $errors = libxml_get_errors();
+            wp_send_json_error(['message' => 'XML-Fehler: ' . ($errors[0]->message ?? 'Unbekannt')]);
+        }
+
+        // Register namespace
+        $xml->registerXPathNamespace('ns', 'http://tempuri.org/export_jk.xsd');
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        $imported = 0;
+        $skipped = 0;
+        $errors = [];
+
+        // Get orders from XML
+        $orders = $xml->xpath('//ns:Order') ?: $xml->xpath('//Order') ?: [];
+        if (empty($orders) && isset($xml->Orders->Order)) {
+            $orders = $xml->Orders->Order;
+        }
+
+        foreach ($orders as $order) {
+            try {
+                // Extract invoice number
+                $invoice_number = (string)($order->InvoiceNumber ?? '');
+                if (empty($invoice_number)) {
+                    $invoice_number = 'BB-' . (string)($order->Identity['InternalId'] ?? uniqid());
+                }
+
+                // Check if already imported
+                $exists = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND invoice_number = %s",
+                    $store_id, $invoice_number
+                ));
+                if ($exists) {
+                    $skipped++;
+                    continue;
+                }
+
+                // Extract customer info
+                $customer_name = (string)($order->Customer->Name ?? $order->BillAddress->Company ?? 'Unbekannt');
+                $customer_email = (string)($order->Customer->Email ?? '');
+                $customer_company = (string)($order->BillAddress->Company ?? '');
+                $customer_address = trim((string)($order->BillAddress->Street ?? '') . ' ' . (string)($order->BillAddress->Housenumber ?? ''));
+                $customer_plz = (string)($order->BillAddress->Zip ?? '');
+                $customer_city = (string)($order->BillAddress->City ?? '');
+
+                // Extract dates
+                $bill_date = (string)($order->BillDate ?? $order->OrderDate ?? date('Y-m-d'));
+                $pay_date = (string)($order->PayDate ?? '');
+
+                // Extract totals
+                $total = floatval($order->SumOfDetails ?? 0);
+                $is_negative = $total < 0;
+                $total = abs($total);
+
+                // Build line items
+                $line_items = [];
+                $details = $order->Details->Detail ?? [];
+                foreach ($details as $detail) {
+                    $desc = (string)($detail->Article->Text ?? 'Artikel');
+                    $amount = abs(floatval($detail->Amount ?? 1));
+                    $unit_price = floatval($detail->UnitPrice ?? 0);
+                    $line_items[] = [
+                        'description' => $desc,
+                        'quantity' => $amount,
+                        'amount' => $unit_price * $amount,
+                    ];
+                }
+
+                // Calculate VAT (assume 19% included in brutto)
+                $vat_rate = 19.0;
+                $net_amount = round($total / 1.19, 2);
+                $vat_amount = round($total - $net_amount, 2);
+
+                // Determine status
+                $status = 'paid';
+                if ($is_negative) {
+                    $status = 'cancelled';
+                } elseif (empty($pay_date)) {
+                    $status = 'sent';
+                }
+
+                // Platform info for notes
+                $platform = (string)($order->Identity['Platform'] ?? '');
+                $platform_id = (string)($order->Identity['PlatformId'] ?? '');
+                $notes = $platform ? "Import: {$platform}" . ($platform_id ? " #{$platform_id}" : '') : 'Billbee Import';
+
+                // Insert invoice
+                $wpdb->insert("{$prefix}ppv_repair_invoices", [
+                    'store_id' => $store_id,
+                    'repair_id' => null,
+                    'invoice_number' => $invoice_number,
+                    'customer_name' => $customer_name,
+                    'customer_email' => $customer_email,
+                    'customer_phone' => '',
+                    'customer_company' => $customer_company,
+                    'customer_address' => $customer_address,
+                    'customer_plz' => $customer_plz,
+                    'customer_city' => $customer_city,
+                    'device_info' => '',
+                    'description' => $notes,
+                    'line_items' => !empty($line_items) ? wp_json_encode($line_items) : null,
+                    'subtotal' => $total,
+                    'discount_type' => 'none',
+                    'discount_value' => 0,
+                    'discount_description' => '',
+                    'net_amount' => $net_amount,
+                    'vat_rate' => $vat_rate,
+                    'vat_amount' => $vat_amount,
+                    'total' => $total,
+                    'is_kleinunternehmer' => 0,
+                    'punktepass_reward_applied' => 0,
+                    'points_used' => 0,
+                    'status' => $status,
+                    'payment_method' => strtolower((string)($order->PaymentTypeName ?? '')),
+                    'paid_at' => !empty($pay_date) ? $pay_date : null,
+                    'notes' => $notes,
+                    'doc_type' => 'rechnung',
+                    'created_at' => $bill_date . ' 00:00:00',
+                ]);
+
+                if ($wpdb->insert_id) {
+                    $imported++;
+                } else {
+                    $errors[] = "Fehler bei {$invoice_number}";
+                }
+
+            } catch (Exception $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
+
+        $message = "{$imported} Rechnungen importiert";
+        if ($skipped > 0) {
+            $message .= ", {$skipped} übersprungen (bereits vorhanden)";
+        }
+        if (!empty($errors)) {
+            $message .= ". Fehler: " . implode(', ', array_slice($errors, 0, 3));
+        }
+
+        wp_send_json_success([
+            'message' => $message,
+            'imported' => $imported,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ]);
+    }
 }
