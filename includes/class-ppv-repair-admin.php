@@ -2884,6 +2884,118 @@ echo '          </div>
         });
     }
 
+    /* ===== Repair Comments ===== */
+    document.addEventListener("click",function(e){
+        // Toggle comments
+        if(e.target.closest(".ra-btn-comments-toggle")){
+            var btn=e.target.closest(".ra-btn-comments-toggle");
+            var rid=btn.getAttribute("data-repair-id");
+            var container=document.querySelector(\'.ra-comments-container[data-repair-id="\'+rid+\'"]\');
+            if(!container)return;
+            var isOpen=container.style.display!=="none";
+            if(isOpen){
+                container.style.display="none";
+                btn.classList.remove("active");
+            }else{
+                container.style.display="block";
+                btn.classList.add("active");
+                loadComments(rid,container);
+            }
+        }
+        // Delete comment
+        if(e.target.closest(".ra-comment-delete")){
+            var btn=e.target.closest(".ra-comment-delete");
+            var cid=btn.getAttribute("data-comment-id");
+            if(!confirm("Kommentar wirklich löschen?"))return;
+            var fd=new FormData();
+            fd.append("action","ppv_repair_comment_delete");
+            fd.append("nonce",NONCE);
+            fd.append("comment_id",cid);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success){
+                    btn.closest(".ra-comment-item").remove();
+                    toast("Kommentar gelöscht");
+                }else{
+                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                }
+            });
+        }
+        // Submit comment
+        if(e.target.closest(".ra-comment-submit")){
+            var btn=e.target.closest(".ra-comment-submit");
+            var container=btn.closest(".ra-comments-container");
+            var rid=container.getAttribute("data-repair-id");
+            var input=container.querySelector(".ra-comment-input");
+            var text=input.value.trim();
+            if(!text)return;
+            btn.disabled=true;
+            var fd=new FormData();
+            fd.append("action","ppv_repair_comment_add");
+            fd.append("nonce",NONCE);
+            fd.append("repair_id",rid);
+            fd.append("comment",text);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success){
+                    input.value="";
+                    loadComments(rid,container);
+                    toast("Kommentar hinzugefügt");
+                }else{
+                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                }
+            })
+            .finally(function(){btn.disabled=false});
+        }
+    });
+
+    // Enter key to submit comment
+    document.addEventListener("keypress",function(e){
+        if(e.key==="Enter"&&e.target.classList.contains("ra-comment-input")){
+            e.preventDefault();
+            var container=e.target.closest(".ra-comments-container");
+            container.querySelector(".ra-comment-submit").click();
+        }
+    });
+
+    function loadComments(rid,container){
+        var list=container.querySelector(".ra-comments-list");
+        list.innerHTML=\'<div style="text-align:center;padding:10px;color:#9ca3af"><i class="ri-loader-4-line ri-spin"></i></div>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_comments_list");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",rid);
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success&&data.data.comments){
+                if(data.data.comments.length===0){
+                    list.innerHTML=\'<div class="ra-comments-empty">Noch keine Kommentare</div>\';
+                }else{
+                    var html="";
+                    data.data.comments.forEach(function(c){
+                        html+=\'<div class="ra-comment-item">\'+
+                            \'<button class="ra-comment-delete" data-comment-id="\'+c.id+\'"><i class="ri-close-line"></i></button>\'+
+                            \'<div class="ra-comment-text">\'+escapeHtml(c.comment)+\'</div>\'+
+                            \'<div class="ra-comment-meta">\'+c.created_at+\'</div>\'+
+                        \'</div>\';
+                    });
+                    list.innerHTML=html;
+                }
+            }else{
+                list.innerHTML=\'<div class="ra-comments-empty">Fehler beim Laden</div>\';
+            }
+        });
+    }
+
+    function escapeHtml(t){
+        var d=document.createElement("div");
+        d.textContent=t;
+        return d.innerHTML;
+    }
+
 })();
 </script>
 </body>
@@ -2939,6 +3051,16 @@ echo '          </div>
                 . $device_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . '</div>'
+            . '</div>'
+            . '<div class="ra-repair-comments-section">'
+                . '<button class="ra-btn-comments-toggle" data-repair-id="' . intval($r->id) . '"><i class="ri-chat-3-line"></i> Kommentare</button>'
+                . '<div class="ra-comments-container" style="display:none" data-repair-id="' . intval($r->id) . '">'
+                    . '<div class="ra-comments-list"></div>'
+                    . '<div class="ra-comment-add">'
+                        . '<input type="text" class="ra-comment-input" placeholder="Kommentar hinzuf&uuml;gen...">'
+                        . '<button class="ra-comment-submit"><i class="ri-send-plane-fill"></i></button>'
+                    . '</div>'
+                . '</div>'
             . '</div>'
             . '<div class="ra-repair-actions">'
                 . '<button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button>'

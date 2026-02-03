@@ -35,6 +35,14 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
         add_action('wp_ajax_nopriv_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
 
+        // AJAX: repair comments
+        add_action('wp_ajax_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
+        add_action('wp_ajax_nopriv_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
+        add_action('wp_ajax_ppv_repair_comment_delete', [__CLASS__, 'ajax_comment_delete']);
+        add_action('wp_ajax_nopriv_ppv_repair_comment_delete', [__CLASS__, 'ajax_comment_delete']);
+        add_action('wp_ajax_ppv_repair_comments_list', [__CLASS__, 'ajax_comments_list']);
+        add_action('wp_ajax_nopriv_ppv_repair_comments_list', [__CLASS__, 'ajax_comments_list']);
+
         // AJAX: repair registration
         add_action('wp_ajax_nopriv_ppv_repair_register', [__CLASS__, 'ajax_register']);
         add_action('wp_ajax_ppv_repair_register', [__CLASS__, 'ajax_register']);
@@ -611,6 +619,26 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '1.8');
         }
+
+        // v1.9: Comments system for repairs
+        if (version_compare($version, '1.9', '<')) {
+            $charset = $wpdb->get_charset_collate();
+            $comments_table = $wpdb->prefix . 'ppv_repair_comments';
+
+            $wpdb->query("CREATE TABLE IF NOT EXISTS {$comments_table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                repair_id BIGINT(20) UNSIGNED NOT NULL,
+                store_id BIGINT(20) UNSIGNED NOT NULL,
+                comment TEXT NOT NULL,
+                created_by VARCHAR(100) NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                INDEX idx_repair_id (repair_id),
+                INDEX idx_store_id (store_id)
+            ) {$charset}");
+
+            update_option('ppv_repair_migration_version', '1.9');
+        }
     }
 
     /** ============================================================
@@ -911,6 +939,122 @@ class PPV_Repair_Core {
         }
 
         wp_send_json_success(['found' => false]);
+    }
+
+    /** ============================================================
+     * AJAX: Add comment to repair
+     * ============================================================ */
+    public static function ajax_comment_add() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        $comment = sanitize_textarea_field($_POST['comment'] ?? '');
+
+        if (!$repair_id || empty($comment)) {
+            wp_send_json_error(['message' => 'Repair ID und Kommentar erforderlich']);
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Verify repair belongs to this store
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$prefix}ppv_repairs WHERE id = %d AND store_id = %d",
+            $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        // Insert comment
+        $wpdb->insert("{$prefix}ppv_repair_comments", [
+            'repair_id'  => $repair_id,
+            'store_id'   => $store_id,
+            'comment'    => $comment,
+            'created_by' => $_SESSION['ppv_repair_store_name'] ?? 'Admin',
+            'created_at' => current_time('mysql'),
+        ]);
+
+        $comment_id = $wpdb->insert_id;
+        if (!$comment_id) wp_send_json_error(['message' => 'Fehler beim Speichern']);
+
+        wp_send_json_success([
+            'comment_id' => $comment_id,
+            'comment' => $comment,
+            'created_at' => current_time('d.m.Y H:i'),
+            'message' => 'Kommentar hinzugefügt',
+        ]);
+    }
+
+    /** ============================================================
+     * AJAX: Delete comment
+     * ============================================================ */
+    public static function ajax_comment_delete() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $comment_id = intval($_POST['comment_id'] ?? 0);
+        if (!$comment_id) wp_send_json_error(['message' => 'Comment ID erforderlich']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Delete comment (only if belongs to this store)
+        $deleted = $wpdb->delete("{$prefix}ppv_repair_comments", [
+            'id' => $comment_id,
+            'store_id' => $store_id,
+        ]);
+
+        if ($deleted) {
+            wp_send_json_success(['message' => 'Kommentar gelöscht']);
+        } else {
+            wp_send_json_error(['message' => 'Kommentar nicht gefunden']);
+        }
+    }
+
+    /** ============================================================
+     * AJAX: List comments for a repair
+     * ============================================================ */
+    public static function ajax_comments_list() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Repair ID erforderlich']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $comments = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, comment, created_by, created_at
+             FROM {$prefix}ppv_repair_comments
+             WHERE repair_id = %d AND store_id = %d
+             ORDER BY created_at ASC",
+            $repair_id, $store_id
+        ));
+
+        $result = [];
+        foreach ($comments as $c) {
+            $result[] = [
+                'id' => $c->id,
+                'comment' => $c->comment,
+                'created_by' => $c->created_by,
+                'created_at' => date('d.m.Y H:i', strtotime($c->created_at)),
+            ];
+        }
+
+        wp_send_json_success(['comments' => $result]);
     }
 
     /** ============================================================

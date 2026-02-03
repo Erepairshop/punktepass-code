@@ -1157,6 +1157,109 @@
     cursor: pointer;
 }
 
+/* Repair comments */
+.ra-repair-comments-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e5e7eb;
+}
+.ra-btn-comments-toggle {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+}
+.ra-btn-comments-toggle:hover {
+    color: var(--repair-accent);
+}
+.ra-btn-comments-toggle.active {
+    color: var(--repair-accent);
+}
+.ra-comments-container {
+    margin-top: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px;
+}
+.ra-comments-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+.ra-comment-item {
+    background: #fff;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    position: relative;
+    border: 1px solid #e5e7eb;
+}
+.ra-comment-item:last-child {
+    margin-bottom: 0;
+}
+.ra-comment-text {
+    color: #374151;
+    line-height: 1.4;
+}
+.ra-comment-meta {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+.ra-comment-delete {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+}
+.ra-comment-delete:hover {
+    color: #ef4444;
+}
+.ra-comment-add {
+    display: flex;
+    gap: 6px;
+}
+.ra-comment-input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+}
+.ra-comment-input:focus {
+    outline: none;
+    border-color: var(--repair-accent);
+}
+.ra-comment-submit {
+    background: var(--repair-accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.ra-comment-submit:hover {
+    opacity: 0.9;
+}
+.ra-comments-empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 12px 0;
+}
+
 /* Empty state */
 .ra-empty {
     text-align: center;
