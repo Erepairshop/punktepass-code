@@ -1110,6 +1110,99 @@ echo '          </div>
     </div>
 </div>';
 
+        // Invoice Edit Modal (with customer fields)
+        echo '<div class="ra-modal-overlay" id="ra-edit-invoice-modal">
+    <div class="ra-modal" style="max-width:650px;max-height:90vh;overflow-y:auto">
+        <h3><i class="ri-pencil-line"></i> Rechnung bearbeiten</h3>
+        <p class="ra-modal-sub" id="ra-einv-subtitle">Rechnung und Kundendaten bearbeiten</p>
+
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;">
+            <strong id="ra-einv-number"></strong> &ndash; <span id="ra-einv-date"></span>
+        </div>
+
+        <details open style="margin-bottom:16px">
+            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">Kundendaten</summary>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+                <div style="grid-column:span 2">
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                    <input type="text" id="ra-einv-name" class="ra-input" required>
+                </div>
+                <div style="grid-column:span 2">
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                    <input type="text" id="ra-einv-company" class="ra-input">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                    <input type="email" id="ra-einv-email" class="ra-input">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                    <input type="tel" id="ra-einv-phone" class="ra-input">
+                </div>
+                <div style="grid-column:span 2">
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Adresse</label>
+                    <input type="text" id="ra-einv-address" class="ra-input">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <input type="text" id="ra-einv-plz" class="ra-input">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <input type="text" id="ra-einv-city" class="ra-input">
+                </div>
+                <div style="grid-column:span 2">
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">USt-IdNr.</label>
+                    <input type="text" id="ra-einv-taxid" class="ra-input">
+                </div>
+            </div>
+        </details>
+
+        <details open style="margin-bottom:16px">
+            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">Positionen</summary>
+            <div class="ra-inv-lines" id="ra-einv-lines" style="margin-top:12px">
+                <div class="ra-inv-line">
+                    <input type="text" placeholder="Leistung" class="ra-inv-line-desc">
+                    <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
+                    <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+                </div>
+            </div>
+            <button type="button" class="ra-inv-add" id="ra-einv-add-line">
+                <i class="ri-add-line"></i> Position hinzuf&uuml;gen
+            </button>
+        </details>
+
+        <div class="ra-inv-totals" style="margin-bottom:16px">
+            <div class="ra-inv-total-row">
+                <span>Netto:</span>
+                <span id="ra-einv-net">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row" id="ra-einv-vat-row">
+                <span>MwSt ' . intval($vat_rate) . '%:</span>
+                <span id="ra-einv-vat">0,00 &euro;</span>
+            </div>
+            <div class="ra-inv-total-row ra-inv-total-final">
+                <span>Gesamt:</span>
+                <span id="ra-einv-total">0,00 &euro;</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
+            <textarea id="ra-einv-notes" class="ra-input" rows="2" placeholder="Interne Notizen..."></textarea>
+        </div>
+
+        <input type="hidden" id="ra-einv-id" value="">
+
+        <div style="display:flex;gap:10px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-einv-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-einv-submit">
+                <i class="ri-save-line"></i> Speichern
+            </button>
+        </div>
+    </div>
+</div>';
+
         // Footer
         echo '<div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;">
         <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">Powered by <a href="https://punktepass.de" target="_blank" style="color:#667eea;">PunktePass</a></div>
@@ -1349,29 +1442,36 @@ echo '          </div>
         document.querySelector("#ra-inv-lines .ra-inv-line-desc").focus();
     }
 
-    function showEditInvoiceModal(invId,itemsJson,subtotal,customer,device){
-        invoiceRepairId=null;
-        invoiceSelect=null;
-        invoiceEditId=invId;
-        // Title for edit mode
-        document.getElementById("ra-inv-modal-title").innerHTML=\'<i class="ri-pencil-line"></i> Rechnung bearbeiten\';
-        document.getElementById("ra-inv-modal-subtitle").textContent="Positionen und Bruttobetr\u00e4ge bearbeiten";
-        document.getElementById("ra-inv-modal-submit").innerHTML=\'<i class="ri-save-line"></i> Speichern\';
-        // Info
-        var info=document.getElementById("ra-inv-modal-info");
-        var txt=customer+(device?" \u2013 "+device:"");
-        if(txt){info.textContent=txt;info.style.display="block"}else{info.style.display="none"}
+    function showEditInvoiceModal(inv){
+        // Use new edit modal with customer fields
+        var modal=document.getElementById("ra-edit-invoice-modal");
+        document.getElementById("ra-einv-id").value=inv.id;
+        document.getElementById("ra-einv-number").textContent=inv.invoice_number;
+        var d=new Date(inv.created_at);
+        document.getElementById("ra-einv-date").textContent=d.toLocaleDateString("de-DE");
+
+        // Fill customer data
+        document.getElementById("ra-einv-name").value=inv.customer_name||"";
+        document.getElementById("ra-einv-company").value=inv.customer_company||"";
+        document.getElementById("ra-einv-email").value=inv.customer_email||"";
+        document.getElementById("ra-einv-phone").value=inv.customer_phone||"";
+        document.getElementById("ra-einv-address").value=inv.customer_address||"";
+        document.getElementById("ra-einv-plz").value=inv.customer_plz||"";
+        document.getElementById("ra-einv-city").value=inv.customer_city||"";
+        document.getElementById("ra-einv-taxid").value=inv.customer_tax_id||"";
+        document.getElementById("ra-einv-notes").value=inv.notes||"";
+
         // Fill line items
-        var lines=document.getElementById("ra-inv-lines");
+        var lines=document.getElementById("ra-einv-lines");
         var items=[];
-        try{items=JSON.parse(itemsJson)}catch(e){}
+        try{items=JSON.parse(inv.line_items||"[]")}catch(e){}
         if(items&&items.length>0){
             lines.innerHTML=items.map(function(it){return buildLineHtml(it.description,it.amount)}).join("");
         }else{
-            lines.innerHTML=buildLineHtml("",subtotal||"");
+            lines.innerHTML=buildLineHtml("",inv.subtotal||"");
         }
-        recalcInvoiceModal();
-        invoiceModal.classList.add("show");
+        recalcEditInvoiceModal();
+        modal.classList.add("show");
     }
 
     function hideInvoiceModal(){
@@ -1578,7 +1678,7 @@ echo '          </div>
                         \'<td><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
                         \'<td><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
-                            \'<button class="ra-inv-btn ra-inv-btn-edit" data-inv-id="\'+inv.id+\'" data-inv-items="\'+esc(inv.line_items||"")+\'" data-inv-subtotal="\'+inv.subtotal+\'" data-inv-customer="\'+esc(inv.customer_name)+\'" data-inv-device="\'+esc(inv.device_info||"")+\'" title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
+                            \'<button class="ra-inv-btn ra-inv-btn-edit" data-invoice=\\\'\'+JSON.stringify(inv).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
                             \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
                                 \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>Entwurf</option>\'+
                                 \'<option value="sent" \'+(inv.status==="sent"?"selected":"")+\'>Gesendet</option>\'+
@@ -1606,13 +1706,8 @@ echo '          </div>
                 // Bind edit
                 tbody.querySelectorAll(".ra-inv-btn-edit").forEach(function(btn){
                     btn.addEventListener("click",function(){
-                        showEditInvoiceModal(
-                            this.getAttribute("data-inv-id"),
-                            this.getAttribute("data-inv-items"),
-                            this.getAttribute("data-inv-subtotal"),
-                            this.getAttribute("data-inv-customer"),
-                            this.getAttribute("data-inv-device")
-                        );
+                        var inv=JSON.parse(this.getAttribute("data-invoice"));
+                        showEditInvoiceModal(inv);
                     });
                 });
                 // Bind delete
@@ -1858,6 +1953,96 @@ echo '          </div>
             if(data.success){
                 toast("Rechnung "+data.data.invoice_number+" erstellt");
                 ninvModal.classList.remove("show");
+                invoicesLoaded=false;
+                loadInvoices(1);
+            }else{
+                toast(data.data&&data.data.message?data.data.message:"Fehler");
+            }
+        })
+        .catch(function(){toast("Verbindungsfehler")});
+    });
+
+    /* ===== EDIT INVOICE MODAL ===== */
+    var editInvModal=document.getElementById("ra-edit-invoice-modal");
+
+    function recalcEditInvoiceModal(){
+        var amounts=document.querySelectorAll("#ra-einv-lines .ra-inv-line-amount");
+        var brutto=0;
+        amounts.forEach(function(a){brutto+=parseFloat(a.value)||0});
+        var net,vat;
+        if(VAT_ENABLED){
+            net=Math.round(brutto/(1+VAT_RATE/100)*100)/100;
+            vat=Math.round((brutto-net)*100)/100;
+        }else{
+            net=brutto;
+            vat=0;
+        }
+        document.getElementById("ra-einv-net").textContent=fmtEur(net);
+        document.getElementById("ra-einv-vat").textContent=fmtEur(vat);
+        document.getElementById("ra-einv-total").textContent=fmtEur(brutto);
+    }
+
+    document.getElementById("ra-einv-cancel").addEventListener("click",function(){
+        editInvModal.classList.remove("show");
+    });
+    editInvModal.addEventListener("click",function(e){
+        if(e.target===editInvModal)editInvModal.classList.remove("show");
+    });
+
+    // Add line
+    document.getElementById("ra-einv-add-line").addEventListener("click",function(){
+        var line=document.createElement("div");
+        line.className="ra-inv-line";
+        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        document.getElementById("ra-einv-lines").appendChild(line);
+    });
+
+    // Remove line + recalc
+    document.getElementById("ra-einv-lines").addEventListener("click",function(e){
+        if(e.target.classList.contains("ra-inv-line-remove")){
+            var lines=this.querySelectorAll(".ra-inv-line");
+            if(lines.length>1)e.target.closest(".ra-inv-line").remove();
+            recalcEditInvoiceModal();
+        }
+    });
+    document.getElementById("ra-einv-lines").addEventListener("input",function(){recalcEditInvoiceModal()});
+
+    // Submit edit
+    document.getElementById("ra-einv-submit").addEventListener("click",function(){
+        var name=document.getElementById("ra-einv-name").value.trim();
+        if(!name){toast("Kundenname ist erforderlich");return;}
+
+        // Collect line items
+        var items=[];
+        var subtotal=0;
+        document.querySelectorAll("#ra-einv-lines .ra-inv-line").forEach(function(line){
+            var desc=line.querySelector(".ra-inv-line-desc").value.trim();
+            var amt=parseFloat(line.querySelector(".ra-inv-line-amount").value)||0;
+            if(desc||amt>0){items.push({description:desc,amount:amt});subtotal+=amt}
+        });
+
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_update");
+        fd.append("nonce",NONCE);
+        fd.append("invoice_id",document.getElementById("ra-einv-id").value);
+        fd.append("customer_name",name);
+        fd.append("customer_company",document.getElementById("ra-einv-company").value);
+        fd.append("customer_email",document.getElementById("ra-einv-email").value);
+        fd.append("customer_phone",document.getElementById("ra-einv-phone").value);
+        fd.append("customer_address",document.getElementById("ra-einv-address").value);
+        fd.append("customer_plz",document.getElementById("ra-einv-plz").value);
+        fd.append("customer_city",document.getElementById("ra-einv-city").value);
+        fd.append("customer_tax_id",document.getElementById("ra-einv-taxid").value);
+        fd.append("notes",document.getElementById("ra-einv-notes").value);
+        fd.append("line_items",JSON.stringify(items));
+        fd.append("subtotal",subtotal);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                toast("Rechnung aktualisiert");
+                editInvModal.classList.remove("show");
                 invoicesLoaded=false;
                 loadInvoices(1);
             }else{

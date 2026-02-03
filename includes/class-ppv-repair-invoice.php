@@ -383,6 +383,32 @@ class PPV_Repair_Invoice {
             $update['notes'] = sanitize_textarea_field($_POST['notes']);
         }
 
+        // Customer fields
+        if (isset($_POST['customer_name'])) {
+            $update['customer_name'] = sanitize_text_field($_POST['customer_name']);
+        }
+        if (isset($_POST['customer_email'])) {
+            $update['customer_email'] = sanitize_email($_POST['customer_email']);
+        }
+        if (isset($_POST['customer_phone'])) {
+            $update['customer_phone'] = sanitize_text_field($_POST['customer_phone']);
+        }
+        if (isset($_POST['customer_company'])) {
+            $update['customer_company'] = sanitize_text_field($_POST['customer_company']);
+        }
+        if (isset($_POST['customer_tax_id'])) {
+            $update['customer_tax_id'] = sanitize_text_field($_POST['customer_tax_id']);
+        }
+        if (isset($_POST['customer_address'])) {
+            $update['customer_address'] = sanitize_text_field($_POST['customer_address']);
+        }
+        if (isset($_POST['customer_plz'])) {
+            $update['customer_plz'] = sanitize_text_field($_POST['customer_plz']);
+        }
+        if (isset($_POST['customer_city'])) {
+            $update['customer_city'] = sanitize_text_field($_POST['customer_city']);
+        }
+
         if (!empty($update)) {
             $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', $update, ['id' => $invoice_id]);
         }
