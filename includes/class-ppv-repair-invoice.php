@@ -1460,8 +1460,8 @@ Powered by PunktePass &middot; punktepass.de
         global $wpdb;
         $prefix = $wpdb->prefix;
 
-        // erepairshop database credentials
-        $er_host = 'localhost';
+        // erepairshop database credentials (remote server)
+        $er_host = 'srv1420.hstgr.io';
         $er_db = 'u660905446_sYOnr';
         $er_user = 'u660905446_oPLnu';
         $er_pass = 'Brtegk84047+_';
