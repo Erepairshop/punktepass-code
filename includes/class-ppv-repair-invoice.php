@@ -933,6 +933,7 @@ class PPV_Repair_Invoice {
                 'kreditkarte' => 'Kreditkarte',
                 'ueberweisung' => 'Überweisung',
                 'paypal' => 'PayPal',
+                'andere' => 'Andere',
             ];
             $method_display = $payment_method_labels[$payment_method] ?? $payment_method;
 

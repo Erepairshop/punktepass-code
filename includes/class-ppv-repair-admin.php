@@ -973,7 +973,35 @@ echo '          </div>
                 <span id="ra-inv-modal-total">0,00 &euro;</span>
             </div>
         </div>
-        <div style="display:flex;gap:10px">
+
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                <input type="checkbox" id="ra-inv-paid-toggle" style="width:18px;height:18px;cursor:pointer">
+                Bereits bezahlt
+            </label>
+            <div id="ra-inv-paid-fields" style="display:none;margin-top:12px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div>
+                        <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsart</label>
+                        <select id="ra-inv-payment-method" class="ra-input" style="width:100%">
+                            <option value="">-- Bitte w&auml;hlen --</option>
+                            <option value="bar">Barzahlung</option>
+                            <option value="ec">EC-Karte</option>
+                            <option value="kreditkarte">Kreditkarte</option>
+                            <option value="ueberweisung">&Uuml;berweisung</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="andere">Andere</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsdatum</label>
+                        <input type="date" id="ra-inv-paid-date" class="ra-input" style="width:100%">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-inv-modal-cancel">Abbrechen</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-inv-modal-submit">
                 <i class="ri-check-line"></i> Abschlie&szlig;en &amp; Rechnung
@@ -1241,6 +1269,7 @@ echo '          </div>
                 <option value="kreditkarte">Kreditkarte</option>
                 <option value="ueberweisung">&Uuml;berweisung</option>
                 <option value="paypal">PayPal</option>
+                <option value="andere">Andere</option>
             </select>
         </div>
 
@@ -1538,10 +1567,20 @@ echo '          </div>
         }
         // Reset lines
         document.getElementById("ra-inv-lines").innerHTML=buildLineHtml("","");
+        // Reset payment fields
+        document.getElementById("ra-inv-paid-toggle").checked=false;
+        document.getElementById("ra-inv-paid-fields").style.display="none";
+        document.getElementById("ra-inv-payment-method").value="";
+        document.getElementById("ra-inv-paid-date").value=new Date().toISOString().split("T")[0];
         recalcInvoiceModal();
         invoiceModal.classList.add("show");
         document.querySelector("#ra-inv-lines .ra-inv-line-desc").focus();
     }
+
+    // Toggle payment fields visibility
+    document.getElementById("ra-inv-paid-toggle").addEventListener("change",function(){
+        document.getElementById("ra-inv-paid-fields").style.display=this.checked?"block":"none";
+    });
 
     function showEditInvoiceModal(inv){
         // Use new edit modal with customer fields
@@ -1691,6 +1730,14 @@ echo '          </div>
             fd.append("status","done");
             fd.append("final_cost",totalAmt);
             fd.append("line_items",JSON.stringify(items));
+            // Check if already paid
+            if(document.getElementById("ra-inv-paid-toggle").checked){
+                fd.append("mark_paid","1");
+                var pm=document.getElementById("ra-inv-payment-method").value;
+                var pd=document.getElementById("ra-inv-paid-date").value;
+                if(pm)fd.append("payment_method",pm);
+                if(pd)fd.append("paid_at",pd);
+            }
         }
 
         var btn=document.getElementById("ra-inv-modal-submit");

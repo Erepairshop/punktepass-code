@@ -882,6 +882,18 @@ class PPV_Repair_Core {
                         if (!is_array($line_items)) $line_items = [];
                     }
                     $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items);
+
+                    // If mark_paid is set, update invoice to paid status
+                    if ($invoice_id && !empty($_POST['mark_paid'])) {
+                        $invoice_update = [
+                            'status' => 'paid',
+                            'paid_at' => !empty($_POST['paid_at']) ? sanitize_text_field($_POST['paid_at']) : current_time('mysql'),
+                        ];
+                        if (!empty($_POST['payment_method'])) {
+                            $invoice_update['payment_method'] = sanitize_text_field($_POST['payment_method']);
+                        }
+                        $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', $invoice_update, ['id' => $invoice_id]);
+                    }
                 }
             } catch (\Exception $e) {
                 // Invoice generation failed, but status update should still succeed
