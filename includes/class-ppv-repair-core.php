@@ -959,13 +959,14 @@ class PPV_Repair_Core {
         </div>
         <?php else:
             $status_map = [
-                'neu' => ['Neu eingegangen', 'status-neu', 'ri-inbox-line'],
-                'in_bearbeitung' => ['In Bearbeitung', 'status-in-bearbeitung', 'ri-tools-line'],
-                'warten_auf_teile' => ['Warten auf Teile', 'status-warten', 'ri-time-line'],
-                'fertig' => ['Fertig', 'status-fertig', 'ri-checkbox-circle-line'],
-                'abgeholt' => ['Abgeholt', 'status-abgeholt', 'ri-check-double-line'],
+                'new' => ['Neu eingegangen', 'status-neu', 'ri-inbox-line'],
+                'in_progress' => ['In Bearbeitung', 'status-in-bearbeitung', 'ri-tools-line'],
+                'waiting_parts' => ['Warten auf Teile', 'status-warten', 'ri-time-line'],
+                'done' => ['Fertig', 'status-fertig', 'ri-checkbox-circle-line'],
+                'delivered' => ['Abgeholt', 'status-abgeholt', 'ri-check-double-line'],
+                'cancelled' => ['Storniert', 'status-abgeholt', 'ri-close-circle-line'],
             ];
-            $current_status = $repair->status ?: 'neu';
+            $current_status = $repair->status ?: 'new';
             $status_info = $status_map[$current_status] ?? ['Unbekannt', 'status-neu', 'ri-question-line'];
         ?>
         <div class="content">
@@ -1002,12 +1003,14 @@ class PPV_Repair_Core {
             <div class="timeline">
                 <div class="timeline-title">Fortschritt</div>
                 <?php
-                $stages = ['neu', 'in_bearbeitung', 'fertig', 'abgeholt'];
+                $stages = ['new', 'in_progress', 'done', 'delivered'];
                 $stage_labels = ['Eingegangen', 'In Bearbeitung', 'Fertig', 'Abgeholt'];
                 $current_idx = array_search($current_status, $stages);
-                if ($current_status === 'warten_auf_teile') $current_idx = 1; // Show as "in bearbeitung" level
+                if ($current_idx === false) $current_idx = 0;
+                if ($current_status === 'waiting_parts') $current_idx = 1; // Show as "in progress" level
+                if ($current_status === 'cancelled') $current_idx = -1; // Don't highlight any
                 foreach ($stages as $idx => $stage):
-                    $is_active = ($idx <= $current_idx);
+                    $is_active = ($current_status !== 'cancelled' && $idx <= $current_idx);
                 ?>
                 <div class="timeline-item">
                     <div class="timeline-dot <?php echo $is_active ? 'active' : ''; ?>"></div>
