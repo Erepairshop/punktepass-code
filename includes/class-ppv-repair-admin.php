@@ -2151,20 +2151,29 @@ echo '          </div>
     });
 
     /* ===== Tab Switching ===== */
+    var invoicesLoaded=false;
+    var customersLoaded=false;
+
+    function switchTab(target){
+        document.querySelectorAll(".ra-tab").forEach(function(t){t.classList.remove("active")});
+        document.querySelectorAll(".ra-tab-content").forEach(function(c){c.classList.remove("active")});
+        var tabBtn=document.querySelector(\'.ra-tab[data-tab="\'+target+\'"]\');
+        if(tabBtn)tabBtn.classList.add("active");
+        var tabContent=document.getElementById("ra-tab-"+target);
+        if(tabContent)tabContent.classList.add("active");
+        if(target==="invoices"&&!invoicesLoaded){loadInvoices(1);invoicesLoaded=true;}
+        if(target==="customers"&&!customersLoaded){loadCustomers(1);customersLoaded=true;}
+        localStorage.setItem("ra_active_tab",target);
+    }
+
     document.querySelectorAll(".ra-tab").forEach(function(tab){
         tab.addEventListener("click",function(){
-            document.querySelectorAll(".ra-tab").forEach(function(t){t.classList.remove("active")});
-            document.querySelectorAll(".ra-tab-content").forEach(function(c){c.classList.remove("active")});
-            this.classList.add("active");
             var target=this.getAttribute("data-tab");
-            document.getElementById("ra-tab-"+target).classList.add("active");
-            if(target==="invoices"&&!invoicesLoaded){loadInvoices(1);invoicesLoaded=true;}
-            if(target==="customers"&&!customersLoaded){loadCustomers(1);customersLoaded=true;}
+            switchTab(target);
         });
     });
 
     /* ===== Invoices ===== */
-    var invoicesLoaded=false;
 
     function fmtEur(n){return parseFloat(n||0).toFixed(2).replace(".",",")+" \u20ac"}
 
@@ -2818,7 +2827,6 @@ echo '          </div>
     });
 
     /* ===== CUSTOMERS TAB ===== */
-    var customersLoaded=false;
     var custSearchTimer=null;
 
     function loadCustomers(page){
@@ -3348,6 +3356,10 @@ echo '          </div>
             });
         });
     }
+
+    // Restore saved tab on page load (must be after function definitions)
+    var savedTab=localStorage.getItem("ra_active_tab");
+    if(savedTab&&document.querySelector(\'.ra-tab[data-tab="\'+savedTab+\'"]\'))switchTab(savedTab);
 
 })();
 </script>
