@@ -13,6 +13,7 @@ class PPV_Admin_Handlers {
         add_action('admin_post_ppv_extend_trial', [__CLASS__, 'handle_extend_trial']);
         add_action('admin_post_ppv_activate_subscription', [__CLASS__, 'handle_activate_subscription']);
         add_action('admin_post_ppv_extend_subscription', [__CLASS__, 'handle_extend_subscription']);
+        add_action('admin_post_ppv_deactivate_subscription', [__CLASS__, 'handle_deactivate_subscription']);
         add_action('admin_post_ppv_mark_renewal_done', [__CLASS__, 'handle_mark_renewal_done']);
         add_action('admin_post_ppv_update_ticket_status', [__CLASS__, 'handle_update_ticket_status']);
         add_action('admin_post_ppv_update_max_filialen', [__CLASS__, 'handle_update_max_filialen']);
@@ -302,6 +303,14 @@ class PPV_Admin_Handlers {
                                                 📅 Hosszabbítás
                                             </button>
                                         </form>
+                                        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block; margin-left: 5px;">
+                                            <?php wp_nonce_field('ppv_deactivate_subscription', 'ppv_deactivate_nonce'); ?>
+                                            <input type="hidden" name="action" value="ppv_deactivate_subscription">
+                                            <input type="hidden" name="handler_id" value="<?php echo intval($handler->id); ?>">
+                                            <button type="submit" class="button button-small" style="color: #dc3545;" onclick="return confirm('Biztosan deaktiválod ezt az előfizetést?');">
+                                                ❌ Deaktivieren
+                                            </button>
+                                        </form>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -538,6 +547,39 @@ class PPV_Admin_Handlers {
         error_log("✅ [PPV_Admin] Subscription verlängert für Handler #{$handler_id} um {$months} Monate bis {$new_expires}");
 
         wp_redirect(admin_url('admin.php?page=punktepass-admin&success=subscription_extended'));
+        exit;
+    }
+
+    // ============================================================
+    // ❌ DEACTIVATE SUBSCRIPTION
+    // ============================================================
+    public static function handle_deactivate_subscription() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Nincs jogosultság');
+        }
+
+        check_admin_referer('ppv_deactivate_subscription', 'ppv_deactivate_nonce');
+
+        global $wpdb;
+
+        $handler_id = intval($_POST['handler_id']);
+
+        // Deactivate subscription - set status to canceled and expire immediately
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            [
+                'subscription_status' => 'canceled',
+                'subscription_expires_at' => current_time('mysql'),
+                'trial_ends_at' => current_time('mysql'),
+            ],
+            ['id' => $handler_id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+
+        error_log("❌ [PPV_Admin] Subscription deaktiviert für Handler #{$handler_id}");
+
+        wp_redirect(admin_url('admin.php?page=punktepass-admin&success=subscription_deactivated'));
         exit;
     }
 
