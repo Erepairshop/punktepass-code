@@ -466,6 +466,48 @@ a:hover{text-decoration:underline}
 .ra-inv-filters .field input:focus{border-color:#667eea}
 .ra-summary-toggle{transition:all .2s}
 .ra-summary-toggle.active{background:#667eea;color:#fff;border-color:#667eea}
+
+/* ========== Feedback Button & Modal ========== */
+.ra-feedback-btn{position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#0d1b2a,#1b263b);color:#00eaff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);z-index:999;display:flex;align-items:center;justify-content:center;transition:all .3s}
+.ra-feedback-btn:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(0,234,255,0.3)}
+.ra-feedback-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px}
+.ra-feedback-modal.show{display:flex}
+.ra-feedback-content{background:linear-gradient(145deg,#0d1b2a,#1b263b);border-radius:20px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.4);color:#fff;position:relative}
+.ra-feedback-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.ra-feedback-header h3{font-size:18px;font-weight:700;color:#00eaff;display:flex;align-items:center;gap:8px;margin:0}
+.ra-feedback-close{background:none;border:none;color:#6b7280;font-size:24px;cursor:pointer;padding:0;line-height:1}
+.ra-feedback-close:hover{color:#fff}
+.ra-feedback-subtitle{color:#94a3b8;font-size:14px;margin-bottom:16px;text-align:center}
+.ra-feedback-cats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ra-feedback-cat{background:rgba(0,234,255,0.05);border:1px solid rgba(0,234,255,0.2);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+.ra-feedback-cat:hover{background:rgba(0,234,255,0.1);border-color:rgba(0,234,255,0.4)}
+.ra-feedback-cat i{font-size:24px;color:#00eaff;display:block;margin-bottom:8px}
+.ra-feedback-cat span{font-size:13px;color:#e2e8f0;font-weight:500}
+.ra-feedback-step{display:none}
+.ra-feedback-step.active{display:block}
+.ra-feedback-back{background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;margin-bottom:16px}
+.ra-feedback-back:hover{color:#00eaff}
+.ra-feedback-cat-header{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:12px;background:rgba(0,234,255,0.1);border-radius:10px}
+.ra-feedback-cat-header i{font-size:20px;color:#00eaff}
+.ra-feedback-cat-header span{font-size:15px;font-weight:600;color:#fff}
+.ra-feedback-input{width:100%;padding:12px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:rgba(0,0,0,0.3);color:#fff;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box}
+.ra-feedback-input:focus{border-color:#00eaff;outline:none}
+.ra-feedback-input::placeholder{color:#6b7280}
+.ra-feedback-stars{display:flex;gap:8px;justify-content:center;margin:16px 0}
+.ra-feedback-star{background:none;border:none;font-size:28px;color:#4b5563;cursor:pointer;padding:4px;transition:all .2s}
+.ra-feedback-star:hover,.ra-feedback-star.active{color:#fbbf24;transform:scale(1.15)}
+.ra-feedback-submit{width:100%;padding:14px;background:linear-gradient(135deg,#00eaff,#00b4d8);color:#0d1b2a;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;transition:all .2s}
+.ra-feedback-submit:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,234,255,0.4)}
+.ra-feedback-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.ra-feedback-msg{padding:12px;border-radius:10px;margin-bottom:12px;font-size:14px;text-align:center;display:none}
+.ra-feedback-msg.show{display:block}
+.ra-feedback-msg.error{background:rgba(239,68,68,0.2);color:#f87171}
+.ra-feedback-msg.success{background:rgba(34,197,94,0.2);color:#4ade80}
+.ra-feedback-success{text-align:center;padding:30px 20px}
+.ra-feedback-success i{font-size:64px;color:#4ade80;margin-bottom:16px}
+.ra-feedback-success h4{color:#fff;font-size:20px;margin:0 0 8px 0}
+.ra-feedback-success p{color:#94a3b8;font-size:14px;margin:0}
+
 .ra-inv-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .ra-inv-summary-card{background:#fff;border-radius:12px;padding:14px;text-align:center;border:1px solid #f0f0f0}
 .ra-inv-summary-val{font-size:22px;font-weight:800;color:#111827}
@@ -1150,6 +1192,72 @@ echo '          </div>
                 <div class="ra-reject-modal-actions">
                     <button class="ra-btn ra-btn-outline" id="ra-reject-cancel">Abbrechen</button>
                     <button class="ra-btn" style="background:#dc2626;color:#fff" id="ra-reject-submit">Ablehnen</button>
+                </div>
+            </div>
+        </div>';
+
+        // Feedback button
+        echo '<button class="ra-feedback-btn" id="ra-feedback-btn" title="Feedback"><i class="ri-feedback-line"></i></button>';
+
+        // Feedback modal
+        echo '<div class="ra-feedback-modal" id="ra-feedback-modal">
+            <div class="ra-feedback-content">
+                <div class="ra-feedback-header">
+                    <h3><i class="ri-feedback-line"></i> Feedback</h3>
+                    <button class="ra-feedback-close" id="ra-feedback-close"><i class="ri-close-line"></i></button>
+                </div>
+
+                <div class="ra-feedback-step active" id="ra-feedback-step1">
+                    <p class="ra-feedback-subtitle">Was m&ouml;chten Sie uns mitteilen?</p>
+                    <div class="ra-feedback-cats">
+                        <div class="ra-feedback-cat" data-cat="bug">
+                            <i class="ri-bug-line"></i>
+                            <span>Fehler melden</span>
+                        </div>
+                        <div class="ra-feedback-cat" data-cat="feature">
+                            <i class="ri-lightbulb-line"></i>
+                            <span>Idee / Wunsch</span>
+                        </div>
+                        <div class="ra-feedback-cat" data-cat="question">
+                            <i class="ri-question-line"></i>
+                            <span>Frage</span>
+                        </div>
+                        <div class="ra-feedback-cat" data-cat="rating">
+                            <i class="ri-star-line"></i>
+                            <span>Bewertung</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ra-feedback-step" id="ra-feedback-step2">
+                    <button class="ra-feedback-back" id="ra-feedback-back">
+                        <i class="ri-arrow-left-line"></i> Zur&uuml;ck
+                    </button>
+                    <div class="ra-feedback-cat-header" id="ra-feedback-cat-header">
+                        <i class="ri-bug-line"></i>
+                        <span>Fehler melden</span>
+                    </div>
+                    <div class="ra-feedback-stars" id="ra-feedback-stars" style="display:none">
+                        <button class="ra-feedback-star" data-rating="1"><i class="ri-star-line"></i></button>
+                        <button class="ra-feedback-star" data-rating="2"><i class="ri-star-line"></i></button>
+                        <button class="ra-feedback-star" data-rating="3"><i class="ri-star-line"></i></button>
+                        <button class="ra-feedback-star" data-rating="4"><i class="ri-star-line"></i></button>
+                        <button class="ra-feedback-star" data-rating="5"><i class="ri-star-line"></i></button>
+                    </div>
+                    <textarea class="ra-feedback-input" id="ra-feedback-message" rows="4" placeholder="Beschreiben Sie Ihr Anliegen..."></textarea>
+                    <input type="email" class="ra-feedback-input" id="ra-feedback-email" placeholder="E-Mail (optional)" style="margin-top:12px">
+                    <div class="ra-feedback-msg" id="ra-feedback-msg"></div>
+                    <button class="ra-feedback-submit" id="ra-feedback-submit">
+                        <i class="ri-send-plane-fill"></i> Absenden
+                    </button>
+                </div>
+
+                <div class="ra-feedback-step" id="ra-feedback-step3">
+                    <div class="ra-feedback-success">
+                        <i class="ri-checkbox-circle-fill"></i>
+                        <h4>Vielen Dank!</h4>
+                        <p>Ihr Feedback wurde gesendet.</p>
+                    </div>
                 </div>
             </div>
         </div>';
@@ -3356,6 +3464,125 @@ echo '          </div>
             });
         });
     }
+
+    /* ===== Feedback Modal ===== */
+    var feedbackModal=document.getElementById("ra-feedback-modal");
+    var feedbackCategory="";
+    var feedbackRating=0;
+    var catMeta={
+        bug:{icon:"ri-bug-line",text:"Fehler melden",placeholder:"Beschreiben Sie den Fehler..."},
+        feature:{icon:"ri-lightbulb-line",text:"Idee / Wunsch",placeholder:"Beschreiben Sie Ihre Idee..."},
+        question:{icon:"ri-question-line",text:"Frage",placeholder:"Stellen Sie Ihre Frage..."},
+        rating:{icon:"ri-star-line",text:"Bewertung",placeholder:"Optionaler Kommentar..."}
+    };
+
+    document.getElementById("ra-feedback-btn").addEventListener("click",function(){
+        feedbackModal.classList.add("show");
+        feedbackCategory="";
+        feedbackRating=0;
+        document.getElementById("ra-feedback-step1").classList.add("active");
+        document.getElementById("ra-feedback-step2").classList.remove("active");
+        document.getElementById("ra-feedback-step3").classList.remove("active");
+        document.getElementById("ra-feedback-message").value="";
+        document.getElementById("ra-feedback-email").value="";
+        document.getElementById("ra-feedback-msg").className="ra-feedback-msg";
+        document.querySelectorAll(".ra-feedback-star").forEach(function(s){s.classList.remove("active");s.querySelector("i").className="ri-star-line"});
+    });
+
+    document.getElementById("ra-feedback-close").addEventListener("click",function(){
+        feedbackModal.classList.remove("show");
+    });
+
+    feedbackModal.addEventListener("click",function(e){
+        if(e.target===feedbackModal)feedbackModal.classList.remove("show");
+    });
+
+    document.querySelectorAll(".ra-feedback-cat").forEach(function(cat){
+        cat.addEventListener("click",function(){
+            feedbackCategory=this.getAttribute("data-cat");
+            var meta=catMeta[feedbackCategory];
+            document.getElementById("ra-feedback-cat-header").innerHTML=\'<i class="\'+meta.icon+\'"></i><span>\'+meta.text+\'</span>\';
+            document.getElementById("ra-feedback-message").setAttribute("placeholder",meta.placeholder);
+            document.getElementById("ra-feedback-stars").style.display=(feedbackCategory==="rating")?"flex":"none";
+            document.getElementById("ra-feedback-step1").classList.remove("active");
+            document.getElementById("ra-feedback-step2").classList.add("active");
+            document.getElementById("ra-feedback-msg").className="ra-feedback-msg";
+        });
+    });
+
+    document.getElementById("ra-feedback-back").addEventListener("click",function(){
+        document.getElementById("ra-feedback-step2").classList.remove("active");
+        document.getElementById("ra-feedback-step1").classList.add("active");
+    });
+
+    document.querySelectorAll(".ra-feedback-star").forEach(function(star){
+        star.addEventListener("click",function(){
+            feedbackRating=parseInt(this.getAttribute("data-rating"));
+            document.querySelectorAll(".ra-feedback-star").forEach(function(s,idx){
+                if(idx<feedbackRating){
+                    s.classList.add("active");
+                    s.querySelector("i").className="ri-star-fill";
+                }else{
+                    s.classList.remove("active");
+                    s.querySelector("i").className="ri-star-line";
+                }
+            });
+        });
+    });
+
+    document.getElementById("ra-feedback-submit").addEventListener("click",function(){
+        var btn=this;
+        var msg=document.getElementById("ra-feedback-msg");
+        var message=document.getElementById("ra-feedback-message").value.trim();
+        var email=document.getElementById("ra-feedback-email").value.trim();
+
+        if(feedbackCategory==="rating"&&feedbackRating===0){
+            msg.textContent="Bitte geben Sie eine Bewertung ab.";
+            msg.className="ra-feedback-msg show error";
+            return;
+        }
+        if(!message&&feedbackCategory!=="rating"){
+            msg.textContent="Bitte beschreiben Sie Ihr Anliegen.";
+            msg.className="ra-feedback-msg show error";
+            return;
+        }
+
+        btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+
+        var fd=new FormData();
+        fd.append("action","ppv_submit_feedback");
+        fd.append("nonce","' . wp_create_nonce('ppv_feedback_nonce') . '");
+        fd.append("category",feedbackCategory);
+        fd.append("message",message);
+        fd.append("rating",feedbackRating);
+        fd.append("email",email);
+        fd.append("user_type","repair_handler");
+        fd.append("page_url",window.location.href);
+        fd.append("device_info",navigator.userAgent);
+        fd.append("source","repair_formular");
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                document.getElementById("ra-feedback-step2").classList.remove("active");
+                document.getElementById("ra-feedback-step3").classList.add("active");
+                setTimeout(function(){feedbackModal.classList.remove("show")},2500);
+            }else{
+                msg.textContent=data.data&&data.data.message?data.data.message:"Fehler beim Senden.";
+                msg.className="ra-feedback-msg show error";
+            }
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Absenden\';
+        })
+        .catch(function(){
+            msg.textContent="Verbindungsfehler.";
+            msg.className="ra-feedback-msg show error";
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Absenden\';
+        });
+    });
 
     // Restore saved tab on page load (must be after function definitions)
     var savedTab=localStorage.getItem("ra_active_tab");
