@@ -137,6 +137,22 @@
 .repair-field:last-child {
     margin-bottom: 0;
 }
+.repair-field-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #92400e;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+.repair-field-hint i {
+    font-size: 14px;
+    color: #f59e0b;
+}
 .repair-field label {
     display: block;
     font-size: 13px;

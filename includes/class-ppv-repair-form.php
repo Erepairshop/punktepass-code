@@ -89,13 +89,6 @@ class PPV_Repair_Form {
     </div>
 
     <?php else: ?>
-    <?php if ($pp_enabled): ?>
-    <!-- Bonus badge -->
-    <div class="repair-bonus-badge">
-        <i class="ri-gift-line"></i>
-        <span>+<?php echo $points; ?> PunktePass Bonuspunkte f&uuml;r dieses Formular!</span>
-    </div>
-    <?php endif; ?>
 
     <!-- Form -->
     <form id="repair-form" class="repair-form" autocomplete="off" enctype="multipart/form-data">
@@ -116,8 +109,9 @@ class PPV_Repair_Form {
             </div>
 
             <div class="repair-field">
-                <label for="rf-email">E-Mail *</label>
-                <input type="email" id="rf-email" name="customer_email" required placeholder="ihre@email.de" value="<?php echo $pf_email; ?>">
+                <label for="rf-email">E-Mail</label>
+                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>">
+                <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
             </div>
 
             <?php if (!empty($field_config['customer_phone']['enabled'])): ?>
