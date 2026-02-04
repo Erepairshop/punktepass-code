@@ -429,8 +429,8 @@ $vat = 7.41;
         </a>
     </div>
 
-    <!-- PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id=<?php echo defined('PAYPAL_CLIENT_ID') ? PAYPAL_CLIENT_ID : 'BAALxY2WmAuDUHtqwXtwO2RD_DjkfSpTEGPcFn0gSSBh9n_WywV0HekzzWMkNQalC7anJv_CMBwRgqU3X4'; ?>&vault=true&intent=subscription&locale=de_DE" data-sdk-integration-source="button-factory"></script>
+    <!-- PayPal SDK (Live) -->
+    <script src="https://www.paypal.com/sdk/js?client-id=<?php echo defined('PAYPAL_CLIENT_ID') ? PAYPAL_CLIENT_ID : 'ATvIpJv2JtjokY3p4OBWc8ZfcJE5wUXn9Lt65IDYUewAoCAg0wMb3thS1bTYTETjeVl41BAX2djkO8FA'; ?>&vault=true&intent=subscription&locale=de_DE" data-sdk-integration-source="button-factory"></script>
 
     <script>
         const bankDetails = document.getElementById('bank-details');
