@@ -464,6 +464,8 @@ a:hover{text-decoration:underline}
 .ra-inv-filters .field label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px}
 .ra-inv-filters .field input{padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none}
 .ra-inv-filters .field input:focus{border-color:#667eea}
+.ra-summary-toggle{transition:all .2s}
+.ra-summary-toggle.active{background:#667eea;color:#fff;border-color:#667eea}
 .ra-inv-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .ra-inv-summary-card{background:#fff;border-radius:12px;padding:14px;text-align:center;border:1px solid #f0f0f0}
 .ra-inv-summary-val{font-size:22px;font-weight:800;color:#111827}
@@ -1042,8 +1044,13 @@ echo '          </div>
             </button>
         </div>';
 
-        // Summary cards
-        echo '<div class="ra-inv-summary" id="ra-inv-summary">
+        // Summary toggle button
+        echo '<button class="ra-btn ra-btn-outline ra-btn-sm ra-summary-toggle" id="ra-inv-summary-toggle" style="margin-bottom:12px">
+            <i class="ri-bar-chart-box-line"></i> Statistik anzeigen
+        </button>';
+
+        // Summary cards (hidden by default)
+        echo '<div class="ra-inv-summary" id="ra-inv-summary" style="display:none">
             <div class="ra-inv-summary-card">
                 <div class="ra-inv-summary-val" id="ra-inv-count">-</div>
                 <div class="ra-inv-summary-label">Rechnungen</div>
@@ -2326,6 +2333,21 @@ echo '          </div>
             }
         });
     }
+
+    // Invoice summary toggle
+    document.getElementById("ra-inv-summary-toggle").addEventListener("click",function(){
+        var summary=document.getElementById("ra-inv-summary");
+        var btn=this;
+        if(summary.style.display==="none"){
+            summary.style.display="grid";
+            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> Statistik ausblenden\';
+            btn.classList.add("active");
+        }else{
+            summary.style.display="none";
+            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> Statistik anzeigen\';
+            btn.classList.remove("active");
+        }
+    });
 
     // Invoice filter
     document.getElementById("ra-inv-filter-btn").addEventListener("click",function(){loadInvoices(1)});
