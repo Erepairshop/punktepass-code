@@ -827,7 +827,8 @@ echo '          </div>
         $is_expired = $sub_expires && strtotime($sub_expires) < time();
         $payment_method = $store->payment_method ?? '';
 
-        if ($is_premium && !$is_expired) {
+        // Active subscription = either repair_premium=1 OR subscription_status=active with valid date
+        if (($is_premium || $sub_status === 'active') && !$is_expired) {
             echo '<span style="color:#059669"><i class="ri-checkbox-circle-line"></i> Premium aktiv</span>';
         } elseif ($sub_status === 'pending_payment') {
             echo '<span style="color:#d97706"><i class="ri-time-line"></i> Zahlung ausstehend</span>';
@@ -845,7 +846,7 @@ echo '          </div>
                         <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Formularlimit</div>
                         <div style="font-size:16px;font-weight:600;color:#111827">';
 
-        if ($is_premium) {
+        if ($is_premium || ($sub_status === 'active' && !$is_expired)) {
             echo '<span style="color:#059669"><i class="ri-infinity-line"></i> Unbegrenzt</span>';
         } else {
             echo intval($store->repair_form_count) . ' / ' . intval($store->repair_form_limit);
@@ -879,15 +880,18 @@ echo '          </div>
         echo '</div>
             </div>';
 
+        // Check if has active subscription (either repair_premium=1 OR subscription_status=active with valid date)
+        $has_active_sub = $is_premium || ($sub_status === 'active' && !$is_expired);
+
         // Upgrade button for non-premium or expired
-        if (!$is_premium || $is_expired) {
+        if (!$has_active_sub) {
             echo '<a href="/checkout" class="ra-btn ra-btn-primary" style="margin-bottom:16px">
                 <i class="ri-vip-crown-line"></i> Jetzt upgraden - 39,00 € / Monat (netto)
             </a>';
         }
 
-        // Cancellation section for active premium users
-        if ($is_premium && !$is_expired && $sub_status !== 'canceled') {
+        // Cancellation section for active subscription users
+        if ($has_active_sub && $sub_status !== 'canceled') {
             echo '<div class="ra-kuendigung" style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb">
                 <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px"><i class="ri-close-circle-line"></i> Abo kündigen</div>
                 <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Bei Kündigung bleibt Ihr Abo bis zum Ende der bezahlten Periode aktiv.</p>
