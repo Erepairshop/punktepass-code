@@ -41,6 +41,37 @@
     flex-direction: column;
 }
 
+/* Tablet landscape - wider layout */
+@media (min-width: 768px) and (orientation: landscape) {
+    .repair-page {
+        max-width: 900px;
+    }
+    .repair-header-inner {
+        max-width: 700px;
+    }
+    .repair-section {
+        padding: 28px;
+    }
+    .repair-row {
+        gap: 20px;
+    }
+}
+
+/* Large tablets and desktop landscape */
+@media (min-width: 1024px) {
+    .repair-page {
+        max-width: 960px;
+        padding: 20px;
+    }
+    .repair-header {
+        border-radius: 16px 16px 0 0;
+        margin-top: 20px;
+    }
+    .repair-section {
+        padding: 32px;
+    }
+}
+
 /* Header */
 .repair-header {
     background: linear-gradient(135deg, var(--repair-accent), var(--repair-accent-dark));
