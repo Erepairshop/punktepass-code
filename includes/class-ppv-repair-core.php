@@ -60,6 +60,8 @@ class PPV_Repair_Core {
             'ppv_repair_logout'         => [__CLASS__, 'ajax_logout'],
             'ppv_repair_user_search'    => [__CLASS__, 'ajax_user_search'],
             'ppv_repair_delete'         => [__CLASS__, 'ajax_delete_repair'],
+            'ppv_repair_reward_approve' => [__CLASS__, 'ajax_reward_approve'],
+            'ppv_repair_reward_reject'  => [__CLASS__, 'ajax_reward_reject'],
         ];
         foreach ($admin_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -657,6 +659,43 @@ class PPV_Repair_Core {
             }
 
             update_option('ppv_repair_migration_version', '2.0');
+        }
+
+        // v2.1: Add reward rejection tracking columns
+        if (version_compare($version, '2.1', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+
+            // Add reward_rejected column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'reward_rejected'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN reward_rejected TINYINT(1) DEFAULT 0 AFTER points_awarded");
+            }
+
+            // Add reward_rejection_reason column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'reward_rejection_reason'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN reward_rejection_reason VARCHAR(500) NULL AFTER reward_rejected");
+            }
+
+            // Add reward_rejection_date column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'reward_rejection_date'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN reward_rejection_date DATETIME NULL AFTER reward_rejection_reason");
+            }
+
+            // Add reward_approved column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'reward_approved'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN reward_approved TINYINT(1) DEFAULT 0 AFTER reward_rejection_date");
+            }
+
+            // Add reward_approved_date column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'reward_approved_date'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN reward_approved_date DATETIME NULL AFTER reward_approved");
+            }
+
+            update_option('ppv_repair_migration_version', '2.1');
         }
     }
 
@@ -1456,6 +1495,123 @@ class PPV_Repair_Core {
         $wpdb->delete($prefix . 'ppv_repairs', ['id' => $repair_id]);
 
         wp_send_json_success(['message' => 'Reparatur gelöscht']);
+    }
+
+    /** AJAX: Approve Reward */
+    public static function ajax_reward_approve() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        $points_to_deduct = intval($_POST['points'] ?? 4);
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Get repair and verify it belongs to this store
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT r.*, s.repair_reward_type, s.repair_reward_value, s.repair_reward_name
+             FROM {$prefix}ppv_repairs r
+             JOIN {$prefix}ppv_stores s ON r.store_id = s.id
+             WHERE r.id = %d AND r.store_id = %d",
+            $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        // Check if already approved
+        if (!empty($repair->reward_approved)) {
+            wp_send_json_error(['message' => 'Belohnung wurde bereits genehmigt']);
+        }
+
+        // Get user_id
+        $user_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$prefix}ppv_users WHERE email = %s LIMIT 1",
+            $repair->customer_email
+        ));
+        if (!$user_id) wp_send_json_error(['message' => 'Benutzer nicht gefunden']);
+
+        // Deduct points
+        $wpdb->insert("{$prefix}ppv_points", [
+            'user_id' => $user_id,
+            'store_id' => $store_id,
+            'points' => -$points_to_deduct,
+            'type' => 'redeem',
+            'reference' => 'repair_reward_' . $repair_id,
+            'created' => current_time('mysql'),
+        ]);
+
+        // Mark reward as approved on the repair
+        $wpdb->update(
+            "{$prefix}ppv_repairs",
+            [
+                'reward_approved' => 1,
+                'reward_approved_date' => current_time('mysql'),
+                'reward_rejected' => 0,
+                'reward_rejection_reason' => null,
+            ],
+            ['id' => $repair_id]
+        );
+
+        // Log
+        $wpdb->insert("{$prefix}ppv_scan_log", [
+            'store_id' => $store_id,
+            'user_id' => $user_id,
+            'message' => "Belohnung eingelöst: {$repair->repair_reward_name} (Reparatur #{$repair_id})",
+            'type' => 'reward_redeem',
+            'points_change' => -$points_to_deduct,
+            'status' => 'ok',
+            'created' => current_time('mysql'),
+        ]);
+
+        wp_send_json_success([
+            'message' => 'Belohnung genehmigt',
+            'reward_type' => $repair->repair_reward_type,
+            'reward_value' => $repair->repair_reward_value,
+            'reward_name' => $repair->repair_reward_name,
+        ]);
+    }
+
+    /** AJAX: Reject Reward */
+    public static function ajax_reward_reject() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        $reason = sanitize_text_field($_POST['reason'] ?? '');
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+        if (empty($reason)) wp_send_json_error(['message' => 'Bitte geben Sie einen Grund an']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Verify repair belongs to this store
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$prefix}ppv_repairs WHERE id = %d AND store_id = %d",
+            $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        // Mark reward as rejected
+        $wpdb->update(
+            "{$prefix}ppv_repairs",
+            [
+                'reward_rejected' => 1,
+                'reward_rejection_reason' => $reason,
+                'reward_rejection_date' => current_time('mysql'),
+            ],
+            ['id' => $repair_id]
+        );
+
+        wp_send_json_success(['message' => 'Belohnung abgelehnt']);
     }
 
     /** AJAX: Search Repairs */

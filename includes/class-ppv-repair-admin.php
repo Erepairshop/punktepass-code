@@ -231,7 +231,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             $repairs_html = '<div class="ra-empty"><i class="ri-inbox-line"></i><p>Noch keine Reparaturen. Teilen Sie Ihren Formular-Link!</p></div>';
         } else {
             foreach ($recent as $r) {
-                $repairs_html .= self::build_repair_card_html($r);
+                $repairs_html .= self::build_repair_card_html($r, $store);
             }
         }
 
@@ -371,6 +371,40 @@ a:hover{text-decoration:underline}
 .ra-btn-invoice:hover{background:#16a34a;color:#fff;border-color:#16a34a}
 .ra-btn-delete{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
+
+/* ========== Reward Section ========== */
+.ra-reward-toggle-section{margin:12px 0}
+.ra-btn-reward-toggle{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;border:none}
+.ra-reward-badge-available{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e}
+.ra-reward-badge-available:hover{background:linear-gradient(135deg,#fde68a,#fcd34d)}
+.ra-reward-badge-rejected{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.ra-reward-badge-rejected:hover{background:#fee2e2}
+.ra-reward-container{margin-top:10px;animation:slideDown .2s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.ra-reward-section{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 16px}
+.ra-reward-section.ra-reward-rejected{background:#fef2f2;border-color:#fecaca}
+.ra-reward-header{font-size:14px;font-weight:700;color:#92400e;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ra-reward-rejected .ra-reward-header{color:#991b1b}
+.ra-reward-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ra-reward-badge{background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.ra-reward-badge i{color:#f59e0b}
+.ra-reward-name{font-size:13px;color:#374151;font-weight:500}
+.ra-reward-rejection-info{background:#fee2e2;border-radius:8px;padding:8px 12px;font-size:12px;color:#991b1b;margin-bottom:12px}
+.ra-reward-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ra-reward-approve{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#059669;color:#fff;display:inline-flex;align-items:center;gap:4px;transition:all .2s}
+.ra-reward-approve:hover{background:#047857}
+.ra-reward-reject{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #fecaca;background:#fff;color:#dc2626;display:inline-flex;align-items:center;gap:4px;transition:all .2s}
+.ra-reward-reject:hover{background:#fef2f2}
+.ra-reward-approved-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#d1fae5;color:#065f46;font-size:12px;font-weight:600;border-radius:8px;margin:8px 0}
+
+/* ========== Reward Reject Modal ========== */
+.ra-reject-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;padding:16px}
+.ra-reject-modal.show{display:flex}
+.ra-reject-modal-content{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.ra-reject-modal h3{font-size:18px;font-weight:700;color:#111827;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.ra-reject-modal textarea{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;resize:vertical;min-height:100px;margin-bottom:16px}
+.ra-reject-modal textarea:focus{border-color:#667eea;outline:none}
+.ra-reject-modal-actions{display:flex;gap:10px;justify-content:flex-end}
 
 /* ========== Empty & Load More ========== */
 .ra-empty{text-align:center;padding:48px 20px;color:#9ca3af}
@@ -1098,6 +1132,20 @@ echo '          </div>
 
         // Toast notification
         echo '<div class="ra-toast" id="ra-toast"></div>';
+
+        // Reward reject modal
+        echo '<div class="ra-reject-modal" id="ra-reject-modal">
+            <div class="ra-reject-modal-content">
+                <h3><i class="ri-close-circle-line"></i> Belohnung ablehnen</h3>
+                <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Bitte geben Sie einen Grund f&uuml;r die Ablehnung an. Der Kunde kann die Belohnung beim n&auml;chsten Besuch erneut einl&ouml;sen.</p>
+                <textarea id="ra-reject-reason" placeholder="Grund f&uuml;r die Ablehnung..."></textarea>
+                <input type="hidden" id="ra-reject-repair-id" value="">
+                <div class="ra-reject-modal-actions">
+                    <button class="ra-btn ra-btn-outline" id="ra-reject-cancel">Abbrechen</button>
+                    <button class="ra-btn" style="background:#dc2626;color:#fff" id="ra-reject-submit">Ablehnen</button>
+                </div>
+            </div>
+        </div>';
 
         // Invoice modal (shown when status changes to "Fertig")
         echo '<div class="ra-modal-overlay" id="ra-invoice-modal">
@@ -3174,6 +3222,111 @@ echo '          </div>
         });
     }
 
+    /* ===== Reward Toggle, Approve & Reject ===== */
+    document.addEventListener("click",function(e){
+        // Toggle reward section
+        if(e.target.closest(".ra-btn-reward-toggle")){
+            var btn=e.target.closest(".ra-btn-reward-toggle");
+            var rid=btn.getAttribute("data-repair-id");
+            var container=document.querySelector(\'.ra-reward-container[data-repair-id="\'+rid+\'"]\');
+            if(!container)return;
+            var isOpen=container.style.display!=="none";
+            if(isOpen){
+                container.style.display="none";
+                btn.classList.remove("active");
+            }else{
+                container.style.display="block";
+                btn.classList.add("active");
+            }
+        }
+
+        // Approve reward
+        if(e.target.closest(".ra-reward-approve")){
+            var btn=e.target.closest(".ra-reward-approve");
+            var rid=btn.getAttribute("data-repair-id");
+            var pts=btn.getAttribute("data-points")||4;
+            if(!confirm("Belohnung genehmigen?\\n\\nDie Punkte werden abgezogen und der Rabatt wird auf der nächsten Rechnung berücksichtigt."))return;
+            btn.disabled=true;
+            btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+            var fd=new FormData();
+            fd.append("action","ppv_repair_reward_approve");
+            fd.append("nonce",NONCE);
+            fd.append("repair_id",rid);
+            fd.append("points",pts);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success){
+                    toast("Belohnung genehmigt! Rabatt wird auf der Rechnung abgezogen.");
+                    setTimeout(function(){location.reload()},1500);
+                }else{
+                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                    btn.disabled=false;
+                    btn.innerHTML=\'<i class="ri-check-line"></i> Genehmigen\';
+                }
+            })
+            .catch(function(){
+                toast("Verbindungsfehler");
+                btn.disabled=false;
+                btn.innerHTML=\'<i class="ri-check-line"></i> Genehmigen\';
+            });
+        }
+
+        // Reject reward (open modal)
+        if(e.target.closest(".ra-reward-reject")){
+            var btn=e.target.closest(".ra-reward-reject");
+            var rid=btn.getAttribute("data-repair-id");
+            document.getElementById("ra-reject-repair-id").value=rid;
+            document.getElementById("ra-reject-reason").value="";
+            document.getElementById("ra-reject-modal").classList.add("show");
+        }
+    });
+
+    // Reject modal handlers
+    var rejectModal=document.getElementById("ra-reject-modal");
+    if(rejectModal){
+        document.getElementById("ra-reject-cancel").addEventListener("click",function(){
+            rejectModal.classList.remove("show");
+        });
+        rejectModal.addEventListener("click",function(e){
+            if(e.target===rejectModal)rejectModal.classList.remove("show");
+        });
+        document.getElementById("ra-reject-submit").addEventListener("click",function(){
+            var rid=document.getElementById("ra-reject-repair-id").value;
+            var reason=document.getElementById("ra-reject-reason").value.trim();
+            if(!reason){
+                alert("Bitte geben Sie einen Grund f\\u00fcr die Ablehnung an.");
+                return;
+            }
+            var btn=this;
+            btn.disabled=true;
+            btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gespeichert...\';
+            var fd=new FormData();
+            fd.append("action","ppv_repair_reward_reject");
+            fd.append("nonce",NONCE);
+            fd.append("repair_id",rid);
+            fd.append("reason",reason);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success){
+                    toast("Belohnung abgelehnt.");
+                    rejectModal.classList.remove("show");
+                    setTimeout(function(){location.reload()},1500);
+                }else{
+                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                    btn.disabled=false;
+                    btn.innerHTML="Ablehnen";
+                }
+            })
+            .catch(function(){
+                toast("Verbindungsfehler");
+                btn.disabled=false;
+                btn.innerHTML="Ablehnen";
+            });
+        });
+    }
+
 })();
 </script>
 </body>
@@ -3183,7 +3336,10 @@ echo '          </div>
     /** ============================================================
      * Build HTML for a single repair card (server-side)
      * ============================================================ */
-    private static function build_repair_card_html($r) {
+    private static function build_repair_card_html($r, $store = null) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
         $status_map = [
             'new'           => ['Neu',              'ra-status-new'],
             'in_progress'   => ['In Bearbeitung',   'ra-status-progress'],
@@ -3223,6 +3379,87 @@ echo '          </div>
             $options .= '<option value="' . esc_attr($key) . '"' . $sel . '>' . esc_html($label[0]) . '</option>';
         }
 
+        // Build reward section if PunktePass is enabled
+        $reward_html = '';
+        if ($store && !empty($store->repair_punktepass_enabled)) {
+            $required_points = intval($store->repair_required_points ?? 4);
+            $reward_name = esc_html($store->repair_reward_name ?? '10 Euro Rabatt');
+            $reward_value = floatval($store->repair_reward_value ?? 10);
+            $reward_type = $store->repair_reward_type ?? 'discount_fixed';
+
+            // Get customer's user_id and points
+            $user_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$prefix}ppv_users WHERE email = %s LIMIT 1",
+                $r->customer_email
+            ));
+
+            $total_points = 0;
+            if ($user_id) {
+                $total_points = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT COALESCE(SUM(points), 0) FROM {$prefix}ppv_points WHERE user_id = %d AND store_id = %d",
+                    $user_id, $store->id
+                ));
+            }
+
+            // Check if reward already approved for this repair
+            $reward_approved = !empty($r->reward_approved);
+            $reward_rejected = !empty($r->reward_rejected);
+            $rejection_reason = $r->reward_rejection_reason ?? '';
+
+            // Show reward section if customer has enough points
+            if ($total_points >= $required_points && !$reward_approved) {
+                $reward_display = ($reward_type === 'discount_percent')
+                    ? $reward_value . '% Rabatt'
+                    : number_format($reward_value, 2, ',', '.') . ' &euro; Rabatt';
+
+                $badge_class = $reward_rejected ? 'ra-reward-badge-rejected' : 'ra-reward-badge-available';
+
+                // Toggle button (always visible)
+                $reward_html = '<div class="ra-reward-toggle-section">'
+                    . '<button class="ra-btn-reward-toggle ' . $badge_class . '" data-repair-id="' . intval($r->id) . '">'
+                        . '<i class="ri-gift-line"></i> ' . ($reward_rejected ? 'Belohnung (abgelehnt)' : 'Belohnung verf&uuml;gbar')
+                    . '</button>'
+                    . '<div class="ra-reward-container" style="display:none" data-repair-id="' . intval($r->id) . '">';
+
+                if ($reward_rejected) {
+                    // Show rejection info with option to reconsider
+                    $reward_html .= '<div class="ra-reward-section ra-reward-rejected">'
+                        . '<div class="ra-reward-header"><i class="ri-gift-line"></i> Belohnung abgelehnt</div>'
+                        . '<div class="ra-reward-info">'
+                            . '<span class="ra-reward-badge"><i class="ri-star-fill"></i> ' . $total_points . '/' . $required_points . ' Punkte</span>'
+                            . '<span class="ra-reward-name">' . $reward_name . '</span>'
+                        . '</div>'
+                        . '<div class="ra-reward-rejection-info">'
+                            . '<i class="ri-close-circle-line"></i> Grund: ' . esc_html($rejection_reason)
+                        . '</div>'
+                        . '<div class="ra-reward-actions">'
+                            . '<button class="ra-reward-approve" data-repair-id="' . intval($r->id) . '" data-points="' . $required_points . '"><i class="ri-check-line"></i> Doch genehmigen</button>'
+                        . '</div>'
+                    . '</div>';
+                } else {
+                    // Show approve/reject buttons
+                    $reward_html .= '<div class="ra-reward-section">'
+                        . '<div class="ra-reward-header"><i class="ri-gift-line"></i> Belohnung einl&ouml;sen</div>'
+                        . '<div class="ra-reward-info">'
+                            . '<span class="ra-reward-badge"><i class="ri-star-fill"></i> ' . $total_points . '/' . $required_points . ' Punkte</span>'
+                            . '<span class="ra-reward-name">' . $reward_name . ' (' . $reward_display . ')</span>'
+                        . '</div>'
+                        . '<div class="ra-reward-actions">'
+                            . '<button class="ra-reward-approve" data-repair-id="' . intval($r->id) . '" data-points="' . $required_points . '"><i class="ri-check-line"></i> Genehmigen</button>'
+                            . '<button class="ra-reward-reject" data-repair-id="' . intval($r->id) . '"><i class="ri-close-line"></i> Ablehnen</button>'
+                        . '</div>'
+                    . '</div>';
+                }
+
+                $reward_html .= '</div></div>';
+            } elseif ($reward_approved) {
+                // Show approved status (small badge, no toggle needed)
+                $reward_html = '<div class="ra-reward-approved-badge">'
+                    . '<i class="ri-check-double-line"></i> ' . $reward_name . ' genehmigt'
+                . '</div>';
+            }
+        }
+
         return '<div class="ra-repair-card" data-id="' . intval($r->id) . '"'
             . ' data-status="' . esc_attr($r->status) . '"'
             . ' data-name="' . esc_attr($r->customer_name) . '"'
@@ -3245,6 +3482,7 @@ echo '          </div>
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . '</div>'
             . '</div>'
+            . $reward_html
             . '<div class="ra-repair-comments-section">'
                 . '<button class="ra-btn-comments-toggle" data-repair-id="' . intval($r->id) . '"><i class="ri-chat-3-line"></i> Kommentare</button>'
                 . '<div class="ra-comments-container" style="display:none" data-repair-id="' . intval($r->id) . '">'
