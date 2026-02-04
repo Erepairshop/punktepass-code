@@ -1149,6 +1149,36 @@ add_action('init', function () {
 }, 99);
 
 // ========================================
+// 💳 PAYPAL & BANK TRANSFER INIT
+// ========================================
+add_action('init', function () {
+    // PayPal Subscription
+    if (file_exists(PPV_PLUGIN_DIR . 'includes/class-ppv-paypal-subscription.php')) {
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-paypal-subscription.php';
+        if (class_exists('PPV_PayPal_Subscription')) PPV_PayPal_Subscription::hooks();
+    }
+    // Bank Transfer
+    if (file_exists(PPV_PLUGIN_DIR . 'includes/class-ppv-bank-transfer.php')) {
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-bank-transfer.php';
+        if (class_exists('PPV_Bank_Transfer')) PPV_Bank_Transfer::hooks();
+    }
+}, 99);
+
+// ========================================
+// 💳 CHECKOUT PAGE ROUTE
+// ========================================
+add_action('init', function () {
+    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    $path = parse_url($request_uri, PHP_URL_PATH);
+    $path = rtrim($path, '/');
+
+    if ($path === '/checkout' || $path === '/zahlung') {
+        require_once PPV_PLUGIN_DIR . 'includes/admin/standalone/payment-checkout.php';
+        exit;
+    }
+}, 5);
+
+// ========================================
 // 🪲 AUTO DEBUG
 // ========================================
 if (class_exists('PPV_Auto_Debug')) {
