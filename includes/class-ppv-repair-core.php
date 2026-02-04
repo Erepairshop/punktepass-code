@@ -62,6 +62,7 @@ class PPV_Repair_Core {
             'ppv_repair_delete'         => [__CLASS__, 'ajax_delete_repair'],
             'ppv_repair_reward_approve' => [__CLASS__, 'ajax_reward_approve'],
             'ppv_repair_reward_reject'  => [__CLASS__, 'ajax_reward_reject'],
+            'ppv_repair_send_email'     => [__CLASS__, 'ajax_send_repair_email'],
         ];
         foreach ($admin_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -1612,6 +1613,95 @@ class PPV_Repair_Core {
         );
 
         wp_send_json_success(['message' => 'Belohnung abgelehnt']);
+    }
+
+    /** AJAX: Send Repair Email to Customer */
+    public static function ajax_send_repair_email() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Get repair with store info
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT r.*, s.name AS store_name, s.repair_company_name, s.repair_company_address, s.repair_company_phone, s.email AS store_email
+             FROM {$prefix}ppv_repairs r
+             JOIN {$prefix}ppv_stores s ON r.store_id = s.id
+             WHERE r.id = %d AND r.store_id = %d",
+            $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+        if (empty($repair->customer_email)) wp_send_json_error(['message' => 'Keine E-Mail-Adresse vorhanden']);
+
+        // Build email
+        $company_name = $repair->repair_company_name ?: $repair->store_name;
+        $company_address = $repair->repair_company_address ?: '';
+        $company_phone = $repair->repair_company_phone ?: '';
+        $device = trim(($repair->device_brand ?: '') . ' ' . ($repair->device_model ?: ''));
+        $date = date('d.m.Y H:i', strtotime($repair->created_at));
+
+        $status_labels = [
+            'new' => 'Neu',
+            'in_progress' => 'In Bearbeitung',
+            'waiting_parts' => 'Wartet auf Teile',
+            'done' => 'Fertig',
+            'delivered' => 'Abgeholt',
+            'cancelled' => 'Storniert'
+        ];
+        $status_text = $status_labels[$repair->status] ?? 'Unbekannt';
+
+        $subject = "Reparaturauftrag #{$repair_id} - {$company_name}";
+
+        $email_body = "Sehr geehrte/r {$repair->customer_name},\n\n";
+        $email_body .= "vielen Dank für Ihren Reparaturauftrag bei {$company_name}.\n\n";
+        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $email_body .= "REPARATURAUFTRAG #{$repair_id}\n";
+        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $email_body .= "📅 Datum: {$date}\n";
+        $email_body .= "📊 Status: {$status_text}\n\n";
+
+        $email_body .= "📱 GERÄT\n";
+        $email_body .= "──────────────────────────────────\n";
+        if ($device) $email_body .= "Gerät: {$device}\n";
+        if (!empty($repair->device_pattern)) $email_body .= "PIN/Code: {$repair->device_pattern}\n";
+        $email_body .= "\n";
+
+        $email_body .= "🔧 PROBLEMBESCHREIBUNG\n";
+        $email_body .= "──────────────────────────────────\n";
+        $email_body .= "{$repair->problem_description}\n\n";
+
+        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $email_body .= "Bei Fragen erreichen Sie uns unter:\n";
+        if ($company_phone) $email_body .= "📞 {$company_phone}\n";
+        if ($repair->store_email) $email_body .= "📧 {$repair->store_email}\n";
+        if ($company_address) $email_body .= "📍 {$company_address}\n";
+        $email_body .= "\n";
+        $email_body .= "Mit freundlichen Grüßen,\n";
+        $email_body .= "{$company_name}\n";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            "From: {$company_name} <noreply@punktepass.de>"
+        ];
+        if ($repair->store_email) {
+            $headers[] = "Reply-To: {$repair->store_email}";
+        }
+
+        $sent = wp_mail($repair->customer_email, $subject, $email_body, $headers);
+
+        if ($sent) {
+            wp_send_json_success(['message' => 'E-Mail gesendet']);
+        } else {
+            wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
+        }
     }
 
     /** AJAX: Search Repairs */

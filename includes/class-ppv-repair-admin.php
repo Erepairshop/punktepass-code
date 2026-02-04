@@ -371,6 +371,10 @@ a:hover{text-decoration:underline}
 .ra-btn-invoice:hover{background:#16a34a;color:#fff;border-color:#16a34a}
 .ra-btn-delete{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
+.ra-btn-print{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.ra-btn-print:hover{background:#374151;color:#fff;border-color:#374151}
+.ra-btn-email{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.ra-btn-email:hover{background:#2563eb;color:#fff;border-color:#2563eb}
 
 /* ========== Reward Section ========== */
 .ra-reward-toggle-section{margin:12px 0}
@@ -1766,6 +1770,10 @@ echo '          </div>
         SLUG="' . esc_attr($store_slug) . '",
         VAT_ENABLED=!!parseInt("' . $vat_enabled . '"),
         VAT_RATE=parseFloat("' . $vat_rate . '"),
+        STORE_NAME="' . esc_js($store->name) . '",
+        STORE_COMPANY="' . esc_js($store->repair_company_name ?: $store->name) . '",
+        STORE_ADDRESS="' . esc_js($store->repair_company_address ?? '') . '",
+        STORE_PHONE="' . esc_js($store->repair_company_phone ?? '') . '",
         searchTimer=null,
         currentPage=1;
 
@@ -1900,6 +1908,139 @@ echo '          </div>
         });
     });
 
+    /* ===== Print Repair ===== */
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-btn-print");
+        if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
+        printRepair(card);
+    });
+
+    function printRepair(card){
+        var data={
+            id: card.dataset.id,
+            name: card.dataset.name||"",
+            email: card.dataset.email||"",
+            phone: card.dataset.phone||"",
+            address: card.dataset.address||"",
+            brand: card.dataset.brand||"",
+            model: card.dataset.model||"",
+            pin: card.dataset.pin||"",
+            problem: card.dataset.problem||"",
+            date: card.dataset.date||"",
+            muster: card.dataset.muster||""
+        };
+        var w=window.open("","_blank","width=800,height=900");
+        if(!w){alert("Popup blockiert! Bitte erlauben Sie Pop-ups.");return;}
+        var device=((data.brand||"")+" "+(data.model||"")).trim();
+        var musterHtml=data.muster&&data.muster.indexOf("data:image/")===0?\'<div class="field"><span class="label">Muster:</span><img src="\'+data.muster+\'" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>\':"";
+        var pinHtml=data.pin?\'<div class="field"><span class="label">PIN:</span><span class="value highlight">\'+esc(data.pin)+\'</span></div>\':"";
+        var addressHtml=data.address?\'<div class="field"><span class="label">Adresse:</span><span class="value">\'+esc(data.address)+\'</span></div>\':"";
+        var html=\'<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reparaturauftrag #\'+data.id+\'</title><style>\'+
+            \'*{margin:0;padding:0;box-sizing:border-box}\'+
+            \'body{font-family:Arial,sans-serif;padding:15px 20px;color:#1f2937;line-height:1.3;font-size:11px}\'+
+            \'.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:12px}\'+
+            \'.logo{font-size:18px;font-weight:700;color:#667eea}\'+
+            \'.logo span{color:#1f2937}\'+
+            \'.header-info{text-align:right;font-size:10px;color:#6b7280}\'+
+            \'.header-info strong{color:#1f2937}\'+
+            \'.title{text-align:center;margin-bottom:12px;padding:8px;background:#667eea;color:#fff;border-radius:6px}\'+
+            \'.title h1{font-size:14px;margin:0}\'+
+            \'.title p{font-size:10px;margin-top:2px;opacity:0.9}\'+
+            \'.two-col{display:flex;gap:12px;margin-bottom:10px}\'+
+            \'.section{background:#f9fafb;border-radius:6px;padding:10px 12px;border:1px solid #e5e7eb;flex:1}\'+
+            \'.section-title{font-size:9px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb}\'+
+            \'.field{display:flex;margin-bottom:4px}\'+
+            \'.label{width:55px;font-weight:500;color:#6b7280;font-size:10px}\'+
+            \'.value{flex:1;font-size:11px;color:#1f2937}\'+
+            \'.value.highlight{color:#667eea;font-weight:600}\'+
+            \'.problem-section{background:#f9fafb;border-radius:6px;padding:10px 12px;border:1px solid #e5e7eb;margin-bottom:10px}\'+
+            \'.datenschutz{background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:8px 10px;margin-bottom:10px}\'+
+            \'.datenschutz-title{font-weight:600;color:#92400e;margin-bottom:4px;font-size:9px;text-transform:uppercase}\'+
+            \'.datenschutz-text{font-size:8px;color:#78350f;line-height:1.4}\'+
+            \'.datenschutz-text ul{margin:4px 0;padding-left:14px}\'+
+            \'.signature-area{display:flex;gap:20px;margin-top:10px;padding-top:8px;border-top:1px dashed #d1d5db}\'+
+            \'.signature-box{flex:1}\'+
+            \'.signature-box label{display:block;font-size:9px;color:#6b7280;margin-bottom:4px}\'+
+            \'.signature-line{border-bottom:1px solid #1f2937;height:35px}\'+
+            \'.footer{text-align:center;margin-top:8px;font-size:9px;color:#9ca3af}\'+
+            \'@media print{body{padding:10px 15px}@page{margin:10mm}}\'+
+            \'</style></head><body>\'+
+            \'<div class="header">\'+
+                \'<div class="logo">\'+esc(STORE_COMPANY)+\'</div>\'+
+                \'<div class="header-info">\'+(STORE_ADDRESS?esc(STORE_ADDRESS)+\'<br>\':\'\')+\'<strong>Tel: \'+esc(STORE_PHONE)+\'</strong></div>\'+
+            \'</div>\'+
+            \'<div class="title"><h1>Reparaturauftrag #\'+data.id+\'</h1><p>Datum: \'+esc(data.date)+\'</p></div>\'+
+            \'<div class="two-col">\'+
+                \'<div class="section"><div class="section-title">Kunde</div>\'+
+                    \'<div class="field"><span class="label">Name:</span><span class="value">\'+esc(data.name)+\'</span></div>\'+
+                    \'<div class="field"><span class="label">Telefon:</span><span class="value">\'+esc(data.phone)+\'</span></div>\'+
+                    \'<div class="field"><span class="label">E-Mail:</span><span class="value">\'+esc(data.email)+\'</span></div>\'+
+                    addressHtml+
+                \'</div>\'+
+                \'<div class="section"><div class="section-title">Ger\\u00e4t</div>\'+
+                    \'<div class="field"><span class="label">Ger\\u00e4t:</span><span class="value">\'+esc(device)+\'</span></div>\'+
+                    pinHtml+
+                    musterHtml+
+                \'</div>\'+
+            \'</div>\'+
+            \'<div class="problem-section"><div class="section-title">Problembeschreibung</div>\'+
+                \'<div style="font-size:11px">\'+esc(data.problem)+\'</div>\'+
+            \'</div>\'+
+            \'<div class="datenschutz">\'+
+                \'<div class="datenschutz-title">Datenschutzhinweis</div>\'+
+                \'<div class="datenschutz-text">Mit meiner Unterschrift best\\u00e4tige ich:<ul><li>Die Richtigkeit der angegebenen Daten</li><li>Die Zustimmung zur Datenverarbeitung gem\\u00e4\\u00df DSGVO</li><li>Die Kenntnisnahme der Reparaturbedingungen</li></ul></div>\'+
+            \'</div>\'+
+            \'<div class="signature-area">\'+
+                \'<div class="signature-box"><label>Unterschrift Kunde:</label><div class="signature-line"></div></div>\'+
+                \'<div class="signature-box"><label>Datum:</label><div class="signature-line"></div></div>\'+
+            \'</div>\'+
+            \'<div class="footer">\'+esc(STORE_COMPANY)+\' | \'+esc(STORE_ADDRESS)+\' | \'+esc(STORE_PHONE)+\'</div>\'+
+            \'<script>window.onload=function(){window.print();}<\\/script>\'+
+            \'</body></html>\';
+        w.document.write(html);
+        w.document.close();
+    }
+
+    /* ===== Email Repair ===== */
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-btn-email");
+        if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
+        var email=card.dataset.email;
+        if(!email){
+            toast("Keine E-Mail-Adresse vorhanden");
+            return;
+        }
+        if(!confirm("Reparaturauftrag an "+email+" senden?")){
+            return;
+        }
+        btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_send_email");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",card.dataset.id);
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-mail-send-line"></i>\';
+            if(res.success){
+                toast("E-Mail erfolgreich gesendet!");
+            }else{
+                toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden");
+            }
+        })
+        .catch(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-mail-send-line"></i>\';
+            toast("Verbindungsfehler");
+        });
+    });
+
     /* ===== Search & Filter ===== */
     var searchInput=document.getElementById("ra-search-input"),
         filterSelect=document.getElementById("ra-filter-status");
@@ -1983,7 +2124,8 @@ echo '          </div>
         var deviceHtml=device?\'<div class="ra-repair-device"><i class="ri-smartphone-line"></i> \'+esc(device)+\'</div>\':"";
         var addressHtml=r.customer_address?\'<div class="ra-repair-address"><i class="ri-map-pin-line"></i> \'+esc(r.customer_address)+\'</div>\':"";
         var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="Muster" title="Entsperrmuster"></div>\':"";
-        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'">\'+
+        var fullProblem=r.problem_description||"";
+        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
                 \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span>\'+addressHtml+\'</div>\'+
@@ -1991,7 +2133,7 @@ echo '          </div>
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
             \'</div>\'+
-            \'<div class="ra-repair-actions"><button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button><button class="ra-btn-invoice" title="Rechnung erstellen"><i class="ri-file-list-3-line"></i></button><button class="ra-btn-delete" title="L\u00f6schen"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
+            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="Ausdrucken"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="Per E-Mail senden"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button><button class="ra-btn-invoice" title="Rechnung erstellen"><i class="ri-file-list-3-line"></i></button><button class="ra-btn-delete" title="L\u00f6schen"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
         \'</div>\';
     }
     function pad(n){return n<10?"0"+n:n}
@@ -3726,8 +3868,13 @@ echo '          </div>
             . ' data-name="' . esc_attr($r->customer_name) . '"'
             . ' data-email="' . esc_attr($r->customer_email) . '"'
             . ' data-phone="' . esc_attr($r->customer_phone) . '"'
+            . ' data-address="' . esc_attr($r->customer_address) . '"'
             . ' data-brand="' . esc_attr($r->device_brand) . '"'
-            . ' data-model="' . esc_attr($r->device_model) . '">'
+            . ' data-model="' . esc_attr($r->device_model) . '"'
+            . ' data-pin="' . esc_attr($r->device_pattern) . '"'
+            . ' data-problem="' . esc_attr($r->problem_description) . '"'
+            . ' data-date="' . esc_attr($date) . '"'
+            . ' data-muster="' . esc_attr($r->muster_image) . '">'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
                 . '<span class="ra-status ' . esc_attr($st[1]) . '">' . esc_html($st[0]) . '</span>'
@@ -3755,6 +3902,8 @@ echo '          </div>
                 . '</div>'
             . '</div>'
             . '<div class="ra-repair-actions">'
+                . '<button class="ra-btn-print" title="Ausdrucken"><i class="ri-printer-line"></i></button>'
+                . '<button class="ra-btn-email" title="Per E-Mail senden"><i class="ri-mail-send-line"></i></button>'
                 . '<button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button>'
                 . '<button class="ra-btn-invoice" title="Rechnung erstellen"><i class="ri-file-list-3-line"></i></button>'
                 . '<button class="ra-btn-delete" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>'
