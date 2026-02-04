@@ -340,11 +340,8 @@ $vat = 7.41;
             <div id="error-message" class="error-message"></div>
 
             <div class="price-summary">
-                <div class="price-amount"><?php echo number_format($price_gross, 2, ',', '.'); ?> €</div>
-                <div class="price-period">pro Monat</div>
-                <div class="price-details">
-                    <?php echo number_format($price_net, 2, ',', '.'); ?> € netto + <?php echo number_format($vat, 2, ',', '.'); ?> € MwSt (19%)
-                </div>
+                <div class="price-amount"><?php echo number_format($price_net, 2, ',', '.'); ?> €</div>
+                <div class="price-period">pro Monat (netto)</div>
             </div>
 
             <div class="features-list">
