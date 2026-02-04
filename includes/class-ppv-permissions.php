@@ -91,7 +91,7 @@ class PPV_Permissions {
             // 🔒 SECURITY: Validate store still exists and is active
             global $wpdb;
             $store_exists = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND status = 'active'",
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND subscription_status = 'active'",
                 $store_id
             ));
 
