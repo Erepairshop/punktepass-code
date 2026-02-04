@@ -366,17 +366,16 @@ $vat = 7.41;
             <h3 style="margin: 24px 0 16px; font-size: 16px; color: #374151;">Zahlungsmethode wählen</h3>
 
             <div class="payment-methods">
-                <label class="payment-option" data-method="paypal">
-                    <input type="radio" name="payment_method" value="paypal">
+                <div class="payment-option selected" data-method="paypal">
                     <div class="payment-option-header">
                         <i class="ri-paypal-fill"></i>
                         <h3>PayPal</h3>
                     </div>
                     <p>Automatische monatliche Abbuchung über PayPal</p>
-                </label>
+                    <div id="paypal-button-container" style="margin-top: 16px;"></div>
+                </div>
 
-                <label class="payment-option" data-method="bank_transfer">
-                    <input type="radio" name="payment_method" value="bank_transfer">
+                <div class="payment-option" data-method="bank_transfer" onclick="selectBankTransfer()">
                     <div class="payment-option-header">
                         <i class="ri-bank-line"></i>
                         <h3>Banküberweisung</h3>
@@ -390,7 +389,7 @@ $vat = 7.41;
                         <div class="bank-row">
                             <label>IBAN</label>
                             <span id="iban-value"><?php echo esc_html($bank_iban); ?></span>
-                            <button type="button" class="copy-btn" onclick="copyToClipboard('<?php echo esc_js($bank_iban); ?>')">
+                            <button type="button" class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('<?php echo esc_js(str_replace(' ', '', $bank_iban)); ?>')">
                                 <i class="ri-file-copy-line"></i>
                             </button>
                         </div>
@@ -405,7 +404,7 @@ $vat = 7.41;
                         <div class="bank-row">
                             <label>Verwendungszweck</label>
                             <span id="reference-value"><?php echo esc_html($reference); ?></span>
-                            <button type="button" class="copy-btn" onclick="copyToClipboard('<?php echo esc_js($reference); ?>')">
+                            <button type="button" class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('<?php echo esc_js($reference); ?>')">
                                 <i class="ri-file-copy-line"></i>
                             </button>
                         </div>
@@ -413,14 +412,13 @@ $vat = 7.41;
                             <label>Betrag</label>
                             <span><?php echo number_format($price_gross, 2, ',', '.'); ?> €</span>
                         </div>
+                        <button type="button" class="checkout-btn" id="bank-transfer-btn" style="margin-top: 16px;" onclick="event.stopPropagation(); requestBankTransfer()">
+                            <span class="spinner" id="bank-spinner"></span>
+                            <span class="btn-text" id="bank-btn-text"><i class="ri-mail-send-line"></i> Bankdaten per E-Mail senden</span>
+                        </button>
                     </div>
-                </label>
+                </div>
             </div>
-
-            <button type="button" class="checkout-btn" id="checkout-btn" disabled>
-                <span class="spinner"></span>
-                <span class="btn-text"><i class="ri-shopping-cart-line"></i> Jetzt abonnieren</span>
-            </button>
 
             <div class="terms">
                 Mit dem Abschluss akzeptieren Sie unsere
@@ -434,89 +432,117 @@ $vat = 7.41;
         </a>
     </div>
 
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=<?php echo defined('PAYPAL_CLIENT_ID') ? PAYPAL_CLIENT_ID : 'BAALxY2WmAuDUHtqwXtwO2RD_DjkfSpTEGPcFn0gSSBh9n_WywV0HekzzWMkNQalC7anJv_CMBwRgqU3X4'; ?>&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+
     <script>
-        const paymentOptions = document.querySelectorAll('.payment-option');
-        const checkoutBtn = document.getElementById('checkout-btn');
         const bankDetails = document.getElementById('bank-details');
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
-        let selectedMethod = null;
+        const storeId = <?php echo $store_id; ?>;
+        const planId = '<?php echo defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : 'P-2AM08048AE701010RNGBQB6I'; ?>';
 
-        paymentOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                paymentOptions.forEach(o => o.classList.remove('selected'));
-                this.classList.add('selected');
-                this.querySelector('input').checked = true;
-                selectedMethod = this.dataset.method;
-                checkoutBtn.disabled = false;
+        // PayPal Button
+        paypal.Buttons({
+            style: {
+                shape: 'rect',
+                color: 'blue',
+                layout: 'vertical',
+                label: 'subscribe'
+            },
+            createSubscription: function(data, actions) {
+                return actions.subscription.create({
+                    plan_id: planId,
+                    custom_id: 'store_' + storeId
+                });
+            },
+            onApprove: async function(data, actions) {
+                // Save subscription to database
+                try {
+                    const response = await fetch('/wp-json/punktepass/v1/paypal/activate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            subscription_id: data.subscriptionID,
+                            store_id: storeId
+                        })
+                    });
 
-                // Show/hide bank details
-                if (selectedMethod === 'bank_transfer') {
-                    bankDetails.classList.add('show');
-                } else {
-                    bankDetails.classList.remove('show');
+                    successMessage.innerHTML = `
+                        <strong>Vielen Dank!</strong><br>
+                        Ihr PayPal-Abo wurde erfolgreich aktiviert.<br>
+                        Subscription ID: <code>${data.subscriptionID}</code><br><br>
+                        Sie werden gleich weitergeleitet...
+                    `;
+                    successMessage.style.display = 'block';
+
+                    setTimeout(() => {
+                        window.location.href = '/handler_dashboard?payment=success&method=paypal';
+                    }, 2000);
+                } catch (error) {
+                    // Even if API fails, redirect - webhook will handle it
+                    window.location.href = '/handler_dashboard?payment=success&method=paypal&sub=' + data.subscriptionID;
                 }
-            });
-        });
+            },
+            onError: function(err) {
+                errorMessage.textContent = 'PayPal Fehler: ' + (err.message || 'Bitte versuchen Sie es erneut.');
+                errorMessage.style.display = 'block';
+            }
+        }).render('#paypal-button-container');
 
-        checkoutBtn.addEventListener('click', async function() {
-            if (!selectedMethod) return;
+        // Bank Transfer selection
+        function selectBankTransfer() {
+            document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+            document.querySelector('[data-method="bank_transfer"]').classList.add('selected');
+            bankDetails.classList.add('show');
+        }
 
-            checkoutBtn.classList.add('loading');
-            checkoutBtn.disabled = true;
+        // Request Bank Transfer
+        async function requestBankTransfer() {
+            const btn = document.getElementById('bank-transfer-btn');
+            const spinner = document.getElementById('bank-spinner');
+            const btnText = document.getElementById('bank-btn-text');
+
+            spinner.style.display = 'block';
+            btnText.style.display = 'none';
+            btn.disabled = true;
             errorMessage.style.display = 'none';
 
             try {
-                if (selectedMethod === 'paypal') {
-                    // Create PayPal subscription
-                    const response = await fetch('/wp-json/punktepass/v1/paypal/create-subscription', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'same-origin'
-                    });
+                const response = await fetch('/wp-json/punktepass/v1/bank-transfer/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                });
 
-                    const data = await response.json();
+                const data = await response.json();
 
-                    if (data.approve_url) {
-                        window.location.href = data.approve_url;
-                    } else {
-                        throw new Error(data.error || 'PayPal subscription failed');
-                    }
-                } else if (selectedMethod === 'bank_transfer') {
-                    // Request bank transfer
-                    const response = await fetch('/wp-json/punktepass/v1/bank-transfer/request', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'same-origin'
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        successMessage.innerHTML = `
-                            <strong>Vielen Dank!</strong><br>
-                            Bitte überweisen Sie <strong>${data.amount.toFixed(2).replace('.', ',')} €</strong>
-                            mit dem Verwendungszweck <strong>${data.reference}</strong>.<br><br>
-                            Eine E-Mail mit den Bankdaten wurde an Sie gesendet.<br>
-                            Nach Zahlungseingang wird Ihr Abo innerhalb von 1-2 Werktagen aktiviert.
-                        `;
-                        successMessage.style.display = 'block';
-                        checkoutBtn.style.display = 'none';
-                    } else {
-                        throw new Error(data.error || 'Request failed');
-                    }
+                if (data.success) {
+                    successMessage.innerHTML = `
+                        <strong>Vielen Dank!</strong><br>
+                        Bitte überweisen Sie <strong>${data.amount.toFixed(2).replace('.', ',')} €</strong>
+                        mit dem Verwendungszweck <strong>${data.reference}</strong>.<br><br>
+                        Eine E-Mail mit den Bankdaten wurde an Sie gesendet.<br>
+                        Nach Zahlungseingang wird Ihr Abo innerhalb von 1-2 Werktagen aktiviert.
+                    `;
+                    successMessage.style.display = 'block';
+                    btn.style.display = 'none';
+                } else {
+                    throw new Error(data.error || 'Request failed');
                 }
             } catch (error) {
-                errorMessage.textContent = error.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+                errorMessage.textContent = error.message || 'Ein Fehler ist aufgetreten.';
                 errorMessage.style.display = 'block';
-                checkoutBtn.classList.remove('loading');
-                checkoutBtn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.style.display = 'inline-flex';
+                btn.disabled = false;
             }
-        });
+        }
 
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text.replace(/\s/g, '')).then(() => {
-                alert('Kopiert: ' + text);
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Kopiert!');
             });
         }
     </script>

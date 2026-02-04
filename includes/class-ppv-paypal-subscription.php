@@ -48,6 +48,48 @@ class PPV_PayPal_Subscription {
             'callback' => [__CLASS__, 'get_subscription_status'],
             'permission_callback' => [__CLASS__, 'check_handler_permission'],
         ]);
+
+        // Activate subscription (after PayPal approval)
+        register_rest_route('punktepass/v1', '/paypal/activate', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'activate_subscription'],
+            'permission_callback' => '__return_true',
+        ]);
+    }
+
+    /**
+     * Activate subscription after PayPal approval
+     */
+    public static function activate_subscription(WP_REST_Request $request) {
+        $subscription_id = $request->get_param('subscription_id');
+        $store_id = $request->get_param('store_id');
+
+        if (empty($subscription_id) || empty($store_id)) {
+            return new WP_REST_Response(['error' => 'Missing parameters'], 400);
+        }
+
+        global $wpdb;
+
+        // Update store with active subscription
+        $updated = $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            [
+                'subscription_status' => 'active',
+                'subscription_expires_at' => date('Y-m-d H:i:s', strtotime('+1 month')),
+                'paypal_subscription_id' => $subscription_id,
+                'payment_method' => 'paypal',
+                'active' => 1,
+            ],
+            ['id' => $store_id]
+        );
+
+        if ($updated === false) {
+            return new WP_REST_Response(['error' => 'Database error'], 500);
+        }
+
+        ppv_log("✅ PayPal subscription activated via JS SDK: {$subscription_id} for store {$store_id}");
+
+        return new WP_REST_Response(['success' => true], 200);
     }
 
     /**
