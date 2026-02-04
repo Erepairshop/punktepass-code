@@ -1629,6 +1629,19 @@ function ppv_format_device_info_json($device_info_json) {
                             <i class="ri-check-line"></i> Aktiválás (6 hónap)
                         </button>
                     </form>
+
+                    <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+
+                    <div class="handler-info-box" style="background: rgba(220,53,69,0.1); border-color: rgba(220,53,69,0.3);">
+                        <h4 style="color: #ff6b6b;"><i class="ri-close-circle-line"></i> Előfizetés deaktiválása</h4>
+                        <p>Az előfizetés azonnali megszüntetése - a händler újra fizethet a /checkout oldalon</p>
+                    </div>
+                    <form method="POST" action="/admin/handler-deactivate" id="deactivateForm">
+                        <input type="hidden" name="handler_id" id="deactivateHandlerId">
+                        <button type="submit" class="btn" id="deactivateBtn" style="background: rgba(220,53,69,0.3); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.4);" onclick="return confirm('Biztosan deaktiválod az előfizetést? A händler nem fog tudni belépni amíg újra nem fizet.');">
+                            <i class="ri-close-line"></i> Deaktivieren
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Tab: Mobile Scanner -->
@@ -1861,6 +1874,7 @@ function ppv_format_device_info_json($device_info_json) {
             // Set hidden form IDs
             document.getElementById('extendHandlerId').value = handler.id;
             document.getElementById('activateHandlerId').value = handler.id;
+            document.getElementById('deactivateHandlerId').value = handler.id;
             document.getElementById('mobileHandlerId').value = handler.id;
             document.getElementById('filialenHandlerId').value = handler.id;
 

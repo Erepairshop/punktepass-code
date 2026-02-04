@@ -31,7 +31,7 @@ class PPV_Repair_Form {
         $reward_name   = esc_html($store->repair_reward_name ?? '10 Euro Rabatt');
         $required_pts  = intval($store->repair_required_points ?? 4);
         $field_config  = json_decode($store->repair_field_config ?? '', true) ?: [];
-        $fc_defaults   = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon']];
+        $fc_defaults   = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster']];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
         $nonce = wp_create_nonce('ppv_repair_form');
@@ -89,16 +89,9 @@ class PPV_Repair_Form {
     </div>
 
     <?php else: ?>
-    <?php if ($pp_enabled): ?>
-    <!-- Bonus badge -->
-    <div class="repair-bonus-badge">
-        <i class="ri-gift-line"></i>
-        <span>+<?php echo $points; ?> PunktePass Bonuspunkte f&uuml;r dieses Formular!</span>
-    </div>
-    <?php endif; ?>
 
     <!-- Form -->
-    <form id="repair-form" class="repair-form" autocomplete="off">
+    <form id="repair-form" class="repair-form" autocomplete="off" enctype="multipart/form-data">
         <input type="hidden" name="action" value="ppv_repair_submit">
         <input type="hidden" name="nonce" value="<?php echo $nonce; ?>">
         <input type="hidden" name="store_id" value="<?php echo $store_id; ?>">
@@ -116,8 +109,9 @@ class PPV_Repair_Form {
             </div>
 
             <div class="repair-field">
-                <label for="rf-email">E-Mail *</label>
-                <input type="email" id="rf-email" name="customer_email" required placeholder="ihre@email.de" value="<?php echo $pf_email; ?>">
+                <label for="rf-email">E-Mail</label>
+                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>">
+                <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
             </div>
 
             <?php if (!empty($field_config['customer_phone']['enabled'])): ?>
@@ -126,11 +120,18 @@ class PPV_Repair_Form {
                 <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>">
             </div>
             <?php endif; ?>
+
+            <?php if (!empty($field_config['customer_address']['enabled'])): ?>
+            <div class="repair-field">
+                <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
+                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort">
+            </div>
+            <?php endif; ?>
         </div>
 
         <!-- Step 2: Informationen -->
         <?php
-        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']);
+        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']) || !empty($field_config['muster_image']['enabled']);
         if ($has_device_fields):
         ?>
         <div class="repair-section" id="step-device">
@@ -156,18 +157,38 @@ class PPV_Repair_Form {
             </div>
             <?php endif; ?>
 
-            <?php if (!empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled'])): ?>
-            <div class="repair-row">
-                <?php if (!empty($field_config['device_imei']['enabled'])): ?>
-                <div class="repair-field">
-                    <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?></label>
-                    <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?>">
+            <?php if (!empty($field_config['device_imei']['enabled'])): ?>
+            <div class="repair-field">
+                <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?></label>
+                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?>">
+            </div>
+            <?php endif; ?>
+
+            <?php
+            $show_pin = !empty($field_config['device_pattern']['enabled']);
+            $show_muster = !empty($field_config['muster_image']['enabled']);
+            if ($show_pin || $show_muster):
+            ?>
+            <div class="repair-field repair-unlock-field">
+                <label><?php echo ($show_pin && $show_muster) ? 'Entsperrmethode' : ($show_pin ? esc_html($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN') : esc_html($field_config['muster_image']['label'] ?? 'Entsperrmuster')); ?></label>
+                <?php if ($show_pin && $show_muster): ?>
+                <div class="repair-unlock-toggle">
+                    <button type="button" class="repair-unlock-btn active" data-mode="pin"><i class="ri-lock-password-line"></i> PIN / Code</button>
+                    <button type="button" class="repair-unlock-btn" data-mode="muster"><i class="ri-grid-line"></i> Muster</button>
                 </div>
                 <?php endif; ?>
-                <?php if (!empty($field_config['device_pattern']['enabled'])): ?>
-                <div class="repair-field">
-                    <label for="rf-pattern"><?php echo esc_html($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN'); ?></label>
+                <?php if ($show_pin): ?>
+                <div class="repair-unlock-content" id="repair-unlock-pin" <?php echo (!$show_muster) ? '' : ''; ?>>
                     <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN'); ?>">
+                </div>
+                <?php endif; ?>
+                <?php if ($show_muster): ?>
+                <div class="repair-unlock-content" id="repair-unlock-muster" <?php echo $show_pin ? 'style="display:none"' : ''; ?>>
+                    <div class="repair-muster-canvas-wrap">
+                        <canvas id="rf-muster-canvas" width="200" height="200"></canvas>
+                        <input type="hidden" name="muster_image" id="rf-muster-data">
+                        <button type="button" class="repair-muster-reset" id="rf-muster-reset"><i class="ri-refresh-line"></i> Zur&uuml;cksetzen</button>
+                    </div>
                 </div>
                 <?php endif; ?>
             </div>
@@ -187,6 +208,7 @@ class PPV_Repair_Form {
                 <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="Beschreiben Sie das Problem m&ouml;glichst genau..."></textarea>
             </div>
 
+
             <?php if (!empty($field_config['accessories']['enabled'])): ?>
             <div class="repair-field">
                 <label><?php echo esc_html($field_config['accessories']['label'] ?? 'Mitgegebenes Zubehör'); ?></label>
@@ -198,6 +220,28 @@ class PPV_Repair_Form {
                 </div>
             </div>
             <?php endif; ?>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="repair-section" id="step-signature">
+            <div class="repair-section-title">
+                <span class="repair-step-num"><?php echo $has_device_fields ? '4' : '3'; ?></span>
+                <h2>Unterschrift</h2>
+            </div>
+
+            <div class="repair-field">
+                <label><i class="ri-edit-line"></i> Unterschrift des Kunden</label>
+                <div class="repair-signature-container">
+                    <canvas id="rf-signature-canvas" width="400" height="150"></canvas>
+                    <p class="repair-signature-hint">Bitte unterschreiben Sie mit dem Finger oder der Maus</p>
+                    <div class="repair-signature-actions">
+                        <button type="button" class="repair-signature-reset" id="rf-signature-reset">
+                            <i class="ri-refresh-line"></i> L&ouml;schen
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="signature_image" id="rf-signature-data">
+            </div>
         </div>
 
         <!-- Terms -->
@@ -226,6 +270,18 @@ class PPV_Repair_Form {
         <h2>Vielen Dank!</h2>
         <p>Ihr <?php echo $form_title; ?> wurde erfolgreich eingereicht.</p>
 
+        <!-- Tracking Card -->
+        <div id="repair-tracking-card" class="repair-tracking-card" style="display:none">
+            <div class="repair-tracking-qr" id="repair-qr-container"></div>
+            <div class="repair-tracking-info">
+                <div class="repair-tracking-label">Ihre Auftragsnummer</div>
+                <div class="repair-tracking-id" id="repair-tracking-id">#---</div>
+                <a href="#" id="repair-tracking-link" class="repair-tracking-link" target="_blank">
+                    <i class="ri-external-link-line"></i> Status verfolgen
+                </a>
+            </div>
+        </div>
+
         <?php if ($pp_enabled): ?>
         <div id="repair-points-card" class="repair-points-card" style="display:none">
             <div class="repair-points-badge">
@@ -237,7 +293,7 @@ class PPV_Repair_Form {
         </div>
         <?php endif; ?>
 
-        <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail.</p>
+        <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail mit Ihrem Tracking-Link.</p>
 
         <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
     </div>
@@ -255,6 +311,7 @@ class PPV_Repair_Form {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>
 (function() {
     var form = document.getElementById('repair-form');
@@ -265,6 +322,241 @@ class PPV_Repair_Form {
     var submitLoading = form.querySelector('.repair-submit-loading');
     var errorDiv = document.getElementById('rf-error');
     var successDiv = document.getElementById('repair-success');
+    var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
+    var storeId = <?php echo $store_id; ?>;
+
+    // Email lookup for returning customers
+    var emailField = document.getElementById('rf-email');
+    var nameField = document.getElementById('rf-name');
+    var phoneField = document.getElementById('rf-phone');
+    var brandField = document.getElementById('rf-brand');
+    var modelField = document.getElementById('rf-model');
+    var emailLookupDone = {};
+
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+            var email = emailField.value.trim();
+            if (!email || emailLookupDone[email]) return;
+
+            var fd = new FormData();
+            fd.append('action', 'ppv_repair_customer_lookup');
+            fd.append('email', email);
+            fd.append('store_id', storeId);
+
+            fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.success && res.data.found) {
+                        emailLookupDone[email] = true;
+                        // Only fill empty fields
+                        if (nameField && !nameField.value) nameField.value = res.data.name || '';
+                        if (phoneField && !phoneField.value) phoneField.value = res.data.phone || '';
+                        if (brandField && !brandField.value) brandField.value = res.data.brand || '';
+                        if (modelField && !modelField.value) modelField.value = res.data.model || '';
+                        // Show hint
+                        showEmailHint('Willkommen zurück! Ihre Daten wurden automatisch eingetragen.');
+                    }
+                })
+                .catch(function() {});
+        });
+    }
+
+    function showEmailHint(msg) {
+        var hint = document.createElement('div');
+        hint.className = 'repair-email-hint';
+        hint.innerHTML = '<i class="ri-user-heart-line"></i> ' + msg;
+        emailField.parentNode.appendChild(hint);
+        setTimeout(function() { hint.classList.add('show'); }, 10);
+        setTimeout(function() { hint.classList.remove('show'); setTimeout(function() { hint.remove(); }, 300); }, 4000);
+    }
+
+    // PIN/Muster toggle handling
+    var unlockToggleBtns = document.querySelectorAll('.repair-unlock-btn');
+    var unlockPinContent = document.getElementById('repair-unlock-pin');
+    var unlockMusterContent = document.getElementById('repair-unlock-muster');
+
+    if (unlockToggleBtns.length > 0) {
+        unlockToggleBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var mode = btn.getAttribute('data-mode');
+                unlockToggleBtns.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                if (mode === 'pin') {
+                    if (unlockPinContent) unlockPinContent.style.display = '';
+                    if (unlockMusterContent) unlockMusterContent.style.display = 'none';
+                } else {
+                    if (unlockPinContent) unlockPinContent.style.display = 'none';
+                    if (unlockMusterContent) unlockMusterContent.style.display = '';
+                }
+            });
+        });
+    }
+
+    // Muster pattern canvas handling (3x3 grid like Android unlock)
+    var musterCanvas = document.getElementById('rf-muster-canvas');
+    var musterDataInput = document.getElementById('rf-muster-data');
+    var musterResetBtn = document.getElementById('rf-muster-reset');
+
+    if (musterCanvas) {
+        var mCtx = musterCanvas.getContext('2d');
+        var gridNum = 3;
+        var gridGap = musterCanvas.width / (gridNum + 1);
+        var musterPoints = [];
+        var musterDrawing = false;
+        var musterLastPointIndex = null;
+
+        function createMusterGrid() {
+            mCtx.clearRect(0, 0, musterCanvas.width, musterCanvas.height);
+            musterPoints = [];
+            mCtx.fillStyle = '#f3f4f6';
+            mCtx.fillRect(0, 0, musterCanvas.width, musterCanvas.height);
+
+            for (var i = 1; i <= gridNum; i++) {
+                for (var j = 1; j <= gridNum; j++) {
+                    var point = { x: j * gridGap, y: i * gridGap, isDrawn: false, index: ((i-1) * gridNum) + (j-1) };
+                    musterPoints.push(point);
+                    mCtx.beginPath();
+                    mCtx.arc(point.x, point.y, 18, 0, Math.PI * 2);
+                    mCtx.fillStyle = '#e5e7eb';
+                    mCtx.fill();
+                    mCtx.beginPath();
+                    mCtx.arc(point.x, point.y, 7, 0, Math.PI * 2);
+                    mCtx.fillStyle = '#6b7280';
+                    mCtx.fill();
+                }
+            }
+            musterLastPointIndex = null;
+            if (musterDataInput) musterDataInput.value = '';
+        }
+
+        function getMusterCoords(e) {
+            var rect = musterCanvas.getBoundingClientRect();
+            var scaleX = musterCanvas.width / rect.width;
+            var scaleY = musterCanvas.height / rect.height;
+            if (e.touches) {
+                return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+            }
+            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+        }
+
+        function drawMusterPoint(x, y) {
+            var idx = musterPoints.findIndex(function(p) {
+                return Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2)) < gridGap / 2 && !p.isDrawn;
+            });
+            if (idx !== -1) {
+                musterPoints[idx].isDrawn = true;
+                mCtx.beginPath();
+                mCtx.arc(musterPoints[idx].x, musterPoints[idx].y, 18, 0, Math.PI * 2);
+                mCtx.fillStyle = 'var(--repair-accent, #667eea)';
+                mCtx.fill();
+                mCtx.beginPath();
+                mCtx.arc(musterPoints[idx].x, musterPoints[idx].y, 7, 0, Math.PI * 2);
+                mCtx.fillStyle = 'white';
+                mCtx.fill();
+                if (musterLastPointIndex !== null) {
+                    mCtx.beginPath();
+                    mCtx.moveTo(musterPoints[musterLastPointIndex].x, musterPoints[musterLastPointIndex].y);
+                    mCtx.lineTo(musterPoints[idx].x, musterPoints[idx].y);
+                    mCtx.strokeStyle = 'var(--repair-accent, #667eea)';
+                    mCtx.lineWidth = 4;
+                    mCtx.lineCap = 'round';
+                    mCtx.stroke();
+                }
+                musterLastPointIndex = idx;
+            }
+        }
+
+        function startMusterDraw(e) { musterDrawing = true; var c = getMusterCoords(e); drawMusterPoint(c.x, c.y); e.preventDefault(); }
+        function moveMusterDraw(e) { if (musterDrawing) { var c = getMusterCoords(e); drawMusterPoint(c.x, c.y); e.preventDefault(); } }
+        function stopMusterDraw() { musterDrawing = false; if (musterDataInput) musterDataInput.value = musterCanvas.toDataURL(); }
+
+        musterCanvas.addEventListener('mousedown', startMusterDraw);
+        musterCanvas.addEventListener('mousemove', moveMusterDraw);
+        musterCanvas.addEventListener('mouseup', stopMusterDraw);
+        musterCanvas.addEventListener('mouseout', stopMusterDraw);
+        musterCanvas.addEventListener('touchstart', startMusterDraw);
+        musterCanvas.addEventListener('touchmove', moveMusterDraw);
+        musterCanvas.addEventListener('touchend', stopMusterDraw);
+
+        if (musterResetBtn) {
+            musterResetBtn.addEventListener('click', function() { createMusterGrid(); });
+        }
+
+        createMusterGrid();
+    }
+
+    // Signature canvas handling
+    var sigCanvas = document.getElementById('rf-signature-canvas');
+    var sigDataInput = document.getElementById('rf-signature-data');
+    var sigResetBtn = document.getElementById('rf-signature-reset');
+
+    if (sigCanvas) {
+        var sigCtx = sigCanvas.getContext('2d');
+        var sigDrawing = false;
+        var sigLastX = 0;
+        var sigLastY = 0;
+
+        function initSignatureCanvas() {
+            sigCtx.fillStyle = '#f9fafb';
+            sigCtx.fillRect(0, 0, sigCanvas.width, sigCanvas.height);
+            sigCtx.strokeStyle = '#1f2937';
+            sigCtx.lineWidth = 2;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+            if (sigDataInput) sigDataInput.value = '';
+        }
+
+        function getSigCoords(e) {
+            var rect = sigCanvas.getBoundingClientRect();
+            var scaleX = sigCanvas.width / rect.width;
+            var scaleY = sigCanvas.height / rect.height;
+            if (e.touches) {
+                return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+            }
+            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+        }
+
+        function startSigDraw(e) {
+            sigDrawing = true;
+            var coords = getSigCoords(e);
+            sigLastX = coords.x;
+            sigLastY = coords.y;
+            e.preventDefault();
+        }
+
+        function moveSigDraw(e) {
+            if (!sigDrawing) return;
+            var coords = getSigCoords(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(sigLastX, sigLastY);
+            sigCtx.lineTo(coords.x, coords.y);
+            sigCtx.stroke();
+            sigLastX = coords.x;
+            sigLastY = coords.y;
+            e.preventDefault();
+        }
+
+        function stopSigDraw() {
+            if (sigDrawing && sigDataInput) {
+                sigDataInput.value = sigCanvas.toDataURL('image/png');
+            }
+            sigDrawing = false;
+        }
+
+        sigCanvas.addEventListener('mousedown', startSigDraw);
+        sigCanvas.addEventListener('mousemove', moveSigDraw);
+        sigCanvas.addEventListener('mouseup', stopSigDraw);
+        sigCanvas.addEventListener('mouseout', stopSigDraw);
+        sigCanvas.addEventListener('touchstart', startSigDraw);
+        sigCanvas.addEventListener('touchmove', moveSigDraw);
+        sigCanvas.addEventListener('touchend', stopSigDraw);
+
+        if (sigResetBtn) {
+            sigResetBtn.addEventListener('click', function() { initSignatureCanvas(); });
+        }
+
+        initSignatureCanvas();
+    }
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -291,7 +583,7 @@ class PPV_Repair_Form {
         var fd = new FormData(form);
         fd.set('accessories', JSON.stringify(accessories));
 
-        fetch('<?php echo esc_js($ajax_url); ?>', {
+        fetch(ajaxUrl, {
             method: 'POST',
             body: fd,
             credentials: 'same-origin'
@@ -305,9 +597,24 @@ class PPV_Repair_Form {
                 if (bonusBadge) bonusBadge.style.display = 'none';
                 successDiv.style.display = 'block';
 
+                // Show tracking card with QR code
+                var d = data.data;
+                if (d.tracking_url && d.repair_id) {
+                    document.getElementById('repair-tracking-card').style.display = 'flex';
+                    document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
+                    document.getElementById('repair-tracking-link').href = d.tracking_url;
+
+                    // Generate QR code
+                    if (typeof qrcode !== 'undefined') {
+                        var qr = qrcode(0, 'M');
+                        qr.addData(d.tracking_url);
+                        qr.make();
+                        document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
+                    }
+                }
+
                 // Show points card
                 <?php if ($pp_enabled): ?>
-                var d = data.data;
                 if (d.points_added > 0) {
                     document.getElementById('repair-points-card').style.display = 'block';
                     document.getElementById('repair-points-count').textContent = d.points_added;

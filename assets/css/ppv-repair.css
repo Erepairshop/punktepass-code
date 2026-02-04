@@ -33,12 +33,20 @@
     -webkit-font-smoothing: antialiased;
 }
 
+/* Desktop/Tablet: Full width layout */
 .repair-page {
-    max-width: 640px;
+    max-width: 100%;
     margin: 0 auto;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+/* Mobile only: narrower centered layout */
+@media (max-width: 640px) {
+    .repair-page {
+        max-width: 100%;
+    }
 }
 
 /* Header */
@@ -48,16 +56,20 @@
     text-align: center;
 }
 .repair-header-inner {
-    max-width: 500px;
+    max-width: 100%;
     margin: 0 auto;
 }
 .repair-logo {
-    height: 56px;
-    width: 56px;
-    border-radius: 14px;
-    object-fit: cover;
+    max-height: 70px;
+    max-width: 200px;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    object-fit: contain;
     margin-bottom: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    background: #fff;
+    padding: 6px;
 }
 .repair-shop-name {
     color: #fff;
@@ -137,6 +149,22 @@
 .repair-field:last-child {
     margin-bottom: 0;
 }
+.repair-field-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #92400e;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+.repair-field-hint i {
+    font-size: 14px;
+    color: #f59e0b;
+}
 .repair-field label {
     display: block;
     font-size: 13px;
@@ -200,6 +228,140 @@
     width: 16px;
     height: 16px;
     accent-color: var(--repair-accent);
+}
+
+/* Muster Pattern Canvas */
+.repair-muster-canvas-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f9fafb;
+    border: 2px dashed var(--repair-border);
+    border-radius: var(--repair-radius);
+    padding: 16px;
+}
+#rf-muster-canvas {
+    border: 2px solid var(--repair-border);
+    border-radius: 8px;
+    background: #f3f4f6;
+    touch-action: none;
+    cursor: crosshair;
+    max-width: 100%;
+}
+.repair-muster-actions {
+    margin-top: 12px;
+}
+.repair-muster-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--repair-bg);
+    border: 1px solid var(--repair-border);
+    border-radius: 8px;
+    color: var(--repair-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.repair-muster-reset:hover {
+    background: #e5e7eb;
+}
+.repair-muster-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--repair-text-secondary);
+    text-align: center;
+}
+
+/* Unlock Method Toggle */
+.repair-unlock-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.repair-unlock-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--repair-bg);
+    border: 2px solid var(--repair-border);
+    border-radius: 8px;
+    color: var(--repair-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.repair-unlock-btn:hover {
+    border-color: var(--repair-accent);
+    color: var(--repair-accent);
+}
+.repair-unlock-btn.active {
+    background: linear-gradient(135deg, var(--repair-accent), var(--repair-accent-dark));
+    border-color: var(--repair-accent);
+    color: #fff;
+}
+.repair-unlock-btn i {
+    font-size: 16px;
+}
+.repair-unlock-content {
+    margin-top: 8px;
+}
+.repair-unlock-field .repair-muster-canvas-wrap {
+    padding: 12px;
+}
+.repair-unlock-field .repair-muster-reset {
+    margin-top: 10px;
+}
+
+/* Signature Canvas */
+.repair-signature-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f9fafb;
+    border: 2px dashed var(--repair-border);
+    border-radius: var(--repair-radius);
+    padding: 16px;
+}
+#rf-signature-canvas {
+    width: 100%;
+    max-width: 400px;
+    height: 150px;
+    border: 2px solid var(--repair-border);
+    border-radius: 8px;
+    background: #f9fafb;
+    touch-action: none;
+    cursor: crosshair;
+}
+.repair-signature-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--repair-text-secondary);
+    text-align: center;
+}
+.repair-signature-actions {
+    margin-top: 12px;
+}
+.repair-signature-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--repair-bg);
+    border: 1px solid var(--repair-border);
+    border-radius: 8px;
+    color: var(--repair-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.repair-signature-reset:hover {
+    background: #e5e7eb;
 }
 
 /* Terms */
@@ -326,6 +488,90 @@
     font-size: 12px;
     color: #6b7280;
     margin-top: 8px;
+}
+
+/* Tracking card */
+.repair-tracking-card {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 1px solid #bae6fd;
+    border-radius: var(--repair-radius);
+    padding: 20px;
+    margin: 0 auto 24px;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    animation: scaleIn 0.5s ease-out 0.2s both;
+}
+.repair-tracking-qr {
+    flex-shrink: 0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.repair-tracking-qr img {
+    display: block;
+    width: 80px;
+    height: 80px;
+}
+.repair-tracking-info {
+    text-align: left;
+    flex: 1;
+}
+.repair-tracking-label {
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+.repair-tracking-id {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0369a1;
+    line-height: 1.1;
+}
+.repair-tracking-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--repair-accent);
+    text-decoration: none;
+    margin-top: 8px;
+    font-weight: 500;
+}
+.repair-tracking-link:hover {
+    text-decoration: underline;
+}
+
+/* Email hint for returning customers */
+.repair-email-hint {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: all 0.2s ease;
+}
+.repair-email-hint.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.repair-field {
+    position: relative;
 }
 
 /* Limit reached */
@@ -1073,6 +1319,109 @@
     cursor: pointer;
 }
 
+/* Repair comments */
+.ra-repair-comments-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e5e7eb;
+}
+.ra-btn-comments-toggle {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+}
+.ra-btn-comments-toggle:hover {
+    color: var(--repair-accent);
+}
+.ra-btn-comments-toggle.active {
+    color: var(--repair-accent);
+}
+.ra-comments-container {
+    margin-top: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px;
+}
+.ra-comments-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+.ra-comment-item {
+    background: #fff;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    position: relative;
+    border: 1px solid #e5e7eb;
+}
+.ra-comment-item:last-child {
+    margin-bottom: 0;
+}
+.ra-comment-text {
+    color: #374151;
+    line-height: 1.4;
+}
+.ra-comment-meta {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+.ra-comment-delete {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+}
+.ra-comment-delete:hover {
+    color: #ef4444;
+}
+.ra-comment-add {
+    display: flex;
+    gap: 6px;
+}
+.ra-comment-input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+}
+.ra-comment-input:focus {
+    outline: none;
+    border-color: var(--repair-accent);
+}
+.ra-comment-submit {
+    background: var(--repair-accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.ra-comment-submit:hover {
+    opacity: 0.9;
+}
+.ra-comments-empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 12px 0;
+}
+
 /* Empty state */
 .ra-empty {
     text-align: center;
@@ -1129,29 +1478,229 @@
 }
 
 /* ========================================
-   RESPONSIVE
+   RESPONSIVE - TABLET (max 768px)
+   ======================================== */
+@media (max-width: 768px) {
+    /* Touch-friendly minimum sizes */
+    button, .ra-btn, .repair-btn, input[type="submit"] {
+        min-height: 44px;
+    }
+    input, select, textarea {
+        font-size: 16px !important; /* Prevent iOS zoom */
+    }
+    /* Tables: horizontal scroll */
+    .ra-inv-table, .ra-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ========================================
+   RESPONSIVE - MOBILE (max 640px)
    ======================================== */
 @media (max-width: 640px) {
+    /* Grids to single column */
     .ra-stats {
         grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
-    .ra-settings-grid {
-        grid-template-columns: 1fr;
-    }
-    .ppv-repair-features {
-        grid-template-columns: 1fr;
-    }
-    .ppv-repair-row {
-        grid-template-columns: 1fr;
-    }
+    .ra-settings-grid,
+    .ppv-repair-features,
+    .ppv-repair-row,
     .repair-row {
         grid-template-columns: 1fr;
     }
+
+    /* Header adjustments */
     .ra-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 12px;
     }
     .ra-toolbar {
         flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Form styling */
+    .repair-page {
+        padding: 0;
+    }
+    .repair-header {
+        padding: 24px 16px 20px;
+    }
+    .repair-shop-name {
+        font-size: 20px;
+    }
+    .repair-section {
+        margin: 12px;
+        padding: 16px;
+        border-radius: 12px;
+    }
+    .repair-section-title h2 {
+        font-size: 16px;
+    }
+    .repair-field label {
+        font-size: 13px;
+    }
+    .repair-field input,
+    .repair-field select,
+    .repair-field textarea {
+        padding: 14px 12px;
+        font-size: 16px;
+    }
+    .repair-btn {
+        padding: 16px 20px;
+        font-size: 16px;
+    }
+    .repair-bonus-badge {
+        margin: 12px;
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+
+    /* Admin specific */
+    .ra-wrap {
+        padding: 12px 12px 32px;
+    }
+    .ra-title {
+        font-size: 18px;
+    }
+    .ra-tabs {
+        gap: 6px;
+        padding-bottom: 4px;
+    }
+    .ra-tab {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    .ra-card {
+        padding: 14px;
+        border-radius: 12px;
+    }
+    .ra-card-header h3 {
+        font-size: 14px;
+    }
+
+    /* Invoice/Customer tables - card view on mobile */
+    .ra-inv-table thead {
+        display: none;
+    }
+    .ra-inv-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        padding: 14px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .ra-inv-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border: none;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 14px;
+    }
+    .ra-inv-table tbody td:last-child {
+        border-bottom: none;
+        padding-top: 12px;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+    .ra-inv-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6b7280;
+        font-size: 12px;
+    }
+    .ra-inv-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .ra-inv-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    /* Filters */
+    .ra-inv-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .ra-inv-filters .field {
+        width: 100%;
+    }
+    .ra-inv-filters .field input {
+        width: 100%;
+    }
+    .ra-inv-summary {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .ra-inv-summary-card {
+        padding: 12px;
+    }
+    .ra-inv-summary-val {
+        font-size: 20px;
+    }
+
+    /* Search */
+    .ra-search {
+        max-width: 100% !important;
+    }
+    .ra-search input {
+        padding: 12px 12px 12px 40px;
+    }
+
+    /* Modals */
+    .ra-modal-overlay {
+        padding: 12px;
+        align-items: flex-start;
+        padding-top: 5vh;
+    }
+    .ra-modal {
+        max-width: 100%;
+        max-height: 85vh;
+        padding: 20px 16px;
+        border-radius: 16px;
+    }
+    .ra-modal h3 {
+        font-size: 18px;
+    }
+    .ra-inv-lines {
+        gap: 10px;
+    }
+    .ra-inv-line {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .ra-inv-line-desc {
+        width: 100%;
+    }
+    .ra-inv-line-amount {
+        flex: 1;
+    }
+}
+
+/* ========================================
+   RESPONSIVE - SMALL MOBILE (max 380px)
+   ======================================== */
+@media (max-width: 380px) {
+    .ra-stats {
+        grid-template-columns: 1fr;
+    }
+    .ra-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    .repair-shop-name {
+        font-size: 18px;
+    }
+    .repair-section {
+        margin: 8px;
+        padding: 14px;
     }
 }

@@ -1414,6 +1414,7 @@ class PPV_Signup {
         $email = sanitize_email($_POST['email'] ?? '');
         $page_url = esc_url_raw($_POST['page_url'] ?? '');
         $device_info = sanitize_text_field($_POST['device_info'] ?? '');
+        $source = sanitize_text_field($_POST['source'] ?? 'punktepass');
 
         // Get user language from cookie
         $language = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'ro';
@@ -1523,7 +1524,8 @@ class PPV_Signup {
         $full_description .= "📱 Gerät: {$device_info}\n";
         $full_description .= "🌐 Seite: {$page_url}\n";
         $full_description .= "🌍 Sprache: " . strtoupper($language) . "\n";
-        $full_description .= "👤 Typ: " . ($user_type === 'handler' ? 'Händler' : 'Kunde');
+        $full_description .= "👤 Typ: " . ($user_type === 'handler' ? 'Händler' : 'Kunde') . "\n";
+        $full_description .= "📍 Quelle: " . ($source === 'repair_formular' ? 'Repair Formular' : 'PunktePass App');
 
         // Insert into support_tickets table (with new columns)
         $insert_result = $wpdb->insert(
@@ -1560,7 +1562,8 @@ class PPV_Signup {
 
         // Send email to admin
         $to = 'info@punktepass.de';
-        $subject = "{$meta['emoji']} PunktePass Feedback #{$ticket_id} - {$meta['text']}";
+        $source_label = ($source === 'repair_formular') ? '[Formular]' : '[App]';
+        $subject = "{$meta['emoji']} {$source_label} Feedback #{$ticket_id} - {$meta['text']}";
 
         $email_body = "Neues Feedback eingegangen:\n\n";
         $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
@@ -1588,6 +1591,7 @@ class PPV_Signup {
         $email_body .= "🌐 Seite: {$page_url}\n";
         $email_body .= "📧 E-Mail: " . ($user_email ?: 'Keine angegeben') . "\n";
         $email_body .= "🕐 Zeit: " . current_time('Y-m-d H:i:s') . "\n";
+        $email_body .= "📍 Quelle: " . ($source === 'repair_formular' ? '🔧 Repair Formular' : '📱 PunktePass App') . "\n";
 
         $headers = [
             'From: PunktePass Feedback <noreply@punktepass.de>',
