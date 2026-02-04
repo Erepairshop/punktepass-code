@@ -33,42 +33,19 @@
     -webkit-font-smoothing: antialiased;
 }
 
+/* Desktop/Tablet: Full width layout */
 .repair-page {
-    max-width: 640px;
+    max-width: 100%;
     margin: 0 auto;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-/* Tablet landscape - wider layout */
-@media (min-width: 768px) and (orientation: landscape) {
+/* Mobile only: narrower centered layout */
+@media (max-width: 640px) {
     .repair-page {
-        max-width: 900px;
-    }
-    .repair-header-inner {
-        max-width: 700px;
-    }
-    .repair-section {
-        padding: 28px;
-    }
-    .repair-row {
-        gap: 20px;
-    }
-}
-
-/* Large tablets and desktop landscape */
-@media (min-width: 1024px) {
-    .repair-page {
-        max-width: 960px;
-        padding: 20px;
-    }
-    .repair-header {
-        border-radius: 16px 16px 0 0;
-        margin-top: 20px;
-    }
-    .repair-section {
-        padding: 32px;
+        max-width: 100%;
     }
 }
 
@@ -79,7 +56,7 @@
     text-align: center;
 }
 .repair-header-inner {
-    max-width: 500px;
+    max-width: 100%;
     margin: 0 auto;
 }
 .repair-logo {
