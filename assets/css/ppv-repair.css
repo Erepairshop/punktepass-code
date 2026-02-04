@@ -52,12 +52,16 @@
     margin: 0 auto;
 }
 .repair-logo {
-    height: 56px;
-    width: 56px;
-    border-radius: 14px;
-    object-fit: cover;
+    max-height: 70px;
+    max-width: 200px;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    object-fit: contain;
     margin-bottom: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    background: #fff;
+    padding: 6px;
 }
 .repair-shop-name {
     color: #fff;
