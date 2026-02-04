@@ -528,8 +528,14 @@ a:hover{text-decoration:underline}
         </div>
     </div>';
 
+        // Check if has active subscription for usage display
+        $sub_status_check = $store->subscription_status ?? 'trial';
+        $sub_expires_check = $store->subscription_expires_at ?? null;
+        $is_expired_check = $sub_expires_check && strtotime($sub_expires_check) < time();
+        $has_active_subscription = $is_premium || ($sub_status_check === 'active' && !$is_expired_check);
+
         // Usage bar or premium badge
-        if (!$is_premium) {
+        if (!$has_active_subscription) {
             $limit_reached_now = ($store->repair_form_count >= $store->repair_form_limit);
 
             // Show prominent upgrade banner when limit reached
