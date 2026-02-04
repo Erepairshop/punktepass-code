@@ -1324,9 +1324,12 @@ echo '          </div>
             </div>
         </div>
 
-        <div style="display:flex;gap:10px;margin-top:16px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-inv-modal-cancel">Abbrechen</button>
-            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-inv-modal-submit">
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1;min-width:100px" id="ra-inv-modal-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn" style="flex:1;min-width:140px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0" id="ra-inv-modal-skip">
+                <i class="ri-check-line"></i> Nur Fertig
+            </button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2;min-width:180px" id="ra-inv-modal-submit">
                 <i class="ri-check-line"></i> Abschlie&szlig;en &amp; Rechnung
             </button>
         </div>
@@ -1929,7 +1932,8 @@ echo '          </div>
             pin: card.dataset.pin||"",
             problem: card.dataset.problem||"",
             date: card.dataset.date||"",
-            muster: card.dataset.muster||""
+            muster: card.dataset.muster||"",
+            signature: card.dataset.signature||""
         };
         var w=window.open("","_blank","width=800,height=900");
         if(!w){alert("Popup blockiert! Bitte erlauben Sie Pop-ups.");return;}
@@ -1937,6 +1941,7 @@ echo '          </div>
         var musterHtml=data.muster&&data.muster.indexOf("data:image/")===0?\'<div class="field"><span class="label">Muster:</span><img src="\'+data.muster+\'" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>\':"";
         var pinHtml=data.pin?\'<div class="field"><span class="label">PIN:</span><span class="value highlight">\'+esc(data.pin)+\'</span></div>\':"";
         var addressHtml=data.address?\'<div class="field"><span class="label">Adresse:</span><span class="value">\'+esc(data.address)+\'</span></div>\':"";
+        var signatureHtml=data.signature&&data.signature.indexOf("data:image/")===0?\'<div class="sig-img"><img src="\'+data.signature+\'" style="max-height:40px"></div>\':\'<div class="signature-line"></div>\';
         var html=\'<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reparaturauftrag #\'+data.id+\'</title><style>\'+
             \'*{margin:0;padding:0;box-sizing:border-box}\'+
             \'body{font-family:Arial,sans-serif;padding:15px 20px;color:#1f2937;line-height:1.3;font-size:11px}\'+
@@ -1964,6 +1969,7 @@ echo '          </div>
             \'.signature-box{flex:1}\'+
             \'.signature-box label{display:block;font-size:9px;color:#6b7280;margin-bottom:4px}\'+
             \'.signature-line{border-bottom:1px solid #1f2937;height:35px}\'+
+            \'.sig-img{height:35px;display:flex;align-items:flex-end;border-bottom:1px solid #ccc}\'+
             \'.footer{text-align:center;margin-top:8px;font-size:9px;color:#9ca3af}\'+
             \'@media print{body{padding:10px 15px}@page{margin:10mm}}\'+
             \'</style></head><body>\'+
@@ -1993,8 +1999,7 @@ echo '          </div>
                 \'<div class="datenschutz-text">Mit meiner Unterschrift best\\u00e4tige ich:<ul><li>Die Richtigkeit der angegebenen Daten</li><li>Die Zustimmung zur Datenverarbeitung gem\\u00e4\\u00df DSGVO</li><li>Die Kenntnisnahme der Reparaturbedingungen</li></ul></div>\'+
             \'</div>\'+
             \'<div class="signature-area">\'+
-                \'<div class="signature-box"><label>Unterschrift Kunde:</label><div class="signature-line"></div></div>\'+
-                \'<div class="signature-box"><label>Datum:</label><div class="signature-line"></div></div>\'+
+                \'<div class="signature-box" style="max-width:250px"><label>Unterschrift Kunde (Einwilligung Datenschutz):</label>\'+signatureHtml+\'</div>\'+
             \'</div>\'+
             \'<div class="footer">\'+esc(STORE_COMPANY)+\' | \'+esc(STORE_ADDRESS)+\' | \'+esc(STORE_PHONE)+\'</div>\'+
             \'<script>window.onload=function(){window.print();}<\\/script>\'+
@@ -2125,7 +2130,7 @@ echo '          </div>
         var addressHtml=r.customer_address?\'<div class="ra-repair-address"><i class="ri-map-pin-line"></i> \'+esc(r.customer_address)+\'</div>\':"";
         var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="Muster" title="Entsperrmuster"></div>\':"";
         var fullProblem=r.problem_description||"";
-        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'">\'+
+        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
                 \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span>\'+addressHtml+\'</div>\'+
@@ -2305,6 +2310,40 @@ echo '          </div>
     document.getElementById("ra-inv-modal-cancel").addEventListener("click",function(){
         if(invoiceSelect)invoiceSelect.value=invoiceSelect.getAttribute("data-prev")||"in_progress";
         hideInvoiceModal();
+    });
+
+    // Skip invoice, just mark as done
+    document.getElementById("ra-inv-modal-skip").addEventListener("click",function(){
+        if(!invoiceRepairId){hideInvoiceModal();return;}
+        var btn=this;
+        btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_update_status");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",invoiceRepairId);
+        fd.append("status","done");
+        fd.append("skip_invoice","1");
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                toast("Reparatur als Fertig markiert");
+                if(invoiceSelect){
+                    updateBadge(invoiceSelect.closest(".ra-repair-card"),"done");
+                    invoiceSelect.value="done";
+                    invoiceSelect.setAttribute("data-prev","done");
+                }
+                hideInvoiceModal();
+            }else{
+                toast(data.data&&data.data.message?data.data.message:"Fehler");
+            }
+        })
+        .catch(function(){toast("Verbindungsfehler")})
+        .finally(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-check-line"></i> Nur Fertig\';
+        });
     });
 
     document.getElementById("ra-inv-modal-submit").addEventListener("click",function(){
@@ -3874,7 +3913,8 @@ echo '          </div>
             . ' data-pin="' . esc_attr($r->device_pattern) . '"'
             . ' data-problem="' . esc_attr($r->problem_description) . '"'
             . ' data-date="' . esc_attr($date) . '"'
-            . ' data-muster="' . esc_attr($r->muster_image) . '">'
+            . ' data-muster="' . esc_attr($r->muster_image) . '"'
+            . ' data-signature="' . esc_attr($r->signature_image) . '">'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
                 . '<span class="ra-status ' . esc_attr($st[1]) . '">' . esc_html($st[0]) . '</span>'

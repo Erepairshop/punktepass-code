@@ -222,6 +222,28 @@ class PPV_Repair_Form {
             <?php endif; ?>
         </div>
 
+        <!-- Signature Section -->
+        <div class="repair-section" id="step-signature">
+            <div class="repair-section-title">
+                <span class="repair-step-num"><?php echo $has_device_fields ? '4' : '3'; ?></span>
+                <h2>Unterschrift</h2>
+            </div>
+
+            <div class="repair-field">
+                <label><i class="ri-edit-line"></i> Unterschrift des Kunden</label>
+                <div class="repair-signature-container">
+                    <canvas id="rf-signature-canvas" width="400" height="150"></canvas>
+                    <p class="repair-signature-hint">Bitte unterschreiben Sie mit dem Finger oder der Maus</p>
+                    <div class="repair-signature-actions">
+                        <button type="button" class="repair-signature-reset" id="rf-signature-reset">
+                            <i class="ri-refresh-line"></i> L&ouml;schen
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="signature_image" id="rf-signature-data">
+            </div>
+        </div>
+
         <!-- Terms -->
         <div class="repair-terms">
             <label class="repair-checkbox">
@@ -461,6 +483,79 @@ class PPV_Repair_Form {
         }
 
         createMusterGrid();
+    }
+
+    // Signature canvas handling
+    var sigCanvas = document.getElementById('rf-signature-canvas');
+    var sigDataInput = document.getElementById('rf-signature-data');
+    var sigResetBtn = document.getElementById('rf-signature-reset');
+
+    if (sigCanvas) {
+        var sigCtx = sigCanvas.getContext('2d');
+        var sigDrawing = false;
+        var sigLastX = 0;
+        var sigLastY = 0;
+
+        function initSignatureCanvas() {
+            sigCtx.fillStyle = '#f9fafb';
+            sigCtx.fillRect(0, 0, sigCanvas.width, sigCanvas.height);
+            sigCtx.strokeStyle = '#1f2937';
+            sigCtx.lineWidth = 2;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+            if (sigDataInput) sigDataInput.value = '';
+        }
+
+        function getSigCoords(e) {
+            var rect = sigCanvas.getBoundingClientRect();
+            var scaleX = sigCanvas.width / rect.width;
+            var scaleY = sigCanvas.height / rect.height;
+            if (e.touches) {
+                return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+            }
+            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+        }
+
+        function startSigDraw(e) {
+            sigDrawing = true;
+            var coords = getSigCoords(e);
+            sigLastX = coords.x;
+            sigLastY = coords.y;
+            e.preventDefault();
+        }
+
+        function moveSigDraw(e) {
+            if (!sigDrawing) return;
+            var coords = getSigCoords(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(sigLastX, sigLastY);
+            sigCtx.lineTo(coords.x, coords.y);
+            sigCtx.stroke();
+            sigLastX = coords.x;
+            sigLastY = coords.y;
+            e.preventDefault();
+        }
+
+        function stopSigDraw() {
+            if (sigDrawing && sigDataInput) {
+                sigDataInput.value = sigCanvas.toDataURL('image/png');
+            }
+            sigDrawing = false;
+        }
+
+        sigCanvas.addEventListener('mousedown', startSigDraw);
+        sigCanvas.addEventListener('mousemove', moveSigDraw);
+        sigCanvas.addEventListener('mouseup', stopSigDraw);
+        sigCanvas.addEventListener('mouseout', stopSigDraw);
+        sigCanvas.addEventListener('touchstart', startSigDraw);
+        sigCanvas.addEventListener('touchmove', moveSigDraw);
+        sigCanvas.addEventListener('touchend', stopSigDraw);
+
+        if (sigResetBtn) {
+            sigResetBtn.addEventListener('click', function() { initSignatureCanvas(); });
+        }
+
+        initSignatureCanvas();
     }
 
     form.addEventListener('submit', function(e) {

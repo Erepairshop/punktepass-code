@@ -698,6 +698,19 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '2.1');
         }
+
+        // v2.2: Add signature_image column
+        if (version_compare($version, '2.2', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+
+            // Add signature_image column if not exists
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'signature_image'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN signature_image LONGTEXT NULL AFTER muster_image");
+            }
+
+            update_option('ppv_repair_migration_version', '2.2');
+        }
     }
 
     /** ============================================================
@@ -761,6 +774,15 @@ class PPV_Repair_Core {
             }
         }
 
+        // Handle signature image (base64 data URL from canvas)
+        $signature_image = '';
+        if (!empty($_POST['signature_image']) && strpos($_POST['signature_image'], 'data:image/') === 0) {
+            // Limit size to prevent abuse (max ~500KB base64)
+            if (strlen($_POST['signature_image']) <= 700000) {
+                $signature_image = $_POST['signature_image'];
+            }
+        }
+
         // Generate unique tracking token
         $tracking_token = bin2hex(random_bytes(16));
 
@@ -778,6 +800,7 @@ class PPV_Repair_Core {
             'problem_description' => $problem,
             'accessories'         => $accessories,
             'muster_image'        => $muster_image,
+            'signature_image'     => $signature_image,
             'status'              => 'new',
             'created_at'          => current_time('mysql'),
             'updated_at'          => current_time('mysql'),
@@ -1422,9 +1445,10 @@ class PPV_Repair_Core {
 
         $wpdb->update($wpdb->prefix . 'ppv_repairs', $update, ['id' => $repair_id]);
 
-        // Auto-generate invoice when status = done
+        // Auto-generate invoice when status = done (unless skip_invoice is set)
         $invoice_id = null;
-        if ($new_status === 'done' && class_exists('PPV_Repair_Invoice')) {
+        $skip_invoice = !empty($_POST['skip_invoice']);
+        if ($new_status === 'done' && class_exists('PPV_Repair_Invoice') && !$skip_invoice) {
             try {
                 // Ensure invoice table exists (run migration if needed)
                 $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ppv_repair_invoices'");
