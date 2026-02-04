@@ -300,6 +300,8 @@ class PPV_Standalone_Admin {
             self::handle_handler_extend();
         } elseif ($path === '/admin/handler-activate') {
             self::handle_handler_activate();
+        } elseif ($path === '/admin/handler-deactivate') {
+            self::handle_handler_deactivate();
         } elseif ($path === '/admin/handler-mobile') {
             self::handle_handler_mobile();
         } elseif ($path === '/admin/handler-filialen') {
@@ -656,6 +658,57 @@ class PPV_Standalone_Admin {
             wp_redirect('/admin/handlers?success=activated');
         } else {
             wp_redirect('/admin/handlers?error=Hiba az aktiválás során');
+        }
+        exit;
+    }
+
+    /**
+     * Handler előfizetés deaktiválása
+     */
+    private static function handle_handler_deactivate() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $handler_id = intval($_POST['handler_id'] ?? 0);
+
+        if (empty($handler_id)) {
+            wp_redirect('/admin/handlers?error=Hibás paraméterek');
+            exit;
+        }
+
+        $handler = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $handler_id
+        ));
+
+        if (!$handler) {
+            wp_redirect('/admin/handlers?error=Handler nem található');
+            exit;
+        }
+
+        // Deactivate subscription - set status to canceled and expire immediately
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_stores',
+            [
+                'subscription_status' => 'canceled',
+                'subscription_expires_at' => current_time('mysql'),
+                'trial_ends_at' => current_time('mysql')
+            ],
+            ['id' => $handler_id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            ppv_log("❌ [Admin Handler Deactivate] handler_id={$handler_id}, name={$handler->store_name}, by={$admin_email}");
+            wp_redirect('/admin/handlers?success=deactivated');
+        } else {
+            wp_redirect('/admin/handlers?error=Hiba a deaktiválás során');
         }
         exit;
     }
