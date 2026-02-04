@@ -251,7 +251,8 @@ a{color:#667eea;text-decoration:none}
 a:hover{text-decoration:underline}
 
 /* ========== Layout ========== */
-.ra-wrap{max-width:800px;margin:0 auto;padding:16px 16px 40px}
+.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box}
+@media(min-width:1200px){.ra-wrap{padding:16px 40px 40px}}
 
 /* ========== Header ========== */
 .ra-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;flex-wrap:wrap}
@@ -303,6 +304,7 @@ a:hover{text-decoration:underline}
 .ra-settings{background:#fff;border-radius:14px;padding:24px;margin-bottom:16px;border:1px solid #f0f0f0}
 .ra-settings h3{font-size:17px;font-weight:700;color:#111827;margin-bottom:20px;display:flex;align-items:center;gap:8px}
 .ra-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(min-width:1024px){.ra-settings-grid{grid-template-columns:repeat(3,1fr)}}
 .ra-settings .field{margin-bottom:0}
 .ra-settings .field label{display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:5px}
 .ra-settings .field input[type="text"],
@@ -332,7 +334,10 @@ a:hover{text-decoration:underline}
 .ra-filters select:focus{border-color:#667eea}
 
 /* ========== Repair Cards ========== */
-.ra-repairs{display:flex;flex-direction:column;gap:10px}
+.ra-repairs{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:768px){.ra-repairs{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1200px){.ra-repairs{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1600px){.ra-repairs{grid-template-columns:repeat(4,1fr)}}
 .ra-repair-card{background:#fff;border-radius:14px;padding:18px;border:1px solid #f0f0f0;transition:box-shadow .2s}
 .ra-repair-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
 .ra-repair-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -427,6 +432,7 @@ a:hover{text-decoration:underline}
 
 /* ========== Responsive ========== */
 @media(max-width:640px){
+    .ra-wrap{padding:12px 12px 32px}
     .ra-stats{grid-template-columns:repeat(2,1fr)}
     .ra-header{flex-direction:column;align-items:flex-start}
     .ra-header-right{width:100%;justify-content:flex-start}
@@ -434,6 +440,7 @@ a:hover{text-decoration:underline}
     .ra-toolbar{flex-direction:column}
     .ra-filters select{width:100%}
     .ra-title{font-size:18px}
+    .ra-repairs{grid-template-columns:1fr}
 }
 /* ========== Toggle Switch ========== */
 .ra-toggle{display:flex;align-items:center;gap:10px;margin-bottom:16px}
