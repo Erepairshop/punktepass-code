@@ -231,6 +231,7 @@ Ihr PunktePass Team
                 'subscription_expires_at' => $new_expires,
                 'bank_transfer_confirmed_at' => current_time('mysql'),
                 'active' => 1,
+                'repair_premium' => 1,
             ],
             ['id' => $store_id]
         );

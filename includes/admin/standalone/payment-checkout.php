@@ -17,10 +17,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in
-$store_id = $_SESSION['ppv_vendor_store_id'] ?? 0;
+// Check if user is logged in (support both vendor and repair admin sessions)
+$store_id = $_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_repair_store_id'] ?? 0;
+$redirect_back = !empty($_SESSION['ppv_repair_store_id']) ? '/formular/admin' : '/handler_dashboard';
 if (!$store_id) {
-    wp_redirect('/login?redirect=' . urlencode('/checkout'));
+    wp_redirect('/formular/admin/login?redirect=' . urlencode('/checkout'));
     exit;
 }
 
@@ -32,13 +33,13 @@ $store = $wpdb->get_row($wpdb->prepare(
 ));
 
 if (!$store) {
-    wp_redirect('/handler_dashboard');
+    wp_redirect($redirect_back);
     exit;
 }
 
 // Check if already has active subscription
-if ($store->subscription_status === 'active' && strtotime($store->subscription_expires_at) > time()) {
-    wp_redirect('/handler_dashboard?notice=already_active');
+if ($store->subscription_status === 'active' && $store->repair_premium && strtotime($store->subscription_expires_at) > time()) {
+    wp_redirect($redirect_back . '?notice=already_active');
     exit;
 }
 

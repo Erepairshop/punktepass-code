@@ -55,6 +55,76 @@ class PPV_PayPal_Subscription {
             'callback' => [__CLASS__, 'activate_subscription'],
             'permission_callback' => '__return_true',
         ]);
+
+        // Generic subscription cancellation (for repair admin)
+        register_rest_route('punktepass/v1', '/repair/cancel-subscription', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'cancel_repair_subscription'],
+            'permission_callback' => [__CLASS__, 'check_repair_admin_permission'],
+        ]);
+    }
+
+    /**
+     * Check if user is logged in as repair admin
+     */
+    public static function check_repair_admin_permission() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        return !empty($_SESSION['ppv_repair_store_id']);
+    }
+
+    /**
+     * Cancel subscription from repair admin
+     */
+    public static function cancel_repair_subscription(WP_REST_Request $request) {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $store_id = $_SESSION['ppv_repair_store_id'] ?? 0;
+        if (!$store_id) {
+            return new WP_REST_Response(['error' => 'Not authenticated'], 401);
+        }
+
+        global $wpdb;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT payment_method, paypal_subscription_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        if (!$store) {
+            return new WP_REST_Response(['error' => 'Store not found'], 404);
+        }
+
+        // If PayPal subscription, cancel it via API
+        if ($store->payment_method === 'paypal' && !empty($store->paypal_subscription_id)) {
+            $access_token = self::get_access_token();
+            if ($access_token) {
+                wp_remote_post(
+                    self::get_api_base() . '/v1/billing/subscriptions/' . $store->paypal_subscription_id . '/cancel',
+                    [
+                        'headers' => [
+                            'Authorization' => 'Bearer ' . $access_token,
+                            'Content-Type' => 'application/json',
+                        ],
+                        'body' => json_encode(['reason' => 'Customer requested cancellation']),
+                        'timeout' => 30,
+                    ]
+                );
+            }
+        }
+
+        // Update local subscription status
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['subscription_status' => 'canceled'],
+            ['id' => $store_id]
+        );
+
+        ppv_log("🛑 Subscription cancelled by handler for store {$store_id}");
+
+        return new WP_REST_Response(['success' => true, 'message' => 'Subscription cancelled'], 200);
     }
 
     /**
@@ -79,6 +149,7 @@ class PPV_PayPal_Subscription {
                 'paypal_subscription_id' => $subscription_id,
                 'payment_method' => 'paypal',
                 'active' => 1,
+                'repair_premium' => 1,
             ],
             ['id' => $store_id]
         );
@@ -286,6 +357,7 @@ class PPV_PayPal_Subscription {
                             'paypal_subscription_id' => $subscription_id,
                             'payment_method' => 'paypal',
                             'active' => 1,
+                            'repair_premium' => 1,
                         ],
                         ['id' => $store_id]
                     );

@@ -530,17 +530,31 @@ a:hover{text-decoration:underline}
 
         // Usage bar or premium badge
         if (!$is_premium) {
-            echo '<div class="ra-usage">
-        <div class="ra-usage-info">
-            <span>Formulare: ' . intval($store->repair_form_count) . ' / ' . intval($store->repair_form_limit) . '</span>';
-            if ($limit_pct >= 80) {
-                echo '<span class="ra-usage-warn">Limit fast erreicht!</span>';
+            $limit_reached_now = ($store->repair_form_count >= $store->repair_form_limit);
+
+            // Show prominent upgrade banner when limit reached
+            if ($limit_reached_now) {
+                echo '<div class="ra-upgrade-banner" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:14px;padding:20px 24px;margin-bottom:16px;color:#fff;text-align:center">
+                    <div style="font-size:24px;margin-bottom:8px"><i class="ri-error-warning-line"></i></div>
+                    <h3 style="font-size:18px;font-weight:700;margin-bottom:8px">Formularlimit erreicht!</h3>
+                    <p style="font-size:14px;opacity:0.9;margin-bottom:16px">Ihr Formular ist f&uuml;r Kunden nicht mehr verf&uuml;gbar. Upgraden Sie jetzt auf Premium f&uuml;r unbegrenzte Formulare.</p>
+                    <a href="/checkout" class="ra-btn" style="background:#fff;color:#dc2626;padding:12px 24px;font-size:15px">
+                        <i class="ri-vip-crown-line"></i> Jetzt upgraden - 39,00 &euro; / Monat
+                    </a>
+                </div>';
+            } else {
+                echo '<div class="ra-usage">
+            <div class="ra-usage-info">
+                <span>Formulare: ' . intval($store->repair_form_count) . ' / ' . intval($store->repair_form_limit) . '</span>';
+                if ($limit_pct >= 80) {
+                    echo '<span class="ra-usage-warn"><a href="/checkout" style="color:#dc2626;text-decoration:underline">Jetzt upgraden</a></span>';
+                }
+                echo '</div>
+            <div class="ra-usage-bar">
+                <div class="ra-usage-fill" style="width:' . $limit_pct . '%"></div>
+            </div>
+        </div>';
             }
-            echo '</div>
-        <div class="ra-usage-bar">
-            <div class="ra-usage-fill" style="width:' . $limit_pct . '%"></div>
-        </div>
-    </div>';
         } else {
             echo '<div class="ra-premium-badge"><i class="ri-vip-crown-line"></i> Premium aktiv</div>';
         }
@@ -797,6 +811,93 @@ echo '          </div>
                 <textarea name="repair_invoice_email_body" rows="6" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">' . $email_body . '</textarea>
             </div>
 
+            <hr class="ra-section-divider">
+
+            <!-- Abo & Kündigung -->
+            <div class="ra-section-title"><i class="ri-vip-crown-line"></i> Abo &amp; Zahlung</div>
+            <div class="ra-abo-box" style="background:#fafafa;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
+                    <div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Status</div>
+                        <div style="font-size:16px;font-weight:600;color:#111827">';
+
+        // Subscription status display
+        $sub_status = $store->subscription_status ?? 'trial';
+        $sub_expires = $store->subscription_expires_at ?? null;
+        $is_expired = $sub_expires && strtotime($sub_expires) < time();
+        $payment_method = $store->payment_method ?? '';
+
+        if ($is_premium && !$is_expired) {
+            echo '<span style="color:#059669"><i class="ri-checkbox-circle-line"></i> Premium aktiv</span>';
+        } elseif ($sub_status === 'pending_payment') {
+            echo '<span style="color:#d97706"><i class="ri-time-line"></i> Zahlung ausstehend</span>';
+        } elseif ($sub_status === 'canceled') {
+            echo '<span style="color:#dc2626"><i class="ri-close-circle-line"></i> Gekündigt</span>';
+        } elseif ($is_expired) {
+            echo '<span style="color:#dc2626"><i class="ri-error-warning-line"></i> Abgelaufen</span>';
+        } else {
+            echo '<span style="color:#6b7280"><i class="ri-information-line"></i> ' . ucfirst($sub_status) . '</span>';
+        }
+
+        echo '</div>
+                    </div>
+                    <div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Formularlimit</div>
+                        <div style="font-size:16px;font-weight:600;color:#111827">';
+
+        if ($is_premium) {
+            echo '<span style="color:#059669"><i class="ri-infinity-line"></i> Unbegrenzt</span>';
+        } else {
+            echo intval($store->repair_form_count) . ' / ' . intval($store->repair_form_limit);
+        }
+
+        echo '</div>
+                    </div>';
+
+        if ($sub_expires) {
+            echo '<div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">' . ($is_expired ? 'Abgelaufen am' : 'Gültig bis') . '</div>
+                        <div style="font-size:16px;font-weight:600;color:' . ($is_expired ? '#dc2626' : '#111827') . '">' . date('d.m.Y', strtotime($sub_expires)) . '</div>
+                    </div>';
+        }
+
+        if ($payment_method) {
+            echo '<div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Zahlungsart</div>
+                        <div style="font-size:16px;font-weight:600;color:#111827">';
+            if ($payment_method === 'paypal') {
+                echo '<i class="ri-paypal-line"></i> PayPal';
+            } elseif ($payment_method === 'bank_transfer') {
+                echo '<i class="ri-bank-line"></i> Überweisung';
+            } else {
+                echo ucfirst($payment_method);
+            }
+            echo '</div>
+                    </div>';
+        }
+
+        echo '</div>
+            </div>';
+
+        // Upgrade button for non-premium or expired
+        if (!$is_premium || $is_expired) {
+            echo '<a href="/checkout" class="ra-btn ra-btn-primary" style="margin-bottom:16px">
+                <i class="ri-vip-crown-line"></i> Jetzt upgraden - 39,00 € / Monat (netto)
+            </a>';
+        }
+
+        // Cancellation section for active premium users
+        if ($is_premium && !$is_expired && $sub_status !== 'canceled') {
+            echo '<div class="ra-kuendigung" style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb">
+                <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px"><i class="ri-close-circle-line"></i> Abo kündigen</div>
+                <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Bei Kündigung bleibt Ihr Abo bis zum Ende der bezahlten Periode aktiv.</p>
+                <button type="button" class="ra-btn ra-btn-outline" style="color:#dc2626;border-color:#fecaca" id="ra-cancel-sub-btn">
+                    <i class="ri-close-line"></i> Abo zum Laufzeitende kündigen
+                </button>
+            </div>';
+        }
+
+        echo '
             <div class="ra-settings-save">
                 <button type="submit" class="ra-btn ra-btn-primary">
                     <i class="ri-save-line"></i> Speichern
@@ -3028,6 +3129,39 @@ echo '          </div>
         var d=document.createElement("div");
         d.textContent=t;
         return d.innerHTML;
+    }
+
+    /* ===== Subscription Cancellation ===== */
+    var cancelSubBtn=document.getElementById("ra-cancel-sub-btn");
+    if(cancelSubBtn){
+        cancelSubBtn.addEventListener("click",function(){
+            if(!confirm("Möchten Sie Ihr Abo wirklich kündigen?\\n\\nIhr Abo bleibt bis zum Ende der bezahlten Periode aktiv.")){
+                return;
+            }
+            cancelSubBtn.disabled=true;
+            cancelSubBtn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird bearbeitet...\';
+            fetch("/wp-json/punktepass/v1/repair/cancel-subscription",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                credentials:"same-origin"
+            })
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success){
+                    toast("Abo wurde gekündigt. Es bleibt bis zum Ablaufdatum aktiv.");
+                    setTimeout(function(){location.reload()},2000);
+                }else{
+                    toast(data.error||data.message||"Fehler bei der Kündigung");
+                    cancelSubBtn.disabled=false;
+                    cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> Abo zum Laufzeitende kündigen\';
+                }
+            })
+            .catch(function(){
+                toast("Verbindungsfehler");
+                cancelSubBtn.disabled=false;
+                cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> Abo zum Laufzeitende kündigen\';
+            });
+        });
     }
 
 })();
