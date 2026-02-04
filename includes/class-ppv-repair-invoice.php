@@ -285,6 +285,13 @@ class PPV_Repair_Invoice {
         $date_from = sanitize_text_field($_POST['date_from'] ?? '');
         $date_to   = sanitize_text_field($_POST['date_to'] ?? '');
         $doc_type  = sanitize_text_field($_POST['doc_type'] ?? '');
+        $sort_by   = sanitize_text_field($_POST['sort_by'] ?? 'created_at');
+        $sort_dir  = strtoupper(sanitize_text_field($_POST['sort_dir'] ?? 'DESC'));
+
+        // Whitelist sortable columns
+        $allowed_sort = ['invoice_number', 'created_at', 'customer_name', 'net_amount', 'total', 'status'];
+        if (!in_array($sort_by, $allowed_sort)) $sort_by = 'created_at';
+        if (!in_array($sort_dir, ['ASC', 'DESC'])) $sort_dir = 'DESC';
 
         $where = "store_id = %d";
         $params = [$store_id];
@@ -303,7 +310,7 @@ class PPV_Repair_Invoice {
         $p[] = $per_page;
         $p[] = $offset;
         $invoices = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$prefix}ppv_repair_invoices WHERE {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+            "SELECT * FROM {$prefix}ppv_repair_invoices WHERE {$where} ORDER BY {$sort_by} {$sort_dir} LIMIT %d OFFSET %d",
             ...$p
         ));
 
@@ -429,6 +436,13 @@ class PPV_Repair_Invoice {
         if (isset($_POST['customer_city'])) {
             $update['customer_city'] = sanitize_text_field($_POST['customer_city']);
         }
+        // Allow updating invoice number
+        if (isset($_POST['invoice_number'])) {
+            $new_invoice_number = sanitize_text_field($_POST['invoice_number']);
+            if (!empty($new_invoice_number)) {
+                $update['invoice_number'] = $new_invoice_number;
+            }
+        }
 
         if (!empty($update)) {
             $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', $update, ['id' => $invoice_id]);
@@ -533,10 +547,18 @@ class PPV_Repair_Invoice {
         $subtotal = floatval($_POST['subtotal'] ?? 0);
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
 
-        // Generate invoice number
-        $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
-        $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
-        $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
+        // Generate invoice number (or use custom if provided)
+        $custom_invoice_number = sanitize_text_field($_POST['invoice_number'] ?? '');
+        if (!empty($custom_invoice_number)) {
+            $invoice_number = $custom_invoice_number;
+            // Don't increment counter when using custom number
+            $should_increment = false;
+        } else {
+            $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
+            $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
+            $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
+            $should_increment = true;
+        }
 
         // VAT calculation
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
@@ -591,8 +613,8 @@ class PPV_Repair_Invoice {
 
         $invoice_id = $wpdb->insert_id;
 
-        // Increment next invoice number
-        if ($invoice_id) {
+        // Increment next invoice number (only if auto-generated)
+        if ($invoice_id && $should_increment) {
             $wpdb->query($wpdb->prepare(
                 "UPDATE {$prefix}ppv_stores SET repair_invoice_next_number = %d WHERE id = %d",
                 $next_num + 1, $store_id

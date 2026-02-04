@@ -527,6 +527,12 @@ a:hover{text-decoration:underline}
 .ra-inv-status-sent{background:#dbeafe;color:#1d4ed8}
 .ra-inv-status-paid{background:#d1fae5;color:#065f46}
 .ra-inv-status-cancelled{background:#fecaca;color:#991b1b}
+/* Sortable columns */
+.ra-sortable{cursor:pointer;user-select:none;white-space:nowrap}
+.ra-sortable:hover{background:#f3f4f6}
+.ra-sort-icon{font-size:14px;margin-left:4px;opacity:.4;transition:opacity .2s}
+.ra-sortable:hover .ra-sort-icon{opacity:.7}
+.ra-sortable.ra-sort-asc .ra-sort-icon,.ra-sortable.ra-sort-desc .ra-sort-icon{opacity:1;color:#667eea}
 .ra-inv-actions{display:flex;gap:6px}
 .ra-inv-btn{padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;display:inline-flex;align-items:center;gap:4px;text-decoration:none}
 .ra-inv-btn:hover{border-color:#667eea;color:#667eea}
@@ -1129,13 +1135,13 @@ echo '          </div>
         <table class="ra-inv-table">
             <thead>
                 <tr>
-                    <th>Nr.</th>
-                    <th>Datum</th>
-                    <th>Kunde</th>
-                    <th>Netto</th>
+                    <th class="ra-sortable" data-sort="invoice_number">Nr. <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="created_at">Datum <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="customer_name">Kunde <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="net_amount">Netto <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
                     <th>MwSt</th>
-                    <th>Gesamt</th>
-                    <th>Status</th>
+                    <th class="ra-sortable" data-sort="total">Gesamt <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="status">Status <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
                     <th></th>
                 </tr>
             </thead>
@@ -1401,6 +1407,12 @@ echo '          </div>
             </div>
         </div>
 
+        <div style="margin-bottom:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px">
+            <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer (optional)</label>
+            <input type="text" id="ra-ninv-number" class="ra-input" placeholder="Automatisch generieren lassen oder eigene eingeben" style="background:#fff">
+            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">Leer lassen f&uuml;r automatische Nummerierung</p>
+        </div>
+
         <div style="margin-bottom:16px">
             <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Positionen</label>
             <div class="ra-inv-lines" id="ra-ninv-lines">
@@ -1605,8 +1617,16 @@ echo '          </div>
         <h3><i class="ri-pencil-line"></i> Rechnung bearbeiten</h3>
         <p class="ra-modal-sub" id="ra-einv-subtitle">Rechnung und Kundendaten bearbeiten</p>
 
-        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;">
-            <strong id="ra-einv-number"></strong> &ndash; <span id="ra-einv-date"></span>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:16px">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+                <div>
+                    <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer</label>
+                    <input type="text" id="ra-einv-number-input" class="ra-input" style="background:#fff;font-weight:600">
+                </div>
+                <div style="font-size:13px;color:#6b7280;padding-bottom:10px">
+                    Datum: <span id="ra-einv-date"></span>
+                </div>
+            </div>
         </div>
 
         <details open style="margin-bottom:16px">
@@ -1794,7 +1814,9 @@ echo '          </div>
         STORE_TAX_ID="' . esc_js($store->repair_tax_id ?? '') . '",
         STORE_OWNER="' . esc_js($store->repair_owner_name ?? '') . '",
         searchTimer=null,
-        currentPage=1;
+        currentPage=1,
+        invSortBy="created_at",
+        invSortDir="desc";
 
     /* ===== Toast ===== */
     function toast(msg){
@@ -2216,7 +2238,7 @@ echo '          </div>
         // Use new edit modal with customer fields
         var modal=document.getElementById("ra-edit-invoice-modal");
         document.getElementById("ra-einv-id").value=inv.id;
-        document.getElementById("ra-einv-number").textContent=inv.invoice_number;
+        document.getElementById("ra-einv-number-input").value=inv.invoice_number;
         var d=new Date(inv.created_at);
         document.getElementById("ra-einv-date").textContent=d.toLocaleDateString("de-DE");
 
@@ -2499,6 +2521,8 @@ echo '          </div>
         if(df)fd.append("date_from",df);
         if(dt)fd.append("date_to",dt);
         if(docType)fd.append("doc_type",docType);
+        fd.append("sort_by",invSortBy);
+        fd.append("sort_dir",invSortDir);
 
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
@@ -2670,6 +2694,30 @@ echo '          </div>
 
     // Invoice filter
     document.getElementById("ra-inv-filter-btn").addEventListener("click",function(){loadInvoices(1)});
+    // Invoice sorting
+    document.querySelectorAll(".ra-inv-table .ra-sortable").forEach(function(th){
+        th.addEventListener("click",function(){
+            var col=this.getAttribute("data-sort");
+            // Toggle direction or set new column
+            if(invSortBy===col){
+                invSortDir=invSortDir==="asc"?"desc":"asc";
+            }else{
+                invSortBy=col;
+                invSortDir="desc";
+            }
+            // Update UI
+            document.querySelectorAll(".ra-inv-table .ra-sortable").forEach(function(h){
+                h.classList.remove("ra-sort-asc","ra-sort-desc");
+                var icon=h.querySelector(".ra-sort-icon");
+                if(icon)icon.className="ri-arrow-up-down-line ra-sort-icon";
+            });
+            this.classList.add(invSortDir==="asc"?"ra-sort-asc":"ra-sort-desc");
+            var icon=this.querySelector(".ra-sort-icon");
+            if(icon)icon.className=(invSortDir==="asc"?"ri-arrow-up-line":"ri-arrow-down-line")+" ra-sort-icon";
+            invoicesLoaded=false;
+            loadInvoices(1);
+        });
+    });
     // Invoice load more
     document.getElementById("ra-inv-more-btn").addEventListener("click",function(){
         loadInvoices(parseInt(this.getAttribute("data-page"))+1);
@@ -2754,6 +2802,7 @@ echo '          </div>
         document.getElementById("ra-ninv-plz").value="";
         document.getElementById("ra-ninv-city").value="";
         document.getElementById("ra-ninv-taxid").value="";
+        document.getElementById("ra-ninv-number").value="";
         document.getElementById("ra-ninv-notes").value="";
         var lines=document.getElementById("ra-ninv-lines");
         lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
@@ -2874,6 +2923,8 @@ echo '          </div>
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
         fd.append("notes",document.getElementById("ra-ninv-notes").value);
+        var customInvNum=document.getElementById("ra-ninv-number").value.trim();
+        if(customInvNum)fd.append("invoice_number",customInvNum);
 
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
@@ -3109,6 +3160,7 @@ echo '          </div>
         fd.append("action","ppv_repair_invoice_update");
         fd.append("nonce",NONCE);
         fd.append("invoice_id",document.getElementById("ra-einv-id").value);
+        fd.append("invoice_number",document.getElementById("ra-einv-number-input").value.trim());
         fd.append("customer_name",name);
         fd.append("customer_company",document.getElementById("ra-einv-company").value);
         fd.append("customer_email",document.getElementById("ra-einv-email").value);
