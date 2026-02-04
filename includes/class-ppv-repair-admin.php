@@ -356,6 +356,7 @@ a:hover{text-decoration:underline}
 .ra-repair-customer strong{font-size:15px;color:#111827;display:block}
 .ra-repair-meta{font-size:13px;color:#6b7280}
 .ra-repair-device{font-size:13px;color:#374151;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.ra-repair-pin{font-size:12px;color:#667eea;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:4px}
 .ra-repair-address{font-size:12px;color:#6b7280;margin-top:4px;display:flex;align-items:center;gap:4px}
 .ra-repair-muster{margin:8px 0;padding:8px;background:#f9fafb;border-radius:8px;display:inline-block}
 .ra-repair-muster img{width:80px;height:80px;border-radius:4px;border:1px solid #e5e7eb;cursor:pointer}
@@ -723,6 +724,18 @@ a:hover{text-decoration:underline}
                 <div class="field">
                     <label>Inhaber (Impressum)</label>
                     <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '">
+                </div>
+                <div class="field">
+                    <label>Adresse</label>
+                    <input type="text" name="repair_company_address" value="' . esc_attr($store->repair_company_address) . '" placeholder="Musterstraße 1, 12345 Stadt">
+                </div>
+                <div class="field">
+                    <label>Telefon</label>
+                    <input type="text" name="repair_company_phone" value="' . esc_attr($store->repair_company_phone) . '" placeholder="+49 123 456789">
+                </div>
+                <div class="field">
+                    <label>E-Mail</label>
+                    <input type="text" name="repair_company_email" value="' . esc_attr($store->repair_company_email) . '" placeholder="info@beispiel.de">
                 </div>
                 <div class="field">
                     <label>USt-IdNr.</label>
@@ -1777,6 +1790,9 @@ echo '          </div>
         STORE_COMPANY="' . esc_js($store->repair_company_name ?: $store->name) . '",
         STORE_ADDRESS="' . esc_js($store->repair_company_address ?? '') . '",
         STORE_PHONE="' . esc_js($store->repair_company_phone ?? '') . '",
+        STORE_EMAIL="' . esc_js($store->repair_company_email ?? '') . '",
+        STORE_TAX_ID="' . esc_js($store->repair_tax_id ?? '') . '",
+        STORE_OWNER="' . esc_js($store->repair_owner_name ?? '') . '",
         searchTimer=null,
         currentPage=1;
 
@@ -1974,8 +1990,12 @@ echo '          </div>
             \'@media print{body{padding:10px 15px}@page{margin:10mm}}\'+
             \'</style></head><body>\'+
             \'<div class="header">\'+
-                \'<div class="logo">\'+esc(STORE_COMPANY)+\'</div>\'+
-                \'<div class="header-info">\'+(STORE_ADDRESS?esc(STORE_ADDRESS)+\'<br>\':\'\')+\'<strong>Tel: \'+esc(STORE_PHONE)+\'</strong></div>\'+
+                \'<div class="logo">\'+esc(STORE_COMPANY)+(STORE_OWNER?\'<br><span style="font-size:10px;font-weight:normal;color:#6b7280">Inh. \'+esc(STORE_OWNER)+\'</span>\':\'\')+\'</div>\'+
+                \'<div class="header-info">\'+(STORE_ADDRESS?esc(STORE_ADDRESS)+\'<br>\':\'\')+
+                (STORE_PHONE?\'<strong>Tel: \'+esc(STORE_PHONE)+\'</strong><br>\':\'\')+
+                (STORE_EMAIL?\'E-Mail: \'+esc(STORE_EMAIL)+\'<br>\':\'\')+
+                (STORE_TAX_ID?\'USt-IdNr.: \'+esc(STORE_TAX_ID):\'\')+
+                \'</div>\'+
             \'</div>\'+
             \'<div class="title"><h1>Reparaturauftrag #\'+data.id+\'</h1><p>Datum: \'+esc(data.date)+\'</p></div>\'+
             \'<div class="two-col">\'+
@@ -2001,7 +2021,7 @@ echo '          </div>
             \'<div class="signature-area">\'+
                 \'<div class="signature-box" style="max-width:250px"><label>Unterschrift Kunde (Einwilligung Datenschutz):</label>\'+signatureHtml+\'</div>\'+
             \'</div>\'+
-            \'<div class="footer">\'+esc(STORE_COMPANY)+\' | \'+esc(STORE_ADDRESS)+\' | \'+esc(STORE_PHONE)+\'</div>\'+
+            \'<div class="footer">\'+esc(STORE_COMPANY)+(STORE_ADDRESS?\' | \'+esc(STORE_ADDRESS):\'\')+(STORE_PHONE?\' | Tel: \'+esc(STORE_PHONE):\'\')+(STORE_EMAIL?\' | \'+esc(STORE_EMAIL):\'\')+\'</div>\'+
             \'<script>window.onload=function(){window.print();}<\\/script>\'+
             \'</body></html>\';
         w.document.write(html);
@@ -2127,6 +2147,7 @@ echo '          </div>
         }
         var phone=r.customer_phone?(" &middot; "+esc(r.customer_phone)):"";
         var deviceHtml=device?\'<div class="ra-repair-device"><i class="ri-smartphone-line"></i> \'+esc(device)+\'</div>\':"";
+        var pinHtml=r.device_pattern?\'<div class="ra-repair-pin"><i class="ri-lock-password-line"></i> PIN: \'+esc(r.device_pattern)+\'</div>\':"";
         var addressHtml=r.customer_address?\'<div class="ra-repair-address"><i class="ri-map-pin-line"></i> \'+esc(r.customer_address)+\'</div>\':"";
         var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="Muster" title="Entsperrmuster"></div>\':"";
         var fullProblem=r.problem_description||"";
@@ -2134,7 +2155,7 @@ echo '          </div>
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
                 \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span>\'+addressHtml+\'</div>\'+
-                deviceHtml+musterHtml+
+                deviceHtml+pinHtml+musterHtml+
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
             \'</div>\'+
@@ -3802,6 +3823,12 @@ echo '          </div>
             $device_html = '<div class="ra-repair-device"><i class="ri-smartphone-line"></i> ' . esc_html($device) . '</div>';
         }
 
+        // PIN code display
+        $pin_html = '';
+        if (!empty($r->device_pattern)) {
+            $pin_html = '<div class="ra-repair-pin"><i class="ri-lock-password-line"></i> PIN: ' . esc_html($r->device_pattern) . '</div>';
+        }
+
         // Muster image display
         $muster_html = '';
         if (!empty($r->muster_image) && strpos($r->muster_image, 'data:image/') === 0) {
@@ -3926,6 +3953,7 @@ echo '          </div>
                     . $address_html
                 . '</div>'
                 . $device_html
+                . $pin_html
                 . $muster_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . '</div>'

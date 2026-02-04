@@ -1771,7 +1771,8 @@ class PPV_Repair_Core {
         global $wpdb;
 
         // Text fields
-        $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'name', 'phone', 'address', 'plz', 'city',
+        $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'repair_company_address', 'repair_company_phone', 'repair_company_email',
+                        'name', 'phone', 'address', 'plz', 'city',
                         'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type',
                         'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject'];
         // Textarea fields (allow newlines)
