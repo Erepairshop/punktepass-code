@@ -281,13 +281,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>' . $store_name . ' - Reparatur Admin</title>
 <meta name="theme-color" content="' . $store_color . '">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
 <style>
-/* ========== Reset & Base ========== */
+/* ========== Reset & Base - Modern ========== */
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f5f7;color:#1f2937;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:#667eea;text-decoration:none}
-a:hover{text-decoration:underline}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+a{color:#667eea;text-decoration:none;transition:color .2s}
+a:hover{color:#5a67d8}
 
 /* ========== Layout ========== */
 .ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box}
@@ -338,29 +341,49 @@ a:hover{text-decoration:underline}
 .ra-btn-copy{background:#f0f0f0;color:#374151;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:16px;transition:all .2s;display:inline-flex;align-items:center}
 .ra-btn-copy:hover{background:#667eea;color:#fff}
 
-/* ========== Settings Panel ========== */
+/* ========== Settings Panel - Modern Accordion ========== */
 .ra-hidden{display:none !important}
-.ra-settings{background:#fff;border-radius:14px;padding:24px;margin-bottom:16px;border:1px solid #f0f0f0}
-.ra-settings h3{font-size:17px;font-weight:700;color:#111827;margin-bottom:20px;display:flex;align-items:center;gap:8px}
-.ra-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ra-settings{background:#fff;border-radius:20px;padding:0;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04);overflow:hidden}
+.ra-settings h3{font-size:18px;font-weight:700;color:#0f172a;margin:0;padding:20px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;background:linear-gradient(180deg,#fff,#fafbfc)}
+.ra-settings h3 i{font-size:20px;color:#667eea}
+
+/* Accordion Section Title */
+.ra-section-title{font-size:15px;font-weight:700;color:#0f172a;margin:0;padding:18px 24px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:all .2s;border-bottom:1px solid transparent}
+.ra-section-title:hover{background:#f8fafc}
+.ra-section-title i{font-size:18px;color:#667eea;width:24px;flex-shrink:0}
+.ra-section-title::after{content:"\\eb96";font-family:"remixicon";margin-left:auto;font-size:18px;color:#94a3b8;transition:transform .2s}
+.ra-section-title.ra-open::after{transform:rotate(180deg)}
+.ra-section-title.ra-open{background:#f8fafc;border-bottom-color:#e2e8f0}
+
+/* Section Content */
+.ra-section-content{display:none;padding:20px 24px;background:#fff;border-bottom:1px solid #f1f5f9}
+.ra-section-content.ra-show{display:block}
+.ra-section-content:last-child{border-bottom:none}
+
+/* Divider */
+.ra-section-divider{border:none;height:1px;background:#f1f5f9;margin:24px 0}
+
+.ra-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(min-width:1024px){.ra-settings-grid{grid-template-columns:repeat(3,1fr)}}
 .ra-settings .field{margin-bottom:0}
-.ra-settings .field label{display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:5px}
+.ra-settings .field label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:6px}
 .ra-settings .field input[type="text"],
 .ra-settings .field input[type="number"],
-.ra-settings .field input[type="color"]{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#1f2937;background:#fafafa;outline:none;transition:border-color .2s}
-.ra-settings .field input:focus{border-color:#667eea;background:#fff}
-.ra-settings .field input[type="color"]{height:44px;padding:4px 6px;cursor:pointer}
-.ra-logo-section{margin-top:18px;margin-bottom:18px}
-.ra-logo-section>label{display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px}
-.ra-logo-upload{display:flex;align-items:center;gap:14px}
-.ra-logo-preview{width:56px;height:56px;border-radius:12px;object-fit:cover;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#9ca3af;flex-shrink:0;overflow:hidden}
+.ra-settings .field input[type="color"]{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;transition:all .2s}
+.ra-settings .field input:hover{border-color:#cbd5e1}
+.ra-settings .field input:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-settings .field input[type="color"]{height:48px;padding:6px;cursor:pointer}
+.ra-logo-section{margin-top:20px;margin-bottom:20px}
+.ra-logo-section>label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:10px}
+.ra-logo-upload{display:flex;align-items:center;gap:16px}
+.ra-logo-preview{width:64px;height:64px;border-radius:16px;object-fit:cover;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:28px;color:#94a3b8;flex-shrink:0;overflow:hidden;border:2px solid #e2e8f0}
 .ra-logo-preview img{width:100%;height:100%;object-fit:cover}
-.ra-settings-save{margin-top:20px}
-.ra-legal-links{margin-top:24px;padding-top:20px;border-top:1px solid #f0f0f0}
-.ra-legal-links h4{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:10px}
-.ra-legal-links a{display:inline-flex;align-items:center;gap:5px;margin-right:16px;margin-bottom:8px;font-size:14px;color:#667eea}
-.ra-pp-link{margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0}
+.ra-settings-save{margin-top:24px;padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;margin:-20px -24px -24px -24px}
+.ra-legal-links{margin-top:28px;padding-top:24px;border-top:1px solid #e2e8f0}
+.ra-legal-links h4{font-size:13px;font-weight:700;color:#64748b;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px}
+.ra-legal-links a{display:inline-flex;align-items:center;gap:6px;margin-right:20px;margin-bottom:10px;font-size:14px;color:#667eea;font-weight:500}
+.ra-legal-links a:hover{color:#5a67d8}
+.ra-pp-link{margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0}
 
 /* ========== Toolbar ========== */
 .ra-toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
@@ -372,13 +395,13 @@ a:hover{text-decoration:underline}
 .ra-filters select{padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:auto;min-width:140px}
 .ra-filters select:focus{border-color:#667eea}
 
-/* ========== Repair Cards ========== */
-.ra-repairs{display:grid;grid-template-columns:1fr;gap:12px}
+/* ========== Repair Cards - Modern ========== */
+.ra-repairs{display:grid;grid-template-columns:1fr;gap:14px}
 @media(min-width:768px){.ra-repairs{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:1200px){.ra-repairs{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:1600px){.ra-repairs{grid-template-columns:repeat(4,1fr)}}
-.ra-repair-card{background:#fff;border-radius:14px;padding:18px;border:1px solid #f0f0f0;transition:box-shadow .2s}
-.ra-repair-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.ra-repair-card{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.ra-repair-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);transform:translateY(-2px)}
 .ra-repair-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .ra-repair-id{font-size:13px;font-weight:700;color:#6b7280}
 .ra-status{display:inline-flex;align-items:center;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600}
@@ -502,11 +525,12 @@ a:hover{text-decoration:underline}
 .ra-field-row input[type="text"]{flex:1;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none;min-width:0}
 .ra-field-row input[type="text"]:focus{border-color:#667eea}
 .ra-fc-name{font-size:12px;font-weight:600;color:#6b7280;min-width:60px}
-/* ========== Tabs ========== */
-.ra-tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.ra-tab{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;white-space:nowrap}
-.ra-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent}
-.ra-tab:hover:not(.active){border-color:#667eea;color:#667eea}
+/* ========== Tabs - Modern Pill Style ========== */
+.ra-tabs{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f1f5f9;padding:6px;border-radius:14px}
+.ra-tab{padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.ra-tab i{font-size:16px}
+.ra-tab.active{background:#fff;color:#0f172a;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.ra-tab:hover:not(.active){color:#0f172a;background:rgba(255,255,255,0.5)}
 .ra-tab-content{display:none}
 .ra-tab-content.active{display:block}
 /* ========== Invoice List ========== */
