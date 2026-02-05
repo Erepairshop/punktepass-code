@@ -288,12 +288,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 <style>
 /* ========== Reset & Base - Modern ========== */
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html{height:100%;overflow-y:scroll}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100%;position:relative}
 a{color:#667eea;text-decoration:none;transition:color .2s}
 a:hover{color:#5a67d8}
 
 /* ========== Layout ========== */
-.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box}
+.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box;min-height:100vh}
 @media(min-width:1200px){.ra-wrap{padding:16px 40px 40px}}
 
 /* ========== Header ========== */
@@ -410,11 +411,11 @@ a:hover{color:#5a67d8}
 .ra-filters select:focus{border-color:#667eea}
 
 /* ========== Repair Cards - Modern ========== */
-.ra-repairs{display:grid;grid-template-columns:1fr;gap:14px}
+.ra-repairs{display:grid;grid-template-columns:1fr;gap:14px;transform:translateZ(0)}
 @media(min-width:768px){.ra-repairs{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:1200px){.ra-repairs{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:1600px){.ra-repairs{grid-template-columns:repeat(4,1fr)}}
-.ra-repair-card{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.ra-repair-card{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px rgba(0,0,0,0.02);transform:translateZ(0)}
 .ra-repair-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);transform:translateY(-2px)}
 .ra-repair-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .ra-repair-id{font-size:13px;font-weight:700;color:#6b7280}
@@ -2716,9 +2717,17 @@ echo '          </div>
     }
 
     // Force initial layout calculation after page load
-    setTimeout(function() {
+    function forceRepaint() {
+        document.body.style.display = "none";
+        document.body.offsetHeight; // Trigger reflow
+        document.body.style.display = "";
         window.dispatchEvent(new Event("resize"));
-    }, 100);
+    }
+    setTimeout(forceRepaint, 50);
+    setTimeout(forceRepaint, 200);
+    window.addEventListener("load", function() {
+        setTimeout(forceRepaint, 100);
+    });
 
     /* ===== Settings Tabs ===== */
     var settingsTabs = document.querySelectorAll(".ra-settings-tab");
