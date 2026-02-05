@@ -256,6 +256,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $status_notify_statuses = $store->repair_status_notify_statuses ?? 'in_progress,done,delivered';
         $notify_statuses_arr = explode(',', $status_notify_statuses);
 
+        // Custom form options (for different branches)
+        $custom_brands = esc_textarea($store->repair_custom_brands ?? '');
+        $custom_problems = esc_textarea($store->repair_custom_problems ?? '');
+        $custom_accessories = esc_textarea($store->repair_custom_accessories ?? '');
+        $success_message = esc_textarea($store->repair_success_message ?? '');
+        $opening_hours = esc_attr($store->repair_opening_hours ?? '');
+        $terms_url = esc_attr($store->repair_terms_url ?? '');
+
         // Build repairs HTML
         $repairs_html = '';
         if (empty($recent)) {
@@ -913,6 +921,49 @@ foreach ($fc_field_names as $fk => $fn) {
 }
 
 echo '          </div>
+            </div>
+
+            <hr class="ra-section-divider">
+
+            <!-- Branchenspezifische Anpassungen -->
+            <div class="ra-section-title"><i class="ri-settings-4-line"></i> Branchenspezifische Optionen</div>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:16px">Passen Sie das Formular f&uuml;r Ihre Branche an (Handy, Computer, Fahrrad, KFZ, Schmuck, Uhren, Schuhe, etc.)</p>
+
+            <div class="field" style="margin-bottom:16px">
+                <label>Marken / Hersteller <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <textarea name="repair_custom_brands" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Apple&#10;Samsung&#10;Huawei&#10;Xiaomi&#10;...">' . $custom_brands . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = freie Texteingabe im Formular</p>
+            </div>
+
+            <div class="field" style="margin-bottom:16px">
+                <label>H&auml;ufige Probleme / Reparaturarten <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <textarea name="repair_custom_problems" rows="5" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Display gebrochen&#10;Akku tauschen&#10;Wasserschaden&#10;Ladebuchse defekt&#10;...">' . $custom_problems . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = nur Freitext. Wird als Schnellauswahl-Buttons im Formular angezeigt</p>
+            </div>
+
+            <div class="field" style="margin-bottom:16px">
+                <label>Zubeh&ouml;r-Optionen <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <textarea name="repair_custom_accessories" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Ladekabel&#10;H&uuml;lle / Case&#10;Schl&uuml;ssel&#10;Originalkarton&#10;...">' . $custom_accessories . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = Standard-Zubeh&ouml;r (Ladekabel, H&uuml;lle, Schl&uuml;ssel, Sonstiges)</p>
+            </div>
+
+            <div class="ra-settings-grid" style="margin-bottom:16px">
+                <div class="field">
+                    <label>&Ouml;ffnungszeiten <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
+                    <input type="text" name="repair_opening_hours" value="' . $opening_hours . '" placeholder="Mo-Fr 9-18, Sa 10-14">
+                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">Wird im Formular-Header angezeigt</p>
+                </div>
+                <div class="field">
+                    <label>Eigene AGB-URL <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
+                    <input type="text" name="repair_terms_url" value="' . $terms_url . '" placeholder="https://ihre-website.de/agb">
+                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer = automatisch generierte AGB</p>
+                </div>
+            </div>
+
+            <div class="field" style="margin-bottom:16px">
+                <label>Erfolgsmeldung nach Absenden <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
+                <textarea name="repair_success_message" rows="3" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.">' . $success_message . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer = Standard-Meldung</p>
             </div>
 
             <hr class="ra-section-divider">

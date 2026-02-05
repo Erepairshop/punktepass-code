@@ -1882,6 +1882,12 @@ class PPV_Repair_Core {
             'repair_invoice_email_body' => "TEXT NULL",
             'repair_status_notify_enabled' => "TINYINT(1) DEFAULT 0",
             'repair_status_notify_statuses' => "VARCHAR(255) DEFAULT 'in_progress,done,delivered'",
+            'repair_custom_brands' => "TEXT NULL",
+            'repair_custom_problems' => "TEXT NULL",
+            'repair_custom_accessories' => "TEXT NULL",
+            'repair_success_message' => "TEXT NULL",
+            'repair_opening_hours' => "VARCHAR(500) NULL",
+            'repair_terms_url' => "VARCHAR(500) NULL",
         ];
 
         foreach ($required_columns as $col => $definition) {
@@ -1895,9 +1901,10 @@ class PPV_Repair_Core {
         $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'repair_company_address', 'repair_company_phone', 'repair_company_email',
                         'name', 'phone', 'address', 'plz', 'city',
                         'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type',
-                        'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject', 'repair_status_notify_statuses'];
+                        'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject', 'repair_status_notify_statuses',
+                        'repair_opening_hours', 'repair_terms_url'];
         // Textarea fields (allow newlines)
-        $textarea_fields = ['repair_invoice_email_body'];
+        $textarea_fields = ['repair_invoice_email_body', 'repair_custom_brands', 'repair_custom_problems', 'repair_custom_accessories', 'repair_success_message'];
         // Integer fields
         $int_fields = ['repair_points_per_form', 'repair_required_points', 'repair_invoice_next_number'];
         // Decimal fields
