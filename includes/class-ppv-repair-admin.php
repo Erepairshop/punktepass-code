@@ -343,7 +343,7 @@ a:hover{color:#5a67d8}
 
 /* ========== Settings Panel - Modern Accordion ========== */
 .ra-hidden{display:none !important}
-.ra-settings{background:#fff;border-radius:20px;padding:0;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04);overflow:hidden}
+.ra-settings{background:#fff;border-radius:20px;padding:0;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04);overflow:visible}
 .ra-settings h3{font-size:18px;font-weight:700;color:#0f172a;margin:0;padding:20px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;background:linear-gradient(180deg,#fff,#fafbfc)}
 .ra-settings h3 i{font-size:20px;color:#667eea}
 
@@ -2698,6 +2698,10 @@ echo '          </div>
             settingsPanel.classList.add("ra-hidden");
             localStorage.setItem("ra_settings_open", "0");
         }
+        // Force layout recalculation to fix rendering issues
+        setTimeout(function() {
+            window.dispatchEvent(new Event("resize"));
+        }, 50);
     }
 
     if (settingsToggleBtn) {
@@ -2708,8 +2712,13 @@ echo '          </div>
 
     // Restore settings panel state on page load
     if (localStorage.getItem("ra_settings_open") === "1") {
-        toggleSettings(true);
+        settingsPanel.classList.remove("ra-hidden");
     }
+
+    // Force initial layout calculation after page load
+    setTimeout(function() {
+        window.dispatchEvent(new Event("resize"));
+    }, 100);
 
     /* ===== Settings Tabs ===== */
     var settingsTabs = document.querySelectorAll(".ra-settings-tab");
