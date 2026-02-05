@@ -821,9 +821,9 @@ class PPV_Repair_Core {
 
         $bonus_result = ['user_id' => 0, 'points_added' => 0, 'total_points' => 0, 'is_new_user' => false];
 
-        // Only award points if PunktePass is enabled for this store
+        // Only award points if PunktePass is enabled AND email is provided
         $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
-        if ($pp_enabled) {
+        if ($pp_enabled && !empty($email)) {
             $points = intval($store->repair_points_per_form ?: 2);
             $bonus_result = self::award_repair_bonus($store, $email, $name, $points);
 
