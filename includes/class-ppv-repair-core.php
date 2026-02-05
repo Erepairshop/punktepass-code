@@ -1849,13 +1849,9 @@ class PPV_Repair_Core {
         }
 
         if (!empty($update)) {
-            $result = $wpdb->update($wpdb->prefix . 'ppv_stores', $update, ['id' => $store_id]);
-            if ($result === false) {
-                error_log('PPV Repair: DB Error: ' . $wpdb->last_error);
-                wp_send_json_error(['message' => 'Datenbankfehler: ' . $wpdb->last_error]);
-            }
+            $wpdb->update($wpdb->prefix . 'ppv_stores', $update, ['id' => $store_id]);
         }
-        wp_send_json_success(['message' => 'Einstellungen gespeichert', 'saved' => !empty($update)]);
+        wp_send_json_success(['message' => 'Einstellungen gespeichert']);
     }
 
     /** AJAX: Upload Logo */
