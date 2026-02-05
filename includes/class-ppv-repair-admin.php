@@ -215,14 +215,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $inv_prefix = esc_attr($store->repair_invoice_prefix ?? 'RE-');
         $inv_next = intval($store->repair_invoice_next_number ?? 1);
 
-        // Auto-detect highest existing invoice number from database
+        // Auto-detect highest existing invoice number from database (only matching current prefix)
         $inv_detected_max = 0;
+        $search_prefix = $inv_prefix ?: 'RE-';
         $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
-            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND type = 'invoice'",
-            $store_id
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+            $store_id,
+            $wpdb->esc_like($search_prefix) . '%'
         ));
         foreach ($all_invoice_numbers as $inv_num) {
-            // Extract numeric part - try different patterns
+            // Extract numeric part after prefix
             if (preg_match('/(\d+)$/', $inv_num, $m)) {
                 $num = intval($m[1]);
                 if ($num > $inv_detected_max) {
@@ -231,6 +233,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             }
         }
         $inv_suggested_next = $inv_detected_max > 0 ? $inv_detected_max + 1 : $inv_next;
+
+        // Count total invoices (all prefixes) for info display
+        $inv_total_count = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL)",
+            $store_id
+        ));
 
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate = floatval($store->repair_vat_rate ?? 19);
@@ -924,10 +932,11 @@ echo '          </div>
                     </div>
                     ' . ($inv_detected_max > 0 && $inv_suggested_next > $inv_next ? '
                     <div style="text-align:right">
-                        <div style="font-size:11px;color:#6b7280">H&ouml;chste gefundene: <strong>' . esc_html($inv_detected_max) . '</strong></div>
+                        <div style="font-size:11px;color:#6b7280">H&ouml;chste mit "' . esc_html($inv_prefix) . '": <strong>' . esc_html($inv_detected_max) . '</strong></div>
                         <button type="button" onclick="document.getElementById(\'ra-inv-next\').value=' . $inv_suggested_next . ';updateInvPreview()" style="margin-top:4px;padding:6px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer">&Uuml;bernehmen: ' . $inv_suggested_next . '</button>
                     </div>' : '') . '
                 </div>
+                ' . ($inv_total_count > 0 ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #bae6fd;font-size:11px;color:#6b7280">Rechnungen gesamt: <strong>' . $inv_total_count . '</strong>' . ($inv_detected_max == 0 && count($all_invoice_numbers) == 0 ? ' (keine mit Pr&auml;fix "' . esc_html($inv_prefix) . '")' : ' (' . count($all_invoice_numbers) . ' mit Pr&auml;fix "' . esc_html($inv_prefix) . '")') . '</div>' : '') . '
             </div>
             <script>
             function updateInvPreview(){

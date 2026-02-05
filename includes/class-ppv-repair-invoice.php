@@ -36,10 +36,11 @@ class PPV_Repair_Invoice {
         $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
         $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
 
-        // Auto-detect highest existing invoice number from database
+        // Auto-detect highest existing invoice number from database (only matching current prefix)
         $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
-            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND type = 'invoice'",
-            $store->id
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+            $store->id,
+            $wpdb->esc_like($inv_prefix) . '%'
         ));
         $detected_max = 0;
         foreach ($all_invoice_numbers as $inv_num) {
@@ -577,10 +578,11 @@ class PPV_Repair_Invoice {
             $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
             $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
 
-            // Auto-detect highest existing invoice number from database
+            // Auto-detect highest existing invoice number from database (only matching current prefix)
             $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
-                "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND type = 'invoice'",
-                $store_id
+                "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+                $store_id,
+                $wpdb->esc_like($inv_prefix) . '%'
             ));
             $detected_max = 0;
             foreach ($all_invoice_numbers as $inv_num) {
