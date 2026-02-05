@@ -251,6 +251,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $email_body_default = "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
         $email_body = esc_textarea($store->repair_invoice_email_body ?? $email_body_default);
 
+        // Status notification settings
+        $status_notify_enabled = isset($store->repair_status_notify_enabled) ? intval($store->repair_status_notify_enabled) : 0;
+        $status_notify_statuses = $store->repair_status_notify_statuses ?? 'in_progress,done,delivered';
+        $notify_statuses_arr = explode(',', $status_notify_statuses);
+
         // Build repairs HTML
         $repairs_html = '';
         if (empty($recent)) {
@@ -982,6 +987,43 @@ echo '          </div>
             <div class="field">
                 <label>Nachricht</label>
                 <textarea name="repair_invoice_email_body" rows="6" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">' . $email_body . '</textarea>
+            </div>
+
+            <hr class="ra-section-divider">
+
+            <!-- Status Benachrichtigungen -->
+            <div class="ra-section-title"><i class="ri-notification-3-line"></i> Status-Benachrichtigungen</div>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Kunden automatisch per E-Mail informieren wenn sich der Reparatur-Status &auml;ndert.</p>
+            <div class="ra-toggle" style="margin-bottom:16px">
+                <label class="ra-toggle-switch">
+                    <input type="checkbox" name="repair_status_notify_enabled" value="1" ' . ($status_notify_enabled ? 'checked' : '') . '>
+                    <span class="ra-toggle-slider"></span>
+                </label>
+                <div>
+                    <strong>Status-Benachrichtigungen aktivieren</strong>
+                    <div style="font-size:12px;color:#6b7280">E-Mails bei Status&auml;nderungen versenden</div>
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:8px">
+                <label style="margin-bottom:8px;display:block">Bei diesen Status benachrichtigen:</label>
+                <div style="display:flex;flex-wrap:wrap;gap:12px">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_in_progress" value="1" ' . (in_array('in_progress', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#d97706"><i class="ri-loader-4-line"></i></span> In Bearbeitung
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_waiting_parts" value="1" ' . (in_array('waiting_parts', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#ec4899"><i class="ri-time-line"></i></span> Wartet auf Teile
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_done" value="1" ' . (in_array('done', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#059669"><i class="ri-checkbox-circle-line"></i></span> Fertig
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_delivered" value="1" ' . (in_array('delivered', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#6b7280"><i class="ri-truck-line"></i></span> Abgeholt
+                    </label>
+                </div>
             </div>
 
             <hr class="ra-section-divider">
@@ -2611,6 +2653,7 @@ echo '          </div>
                         \'<td data-label=""><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
                             \'<button class="ra-inv-btn ra-inv-btn-email" data-inv-id="\'+inv.id+\'" data-customer-email="\'+esc(inv.customer_email||"")+\'" title="E-Mail senden"><i class="ri-mail-send-line"></i></button>\'+
+                            (inv.status!=="paid"&&inv.doc_type!=="angebot"?\'<button class="ra-inv-btn ra-inv-btn-reminder" data-inv-id="\'+inv.id+\'" title="Zahlungserinnerung" style="background:#fef3c7;color:#d97706"><i class="ri-alarm-warning-line"></i></button>\':\'\')+
                             \'<button class="ra-inv-btn ra-inv-btn-edit" data-invoice=\\\'\'+JSON.stringify(inv).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
                             \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" data-old-status="\'+inv.status+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
                                 \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>Entwurf</option>\'+
@@ -2707,6 +2750,27 @@ echo '          </div>
                             btn.disabled=false;
                             btn.innerHTML=\'<i class="ri-mail-send-line"></i>\';
                             if(res.success){toast("E-Mail erfolgreich gesendet!");invoicesLoaded=false;loadInvoices(1)}
+                            else{toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden")}
+                        });
+                    });
+                });
+                // Reminder button handler
+                tbody.querySelectorAll(".ra-inv-btn-reminder").forEach(function(btn){
+                    btn.addEventListener("click",function(){
+                        var iid=this.getAttribute("data-inv-id");
+                        if(!confirm("Zahlungserinnerung an den Kunden senden?"))return;
+                        btn.disabled=true;
+                        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+                        var fd2=new FormData();
+                        fd2.append("action","ppv_repair_invoice_reminder");
+                        fd2.append("nonce",NONCE);
+                        fd2.append("invoice_id",iid);
+                        fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                        .then(function(r){return r.json()})
+                        .then(function(res){
+                            btn.disabled=false;
+                            btn.innerHTML=\'<i class="ri-alarm-warning-line"></i>\';
+                            if(res.success){toast(res.data.message||"Erinnerung gesendet!")}
                             else{toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden")}
                         });
                     });

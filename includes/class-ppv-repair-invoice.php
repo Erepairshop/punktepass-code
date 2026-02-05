@@ -1324,6 +1324,87 @@ Powered by PunktePass &middot; punktepass.de
     }
 
     /**
+     * AJAX: Send payment reminder email
+     */
+    public static function ajax_send_reminder() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $invoice_id = intval($_POST['invoice_id'] ?? 0);
+        if (!$invoice_id) wp_send_json_error(['message' => 'Ungültige Rechnung']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $invoice = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_repair_invoices WHERE id = %d AND store_id = %d",
+            $invoice_id, $store_id
+        ));
+        if (!$invoice) wp_send_json_error(['message' => 'Rechnung nicht gefunden']);
+        if (empty($invoice->customer_email)) wp_send_json_error(['message' => 'Keine E-Mail-Adresse vorhanden']);
+        if ($invoice->status === 'paid') wp_send_json_error(['message' => 'Rechnung ist bereits bezahlt']);
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+
+        $company_name = $store->repair_company_name ?: $store->name;
+        $company_email = $store->repair_company_email ?: $store->email ?: '';
+        $company_phone = $store->repair_company_phone ?: $store->phone ?: '';
+        $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+        $days_overdue = floor((time() - strtotime($invoice->created_at)) / 86400);
+
+        $subject = "Zahlungserinnerung: Rechnung {$invoice->invoice_number}";
+
+        $body = "Sehr geehrte/r {$invoice->customer_name},\n\n";
+        $body .= "wir möchten Sie freundlich daran erinnern, dass die folgende Rechnung noch offen ist:\n\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $body .= "RECHNUNGSDETAILS\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $body .= "📋 Rechnungsnummer: {$invoice->invoice_number}\n";
+        $body .= "📅 Rechnungsdatum: {$invoice_date}\n";
+        $body .= "💰 Offener Betrag: " . number_format($invoice->total, 2, ',', '.') . " €\n";
+        if ($days_overdue > 0) {
+            $body .= "⏰ Überfällig seit: {$days_overdue} Tagen\n";
+        }
+        $body .= "\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $body .= "Bitte überweisen Sie den offenen Betrag zeitnah.\n\n";
+        $body .= "Falls Sie die Zahlung bereits veranlasst haben, betrachten Sie diese E-Mail bitte als gegenstandslos.\n\n";
+        $body .= "Bei Fragen stehen wir Ihnen gerne zur Verfügung:\n";
+        if ($company_phone) $body .= "📞 {$company_phone}\n";
+        if ($company_email) $body .= "📧 {$company_email}\n";
+        $body .= "\n";
+        $body .= "Mit freundlichen Grüßen,\n";
+        $body .= "{$company_name}\n";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            "From: {$company_name} <noreply@punktepass.de>"
+        ];
+        if ($company_email) {
+            $headers[] = "Reply-To: {$company_email}";
+        }
+
+        $sent = wp_mail($invoice->customer_email, $subject, $body, $headers);
+
+        if ($sent) {
+            // Update reminder_sent_at timestamp
+            $wpdb->update($prefix . 'ppv_repair_invoices',
+                ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] Zahlungserinnerung gesendet")],
+                ['id' => $invoice_id]
+            );
+            wp_send_json_success(['message' => 'Zahlungserinnerung wurde an ' . $invoice->customer_email . ' gesendet']);
+        } else {
+            wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
+        }
+    }
+
+    /**
      * AJAX: Import invoices from Billbee XML export
      */
     public static function ajax_billbee_import() {

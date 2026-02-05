@@ -78,6 +78,7 @@ class PPV_Repair_Core {
             'ppv_repair_invoice_delete'  => ['PPV_Repair_Invoice', 'ajax_delete_invoice'],
             'ppv_repair_invoice_create'  => ['PPV_Repair_Invoice', 'ajax_create_invoice'],
             'ppv_repair_invoice_email'   => ['PPV_Repair_Invoice', 'ajax_send_email'],
+            'ppv_repair_invoice_reminder' => ['PPV_Repair_Invoice', 'ajax_send_reminder'],
             'ppv_repair_angebot_create'  => ['PPV_Repair_Invoice', 'ajax_create_angebot'],
             'ppv_repair_customer_search' => ['PPV_Repair_Invoice', 'ajax_customer_search'],
             'ppv_repair_customer_save'   => ['PPV_Repair_Invoice', 'ajax_customer_save'],
@@ -1443,21 +1444,30 @@ class PPV_Repair_Core {
         if ($new_status === 'done') $update['completed_at'] = current_time('mysql');
         if ($new_status === 'delivered') $update['delivered_at'] = current_time('mysql');
 
+        $old_status = $repair->status;
         $wpdb->update($wpdb->prefix . 'ppv_repairs', $update, ['id' => $repair_id]);
+
+        // Send status notification email if enabled
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if ($store && !empty($store->repair_status_notify_enabled) && $old_status !== $new_status) {
+            $notify_statuses = explode(',', $store->repair_status_notify_statuses ?: 'in_progress,done,delivered');
+            if (in_array($new_status, $notify_statuses) && !empty($repair->customer_email)) {
+                self::send_status_notification($store, $repair, $new_status);
+            }
+        }
 
         // Auto-generate invoice when status = done (unless skip_invoice is set)
         $invoice_id = null;
         $skip_invoice = !empty($_POST['skip_invoice']);
-        if ($new_status === 'done' && class_exists('PPV_Repair_Invoice') && !$skip_invoice) {
+        if ($new_status === 'done' && class_exists('PPV_Repair_Invoice') && !$skip_invoice && $store) {
             try {
                 // Ensure invoice table exists (run migration if needed)
                 $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ppv_repair_invoices'");
                 if (!$table_exists) {
                     self::run_migrations();
                 }
-                $store = $wpdb->get_row($wpdb->prepare(
-                    "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
-                ));
                 if ($store) {
                     $final_cost = floatval($_POST['final_cost'] ?? $repair->estimated_cost ?? 0);
                     $line_items = [];
@@ -1728,6 +1738,77 @@ class PPV_Repair_Core {
         }
     }
 
+    /**
+     * Send status notification email to customer
+     */
+    private static function send_status_notification($store, $repair, $new_status) {
+        $status_labels = [
+            'new' => 'Neu - Auftrag eingegangen',
+            'in_progress' => 'In Bearbeitung',
+            'waiting_parts' => 'Wartet auf Ersatzteile',
+            'done' => 'Fertig - Abholbereit',
+            'delivered' => 'Abgeholt',
+            'cancelled' => 'Storniert'
+        ];
+        $status_text = $status_labels[$new_status] ?? $new_status;
+
+        $company_name = $store->repair_company_name ?: $store->name;
+        $company_phone = $store->repair_company_phone ?: $store->phone;
+        $company_email = $store->repair_company_email ?: '';
+        $device = trim(($repair->device_brand ?: '') . ' ' . ($repair->device_model ?: ''));
+
+        $subject = "Reparatur-Status Update: {$status_text}";
+
+        $body = "Sehr geehrte/r {$repair->customer_name},\n\n";
+
+        switch ($new_status) {
+            case 'in_progress':
+                $body .= "Ihre Reparatur wird jetzt bearbeitet.\n\n";
+                break;
+            case 'waiting_parts':
+                $body .= "Für Ihre Reparatur werden Ersatzteile bestellt. Wir informieren Sie, sobald es weitergeht.\n\n";
+                break;
+            case 'done':
+                $body .= "Gute Nachrichten! Ihre Reparatur ist abgeschlossen und Ihr Gerät ist zur Abholung bereit.\n\n";
+                break;
+            case 'delivered':
+                $body .= "Vielen Dank für Ihren Besuch! Wir hoffen, Sie sind mit unserer Arbeit zufrieden.\n\n";
+                break;
+            case 'cancelled':
+                $body .= "Ihre Reparatur wurde storniert. Bei Fragen kontaktieren Sie uns bitte.\n\n";
+                break;
+            default:
+                $body .= "Der Status Ihrer Reparatur wurde aktualisiert.\n\n";
+        }
+
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $body .= "REPARATUR-DETAILS\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $body .= "📋 Auftragsnummer: #{$repair->id}\n";
+        $body .= "📊 Neuer Status: {$status_text}\n";
+        if ($device) $body .= "📱 Gerät: {$device}\n";
+        $body .= "\n";
+
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $body .= "KONTAKT\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        if ($company_phone) $body .= "📞 {$company_phone}\n";
+        if ($company_email) $body .= "📧 {$company_email}\n";
+        $body .= "\n";
+        $body .= "Mit freundlichen Grüßen,\n";
+        $body .= "{$company_name}\n";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            "From: {$company_name} <noreply@punktepass.de>"
+        ];
+        if ($company_email) {
+            $headers[] = "Reply-To: {$company_email}";
+        }
+
+        wp_mail($repair->customer_email, $subject, $body, $headers);
+    }
+
     /** AJAX: Search Repairs */
     public static function ajax_search_repairs() {
         if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
@@ -1798,6 +1879,8 @@ class PPV_Repair_Core {
             'repair_vat_rate' => "DECIMAL(5,2) DEFAULT 19.00",
             'repair_invoice_email_subject' => "VARCHAR(255) NULL",
             'repair_invoice_email_body' => "TEXT NULL",
+            'repair_status_notify_enabled' => "TINYINT(1) DEFAULT 0",
+            'repair_status_notify_statuses' => "VARCHAR(255) DEFAULT 'in_progress,done,delivered'",
         ];
 
         foreach ($required_columns as $col => $definition) {
@@ -1811,7 +1894,7 @@ class PPV_Repair_Core {
         $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'repair_company_address', 'repair_company_phone', 'repair_company_email',
                         'name', 'phone', 'address', 'plz', 'city',
                         'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type',
-                        'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject'];
+                        'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject', 'repair_status_notify_statuses'];
         // Textarea fields (allow newlines)
         $textarea_fields = ['repair_invoice_email_body'];
         // Integer fields
@@ -1819,7 +1902,7 @@ class PPV_Repair_Core {
         // Decimal fields
         $decimal_fields = ['repair_reward_value', 'repair_vat_rate'];
         // Toggle fields (0/1)
-        $toggle_fields = ['repair_punktepass_enabled', 'repair_vat_enabled'];
+        $toggle_fields = ['repair_punktepass_enabled', 'repair_vat_enabled', 'repair_status_notify_enabled'];
 
         $update = [];
         foreach ($text_fields as $f) {
@@ -1837,6 +1920,17 @@ class PPV_Repair_Core {
         foreach ($toggle_fields as $f) {
             if (isset($_POST[$f])) $update[$f] = intval($_POST[$f]) ? 1 : 0;
         }
+
+        // Build status notify statuses from individual checkboxes
+        $notify_statuses = [];
+        if (!empty($_POST['notify_in_progress'])) $notify_statuses[] = 'in_progress';
+        if (!empty($_POST['notify_waiting_parts'])) $notify_statuses[] = 'waiting_parts';
+        if (!empty($_POST['notify_done'])) $notify_statuses[] = 'done';
+        if (!empty($_POST['notify_delivered'])) $notify_statuses[] = 'delivered';
+        if (!empty($notify_statuses)) {
+            $update['repair_status_notify_statuses'] = implode(',', $notify_statuses);
+        }
+
         if (isset($_POST['repair_color'])) {
             $update['repair_color'] = sanitize_hex_color($_POST['repair_color']) ?: '#667eea';
         }
