@@ -1239,11 +1239,27 @@ echo '          </div>
             </div>
         </div>';
 
+        // Bulk actions bar
+        echo '<div id="ra-inv-bulk-bar" style="display:none;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px 16px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-weight:600;color:#4f46e5"><span id="ra-inv-selected-count">0</span> ausgew&auml;hlt</span>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-paid" style="background:#059669;color:#fff"><i class="ri-checkbox-circle-line"></i> Als bezahlt</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-send" style="background:#3b82f6;color:#fff"><i class="ri-mail-send-line"></i> E-Mails senden</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-reminder" style="background:#d97706;color:#fff"><i class="ri-alarm-warning-line"></i> Erinnerungen</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-cancel" style="background:#6b7280;color:#fff"><i class="ri-close-line"></i> Abbrechen</button>
+                </div>
+            </div>
+        </div>';
+
         // Invoice table
         echo '<div style="overflow-x:auto">
         <table class="ra-inv-table">
             <thead>
                 <tr>
+                    <th style="width:40px"><input type="checkbox" id="ra-inv-select-all" style="width:16px;height:16px;cursor:pointer"></th>
                     <th class="ra-sortable" data-sort="invoice_number">Nr. <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
                     <th class="ra-sortable" data-sort="created_at">Datum <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
                     <th class="ra-sortable" data-sort="customer_name">Kunde <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
@@ -1255,7 +1271,7 @@ echo '          </div>
                 </tr>
             </thead>
             <tbody id="ra-inv-body">
-                <tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Rechnungen werden geladen...</td></tr>
+                <tr><td colspan="9" style="text-align:center;padding:32px;color:#9ca3af;">Rechnungen werden geladen...</td></tr>
             </tbody>
         </table>
         </div>
@@ -2643,7 +2659,9 @@ echo '          </div>
                         :"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#eff6ff;color:#2563eb;margin-left:6px\'>Rechnung</span>";
 
                     var row=document.createElement("tr");
-                    row.innerHTML=\'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong>\'+typeBadge+\'</td>\'+
+                    row.setAttribute("data-inv-id",inv.id);
+                    row.innerHTML=\'<td><input type="checkbox" class="ra-inv-checkbox" data-inv-id="\'+inv.id+\'" style="width:16px;height:16px;cursor:pointer"></td>\'+
+                        \'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong>\'+typeBadge+\'</td>\'+
                         \'<td data-label="Datum">\'+dateStr+\'</td>\'+
                         \'<td data-label="Kunde">\'+esc(inv.customer_name)+\'</td>\'+
                         \'<td data-label="Netto">\'+fmtEur(inv.net_amount)+\'</td>\'+
@@ -2775,7 +2793,14 @@ echo '          </div>
                         });
                     });
                 });
+                // Checkbox handlers for bulk selection
+                tbody.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){
+                    cb.addEventListener("change",updateBulkSelection);
+                });
             }
+            // Reset select all checkbox
+            document.getElementById("ra-inv-select-all").checked=false;
+            updateBulkSelection();
             // Load more
             var lm=document.getElementById("ra-inv-load-more");
             if(d.page<d.pages){
@@ -2840,6 +2865,95 @@ echo '          </div>
         if(df)url+="&date_from="+df;
         if(dt)url+="&date_to="+dt;
         window.open(url,"_blank");
+    });
+
+    // ===== Bulk Selection Functions =====
+    function getSelectedInvoiceIds(){
+        var ids=[];
+        document.querySelectorAll(".ra-inv-checkbox:checked").forEach(function(cb){
+            ids.push(cb.getAttribute("data-inv-id"));
+        });
+        return ids;
+    }
+    function updateBulkSelection(){
+        var selected=getSelectedInvoiceIds();
+        var bulkBar=document.getElementById("ra-inv-bulk-bar");
+        var countEl=document.getElementById("ra-inv-selected-count");
+        if(selected.length>0){
+            bulkBar.style.display="block";
+            countEl.textContent=selected.length;
+        }else{
+            bulkBar.style.display="none";
+        }
+    }
+    // Select all checkbox
+    document.getElementById("ra-inv-select-all").addEventListener("change",function(){
+        var checked=this.checked;
+        document.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){cb.checked=checked});
+        updateBulkSelection();
+    });
+    // Bulk cancel
+    document.getElementById("ra-bulk-cancel").addEventListener("click",function(){
+        document.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){cb.checked=false});
+        document.getElementById("ra-inv-select-all").checked=false;
+        updateBulkSelection();
+    });
+    // Bulk mark as paid
+    document.getElementById("ra-bulk-paid").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm(ids.length+" Rechnung(en) als bezahlt markieren?"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird verarbeitet...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","mark_paid");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-checkbox-circle-line"></i> Als bezahlt\';
+            if(res.success){toast(res.data.message||"Erfolgreich!");invoicesLoaded=false;loadInvoices(1)}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
+    });
+    // Bulk send emails
+    document.getElementById("ra-bulk-send").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm(ids.length+" Rechnung(en) per E-Mail versenden?"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","send_email");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-mail-send-line"></i> E-Mails senden\';
+            if(res.success){toast(res.data.message||"Erfolgreich!");invoicesLoaded=false;loadInvoices(1)}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
+    });
+    // Bulk reminders
+    document.getElementById("ra-bulk-reminder").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm(ids.length+" Zahlungserinnerung(en) senden?"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","send_reminder");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-alarm-warning-line"></i> Erinnerungen\';
+            if(res.success){toast(res.data.message||"Erfolgreich!")}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
     });
 
     /* ===== Settings Form ===== */
@@ -3956,6 +4070,7 @@ echo '          </div>
         $st    = $status_map[$r->status] ?? ['Unbekannt', ''];
         $device = trim(($r->device_brand ?: '') . ' ' . ($r->device_model ?: ''));
         $date   = date('d.m.Y H:i', strtotime($r->created_at));
+        $updated = !empty($r->updated_at) && $r->updated_at !== $r->created_at ? date('d.m.Y H:i', strtotime($r->updated_at)) : '';
         $problem = esc_html(mb_strimwidth($r->problem_description, 0, 150, '...'));
         $phone  = $r->customer_phone ? (' &middot; ' . esc_html($r->customer_phone)) : '';
 
@@ -4097,7 +4212,7 @@ echo '          </div>
                 . $pin_html
                 . $muster_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
-                . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . '</div>'
+                . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="Zuletzt ge&auml;ndert">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
             . '</div>'
             . $reward_html
             . '<div class="ra-repair-comments-section">'

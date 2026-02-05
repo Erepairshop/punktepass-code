@@ -1405,6 +1405,128 @@ Powered by PunktePass &middot; punktepass.de
     }
 
     /**
+     * AJAX: Bulk operation on invoices
+     */
+    public static function ajax_bulk_operation() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $operation = sanitize_text_field($_POST['operation'] ?? '');
+        $invoice_ids = json_decode(stripslashes($_POST['invoice_ids'] ?? '[]'), true);
+
+        if (empty($invoice_ids) || !is_array($invoice_ids)) {
+            wp_send_json_error(['message' => 'Keine Rechnungen ausgewählt']);
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+
+        $success_count = 0;
+        $error_count = 0;
+
+        foreach ($invoice_ids as $invoice_id) {
+            $invoice_id = intval($invoice_id);
+            $invoice = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}ppv_repair_invoices WHERE id = %d AND store_id = %d",
+                $invoice_id, $store_id
+            ));
+            if (!$invoice) {
+                $error_count++;
+                continue;
+            }
+
+            switch ($operation) {
+                case 'mark_paid':
+                    $wpdb->update($prefix . 'ppv_repair_invoices', [
+                        'status' => 'paid',
+                        'paid_at' => current_time('mysql')
+                    ], ['id' => $invoice_id]);
+                    $success_count++;
+                    break;
+
+                case 'send_email':
+                    if (empty($invoice->customer_email)) {
+                        $error_count++;
+                        continue 2;
+                    }
+                    // Use existing send_email logic (simplified version without PDF for bulk)
+                    $_POST['invoice_id'] = $invoice_id;
+                    // Generate and send - this is a simplified approach
+                    $company_name = $store->repair_company_name ?: $store->name;
+                    $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+                    $subject = str_replace('{invoice_number}', $invoice->invoice_number,
+                        $store->repair_invoice_email_subject ?: 'Ihre Rechnung {invoice_number}');
+                    $body = str_replace(
+                        ['{customer_name}', '{invoice_number}', '{invoice_date}', '{total}', '{company_name}'],
+                        [$invoice->customer_name, $invoice->invoice_number, $invoice_date, number_format($invoice->total, 2, ',', '.'), $company_name],
+                        $store->repair_invoice_email_body ?: "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number}.\n\nGesamtbetrag: {total} €\n\nMit freundlichen Grüßen,\n{company_name}"
+                    );
+                    $headers = ['Content-Type: text/plain; charset=UTF-8', "From: {$company_name} <noreply@punktepass.de>"];
+                    if (wp_mail($invoice->customer_email, $subject, $body, $headers)) {
+                        if ($invoice->status === 'draft') {
+                            $wpdb->update($prefix . 'ppv_repair_invoices', ['status' => 'sent'], ['id' => $invoice_id]);
+                        }
+                        $success_count++;
+                    } else {
+                        $error_count++;
+                    }
+                    break;
+
+                case 'send_reminder':
+                    if (empty($invoice->customer_email) || $invoice->status === 'paid') {
+                        $error_count++;
+                        continue 2;
+                    }
+                    $company_name = $store->repair_company_name ?: $store->name;
+                    $company_email = $store->repair_company_email ?: '';
+                    $company_phone = $store->repair_company_phone ?: '';
+                    $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+                    $days_overdue = floor((time() - strtotime($invoice->created_at)) / 86400);
+
+                    $subject = "Zahlungserinnerung: Rechnung {$invoice->invoice_number}";
+                    $body = "Sehr geehrte/r {$invoice->customer_name},\n\n";
+                    $body .= "wir möchten Sie freundlich daran erinnern, dass die folgende Rechnung noch offen ist:\n\n";
+                    $body .= "Rechnungsnummer: {$invoice->invoice_number}\n";
+                    $body .= "Rechnungsdatum: {$invoice_date}\n";
+                    $body .= "Offener Betrag: " . number_format($invoice->total, 2, ',', '.') . " €\n";
+                    if ($days_overdue > 0) $body .= "Überfällig seit: {$days_overdue} Tagen\n";
+                    $body .= "\nBitte überweisen Sie den offenen Betrag zeitnah.\n\n";
+                    $body .= "Mit freundlichen Grüßen,\n{$company_name}\n";
+
+                    $headers = ['Content-Type: text/plain; charset=UTF-8', "From: {$company_name} <noreply@punktepass.de>"];
+                    if (wp_mail($invoice->customer_email, $subject, $body, $headers)) {
+                        $wpdb->update($prefix . 'ppv_repair_invoices',
+                            ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] Zahlungserinnerung gesendet")],
+                            ['id' => $invoice_id]
+                        );
+                        $success_count++;
+                    } else {
+                        $error_count++;
+                    }
+                    break;
+
+                default:
+                    wp_send_json_error(['message' => 'Unbekannte Operation']);
+            }
+        }
+
+        $message = "{$success_count} erfolgreich verarbeitet";
+        if ($error_count > 0) {
+            $message .= ", {$error_count} fehlgeschlagen";
+        }
+
+        wp_send_json_success(['message' => $message, 'success' => $success_count, 'errors' => $error_count]);
+    }
+
+    /**
      * AJAX: Import invoices from Billbee XML export
      */
     public static function ajax_billbee_import() {
