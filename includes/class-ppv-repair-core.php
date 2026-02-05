@@ -748,10 +748,11 @@ class PPV_Repair_Core {
         $email = sanitize_email($_POST['customer_email'] ?? '');
         $phone = sanitize_text_field($_POST['customer_phone'] ?? '');
 
-        if (empty($name) || empty($email)) {
-            wp_send_json_error(['message' => 'Name und E-Mail sind Pflichtfelder']);
+        if (empty($name)) {
+            wp_send_json_error(['message' => 'Name ist ein Pflichtfeld']);
         }
-        if (!is_email($email)) {
+        // Only validate email format if provided
+        if (!empty($email) && !is_email($email)) {
             wp_send_json_error(['message' => 'Ungültige E-Mail-Adresse']);
         }
 
