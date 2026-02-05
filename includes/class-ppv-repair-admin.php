@@ -288,13 +288,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 <style>
 /* ========== Reset & Base - Modern ========== */
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:auto;min-height:100%}
-body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html{min-height:100%;overflow-y:scroll}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh}
 a{color:#667eea;text-decoration:none;transition:color .2s}
 a:hover{color:#5a67d8}
 
 /* ========== Layout ========== */
-.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box}
+@keyframes raFadeIn{from{opacity:0.99}to{opacity:1}}
+.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box;transform:translateZ(0);backface-visibility:hidden;animation:raFadeIn 0.01s ease-out}
 @media(min-width:1200px){.ra-wrap{padding:16px 40px 40px}}
 
 /* ========== Header ========== */
@@ -2716,12 +2717,26 @@ echo '          </div>
         settingsPanel.classList.remove("ra-hidden");
     }
 
-    // Force scroll to trigger rendering
+    // Force repaint on desktop browsers
     window.addEventListener("load", function() {
-        setTimeout(function() {
-            window.scrollTo(0, 1);
-            window.scrollTo(0, 0);
-        }, 100);
+        var wrap = document.querySelector(".ra-wrap");
+        if (wrap) {
+            // Force layout recalculation
+            wrap.style.display = "none";
+            wrap.offsetHeight; // Force reflow
+            wrap.style.display = "";
+
+            // Trigger resize event after slight delay
+            setTimeout(function() {
+                window.dispatchEvent(new Event("resize"));
+                // Force scroll to bottom and back
+                var docHeight = document.body.scrollHeight;
+                window.scrollTo(0, docHeight);
+                setTimeout(function() {
+                    window.scrollTo(0, 0);
+                }, 50);
+            }, 100);
+        }
     });
 
     /* ===== Settings Tabs ===== */
