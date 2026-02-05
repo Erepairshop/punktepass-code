@@ -1268,9 +1268,6 @@ echo '          </div>
                 <option value="delivered">Abgeholt</option>
                 <option value="cancelled">Storniert</option>
             </select>
-            <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-erepairshop-import-btn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0">
-                <i class="ri-database-2-line"></i> eRepairshop Import
-            </button>
         </div>
     </div>';
 
@@ -3843,38 +3840,6 @@ echo '          </div>
             bbSubmit.disabled=false;
         });
     });
-
-    /* ===== eRepairshop Import ===== */
-    var erBtn=document.getElementById("ra-erepairshop-import-btn");
-    if(erBtn){
-        erBtn.addEventListener("click",function(){
-            if(!confirm("Alle Reparaturen aus der alten eRepairshop-Datenbank importieren?\n\nHinweis: Bereits importierte werden übersprungen.\nKeine Punkte werden vergeben.")){
-                return;
-            }
-            erBtn.disabled=true;
-            erBtn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Import läuft...\';
-
-            var fd=new FormData();
-            fd.append("action","ppv_repair_erepairshop_import");
-            fd.append("nonce",NONCE);
-
-            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-            .then(function(r){return r.json()})
-            .then(function(data){
-                if(data.success){
-                    toast(data.data.message||"Import erfolgreich");
-                    loadRepairs(1);
-                }else{
-                    toast(data.data&&data.data.message?data.data.message:"Import fehlgeschlagen");
-                }
-            })
-            .catch(function(){toast("Verbindungsfehler")})
-            .finally(function(){
-                erBtn.disabled=false;
-                erBtn.innerHTML=\'<i class="ri-database-2-line"></i> eRepairshop Import\';
-            });
-        });
-    }
 
     /* ===== Repair Comments ===== */
     document.addEventListener("click",function(e){
