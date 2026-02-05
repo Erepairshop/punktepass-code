@@ -1769,6 +1769,43 @@ class PPV_Repair_Core {
         if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
 
         global $wpdb;
+        $stores_table = $wpdb->prefix . 'ppv_stores';
+
+        // Auto-migrate: ensure all required columns exist
+        $required_columns = [
+            'repair_company_name' => "VARCHAR(255) NULL",
+            'repair_owner_name' => "VARCHAR(255) NULL",
+            'repair_tax_id' => "VARCHAR(100) NULL",
+            'repair_company_address' => "VARCHAR(500) NULL",
+            'repair_company_phone' => "VARCHAR(100) NULL",
+            'repair_company_email' => "VARCHAR(255) NULL",
+            'repair_punktepass_enabled' => "TINYINT(1) DEFAULT 1",
+            'repair_reward_name' => "VARCHAR(255) DEFAULT '10 Euro Rabatt'",
+            'repair_reward_description' => "VARCHAR(500) NULL",
+            'repair_reward_type' => "VARCHAR(50) DEFAULT 'discount_fixed'",
+            'repair_reward_value' => "DECIMAL(10,2) DEFAULT 10",
+            'repair_reward_product' => "VARCHAR(255) NULL",
+            'repair_required_points' => "INT DEFAULT 4",
+            'repair_points_per_form' => "INT DEFAULT 2",
+            'repair_form_title' => "VARCHAR(255) DEFAULT 'Reparaturauftrag'",
+            'repair_form_subtitle' => "VARCHAR(500) NULL",
+            'repair_service_type' => "VARCHAR(100) DEFAULT 'Allgemein'",
+            'repair_field_config' => "TEXT NULL",
+            'repair_color' => "VARCHAR(20) DEFAULT '#667eea'",
+            'repair_invoice_prefix' => "VARCHAR(20) DEFAULT 'RE-'",
+            'repair_invoice_next_number' => "INT DEFAULT 1",
+            'repair_vat_enabled' => "TINYINT(1) DEFAULT 1",
+            'repair_vat_rate' => "DECIMAL(5,2) DEFAULT 19.00",
+            'repair_invoice_email_subject' => "VARCHAR(255) NULL",
+            'repair_invoice_email_body' => "TEXT NULL",
+        ];
+
+        foreach ($required_columns as $col => $definition) {
+            $exists = $wpdb->get_var("SHOW COLUMNS FROM {$stores_table} LIKE '{$col}'");
+            if (!$exists) {
+                $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN {$col} {$definition}");
+            }
+        }
 
         // Text fields
         $text_fields = ['repair_company_name', 'repair_owner_name', 'repair_tax_id', 'repair_company_address', 'repair_company_phone', 'repair_company_email',
@@ -1805,13 +1842,6 @@ class PPV_Repair_Core {
         }
         // Field config (JSON)
         if (isset($_POST['repair_field_config'])) {
-            // Ensure column exists (auto-migration)
-            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'repair_field_config'");
-            if (!$col_exists) {
-                $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN repair_field_config TEXT NULL");
-                error_log('PPV Repair: Added missing repair_field_config column');
-            }
-
             $config = json_decode(stripslashes($_POST['repair_field_config']), true);
             if (is_array($config)) {
                 $update['repair_field_config'] = wp_json_encode($config);
