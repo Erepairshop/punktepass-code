@@ -510,6 +510,18 @@ a:hover{text-decoration:underline}
 .ra-feedback-star:hover,.ra-feedback-star.active{color:#fbbf24;transform:scale(1.15)}
 .ra-feedback-submit{width:100%;padding:14px;background:linear-gradient(135deg,#00eaff,#00b4d8);color:#0d1b2a;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;transition:all .2s}
 .ra-feedback-submit:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,234,255,0.4)}
+/* Feedback Tab Styles */
+.ra-feedback-cats-inline{display:flex;gap:8px;flex-wrap:wrap}
+.ra-fb-cat-btn{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.ra-fb-cat-btn:hover{border-color:#667eea;color:#667eea}
+.ra-fb-cat-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent}
+.ra-fb-stars{display:flex;gap:8px}
+.ra-fb-star{background:none;border:none;font-size:28px;color:#d1d5db;cursor:pointer;padding:4px;transition:all .2s}
+.ra-fb-star:hover,.ra-fb-star.active{color:#fbbf24;transform:scale(1.1)}
+.ra-fb-msg{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.ra-fb-msg.show{display:block}
+.ra-fb-msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.ra-fb-msg.success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
 .ra-feedback-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
 .ra-feedback-msg{padding:12px;border-radius:10px;margin-bottom:12px;font-size:14px;text-align:center;display:none}
 .ra-feedback-msg.show{display:block}
@@ -1039,11 +1051,12 @@ echo '          </div>
         </div>
     </div>';
 
-        // Tabs: Reparaturen | Rechnung/Angebot | Kunden
+        // Tabs: Reparaturen | Rechnung/Angebot | Kunden | Feedback
         echo '<div class="ra-tabs">
         <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> Reparaturen</div>
         <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnung / Angebot</div>
         <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> Kunden</div>
+        <div class="ra-tab" data-tab="feedback"><i class="ri-feedback-line"></i> Feedback</div>
     </div>';
 
         // ========== TAB: Reparaturen ==========
@@ -1209,6 +1222,51 @@ echo '          </div>
 
         echo '</div>'; // end ra-tab-customers
 
+        // ========== TAB: Feedback ==========
+        echo '<div class="ra-tab-content" id="ra-tab-feedback">
+        <div class="ra-settings" style="max-width:600px">
+            <h3><i class="ri-feedback-line"></i> Feedback senden</h3>
+            <p style="font-size:14px;color:#6b7280;margin-bottom:20px">Wir freuen uns &uuml;ber Ihr Feedback! Teilen Sie uns Fehler, Ideen oder Fragen mit.</p>
+
+            <div style="margin-bottom:20px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">Kategorie</label>
+                <div class="ra-feedback-cats-inline" id="ra-fb-cats">
+                    <button type="button" class="ra-fb-cat-btn" data-cat="bug"><i class="ri-bug-line"></i> Fehler</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="feature"><i class="ri-lightbulb-line"></i> Idee</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="question"><i class="ri-question-line"></i> Frage</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="rating"><i class="ri-star-line"></i> Bewertung</button>
+                </div>
+            </div>
+
+            <div id="ra-fb-rating-section" style="display:none;margin-bottom:20px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">Bewertung</label>
+                <div class="ra-fb-stars">
+                    <button type="button" class="ra-fb-star" data-rating="1"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="2"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="3"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="4"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="5"><i class="ri-star-line"></i></button>
+                </div>
+            </div>
+
+            <div class="field" style="margin-bottom:16px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Nachricht</label>
+                <textarea id="ra-fb-message" class="ra-input" rows="5" placeholder="Beschreiben Sie Ihr Anliegen..." style="width:100%;resize:vertical"></textarea>
+            </div>
+
+            <div class="field" style="margin-bottom:20px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">E-Mail (optional)</label>
+                <input type="email" id="ra-fb-email" class="ra-input" placeholder="Ihre E-Mail f&uuml;r R&uuml;ckfragen" style="width:100%">
+            </div>
+
+            <div id="ra-fb-msg" class="ra-fb-msg"></div>
+
+            <button type="button" class="ra-btn ra-btn-primary" id="ra-fb-submit" style="width:100%">
+                <i class="ri-send-plane-fill"></i> Feedback senden
+            </button>
+        </div>
+        </div>'; // end ra-tab-feedback
+
         // Toast notification
         echo '<div class="ra-toast" id="ra-toast"></div>';
 
@@ -1222,72 +1280,6 @@ echo '          </div>
                 <div class="ra-reject-modal-actions">
                     <button class="ra-btn ra-btn-outline" id="ra-reject-cancel">Abbrechen</button>
                     <button class="ra-btn" style="background:#dc2626;color:#fff" id="ra-reject-submit">Ablehnen</button>
-                </div>
-            </div>
-        </div>';
-
-        // Feedback button
-        echo '<button class="ra-feedback-btn" id="ra-feedback-btn" title="Feedback"><i class="ri-feedback-line"></i></button>';
-
-        // Feedback modal
-        echo '<div class="ra-feedback-modal" id="ra-feedback-modal">
-            <div class="ra-feedback-content">
-                <div class="ra-feedback-header">
-                    <h3><i class="ri-feedback-line"></i> Feedback</h3>
-                    <button class="ra-feedback-close" id="ra-feedback-close"><i class="ri-close-line"></i></button>
-                </div>
-
-                <div class="ra-feedback-step active" id="ra-feedback-step1">
-                    <p class="ra-feedback-subtitle">Was m&ouml;chten Sie uns mitteilen?</p>
-                    <div class="ra-feedback-cats">
-                        <div class="ra-feedback-cat" data-cat="bug">
-                            <i class="ri-bug-line"></i>
-                            <span>Fehler melden</span>
-                        </div>
-                        <div class="ra-feedback-cat" data-cat="feature">
-                            <i class="ri-lightbulb-line"></i>
-                            <span>Idee / Wunsch</span>
-                        </div>
-                        <div class="ra-feedback-cat" data-cat="question">
-                            <i class="ri-question-line"></i>
-                            <span>Frage</span>
-                        </div>
-                        <div class="ra-feedback-cat" data-cat="rating">
-                            <i class="ri-star-line"></i>
-                            <span>Bewertung</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ra-feedback-step" id="ra-feedback-step2">
-                    <button class="ra-feedback-back" id="ra-feedback-back">
-                        <i class="ri-arrow-left-line"></i> Zur&uuml;ck
-                    </button>
-                    <div class="ra-feedback-cat-header" id="ra-feedback-cat-header">
-                        <i class="ri-bug-line"></i>
-                        <span>Fehler melden</span>
-                    </div>
-                    <div class="ra-feedback-stars" id="ra-feedback-stars" style="display:none">
-                        <button class="ra-feedback-star" data-rating="1"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="2"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="3"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="4"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="5"><i class="ri-star-line"></i></button>
-                    </div>
-                    <textarea class="ra-feedback-input" id="ra-feedback-message" rows="4" placeholder="Beschreiben Sie Ihr Anliegen..."></textarea>
-                    <input type="email" class="ra-feedback-input" id="ra-feedback-email" placeholder="E-Mail (optional)" style="margin-top:12px">
-                    <div class="ra-feedback-msg" id="ra-feedback-msg"></div>
-                    <button class="ra-feedback-submit" id="ra-feedback-submit">
-                        <i class="ri-send-plane-fill"></i> Absenden
-                    </button>
-                </div>
-
-                <div class="ra-feedback-step" id="ra-feedback-step3">
-                    <div class="ra-feedback-success">
-                        <i class="ri-checkbox-circle-fill"></i>
-                        <h4>Vielen Dank!</h4>
-                        <p>Ihr Feedback wurde gesendet.</p>
-                    </div>
                 </div>
             </div>
         </div>';
@@ -3726,61 +3718,27 @@ echo '          </div>
         });
     }
 
-    /* ===== Feedback Modal ===== */
-    var feedbackModal=document.getElementById("ra-feedback-modal");
-    var feedbackCategory="";
-    var feedbackRating=0;
-    var catMeta={
-        bug:{icon:"ri-bug-line",text:"Fehler melden",placeholder:"Beschreiben Sie den Fehler..."},
-        feature:{icon:"ri-lightbulb-line",text:"Idee / Wunsch",placeholder:"Beschreiben Sie Ihre Idee..."},
-        question:{icon:"ri-question-line",text:"Frage",placeholder:"Stellen Sie Ihre Frage..."},
-        rating:{icon:"ri-star-line",text:"Bewertung",placeholder:"Optionaler Kommentar..."}
-    };
+    /* ===== Feedback Tab ===== */
+    var fbCategory="";
+    var fbRating=0;
 
-    document.getElementById("ra-feedback-btn").addEventListener("click",function(){
-        feedbackModal.classList.add("show");
-        feedbackCategory="";
-        feedbackRating=0;
-        document.getElementById("ra-feedback-step1").classList.add("active");
-        document.getElementById("ra-feedback-step2").classList.remove("active");
-        document.getElementById("ra-feedback-step3").classList.remove("active");
-        document.getElementById("ra-feedback-message").value="";
-        document.getElementById("ra-feedback-email").value="";
-        document.getElementById("ra-feedback-msg").className="ra-feedback-msg";
-        document.querySelectorAll(".ra-feedback-star").forEach(function(s){s.classList.remove("active");s.querySelector("i").className="ri-star-line"});
-    });
-
-    document.getElementById("ra-feedback-close").addEventListener("click",function(){
-        feedbackModal.classList.remove("show");
-    });
-
-    feedbackModal.addEventListener("click",function(e){
-        if(e.target===feedbackModal)feedbackModal.classList.remove("show");
-    });
-
-    document.querySelectorAll(".ra-feedback-cat").forEach(function(cat){
-        cat.addEventListener("click",function(){
-            feedbackCategory=this.getAttribute("data-cat");
-            var meta=catMeta[feedbackCategory];
-            document.getElementById("ra-feedback-cat-header").innerHTML=\'<i class="\'+meta.icon+\'"></i><span>\'+meta.text+\'</span>\';
-            document.getElementById("ra-feedback-message").setAttribute("placeholder",meta.placeholder);
-            document.getElementById("ra-feedback-stars").style.display=(feedbackCategory==="rating")?"flex":"none";
-            document.getElementById("ra-feedback-step1").classList.remove("active");
-            document.getElementById("ra-feedback-step2").classList.add("active");
-            document.getElementById("ra-feedback-msg").className="ra-feedback-msg";
+    // Category selection
+    document.querySelectorAll(".ra-fb-cat-btn").forEach(function(btn){
+        btn.addEventListener("click",function(){
+            document.querySelectorAll(".ra-fb-cat-btn").forEach(function(b){b.classList.remove("active")});
+            this.classList.add("active");
+            fbCategory=this.getAttribute("data-cat");
+            document.getElementById("ra-fb-rating-section").style.display=(fbCategory==="rating")?"block":"none";
+            document.getElementById("ra-fb-msg").className="ra-fb-msg";
         });
     });
 
-    document.getElementById("ra-feedback-back").addEventListener("click",function(){
-        document.getElementById("ra-feedback-step2").classList.remove("active");
-        document.getElementById("ra-feedback-step1").classList.add("active");
-    });
-
-    document.querySelectorAll(".ra-feedback-star").forEach(function(star){
+    // Star rating
+    document.querySelectorAll(".ra-fb-star").forEach(function(star){
         star.addEventListener("click",function(){
-            feedbackRating=parseInt(this.getAttribute("data-rating"));
-            document.querySelectorAll(".ra-feedback-star").forEach(function(s,idx){
-                if(idx<feedbackRating){
+            fbRating=parseInt(this.getAttribute("data-rating"));
+            document.querySelectorAll(".ra-fb-star").forEach(function(s,idx){
+                if(idx<fbRating){
                     s.classList.add("active");
                     s.querySelector("i").className="ri-star-fill";
                 }else{
@@ -3791,20 +3749,26 @@ echo '          </div>
         });
     });
 
-    document.getElementById("ra-feedback-submit").addEventListener("click",function(){
+    // Submit feedback
+    document.getElementById("ra-fb-submit").addEventListener("click",function(){
         var btn=this;
-        var msg=document.getElementById("ra-feedback-msg");
-        var message=document.getElementById("ra-feedback-message").value.trim();
-        var email=document.getElementById("ra-feedback-email").value.trim();
+        var msg=document.getElementById("ra-fb-msg");
+        var message=document.getElementById("ra-fb-message").value.trim();
+        var email=document.getElementById("ra-fb-email").value.trim();
 
-        if(feedbackCategory==="rating"&&feedbackRating===0){
-            msg.textContent="Bitte geben Sie eine Bewertung ab.";
-            msg.className="ra-feedback-msg show error";
+        if(!fbCategory){
+            msg.textContent="Bitte w\u00e4hlen Sie eine Kategorie.";
+            msg.className="ra-fb-msg show error";
             return;
         }
-        if(!message&&feedbackCategory!=="rating"){
+        if(fbCategory==="rating"&&fbRating===0){
+            msg.textContent="Bitte geben Sie eine Bewertung ab.";
+            msg.className="ra-fb-msg show error";
+            return;
+        }
+        if(!message&&fbCategory!=="rating"){
             msg.textContent="Bitte beschreiben Sie Ihr Anliegen.";
-            msg.className="ra-feedback-msg show error";
+            msg.className="ra-fb-msg show error";
             return;
         }
 
@@ -3814,9 +3778,9 @@ echo '          </div>
         var fd=new FormData();
         fd.append("action","ppv_submit_feedback");
         fd.append("nonce","' . wp_create_nonce('ppv_feedback_nonce') . '");
-        fd.append("category",feedbackCategory);
+        fd.append("category",fbCategory);
         fd.append("message",message);
-        fd.append("rating",feedbackRating);
+        fd.append("rating",fbRating);
         fd.append("email",email);
         fd.append("user_type","repair_handler");
         fd.append("page_url",window.location.href);
@@ -3827,21 +3791,28 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                document.getElementById("ra-feedback-step2").classList.remove("active");
-                document.getElementById("ra-feedback-step3").classList.add("active");
-                setTimeout(function(){feedbackModal.classList.remove("show")},2500);
+                msg.textContent="Vielen Dank f\u00fcr Ihr Feedback!";
+                msg.className="ra-fb-msg show success";
+                // Reset form
+                document.getElementById("ra-fb-message").value="";
+                document.getElementById("ra-fb-email").value="";
+                document.querySelectorAll(".ra-fb-cat-btn").forEach(function(b){b.classList.remove("active")});
+                document.querySelectorAll(".ra-fb-star").forEach(function(s){s.classList.remove("active");s.querySelector("i").className="ri-star-line"});
+                document.getElementById("ra-fb-rating-section").style.display="none";
+                fbCategory="";
+                fbRating=0;
             }else{
                 msg.textContent=data.data&&data.data.message?data.data.message:"Fehler beim Senden.";
-                msg.className="ra-feedback-msg show error";
+                msg.className="ra-fb-msg show error";
             }
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Absenden\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Feedback senden\';
         })
         .catch(function(){
             msg.textContent="Verbindungsfehler.";
-            msg.className="ra-feedback-msg show error";
+            msg.className="ra-fb-msg show error";
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Absenden\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Feedback senden\';
         });
     });
 
