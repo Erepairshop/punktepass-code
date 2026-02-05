@@ -385,6 +385,20 @@ a:hover{color:#5a67d8}
 .ra-legal-links a:hover{color:#5a67d8}
 .ra-pp-link{margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0}
 
+/* ========== Settings Tabs ========== */
+.ra-settings-tabs{display:flex;gap:4px;padding:16px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ra-settings-tab{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.ra-settings-tab i{font-size:15px}
+.ra-settings-tab:hover{background:#e2e8f0;color:#0f172a}
+.ra-settings-tab.active{background:#667eea;color:#fff}
+.ra-settings-panel{display:none;padding:24px}
+.ra-settings-panel.active{display:block}
+.ra-settings-panel h4{font-size:15px;font-weight:700;color:#0f172a;margin:0 0 16px 0;padding-bottom:12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+.ra-settings-panel h4 i{color:#667eea;font-size:18px}
+.ra-settings-panel h4:not(:first-child){margin-top:28px}
+.ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
+.ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+
 /* ========== Toolbar ========== */
 .ra-toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .ra-search{flex:1;position:relative;min-width:200px}
@@ -673,7 +687,7 @@ a:hover{color:#5a67d8}
             <a href="' . esc_url($form_url) . '" target="_blank" class="ra-btn ra-btn-outline">
                 <i class="ri-external-link-line"></i> Formular ansehen
             </a>
-            <button class="ra-btn-icon" onclick="document.getElementById(\'ra-settings\').classList.toggle(\'ra-hidden\')" title="Einstellungen">
+            <button class="ra-btn-icon" id="ra-settings-toggle-btn" title="Einstellungen">
                 <i class="ri-settings-3-line"></i>
             </button>
         </div>
@@ -750,10 +764,22 @@ a:hover{color:#5a67d8}
         // Settings panel
         echo '<div id="ra-settings" class="ra-settings ra-hidden">
         <h3><i class="ri-settings-3-line"></i> Einstellungen</h3>
+
+        <!-- Settings Tabs Navigation -->
+        <div class="ra-settings-tabs" id="ra-settings-tabs">
+            <button type="button" class="ra-settings-tab active" data-panel="general"><i class="ri-store-2-line"></i> Allgemein</button>
+            <button type="button" class="ra-settings-tab" data-panel="form"><i class="ri-edit-line"></i> Formular</button>
+            <button type="button" class="ra-settings-tab" data-panel="invoice"><i class="ri-file-list-3-line"></i> Rechnungen</button>
+            <button type="button" class="ra-settings-tab" data-panel="email"><i class="ri-mail-line"></i> E-Mails</button>
+            <button type="button" class="ra-settings-tab" data-panel="punktepass"><i class="ri-star-line"></i> PunktePass</button>
+            <button type="button" class="ra-settings-tab" data-panel="abo"><i class="ri-vip-crown-line"></i> Abo</button>
+        </div>
+
         <form id="ra-settings-form">
-            <!-- Allgemein -->
-            <div class="ra-section-title"><i class="ri-store-2-line"></i> Allgemein</div>
-            <div class="ra-settings-grid">
+            <!-- ==================== PANEL: Allgemein ==================== -->
+            <div class="ra-settings-panel active" data-panel="general">
+                <h4><i class="ri-store-2-line"></i> Gesch&auml;ftsdaten</h4>
+                <div class="ra-settings-grid">
                 <div class="field">
                     <label>Firmenname</label>
                     <input type="text" name="name" value="' . esc_attr($store->name) . '">
@@ -800,10 +826,8 @@ a:hover{color:#5a67d8}
                 </div>
             </div>
 
-            <hr class="ra-section-divider">
 
-            <!-- Impressum -->
-            <div class="ra-section-title"><i class="ri-file-list-3-line"></i> Impressum / Rechtliches</div>
+                <h4><i class="ri-file-list-3-line"></i> Impressum / Rechtliches</h4>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Firmenname (Impressum)</label>
@@ -830,11 +854,11 @@ a:hover{color:#5a67d8}
                     <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
                 </div>
             </div>
+            </div><!-- END PANEL: general -->
 
-            <hr class="ra-section-divider">
-
-            <!-- PunktePass Integration -->
-            <div class="ra-section-title"><i class="ri-star-line"></i> PunktePass Integration</div>
+            <!-- ==================== PANEL: PunktePass ==================== -->
+            <div class="ra-settings-panel" data-panel="punktepass">
+                <h4><i class="ri-star-line"></i> PunktePass Integration</h4>
             <div class="ra-toggle">
                 <label class="ra-toggle-switch">
                     <input type="checkbox" id="ra-pp-toggle" ' . ($pp_enabled ? 'checked' : '') . '>
@@ -887,11 +911,11 @@ a:hover{color:#5a67d8}
                     </div>
                 </div>
             </div>
+            </div><!-- END PANEL: punktepass -->
 
-            <hr class="ra-section-divider">
-
-            <!-- Formular anpassen -->
-            <div class="ra-section-title"><i class="ri-edit-line"></i> Formular anpassen</div>
+            <!-- ==================== PANEL: Formular ==================== -->
+            <div class="ra-settings-panel" data-panel="form">
+                <h4><i class="ri-edit-line"></i> Formular anpassen</h4>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Formulartitel</label>
@@ -947,10 +971,8 @@ foreach ($fc_field_names as $fk => $fn) {
 echo '          </div>
             </div>
 
-            <hr class="ra-section-divider">
 
-            <!-- Branchenspezifische Anpassungen -->
-            <div class="ra-section-title"><i class="ri-settings-4-line"></i> Branchenspezifische Optionen</div>
+                <h4><i class="ri-settings-4-line"></i> Branchenspezifische Optionen</h4>
             <p style="font-size:12px;color:#6b7280;margin-bottom:16px">Passen Sie das Formular f&uuml;r Ihre Branche an (Handy, Computer, Fahrrad, KFZ, Schmuck, Uhren, Schuhe, etc.)</p>
 
             <div class="field" style="margin-bottom:16px">
@@ -990,10 +1012,11 @@ echo '          </div>
                 <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer = Standard-Meldung</p>
             </div>
 
-            <hr class="ra-section-divider">
+            </div><!-- END PANEL: form -->
 
-            <!-- Rechnungen / Invoice Settings -->
-            <div class="ra-section-title"><i class="ri-file-list-3-line"></i> Rechnungen</div>
+            <!-- ==================== PANEL: Rechnungen ==================== -->
+            <div class="ra-settings-panel" data-panel="invoice">
+                <h4><i class="ri-file-list-3-line"></i> Rechnungsnummern</h4>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Rechnungsnr. Pr&auml;fix</label>
@@ -1026,10 +1049,8 @@ echo '          </div>
             }
             </script>
 
-            <hr class="ra-section-divider">
 
-            <!-- MwSt / VAT Settings -->
-            <div class="ra-section-title"><i class="ri-percent-line"></i> Umsatzsteuer (MwSt)</div>
+                <h4><i class="ri-percent-line"></i> Umsatzsteuer (MwSt)</h4>
             <div class="ra-toggle">
                 <label class="ra-toggle-switch">
                     <input type="checkbox" id="ra-vat-toggle" ' . ($vat_enabled ? 'checked' : '') . '>
@@ -1050,10 +1071,11 @@ echo '          </div>
                 </div>
             </div>
 
-            <hr class="ra-section-divider">
+            </div><!-- END PANEL: invoice -->
 
-            <!-- Email Template Settings -->
-            <div class="ra-section-title"><i class="ri-mail-line"></i> E-Mail Vorlage</div>
+            <!-- ==================== PANEL: E-Mail ==================== -->
+            <div class="ra-settings-panel" data-panel="email">
+                <h4><i class="ri-mail-line"></i> Rechnungs-E-Mail Vorlage</h4>
             <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Wird verwendet wenn Sie Rechnungen per E-Mail versenden. Platzhalter: {customer_name}, {invoice_number}, {invoice_date}, {total}, {company_name}</p>
             <div class="field" style="margin-bottom:12px">
                 <label>Betreff</label>
@@ -1064,10 +1086,8 @@ echo '          </div>
                 <textarea name="repair_invoice_email_body" rows="6" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">' . $email_body . '</textarea>
             </div>
 
-            <hr class="ra-section-divider">
 
-            <!-- Status Benachrichtigungen -->
-            <div class="ra-section-title"><i class="ri-notification-3-line"></i> Status-Benachrichtigungen</div>
+                <h4><i class="ri-notification-3-line"></i> Status-Benachrichtigungen</h4>
             <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Kunden automatisch per E-Mail informieren wenn sich der Reparatur-Status &auml;ndert.</p>
             <div class="ra-toggle" style="margin-bottom:16px">
                 <label class="ra-toggle-switch">
@@ -1101,10 +1121,11 @@ echo '          </div>
                 </div>
             </div>
 
-            <hr class="ra-section-divider">
+            </div><!-- END PANEL: email -->
 
-            <!-- Abo & Kündigung -->
-            <div class="ra-section-title"><i class="ri-vip-crown-line"></i> Abo &amp; Zahlung</div>
+            <!-- ==================== PANEL: Abo ==================== -->
+            <div class="ra-settings-panel" data-panel="abo">
+                <h4><i class="ri-vip-crown-line"></i> Abo &amp; Zahlung</h4>
             <div class="ra-abo-box" style="background:#fafafa;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:16px">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
                     <div>
@@ -1192,15 +1213,18 @@ echo '          </div>
         }
 
         echo '
-            <div class="ra-settings-save">
-                <button type="submit" class="ra-btn ra-btn-primary">
-                    <i class="ri-save-line"></i> Speichern
+            </div><!-- END PANEL: abo -->
+
+            <!-- Save button visible on all panels -->
+            <div class="ra-settings-save" style="padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0">
+                <button type="submit" class="ra-btn ra-btn-primary ra-btn-full">
+                    <i class="ri-save-line"></i> Einstellungen speichern
                 </button>
             </div>
         </form>
 
         <!-- Legal pages -->
-        <div class="ra-legal-links">
+        <div class="ra-legal-links" style="padding:0 24px 24px">
             <h4>Automatisch generierte Seiten</h4>
             <a href="/formular/' . $store_slug . '/datenschutz" target="_blank"><i class="ri-shield-check-line"></i> Datenschutz</a>
             <a href="/formular/' . $store_slug . '/agb" target="_blank"><i class="ri-file-text-line"></i> AGB</a>
@@ -2660,6 +2684,62 @@ echo '          </div>
         var pf=document.getElementById("ra-reward-product-field");
         pf.style.display=this.value==="free_product"?"":"none";
     });
+
+    /* ===== Settings Panel Toggle & Persistence ===== */
+    var settingsPanel = document.getElementById("ra-settings");
+    var settingsToggleBtn = document.getElementById("ra-settings-toggle-btn");
+
+    function toggleSettings(forceShow) {
+        var isHidden = settingsPanel.classList.contains("ra-hidden");
+        if (forceShow === true || isHidden) {
+            settingsPanel.classList.remove("ra-hidden");
+            localStorage.setItem("ra_settings_open", "1");
+        } else {
+            settingsPanel.classList.add("ra-hidden");
+            localStorage.setItem("ra_settings_open", "0");
+        }
+    }
+
+    if (settingsToggleBtn) {
+        settingsToggleBtn.addEventListener("click", function() {
+            toggleSettings();
+        });
+    }
+
+    // Restore settings panel state on page load
+    if (localStorage.getItem("ra_settings_open") === "1") {
+        toggleSettings(true);
+    }
+
+    /* ===== Settings Tabs ===== */
+    var settingsTabs = document.querySelectorAll(".ra-settings-tab");
+    var settingsPanels = document.querySelectorAll(".ra-settings-panel");
+
+    function switchSettingsTab(panelName) {
+        settingsTabs.forEach(function(t) { t.classList.remove("active"); });
+        settingsPanels.forEach(function(p) { p.classList.remove("active"); });
+
+        var tabBtn = document.querySelector(\'.ra-settings-tab[data-panel="\' + panelName + \'"]\');
+        var panel = document.querySelector(\'.ra-settings-panel[data-panel="\' + panelName + \'"]\');
+
+        if (tabBtn) tabBtn.classList.add("active");
+        if (panel) panel.classList.add("active");
+
+        localStorage.setItem("ra_settings_tab", panelName);
+    }
+
+    settingsTabs.forEach(function(tab) {
+        tab.addEventListener("click", function() {
+            var panelName = this.getAttribute("data-panel");
+            switchSettingsTab(panelName);
+        });
+    });
+
+    // Restore settings tab on page load
+    var savedSettingsTab = localStorage.getItem("ra_settings_tab");
+    if (savedSettingsTab) {
+        switchSettingsTab(savedSettingsTab);
+    }
 
     /* ===== Tab Switching ===== */
     var invoicesLoaded=false;
