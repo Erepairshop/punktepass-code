@@ -214,6 +214,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $reward_product = esc_attr($store->repair_reward_product ?? '');
         $inv_prefix = esc_attr($store->repair_invoice_prefix ?? 'RE-');
         $inv_next = intval($store->repair_invoice_next_number ?? 1);
+
+        // Auto-detect highest existing invoice number from database
+        $inv_detected_max = 0;
+        $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND type = 'invoice'",
+            $store_id
+        ));
+        foreach ($all_invoice_numbers as $inv_num) {
+            // Extract numeric part - try different patterns
+            if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                $num = intval($m[1]);
+                if ($num > $inv_detected_max) {
+                    $inv_detected_max = $num;
+                }
+            }
+        }
+        $inv_suggested_next = $inv_detected_max > 0 ? $inv_detected_max + 1 : $inv_next;
+
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate = floatval($store->repair_vat_rate ?? 19);
         $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
@@ -891,13 +909,33 @@ echo '          </div>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Rechnungsnr. Pr&auml;fix</label>
-                    <input type="text" name="repair_invoice_prefix" value="' . $inv_prefix . '" placeholder="RE-">
+                    <input type="text" name="repair_invoice_prefix" id="ra-inv-prefix" value="' . $inv_prefix . '" placeholder="RE-" oninput="updateInvPreview()">
                 </div>
                 <div class="field">
                     <label>N&auml;chste Rechnungsnr.</label>
-                    <input type="number" name="repair_invoice_next_number" value="' . $inv_next . '" min="1">
+                    <input type="number" name="repair_invoice_next_number" id="ra-inv-next" value="' . $inv_next . '" min="1" oninput="updateInvPreview()">
                 </div>
             </div>
+            <div style="margin-top:12px;padding:12px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                    <div>
+                        <div style="font-size:12px;color:#0369a1;font-weight:500">Vorschau n&auml;chste Rechnung</div>
+                        <div style="font-size:18px;font-weight:600;color:#0c4a6e;margin-top:2px" id="ra-inv-preview">' . esc_html($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '</div>
+                    </div>
+                    ' . ($inv_detected_max > 0 && $inv_suggested_next > $inv_next ? '
+                    <div style="text-align:right">
+                        <div style="font-size:11px;color:#6b7280">H&ouml;chste gefundene: <strong>' . esc_html($inv_detected_max) . '</strong></div>
+                        <button type="button" onclick="document.getElementById(\'ra-inv-next\').value=' . $inv_suggested_next . ';updateInvPreview()" style="margin-top:4px;padding:6px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer">&Uuml;bernehmen: ' . $inv_suggested_next . '</button>
+                    </div>' : '') . '
+                </div>
+            </div>
+            <script>
+            function updateInvPreview(){
+                var p=document.getElementById("ra-inv-prefix").value||"RE-";
+                var n=parseInt(document.getElementById("ra-inv-next").value)||1;
+                document.getElementById("ra-inv-preview").textContent=p+String(n).padStart(4,"0");
+            }
+            </script>
 
             <hr class="ra-section-divider">
 
@@ -1408,8 +1446,8 @@ echo '          </div>
 
         <div style="margin-bottom:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px">
             <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer</label>
-            <input type="text" id="ra-ninv-number" class="ra-input" placeholder="' . esc_attr($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '" style="background:#fff">
-            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">N&auml;chste: <strong>' . esc_html($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '</strong> &ndash; Leer lassen f&uuml;r automatische Nummerierung</p>
+            <input type="text" id="ra-ninv-number" class="ra-input" placeholder="' . esc_attr($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '" style="background:#fff">
+            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">N&auml;chste: <strong>' . esc_html($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '</strong> &ndash; Leer lassen f&uuml;r automatische Nummerierung</p>
         </div>
 
         <div style="margin-bottom:16px">

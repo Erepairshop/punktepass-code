@@ -35,6 +35,26 @@ class PPV_Repair_Invoice {
         // Generate invoice number
         $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
         $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
+
+        // Auto-detect highest existing invoice number from database
+        $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND type = 'invoice'",
+            $store->id
+        ));
+        $detected_max = 0;
+        foreach ($all_invoice_numbers as $inv_num) {
+            if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                $num = intval($m[1]);
+                if ($num > $detected_max) {
+                    $detected_max = $num;
+                }
+            }
+        }
+        // Use the higher of stored counter or detected max + 1
+        if ($detected_max >= $next_num) {
+            $next_num = $detected_max + 1;
+        }
+
         $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
 
         // Device info
@@ -556,6 +576,26 @@ class PPV_Repair_Invoice {
         } else {
             $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
             $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
+
+            // Auto-detect highest existing invoice number from database
+            $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
+                "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND type = 'invoice'",
+                $store_id
+            ));
+            $detected_max = 0;
+            foreach ($all_invoice_numbers as $inv_num) {
+                if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                    $num = intval($m[1]);
+                    if ($num > $detected_max) {
+                        $detected_max = $num;
+                    }
+                }
+            }
+            // Use the higher of stored counter or detected max + 1
+            if ($detected_max >= $next_num) {
+                $next_num = $detected_max + 1;
+            }
+
             $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
             $should_increment = true;
         }
