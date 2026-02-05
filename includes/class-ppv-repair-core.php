@@ -1808,11 +1808,15 @@ class PPV_Repair_Core {
             $config = json_decode(stripslashes($_POST['repair_field_config']), true);
             if (is_array($config)) {
                 $update['repair_field_config'] = wp_json_encode($config);
+                error_log('PPV Repair: Field config saved: ' . $update['repair_field_config']);
             }
         }
 
-        if (!empty($update)) $wpdb->update($wpdb->prefix . 'ppv_stores', $update, ['id' => $store_id]);
-        wp_send_json_success(['message' => 'Einstellungen gespeichert']);
+        if (!empty($update)) {
+            $result = $wpdb->update($wpdb->prefix . 'ppv_stores', $update, ['id' => $store_id]);
+            error_log('PPV Repair: Settings update result: ' . var_export($result, true) . ', store_id: ' . $store_id);
+        }
+        wp_send_json_success(['message' => 'Einstellungen gespeichert', 'field_config' => $update['repair_field_config'] ?? null]);
     }
 
     /** AJAX: Upload Logo */

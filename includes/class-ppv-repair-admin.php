@@ -2744,15 +2744,17 @@ echo '          </div>
                 fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
             }
         });
+        console.log("Field config to save:",fc);
         fd.append("repair_field_config",JSON.stringify(fc));
         fd.append("action","ppv_repair_save_settings");
         fd.append("nonce",NONCE);
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(data){
+            console.log("Settings save response:",data);
             toast(data.success?"Einstellungen gespeichert":"Fehler beim Speichern");
         })
-        .catch(function(){toast("Verbindungsfehler")});
+        .catch(function(err){console.error("Settings save error:",err);toast("Verbindungsfehler")});
     });
 
     /* ===== Logo Upload ===== */
