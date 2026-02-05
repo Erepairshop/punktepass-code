@@ -1805,18 +1805,27 @@ class PPV_Repair_Core {
         }
         // Field config (JSON)
         if (isset($_POST['repair_field_config'])) {
+            // Ensure column exists (auto-migration)
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'repair_field_config'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN repair_field_config TEXT NULL");
+                error_log('PPV Repair: Added missing repair_field_config column');
+            }
+
             $config = json_decode(stripslashes($_POST['repair_field_config']), true);
             if (is_array($config)) {
                 $update['repair_field_config'] = wp_json_encode($config);
-                error_log('PPV Repair: Field config saved: ' . $update['repair_field_config']);
             }
         }
 
         if (!empty($update)) {
             $result = $wpdb->update($wpdb->prefix . 'ppv_stores', $update, ['id' => $store_id]);
-            error_log('PPV Repair: Settings update result: ' . var_export($result, true) . ', store_id: ' . $store_id);
+            if ($result === false) {
+                error_log('PPV Repair: DB Error: ' . $wpdb->last_error);
+                wp_send_json_error(['message' => 'Datenbankfehler: ' . $wpdb->last_error]);
+            }
         }
-        wp_send_json_success(['message' => 'Einstellungen gespeichert', 'field_config' => $update['repair_field_config'] ?? null]);
+        wp_send_json_success(['message' => 'Einstellungen gespeichert', 'saved' => !empty($update)]);
     }
 
     /** AJAX: Upload Logo */
