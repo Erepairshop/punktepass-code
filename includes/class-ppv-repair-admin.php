@@ -1407,9 +1407,9 @@ echo '          </div>
         </div>
 
         <div style="margin-bottom:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px">
-            <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer (optional)</label>
-            <input type="text" id="ra-ninv-number" class="ra-input" placeholder="Automatisch generieren lassen oder eigene eingeben" style="background:#fff">
-            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">Leer lassen f&uuml;r automatische Nummerierung</p>
+            <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer</label>
+            <input type="text" id="ra-ninv-number" class="ra-input" placeholder="' . esc_attr($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '" style="background:#fff">
+            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">N&auml;chste: <strong>' . esc_html($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '</strong> &ndash; Leer lassen f&uuml;r automatische Nummerierung</p>
         </div>
 
         <div style="margin-bottom:16px">
