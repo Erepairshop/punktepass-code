@@ -145,6 +145,13 @@ class PPV_Repair_Core {
             exit;
         }
 
+        // /formular/email-sender → Email marketing tool
+        if ($path === '/formular/email-sender') {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-email-sender.php';
+            PPV_Repair_Email_Sender::render();
+            exit;
+        }
+
         // /formular/{slug}/status/{token} → Customer tracking page
         if (preg_match('#^/formular/([^/]+)/status/([a-f0-9]{32})$#', $path, $m)) {
             $store = self::get_store_by_slug($m[1]);
