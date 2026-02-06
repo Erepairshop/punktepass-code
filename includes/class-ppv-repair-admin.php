@@ -4537,7 +4537,7 @@ echo '          </div>
                     . '<button class="ra-btn-reward-toggle ' . $badge_class . '" data-repair-id="' . intval($r->id) . '">'
                         . '<i class="ri-gift-line"></i> ' . ($reward_rejected ? 'Belohnung (abgelehnt)' : 'Belohnung verf&uuml;gbar')
                     . '</button>'
-                    . '<div class="ra-reward-container" style="display:none" data-repair-id="' . intval($r->id) . '">';
+                    . '<div class="ra-reward-container" data-repair-id="' . intval($r->id) . '">';
 
                 if ($reward_rejected) {
                     // Show rejection info with option to reconsider
