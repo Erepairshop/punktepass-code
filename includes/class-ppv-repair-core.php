@@ -80,6 +80,7 @@ class PPV_Repair_Core {
             'ppv_repair_invoice_email'   => ['PPV_Repair_Invoice', 'ajax_send_email'],
             'ppv_repair_invoice_reminder' => ['PPV_Repair_Invoice', 'ajax_send_reminder'],
             'ppv_repair_invoice_bulk'    => ['PPV_Repair_Invoice', 'ajax_bulk_operation'],
+            'ppv_repair_invoice_export_all' => ['PPV_Repair_Invoice', 'ajax_export_all'],
             'ppv_repair_angebot_create'  => ['PPV_Repair_Invoice', 'ajax_create_angebot'],
             'ppv_repair_customer_search' => ['PPV_Repair_Invoice', 'ajax_customer_search'],
             'ppv_repair_customer_save'   => ['PPV_Repair_Invoice', 'ajax_customer_save'],

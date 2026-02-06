@@ -2095,6 +2095,60 @@ IBAN: ' . $bank_iban . '
     }
 
     /**
+     * AJAX: Export all invoices (with optional date filter)
+     */
+    public static function ajax_export_all() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        $format = sanitize_text_field($_POST['format'] ?? 'csv');
+        $date_from = sanitize_text_field($_POST['date_from'] ?? '');
+        $date_to = sanitize_text_field($_POST['date_to'] ?? '');
+        $doc_type = sanitize_text_field($_POST['doc_type'] ?? '');
+
+        // Build query with filters
+        $where = "WHERE store_id = %d";
+        $params = [$store_id];
+
+        if ($date_from) {
+            $where .= " AND DATE(created_at) >= %s";
+            $params[] = $date_from;
+        }
+        if ($date_to) {
+            $where .= " AND DATE(created_at) <= %s";
+            $params[] = $date_to;
+        }
+        if ($doc_type && in_array($doc_type, ['rechnung', 'angebot'])) {
+            $where .= " AND (doc_type = %s OR (doc_type IS NULL AND %s = 'rechnung'))";
+            $params[] = $doc_type;
+            $params[] = $doc_type;
+        }
+
+        $invoices = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_repair_invoices {$where} ORDER BY created_at DESC",
+            ...$params
+        ));
+
+        if (empty($invoices)) {
+            wp_send_json_error(['message' => 'Keine Rechnungen gefunden']);
+        }
+
+        return self::handle_bulk_export($invoices, $format, $store);
+    }
+
+    /**
      * AJAX: Import invoices from Billbee XML export
      */
     public static function ajax_billbee_import() {

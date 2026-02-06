@@ -1351,9 +1351,23 @@ echo '          </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-filter-btn">
                 <i class="ri-filter-line"></i> Filtern
             </button>
-            <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-csv-btn">
-                <i class="ri-file-excel-2-line"></i> CSV Export
-            </button>
+            <div style="position:relative;display:inline-block">
+                <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-export-btn">
+                    <i class="ri-download-2-line"></i> Export <i class="ri-arrow-down-s-line"></i>
+                </button>
+                <div id="ra-inv-export-dropdown" style="display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:220px;z-index:100;margin-top:4px">
+                    <div style="padding:8px 0">
+                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Buchhalter-Formate</div>
+                        <a href="#" class="ra-inv-export-opt" data-format="datev" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-text-line" style="margin-right:8px;color:#8b5cf6"></i>DATEV-Export (.csv)</a>
+                        <a href="#" class="ra-inv-export-opt" data-format="csv" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-2-line" style="margin-right:8px;color:#059669"></i>CSV-Export</a>
+                        <a href="#" class="ra-inv-export-opt" data-format="excel" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-line" style="margin-right:8px;color:#217346"></i>Excel-Export (.xlsx)</a>
+                        <div style="border-top:1px solid #e5e7eb;margin:6px 0"></div>
+                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Dokumente</div>
+                        <a href="#" class="ra-inv-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF-Sammlung (.zip)</a>
+                        <a href="#" class="ra-inv-export-opt" data-format="json" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-code-s-slash-line" style="margin-right:8px;color:#3b82f6"></i>JSON-Export</a>
+                    </div>
+                </div>
+            </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-billbee-import-btn" style="margin-left:auto;background:#fff7ed;color:#ea580c;border-color:#fed7aa">
                 <i class="ri-upload-cloud-line"></i> Billbee Import
             </button>
@@ -3121,14 +3135,59 @@ echo '          </div>
     document.getElementById("ra-inv-more-btn").addEventListener("click",function(){
         loadInvoices(parseInt(this.getAttribute("data-page"))+1);
     });
-    // CSV export
-    document.getElementById("ra-inv-csv-btn").addEventListener("click",function(){
-        var df=document.getElementById("ra-inv-from").value;
-        var dt=document.getElementById("ra-inv-to").value;
-        var url=AJAX+"?action=ppv_repair_invoice_csv&nonce="+NONCE;
-        if(df)url+="&date_from="+df;
-        if(dt)url+="&date_to="+dt;
-        window.open(url,"_blank");
+    // Export dropdown toggle
+    var invExportBtn=document.getElementById("ra-inv-export-btn");
+    var invExportDropdown=document.getElementById("ra-inv-export-dropdown");
+    if(invExportBtn&&invExportDropdown){
+        invExportBtn.addEventListener("click",function(e){
+            e.stopPropagation();
+            invExportDropdown.style.display=invExportDropdown.style.display==="none"?"block":"none";
+        });
+        document.addEventListener("click",function(e){
+            if(!invExportBtn.contains(e.target)&&!invExportDropdown.contains(e.target)){
+                invExportDropdown.style.display="none";
+            }
+        });
+        // Hover effect for dropdown items
+        document.querySelectorAll(".ra-inv-export-opt").forEach(function(opt){
+            opt.addEventListener("mouseenter",function(){this.style.background="#f3f4f6"});
+            opt.addEventListener("mouseleave",function(){this.style.background="transparent"});
+        });
+    }
+
+    // Export all invoices (with date filter)
+    document.querySelectorAll(".ra-inv-export-opt").forEach(function(opt){
+        opt.addEventListener("click",function(e){
+            e.preventDefault();
+            var format=this.getAttribute("data-format");
+            invExportDropdown.style.display="none";
+            toast("Export wird vorbereitet...");
+            var df=document.getElementById("ra-inv-from").value;
+            var dt=document.getElementById("ra-inv-to").value;
+            var docType=document.getElementById("ra-inv-type").value;
+            var fd=new FormData();
+            fd.append("action","ppv_repair_invoice_export_all");
+            fd.append("nonce",NONCE);
+            fd.append("format",format);
+            if(df)fd.append("date_from",df);
+            if(dt)fd.append("date_to",dt);
+            if(docType)fd.append("doc_type",docType);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(res){
+                if(res.success&&res.data.download_url){
+                    var a=document.createElement("a");
+                    a.href=res.data.download_url;
+                    a.download=res.data.filename||"export";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    toast("Export erfolgreich!");
+                }else{
+                    toast(res.data&&res.data.message?res.data.message:"Export fehlgeschlagen");
+                }
+            });
+        });
     });
 
     // ===== Bulk Selection Functions =====
