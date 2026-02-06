@@ -534,13 +534,22 @@ Erik Borota';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Sender - Reparaturverwaltung</title>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3"></script>
+    <!-- Google Analytics (loads only with consent) -->
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-NDVQK1WSG3');
+        function loadGoogleAnalytics() {
+            if (localStorage.getItem('cookie_consent') === 'accepted') {
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3';
+                document.head.appendChild(s);
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', 'G-NDVQK1WSG3');
+            }
+        }
+        loadGoogleAnalytics();
     </script>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css">
@@ -1018,6 +1027,39 @@ function loadTemplate(id) {
     var option = select.options[select.selectedIndex];
     document.getElementById('email-subject').value = option.getAttribute('data-subject') || '';
     document.getElementById('email-message').value = option.getAttribute('data-message') || '';
+}
+</script>
+
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none; position:fixed; bottom:0; left:0; right:0; background:rgba(30,41,59,0.97); color:#fff; padding:16px 24px; z-index:9999; box-shadow:0 -4px 20px rgba(0,0,0,0.15);">
+    <div style="max-width:1200px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
+        <div style="flex:1; min-width:280px;">
+            <p style="margin:0; font-size:14px; line-height:1.5;">
+                <strong>Cookie-Hinweis:</strong> Wir verwenden Cookies und Google Analytics, um unsere Website zu verbessern.
+                <a href="https://punktepass.de/datenschutz" target="_blank" style="color:#93c5fd; text-decoration:underline;">Datenschutzerklärung</a>
+            </p>
+        </div>
+        <div style="display:flex; gap:12px; flex-shrink:0;">
+            <button onclick="rejectCookies()" style="padding:10px 20px; background:transparent; border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; cursor:pointer; font-size:14px; transition:all 0.2s;">Ablehnen</button>
+            <button onclick="acceptCookies()" style="padding:10px 24px; background:linear-gradient(135deg,#667eea,#764ba2); border:none; color:#fff; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s;">Akzeptieren</button>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var consent = localStorage.getItem('cookie_consent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    }
+})();
+function acceptCookies() {
+    localStorage.setItem('cookie_consent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    loadGoogleAnalytics();
+}
+function rejectCookies() {
+    localStorage.setItem('cookie_consent', 'rejected');
+    document.getElementById('cookieConsent').style.display = 'none';
 }
 </script>
 
