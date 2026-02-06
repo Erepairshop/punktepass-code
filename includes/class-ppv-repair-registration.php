@@ -29,15 +29,15 @@ class PPV_Repair_Registration {
 
         $ajax_url = admin_url('admin-ajax.php');
         $nonce    = wp_create_nonce('ppv_repair_register');
-        $logo_url = PPV_PLUGIN_URL . 'assets/img/punktepass-logo.png';
+        $logo_url = PPV_PLUGIN_URL . 'assets/img/punktepass-repair-logo.svg';
 
         ?><!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reparaturformular erstellen - PunktePass</title>
-    <meta name="description" content="Erstellen Sie Ihr digitales Reparaturformular f&uuml;r jede Branche. Felder anpassbar, Bonuspunkte optional. Kostenlos starten mit PunktePass.">
+    <title>Reparaturverwaltung f&uuml;r Ihren Shop - PunktePass</title>
+    <meta name="description" content="Digitale Reparaturverwaltung mit Formular, Rechnungen, Angebote, DATEV-Export und Kundenverwaltung. Online &amp; Tablet nutzbar. Kostenlos starten.">
     <meta name="robots" content="index, follow">
     <link rel="icon" href="https://punktepass.de/wp-content/uploads/2025/04/cropped-ppfavicon-32x32.png" sizes="32x32">
     <style>
@@ -90,16 +90,19 @@ class PPV_Repair_Registration {
         /* ── Features Grid ── */
         .pp-reg-features {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             margin: -24px 0 32px;
             position: relative;
             z-index: 1;
         }
+        @media (max-width: 600px) {
+            .pp-reg-features { grid-template-columns: 1fr 1fr; }
+        }
         .pp-reg-feature {
             background: #fff;
             border-radius: 12px;
-            padding: 20px 16px;
+            padding: 16px 12px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             transition: transform 0.2s, box-shadow 0.2s;
@@ -109,21 +112,32 @@ class PPV_Repair_Registration {
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
         .pp-reg-feature-icon {
-            display: block;
-            font-size: 28px;
-            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            border-radius: 10px;
+            font-size: 20px;
         }
+        .pp-reg-feature-icon.blue { background: #eff6ff; color: #3b82f6; }
+        .pp-reg-feature-icon.green { background: #f0fdf4; color: #22c55e; }
+        .pp-reg-feature-icon.purple { background: #f5f3ff; color: #8b5cf6; }
+        .pp-reg-feature-icon.amber { background: #fffbeb; color: #f59e0b; }
+        .pp-reg-feature-icon.rose { background: #fff1f2; color: #f43f5e; }
+        .pp-reg-feature-icon.teal { background: #f0fdfa; color: #14b8a6; }
         .pp-reg-feature strong {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #1f2937;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .pp-reg-feature span {
-            font-size: 12px;
+            font-size: 11px;
             color: #6b7280;
-            line-height: 1.4;
+            line-height: 1.3;
         }
 
         /* ── Form Card ── */
@@ -449,8 +463,8 @@ class PPV_Repair_Registration {
 <!-- Header -->
 <div class="pp-reg-header">
     <img src="<?php echo esc_url($logo_url); ?>" alt="PunktePass" class="pp-reg-header-logo">
-    <h1>Reparaturformular erstellen</h1>
-    <p>Erstellen Sie Ihr digitales Reparaturformular &ndash; f&uuml;r jede Branche anpassbar, mit optionalen Bonuspunkten f&uuml;r Ihre Kunden</p>
+    <h1>Reparaturverwaltung f&uuml;r Ihren Shop</h1>
+    <p>Digitales Formular f&uuml;r Online &amp; Vor-Ort (Tablet) &ndash; inkl. Rechnungen, Angebote, Kundenverwaltung &amp; DATEV-Export</p>
 </div>
 
 <div class="pp-reg-container">
@@ -458,32 +472,34 @@ class PPV_Repair_Registration {
     <!-- Features -->
     <div class="pp-reg-features">
         <div class="pp-reg-feature">
-            <span class="pp-reg-feature-icon">&#128736;</span>
-            <div>
-                <strong>Digitales Reparaturformular</strong>
-                <span>Kunden f&uuml;llen das Formular bequem online aus</span>
-            </div>
+            <div class="pp-reg-feature-icon blue">&#128241;</div>
+            <strong>Online &amp; Vor-Ort</strong>
+            <span>Formular am Tablet oder Online nutzen</span>
         </div>
         <div class="pp-reg-feature">
-            <span class="pp-reg-feature-icon">&#11088;</span>
-            <div>
-                <strong>Bonuspunkte (optional)</strong>
-                <span>Kunden sammeln Punkte &ndash; PunktePass ein-/ausschaltbar</span>
-            </div>
+            <div class="pp-reg-feature-icon green">&#128206;</div>
+            <strong>Rechnungen &amp; Angebote</strong>
+            <span>PDF erstellen &amp; per E-Mail senden</span>
         </div>
         <div class="pp-reg-feature">
-            <span class="pp-reg-feature-icon">&#128279;</span>
-            <div>
-                <strong>Eigener Link</strong>
-                <span>punktepass.de/formular/ihr-shop</span>
-            </div>
+            <div class="pp-reg-feature-icon purple">&#128202;</div>
+            <strong>DATEV &amp; Export</strong>
+            <span>CSV, Excel, DATEV f&uuml;r Buchhalter</span>
         </div>
         <div class="pp-reg-feature">
-            <span class="pp-reg-feature-icon">&#9989;</span>
-            <div>
-                <strong>Jede Branche</strong>
-                <span>Handy, Computer, Fahrrad, KFZ, Schmuck &amp; mehr</span>
-            </div>
+            <div class="pp-reg-feature-icon amber">&#11088;</div>
+            <strong>Bonuspunkte</strong>
+            <span>Optional: Kunden sammeln Punkte</span>
+        </div>
+        <div class="pp-reg-feature">
+            <div class="pp-reg-feature-icon rose">&#128101;</div>
+            <strong>Kundenverwaltung</strong>
+            <span>Alle Kunden &amp; Historie im Blick</span>
+        </div>
+        <div class="pp-reg-feature">
+            <div class="pp-reg-feature-icon teal">&#9989;</div>
+            <strong>Jede Branche</strong>
+            <span>Handy, PC, KFZ, Fahrrad &amp; mehr</span>
         </div>
     </div>
 
