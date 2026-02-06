@@ -1696,10 +1696,11 @@ class PPV_Repair_Core {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
-        // Get repair with store info
+        // Get repair with store info (include all address fields like invoice does)
         $repair = $wpdb->get_row($wpdb->prepare(
             "SELECT r.*, s.name AS store_name, s.repair_company_name, s.repair_company_address,
-                    s.repair_company_phone, s.email AS store_email, s.repair_owner_name, s.repair_tax_id
+                    s.repair_company_phone, s.email AS store_email, s.repair_owner_name, s.repair_tax_id,
+                    s.address AS store_address, s.plz AS store_plz, s.city AS store_city, s.phone AS store_phone
              FROM {$prefix}ppv_repairs r
              JOIN {$prefix}ppv_stores s ON r.store_id = s.id
              WHERE r.id = %d AND r.store_id = %d",
@@ -1708,10 +1709,16 @@ class PPV_Repair_Core {
         if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
         if (empty($repair->customer_email)) wp_send_json_error(['message' => 'Keine E-Mail-Adresse vorhanden']);
 
-        // Build email data
+        // Build email data (use same fallback logic as invoice)
         $company_name = $repair->repair_company_name ?: $repair->store_name;
+        // Address: prefer repair_company_address, fallback to general store address
         $company_address = $repair->repair_company_address ?: '';
-        $company_phone = $repair->repair_company_phone ?: '';
+        if (empty($company_address) && !empty($repair->store_address)) {
+            $plz_city = trim(($repair->store_plz ?: '') . ' ' . ($repair->store_city ?: ''));
+            $company_address = $repair->store_address . ($plz_city ? ', ' . $plz_city : '');
+        }
+        // Phone: prefer repair_company_phone, fallback to general store phone
+        $company_phone = $repair->repair_company_phone ?: $repair->store_phone ?: '';
         $company_email = $repair->store_email ?: '';
         $owner_name = $repair->repair_owner_name ?: '';
         $tax_id = $repair->repair_tax_id ?: '';
