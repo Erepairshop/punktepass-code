@@ -3205,28 +3205,39 @@ echo '          </div>
     });
 
     /* ===== Settings Form ===== */
-    document.getElementById("ra-settings-form").addEventListener("submit",function(e){
-        e.preventDefault();
-        var fd=new FormData(this);
-        // Collect field config
-        var fc={};
-        document.querySelectorAll("#ra-field-config .ra-field-row").forEach(function(row){
-            var cb=row.querySelector("input[type=checkbox]");
-            var inp=row.querySelector("input[type=text]");
-            if(cb&&inp){
-                fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
-            }
+    console.log("DEBUG: Looking for settings form...");
+    var settingsFormEl = document.getElementById("ra-settings-form");
+    console.log("DEBUG: Settings form element:", settingsFormEl);
+    if(settingsFormEl){
+        settingsFormEl.addEventListener("submit",function(e){
+            console.log("DEBUG: Form submit triggered!");
+            e.preventDefault();
+            var fd=new FormData(this);
+            console.log("DEBUG: FormData created, AJAX URL:", AJAX);
+            // Collect field config
+            var fc={};
+            document.querySelectorAll("#ra-field-config .ra-field-row").forEach(function(row){
+                var cb=row.querySelector("input[type=checkbox]");
+                var inp=row.querySelector("input[type=text]");
+                if(cb&&inp){
+                    fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
+                }
+            });
+            fd.append("repair_field_config",JSON.stringify(fc));
+            fd.append("action","ppv_repair_save_settings");
+            fd.append("nonce",NONCE);
+            console.log("DEBUG: Sending fetch request...");
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){console.log("DEBUG: Response received:", r.status);return r.json()})
+            .then(function(data){
+                console.log("DEBUG: JSON data:", data);
+                toast(data.success?"Einstellungen gespeichert":"Fehler beim Speichern");
+            })
+            .catch(function(err){console.log("DEBUG: Error:", err);toast("Verbindungsfehler")});
         });
-        fd.append("repair_field_config",JSON.stringify(fc));
-        fd.append("action","ppv_repair_save_settings");
-        fd.append("nonce",NONCE);
-        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-        .then(function(r){return r.json()})
-        .then(function(data){
-            toast(data.success?"Einstellungen gespeichert":"Fehler beim Speichern");
-        })
-        .catch(function(){toast("Verbindungsfehler")});
-    });
+    }else{
+        console.log("DEBUG: Settings form NOT FOUND!");
+    }
 
     /* ===== Logo Upload ===== */
     document.getElementById("ra-logo-file").addEventListener("change",function(){
