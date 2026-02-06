@@ -811,6 +811,10 @@ a:hover{color:#5a67d8}
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
                 </div>
                 <div class="field">
+                    <label>Login E-Mail <small style="color:#6b7280">(f&uuml;r Anmeldung)</small></label>
+                    <input type="email" name="email" value="' . esc_attr($store->email) . '" required>
+                </div>
+                <div class="field">
                     <label>Akzentfarbe</label>
                     <input type="color" name="repair_color" value="' . $store_color . '">
                 </div>

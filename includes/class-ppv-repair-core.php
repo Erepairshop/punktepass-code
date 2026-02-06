@@ -1978,6 +1978,48 @@ class PPV_Repair_Core {
             }
         }
 
+        // Handle email change with duplicate validation
+        if (isset($_POST['email'])) {
+            $new_email = sanitize_email($_POST['email']);
+            if (!empty($new_email) && is_email($new_email)) {
+                // Get current store email
+                $current_email = $wpdb->get_var($wpdb->prepare(
+                    "SELECT email FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                    $store_id
+                ));
+
+                // Only validate if email is changing
+                if ($new_email !== $current_email) {
+                    // Check if email already exists for another user
+                    $email_exists = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s AND id != (SELECT user_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d)",
+                        $new_email,
+                        $store_id
+                    ));
+
+                    if ($email_exists) {
+                        wp_send_json_error(['message' => 'Diese E-Mail-Adresse wird bereits verwendet']);
+                    }
+
+                    // Update email in stores table
+                    $update['email'] = $new_email;
+
+                    // Also update email in users table
+                    $user_id = $wpdb->get_var($wpdb->prepare(
+                        "SELECT user_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                        $store_id
+                    ));
+                    if ($user_id) {
+                        $wpdb->update(
+                            $wpdb->prefix . 'ppv_users',
+                            ['email' => $new_email, 'updated_at' => current_time('mysql')],
+                            ['id' => $user_id]
+                        );
+                    }
+                }
+            }
+        }
+
         if (!empty($update)) {
             $wpdb->update($wpdb->prefix . 'ppv_stores', $update, ['id' => $store_id]);
         }
