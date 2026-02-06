@@ -3231,7 +3231,19 @@ echo '          </div>
             .then(function(r){console.log("DEBUG: Response received:", r.status);return r.json()})
             .then(function(data){
                 console.log("DEBUG: JSON data:", data);
-                toast(data.success?"Einstellungen gespeichert":"Fehler beim Speichern");
+                if(data.success){
+                    toast("Einstellungen gespeichert");
+                    // Visual feedback on button
+                    var btn=settingsFormEl.querySelector("button[type=submit]");
+                    if(btn){
+                        var orig=btn.innerHTML;
+                        btn.innerHTML='<i class="ri-check-line"></i> Gespeichert!';
+                        btn.style.background="#10b981";
+                        setTimeout(function(){btn.innerHTML=orig;btn.style.background=""},2000);
+                    }
+                }else{
+                    toast("Fehler beim Speichern");
+                }
             })
             .catch(function(err){console.log("DEBUG: Error:", err);toast("Verbindungsfehler")});
         });
