@@ -1136,7 +1136,7 @@ class PPV_Repair_Invoice {
 
         $discount_row = '';
         if ($has_discount) {
-            $discount_row = '<tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;" colspan="3">PunktePass Belohnung: ' . $discount_desc . '</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;color:#059669;font-weight:600;">-' . $discount_val . ' &euro;</td></tr>';
+            $discount_row = '<tr><td></td><td colspan="3" style="color:#059669">PunktePass Belohnung: ' . $discount_desc . '</td><td style="color:#059669;font-weight:600">-' . $discount_val . ' &euro;</td></tr>';
         }
 
         $reward_notice = '';
@@ -1183,13 +1183,13 @@ class PPV_Repair_Invoice {
             foreach ($line_items as $item) {
                 $item_desc = esc_html($item['description'] ?? 'Position');
                 $item_amt = number_format(floatval($item['amount'] ?? 0), 2, ',', '.');
-                $items_html .= '<tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;width:30px">' . $pos . '</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">' . $item_desc . '</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:center">1,00</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right">' . $item_amt . ' &euro;</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right">' . $item_amt . ' &euro;</td></tr>';
+                $items_html .= '<tr><td>' . $pos . '</td><td>' . $item_desc . '</td><td>1,00</td><td>' . $item_amt . ' &euro;</td><td>' . $item_amt . ' &euro;</td></tr>';
                 $pos++;
             }
         } else {
             // Fallback: single line for legacy invoices
             $item_label = $device ? $device : 'Reparatur';
-            $items_html = '<tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;width:30px">1</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">' . $item_label . ($desc ? '<br><span style="font-size:10px;color:#6b7280;">' . $desc . '</span>' : '') . '</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:center">1,00</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right">' . $subtotal . ' &euro;</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right">' . $subtotal . ' &euro;</td></tr>';
+            $items_html = '<tr><td>1</td><td>' . $item_label . ($desc ? '<br><span style="font-size:8pt;color:#718096">' . $desc . '</span>' : '') . '</td><td>1,00</td><td>' . $subtotal . ' &euro;</td><td>' . $subtotal . ' &euro;</td></tr>';
         }
 
         // Determine VAT text based on settings
@@ -1237,90 +1237,170 @@ class PPV_Repair_Invoice {
         $sender_line = $owner . ', ' . $addr . ', ' . $plz_city . ', Deutschland';
 
         return '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>
-@page{margin:15mm 15mm 20mm 15mm}
-body{font-family:Arial,Helvetica,sans-serif;color:#1f2937;font-size:11px;line-height:1.4;margin:0;padding:0}
-.inv-wrap{max-width:100%;padding:0}
-.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
-.inv-logo-section{display:flex;align-items:center;gap:12px}
-.inv-logo img{height:45px}
-.inv-company-text{font-size:18px;color:#1e3a5f}
-.inv-parties{display:flex;justify-content:space-between;margin-bottom:24px;margin-top:10px}
-.inv-customer{width:55%}
-.inv-details{width:40%}
-.inv-sender-line{font-size:8px;color:#6b7280;text-decoration:underline;margin-bottom:6px}
-.inv-cust-addr{font-size:12px;color:#1f2937;line-height:1.5}
-.inv-details-table{width:100%;font-size:11px}
-.inv-details-table td{padding:2px 0}
-.inv-details-table td:first-child{color:#6b7280;padding-right:12px}
-.inv-details-table td:last-child{text-align:right;font-weight:500}
-.inv-title{font-size:20px;font-weight:400;color:#1f2937;margin:24px 0 8px;border-bottom:none}
-.inv-intro{font-size:11px;color:#374151;margin-bottom:20px;line-height:1.5}
-.inv-table{width:100%;border-collapse:collapse;margin-bottom:16px}
-.inv-table th{background:#f3f4f6;padding:8px 0;text-align:left;font-size:10px;font-weight:600;border-bottom:2px solid #1f2937;border-top:2px solid #1f2937}
-.inv-table th:last-child,.inv-table th:nth-child(4){text-align:right}
-.inv-table th:nth-child(3){text-align:center}
-.inv-table td{padding:8px 0;font-size:11px}
-.inv-summary{width:50%;margin-left:auto;margin-top:16px}
-.inv-summary-row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px}
-.inv-summary-row.total{font-weight:700;font-size:13px;border-top:2px solid #1f2937;padding-top:8px;margin-top:4px}
-.inv-footer{position:fixed;bottom:0;left:0;right:0;padding:12px 15mm;border-top:1px solid #d1d5db;font-size:9px;color:#6b7280;display:flex;justify-content:space-between;background:#fff}
-.inv-footer-col{flex:1;padding:0 8px;line-height:1.4}
-.inv-footer-col:first-child{padding-left:0}
-.inv-footer-col:last-child{padding-right:0}
+@page{margin:12mm 12mm 25mm 12mm;size:A4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-height:1.5}
+.invoice{padding:0;max-width:100%}
+
+/* Header */
+.header{display:table;width:100%;margin-bottom:8mm;padding-bottom:5mm;border-bottom:2px solid ' . $color . '}
+.header-left{display:table-cell;vertical-align:top;width:50%}
+.header-right{display:table-cell;vertical-align:top;width:50%;text-align:right}
+.logo{height:40px;margin-bottom:3mm}
+.company-name{font-size:16pt;font-weight:600;color:' . $color . ';margin-bottom:1mm}
+.company-tagline{font-size:9pt;color:#718096}
+
+/* Address Section */
+.address-section{display:table;width:100%;margin-bottom:8mm}
+.address-left{display:table-cell;vertical-align:top;width:55%}
+.address-right{display:table-cell;vertical-align:top;width:45%}
+.sender-line{font-size:7pt;color:#a0aec0;margin-bottom:2mm;border-bottom:1px solid #cbd5e0;padding-bottom:1mm;display:inline-block}
+.customer-address{font-size:10pt;line-height:1.6}
+.customer-name{font-weight:600;font-size:11pt}
+
+/* Invoice Details Box */
+.invoice-details{background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;padding:4mm}
+.invoice-details table{width:100%;border-collapse:collapse}
+.invoice-details td{padding:2mm 0;font-size:10pt}
+.invoice-details td:first-child{color:#718096;width:45%}
+.invoice-details td:last-child{text-align:right;font-weight:500}
+.invoice-number{font-size:12pt;font-weight:700;color:' . $color . '}
+
+/* Title & Intro */
+.doc-title{font-size:18pt;font-weight:600;color:#2d3748;margin:6mm 0 4mm}
+.intro-text{font-size:10pt;color:#4a5568;margin-bottom:6mm;line-height:1.6}
+
+/* Items Table */
+.items-table{width:100%;border-collapse:collapse;margin-bottom:5mm}
+.items-table th{background:' . $color . ';color:#fff;padding:3mm 2mm;font-size:9pt;font-weight:600;text-align:left}
+.items-table th:nth-child(1){width:8%;text-align:center;border-radius:3px 0 0 0}
+.items-table th:nth-child(2){width:52%}
+.items-table th:nth-child(3){width:12%;text-align:center}
+.items-table th:nth-child(4){width:14%;text-align:right}
+.items-table th:nth-child(5){width:14%;text-align:right;border-radius:0 3px 0 0}
+.items-table td{padding:3mm 2mm;border-bottom:1px solid #e2e8f0;font-size:10pt;vertical-align:top}
+.items-table td:nth-child(1){text-align:center;color:#718096}
+.items-table td:nth-child(3){text-align:center}
+.items-table td:nth-child(4),.items-table td:nth-child(5){text-align:right}
+.items-table tr:last-child td{border-bottom:2px solid ' . $color . '}
+
+/* Summary */
+.summary-section{margin-left:auto;width:50%;margin-top:4mm}
+.summary-row{display:table;width:100%;padding:2mm 0;font-size:10pt}
+.summary-row span:first-child{display:table-cell;text-align:left;color:#718096}
+.summary-row span:last-child{display:table-cell;text-align:right}
+.summary-row.total{border-top:2px solid #2d3748;margin-top:2mm;padding-top:3mm;font-weight:700;font-size:12pt}
+.summary-row.total span{color:#2d3748}
+
+/* Info Boxes */
+.info-box{border-radius:4px;padding:3mm 4mm;margin-top:4mm;font-size:9pt}
+.info-box.payment{background:#ebf8ff;border:1px solid #90cdf4;color:#2b6cb0}
+.info-box.reward{background:#f0fff4;border:1px solid #9ae6b4;color:#276749}
+.info-box strong{font-weight:600}
+.vat-notice{font-size:8pt;color:#718096;margin-top:3mm}
+
+/* Footer */
+.footer{position:fixed;bottom:0;left:0;right:0;padding:3mm 12mm;background:#f7fafc;border-top:1px solid #e2e8f0;font-size:8pt;color:#718096}
+.footer-grid{display:table;width:100%;table-layout:fixed}
+.footer-col{display:table-cell;vertical-align:top;padding:0 2mm;line-height:1.5}
+.footer-col:first-child{padding-left:0}
+.footer-col:last-child{padding-right:0}
+.footer-col strong{color:#4a5568;font-weight:600}
+.footer-label{color:#a0aec0;font-size:7pt;text-transform:uppercase;letter-spacing:0.3px}
 </style></head><body>
-<div class="inv-wrap">
 
-<div class="inv-header">
-<div class="inv-logo-section">' . $logo_html . '<div class="inv-company-text">' . $company . '</div></div>
+<div class="invoice">
+
+<div class="header">
+<div class="header-left">
+' . ($logo_url ? '<img src="' . $logo_url . '" class="logo" alt="">' : '') . '
+<div class="company-name">' . $company . '</div>
+<div class="company-tagline">' . ($owner ? $owner : '') . '</div>
+</div>
+<div class="header-right">
+<div style="font-size:9pt;color:#718096;line-height:1.6">
+' . $addr . '<br>
+' . $plz_city . '<br>
+' . ($phone ? 'Tel: ' . $phone . '<br>' : '') . '
+' . $email . '
+</div>
+</div>
 </div>
 
-<div class="inv-parties">
-<div class="inv-customer">
-<div class="inv-sender-line">' . $sender_line . '</div>
-<div class="inv-cust-addr">
-' . ($cust_company ? '<strong>' . $cust_company . '</strong><br>' : '') . '
-<strong>' . $cust_name . '</strong><br>
+<div class="address-section">
+<div class="address-left">
+<div class="sender-line">' . $company . ' &middot; ' . $addr . ' &middot; ' . $plz_city . '</div>
+<div class="customer-address">
+' . ($cust_company ? $cust_company . '<br>' : '') . '
+<span class="customer-name">' . $cust_name . '</span><br>
 ' . ($cust_address ? $cust_address . '<br>' : '') . '
-' . ($cust_plz_city ? $cust_plz_city . '<br>' : '') . '
-DEUTSCHLAND
+' . ($cust_plz_city ? $cust_plz_city : '') . '
 </div>
 </div>
-<div class="inv-details">
-<table class="inv-details-table">
-<tr><td>' . $doc_type_label . '</td><td>' . $inv_nr . '</td></tr>
-<tr><td>' . $doc_type_label . 'sdatum</td><td>' . $inv_date . '</td></tr>
-' . ($valid_until ? '<tr><td>G&uuml;ltig bis</td><td>' . $valid_until . '</td></tr>' : '') . '
+<div class="address-right">
+<div class="invoice-details">
+<table>
+<tr><td>' . $doc_type_label . '-Nr.:</td><td><span class="invoice-number">' . $inv_nr . '</span></td></tr>
+<tr><td>Datum:</td><td>' . $inv_date . '</td></tr>
+' . ($valid_until ? '<tr><td>G&uuml;ltig bis:</td><td>' . $valid_until . '</td></tr>' : '') . '
+' . ($cust_tax_id ? '<tr><td>Ihre USt-IdNr.:</td><td>' . $cust_tax_id . '</td></tr>' : '') . '
 </table>
 </div>
 </div>
+</div>
 
-<div class="inv-title">' . $doc_type_label . '</div>
-<div class="inv-intro">Sehr geehrte Damen und Herren,<br>vielen Dank f&uuml;r Ihren Auftrag und das damit verbundene Vertrauen!<br>Hiermit stelle ich Ihnen die folgenden Leistungen in Rechnung:</div>
+<div class="doc-title">' . $doc_type_label . '</div>
+<p class="intro-text">Sehr geehrte Damen und Herren,<br>vielen Dank f&uuml;r Ihren Auftrag. Hiermit stellen wir Ihnen folgende Leistungen in Rechnung:</p>
 
-<table class="inv-table">
-<tr><th>Pos</th><th>Artikel</th><th>Anzahl</th><th>Preis</th><th>Summe</th></tr>
+<table class="items-table">
+<tr><th>Pos</th><th>Beschreibung</th><th>Menge</th><th>Einzelpreis</th><th>Gesamt</th></tr>
 ' . $items_html . '
 ' . $discount_row . '
 </table>
 
-<div class="inv-summary">
-<div class="inv-summary-row"><span>Zwischensumme (netto)</span><span>' . $net_amount . ' &euro;</span></div>
-' . (!$is_klein && !$is_differenz ? '<div class="inv-summary-row"><span>MwSt ' . number_format($vat_rate, 0) . '%</span><span>' . $vat_amount . ' &euro;</span></div>' : '') . '
-<div class="inv-summary-row total"><span>Gesamtsumme</span><span>' . $total . ' &euro;</span></div>
+<div class="summary-section">
+<div class="summary-row"><span>Zwischensumme (netto)</span><span>' . $net_amount . ' &euro;</span></div>
+' . (!$is_klein && !$is_differenz ? '<div class="summary-row"><span>MwSt. ' . number_format($vat_rate, 0) . '%</span><span>' . $vat_amount . ' &euro;</span></div>' : '') . '
+<div class="summary-row total"><span>Gesamtbetrag</span><span>' . $total . ' &euro;</span></div>
 </div>
 
-' . $vat_text . '
-' . $reward_notice . '
-' . $notes_section . '
-' . $payment_section . '
+' . ($is_klein ? '<p class="vat-notice">Gem&auml;&szlig; &sect;19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>' : '') . '
+' . ($is_differenz ? '<p class="vat-notice">Differenzbesteuerung gem. &sect;25a UStG. Im Rechnungsbetrag ist keine Umsatzsteuer enthalten.</p>' : '') . '
+
+' . ($invoice->status === 'paid' ? '<div class="info-box payment"><strong>Bezahlt</strong>' . ($paid_at ? ' am ' . date('d.m.Y', strtotime($invoice->paid_at)) : '') . ($method_display ? ' per ' . $method_display : '') . '</div>' : '') . '
+
+' . ($invoice->punktepass_reward_applied ? '<div class="info-box reward"><strong>PunktePass Belohnung eingel&ouml;st:</strong> ' . $discount_desc . '</div>' : '') . '
+
+' . ($notes ? '<div style="margin-top:5mm;padding-top:3mm;border-top:1px solid #e2e8f0"><strong style="font-size:9pt;color:#718096">Anmerkungen:</strong><p style="font-size:9pt;color:#4a5568;margin-top:1mm">' . $notes . '</p></div>' : '') . '
 
 </div>
 
-<div class="inv-footer">
-<div class="inv-footer-col">' . $footer_col1 . '</div>
-<div class="inv-footer-col">' . $footer_col2 . '</div>
-<div class="inv-footer-col">' . $footer_col3 . '</div>
-' . ($footer_col4 ? '<div class="inv-footer-col">' . $footer_col4 . '</div>' : '') . '
+<div class="footer">
+<div class="footer-grid">
+<div class="footer-col">
+<strong>' . $company . '</strong><br>
+' . $addr . '<br>
+' . $plz_city . '
+</div>
+<div class="footer-col">
+<span class="footer-label">Kontakt</span><br>
+' . ($phone ? 'Tel: ' . $phone . '<br>' : '') . '
+' . $email . '
+' . ($website ? '<br>' . $website : '') . '
+</div>
+<div class="footer-col">
+<span class="footer-label">Steuerdaten</span><br>
+' . ($tax ? 'USt-IdNr: ' . $tax . '<br>' : '') . '
+' . ($steuernummer ? 'St-Nr: ' . $steuernummer . '<br>' : '') . '
+' . ($owner ? 'Inh: ' . $owner : '') . '
+</div>
+' . ($bank_iban ? '<div class="footer-col">
+<span class="footer-label">Bankverbindung</span><br>
+' . ($bank_name ? $bank_name . '<br>' : '') . '
+IBAN: ' . $bank_iban . '
+' . ($bank_bic ? '<br>BIC: ' . $bank_bic : '') . '
+</div>' : '') . '
+</div>
 </div>
 
 </body></html>';
