@@ -406,11 +406,12 @@
     width: 100%;
     max-width: 400px;
     height: 150px;
-    border: 2px solid var(--repair-border);
+    border: 2px solid var(--repair-accent);
     border-radius: 8px;
-    background: #f9fafb;
+    background: #ffffff;
     touch-action: none;
     cursor: crosshair;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
 }
 .repair-signature-hint {
     margin-top: 10px;
