@@ -256,7 +256,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $bank_iban = esc_attr($store->repair_bank_iban ?? '');
         $bank_bic = esc_attr($store->repair_bank_bic ?? '');
         $paypal_email = esc_attr($store->repair_paypal_email ?? '');
-        $differenzbesteuerung = isset($store->repair_differenzbesteuerung) ? intval($store->repair_differenzbesteuerung) : 0;
         $steuernummer = esc_attr($store->repair_steuernummer ?? '');
         $website_url = esc_attr($store->repair_website_url ?? '');
 
@@ -1082,17 +1081,6 @@ echo '          </div>
                 </div>
             </div>
 
-            <div class="ra-toggle" style="margin-top:16px">
-                <label class="ra-toggle-switch">
-                    <input type="checkbox" name="repair_differenzbesteuerung" value="1" ' . ($differenzbesteuerung ? 'checked' : '') . '>
-                    <span class="ra-toggle-slider"></span>
-                </label>
-                <div>
-                    <div class="ra-toggle-label">Differenzbesteuerung</div>
-                    <div class="ra-toggle-desc">F&uuml;r Gebrauchtwarenhandel gem. &sect;25a UStG (0% MwSt)</div>
-                </div>
-            </div>
-
                 <h4 style="margin-top:24px"><i class="ri-file-text-line"></i> Steuerdaten</h4>
             <div class="ra-settings-grid">
                 <div class="field">
@@ -1600,6 +1588,13 @@ echo '          </div>
             </div>
         </div>
 
+        <div style="margin-top:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ra-inv-differenz" style="width:18px;height:18px;cursor:pointer">
+                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+            </label>
+        </div>
+
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1;min-width:100px" id="ra-inv-modal-cancel">Abbrechen</button>
             <button type="button" class="ra-btn" style="flex:1;min-width:140px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0" id="ra-inv-modal-skip">
@@ -1697,6 +1692,13 @@ echo '          </div>
                 <span>Gesamt:</span>
                 <span id="ra-ninv-total">0,00 &euro;</span>
             </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ra-ninv-differenz" style="width:18px;height:18px;cursor:pointer">
+                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+            </label>
         </div>
 
         <div>
@@ -1951,6 +1953,13 @@ echo '          </div>
                 <span>Gesamt:</span>
                 <span id="ra-einv-total">0,00 &euro;</span>
             </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ra-einv-differenz" style="width:18px;height:18px;cursor:pointer">
+                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+            </label>
         </div>
 
         <div style="margin-bottom:16px">
@@ -2509,6 +2518,7 @@ echo '          </div>
         document.getElementById("ra-einv-city").value=inv.customer_city||"";
         document.getElementById("ra-einv-taxid").value=inv.customer_tax_id||"";
         document.getElementById("ra-einv-notes").value=inv.notes||"";
+        document.getElementById("ra-einv-differenz").checked=!!parseInt(inv.is_differenzbesteuerung);
 
         // Fill line items
         var lines=document.getElementById("ra-einv-lines");
@@ -2659,6 +2669,9 @@ echo '          </div>
 
         var fd=new FormData();
         fd.append("nonce",NONCE);
+
+        // Add differenzbesteuerung flag
+        fd.append("is_differenzbesteuerung",document.getElementById("ra-inv-differenz").checked?"1":"0");
 
         if(invoiceEditId){
             // Edit mode
@@ -3382,6 +3395,7 @@ echo '          </div>
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
         fd.append("notes",document.getElementById("ra-ninv-notes").value);
+        fd.append("is_differenzbesteuerung",document.getElementById("ra-ninv-differenz").checked?"1":"0");
         var customInvNum=document.getElementById("ra-ninv-number").value.trim();
         if(customInvNum)fd.append("invoice_number",customInvNum);
 
@@ -3629,6 +3643,7 @@ echo '          </div>
         fd.append("customer_city",document.getElementById("ra-einv-city").value);
         fd.append("customer_tax_id",document.getElementById("ra-einv-taxid").value);
         fd.append("notes",document.getElementById("ra-einv-notes").value);
+        fd.append("is_differenzbesteuerung",document.getElementById("ra-einv-differenz").checked?"1":"0");
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
 

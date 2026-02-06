@@ -465,6 +465,25 @@ class PPV_Repair_Invoice {
             }
         }
 
+        // Differenzbesteuerung
+        if (isset($_POST['is_differenzbesteuerung'])) {
+            $is_differenz = intval($_POST['is_differenzbesteuerung']) ? 1 : 0;
+            $update['is_differenzbesteuerung'] = $is_differenz;
+
+            // Recalculate VAT if differenzbesteuerung changed
+            if (isset($update['total'])) {
+                $brutto = $update['total'];
+            } else {
+                $brutto = floatval($invoice->total);
+            }
+
+            if ($is_differenz || $invoice->is_kleinunternehmer) {
+                $update['net_amount'] = $brutto;
+                $update['vat_amount'] = 0;
+                $update['vat_rate'] = 0;
+            }
+        }
+
         if (!empty($update)) {
             $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', $update, ['id' => $invoice_id]);
         }
@@ -606,9 +625,10 @@ class PPV_Repair_Invoice {
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate_pct = floatval($store->repair_vat_rate ?: 19.00);
         $is_klein = $vat_enabled ? 0 : 1;
+        $is_differenz = !empty($_POST['is_differenzbesteuerung']) ? 1 : 0;
 
-        // Calculate from brutto
-        if ($vat_enabled) {
+        // Calculate from brutto (no VAT if Kleinunternehmer or Differenzbesteuerung)
+        if ($vat_enabled && !$is_differenz) {
             $net_amount = round($subtotal / (1 + $vat_rate_pct / 100), 2);
             $vat_amount = round($subtotal - $net_amount, 2);
             $total = $subtotal;
@@ -646,6 +666,7 @@ class PPV_Repair_Invoice {
             'vat_amount'        => $vat_amount,
             'total'             => $total,
             'is_kleinunternehmer' => $is_klein,
+            'is_differenzbesteuerung' => $is_differenz,
             'punktepass_reward_applied' => 0,
             'points_used'       => 0,
             'notes'             => $notes,
@@ -1078,7 +1099,7 @@ class PPV_Repair_Invoice {
         $bank_iban = esc_html($store->repair_bank_iban ?? '');
         $bank_bic = esc_html($store->repair_bank_bic ?? '');
         $paypal = esc_html($store->repair_paypal_email ?? '');
-        $is_differenz = intval($store->repair_differenzbesteuerung ?? 0);
+        $is_differenz = intval($invoice->is_differenzbesteuerung ?? 0);
 
         $inv_nr = esc_html($invoice->invoice_number);
         $inv_date = date('d.m.Y', strtotime($invoice->created_at));

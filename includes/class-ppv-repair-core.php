@@ -713,6 +713,18 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '2.2');
         }
+
+        // v2.3: Add is_differenzbesteuerung column to invoices
+        if (version_compare($version, '2.3', '<')) {
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE 'is_differenzbesteuerung'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN is_differenzbesteuerung TINYINT(1) DEFAULT 0 AFTER is_kleinunternehmer");
+            }
+
+            update_option('ppv_repair_migration_version', '2.3');
+        }
     }
 
     /** ============================================================
@@ -1889,6 +1901,12 @@ class PPV_Repair_Core {
             'repair_success_message' => "TEXT NULL",
             'repair_opening_hours' => "VARCHAR(500) NULL",
             'repair_terms_url' => "VARCHAR(500) NULL",
+            'repair_bank_name' => "VARCHAR(255) NULL",
+            'repair_bank_iban' => "VARCHAR(100) NULL",
+            'repair_bank_bic' => "VARCHAR(50) NULL",
+            'repair_paypal_email' => "VARCHAR(255) NULL",
+            'repair_steuernummer' => "VARCHAR(100) NULL",
+            'repair_website_url' => "VARCHAR(500) NULL",
         ];
 
         foreach ($required_columns as $col => $definition) {
@@ -1903,7 +1921,8 @@ class PPV_Repair_Core {
                         'name', 'phone', 'address', 'plz', 'city',
                         'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type',
                         'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject', 'repair_status_notify_statuses',
-                        'repair_opening_hours', 'repair_terms_url'];
+                        'repair_opening_hours', 'repair_terms_url',
+                        'repair_bank_name', 'repair_bank_iban', 'repair_bank_bic', 'repair_paypal_email', 'repair_steuernummer', 'repair_website_url'];
         // Textarea fields (allow newlines)
         $textarea_fields = ['repair_invoice_email_body', 'repair_custom_brands', 'repair_custom_problems', 'repair_custom_accessories', 'repair_success_message'];
         // Integer fields
