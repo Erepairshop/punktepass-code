@@ -1698,7 +1698,8 @@ class PPV_Repair_Core {
 
         // Get repair with store info
         $repair = $wpdb->get_row($wpdb->prepare(
-            "SELECT r.*, s.name AS store_name, s.repair_company_name, s.repair_company_address, s.repair_company_phone, s.email AS store_email
+            "SELECT r.*, s.name AS store_name, s.repair_company_name, s.repair_company_address,
+                    s.repair_company_phone, s.email AS store_email, s.repair_owner_name, s.repair_tax_id
              FROM {$prefix}ppv_repairs r
              JOIN {$prefix}ppv_stores s ON r.store_id = s.id
              WHERE r.id = %d AND r.store_id = %d",
@@ -1707,58 +1708,104 @@ class PPV_Repair_Core {
         if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
         if (empty($repair->customer_email)) wp_send_json_error(['message' => 'Keine E-Mail-Adresse vorhanden']);
 
-        // Build email
+        // Build email data
         $company_name = $repair->repair_company_name ?: $repair->store_name;
         $company_address = $repair->repair_company_address ?: '';
         $company_phone = $repair->repair_company_phone ?: '';
+        $company_email = $repair->store_email ?: '';
+        $owner_name = $repair->repair_owner_name ?: '';
+        $tax_id = $repair->repair_tax_id ?: '';
         $device = trim(($repair->device_brand ?: '') . ' ' . ($repair->device_model ?: ''));
         $date = date('d.m.Y H:i', strtotime($repair->created_at));
-
-        $status_labels = [
-            'new' => 'Neu',
-            'in_progress' => 'In Bearbeitung',
-            'waiting_parts' => 'Wartet auf Teile',
-            'done' => 'Fertig',
-            'delivered' => 'Abgeholt',
-            'cancelled' => 'Storniert'
-        ];
-        $status_text = $status_labels[$repair->status] ?? 'Unbekannt';
+        $customer_address = $repair->customer_address ?: '';
 
         $subject = "Reparaturauftrag #{$repair_id} - {$company_name}";
 
-        $email_body = "Sehr geehrte/r {$repair->customer_name},\n\n";
-        $email_body .= "vielen Dank für Ihren Reparaturauftrag bei {$company_name}.\n\n";
-        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $email_body .= "REPARATURAUFTRAG #{$repair_id}\n";
-        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
-        $email_body .= "📅 Datum: {$date}\n";
-        $email_body .= "📊 Status: {$status_text}\n\n";
+        // Build HTML email (same format as print version)
+        $address_html = $customer_address ? '<div class="field"><span class="label">Adresse:</span><span class="value">' . esc_html($customer_address) . '</span></div>' : '';
+        $pin_html = !empty($repair->device_pattern) ? '<div class="field"><span class="label">PIN:</span><span class="value highlight">' . esc_html($repair->device_pattern) . '</span></div>' : '';
+        $signature_html = !empty($repair->signature_image) && strpos($repair->signature_image, 'data:image/') === 0
+            ? '<div class="sig-img"><img src="' . $repair->signature_image . '" style="max-height:40px"></div>'
+            : '<div class="signature-line"></div>';
 
-        $email_body .= "📱 GERÄT\n";
-        $email_body .= "──────────────────────────────────\n";
-        if ($device) $email_body .= "Gerät: {$device}\n";
-        if (!empty($repair->device_pattern)) $email_body .= "PIN/Code: {$repair->device_pattern}\n";
-        $email_body .= "\n";
+        $email_body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reparaturauftrag #' . $repair_id . '</title></head>
+        <body style="font-family:Arial,sans-serif;padding:20px;color:#1f2937;line-height:1.4;font-size:14px;max-width:700px;margin:0 auto;background:#f9fafb;">
+        <div style="background:#fff;padding:25px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <!-- Header with shop info -->
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #667eea;padding-bottom:15px;margin-bottom:20px;">
+                <div style="font-size:22px;font-weight:700;color:#667eea;">' . esc_html($company_name) .
+                    ($owner_name ? '<br><span style="font-size:12px;font-weight:normal;color:#6b7280;">Inh. ' . esc_html($owner_name) . '</span>' : '') .
+                '</div>
+                <div style="text-align:right;font-size:12px;color:#6b7280;">' .
+                    ($company_address ? esc_html($company_address) . '<br>' : '') .
+                    ($company_phone ? '<strong>Tel: ' . esc_html($company_phone) . '</strong><br>' : '') .
+                    ($company_email ? 'E-Mail: ' . esc_html($company_email) . '<br>' : '') .
+                    ($tax_id ? 'USt-IdNr.: ' . esc_html($tax_id) : '') .
+                '</div>
+            </div>
 
-        $email_body .= "🔧 PROBLEMBESCHREIBUNG\n";
-        $email_body .= "──────────────────────────────────\n";
-        $email_body .= "{$repair->problem_description}\n\n";
+            <!-- Title -->
+            <div style="text-align:center;margin-bottom:20px;padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:8px;">
+                <h1 style="font-size:20px;margin:0;">Reparaturauftrag #' . $repair_id . '</h1>
+                <p style="font-size:13px;margin-top:5px;opacity:0.9;">Datum: ' . esc_html($date) . '</p>
+            </div>
 
-        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $email_body .= "Bei Fragen erreichen Sie uns unter:\n";
-        if ($company_phone) $email_body .= "📞 {$company_phone}\n";
-        if ($repair->store_email) $email_body .= "📧 {$repair->store_email}\n";
-        if ($company_address) $email_body .= "📍 {$company_address}\n";
-        $email_body .= "\n";
-        $email_body .= "Mit freundlichen Grüßen,\n";
-        $email_body .= "{$company_name}\n";
+            <!-- Two columns: Customer & Device -->
+            <div style="display:flex;gap:15px;margin-bottom:15px;">
+                <div style="flex:1;background:#f9fafb;border-radius:8px;padding:15px;border:1px solid #e5e7eb;">
+                    <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">Kunde</div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Name:</span><span style="color:#1f2937;">' . esc_html($repair->customer_name) . '</span></div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Telefon:</span><span style="color:#1f2937;">' . esc_html($repair->customer_phone) . '</span></div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">E-Mail:</span><span style="color:#1f2937;">' . esc_html($repair->customer_email) . '</span></div>
+                    ' . ($customer_address ? '<div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Adresse:</span><span style="color:#1f2937;">' . esc_html($customer_address) . '</span></div>' : '') . '
+                </div>
+                <div style="flex:1;background:#f9fafb;border-radius:8px;padding:15px;border:1px solid #e5e7eb;">
+                    <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">Gerät</div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Gerät:</span><span style="color:#1f2937;">' . esc_html($device ?: '-') . '</span></div>
+                    ' . (!empty($repair->device_pattern) ? '<div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">PIN:</span><span style="color:#667eea;font-weight:600;">' . esc_html($repair->device_pattern) . '</span></div>' : '') . '
+                </div>
+            </div>
+
+            <!-- Problem description -->
+            <div style="background:#f9fafb;border-radius:8px;padding:15px;border:1px solid #e5e7eb;margin-bottom:15px;">
+                <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">Problembeschreibung</div>
+                <div style="font-size:14px;color:#1f2937;">' . nl2br(esc_html($repair->problem_description)) . '</div>
+            </div>
+
+            <!-- Datenschutz -->
+            <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 15px;margin-bottom:15px;">
+                <div style="font-weight:600;color:#92400e;margin-bottom:6px;font-size:11px;text-transform:uppercase;">Datenschutzhinweis</div>
+                <div style="font-size:11px;color:#78350f;line-height:1.5;">Mit meiner Unterschrift bestätige ich:
+                    <ul style="margin:6px 0;padding-left:18px;">
+                        <li>Die Richtigkeit der angegebenen Daten</li>
+                        <li>Die Zustimmung zur Datenverarbeitung gemäß DSGVO</li>
+                        <li>Die Kenntnisnahme der Reparaturbedingungen</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Signature -->
+            <div style="margin-top:15px;padding-top:12px;border-top:1px dashed #d1d5db;">
+                <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Unterschrift Kunde (Einwilligung Datenschutz):</div>
+                ' . $signature_html . '
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align:center;margin-top:20px;padding-top:15px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;">
+                ' . esc_html($company_name) .
+                ($company_address ? ' | ' . esc_html($company_address) : '') .
+                ($company_phone ? ' | Tel: ' . esc_html($company_phone) : '') .
+                ($company_email ? ' | ' . esc_html($company_email) : '') . '
+            </div>
+        </div>
+        </body></html>';
 
         $headers = [
-            'Content-Type: text/plain; charset=UTF-8',
+            'Content-Type: text/html; charset=UTF-8',
             "From: {$company_name} <noreply@punktepass.de>"
         ];
-        if ($repair->store_email) {
-            $headers[] = "Reply-To: {$repair->store_email}";
+        if ($company_email) {
+            $headers[] = "Reply-To: {$company_email}";
         }
 
         $sent = wp_mail($repair->customer_email, $subject, $email_body, $headers);
