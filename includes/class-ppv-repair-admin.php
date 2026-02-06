@@ -251,6 +251,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $email_body_default = "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
         $email_body = esc_textarea($store->repair_invoice_email_body ?? $email_body_default);
 
+        // Payment/Bank settings for invoices
+        $bank_name = esc_attr($store->repair_bank_name ?? '');
+        $bank_iban = esc_attr($store->repair_bank_iban ?? '');
+        $bank_bic = esc_attr($store->repair_bank_bic ?? '');
+        $paypal_email = esc_attr($store->repair_paypal_email ?? '');
+        $differenzbesteuerung = isset($store->repair_differenzbesteuerung) ? intval($store->repair_differenzbesteuerung) : 0;
+        $steuernummer = esc_attr($store->repair_steuernummer ?? '');
+        $website_url = esc_attr($store->repair_website_url ?? '');
+
         // Status notification settings
         $status_notify_enabled = isset($store->repair_status_notify_enabled) ? intval($store->repair_status_notify_enabled) : 0;
         $status_notify_statuses = $store->repair_status_notify_statuses ?? 'in_progress,done,delivered';
@@ -1071,6 +1080,52 @@ echo '          </div>
                         <input type="number" name="repair_vat_rate" value="' . $vat_rate . '" min="0" max="100" step="0.01" placeholder="19.00">
                     </div>
                 </div>
+            </div>
+
+            <div class="ra-toggle" style="margin-top:16px">
+                <label class="ra-toggle-switch">
+                    <input type="checkbox" name="repair_differenzbesteuerung" value="1" ' . ($differenzbesteuerung ? 'checked' : '') . '>
+                    <span class="ra-toggle-slider"></span>
+                </label>
+                <div>
+                    <div class="ra-toggle-label">Differenzbesteuerung</div>
+                    <div class="ra-toggle-desc">F&uuml;r Gebrauchtwarenhandel gem. &sect;25a UStG (0% MwSt)</div>
+                </div>
+            </div>
+
+                <h4 style="margin-top:24px"><i class="ri-file-text-line"></i> Steuerdaten</h4>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Steuernummer</label>
+                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="z.B. 109/206/40309">
+                </div>
+                <div class="field">
+                    <label>Webseite</label>
+                    <input type="text" name="repair_website_url" value="' . $website_url . '" placeholder="www.example.de">
+                </div>
+            </div>
+
+                <h4 style="margin-top:24px"><i class="ri-bank-line"></i> Bankverbindung</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Wird im Fu&szlig;bereich der Rechnung angezeigt</p>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Bank Name</label>
+                    <input type="text" name="repair_bank_name" value="' . $bank_name . '" placeholder="z.B. Sparkasse">
+                </div>
+                <div class="field">
+                    <label>IBAN</label>
+                    <input type="text" name="repair_bank_iban" value="' . $bank_iban . '" placeholder="DE...">
+                </div>
+                <div class="field">
+                    <label>BIC</label>
+                    <input type="text" name="repair_bank_bic" value="' . $bank_bic . '" placeholder="z.B. BYLADEM1DLG">
+                </div>
+            </div>
+
+                <h4 style="margin-top:24px"><i class="ri-paypal-line"></i> PayPal</h4>
+            <div class="field">
+                <label>PayPal E-Mail / Adresse</label>
+                <input type="text" name="repair_paypal_email" value="' . $paypal_email . '" placeholder="paypal@example.de">
             </div>
 
             </div><!-- END PANEL: invoice -->
