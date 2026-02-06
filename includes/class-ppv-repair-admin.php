@@ -1277,10 +1277,13 @@ echo '          </div>
         </div>
 
         <!-- PunktePass admin -->
-        <div class="ra-pp-link">
+        <div class="ra-pp-link" style="display:flex;gap:8px;align-items:center">
             <a href="/qr-center" class="ra-btn ra-btn-outline">
                 <i class="ri-qr-code-line"></i> PunktePass Admin &ouml;ffnen
             </a>
+            <button class="ra-btn ra-btn-outline" style="color:#dc2626;border-color:#fecaca" onclick="if(confirm(\'Wirklich abmelden?\')){var fd=new FormData();fd.append(\'action\',\'ppv_repair_logout\');fetch(\'' . esc_url($ajax_url) . '\',{method:\'POST\',body:fd,credentials:\'same-origin\'}).finally(function(){window.location.href=\'/formular/admin/login\';})}">
+                <i class="ri-logout-box-r-line"></i> Abmelden
+            </button>
         </div>
     </div>';
 
@@ -2086,10 +2089,7 @@ echo '          </div>
 
         // Footer
         echo '<div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;">
-        <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">Powered by <a href="https://punktepass.de" target="_blank" style="color:#667eea;">PunktePass</a></div>
-        <button class="ra-logout" onclick="if(confirm(\'Wirklich abmelden?\')){var fd=new FormData();fd.append(\'action\',\'ppv_repair_logout\');fetch(\'' . esc_url($ajax_url) . '\',{method:\'POST\',body:fd,credentials:\'same-origin\'}).finally(function(){window.location.href=\'/formular/admin/login\';})}">
-            <i class="ri-logout-box-r-line"></i> Abmelden
-        </button>
+        <div style="font-size:12px;color:#9ca3af;">Powered by <a href="https://punktepass.de" target="_blank" style="color:#667eea;">PunktePass</a></div>
     </div>
 
 </div>
