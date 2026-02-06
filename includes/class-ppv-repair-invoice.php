@@ -1237,7 +1237,7 @@ class PPV_Repair_Invoice {
         $sender_line = $owner . ', ' . $addr . ', ' . $plz_city . ', Deutschland';
 
         return '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>
-@page{margin:12mm 12mm 25mm 12mm;size:A4}
+@page{margin:15mm 15mm 28mm 15mm;size:A4}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-height:1.5}
 .invoice{padding:0;max-width:100%}
@@ -1300,7 +1300,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 .vat-notice{font-size:8pt;color:#718096;margin-top:3mm}
 
 /* Footer */
-.footer{position:fixed;bottom:0;left:0;right:0;padding:3mm 12mm;background:#f7fafc;border-top:1px solid #e2e8f0;font-size:8pt;color:#718096}
+.footer{position:fixed;bottom:0;left:0;right:0;padding:4mm 15mm;background:#f7fafc;border-top:1px solid #e2e8f0;font-size:8pt;color:#718096}
 .footer-grid{display:table;width:100%;table-layout:fixed}
 .footer-col{display:table-cell;vertical-align:top;padding:0 2mm;line-height:1.5}
 .footer-col:first-child{padding-left:0}
@@ -1350,7 +1350,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 </div>
 
 <div class="doc-title">' . $doc_type_label . '</div>
-<p class="intro-text">Sehr geehrte Damen und Herren,<br>vielen Dank f&uuml;r Ihren Auftrag. Hiermit stellen wir Ihnen folgende Leistungen in Rechnung:</p>
+<p class="intro-text">Sehr geehrte Damen und Herren,<br>' . ($is_angebot ? 'vielen Dank f&uuml;r Ihre Anfrage. Gerne unterbreiten wir Ihnen folgendes Angebot:' : 'vielen Dank f&uuml;r Ihren Auftrag. Hiermit stellen wir Ihnen folgende Leistungen in Rechnung:') . '</p>
 
 <table class="items-table">
 <tr><th>Pos</th><th>Beschreibung</th><th>Menge</th><th>Einzelpreis</th><th>Gesamt</th></tr>
