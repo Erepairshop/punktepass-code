@@ -40,6 +40,16 @@ class PPV_Repair_Registration {
     <meta name="description" content="Digitale Reparaturverwaltung mit Formular, Rechnungen, Angebote, DATEV-Export und Kundenverwaltung. Online &amp; Tablet nutzbar. Kostenlos starten.">
     <meta name="robots" content="index, follow">
     <link rel="icon" href="https://punktepass.de/wp-content/uploads/2025/04/cropped-ppfavicon-32x32.png" sizes="32x32">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-NDVQK1WSG3');
+    </script>
+
     <style>
         /* ── Reset & Base ── */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
