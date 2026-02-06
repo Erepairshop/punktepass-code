@@ -1390,6 +1390,22 @@ echo '          </div>
                     <button class="ra-btn ra-btn-sm" id="ra-bulk-paid" style="background:#059669;color:#fff"><i class="ri-checkbox-circle-line"></i> Als bezahlt</button>
                     <button class="ra-btn ra-btn-sm" id="ra-bulk-send" style="background:#3b82f6;color:#fff"><i class="ri-mail-send-line"></i> E-Mails senden</button>
                     <button class="ra-btn ra-btn-sm" id="ra-bulk-reminder" style="background:#d97706;color:#fff"><i class="ri-alarm-warning-line"></i> Erinnerungen</button>
+                    <div style="position:relative;display:inline-block">
+                        <button class="ra-btn ra-btn-sm" id="ra-bulk-export" style="background:#8b5cf6;color:#fff"><i class="ri-download-2-line"></i> Export <i class="ri-arrow-down-s-line"></i></button>
+                        <div id="ra-export-dropdown" style="display:none;position:absolute;top:100%;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:220px;z-index:100;margin-top:4px">
+                            <div style="padding:8px 0">
+                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Buchhalter-Formate</div>
+                                <a href="#" class="ra-export-opt" data-format="datev" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-text-line" style="margin-right:8px;color:#8b5cf6"></i>DATEV-Export (.csv)</a>
+                                <a href="#" class="ra-export-opt" data-format="csv" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-2-line" style="margin-right:8px;color:#059669"></i>CSV-Export</a>
+                                <a href="#" class="ra-export-opt" data-format="excel" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-line" style="margin-right:8px;color:#217346"></i>Excel-Export (.xlsx)</a>
+                                <div style="border-top:1px solid #e5e7eb;margin:6px 0"></div>
+                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Dokumente</div>
+                                <a href="#" class="ra-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF-Sammlung (.zip)</a>
+                                <a href="#" class="ra-export-opt" data-format="json" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-code-s-slash-line" style="margin-right:8px;color:#3b82f6"></i>JSON-Export</a>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-delete" style="background:#dc2626;color:#fff"><i class="ri-delete-bin-line"></i> L&ouml;schen</button>
                     <button class="ra-btn ra-btn-sm" id="ra-bulk-cancel" style="background:#6b7280;color:#fff"><i class="ri-close-line"></i> Abbrechen</button>
                 </div>
             </div>
@@ -3200,6 +3216,79 @@ echo '          </div>
         .then(function(res){
             btn.disabled=false;btn.innerHTML=\'<i class="ri-alarm-warning-line"></i> Erinnerungen\';
             if(res.success){toast(res.data.message||"Erfolgreich!")}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
+    });
+
+    // Export dropdown toggle
+    var exportBtn=document.getElementById("ra-bulk-export");
+    var exportDropdown=document.getElementById("ra-export-dropdown");
+    if(exportBtn&&exportDropdown){
+        exportBtn.addEventListener("click",function(e){
+            e.stopPropagation();
+            exportDropdown.style.display=exportDropdown.style.display==="none"?"block":"none";
+        });
+        document.addEventListener("click",function(e){
+            if(!exportBtn.contains(e.target)&&!exportDropdown.contains(e.target)){
+                exportDropdown.style.display="none";
+            }
+        });
+        // Hover effect for dropdown items
+        document.querySelectorAll(".ra-export-opt").forEach(function(opt){
+            opt.addEventListener("mouseenter",function(){this.style.background="#f3f4f6"});
+            opt.addEventListener("mouseleave",function(){this.style.background="transparent"});
+        });
+    }
+
+    // Bulk export
+    document.querySelectorAll(".ra-export-opt").forEach(function(opt){
+        opt.addEventListener("click",function(e){
+            e.preventDefault();
+            var ids=getSelectedInvoiceIds();
+            if(!ids.length){toast("Keine Rechnungen ausgewählt");return;}
+            var format=this.getAttribute("data-format");
+            exportDropdown.style.display="none";
+            toast("Export wird vorbereitet...");
+            var fd=new FormData();
+            fd.append("action","ppv_repair_invoice_bulk");
+            fd.append("nonce",NONCE);
+            fd.append("operation","export");
+            fd.append("format",format);
+            fd.append("invoice_ids",JSON.stringify(ids));
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(res){
+                if(res.success&&res.data.download_url){
+                    var a=document.createElement("a");
+                    a.href=res.data.download_url;
+                    a.download=res.data.filename||"export";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    toast("Export erfolgreich!");
+                }else{
+                    toast(res.data&&res.data.message?res.data.message:"Export fehlgeschlagen");
+                }
+            });
+        });
+    });
+
+    // Bulk delete
+    document.getElementById("ra-bulk-delete").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm("Möchten Sie "+ids.length+" Dokument(e) wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gelöscht...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","delete");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-delete-bin-line"></i> Löschen\';
+            if(res.success){toast(res.data.message||"Erfolgreich gelöscht!");invoicesLoaded=false;loadInvoices(1);updateBulkBar()}
             else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
         });
     });

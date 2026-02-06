@@ -1702,9 +1702,44 @@ IBAN: ' . $bank_iban . '
                     }
                     break;
 
+                case 'delete':
+                    // Delete the invoice
+                    $deleted = $wpdb->delete($prefix . 'ppv_repair_invoices', ['id' => $invoice_id, 'store_id' => $store_id]);
+                    if ($deleted) {
+                        $success_count++;
+                    } else {
+                        $error_count++;
+                    }
+                    break;
+
+                case 'export':
+                    // Export is handled separately after the loop
+                    $success_count++;
+                    break;
+
                 default:
                     wp_send_json_error(['message' => 'Unbekannte Operation']);
             }
+        }
+
+        // Handle export operation separately (needs all invoices at once)
+        if ($operation === 'export') {
+            $format = sanitize_text_field($_POST['format'] ?? 'csv');
+            $invoices = [];
+            foreach ($invoice_ids as $invoice_id) {
+                $invoice_id = intval($invoice_id);
+                $invoice = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$prefix}ppv_repair_invoices WHERE id = %d AND store_id = %d",
+                    $invoice_id, $store_id
+                ));
+                if ($invoice) {
+                    $invoices[] = $invoice;
+                }
+            }
+            if (empty($invoices)) {
+                wp_send_json_error(['message' => 'Keine Rechnungen gefunden']);
+            }
+            return self::handle_bulk_export($invoices, $format, $store);
         }
 
         $message = "{$success_count} erfolgreich verarbeitet";
@@ -1713,6 +1748,350 @@ IBAN: ' . $bank_iban . '
         }
 
         wp_send_json_success(['message' => $message, 'success' => $success_count, 'errors' => $error_count]);
+    }
+
+    /**
+     * Handle bulk export of invoices
+     */
+    private static function handle_bulk_export($invoices, $format, $store) {
+        $upload_dir = wp_upload_dir();
+        $export_dir = $upload_dir['basedir'] . '/ppv-exports/';
+        if (!file_exists($export_dir)) {
+            wp_mkdir_p($export_dir);
+        }
+
+        $timestamp = date('Y-m-d_His');
+        $company = sanitize_file_name($store->repair_company_name ?: $store->name);
+
+        switch ($format) {
+            case 'datev':
+                return self::export_datev($invoices, $export_dir, $timestamp, $company, $store);
+
+            case 'csv':
+                return self::export_csv($invoices, $export_dir, $timestamp, $company);
+
+            case 'excel':
+                return self::export_excel($invoices, $export_dir, $timestamp, $company);
+
+            case 'pdf':
+                return self::export_pdf_zip($invoices, $export_dir, $timestamp, $company, $store);
+
+            case 'json':
+                return self::export_json($invoices, $export_dir, $timestamp, $company);
+
+            default:
+                wp_send_json_error(['message' => 'Unbekanntes Export-Format']);
+        }
+    }
+
+    /**
+     * Export DATEV format (German accounting standard)
+     */
+    private static function export_datev($invoices, $export_dir, $timestamp, $company, $store) {
+        $filename = "DATEV_Export_{$company}_{$timestamp}.csv";
+        $filepath = $export_dir . $filename;
+
+        // DATEV header
+        $header = [
+            'Umsatz (ohne Soll/Haben-Kz)',
+            'Soll/Haben-Kennzeichen',
+            'WKZ Umsatz',
+            'Kurs',
+            'Basis-Umsatz',
+            'WKZ Basis-Umsatz',
+            'Konto',
+            'Gegenkonto (ohne BU-Schlüssel)',
+            'BU-Schlüssel',
+            'Belegdatum',
+            'Belegfeld 1',
+            'Belegfeld 2',
+            'Skonto',
+            'Buchungstext',
+            'Postensperre',
+            'Diverse Adressnummer',
+            'Geschäftspartnerbank',
+            'Sachverhalt',
+            'Zinssperre',
+            'Beleglink',
+            'Beleginfo - Art 1',
+            'Beleginfo - Inhalt 1',
+            'Kostenstelle',
+            'Kostenträger',
+            'Kost-Menge',
+            'EU-Land u. UStID',
+            'EU-Steuersatz',
+            'Abw. Versteuerungsart',
+            'Sachverhalt L+L',
+            'Funktionsergänzung L+L',
+            'BU 49 Hauptfunktionstyp',
+            'BU 49 Hauptfunktionsnummer',
+            'BU 49 Funktionsergänzung',
+            'Zusatzinformation - Art 1',
+            'Zusatzinformation - Inhalt 1'
+        ];
+
+        $rows = [];
+        foreach ($invoices as $inv) {
+            $date = date('dmY', strtotime($inv->created_at)); // DATEV date format
+            $amount = number_format($inv->total, 2, ',', '');
+            $net = number_format($inv->net_amount, 2, ',', '');
+            $vat = number_format($inv->vat_amount, 2, ',', '');
+
+            // Main revenue booking
+            $row = array_fill(0, count($header), '');
+            $row[0] = $amount; // Umsatz
+            $row[1] = 'S'; // Soll
+            $row[2] = 'EUR';
+            $row[6] = '1000'; // Debitor account (generic)
+            $row[7] = '8400'; // Revenue account
+            $row[8] = $inv->vat_rate > 0 ? '3' : '0'; // Tax code (3 = 19% MwSt)
+            $row[9] = $date;
+            $row[10] = $inv->invoice_number;
+            $row[13] = $inv->customer_name;
+
+            $rows[] = $row;
+        }
+
+        // Write CSV with BOM for Excel compatibility
+        $fp = fopen($filepath, 'w');
+        fprintf($fp, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+        fputcsv($fp, $header, ';');
+        foreach ($rows as $row) {
+            fputcsv($fp, $row, ';');
+        }
+        fclose($fp);
+
+        $upload_url = $upload_dir = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export standard CSV
+     */
+    private static function export_csv($invoices, $export_dir, $timestamp, $company) {
+        $filename = "Rechnungen_{$company}_{$timestamp}.csv";
+        $filepath = $export_dir . $filename;
+
+        $header = [
+            'Rechnungsnummer',
+            'Typ',
+            'Datum',
+            'Kunde',
+            'E-Mail',
+            'Telefon',
+            'Adresse',
+            'PLZ/Ort',
+            'Nettobetrag',
+            'MwSt-Satz',
+            'MwSt-Betrag',
+            'Gesamtbetrag',
+            'Status',
+            'Bezahlt am',
+            'Zahlungsart',
+            'Anmerkungen'
+        ];
+
+        $fp = fopen($filepath, 'w');
+        fprintf($fp, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+        fputcsv($fp, $header, ';');
+
+        foreach ($invoices as $inv) {
+            $row = [
+                $inv->invoice_number,
+                $inv->doc_type === 'angebot' ? 'Angebot' : 'Rechnung',
+                date('d.m.Y', strtotime($inv->created_at)),
+                $inv->customer_name,
+                $inv->customer_email,
+                $inv->customer_phone,
+                $inv->customer_address,
+                $inv->customer_plz_city,
+                number_format($inv->net_amount, 2, ',', ''),
+                number_format($inv->vat_rate, 0) . '%',
+                number_format($inv->vat_amount, 2, ',', ''),
+                number_format($inv->total, 2, ',', ''),
+                $inv->status === 'paid' ? 'Bezahlt' : ($inv->status === 'sent' ? 'Gesendet' : 'Entwurf'),
+                $inv->paid_at ? date('d.m.Y', strtotime($inv->paid_at)) : '',
+                $inv->payment_method ?: '',
+                $inv->notes ?: ''
+            ];
+            fputcsv($fp, $row, ';');
+        }
+        fclose($fp);
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export Excel format (CSV with Excel dialect)
+     */
+    private static function export_excel($invoices, $export_dir, $timestamp, $company) {
+        // For true .xlsx we would need PhpSpreadsheet, so we create a TSV that Excel opens well
+        $filename = "Rechnungen_{$company}_{$timestamp}.xlsx.csv";
+        $filepath = $export_dir . $filename;
+
+        $header = [
+            'Rechnungsnummer',
+            'Dokumenttyp',
+            'Rechnungsdatum',
+            'Kundenname',
+            'Firma',
+            'E-Mail',
+            'Telefon',
+            'Straße',
+            'PLZ/Ort',
+            'USt-IdNr.',
+            'Nettobetrag (EUR)',
+            'MwSt-Satz (%)',
+            'MwSt-Betrag (EUR)',
+            'Bruttobetrag (EUR)',
+            'Status',
+            'Bezahldatum',
+            'Zahlungsart',
+            'Kleinunternehmer',
+            'Differenzbesteuerung',
+            'Positionen (JSON)',
+            'Anmerkungen',
+            'Erstellt am'
+        ];
+
+        $fp = fopen($filepath, 'w');
+        fprintf($fp, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+        fputcsv($fp, $header, "\t");
+
+        foreach ($invoices as $inv) {
+            $row = [
+                $inv->invoice_number,
+                $inv->doc_type === 'angebot' ? 'Angebot' : 'Rechnung',
+                date('d.m.Y', strtotime($inv->created_at)),
+                $inv->customer_name,
+                $inv->customer_company ?: '',
+                $inv->customer_email,
+                $inv->customer_phone,
+                $inv->customer_address,
+                $inv->customer_plz_city,
+                $inv->customer_tax_id ?: '',
+                number_format($inv->net_amount, 2, ',', ''),
+                number_format($inv->vat_rate, 0),
+                number_format($inv->vat_amount, 2, ',', ''),
+                number_format($inv->total, 2, ',', ''),
+                $inv->status === 'paid' ? 'Bezahlt' : ($inv->status === 'sent' ? 'Gesendet' : 'Entwurf'),
+                $inv->paid_at ? date('d.m.Y', strtotime($inv->paid_at)) : '',
+                $inv->payment_method ?: '',
+                $inv->is_kleinunternehmer ? 'Ja' : 'Nein',
+                $inv->is_differenzbesteuerung ? 'Ja' : 'Nein',
+                $inv->items_json ?: '',
+                str_replace(["\r", "\n"], ' ', $inv->notes ?: ''),
+                date('d.m.Y H:i', strtotime($inv->created_at))
+            ];
+            fputcsv($fp, $row, "\t");
+        }
+        fclose($fp);
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export all PDFs as ZIP
+     */
+    private static function export_pdf_zip($invoices, $export_dir, $timestamp, $company, $store) {
+        $filename = "Rechnungen_PDF_{$company}_{$timestamp}.zip";
+        $filepath = $export_dir . $filename;
+
+        $zip = new \ZipArchive();
+        if ($zip->open($filepath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            wp_send_json_error(['message' => 'ZIP-Erstellung fehlgeschlagen']);
+        }
+
+        require_once(PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php');
+
+        foreach ($invoices as $inv) {
+            $html = self::build_invoice_html($store, $inv);
+            $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $pdf_content = $dompdf->output();
+
+            $doc_type = $inv->doc_type === 'angebot' ? 'Angebot' : 'Rechnung';
+            $pdf_name = "{$doc_type}_{$inv->invoice_number}.pdf";
+            $zip->addFromString($pdf_name, $pdf_content);
+        }
+
+        $zip->close();
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export JSON format (for data migration/backup)
+     */
+    private static function export_json($invoices, $export_dir, $timestamp, $company) {
+        $filename = "Rechnungen_{$company}_{$timestamp}.json";
+        $filepath = $export_dir . $filename;
+
+        $data = [
+            'export_date' => date('Y-m-d H:i:s'),
+            'company' => $company,
+            'count' => count($invoices),
+            'invoices' => []
+        ];
+
+        foreach ($invoices as $inv) {
+            $items = json_decode($inv->items_json, true) ?: [];
+            $data['invoices'][] = [
+                'id' => $inv->id,
+                'invoice_number' => $inv->invoice_number,
+                'doc_type' => $inv->doc_type ?: 'rechnung',
+                'date' => date('Y-m-d', strtotime($inv->created_at)),
+                'customer' => [
+                    'name' => $inv->customer_name,
+                    'company' => $inv->customer_company ?: null,
+                    'email' => $inv->customer_email,
+                    'phone' => $inv->customer_phone,
+                    'address' => $inv->customer_address,
+                    'plz_city' => $inv->customer_plz_city,
+                    'tax_id' => $inv->customer_tax_id ?: null
+                ],
+                'amounts' => [
+                    'net' => floatval($inv->net_amount),
+                    'vat_rate' => floatval($inv->vat_rate),
+                    'vat' => floatval($inv->vat_amount),
+                    'total' => floatval($inv->total),
+                    'discount' => floatval($inv->discount_amount ?? 0)
+                ],
+                'items' => $items,
+                'status' => $inv->status,
+                'paid_at' => $inv->paid_at ? date('Y-m-d', strtotime($inv->paid_at)) : null,
+                'payment_method' => $inv->payment_method ?: null,
+                'is_kleinunternehmer' => (bool)$inv->is_kleinunternehmer,
+                'is_differenzbesteuerung' => (bool)$inv->is_differenzbesteuerung,
+                'notes' => $inv->notes ?: null,
+                'created_at' => $inv->created_at
+            ];
+        }
+
+        file_put_contents($filepath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
     }
 
     /**
