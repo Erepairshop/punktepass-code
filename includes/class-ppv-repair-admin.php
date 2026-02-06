@@ -3326,7 +3326,7 @@ echo '          </div>
                     var btn=settingsFormEl.querySelector("button[type=submit]");
                     if(btn){
                         var orig=btn.innerHTML;
-                        btn.innerHTML='<i class="ri-check-line"></i> Gespeichert!';
+                        btn.innerHTML=\'<i class="ri-check-line"></i> Gespeichert!\';
                         btn.style.background="#10b981";
                         setTimeout(function(){btn.innerHTML=orig;btn.style.background=""},2000);
                     }
