@@ -17,6 +17,9 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_SEO {
 
+    // Google Search Console verification code (filename without .html)
+    const GOOGLE_VERIFICATION_CODE = 'googlead9253a892c914de';
+
     /**
      * Initialize SEO system
      */
@@ -33,6 +36,31 @@ class PPV_SEO {
         // Override Yoast/RankMath if needed
         add_filter('wpseo_title', [__CLASS__, 'filter_seo_title'], 10, 1);
         add_filter('wpseo_metadesc', [__CLASS__, 'filter_seo_description'], 10, 1);
+
+        // Handle Google verification file requests early
+        add_action('init', [__CLASS__, 'handle_google_verification'], 1);
+    }
+
+    /**
+     * Handle Google Search Console verification file requests
+     * Serves the verification HTML file dynamically
+     */
+    public static function handle_google_verification() {
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $path = parse_url($uri, PHP_URL_PATH);
+
+        // Check for Google verification file (e.g., /googlead9253a892c914de.html)
+        if (preg_match('/^\/(google[a-f0-9]+)\.html$/', $path, $matches)) {
+            $requested_code = $matches[1];
+
+            // Verify it matches our configured code
+            if ($requested_code === self::GOOGLE_VERIFICATION_CODE) {
+                header('Content-Type: text/html; charset=UTF-8');
+                header('X-Robots-Tag: noindex');
+                echo 'google-site-verification: ' . self::GOOGLE_VERIFICATION_CODE . '.html';
+                exit;
+            }
+        }
     }
 
     /**
