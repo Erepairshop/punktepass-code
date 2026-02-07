@@ -93,6 +93,20 @@ class PPV_Repair_Core {
             add_action("wp_ajax_{$action}", $callback);
             add_action("wp_ajax_nopriv_{$action}", $callback);
         }
+
+        // AJAX: Ankauf actions
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-ankauf.php';
+        $ankauf_actions = [
+            'ppv_repair_ankauf_list'   => ['PPV_Repair_Ankauf', 'ajax_list'],
+            'ppv_repair_ankauf_create' => ['PPV_Repair_Ankauf', 'ajax_create'],
+            'ppv_repair_ankauf_delete' => ['PPV_Repair_Ankauf', 'ajax_delete'],
+            'ppv_repair_ankauf_pdf'    => ['PPV_Repair_Ankauf', 'ajax_pdf'],
+            'ppv_repair_ankauf_email'  => ['PPV_Repair_Ankauf', 'ajax_email'],
+        ];
+        foreach ($ankauf_actions as $action => $callback) {
+            add_action("wp_ajax_{$action}", $callback);
+            add_action("wp_ajax_nopriv_{$action}", $callback);
+        }
     }
 
     /** ============================================================
