@@ -302,9 +302,9 @@ class PPV_SEO {
         $page_url = home_url('/formular');
         $logo_url = PPV_PLUGIN_URL . 'assets/img/punktepass-repair-logo.svg';
 
-        $title = 'Reparaturverwaltung für Ihren Shop - PunktePass';
-        $description = 'Digitale Reparaturverwaltung mit Formular, Rechnungen, Angebote, Ankauf, DATEV-Export und Kundenverwaltung. Online & Tablet nutzbar. Kostenlos starten.';
-        $keywords = 'Reparaturverwaltung, Reparatursoftware, Werkstatt Software, Handy Reparatur, Shop Verwaltung, Kundenverwaltung, Rechnungen erstellen, Angebote erstellen, DATEV Export, PunktePass';
+        $title = 'Reparaturverwaltung für Ihren Shop - Kostenlose Werkstatt Software | PunktePass';
+        $description = 'Kostenlose Reparaturverwaltung für Werkstätten: Digitales Formular, Rechnungen, Angebote, Ankauf, DATEV-Export, Kundenverwaltung. Handy Reparatur, Computer, KFZ, Fahrrad. Online & Tablet. Jetzt gratis starten!';
+        $keywords = 'Reparaturverwaltung, Reparatursoftware, Werkstatt Software kostenlos, Handy Reparatur Software, Computer Reparatur Programm, KFZ Werkstatt Software, Fahrrad Reparatur Software, Rechnungen erstellen kostenlos, Angebote erstellen, DATEV Export, Kundenverwaltung, digitales Reparaturformular, Werkstatt Verwaltung, Reparatur App, PunktePass, Reparatur Lauingen, Reparatur Dillingen, Reparatur Bayern';
 
         $og_image = PPV_PLUGIN_URL . 'assets/img/punktepass-og-image.png';
 
@@ -334,16 +334,26 @@ class PPV_SEO {
         $slug = esc_attr($store->store_slug);
         $form_title = esc_attr($store->repair_form_title ?? 'Reparaturauftrag');
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
-        $address = trim(($store->address ?: '') . ', ' . ($store->plz ?: '') . ' ' . ($store->city ?: ''));
+        $city = esc_attr($store->city ?: '');
+        $address = trim(($store->address ?: '') . ', ' . ($store->plz ?: '') . ' ' . $city);
+
+        // Service type specific keywords
+        $service_keywords = self::get_service_type_keywords($service_type);
 
         $page_url = home_url("/formular/{$slug}");
-        $title = "{$form_title} - {$store_name}";
-        $description = "Reparaturauftrag online einreichen bei {$store_name}. Schnell, einfach und digital. " . ($address ? "Standort: {$address}" : '');
+        $title = "{$form_title} - {$store_name}" . ($city ? " | {$city}" : '');
 
-        $keywords = "{$store_name}, Reparatur, {$service_type}, Reparaturauftrag, {$form_title}";
-        if ($store->city) {
-            $keywords .= ", Reparatur {$store->city}";
+        $description = "{$service_type} bei {$store_name}";
+        if ($city) {
+            $description .= " in {$city}";
         }
+        $description .= ". Reparaturauftrag online einreichen. Schnell, einfach und digital. Jetzt Termin anfragen!";
+
+        $keywords = "{$store_name}, {$service_type}, Reparatur, Reparaturauftrag";
+        if ($city) {
+            $keywords .= ", Reparatur {$city}, {$service_type} {$city}";
+        }
+        $keywords .= ", {$service_keywords}";
 
         return self::build_seo_tags([
             'title' => $title,
@@ -358,6 +368,24 @@ class PPV_SEO {
             'theme_color' => $color,
             'language' => 'de-DE',
         ]) . self::get_local_business_structured_data($store);
+    }
+
+    /**
+     * Get keywords for specific service types
+     */
+    private static function get_service_type_keywords($service_type) {
+        $keywords_map = [
+            'Handy-Reparatur' => 'Handy Reparatur, Smartphone Reparatur, iPhone Reparatur, Samsung Reparatur, Display Reparatur, Akku tauschen, Handy Display kaputt',
+            'Computer-Reparatur' => 'Computer Reparatur, PC Reparatur, Laptop Reparatur, Notebook Reparatur, Windows Reparatur, Mac Reparatur, Datenrettung',
+            'Fahrrad-Reparatur' => 'Fahrrad Reparatur, Bike Service, E-Bike Reparatur, Fahrrad Inspektion, Bremsen einstellen, Reifen wechseln',
+            'KFZ-Reparatur' => 'KFZ Reparatur, Auto Reparatur, Autowerkstatt, Inspektion, Ölwechsel, Bremsen Service, TÜV Vorbereitung',
+            'Schmuck-Reparatur' => 'Schmuck Reparatur, Ring vergrößern, Kette reparieren, Goldschmied, Silberschmied, Schmuck reinigen',
+            'Uhren-Reparatur' => 'Uhren Reparatur, Uhr reparieren, Batterie wechseln, Armband kürzen, Uhrmacher, Chronograph Service',
+            'Schuh-Reparatur' => 'Schuh Reparatur, Schuhmacher, Absätze erneuern, Sohlen kleben, Schuhe dehnen, Leder Reparatur',
+            'Elektro-Reparatur' => 'Elektro Reparatur, Haushaltsgeräte Reparatur, Waschmaschine Reparatur, Kühlschrank Reparatur, Elektriker',
+        ];
+
+        return $keywords_map[$service_type] ?? 'Reparatur Service, professionelle Reparatur, schnelle Reparatur';
     }
 
     /**

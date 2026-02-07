@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- ========== HAUPTSEITEN ========== -->
+  <url>
+    <loc>https://punktepass.de</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <url>
+    <loc>https://punktepass.de/formular</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://punktepass.de/wp-content/plugins/punktepass/assets/img/punktepass-repair-logo.svg</image:loc>
+      <image:title>PunktePass Reparaturverwaltung</image:title>
+    </image:image>
+  </url>
+
+  <!-- ========== INFORMATIONSSEITEN ========== -->
+  <url>
+    <loc>https://punktepass.de/haendler</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://punktepass.de/so-funktionierts</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://punktepass.de/preise</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://punktepass.de/kontakt</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://punktepass.de/registrierung</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ========== FORMULAR / REPARATURVERWALTUNG ========== -->
+  <url>
+    <loc>https://punktepass.de/formular/erepairshop</loc>
+    <lastmod>2025-02-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Weitere Shops hier hinzufügen wenn aktiv -->
+
+</urlset>
