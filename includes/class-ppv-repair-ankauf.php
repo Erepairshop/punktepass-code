@@ -1101,7 +1101,7 @@ class PPV_Repair_Ankauf {
         function collectData() {
             var type = document.getElementById('ankauf-type').value;
             var data = {
-                action: 'ppv_ankauf_create',
+                action: 'ppv_repair_ankauf_create',
                 nonce: nonce,
                 ankauf_type: type,
                 seller_name: document.getElementById('seller-name').value,
@@ -1187,7 +1187,7 @@ class PPV_Repair_Ankauf {
                     ankaufId = resp.data.ankauf_id;
 
                     if (openPdf) {
-                        window.open(ajaxUrl + '?action=ppv_ankauf_pdf&nonce=' + nonce + '&ankauf_id=' + ankaufId, '_blank');
+                        window.open(ajaxUrl + '?action=ppv_repair_ankauf_pdf&nonce=' + nonce + '&ankauf_id=' + ankaufId, '_blank');
                     }
 
                     // Notify parent window
