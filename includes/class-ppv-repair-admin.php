@@ -3124,6 +3124,8 @@ echo '          </div>
 
     // Invoice filter
     document.getElementById("ra-inv-filter-btn").addEventListener("click",function(){loadInvoices(1)});
+    // Auto-reload when type filter changes
+    document.getElementById("ra-inv-type-filter").addEventListener("change",function(){loadInvoices(1)});
     // Invoice sorting
     document.querySelectorAll(".ra-inv-table .ra-sortable").forEach(function(th){
         th.addEventListener("click",function(){

@@ -109,6 +109,18 @@ class PPV_Repair_Ankauf {
             $params = array_merge($params, [$like, $like, $like, $like, $like]);
         }
 
+        // Date filters
+        $date_from = sanitize_text_field($_POST['date_from'] ?? '');
+        $date_to = sanitize_text_field($_POST['date_to'] ?? '');
+        if ($date_from) {
+            $where .= " AND DATE(created_at) >= %s";
+            $params[] = $date_from;
+        }
+        if ($date_to) {
+            $where .= " AND DATE(created_at) <= %s";
+            $params[] = $date_to;
+        }
+
         $total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE $where", $params));
 
         $params[] = $per_page;
@@ -312,7 +324,7 @@ class PPV_Repair_Ankauf {
         $html = self::build_kaufvertrag_html($store, $ankauf);
 
         // Generate PDF with DomPDF
-        require_once PPV_PLUGIN_DIR . 'vendor/autoload.php';
+        require_once PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php';
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', true);
         $options->set('isHtml5ParserEnabled', true);
@@ -1245,7 +1257,7 @@ class PPV_Repair_Ankauf {
 
         // Generate PDF
         $html = self::build_kaufvertrag_html($store, $ankauf);
-        require_once PPV_PLUGIN_DIR . 'vendor/autoload.php';
+        require_once PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php';
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', true);
         $dompdf = new \Dompdf\Dompdf($options);
