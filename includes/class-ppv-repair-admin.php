@@ -2903,13 +2903,20 @@ echo '          </div>
 
     function loadInvoices(page){
         page=page||1;
+        var docType=document.getElementById("ra-inv-type-filter").value;
+
+        // If Ankäufe selected, load from separate endpoint
+        if(docType==="ankauf"){
+            loadAnkaufList(page);
+            return;
+        }
+
         var fd=new FormData();
         fd.append("action","ppv_repair_invoices_list");
         fd.append("nonce",NONCE);
         fd.append("page",page);
         var df=document.getElementById("ra-inv-from").value;
         var dt=document.getElementById("ra-inv-to").value;
-        var docType=document.getElementById("ra-inv-type-filter").value;
         if(df)fd.append("date_from",df);
         if(dt)fd.append("date_to",dt);
         if(docType)fd.append("doc_type",docType);
@@ -3939,6 +3946,96 @@ echo '          </div>
         }
     });
 
+    /* ===== ANKAUF LIST ===== */
+    function loadAnkaufList(page){
+        page=page||1;
+        var fd=new FormData();
+        fd.append("action","ppv_repair_ankauf_list");
+        fd.append("nonce",NONCE);
+        fd.append("page",page);
+        var df=document.getElementById("ra-inv-from").value;
+        var dt=document.getElementById("ra-inv-to").value;
+        if(df)fd.append("date_from",df);
+        if(dt)fd.append("date_to",dt);
+
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(!data.success)return;
+            var d=data.data;
+            // Summary - Ankäufe
+            document.getElementById("ra-inv-count").textContent=d.total||"0";
+            var totalPrice=0;
+            if(d.items)d.items.forEach(function(a){totalPrice+=parseFloat(a.ankauf_price||0)});
+            document.getElementById("ra-inv-revenue").textContent=fmtEur(totalPrice);
+            document.getElementById("ra-inv-discounts").textContent="-";
+
+            // Table
+            var tbody=document.getElementById("ra-inv-body");
+            if(page===1)tbody.innerHTML="";
+            if(!d.items||d.items.length===0){
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Keine Ank\u00e4ufe vorhanden.</td></tr>\';
+            }else{
+                d.items.forEach(function(a){
+                    var date=a.created_at?new Date(a.created_at.replace(/-/g,"/")):"";
+                    var dateStr=date?pad(date.getDate())+"."+pad(date.getMonth()+1)+"."+date.getFullYear():"";
+                    var typeLabels={handy:"Handy",kfz:"KFZ",sonstiges:"Sonstiges"};
+                    var typeLabel=typeLabels[a.ankauf_type]||"Handy";
+                    var typeBadge="<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#fef3c7;color:#b45309;margin-left:6px\'>"+typeLabel+"</span>";
+                    var pdfUrl=AJAX+"?action=ppv_repair_ankauf_pdf&ankauf_id="+a.id+"&nonce="+NONCE;
+                    var device=esc((a.device_brand||"")+" "+(a.device_model||"")).trim()||"-";
+
+                    var row=document.createElement("tr");
+                    row.setAttribute("data-ankauf-id",a.id);
+                    row.innerHTML=\'<td><input type="checkbox" class="ra-ankauf-checkbox" data-ankauf-id="\'+a.id+\'" style="width:16px;height:16px;cursor:pointer"></td>\'+
+                        \'<td data-label="Nr."><strong>\'+esc(a.ankauf_number)+\'</strong>\'+typeBadge+\'</td>\'+
+                        \'<td data-label="Datum">\'+dateStr+\'</td>\'+
+                        \'<td data-label="Verk\u00e4ufer">\'+esc(a.seller_name)+\'</td>\'+
+                        \'<td data-label="Artikel">\'+device+\'</td>\'+
+                        \'<td data-label="IMEI/Kz.">\'+esc(a.device_imei||a.kfz_kennzeichen||"-")+\'</td>\'+
+                        \'<td data-label="Preis"><strong>\'+fmtEur(a.ankauf_price)+\'</strong></td>\'+
+                        \'<td data-label=""><div class="ra-inv-actions">\'+
+                            \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
+                            \'<button class="ra-inv-btn ra-ankauf-edit" data-ankauf-id="\'+a.id+\'" title="Bearbeiten" style="background:#e0f2fe;color:#0284c7"><i class="ri-pencil-line"></i></button>\'+
+                            \'<button class="ra-inv-btn ra-ankauf-del" data-ankauf-id="\'+a.id+\'" title="L\u00f6schen"><i class="ri-delete-bin-line"></i></button>\'+
+                        \'</div></td>\';
+                    tbody.appendChild(row);
+                });
+                // Bind edit - opens in window
+                tbody.querySelectorAll(".ra-ankauf-edit").forEach(function(btn){
+                    btn.addEventListener("click",function(){
+                        var aid=this.getAttribute("data-ankauf-id");
+                        var w=900,h=800;
+                        var left=(screen.width-w)/2;
+                        var top=(screen.height-h)/2;
+                        window.open("/formular/admin/ankauf?id="+aid,"ankauf_edit_"+aid,"width="+w+",height="+h+",left="+left+",top="+top+",scrollbars=yes,resizable=yes");
+                    });
+                });
+                // Bind delete
+                tbody.querySelectorAll(".ra-ankauf-del").forEach(function(btn){
+                    btn.addEventListener("click",function(){
+                        if(!confirm("Ankauf wirklich l\u00f6schen?"))return;
+                        var aid=this.getAttribute("data-ankauf-id");
+                        var fd2=new FormData();
+                        fd2.append("action","ppv_repair_ankauf_delete");
+                        fd2.append("nonce",NONCE);
+                        fd2.append("ankauf_id",aid);
+                        fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                        .then(function(r){return r.json()})
+                        .then(function(res){
+                            if(res.success){toast("Ankauf gel\u00f6scht");loadAnkaufList(1)}
+                            else{toast(res.data&&res.data.message||"Fehler")}
+                        });
+                    });
+                });
+            }
+            // Pagination
+            var moreBtn=document.getElementById("ra-inv-more-btn");
+            if(d.page<d.pages){moreBtn.style.display="inline-block";moreBtn.setAttribute("data-page",d.page)}
+            else{moreBtn.style.display="none"}
+        });
+    }
+
     /* ===== ANKAUF - NEW WINDOW ===== */
     document.getElementById("ra-new-ankauf-btn").addEventListener("click",function(){
         var w = 900, h = 800;
@@ -3949,8 +4046,9 @@ echo '          </div>
 
     // Global function for child window to refresh list
     window.refreshAnkaufList = function() {
-        // Refresh the invoices tab if needed
-        if (typeof loadInvoices === "function") loadInvoices();
+        var docType=document.getElementById("ra-inv-type-filter").value;
+        if(docType==="ankauf"){loadAnkaufList(1)}
+        else if (typeof loadInvoices === "function") loadInvoices(1);
     };
 
 
