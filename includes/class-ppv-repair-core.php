@@ -159,6 +159,17 @@ class PPV_Repair_Core {
             exit;
         }
 
+        // /formular/admin/ankauf → Standalone Ankauf page (requires auth)
+        if ($path === '/formular/admin/ankauf') {
+            if (!self::is_repair_admin_logged_in()) {
+                header('Location: /formular/admin/login');
+                exit;
+            }
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-ankauf.php';
+            PPV_Repair_Ankauf::render_standalone();
+            exit;
+        }
+
         // /formular/email-sender → Email marketing tool
         if ($path === '/formular/email-sender') {
             require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-email-sender.php';
