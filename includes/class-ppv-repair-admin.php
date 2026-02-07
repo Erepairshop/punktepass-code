@@ -3217,13 +3217,33 @@ echo '          </div>
         });
         return ids;
     }
+    function getSelectedAnkaufIds(){
+        var ids=[];
+        document.querySelectorAll(".ra-ankauf-checkbox:checked").forEach(function(cb){
+            ids.push(cb.getAttribute("data-ankauf-id"));
+        });
+        return ids;
+    }
+    function getSelectedIds(){
+        var docType=document.getElementById("ra-inv-type-filter").value;
+        if(docType==="ankauf"){return getSelectedAnkaufIds()}
+        return getSelectedInvoiceIds();
+    }
+    function isAnkaufMode(){
+        return document.getElementById("ra-inv-type-filter").value==="ankauf";
+    }
     function updateBulkSelection(){
-        var selected=getSelectedInvoiceIds();
+        var selected=getSelectedIds();
         var bulkBar=document.getElementById("ra-inv-bulk-bar");
         var countEl=document.getElementById("ra-inv-selected-count");
+        var ankaufMode=isAnkaufMode();
         if(selected.length>0){
             bulkBar.style.display="block";
             countEl.textContent=selected.length;
+            // Show/hide buttons based on mode
+            document.getElementById("ra-bulk-paid").style.display=ankaufMode?"none":"";
+            document.getElementById("ra-bulk-send").style.display=ankaufMode?"none":"";
+            document.getElementById("ra-bulk-reminder").style.display=ankaufMode?"none":"";
         }else{
             bulkBar.style.display="none";
         }
@@ -3231,12 +3251,13 @@ echo '          </div>
     // Select all checkbox
     document.getElementById("ra-inv-select-all").addEventListener("change",function(){
         var checked=this.checked;
-        document.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){cb.checked=checked});
+        var selector=isAnkaufMode()?".ra-ankauf-checkbox":".ra-inv-checkbox";
+        document.querySelectorAll(selector).forEach(function(cb){cb.checked=checked});
         updateBulkSelection();
     });
     // Bulk cancel
     document.getElementById("ra-bulk-cancel").addEventListener("click",function(){
-        document.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){cb.checked=false});
+        document.querySelectorAll(".ra-inv-checkbox,.ra-ankauf-checkbox").forEach(function(cb){cb.checked=false});
         document.getElementById("ra-inv-select-all").checked=false;
         updateBulkSelection();
     });
@@ -3353,21 +3374,33 @@ echo '          </div>
 
     // Bulk delete
     document.getElementById("ra-bulk-delete").addEventListener("click",function(){
-        var ids=getSelectedInvoiceIds();
+        var ankaufMode=isAnkaufMode();
+        var ids=ankaufMode?getSelectedAnkaufIds():getSelectedInvoiceIds();
         if(!ids.length)return;
-        if(!confirm("Möchten Sie "+ids.length+" Dokument(e) wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!"))return;
+        var itemName=ankaufMode?"Ankauf":"Dokument";
+        if(!confirm("Möchten Sie "+ids.length+" "+itemName+"(e) wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!"))return;
         var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gelöscht...\';
         var fd=new FormData();
-        fd.append("action","ppv_repair_invoice_bulk");
-        fd.append("nonce",NONCE);
-        fd.append("operation","delete");
-        fd.append("invoice_ids",JSON.stringify(ids));
+        if(ankaufMode){
+            fd.append("action","ppv_repair_ankauf_bulk_delete");
+            fd.append("nonce",NONCE);
+            fd.append("ankauf_ids",JSON.stringify(ids));
+        }else{
+            fd.append("action","ppv_repair_invoice_bulk");
+            fd.append("nonce",NONCE);
+            fd.append("operation","delete");
+            fd.append("invoice_ids",JSON.stringify(ids));
+        }
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(res){
             btn.disabled=false;btn.innerHTML=\'<i class="ri-delete-bin-line"></i> Löschen\';
-            if(res.success){toast(res.data.message||"Erfolgreich gelöscht!");invoicesLoaded=false;loadInvoices(1);updateBulkBar()}
-            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+            if(res.success){
+                toast(res.data.message||"Erfolgreich gelöscht!");
+                if(ankaufMode){loadAnkaufList(1)}
+                else{invoicesLoaded=false;loadInvoices(1)}
+                updateBulkSelection();
+            }else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
         });
     });
 
@@ -4030,7 +4063,14 @@ echo '          </div>
                         });
                     });
                 });
+                // Checkbox handlers for bulk selection (Ankauf)
+                tbody.querySelectorAll(".ra-ankauf-checkbox").forEach(function(cb){
+                    cb.addEventListener("change",updateBulkSelection);
+                });
             }
+            // Reset select all checkbox
+            document.getElementById("ra-inv-select-all").checked=false;
+            updateBulkSelection();
             // Pagination
             var moreBtn=document.getElementById("ra-inv-more-btn");
             if(d.page<d.pages){moreBtn.style.display="inline-block";moreBtn.setAttribute("data-page",d.page)}
