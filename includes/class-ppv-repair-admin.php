@@ -3944,13 +3944,13 @@ echo '          </div>
         var w = 900, h = 800;
         var left = (screen.width - w) / 2;
         var top = (screen.height - h) / 2;
-        window.open('/formular/admin/ankauf', 'ankauf_window', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes');
+        window.open("/formular/admin/ankauf", "ankauf_window", "width=" + w + ",height=" + h + ",left=" + left + ",top=" + top + ",scrollbars=yes,resizable=yes");
     });
 
     // Global function for child window to refresh list
     window.refreshAnkaufList = function() {
         // Refresh the invoices tab if needed
-        if (typeof loadInvoices === 'function') loadInvoices();
+        if (typeof loadInvoices === "function") loadInvoices();
     };
 
 
