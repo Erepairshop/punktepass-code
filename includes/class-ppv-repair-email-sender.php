@@ -508,6 +508,8 @@ Mit unserer <strong>Reparaturverwaltung</strong> k&ouml;nnen Sie Ihren Reparatur
 
 &#128206; <strong>Rechnungen &amp; Angebote</strong> &ndash; PDF erstellen und direkt per E-Mail versenden
 
+&#128176; <strong>Digitaler Ankauf</strong> &ndash; Kaufvertr&auml;ge f&uuml;r Handy, KFZ und mehr mit digitaler Unterschrift
+
 &#128202; <strong>DATEV &amp; Export</strong> &ndash; CSV, Excel und DATEV-Export f&uuml;r Ihren Steuerberater
 
 &#128101; <strong>Kundenverwaltung</strong> &ndash; Alle Kunden und deren Reparatur-Historie auf einen Blick
