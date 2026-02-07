@@ -34,6 +34,17 @@ class PPV_Repair_Form {
         $fc_defaults   = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster']];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
+        // Custom form options (branch-specific)
+        $custom_brands_raw = trim($store->repair_custom_brands ?? '');
+        $custom_brands = $custom_brands_raw ? array_filter(array_map('trim', explode("\n", $custom_brands_raw))) : [];
+        $custom_problems_raw = trim($store->repair_custom_problems ?? '');
+        $custom_problems = $custom_problems_raw ? array_filter(array_map('trim', explode("\n", $custom_problems_raw))) : [];
+        $custom_accessories_raw = trim($store->repair_custom_accessories ?? '');
+        $custom_accessories = $custom_accessories_raw ? array_filter(array_map('trim', explode("\n", $custom_accessories_raw))) : [];
+        $success_message = trim($store->repair_success_message ?? '');
+        $opening_hours = trim($store->repair_opening_hours ?? '');
+        $terms_url = trim($store->repair_terms_url ?? '');
+
         $nonce = wp_create_nonce('ppv_repair_form');
         $ajax_url = admin_url('admin-ajax.php');
 
@@ -55,9 +66,19 @@ class PPV_Repair_Form {
     <meta name="description" content="<?php echo $form_title; ?> von <?php echo $store_name; ?><?php echo $pp_enabled ? ' - Bonuspunkte sammeln!' : ''; ?>">
     <meta name="theme-color" content="<?php echo $color; ?>">
     <link rel="icon" href="<?php echo $logo; ?>" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-repair.css?v=<?php echo PPV_VERSION; ?>">
-    <style>:root{--repair-accent:<?php echo $color; ?>;--repair-accent-dark:color-mix(in srgb,<?php echo $color; ?>,#000 20%)}</style>
+    <style>
+    :root{--repair-accent:<?php echo $color; ?>;--repair-accent-dark:color-mix(in srgb,<?php echo $color; ?>,#000 20%);--repair-accent-light:color-mix(in srgb,<?php echo $color; ?>,#fff 30%)}
+    .repair-select{width:100%;padding:14px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:16px;background:#f8fafc;color:#0f172a;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:44px;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1)}
+    .repair-select:hover{border-color:#cbd5e1}
+    .repair-select:focus{border-color:var(--repair-accent);background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+    .repair-problem-tag{transition:all .2s cubic-bezier(.4,0,.2,1)}
+    .repair-problem-tag.active{background:var(--repair-accent)!important;border-color:var(--repair-accent)!important;color:#fff!important;box-shadow:0 4px 12px rgba(102,126,234,0.25)}
+    </style>
 </head>
 <body class="ppv-repair-body">
 
@@ -71,6 +92,9 @@ class PPV_Repair_Form {
             <h1 class="repair-shop-name"><?php echo $store_name; ?></h1>
             <?php if ($address): ?>
                 <p class="repair-shop-address"><i class="ri-map-pin-line"></i> <?php echo $address; ?></p>
+            <?php endif; ?>
+            <?php if ($opening_hours): ?>
+                <p class="repair-shop-address" style="margin-top:4px"><i class="ri-time-line"></i> <?php echo esc_html($opening_hours); ?></p>
             <?php endif; ?>
         </div>
     </div>
@@ -145,7 +169,19 @@ class PPV_Repair_Form {
                 <?php if (!empty($field_config['device_brand']['enabled'])): ?>
                 <div class="repair-field">
                     <label for="rf-brand"><?php echo esc_html($field_config['device_brand']['label'] ?? 'Marke'); ?></label>
+                    <?php if (!empty($custom_brands)): ?>
+                    <select id="rf-brand-select" class="repair-select" onchange="if(this.value==='_other'){document.getElementById('rf-brand-other').style.display='block';document.getElementById('rf-brand').value=''}else{document.getElementById('rf-brand-other').style.display='none';document.getElementById('rf-brand').value=this.value}">
+                        <option value="">Bitte w&auml;hlen...</option>
+                        <?php foreach ($custom_brands as $brand): ?>
+                        <option value="<?php echo esc_attr($brand); ?>" <?php echo ($pf_brand === $brand) ? 'selected' : ''; ?>><?php echo esc_html($brand); ?></option>
+                        <?php endforeach; ?>
+                        <option value="_other">Andere...</option>
+                    </select>
+                    <input type="hidden" id="rf-brand" name="device_brand" value="<?php echo $pf_brand; ?>">
+                    <input type="text" id="rf-brand-other" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? 'Marke'); ?> eingeben" style="display:none;margin-top:8px" oninput="document.getElementById('rf-brand').value=this.value">
+                    <?php else: ?>
                     <input type="text" id="rf-brand" name="device_brand" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? 'Marke'); ?>" value="<?php echo $pf_brand; ?>">
+                    <?php endif; ?>
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($field_config['device_model']['enabled'])): ?>
@@ -203,9 +239,20 @@ class PPV_Repair_Form {
                 <h2>Beschreibung</h2>
             </div>
 
+            <?php if (!empty($custom_problems)): ?>
+            <div class="repair-field">
+                <label>Schnellauswahl</label>
+                <div class="repair-problem-tags" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+                    <?php foreach ($custom_problems as $problem): ?>
+                    <button type="button" class="repair-problem-tag" onclick="toggleProblemTag(this, '<?php echo esc_js($problem); ?>')" style="padding:8px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:13px;cursor:pointer;transition:all .2s"><?php echo esc_html($problem); ?></button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <div class="repair-field">
                 <label for="rf-problem">Was soll repariert werden? *</label>
-                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="Beschreiben Sie das Problem m&ouml;glichst genau..."></textarea>
+                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo !empty($custom_problems) ? 'Weitere Details oder andere Probleme...' : 'Beschreiben Sie das Problem möglichst genau...'; ?>"></textarea>
             </div>
 
 
@@ -213,10 +260,16 @@ class PPV_Repair_Form {
             <div class="repair-field">
                 <label><?php echo esc_html($field_config['accessories']['label'] ?? 'Mitgegebenes Zubehör'); ?></label>
                 <div class="repair-accessories">
+                    <?php if (!empty($custom_accessories)): ?>
+                        <?php foreach ($custom_accessories as $acc): ?>
+                        <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="<?php echo esc_attr(sanitize_title($acc)); ?>"> <?php echo esc_html($acc); ?></label>
+                        <?php endforeach; ?>
+                    <?php else: ?>
                     <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="charger"> Ladekabel</label>
                     <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="case"> H&uuml;lle / Case</label>
                     <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="keys"> Schl&uuml;ssel</label>
                     <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="other"> Sonstiges</label>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php endif; ?>
@@ -248,7 +301,7 @@ class PPV_Repair_Form {
         <div class="repair-terms">
             <label class="repair-checkbox">
                 <input type="checkbox" id="rf-terms" required>
-                Ich akzeptiere die <a href="/formular/<?php echo $slug; ?>/datenschutz" target="_blank">Datenschutzerkl&auml;rung</a> und <a href="/formular/<?php echo $slug; ?>/agb" target="_blank">AGB</a>
+                Ich akzeptiere die <a href="/formular/<?php echo $slug; ?>/datenschutz" target="_blank">Datenschutzerkl&auml;rung</a> und <a href="<?php echo $terms_url ? esc_url($terms_url) : '/formular/' . $slug . '/agb'; ?>" target="_blank">AGB</a>
             </label>
         </div>
 
@@ -268,7 +321,11 @@ class PPV_Repair_Form {
             <div class="repair-success-check">&#10003;</div>
         </div>
         <h2>Vielen Dank!</h2>
+        <?php if ($success_message): ?>
+        <p><?php echo esc_html($success_message); ?></p>
+        <?php else: ?>
         <p>Ihr <?php echo $form_title; ?> wurde erfolgreich eingereicht.</p>
+        <?php endif; ?>
 
         <!-- Tracking Card -->
         <div id="repair-tracking-card" class="repair-tracking-card" style="display:none">
@@ -306,13 +363,48 @@ class PPV_Repair_Form {
             <a href="/formular/<?php echo $slug; ?>/impressum">Impressum</a>
         </div>
         <div class="repair-footer-powered">
-            Powered by <a href="https://punktepass.de" target="_blank">PunktePass</a>
+            Powered by
+            <a href="https://punktepass.de" target="_blank">
+                <svg class="repair-footer-logo" width="90" height="18" viewBox="0 0 90 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="3" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 9l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <text x="18" y="13" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="currentColor">PunktePass</text>
+                </svg>
+            </a>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>
+// Problem tag toggle for quick selection
+function toggleProblemTag(btn, text) {
+    var problemField = document.getElementById('rf-problem');
+    if (!problemField) return;
+
+    var isActive = btn.classList.contains('active');
+    if (isActive) {
+        btn.classList.remove('active');
+        btn.style.background = '#fff';
+        btn.style.borderColor = '#e5e7eb';
+        btn.style.color = '';
+        // Remove from textarea
+        var lines = problemField.value.split('\n').filter(function(l) { return l.trim() !== text; });
+        problemField.value = lines.join('\n');
+    } else {
+        btn.classList.add('active');
+        btn.style.background = 'var(--repair-accent)';
+        btn.style.borderColor = 'var(--repair-accent)';
+        btn.style.color = '#fff';
+        // Add to textarea
+        if (problemField.value.trim()) {
+            problemField.value = problemField.value.trim() + '\n' + text;
+        } else {
+            problemField.value = text;
+        }
+    }
+}
+
 (function() {
     var form = document.getElementById('repair-form');
     if (!form) return;
@@ -325,39 +417,56 @@ class PPV_Repair_Form {
     var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
     var storeId = <?php echo $store_id; ?>;
 
-    // Email lookup for returning customers
+    // Email lookup for returning customers with debounce
     var emailField = document.getElementById('rf-email');
     var nameField = document.getElementById('rf-name');
     var phoneField = document.getElementById('rf-phone');
     var brandField = document.getElementById('rf-brand');
     var modelField = document.getElementById('rf-model');
     var emailLookupDone = {};
+    var emailDebounceTimer = null;
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function doEmailLookup(email) {
+        if (!email || emailLookupDone[email] || !emailRegex.test(email)) return;
+
+        var fd = new FormData();
+        fd.append('action', 'ppv_repair_customer_lookup');
+        fd.append('email', email);
+        fd.append('store_id', storeId);
+
+        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.success && res.data.found) {
+                    emailLookupDone[email] = true;
+                    // Only fill empty fields
+                    if (nameField && !nameField.value) nameField.value = res.data.name || '';
+                    if (phoneField && !phoneField.value) phoneField.value = res.data.phone || '';
+                    if (brandField && !brandField.value) brandField.value = res.data.brand || '';
+                    if (modelField && !modelField.value) modelField.value = res.data.model || '';
+                    // Show hint
+                    showEmailHint('Willkommen zurück! Ihre Daten wurden automatisch eingetragen.');
+                }
+            })
+            .catch(function() {});
+    }
 
     if (emailField) {
-        emailField.addEventListener('blur', function() {
+        // Debounced input handler (800ms delay)
+        emailField.addEventListener('input', function() {
+            clearTimeout(emailDebounceTimer);
             var email = emailField.value.trim();
-            if (!email || emailLookupDone[email]) return;
-
-            var fd = new FormData();
-            fd.append('action', 'ppv_repair_customer_lookup');
-            fd.append('email', email);
-            fd.append('store_id', storeId);
-
-            fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
-                .then(function(r) { return r.json(); })
-                .then(function(res) {
-                    if (res.success && res.data.found) {
-                        emailLookupDone[email] = true;
-                        // Only fill empty fields
-                        if (nameField && !nameField.value) nameField.value = res.data.name || '';
-                        if (phoneField && !phoneField.value) phoneField.value = res.data.phone || '';
-                        if (brandField && !brandField.value) brandField.value = res.data.brand || '';
-                        if (modelField && !modelField.value) modelField.value = res.data.model || '';
-                        // Show hint
-                        showEmailHint('Willkommen zurück! Ihre Daten wurden automatisch eingetragen.');
-                    }
-                })
-                .catch(function() {});
+            if (email && emailRegex.test(email)) {
+                emailDebounceTimer = setTimeout(function() {
+                    doEmailLookup(email);
+                }, 800);
+            }
+        });
+        // Immediate on blur
+        emailField.addEventListener('blur', function() {
+            clearTimeout(emailDebounceTimer);
+            doEmailLookup(emailField.value.trim());
         });
     }
 
@@ -558,6 +667,114 @@ class PPV_Repair_Form {
         initSignatureCanvas();
     }
 
+    // ========== OFFLINE SUPPORT ==========
+    var offlineStorageKey = 'repair_form_draft_' + storeId;
+    var offlineQueueKey = 'repair_form_queue_' + storeId;
+    var isOnline = navigator.onLine;
+
+    // Create offline indicator
+    var offlineIndicator = document.createElement('div');
+    offlineIndicator.id = 'rf-offline-indicator';
+    offlineIndicator.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 2px 10px rgba(0,0,0,0.2)';
+    offlineIndicator.innerHTML = '<i class="ri-wifi-off-line"></i> Offline-Modus — Formular wird gespeichert und bei Verbindung automatisch gesendet';
+    document.body.insertBefore(offlineIndicator, document.body.firstChild);
+
+    function updateOnlineStatus() {
+        isOnline = navigator.onLine;
+        offlineIndicator.style.display = isOnline ? 'none' : 'block';
+        if (isOnline) syncOfflineQueue();
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // Auto-save form to localStorage
+    function saveFormDraft() {
+        var formData = {};
+        form.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]), textarea, select').forEach(function(el) {
+            if (el.name && el.value) formData[el.name] = el.value;
+        });
+        // Save checkboxes
+        var accChecked = [];
+        form.querySelectorAll('input[name="acc[]"]:checked').forEach(function(cb) {
+            accChecked.push(cb.value);
+        });
+        formData['_acc_checked'] = accChecked;
+        localStorage.setItem(offlineStorageKey, JSON.stringify(formData));
+    }
+
+    // Restore form from localStorage
+    function restoreFormDraft() {
+        try {
+            var saved = localStorage.getItem(offlineStorageKey);
+            if (!saved) return;
+            var formData = JSON.parse(saved);
+            Object.keys(formData).forEach(function(name) {
+                if (name === '_acc_checked') {
+                    formData[name].forEach(function(val) {
+                        var cb = form.querySelector('input[name="acc[]"][value="' + val + '"]');
+                        if (cb) cb.checked = true;
+                    });
+                } else {
+                    var el = form.querySelector('[name="' + name + '"]');
+                    if (el && !el.value) el.value = formData[name];
+                }
+            });
+        } catch(e) {}
+    }
+
+    // Debounced auto-save
+    var draftSaveTimer = null;
+    form.addEventListener('input', function() {
+        clearTimeout(draftSaveTimer);
+        draftSaveTimer = setTimeout(saveFormDraft, 500);
+    });
+    form.addEventListener('change', saveFormDraft);
+
+    // Restore draft on page load
+    restoreFormDraft();
+
+    // Offline queue management
+    function addToOfflineQueue(formDataObj) {
+        var queue = [];
+        try { queue = JSON.parse(localStorage.getItem(offlineQueueKey) || '[]'); } catch(e) {}
+        formDataObj._timestamp = Date.now();
+        queue.push(formDataObj);
+        localStorage.setItem(offlineQueueKey, JSON.stringify(queue));
+    }
+
+    function syncOfflineQueue() {
+        var queue = [];
+        try { queue = JSON.parse(localStorage.getItem(offlineQueueKey) || '[]'); } catch(e) {}
+        if (queue.length === 0) return;
+
+        var item = queue.shift();
+        localStorage.setItem(offlineQueueKey, JSON.stringify(queue));
+
+        var fd = new FormData();
+        Object.keys(item).forEach(function(k) {
+            if (k !== '_timestamp') fd.append(k, item[k]);
+        });
+
+        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    // Continue syncing
+                    if (queue.length > 0) syncOfflineQueue();
+                } else {
+                    // Re-add to queue on failure
+                    queue.unshift(item);
+                    localStorage.setItem(offlineQueueKey, JSON.stringify(queue));
+                }
+            })
+            .catch(function() {
+                queue.unshift(item);
+                localStorage.setItem(offlineQueueKey, JSON.stringify(queue));
+            });
+    }
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -583,6 +800,26 @@ class PPV_Repair_Form {
         var fd = new FormData(form);
         fd.set('accessories', JSON.stringify(accessories));
 
+        // If offline, queue for later
+        if (!navigator.onLine) {
+            var formDataObj = {};
+            fd.forEach(function(val, key) { formDataObj[key] = val; });
+            addToOfflineQueue(formDataObj);
+
+            // Clear draft
+            localStorage.removeItem(offlineStorageKey);
+
+            // Show offline success
+            form.style.display = 'none';
+            successDiv.style.display = 'block';
+            successDiv.querySelector('p').textContent = 'Ihr Auftrag wurde offline gespeichert und wird automatisch gesendet, sobald Sie wieder online sind.';
+
+            submitBtn.disabled = false;
+            submitText.style.display = 'inline-flex';
+            submitLoading.style.display = 'none';
+            return;
+        }
+
         fetch(ajaxUrl, {
             method: 'POST',
             body: fd,
@@ -591,6 +828,9 @@ class PPV_Repair_Form {
         .then(function(res) { return res.json(); })
         .then(function(data) {
             if (data.success) {
+                // Clear saved draft
+                localStorage.removeItem(offlineStorageKey);
+
                 // Hide form, show success
                 form.style.display = 'none';
                 var bonusBadge = document.querySelector('.repair-bonus-badge');

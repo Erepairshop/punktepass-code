@@ -214,6 +214,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $reward_product = esc_attr($store->repair_reward_product ?? '');
         $inv_prefix = esc_attr($store->repair_invoice_prefix ?? 'RE-');
         $inv_next = intval($store->repair_invoice_next_number ?? 1);
+
+        // Auto-detect highest existing invoice number from database (only matching current prefix)
+        $inv_detected_max = 0;
+        $search_prefix = $inv_prefix ?: 'RE-';
+        $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+            $store_id,
+            $wpdb->esc_like($search_prefix) . '%'
+        ));
+        foreach ($all_invoice_numbers as $inv_num) {
+            // Extract numeric part after prefix
+            if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                $num = intval($m[1]);
+                if ($num > $inv_detected_max) {
+                    $inv_detected_max = $num;
+                }
+            }
+        }
+        $inv_suggested_next = $inv_detected_max > 0 ? $inv_detected_max + 1 : $inv_next;
+
+        // Count total invoices (all prefixes) for info display
+        $inv_total_count = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL)",
+            $store_id
+        ));
+
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate = floatval($store->repair_vat_rate ?? 19);
         $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
@@ -224,6 +250,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $email_subject = esc_attr($store->repair_invoice_email_subject ?? 'Ihre Rechnung {invoice_number}');
         $email_body_default = "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
         $email_body = esc_textarea($store->repair_invoice_email_body ?? $email_body_default);
+
+        // Payment/Bank settings for invoices
+        $bank_name = esc_attr($store->repair_bank_name ?? '');
+        $bank_iban = esc_attr($store->repair_bank_iban ?? '');
+        $bank_bic = esc_attr($store->repair_bank_bic ?? '');
+        $paypal_email = esc_attr($store->repair_paypal_email ?? '');
+        $steuernummer = esc_attr($store->repair_steuernummer ?? '');
+        $website_url = esc_attr($store->repair_website_url ?? '');
+
+        // Status notification settings
+        $status_notify_enabled = isset($store->repair_status_notify_enabled) ? intval($store->repair_status_notify_enabled) : 0;
+        $status_notify_statuses = $store->repair_status_notify_statuses ?? 'in_progress,done,delivered';
+        $notify_statuses_arr = explode(',', $status_notify_statuses);
+
+        // Custom form options (for different branches)
+        $custom_brands = esc_textarea($store->repair_custom_brands ?? '');
+        $custom_problems = esc_textarea($store->repair_custom_problems ?? '');
+        $custom_accessories = esc_textarea($store->repair_custom_accessories ?? '');
+        $success_message = esc_textarea($store->repair_success_message ?? '');
+        $opening_hours = esc_attr($store->repair_opening_hours ?? '');
+        $terms_url = esc_attr($store->repair_terms_url ?? '');
 
         // Build repairs HTML
         $repairs_html = '';
@@ -242,16 +289,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>' . $store_name . ' - Reparatur Admin</title>
 <meta name="theme-color" content="' . $store_color . '">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
 <style>
-/* ========== Reset & Base ========== */
+/* ========== Reset & Base - Modern ========== */
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f5f7;color:#1f2937;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:#667eea;text-decoration:none}
-a:hover{text-decoration:underline}
+html{min-height:100%;overflow-y:scroll}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh}
+a{color:#667eea;text-decoration:none;transition:color .2s}
+a:hover{color:#5a67d8}
 
 /* ========== Layout ========== */
-.ra-wrap{max-width:800px;margin:0 auto;padding:16px 16px 40px}
+@keyframes raFadeIn{from{opacity:0.99}to{opacity:1}}
+.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box;transform:translateZ(0);backface-visibility:hidden;animation:raFadeIn 0.01s ease-out}
+@media(min-width:1200px){.ra-wrap{padding:16px 40px 40px}}
 
 /* ========== Header ========== */
 .ra-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;flex-wrap:wrap}
@@ -298,28 +351,63 @@ a:hover{text-decoration:underline}
 .ra-btn-copy{background:#f0f0f0;color:#374151;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:16px;transition:all .2s;display:inline-flex;align-items:center}
 .ra-btn-copy:hover{background:#667eea;color:#fff}
 
-/* ========== Settings Panel ========== */
+/* ========== Settings Panel - Modern Accordion ========== */
 .ra-hidden{display:none !important}
-.ra-settings{background:#fff;border-radius:14px;padding:24px;margin-bottom:16px;border:1px solid #f0f0f0}
-.ra-settings h3{font-size:17px;font-weight:700;color:#111827;margin-bottom:20px;display:flex;align-items:center;gap:8px}
-.ra-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ra-settings{background:#fff;border-radius:20px;padding:0;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04);overflow:visible}
+.ra-settings h3{font-size:18px;font-weight:700;color:#0f172a;margin:0;padding:20px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;background:linear-gradient(180deg,#fff,#fafbfc)}
+.ra-settings h3 i{font-size:20px;color:#667eea}
+
+/* Accordion Section Title */
+.ra-section-title{font-size:15px;font-weight:700;color:#0f172a;margin:0;padding:18px 24px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:all .2s;border-bottom:1px solid transparent}
+.ra-section-title:hover{background:#f8fafc}
+.ra-section-title i{font-size:18px;color:#667eea;width:24px;flex-shrink:0}
+.ra-section-title::after{content:"\\eb96";font-family:"remixicon";margin-left:auto;font-size:18px;color:#94a3b8;transition:transform .2s}
+.ra-section-title.ra-open::after{transform:rotate(180deg)}
+.ra-section-title.ra-open{background:#f8fafc;border-bottom-color:#e2e8f0}
+
+/* Section Content */
+.ra-section-content{display:none;padding:20px 24px;background:#fff;border-bottom:1px solid #f1f5f9}
+.ra-section-content.ra-show{display:block}
+.ra-section-content:last-child{border-bottom:none}
+
+/* Divider */
+.ra-section-divider{border:none;height:1px;background:#f1f5f9;margin:24px 0}
+
+.ra-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(min-width:1024px){.ra-settings-grid{grid-template-columns:repeat(3,1fr)}}
 .ra-settings .field{margin-bottom:0}
-.ra-settings .field label{display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:5px}
+.ra-settings .field label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:6px}
 .ra-settings .field input[type="text"],
 .ra-settings .field input[type="number"],
-.ra-settings .field input[type="color"]{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#1f2937;background:#fafafa;outline:none;transition:border-color .2s}
-.ra-settings .field input:focus{border-color:#667eea;background:#fff}
-.ra-settings .field input[type="color"]{height:44px;padding:4px 6px;cursor:pointer}
-.ra-logo-section{margin-top:18px;margin-bottom:18px}
-.ra-logo-section>label{display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px}
-.ra-logo-upload{display:flex;align-items:center;gap:14px}
-.ra-logo-preview{width:56px;height:56px;border-radius:12px;object-fit:cover;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#9ca3af;flex-shrink:0;overflow:hidden}
+.ra-settings .field input[type="color"]{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;transition:all .2s}
+.ra-settings .field input:hover{border-color:#cbd5e1}
+.ra-settings .field input:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-settings .field input[type="color"]{height:48px;padding:6px;cursor:pointer}
+.ra-logo-section{margin-top:20px;margin-bottom:20px}
+.ra-logo-section>label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:10px}
+.ra-logo-upload{display:flex;align-items:center;gap:16px}
+.ra-logo-preview{width:64px;height:64px;border-radius:16px;object-fit:cover;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:28px;color:#94a3b8;flex-shrink:0;overflow:hidden;border:2px solid #e2e8f0}
 .ra-logo-preview img{width:100%;height:100%;object-fit:cover}
-.ra-settings-save{margin-top:20px}
-.ra-legal-links{margin-top:24px;padding-top:20px;border-top:1px solid #f0f0f0}
-.ra-legal-links h4{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:10px}
-.ra-legal-links a{display:inline-flex;align-items:center;gap:5px;margin-right:16px;margin-bottom:8px;font-size:14px;color:#667eea}
-.ra-pp-link{margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0}
+.ra-settings-save{margin-top:24px;padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;margin:-20px -24px -24px -24px}
+.ra-legal-links{margin-top:28px;padding-top:24px;border-top:1px solid #e2e8f0}
+.ra-legal-links h4{font-size:13px;font-weight:700;color:#64748b;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px}
+.ra-legal-links a{display:inline-flex;align-items:center;gap:6px;margin-right:20px;margin-bottom:10px;font-size:14px;color:#667eea;font-weight:500}
+.ra-legal-links a:hover{color:#5a67d8}
+.ra-pp-link{margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0}
+
+/* ========== Settings Tabs ========== */
+.ra-settings-tabs{display:flex;gap:4px;padding:16px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ra-settings-tab{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.ra-settings-tab i{font-size:15px}
+.ra-settings-tab:hover{background:#e2e8f0;color:#0f172a}
+.ra-settings-tab.active{background:#667eea;color:#fff}
+.ra-settings-panel{display:none;padding:24px}
+.ra-settings-panel.active{display:block}
+.ra-settings-panel h4{font-size:15px;font-weight:700;color:#0f172a;margin:0 0 16px 0;padding-bottom:12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+.ra-settings-panel h4 i{color:#667eea;font-size:18px}
+.ra-settings-panel h4:not(:first-child){margin-top:28px}
+.ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
+.ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
 
 /* ========== Toolbar ========== */
 .ra-toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
@@ -331,10 +419,13 @@ a:hover{text-decoration:underline}
 .ra-filters select{padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:auto;min-width:140px}
 .ra-filters select:focus{border-color:#667eea}
 
-/* ========== Repair Cards ========== */
-.ra-repairs{display:flex;flex-direction:column;gap:10px}
-.ra-repair-card{background:#fff;border-radius:14px;padding:18px;border:1px solid #f0f0f0;transition:box-shadow .2s}
-.ra-repair-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+/* ========== Repair Cards - Modern ========== */
+.ra-repairs{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:768px){.ra-repairs{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1200px){.ra-repairs{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1600px){.ra-repairs{grid-template-columns:repeat(4,1fr)}}
+.ra-repair-card{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:box-shadow .2s,transform .2s;box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.ra-repair-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);transform:translateY(-2px)}
 .ra-repair-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .ra-repair-id{font-size:13px;font-weight:700;color:#6b7280}
 .ra-status{display:inline-flex;align-items:center;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600}
@@ -427,6 +518,7 @@ a:hover{text-decoration:underline}
 
 /* ========== Responsive ========== */
 @media(max-width:640px){
+    .ra-wrap{padding:12px 12px 32px}
     .ra-stats{grid-template-columns:repeat(2,1fr)}
     .ra-header{flex-direction:column;align-items:flex-start}
     .ra-header-right{width:100%;justify-content:flex-start}
@@ -434,6 +526,7 @@ a:hover{text-decoration:underline}
     .ra-toolbar{flex-direction:column}
     .ra-filters select{width:100%}
     .ra-title{font-size:18px}
+    .ra-repairs{grid-template-columns:1fr}
 }
 /* ========== Toggle Switch ========== */
 .ra-toggle{display:flex;align-items:center;gap:10px;margin-bottom:16px}
@@ -456,11 +549,12 @@ a:hover{text-decoration:underline}
 .ra-field-row input[type="text"]{flex:1;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none;min-width:0}
 .ra-field-row input[type="text"]:focus{border-color:#667eea}
 .ra-fc-name{font-size:12px;font-weight:600;color:#6b7280;min-width:60px}
-/* ========== Tabs ========== */
-.ra-tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.ra-tab{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;white-space:nowrap}
-.ra-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent}
-.ra-tab:hover:not(.active){border-color:#667eea;color:#667eea}
+/* ========== Tabs - Modern Pill Style ========== */
+.ra-tabs{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f1f5f9;padding:6px;border-radius:14px}
+.ra-tab{padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.ra-tab i{font-size:16px}
+.ra-tab.active{background:#fff;color:#0f172a;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.ra-tab:hover:not(.active){color:#0f172a;background:rgba(255,255,255,0.5)}
 .ra-tab-content{display:none}
 .ra-tab-content.active{display:block}
 /* ========== Invoice List ========== */
@@ -503,6 +597,18 @@ a:hover{text-decoration:underline}
 .ra-feedback-star:hover,.ra-feedback-star.active{color:#fbbf24;transform:scale(1.15)}
 .ra-feedback-submit{width:100%;padding:14px;background:linear-gradient(135deg,#00eaff,#00b4d8);color:#0d1b2a;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;transition:all .2s}
 .ra-feedback-submit:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,234,255,0.4)}
+/* Feedback Tab Styles */
+.ra-feedback-cats-inline{display:flex;gap:8px;flex-wrap:wrap}
+.ra-fb-cat-btn{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.ra-fb-cat-btn:hover{border-color:#667eea;color:#667eea}
+.ra-fb-cat-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent}
+.ra-fb-stars{display:flex;gap:8px}
+.ra-fb-star{background:none;border:none;font-size:28px;color:#d1d5db;cursor:pointer;padding:4px;transition:all .2s}
+.ra-fb-star:hover,.ra-fb-star.active{color:#fbbf24;transform:scale(1.1)}
+.ra-fb-msg{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.ra-fb-msg.show{display:block}
+.ra-fb-msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.ra-fb-msg.success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
 .ra-feedback-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
 .ra-feedback-msg{padding:12px;border-radius:10px;margin-bottom:12px;font-size:14px;text-align:center;display:none}
 .ra-feedback-msg.show{display:block}
@@ -527,6 +633,12 @@ a:hover{text-decoration:underline}
 .ra-inv-status-sent{background:#dbeafe;color:#1d4ed8}
 .ra-inv-status-paid{background:#d1fae5;color:#065f46}
 .ra-inv-status-cancelled{background:#fecaca;color:#991b1b}
+/* Sortable columns */
+.ra-sortable{cursor:pointer;user-select:none;white-space:nowrap}
+.ra-sortable:hover{background:#f3f4f6}
+.ra-sort-icon{font-size:14px;margin-left:4px;opacity:.4;transition:opacity .2s}
+.ra-sortable:hover .ra-sort-icon{opacity:.7}
+.ra-sortable.ra-sort-asc .ra-sort-icon,.ra-sortable.ra-sort-desc .ra-sort-icon{opacity:1;color:#667eea}
 .ra-inv-actions{display:flex;gap:6px}
 .ra-inv-btn{padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#374151;transition:all .2s;display:inline-flex;align-items:center;gap:4px;text-decoration:none}
 .ra-inv-btn:hover{border-color:#667eea;color:#667eea}
@@ -585,7 +697,7 @@ a:hover{text-decoration:underline}
             <a href="' . esc_url($form_url) . '" target="_blank" class="ra-btn ra-btn-outline">
                 <i class="ri-external-link-line"></i> Formular ansehen
             </a>
-            <button class="ra-btn-icon" onclick="document.getElementById(\'ra-settings\').classList.toggle(\'ra-hidden\')" title="Einstellungen">
+            <button class="ra-btn-icon" id="ra-settings-toggle-btn" title="Einstellungen">
                 <i class="ri-settings-3-line"></i>
             </button>
         </div>
@@ -662,10 +774,22 @@ a:hover{text-decoration:underline}
         // Settings panel
         echo '<div id="ra-settings" class="ra-settings ra-hidden">
         <h3><i class="ri-settings-3-line"></i> Einstellungen</h3>
+
+        <!-- Settings Tabs Navigation -->
+        <div class="ra-settings-tabs" id="ra-settings-tabs">
+            <button type="button" class="ra-settings-tab active" data-panel="general"><i class="ri-store-2-line"></i> Allgemein</button>
+            <button type="button" class="ra-settings-tab" data-panel="form"><i class="ri-edit-line"></i> Formular</button>
+            <button type="button" class="ra-settings-tab" data-panel="invoice"><i class="ri-file-list-3-line"></i> Rechnungen</button>
+            <button type="button" class="ra-settings-tab" data-panel="email"><i class="ri-mail-line"></i> E-Mails</button>
+            <button type="button" class="ra-settings-tab" data-panel="punktepass"><i class="ri-star-line"></i> PunktePass</button>
+            <button type="button" class="ra-settings-tab" data-panel="abo"><i class="ri-vip-crown-line"></i> Abo</button>
+        </div>
+
         <form id="ra-settings-form">
-            <!-- Allgemein -->
-            <div class="ra-section-title"><i class="ri-store-2-line"></i> Allgemein</div>
-            <div class="ra-settings-grid">
+            <!-- ==================== PANEL: Allgemein ==================== -->
+            <div class="ra-settings-panel active" data-panel="general">
+                <h4><i class="ri-store-2-line"></i> Gesch&auml;ftsdaten</h4>
+                <div class="ra-settings-grid">
                 <div class="field">
                     <label>Firmenname</label>
                     <input type="text" name="name" value="' . esc_attr($store->name) . '">
@@ -685,6 +809,10 @@ a:hover{text-decoration:underline}
                 <div class="field">
                     <label>Telefon</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
+                </div>
+                <div class="field">
+                    <label>Login E-Mail <small style="color:#6b7280">(f&uuml;r Anmeldung)</small></label>
+                    <input type="email" name="email" value="' . esc_attr($store->email) . '" required>
                 </div>
                 <div class="field">
                     <label>Akzentfarbe</label>
@@ -712,10 +840,8 @@ a:hover{text-decoration:underline}
                 </div>
             </div>
 
-            <hr class="ra-section-divider">
 
-            <!-- Impressum -->
-            <div class="ra-section-title"><i class="ri-file-list-3-line"></i> Impressum / Rechtliches</div>
+                <h4><i class="ri-file-list-3-line"></i> Impressum / Rechtliches</h4>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Firmenname (Impressum)</label>
@@ -742,11 +868,11 @@ a:hover{text-decoration:underline}
                     <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
                 </div>
             </div>
+            </div><!-- END PANEL: general -->
 
-            <hr class="ra-section-divider">
-
-            <!-- PunktePass Integration -->
-            <div class="ra-section-title"><i class="ri-star-line"></i> PunktePass Integration</div>
+            <!-- ==================== PANEL: PunktePass ==================== -->
+            <div class="ra-settings-panel" data-panel="punktepass">
+                <h4><i class="ri-star-line"></i> PunktePass Integration</h4>
             <div class="ra-toggle">
                 <label class="ra-toggle-switch">
                     <input type="checkbox" id="ra-pp-toggle" ' . ($pp_enabled ? 'checked' : '') . '>
@@ -799,11 +925,11 @@ a:hover{text-decoration:underline}
                     </div>
                 </div>
             </div>
+            </div><!-- END PANEL: punktepass -->
 
-            <hr class="ra-section-divider">
-
-            <!-- Formular anpassen -->
-            <div class="ra-section-title"><i class="ri-edit-line"></i> Formular anpassen</div>
+            <!-- ==================== PANEL: Formular ==================== -->
+            <div class="ra-settings-panel" data-panel="form">
+                <h4><i class="ri-edit-line"></i> Formular anpassen</h4>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Formulartitel</label>
@@ -859,25 +985,86 @@ foreach ($fc_field_names as $fk => $fn) {
 echo '          </div>
             </div>
 
-            <hr class="ra-section-divider">
 
-            <!-- Rechnungen / Invoice Settings -->
-            <div class="ra-section-title"><i class="ri-file-list-3-line"></i> Rechnungen</div>
-            <div class="ra-settings-grid">
+                <h4><i class="ri-settings-4-line"></i> Branchenspezifische Optionen</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:16px">Passen Sie das Formular f&uuml;r Ihre Branche an (Handy, Computer, Fahrrad, KFZ, Schmuck, Uhren, Schuhe, etc.)</p>
+
+            <div class="field" style="margin-bottom:16px">
+                <label>Marken / Hersteller <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <textarea name="repair_custom_brands" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Apple&#10;Samsung&#10;Huawei&#10;Xiaomi&#10;...">' . $custom_brands . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = freie Texteingabe im Formular</p>
+            </div>
+
+            <div class="field" style="margin-bottom:16px">
+                <label>H&auml;ufige Probleme / Reparaturarten <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <textarea name="repair_custom_problems" rows="5" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Display gebrochen&#10;Akku tauschen&#10;Wasserschaden&#10;Ladebuchse defekt&#10;...">' . $custom_problems . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = nur Freitext. Wird als Schnellauswahl-Buttons im Formular angezeigt</p>
+            </div>
+
+            <div class="field" style="margin-bottom:16px">
+                <label>Zubeh&ouml;r-Optionen <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <textarea name="repair_custom_accessories" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Ladekabel&#10;H&uuml;lle / Case&#10;Schl&uuml;ssel&#10;Originalkarton&#10;...">' . $custom_accessories . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = Standard-Zubeh&ouml;r (Ladekabel, H&uuml;lle, Schl&uuml;ssel, Sonstiges)</p>
+            </div>
+
+            <div class="ra-settings-grid" style="margin-bottom:16px">
                 <div class="field">
-                    <label>Rechnungsnr. Pr&auml;fix</label>
-                    <input type="text" name="repair_invoice_prefix" value="' . $inv_prefix . '" placeholder="RE-">
+                    <label>&Ouml;ffnungszeiten <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
+                    <input type="text" name="repair_opening_hours" value="' . $opening_hours . '" placeholder="Mo-Fr 9-18, Sa 10-14">
+                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">Wird im Formular-Header angezeigt</p>
                 </div>
                 <div class="field">
-                    <label>N&auml;chste Rechnungsnr.</label>
-                    <input type="number" name="repair_invoice_next_number" value="' . $inv_next . '" min="1">
+                    <label>Eigene AGB-URL <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
+                    <input type="text" name="repair_terms_url" value="' . $terms_url . '" placeholder="https://ihre-website.de/agb">
+                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer = automatisch generierte AGB</p>
                 </div>
             </div>
 
-            <hr class="ra-section-divider">
+            <div class="field" style="margin-bottom:16px">
+                <label>Erfolgsmeldung nach Absenden <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
+                <textarea name="repair_success_message" rows="3" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.">' . $success_message . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer = Standard-Meldung</p>
+            </div>
 
-            <!-- MwSt / VAT Settings -->
-            <div class="ra-section-title"><i class="ri-percent-line"></i> Umsatzsteuer (MwSt)</div>
+            </div><!-- END PANEL: form -->
+
+            <!-- ==================== PANEL: Rechnungen ==================== -->
+            <div class="ra-settings-panel" data-panel="invoice">
+                <h4><i class="ri-file-list-3-line"></i> Rechnungsnummern</h4>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Rechnungsnr. Pr&auml;fix</label>
+                    <input type="text" name="repair_invoice_prefix" id="ra-inv-prefix" value="' . $inv_prefix . '" placeholder="RE-" oninput="updateInvPreview()">
+                </div>
+                <div class="field">
+                    <label>N&auml;chste Rechnungsnr.</label>
+                    <input type="number" name="repair_invoice_next_number" id="ra-inv-next" value="' . $inv_next . '" min="1" oninput="updateInvPreview()">
+                </div>
+            </div>
+            <div style="margin-top:12px;padding:12px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                    <div>
+                        <div style="font-size:12px;color:#0369a1;font-weight:500">Vorschau n&auml;chste Rechnung</div>
+                        <div style="font-size:18px;font-weight:600;color:#0c4a6e;margin-top:2px" id="ra-inv-preview">' . esc_html($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '</div>
+                    </div>
+                    ' . ($inv_detected_max > 0 && $inv_suggested_next > $inv_next ? '
+                    <div style="text-align:right">
+                        <div style="font-size:11px;color:#6b7280">H&ouml;chste mit "' . esc_html($inv_prefix) . '": <strong>' . esc_html($inv_detected_max) . '</strong></div>
+                        <button type="button" onclick="document.getElementById(\'ra-inv-next\').value=' . $inv_suggested_next . ';updateInvPreview()" style="margin-top:4px;padding:6px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer">&Uuml;bernehmen: ' . $inv_suggested_next . '</button>
+                    </div>' : '') . '
+                </div>
+                ' . ($inv_total_count > 0 ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #bae6fd;font-size:11px;color:#6b7280">Rechnungen gesamt: <strong>' . $inv_total_count . '</strong>' . ($inv_detected_max == 0 && count($all_invoice_numbers) == 0 ? ' (keine mit Pr&auml;fix "' . esc_html($inv_prefix) . '")' : ' (' . count($all_invoice_numbers) . ' mit Pr&auml;fix "' . esc_html($inv_prefix) . '")') . '</div>' : '') . '
+            </div>
+            <script>
+            function updateInvPreview(){
+                var p=document.getElementById("ra-inv-prefix").value||"RE-";
+                var n=parseInt(document.getElementById("ra-inv-next").value)||1;
+                document.getElementById("ra-inv-preview").textContent=p+String(n).padStart(4,"0");
+            }
+            </script>
+
+
+                <h4><i class="ri-percent-line"></i> Umsatzsteuer (MwSt)</h4>
             <div class="ra-toggle">
                 <label class="ra-toggle-switch">
                     <input type="checkbox" id="ra-vat-toggle" ' . ($vat_enabled ? 'checked' : '') . '>
@@ -898,10 +1085,46 @@ echo '          </div>
                 </div>
             </div>
 
-            <hr class="ra-section-divider">
+                <h4 style="margin-top:24px"><i class="ri-file-text-line"></i> Steuerdaten</h4>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Steuernummer</label>
+                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="z.B. 109/206/40309">
+                </div>
+                <div class="field">
+                    <label>Webseite</label>
+                    <input type="text" name="repair_website_url" value="' . $website_url . '" placeholder="www.example.de">
+                </div>
+            </div>
 
-            <!-- Email Template Settings -->
-            <div class="ra-section-title"><i class="ri-mail-line"></i> E-Mail Vorlage</div>
+                <h4 style="margin-top:24px"><i class="ri-bank-line"></i> Bankverbindung</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Wird im Fu&szlig;bereich der Rechnung angezeigt</p>
+            <div class="ra-settings-grid">
+                <div class="field">
+                    <label>Bank Name</label>
+                    <input type="text" name="repair_bank_name" value="' . $bank_name . '" placeholder="z.B. Sparkasse">
+                </div>
+                <div class="field">
+                    <label>IBAN</label>
+                    <input type="text" name="repair_bank_iban" value="' . $bank_iban . '" placeholder="DE...">
+                </div>
+                <div class="field">
+                    <label>BIC</label>
+                    <input type="text" name="repair_bank_bic" value="' . $bank_bic . '" placeholder="z.B. BYLADEM1DLG">
+                </div>
+            </div>
+
+                <h4 style="margin-top:24px"><i class="ri-paypal-line"></i> PayPal</h4>
+            <div class="field">
+                <label>PayPal E-Mail / Adresse</label>
+                <input type="text" name="repair_paypal_email" value="' . $paypal_email . '" placeholder="paypal@example.de">
+            </div>
+
+            </div><!-- END PANEL: invoice -->
+
+            <!-- ==================== PANEL: E-Mail ==================== -->
+            <div class="ra-settings-panel" data-panel="email">
+                <h4><i class="ri-mail-line"></i> Rechnungs-E-Mail Vorlage</h4>
             <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Wird verwendet wenn Sie Rechnungen per E-Mail versenden. Platzhalter: {customer_name}, {invoice_number}, {invoice_date}, {total}, {company_name}</p>
             <div class="field" style="margin-bottom:12px">
                 <label>Betreff</label>
@@ -912,10 +1135,46 @@ echo '          </div>
                 <textarea name="repair_invoice_email_body" rows="6" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">' . $email_body . '</textarea>
             </div>
 
-            <hr class="ra-section-divider">
 
-            <!-- Abo & Kündigung -->
-            <div class="ra-section-title"><i class="ri-vip-crown-line"></i> Abo &amp; Zahlung</div>
+                <h4><i class="ri-notification-3-line"></i> Status-Benachrichtigungen</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Kunden automatisch per E-Mail informieren wenn sich der Reparatur-Status &auml;ndert.</p>
+            <div class="ra-toggle" style="margin-bottom:16px">
+                <label class="ra-toggle-switch">
+                    <input type="checkbox" name="repair_status_notify_enabled" value="1" ' . ($status_notify_enabled ? 'checked' : '') . '>
+                    <span class="ra-toggle-slider"></span>
+                </label>
+                <div>
+                    <strong>Status-Benachrichtigungen aktivieren</strong>
+                    <div style="font-size:12px;color:#6b7280">E-Mails bei Status&auml;nderungen versenden</div>
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:8px">
+                <label style="margin-bottom:8px;display:block">Bei diesen Status benachrichtigen:</label>
+                <div style="display:flex;flex-wrap:wrap;gap:12px">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_in_progress" value="1" ' . (in_array('in_progress', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#d97706"><i class="ri-loader-4-line"></i></span> In Bearbeitung
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_waiting_parts" value="1" ' . (in_array('waiting_parts', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#ec4899"><i class="ri-time-line"></i></span> Wartet auf Teile
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_done" value="1" ' . (in_array('done', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#059669"><i class="ri-checkbox-circle-line"></i></span> Fertig
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_delivered" value="1" ' . (in_array('delivered', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#6b7280"><i class="ri-truck-line"></i></span> Abgeholt
+                    </label>
+                </div>
+            </div>
+
+            </div><!-- END PANEL: email -->
+
+            <!-- ==================== PANEL: Abo ==================== -->
+            <div class="ra-settings-panel" data-panel="abo">
+                <h4><i class="ri-vip-crown-line"></i> Abo &amp; Zahlung</h4>
             <div class="ra-abo-box" style="background:#fafafa;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:16px">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
                     <div>
@@ -1003,15 +1262,18 @@ echo '          </div>
         }
 
         echo '
-            <div class="ra-settings-save">
-                <button type="submit" class="ra-btn ra-btn-primary">
-                    <i class="ri-save-line"></i> Speichern
+            </div><!-- END PANEL: abo -->
+
+            <!-- Save button visible on all panels -->
+            <div class="ra-settings-save" style="padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0">
+                <button type="submit" class="ra-btn ra-btn-primary ra-btn-full">
+                    <i class="ri-save-line"></i> Einstellungen speichern
                 </button>
             </div>
         </form>
 
         <!-- Legal pages -->
-        <div class="ra-legal-links">
+        <div class="ra-legal-links" style="padding:0 24px 24px">
             <h4>Automatisch generierte Seiten</h4>
             <a href="/formular/' . $store_slug . '/datenschutz" target="_blank"><i class="ri-shield-check-line"></i> Datenschutz</a>
             <a href="/formular/' . $store_slug . '/agb" target="_blank"><i class="ri-file-text-line"></i> AGB</a>
@@ -1019,18 +1281,22 @@ echo '          </div>
         </div>
 
         <!-- PunktePass admin -->
-        <div class="ra-pp-link">
+        <div class="ra-pp-link" style="display:flex;gap:8px;align-items:center">
             <a href="/qr-center" class="ra-btn ra-btn-outline">
                 <i class="ri-qr-code-line"></i> PunktePass Admin &ouml;ffnen
             </a>
+            <button class="ra-btn ra-btn-outline" style="color:#dc2626;border-color:#fecaca" onclick="if(confirm(\'Wirklich abmelden?\')){var fd=new FormData();fd.append(\'action\',\'ppv_repair_logout\');fetch(\'' . esc_url($ajax_url) . '\',{method:\'POST\',body:fd,credentials:\'same-origin\'}).finally(function(){window.location.href=\'/formular/admin/login\';})}">
+                <i class="ri-logout-box-r-line"></i> Abmelden
+            </button>
         </div>
     </div>';
 
-        // Tabs: Reparaturen | Rechnung/Angebot | Kunden
+        // Tabs: Reparaturen | Rechnung/Angebot | Kunden | Feedback
         echo '<div class="ra-tabs">
         <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> Reparaturen</div>
         <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnung / Angebot</div>
         <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> Kunden</div>
+        <div class="ra-tab" data-tab="feedback"><i class="ri-feedback-line"></i> Feedback</div>
     </div>';
 
         // ========== TAB: Reparaturen ==========
@@ -1052,9 +1318,6 @@ echo '          </div>
                 <option value="delivered">Abgeholt</option>
                 <option value="cancelled">Storniert</option>
             </select>
-            <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-erepairshop-import-btn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0">
-                <i class="ri-database-2-line"></i> eRepairshop Import
-            </button>
         </div>
     </div>';
 
@@ -1071,7 +1334,7 @@ echo '          </div>
         // ========== TAB: Rechnungen ==========
         echo '<div class="ra-tab-content" id="ra-tab-invoices">';
 
-        // Filters + New Invoice/Angebot buttons
+        // Filters + New Invoice/Angebot/Ankauf buttons
         echo '<div class="ra-inv-filters">
             <button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-new-invoice-btn">
                 <i class="ri-add-line"></i> Neue Rechnung
@@ -1079,10 +1342,14 @@ echo '          </div>
             <button class="ra-btn ra-btn-sm" id="ra-new-angebot-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">
                 <i class="ri-add-line"></i> Neues Angebot
             </button>
+            <button class="ra-btn ra-btn-sm" id="ra-new-ankauf-btn" style="background:#fef3c7;color:#b45309;border:1px solid #fcd34d">
+                <i class="ri-shopping-basket-line"></i> Neuer Ankauf
+            </button>
             <select id="ra-inv-type-filter" class="ra-input" style="padding:8px 12px;font-size:13px;min-width:120px">
                 <option value="">Alle Typen</option>
                 <option value="rechnung">Rechnungen</option>
                 <option value="angebot">Angebote</option>
+                <option value="ankauf">Ankäufe</option>
             </select>
             <div class="field">
                 <label>Von</label>
@@ -1095,9 +1362,23 @@ echo '          </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-filter-btn">
                 <i class="ri-filter-line"></i> Filtern
             </button>
-            <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-csv-btn">
-                <i class="ri-file-excel-2-line"></i> CSV Export
-            </button>
+            <div style="position:relative;display:inline-block">
+                <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-export-btn">
+                    <i class="ri-download-2-line"></i> Export <i class="ri-arrow-down-s-line"></i>
+                </button>
+                <div id="ra-inv-export-dropdown" style="display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:220px;z-index:100;margin-top:4px">
+                    <div style="padding:8px 0">
+                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Buchhalter-Formate</div>
+                        <a href="#" class="ra-inv-export-opt" data-format="datev" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-text-line" style="margin-right:8px;color:#8b5cf6"></i>DATEV-Export (.csv)</a>
+                        <a href="#" class="ra-inv-export-opt" data-format="csv" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-2-line" style="margin-right:8px;color:#059669"></i>CSV-Export</a>
+                        <a href="#" class="ra-inv-export-opt" data-format="excel" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-line" style="margin-right:8px;color:#217346"></i>Excel-Export (.xlsx)</a>
+                        <div style="border-top:1px solid #e5e7eb;margin:6px 0"></div>
+                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Dokumente</div>
+                        <a href="#" class="ra-inv-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF-Sammlung (.zip)</a>
+                        <a href="#" class="ra-inv-export-opt" data-format="json" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-code-s-slash-line" style="margin-right:8px;color:#3b82f6"></i>JSON-Export</a>
+                    </div>
+                </div>
+            </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-billbee-import-btn" style="margin-left:auto;background:#fff7ed;color:#ea580c;border-color:#fed7aa">
                 <i class="ri-upload-cloud-line"></i> Billbee Import
             </button>
@@ -1124,23 +1405,55 @@ echo '          </div>
             </div>
         </div>';
 
+        // Bulk actions bar
+        echo '<div id="ra-inv-bulk-bar" style="display:none;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px 16px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-weight:600;color:#4f46e5"><span id="ra-inv-selected-count">0</span> ausgew&auml;hlt</span>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-paid" style="background:#059669;color:#fff"><i class="ri-checkbox-circle-line"></i> Als bezahlt</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-send" style="background:#3b82f6;color:#fff"><i class="ri-mail-send-line"></i> E-Mails senden</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-reminder" style="background:#d97706;color:#fff"><i class="ri-alarm-warning-line"></i> Erinnerungen</button>
+                    <div style="position:relative;display:inline-block">
+                        <button class="ra-btn ra-btn-sm" id="ra-bulk-export" style="background:#8b5cf6;color:#fff"><i class="ri-download-2-line"></i> Export <i class="ri-arrow-down-s-line"></i></button>
+                        <div id="ra-export-dropdown" style="display:none;position:absolute;top:100%;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:220px;z-index:100;margin-top:4px">
+                            <div style="padding:8px 0">
+                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Buchhalter-Formate</div>
+                                <a href="#" class="ra-export-opt" data-format="datev" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-text-line" style="margin-right:8px;color:#8b5cf6"></i>DATEV-Export (.csv)</a>
+                                <a href="#" class="ra-export-opt" data-format="csv" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-2-line" style="margin-right:8px;color:#059669"></i>CSV-Export</a>
+                                <a href="#" class="ra-export-opt" data-format="excel" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-line" style="margin-right:8px;color:#217346"></i>Excel-Export (.xlsx)</a>
+                                <div style="border-top:1px solid #e5e7eb;margin:6px 0"></div>
+                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Dokumente</div>
+                                <a href="#" class="ra-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF-Sammlung (.zip)</a>
+                                <a href="#" class="ra-export-opt" data-format="json" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-code-s-slash-line" style="margin-right:8px;color:#3b82f6"></i>JSON-Export</a>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-delete" style="background:#dc2626;color:#fff"><i class="ri-delete-bin-line"></i> L&ouml;schen</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-cancel" style="background:#6b7280;color:#fff"><i class="ri-close-line"></i> Abbrechen</button>
+                </div>
+            </div>
+        </div>';
+
         // Invoice table
         echo '<div style="overflow-x:auto">
         <table class="ra-inv-table">
             <thead>
                 <tr>
-                    <th>Nr.</th>
-                    <th>Datum</th>
-                    <th>Kunde</th>
-                    <th>Netto</th>
+                    <th style="width:40px"><input type="checkbox" id="ra-inv-select-all" style="width:16px;height:16px;cursor:pointer"></th>
+                    <th class="ra-sortable" data-sort="invoice_number">Nr. <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="created_at">Datum <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="customer_name">Kunde <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="net_amount">Netto <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
                     <th>MwSt</th>
-                    <th>Gesamt</th>
-                    <th>Status</th>
+                    <th class="ra-sortable" data-sort="total">Gesamt <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="status">Status <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
                     <th></th>
                 </tr>
             </thead>
             <tbody id="ra-inv-body">
-                <tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Rechnungen werden geladen...</td></tr>
+                <tr><td colspan="9" style="text-align:center;padding:32px;color:#9ca3af;">Rechnungen werden geladen...</td></tr>
             </tbody>
         </table>
         </div>
@@ -1196,6 +1509,51 @@ echo '          </div>
 
         echo '</div>'; // end ra-tab-customers
 
+        // ========== TAB: Feedback ==========
+        echo '<div class="ra-tab-content" id="ra-tab-feedback">
+        <div class="ra-settings" style="max-width:600px">
+            <h3><i class="ri-feedback-line"></i> Feedback senden</h3>
+            <p style="font-size:14px;color:#6b7280;margin-bottom:20px">Wir freuen uns &uuml;ber Ihr Feedback! Teilen Sie uns Fehler, Ideen oder Fragen mit.</p>
+
+            <div style="margin-bottom:20px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">Kategorie</label>
+                <div class="ra-feedback-cats-inline" id="ra-fb-cats">
+                    <button type="button" class="ra-fb-cat-btn" data-cat="bug"><i class="ri-bug-line"></i> Fehler</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="feature"><i class="ri-lightbulb-line"></i> Idee</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="question"><i class="ri-question-line"></i> Frage</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="rating"><i class="ri-star-line"></i> Bewertung</button>
+                </div>
+            </div>
+
+            <div id="ra-fb-rating-section" style="display:none;margin-bottom:20px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">Bewertung</label>
+                <div class="ra-fb-stars">
+                    <button type="button" class="ra-fb-star" data-rating="1"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="2"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="3"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="4"><i class="ri-star-line"></i></button>
+                    <button type="button" class="ra-fb-star" data-rating="5"><i class="ri-star-line"></i></button>
+                </div>
+            </div>
+
+            <div class="field" style="margin-bottom:16px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Nachricht</label>
+                <textarea id="ra-fb-message" class="ra-input" rows="5" placeholder="Beschreiben Sie Ihr Anliegen..." style="width:100%;resize:vertical"></textarea>
+            </div>
+
+            <div class="field" style="margin-bottom:20px">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">E-Mail (optional)</label>
+                <input type="email" id="ra-fb-email" class="ra-input" placeholder="Ihre E-Mail f&uuml;r R&uuml;ckfragen" style="width:100%">
+            </div>
+
+            <div id="ra-fb-msg" class="ra-fb-msg"></div>
+
+            <button type="button" class="ra-btn ra-btn-primary" id="ra-fb-submit" style="width:100%">
+                <i class="ri-send-plane-fill"></i> Feedback senden
+            </button>
+        </div>
+        </div>'; // end ra-tab-feedback
+
         // Toast notification
         echo '<div class="ra-toast" id="ra-toast"></div>';
 
@@ -1209,72 +1567,6 @@ echo '          </div>
                 <div class="ra-reject-modal-actions">
                     <button class="ra-btn ra-btn-outline" id="ra-reject-cancel">Abbrechen</button>
                     <button class="ra-btn" style="background:#dc2626;color:#fff" id="ra-reject-submit">Ablehnen</button>
-                </div>
-            </div>
-        </div>';
-
-        // Feedback button
-        echo '<button class="ra-feedback-btn" id="ra-feedback-btn" title="Feedback"><i class="ri-feedback-line"></i></button>';
-
-        // Feedback modal
-        echo '<div class="ra-feedback-modal" id="ra-feedback-modal">
-            <div class="ra-feedback-content">
-                <div class="ra-feedback-header">
-                    <h3><i class="ri-feedback-line"></i> Feedback</h3>
-                    <button class="ra-feedback-close" id="ra-feedback-close"><i class="ri-close-line"></i></button>
-                </div>
-
-                <div class="ra-feedback-step active" id="ra-feedback-step1">
-                    <p class="ra-feedback-subtitle">Was m&ouml;chten Sie uns mitteilen?</p>
-                    <div class="ra-feedback-cats">
-                        <div class="ra-feedback-cat" data-cat="bug">
-                            <i class="ri-bug-line"></i>
-                            <span>Fehler melden</span>
-                        </div>
-                        <div class="ra-feedback-cat" data-cat="feature">
-                            <i class="ri-lightbulb-line"></i>
-                            <span>Idee / Wunsch</span>
-                        </div>
-                        <div class="ra-feedback-cat" data-cat="question">
-                            <i class="ri-question-line"></i>
-                            <span>Frage</span>
-                        </div>
-                        <div class="ra-feedback-cat" data-cat="rating">
-                            <i class="ri-star-line"></i>
-                            <span>Bewertung</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ra-feedback-step" id="ra-feedback-step2">
-                    <button class="ra-feedback-back" id="ra-feedback-back">
-                        <i class="ri-arrow-left-line"></i> Zur&uuml;ck
-                    </button>
-                    <div class="ra-feedback-cat-header" id="ra-feedback-cat-header">
-                        <i class="ri-bug-line"></i>
-                        <span>Fehler melden</span>
-                    </div>
-                    <div class="ra-feedback-stars" id="ra-feedback-stars" style="display:none">
-                        <button class="ra-feedback-star" data-rating="1"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="2"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="3"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="4"><i class="ri-star-line"></i></button>
-                        <button class="ra-feedback-star" data-rating="5"><i class="ri-star-line"></i></button>
-                    </div>
-                    <textarea class="ra-feedback-input" id="ra-feedback-message" rows="4" placeholder="Beschreiben Sie Ihr Anliegen..."></textarea>
-                    <input type="email" class="ra-feedback-input" id="ra-feedback-email" placeholder="E-Mail (optional)" style="margin-top:12px">
-                    <div class="ra-feedback-msg" id="ra-feedback-msg"></div>
-                    <button class="ra-feedback-submit" id="ra-feedback-submit">
-                        <i class="ri-send-plane-fill"></i> Absenden
-                    </button>
-                </div>
-
-                <div class="ra-feedback-step" id="ra-feedback-step3">
-                    <div class="ra-feedback-success">
-                        <i class="ri-checkbox-circle-fill"></i>
-                        <h4>Vielen Dank!</h4>
-                        <p>Ihr Feedback wurde gesendet.</p>
-                    </div>
                 </div>
             </div>
         </div>';
@@ -1335,6 +1627,13 @@ echo '          </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div style="margin-top:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ra-inv-differenz" style="width:18px;height:18px;cursor:pointer">
+                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+            </label>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
@@ -1401,6 +1700,12 @@ echo '          </div>
             </div>
         </div>
 
+        <div style="margin-bottom:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px">
+            <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer</label>
+            <input type="text" id="ra-ninv-number" class="ra-input" placeholder="' . esc_attr($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '" style="background:#fff">
+            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">N&auml;chste: <strong>' . esc_html($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '</strong> &ndash; Leer lassen f&uuml;r automatische Nummerierung</p>
+        </div>
+
         <div style="margin-bottom:16px">
             <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Positionen</label>
             <div class="ra-inv-lines" id="ra-ninv-lines">
@@ -1428,6 +1733,13 @@ echo '          </div>
                 <span>Gesamt:</span>
                 <span id="ra-ninv-total">0,00 &euro;</span>
             </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ra-ninv-differenz" style="width:18px;height:18px;cursor:pointer">
+                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+            </label>
         </div>
 
         <div>
@@ -1545,6 +1857,8 @@ echo '          </div>
     </div>
 </div>';
 
+        // Ankauf now opens in a separate window at /formular/admin/ankauf
+
         // Customer Modal (new/edit customer)
         echo '<div class="ra-modal-overlay" id="ra-customer-modal">
     <div class="ra-modal" style="max-width:500px">
@@ -1605,8 +1919,16 @@ echo '          </div>
         <h3><i class="ri-pencil-line"></i> Rechnung bearbeiten</h3>
         <p class="ra-modal-sub" id="ra-einv-subtitle">Rechnung und Kundendaten bearbeiten</p>
 
-        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;">
-            <strong id="ra-einv-number"></strong> &ndash; <span id="ra-einv-date"></span>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:16px">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+                <div>
+                    <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer</label>
+                    <input type="text" id="ra-einv-number-input" class="ra-input" style="background:#fff;font-weight:600">
+                </div>
+                <div style="font-size:13px;color:#6b7280;padding-bottom:10px">
+                    Datum: <span id="ra-einv-date"></span>
+                </div>
+            </div>
         </div>
 
         <details open style="margin-bottom:16px">
@@ -1674,6 +1996,13 @@ echo '          </div>
                 <span>Gesamt:</span>
                 <span id="ra-einv-total">0,00 &euro;</span>
             </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="ra-einv-differenz" style="width:18px;height:18px;cursor:pointer">
+                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+            </label>
         </div>
 
         <div style="margin-bottom:16px">
@@ -1770,10 +2099,7 @@ echo '          </div>
 
         // Footer
         echo '<div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;">
-        <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">Powered by <a href="https://punktepass.de" target="_blank" style="color:#667eea;">PunktePass</a></div>
-        <button class="ra-logout" onclick="if(confirm(\'Wirklich abmelden?\')){var fd=new FormData();fd.append(\'action\',\'ppv_repair_logout\');fetch(\'' . esc_url($ajax_url) . '\',{method:\'POST\',body:fd,credentials:\'same-origin\'}).finally(function(){window.location.href=\'/formular/admin/login\';})}">
-            <i class="ri-logout-box-r-line"></i> Abmelden
-        </button>
+        <div style="font-size:12px;color:#9ca3af;">Powered by <a href="https://punktepass.de" target="_blank" style="color:#667eea;">PunktePass</a></div>
     </div>
 
 </div>
@@ -1794,7 +2120,9 @@ echo '          </div>
         STORE_TAX_ID="' . esc_js($store->repair_tax_id ?? '') . '",
         STORE_OWNER="' . esc_js($store->repair_owner_name ?? '') . '",
         searchTimer=null,
-        currentPage=1;
+        currentPage=1,
+        invSortBy="created_at",
+        invSortDir="desc";
 
     /* ===== Toast ===== */
     function toast(msg){
@@ -2216,7 +2544,7 @@ echo '          </div>
         // Use new edit modal with customer fields
         var modal=document.getElementById("ra-edit-invoice-modal");
         document.getElementById("ra-einv-id").value=inv.id;
-        document.getElementById("ra-einv-number").textContent=inv.invoice_number;
+        document.getElementById("ra-einv-number-input").value=inv.invoice_number;
         var d=new Date(inv.created_at);
         document.getElementById("ra-einv-date").textContent=d.toLocaleDateString("de-DE");
 
@@ -2230,6 +2558,7 @@ echo '          </div>
         document.getElementById("ra-einv-city").value=inv.customer_city||"";
         document.getElementById("ra-einv-taxid").value=inv.customer_tax_id||"";
         document.getElementById("ra-einv-notes").value=inv.notes||"";
+        document.getElementById("ra-einv-differenz").checked=!!parseInt(inv.is_differenzbesteuerung);
 
         // Fill line items
         var lines=document.getElementById("ra-einv-lines");
@@ -2381,6 +2710,9 @@ echo '          </div>
         var fd=new FormData();
         fd.append("nonce",NONCE);
 
+        // Add differenzbesteuerung flag
+        fd.append("is_differenzbesteuerung",document.getElementById("ra-inv-differenz").checked?"1":"0");
+
         if(invoiceEditId){
             // Edit mode
             fd.append("action","ppv_repair_invoice_update");
@@ -2460,6 +2792,88 @@ echo '          </div>
         pf.style.display=this.value==="free_product"?"":"none";
     });
 
+    /* ===== Settings Panel Toggle & Persistence ===== */
+    var settingsPanel = document.getElementById("ra-settings");
+    var settingsToggleBtn = document.getElementById("ra-settings-toggle-btn");
+
+    function toggleSettings(forceShow) {
+        var isHidden = settingsPanel.classList.contains("ra-hidden");
+        if (forceShow === true || isHidden) {
+            settingsPanel.classList.remove("ra-hidden");
+            localStorage.setItem("ra_settings_open", "1");
+        } else {
+            settingsPanel.classList.add("ra-hidden");
+            localStorage.setItem("ra_settings_open", "0");
+        }
+        // Force layout recalculation to fix rendering issues
+        setTimeout(function() {
+            window.dispatchEvent(new Event("resize"));
+        }, 50);
+    }
+
+    if (settingsToggleBtn) {
+        settingsToggleBtn.addEventListener("click", function() {
+            toggleSettings();
+        });
+    }
+
+    // Restore settings panel state on page load
+    if (localStorage.getItem("ra_settings_open") === "1") {
+        settingsPanel.classList.remove("ra-hidden");
+    }
+
+    // Force repaint on desktop browsers
+    window.addEventListener("load", function() {
+        var wrap = document.querySelector(".ra-wrap");
+        if (wrap) {
+            // Force layout recalculation
+            wrap.style.display = "none";
+            wrap.offsetHeight; // Force reflow
+            wrap.style.display = "";
+
+            // Trigger resize event after slight delay
+            setTimeout(function() {
+                window.dispatchEvent(new Event("resize"));
+                // Force scroll to bottom and back
+                var docHeight = document.body.scrollHeight;
+                window.scrollTo(0, docHeight);
+                setTimeout(function() {
+                    window.scrollTo(0, 0);
+                }, 50);
+            }, 100);
+        }
+    });
+
+    /* ===== Settings Tabs ===== */
+    var settingsTabs = document.querySelectorAll(".ra-settings-tab");
+    var settingsPanels = document.querySelectorAll(".ra-settings-panel");
+
+    function switchSettingsTab(panelName) {
+        settingsTabs.forEach(function(t) { t.classList.remove("active"); });
+        settingsPanels.forEach(function(p) { p.classList.remove("active"); });
+
+        var tabBtn = document.querySelector(\'.ra-settings-tab[data-panel="\' + panelName + \'"]\');
+        var panel = document.querySelector(\'.ra-settings-panel[data-panel="\' + panelName + \'"]\');
+
+        if (tabBtn) tabBtn.classList.add("active");
+        if (panel) panel.classList.add("active");
+
+        localStorage.setItem("ra_settings_tab", panelName);
+    }
+
+    settingsTabs.forEach(function(tab) {
+        tab.addEventListener("click", function() {
+            var panelName = this.getAttribute("data-panel");
+            switchSettingsTab(panelName);
+        });
+    });
+
+    // Restore settings tab on page load
+    var savedSettingsTab = localStorage.getItem("ra_settings_tab");
+    if (savedSettingsTab) {
+        switchSettingsTab(savedSettingsTab);
+    }
+
     /* ===== Tab Switching ===== */
     var invoicesLoaded=false;
     var customersLoaded=false;
@@ -2499,6 +2913,8 @@ echo '          </div>
         if(df)fd.append("date_from",df);
         if(dt)fd.append("date_to",dt);
         if(docType)fd.append("doc_type",docType);
+        fd.append("sort_by",invSortBy);
+        fd.append("sort_dir",invSortDir);
 
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
@@ -2531,7 +2947,9 @@ echo '          </div>
                         :"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#eff6ff;color:#2563eb;margin-left:6px\'>Rechnung</span>";
 
                     var row=document.createElement("tr");
-                    row.innerHTML=\'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong>\'+typeBadge+\'</td>\'+
+                    row.setAttribute("data-inv-id",inv.id);
+                    row.innerHTML=\'<td><input type="checkbox" class="ra-inv-checkbox" data-inv-id="\'+inv.id+\'" style="width:16px;height:16px;cursor:pointer"></td>\'+
+                        \'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong>\'+typeBadge+\'</td>\'+
                         \'<td data-label="Datum">\'+dateStr+\'</td>\'+
                         \'<td data-label="Kunde">\'+esc(inv.customer_name)+\'</td>\'+
                         \'<td data-label="Netto">\'+fmtEur(inv.net_amount)+\'</td>\'+
@@ -2541,6 +2959,7 @@ echo '          </div>
                         \'<td data-label=""><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
                             \'<button class="ra-inv-btn ra-inv-btn-email" data-inv-id="\'+inv.id+\'" data-customer-email="\'+esc(inv.customer_email||"")+\'" title="E-Mail senden"><i class="ri-mail-send-line"></i></button>\'+
+                            (inv.status!=="paid"&&inv.doc_type!=="angebot"?\'<button class="ra-inv-btn ra-inv-btn-reminder" data-inv-id="\'+inv.id+\'" title="Zahlungserinnerung" style="background:#fef3c7;color:#d97706"><i class="ri-alarm-warning-line"></i></button>\':\'\')+
                             \'<button class="ra-inv-btn ra-inv-btn-edit" data-invoice=\\\'\'+JSON.stringify(inv).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
                             \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" data-old-status="\'+inv.status+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
                                 \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>Entwurf</option>\'+
@@ -2641,7 +3060,35 @@ echo '          </div>
                         });
                     });
                 });
+                // Reminder button handler
+                tbody.querySelectorAll(".ra-inv-btn-reminder").forEach(function(btn){
+                    btn.addEventListener("click",function(){
+                        var iid=this.getAttribute("data-inv-id");
+                        if(!confirm("Zahlungserinnerung an den Kunden senden?"))return;
+                        btn.disabled=true;
+                        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+                        var fd2=new FormData();
+                        fd2.append("action","ppv_repair_invoice_reminder");
+                        fd2.append("nonce",NONCE);
+                        fd2.append("invoice_id",iid);
+                        fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
+                        .then(function(r){return r.json()})
+                        .then(function(res){
+                            btn.disabled=false;
+                            btn.innerHTML=\'<i class="ri-alarm-warning-line"></i>\';
+                            if(res.success){toast(res.data.message||"Erinnerung gesendet!")}
+                            else{toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden")}
+                        });
+                    });
+                });
+                // Checkbox handlers for bulk selection
+                tbody.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){
+                    cb.addEventListener("change",updateBulkSelection);
+                });
             }
+            // Reset select all checkbox
+            document.getElementById("ra-inv-select-all").checked=false;
+            updateBulkSelection();
             // Load more
             var lm=document.getElementById("ra-inv-load-more");
             if(d.page<d.pages){
@@ -2670,43 +3117,297 @@ echo '          </div>
 
     // Invoice filter
     document.getElementById("ra-inv-filter-btn").addEventListener("click",function(){loadInvoices(1)});
+    // Invoice sorting
+    document.querySelectorAll(".ra-inv-table .ra-sortable").forEach(function(th){
+        th.addEventListener("click",function(){
+            var col=this.getAttribute("data-sort");
+            // Toggle direction or set new column
+            if(invSortBy===col){
+                invSortDir=invSortDir==="asc"?"desc":"asc";
+            }else{
+                invSortBy=col;
+                invSortDir="desc";
+            }
+            // Update UI
+            document.querySelectorAll(".ra-inv-table .ra-sortable").forEach(function(h){
+                h.classList.remove("ra-sort-asc","ra-sort-desc");
+                var icon=h.querySelector(".ra-sort-icon");
+                if(icon)icon.className="ri-arrow-up-down-line ra-sort-icon";
+            });
+            this.classList.add(invSortDir==="asc"?"ra-sort-asc":"ra-sort-desc");
+            var icon=this.querySelector(".ra-sort-icon");
+            if(icon)icon.className=(invSortDir==="asc"?"ri-arrow-up-line":"ri-arrow-down-line")+" ra-sort-icon";
+            invoicesLoaded=false;
+            loadInvoices(1);
+        });
+    });
     // Invoice load more
     document.getElementById("ra-inv-more-btn").addEventListener("click",function(){
         loadInvoices(parseInt(this.getAttribute("data-page"))+1);
     });
-    // CSV export
-    document.getElementById("ra-inv-csv-btn").addEventListener("click",function(){
-        var df=document.getElementById("ra-inv-from").value;
-        var dt=document.getElementById("ra-inv-to").value;
-        var url=AJAX+"?action=ppv_repair_invoice_csv&nonce="+NONCE;
-        if(df)url+="&date_from="+df;
-        if(dt)url+="&date_to="+dt;
-        window.open(url,"_blank");
+    // Export dropdown toggle
+    var invExportBtn=document.getElementById("ra-inv-export-btn");
+    var invExportDropdown=document.getElementById("ra-inv-export-dropdown");
+    if(invExportBtn&&invExportDropdown){
+        invExportBtn.addEventListener("click",function(e){
+            e.stopPropagation();
+            invExportDropdown.style.display=invExportDropdown.style.display==="none"?"block":"none";
+        });
+        document.addEventListener("click",function(e){
+            if(!invExportBtn.contains(e.target)&&!invExportDropdown.contains(e.target)){
+                invExportDropdown.style.display="none";
+            }
+        });
+        // Hover effect for dropdown items
+        document.querySelectorAll(".ra-inv-export-opt").forEach(function(opt){
+            opt.addEventListener("mouseenter",function(){this.style.background="#f3f4f6"});
+            opt.addEventListener("mouseleave",function(){this.style.background="transparent"});
+        });
+    }
+
+    // Export all invoices (with date filter)
+    document.querySelectorAll(".ra-inv-export-opt").forEach(function(opt){
+        opt.addEventListener("click",function(e){
+            e.preventDefault();
+            var format=this.getAttribute("data-format");
+            invExportDropdown.style.display="none";
+            toast("Export wird vorbereitet...");
+            var df=document.getElementById("ra-inv-from").value;
+            var dt=document.getElementById("ra-inv-to").value;
+            var docType=document.getElementById("ra-inv-type").value;
+            var fd=new FormData();
+            fd.append("action","ppv_repair_invoice_export_all");
+            fd.append("nonce",NONCE);
+            fd.append("format",format);
+            if(df)fd.append("date_from",df);
+            if(dt)fd.append("date_to",dt);
+            if(docType)fd.append("doc_type",docType);
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(res){
+                if(res.success&&res.data.download_url){
+                    var a=document.createElement("a");
+                    a.href=res.data.download_url;
+                    a.download=res.data.filename||"export";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    toast("Export erfolgreich!");
+                }else{
+                    toast(res.data&&res.data.message?res.data.message:"Export fehlgeschlagen");
+                }
+            });
+        });
+    });
+
+    // ===== Bulk Selection Functions =====
+    function getSelectedInvoiceIds(){
+        var ids=[];
+        document.querySelectorAll(".ra-inv-checkbox:checked").forEach(function(cb){
+            ids.push(cb.getAttribute("data-inv-id"));
+        });
+        return ids;
+    }
+    function updateBulkSelection(){
+        var selected=getSelectedInvoiceIds();
+        var bulkBar=document.getElementById("ra-inv-bulk-bar");
+        var countEl=document.getElementById("ra-inv-selected-count");
+        if(selected.length>0){
+            bulkBar.style.display="block";
+            countEl.textContent=selected.length;
+        }else{
+            bulkBar.style.display="none";
+        }
+    }
+    // Select all checkbox
+    document.getElementById("ra-inv-select-all").addEventListener("change",function(){
+        var checked=this.checked;
+        document.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){cb.checked=checked});
+        updateBulkSelection();
+    });
+    // Bulk cancel
+    document.getElementById("ra-bulk-cancel").addEventListener("click",function(){
+        document.querySelectorAll(".ra-inv-checkbox").forEach(function(cb){cb.checked=false});
+        document.getElementById("ra-inv-select-all").checked=false;
+        updateBulkSelection();
+    });
+    // Bulk mark as paid
+    document.getElementById("ra-bulk-paid").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm(ids.length+" Rechnung(en) als bezahlt markieren?"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird verarbeitet...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","mark_paid");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-checkbox-circle-line"></i> Als bezahlt\';
+            if(res.success){toast(res.data.message||"Erfolgreich!");invoicesLoaded=false;loadInvoices(1)}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
+    });
+    // Bulk send emails
+    document.getElementById("ra-bulk-send").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm(ids.length+" Rechnung(en) per E-Mail versenden?"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","send_email");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-mail-send-line"></i> E-Mails senden\';
+            if(res.success){toast(res.data.message||"Erfolgreich!");invoicesLoaded=false;loadInvoices(1)}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
+    });
+    // Bulk reminders
+    document.getElementById("ra-bulk-reminder").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm(ids.length+" Zahlungserinnerung(en) senden?"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","send_reminder");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-alarm-warning-line"></i> Erinnerungen\';
+            if(res.success){toast(res.data.message||"Erfolgreich!")}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
+    });
+
+    // Export dropdown toggle
+    var exportBtn=document.getElementById("ra-bulk-export");
+    var exportDropdown=document.getElementById("ra-export-dropdown");
+    if(exportBtn&&exportDropdown){
+        exportBtn.addEventListener("click",function(e){
+            e.stopPropagation();
+            exportDropdown.style.display=exportDropdown.style.display==="none"?"block":"none";
+        });
+        document.addEventListener("click",function(e){
+            if(!exportBtn.contains(e.target)&&!exportDropdown.contains(e.target)){
+                exportDropdown.style.display="none";
+            }
+        });
+        // Hover effect for dropdown items
+        document.querySelectorAll(".ra-export-opt").forEach(function(opt){
+            opt.addEventListener("mouseenter",function(){this.style.background="#f3f4f6"});
+            opt.addEventListener("mouseleave",function(){this.style.background="transparent"});
+        });
+    }
+
+    // Bulk export
+    document.querySelectorAll(".ra-export-opt").forEach(function(opt){
+        opt.addEventListener("click",function(e){
+            e.preventDefault();
+            var ids=getSelectedInvoiceIds();
+            if(!ids.length){toast("Keine Rechnungen ausgewählt");return;}
+            var format=this.getAttribute("data-format");
+            exportDropdown.style.display="none";
+            toast("Export wird vorbereitet...");
+            var fd=new FormData();
+            fd.append("action","ppv_repair_invoice_bulk");
+            fd.append("nonce",NONCE);
+            fd.append("operation","export");
+            fd.append("format",format);
+            fd.append("invoice_ids",JSON.stringify(ids));
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(res){
+                if(res.success&&res.data.download_url){
+                    var a=document.createElement("a");
+                    a.href=res.data.download_url;
+                    a.download=res.data.filename||"export";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    toast("Export erfolgreich!");
+                }else{
+                    toast(res.data&&res.data.message?res.data.message:"Export fehlgeschlagen");
+                }
+            });
+        });
+    });
+
+    // Bulk delete
+    document.getElementById("ra-bulk-delete").addEventListener("click",function(){
+        var ids=getSelectedInvoiceIds();
+        if(!ids.length)return;
+        if(!confirm("Möchten Sie "+ids.length+" Dokument(e) wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!"))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gelöscht...\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_invoice_bulk");
+        fd.append("nonce",NONCE);
+        fd.append("operation","delete");
+        fd.append("invoice_ids",JSON.stringify(ids));
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-delete-bin-line"></i> Löschen\';
+            if(res.success){toast(res.data.message||"Erfolgreich gelöscht!");invoicesLoaded=false;loadInvoices(1);updateBulkBar()}
+            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+        });
     });
 
     /* ===== Settings Form ===== */
-    document.getElementById("ra-settings-form").addEventListener("submit",function(e){
-        e.preventDefault();
-        var fd=new FormData(this);
-        // Collect field config
-        var fc={};
-        document.querySelectorAll("#ra-field-config .ra-field-row").forEach(function(row){
-            var cb=row.querySelector("input[type=checkbox]");
-            var inp=row.querySelector("input[type=text]");
-            if(cb&&inp){
-                fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
-            }
+    console.log("DEBUG: Looking for settings form...");
+    var settingsFormEl = document.getElementById("ra-settings-form");
+    console.log("DEBUG: Settings form element:", settingsFormEl);
+    if(settingsFormEl){
+        settingsFormEl.addEventListener("submit",function(e){
+            console.log("DEBUG: Form submit triggered!");
+            e.preventDefault();
+            var fd=new FormData(this);
+            console.log("DEBUG: FormData created, AJAX URL:", AJAX);
+            // Collect field config
+            var fc={};
+            document.querySelectorAll("#ra-field-config .ra-field-row").forEach(function(row){
+                var cb=row.querySelector("input[type=checkbox]");
+                var inp=row.querySelector("input[type=text]");
+                if(cb&&inp){
+                    fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
+                }
+            });
+            fd.append("repair_field_config",JSON.stringify(fc));
+            fd.append("action","ppv_repair_save_settings");
+            fd.append("nonce",NONCE);
+            console.log("DEBUG: Sending fetch request...");
+            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+            .then(function(r){console.log("DEBUG: Response received:", r.status);return r.json()})
+            .then(function(data){
+                console.log("DEBUG: JSON data:", data);
+                if(data.success){
+                    toast("Einstellungen gespeichert");
+                    // Visual feedback on button
+                    var btn=settingsFormEl.querySelector("button[type=submit]");
+                    if(btn){
+                        var orig=btn.innerHTML;
+                        btn.innerHTML=\'<i class="ri-check-line"></i> Gespeichert!\';
+                        btn.style.background="#10b981";
+                        setTimeout(function(){btn.innerHTML=orig;btn.style.background=""},2000);
+                    }
+                }else{
+                    toast("Fehler beim Speichern");
+                }
+            })
+            .catch(function(err){console.log("DEBUG: Error:", err);toast("Verbindungsfehler")});
         });
-        fd.append("repair_field_config",JSON.stringify(fc));
-        fd.append("action","ppv_repair_save_settings");
-        fd.append("nonce",NONCE);
-        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-        .then(function(r){return r.json()})
-        .then(function(data){
-            toast(data.success?"Einstellungen gespeichert":"Fehler beim Speichern");
-        })
-        .catch(function(){toast("Verbindungsfehler")});
-    });
+    }else{
+        console.log("DEBUG: Settings form NOT FOUND!");
+    }
 
     /* ===== Logo Upload ===== */
     document.getElementById("ra-logo-file").addEventListener("change",function(){
@@ -2754,6 +3455,7 @@ echo '          </div>
         document.getElementById("ra-ninv-plz").value="";
         document.getElementById("ra-ninv-city").value="";
         document.getElementById("ra-ninv-taxid").value="";
+        document.getElementById("ra-ninv-number").value="";
         document.getElementById("ra-ninv-notes").value="";
         var lines=document.getElementById("ra-ninv-lines");
         lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
@@ -2874,6 +3576,9 @@ echo '          </div>
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
         fd.append("notes",document.getElementById("ra-ninv-notes").value);
+        fd.append("is_differenzbesteuerung",document.getElementById("ra-ninv-differenz").checked?"1":"0");
+        var customInvNum=document.getElementById("ra-ninv-number").value.trim();
+        if(customInvNum)fd.append("invoice_number",customInvNum);
 
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
@@ -3109,6 +3814,7 @@ echo '          </div>
         fd.append("action","ppv_repair_invoice_update");
         fd.append("nonce",NONCE);
         fd.append("invoice_id",document.getElementById("ra-einv-id").value);
+        fd.append("invoice_number",document.getElementById("ra-einv-number-input").value.trim());
         fd.append("customer_name",name);
         fd.append("customer_company",document.getElementById("ra-einv-company").value);
         fd.append("customer_email",document.getElementById("ra-einv-email").value);
@@ -3118,6 +3824,7 @@ echo '          </div>
         fd.append("customer_city",document.getElementById("ra-einv-city").value);
         fd.append("customer_tax_id",document.getElementById("ra-einv-taxid").value);
         fd.append("notes",document.getElementById("ra-einv-notes").value);
+        fd.append("is_differenzbesteuerung",document.getElementById("ra-einv-differenz").checked?"1":"0");
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
 
@@ -3231,6 +3938,23 @@ echo '          </div>
             });
         }
     });
+
+    /* ===== ANKAUF - NEW WINDOW ===== */
+    document.getElementById("ra-new-ankauf-btn").addEventListener("click",function(){
+        var w = 900, h = 800;
+        var left = (screen.width - w) / 2;
+        var top = (screen.height - h) / 2;
+        window.open('/formular/admin/ankauf', 'ankauf_window', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes');
+    });
+
+    // Global function for child window to refresh list
+    window.refreshAnkaufList = function() {
+        // Refresh the invoices tab if needed
+        if (typeof loadInvoices === 'function') loadInvoices();
+    };
+
+
+
 
     /* ===== CUSTOMER MODAL ===== */
     var custModal=document.getElementById("ra-customer-modal");
@@ -3384,38 +4108,6 @@ echo '          </div>
             bbSubmit.disabled=false;
         });
     });
-
-    /* ===== eRepairshop Import ===== */
-    var erBtn=document.getElementById("ra-erepairshop-import-btn");
-    if(erBtn){
-        erBtn.addEventListener("click",function(){
-            if(!confirm("Alle Reparaturen aus der alten eRepairshop-Datenbank importieren?\n\nHinweis: Bereits importierte werden übersprungen.\nKeine Punkte werden vergeben.")){
-                return;
-            }
-            erBtn.disabled=true;
-            erBtn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Import läuft...\';
-
-            var fd=new FormData();
-            fd.append("action","ppv_repair_erepairshop_import");
-            fd.append("nonce",NONCE);
-
-            fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-            .then(function(r){return r.json()})
-            .then(function(data){
-                if(data.success){
-                    toast(data.data.message||"Import erfolgreich");
-                    loadRepairs(1);
-                }else{
-                    toast(data.data&&data.data.message?data.data.message:"Import fehlgeschlagen");
-                }
-            })
-            .catch(function(){toast("Verbindungsfehler")})
-            .finally(function(){
-                erBtn.disabled=false;
-                erBtn.innerHTML=\'<i class="ri-database-2-line"></i> eRepairshop Import\';
-            });
-        });
-    }
 
     /* ===== Repair Comments ===== */
     document.addEventListener("click",function(e){
@@ -3667,61 +4359,27 @@ echo '          </div>
         });
     }
 
-    /* ===== Feedback Modal ===== */
-    var feedbackModal=document.getElementById("ra-feedback-modal");
-    var feedbackCategory="";
-    var feedbackRating=0;
-    var catMeta={
-        bug:{icon:"ri-bug-line",text:"Fehler melden",placeholder:"Beschreiben Sie den Fehler..."},
-        feature:{icon:"ri-lightbulb-line",text:"Idee / Wunsch",placeholder:"Beschreiben Sie Ihre Idee..."},
-        question:{icon:"ri-question-line",text:"Frage",placeholder:"Stellen Sie Ihre Frage..."},
-        rating:{icon:"ri-star-line",text:"Bewertung",placeholder:"Optionaler Kommentar..."}
-    };
+    /* ===== Feedback Tab ===== */
+    var fbCategory="";
+    var fbRating=0;
 
-    document.getElementById("ra-feedback-btn").addEventListener("click",function(){
-        feedbackModal.classList.add("show");
-        feedbackCategory="";
-        feedbackRating=0;
-        document.getElementById("ra-feedback-step1").classList.add("active");
-        document.getElementById("ra-feedback-step2").classList.remove("active");
-        document.getElementById("ra-feedback-step3").classList.remove("active");
-        document.getElementById("ra-feedback-message").value="";
-        document.getElementById("ra-feedback-email").value="";
-        document.getElementById("ra-feedback-msg").className="ra-feedback-msg";
-        document.querySelectorAll(".ra-feedback-star").forEach(function(s){s.classList.remove("active");s.querySelector("i").className="ri-star-line"});
-    });
-
-    document.getElementById("ra-feedback-close").addEventListener("click",function(){
-        feedbackModal.classList.remove("show");
-    });
-
-    feedbackModal.addEventListener("click",function(e){
-        if(e.target===feedbackModal)feedbackModal.classList.remove("show");
-    });
-
-    document.querySelectorAll(".ra-feedback-cat").forEach(function(cat){
-        cat.addEventListener("click",function(){
-            feedbackCategory=this.getAttribute("data-cat");
-            var meta=catMeta[feedbackCategory];
-            document.getElementById("ra-feedback-cat-header").innerHTML=\'<i class="\'+meta.icon+\'"></i><span>\'+meta.text+\'</span>\';
-            document.getElementById("ra-feedback-message").setAttribute("placeholder",meta.placeholder);
-            document.getElementById("ra-feedback-stars").style.display=(feedbackCategory==="rating")?"flex":"none";
-            document.getElementById("ra-feedback-step1").classList.remove("active");
-            document.getElementById("ra-feedback-step2").classList.add("active");
-            document.getElementById("ra-feedback-msg").className="ra-feedback-msg";
+    // Category selection
+    document.querySelectorAll(".ra-fb-cat-btn").forEach(function(btn){
+        btn.addEventListener("click",function(){
+            document.querySelectorAll(".ra-fb-cat-btn").forEach(function(b){b.classList.remove("active")});
+            this.classList.add("active");
+            fbCategory=this.getAttribute("data-cat");
+            document.getElementById("ra-fb-rating-section").style.display=(fbCategory==="rating")?"block":"none";
+            document.getElementById("ra-fb-msg").className="ra-fb-msg";
         });
     });
 
-    document.getElementById("ra-feedback-back").addEventListener("click",function(){
-        document.getElementById("ra-feedback-step2").classList.remove("active");
-        document.getElementById("ra-feedback-step1").classList.add("active");
-    });
-
-    document.querySelectorAll(".ra-feedback-star").forEach(function(star){
+    // Star rating
+    document.querySelectorAll(".ra-fb-star").forEach(function(star){
         star.addEventListener("click",function(){
-            feedbackRating=parseInt(this.getAttribute("data-rating"));
-            document.querySelectorAll(".ra-feedback-star").forEach(function(s,idx){
-                if(idx<feedbackRating){
+            fbRating=parseInt(this.getAttribute("data-rating"));
+            document.querySelectorAll(".ra-fb-star").forEach(function(s,idx){
+                if(idx<fbRating){
                     s.classList.add("active");
                     s.querySelector("i").className="ri-star-fill";
                 }else{
@@ -3732,20 +4390,26 @@ echo '          </div>
         });
     });
 
-    document.getElementById("ra-feedback-submit").addEventListener("click",function(){
+    // Submit feedback
+    document.getElementById("ra-fb-submit").addEventListener("click",function(){
         var btn=this;
-        var msg=document.getElementById("ra-feedback-msg");
-        var message=document.getElementById("ra-feedback-message").value.trim();
-        var email=document.getElementById("ra-feedback-email").value.trim();
+        var msg=document.getElementById("ra-fb-msg");
+        var message=document.getElementById("ra-fb-message").value.trim();
+        var email=document.getElementById("ra-fb-email").value.trim();
 
-        if(feedbackCategory==="rating"&&feedbackRating===0){
-            msg.textContent="Bitte geben Sie eine Bewertung ab.";
-            msg.className="ra-feedback-msg show error";
+        if(!fbCategory){
+            msg.textContent="Bitte w\u00e4hlen Sie eine Kategorie.";
+            msg.className="ra-fb-msg show error";
             return;
         }
-        if(!message&&feedbackCategory!=="rating"){
+        if(fbCategory==="rating"&&fbRating===0){
+            msg.textContent="Bitte geben Sie eine Bewertung ab.";
+            msg.className="ra-fb-msg show error";
+            return;
+        }
+        if(!message&&fbCategory!=="rating"){
             msg.textContent="Bitte beschreiben Sie Ihr Anliegen.";
-            msg.className="ra-feedback-msg show error";
+            msg.className="ra-fb-msg show error";
             return;
         }
 
@@ -3755,9 +4419,9 @@ echo '          </div>
         var fd=new FormData();
         fd.append("action","ppv_submit_feedback");
         fd.append("nonce","' . wp_create_nonce('ppv_feedback_nonce') . '");
-        fd.append("category",feedbackCategory);
+        fd.append("category",fbCategory);
         fd.append("message",message);
-        fd.append("rating",feedbackRating);
+        fd.append("rating",fbRating);
         fd.append("email",email);
         fd.append("user_type","repair_handler");
         fd.append("page_url",window.location.href);
@@ -3768,21 +4432,28 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                document.getElementById("ra-feedback-step2").classList.remove("active");
-                document.getElementById("ra-feedback-step3").classList.add("active");
-                setTimeout(function(){feedbackModal.classList.remove("show")},2500);
+                msg.textContent="Vielen Dank f\u00fcr Ihr Feedback!";
+                msg.className="ra-fb-msg show success";
+                // Reset form
+                document.getElementById("ra-fb-message").value="";
+                document.getElementById("ra-fb-email").value="";
+                document.querySelectorAll(".ra-fb-cat-btn").forEach(function(b){b.classList.remove("active")});
+                document.querySelectorAll(".ra-fb-star").forEach(function(s){s.classList.remove("active");s.querySelector("i").className="ri-star-line"});
+                document.getElementById("ra-fb-rating-section").style.display="none";
+                fbCategory="";
+                fbRating=0;
             }else{
                 msg.textContent=data.data&&data.data.message?data.data.message:"Fehler beim Senden.";
-                msg.className="ra-feedback-msg show error";
+                msg.className="ra-fb-msg show error";
             }
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Absenden\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Feedback senden\';
         })
         .catch(function(){
             msg.textContent="Verbindungsfehler.";
-            msg.className="ra-feedback-msg show error";
+            msg.className="ra-fb-msg show error";
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Absenden\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Feedback senden\';
         });
     });
 
@@ -3815,6 +4486,7 @@ echo '          </div>
         $st    = $status_map[$r->status] ?? ['Unbekannt', ''];
         $device = trim(($r->device_brand ?: '') . ' ' . ($r->device_model ?: ''));
         $date   = date('d.m.Y H:i', strtotime($r->created_at));
+        $updated = !empty($r->updated_at) && $r->updated_at !== $r->created_at ? date('d.m.Y H:i', strtotime($r->updated_at)) : '';
         $problem = esc_html(mb_strimwidth($r->problem_description, 0, 150, '...'));
         $phone  = $r->customer_phone ? (' &middot; ' . esc_html($r->customer_phone)) : '';
 
@@ -3888,7 +4560,7 @@ echo '          </div>
                     . '<button class="ra-btn-reward-toggle ' . $badge_class . '" data-repair-id="' . intval($r->id) . '">'
                         . '<i class="ri-gift-line"></i> ' . ($reward_rejected ? 'Belohnung (abgelehnt)' : 'Belohnung verf&uuml;gbar')
                     . '</button>'
-                    . '<div class="ra-reward-container" style="display:none" data-repair-id="' . intval($r->id) . '">';
+                    . '<div class="ra-reward-container" data-repair-id="' . intval($r->id) . '">';
 
                 if ($reward_rejected) {
                     // Show rejection info with option to reconsider
@@ -3956,7 +4628,7 @@ echo '          </div>
                 . $pin_html
                 . $muster_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
-                . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . '</div>'
+                . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="Zuletzt ge&auml;ndert">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
             . '</div>'
             . $reward_html
             . '<div class="ra-repair-comments-section">'

@@ -35,6 +35,27 @@ class PPV_Repair_Invoice {
         // Generate invoice number
         $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
         $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
+
+        // Auto-detect highest existing invoice number from database (only matching current prefix)
+        $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+            $store->id,
+            $wpdb->esc_like($inv_prefix) . '%'
+        ));
+        $detected_max = 0;
+        foreach ($all_invoice_numbers as $inv_num) {
+            if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                $num = intval($m[1]);
+                if ($num > $detected_max) {
+                    $detected_max = $num;
+                }
+            }
+        }
+        // Use the higher of stored counter or detected max + 1
+        if ($detected_max >= $next_num) {
+            $next_num = $detected_max + 1;
+        }
+
         $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
 
         // Device info
@@ -285,6 +306,13 @@ class PPV_Repair_Invoice {
         $date_from = sanitize_text_field($_POST['date_from'] ?? '');
         $date_to   = sanitize_text_field($_POST['date_to'] ?? '');
         $doc_type  = sanitize_text_field($_POST['doc_type'] ?? '');
+        $sort_by   = sanitize_text_field($_POST['sort_by'] ?? 'created_at');
+        $sort_dir  = strtoupper(sanitize_text_field($_POST['sort_dir'] ?? 'DESC'));
+
+        // Whitelist sortable columns
+        $allowed_sort = ['invoice_number', 'created_at', 'customer_name', 'net_amount', 'total', 'status'];
+        if (!in_array($sort_by, $allowed_sort)) $sort_by = 'created_at';
+        if (!in_array($sort_dir, ['ASC', 'DESC'])) $sort_dir = 'DESC';
 
         $where = "store_id = %d";
         $params = [$store_id];
@@ -303,7 +331,7 @@ class PPV_Repair_Invoice {
         $p[] = $per_page;
         $p[] = $offset;
         $invoices = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$prefix}ppv_repair_invoices WHERE {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+            "SELECT * FROM {$prefix}ppv_repair_invoices WHERE {$where} ORDER BY {$sort_by} {$sort_dir} LIMIT %d OFFSET %d",
             ...$p
         ));
 
@@ -429,6 +457,32 @@ class PPV_Repair_Invoice {
         if (isset($_POST['customer_city'])) {
             $update['customer_city'] = sanitize_text_field($_POST['customer_city']);
         }
+        // Allow updating invoice number
+        if (isset($_POST['invoice_number'])) {
+            $new_invoice_number = sanitize_text_field($_POST['invoice_number']);
+            if (!empty($new_invoice_number)) {
+                $update['invoice_number'] = $new_invoice_number;
+            }
+        }
+
+        // Differenzbesteuerung
+        if (isset($_POST['is_differenzbesteuerung'])) {
+            $is_differenz = intval($_POST['is_differenzbesteuerung']) ? 1 : 0;
+            $update['is_differenzbesteuerung'] = $is_differenz;
+
+            // Recalculate VAT if differenzbesteuerung changed
+            if (isset($update['total'])) {
+                $brutto = $update['total'];
+            } else {
+                $brutto = floatval($invoice->total);
+            }
+
+            if ($is_differenz || $invoice->is_kleinunternehmer) {
+                $update['net_amount'] = $brutto;
+                $update['vat_amount'] = 0;
+                $update['vat_rate'] = 0;
+            }
+        }
 
         if (!empty($update)) {
             $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', $update, ['id' => $invoice_id]);
@@ -533,18 +587,48 @@ class PPV_Repair_Invoice {
         $subtotal = floatval($_POST['subtotal'] ?? 0);
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
 
-        // Generate invoice number
-        $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
-        $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
-        $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
+        // Generate invoice number (or use custom if provided)
+        $custom_invoice_number = sanitize_text_field($_POST['invoice_number'] ?? '');
+        if (!empty($custom_invoice_number)) {
+            $invoice_number = $custom_invoice_number;
+            // Don't increment counter when using custom number
+            $should_increment = false;
+        } else {
+            $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
+            $next_num = max(1, intval($store->repair_invoice_next_number ?: 1));
+
+            // Auto-detect highest existing invoice number from database (only matching current prefix)
+            $all_invoice_numbers = $wpdb->get_col($wpdb->prepare(
+                "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+                $store_id,
+                $wpdb->esc_like($inv_prefix) . '%'
+            ));
+            $detected_max = 0;
+            foreach ($all_invoice_numbers as $inv_num) {
+                if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                    $num = intval($m[1]);
+                    if ($num > $detected_max) {
+                        $detected_max = $num;
+                    }
+                }
+            }
+            // Use the higher of stored counter or detected max + 1
+            if ($detected_max >= $next_num) {
+                $next_num = $detected_max + 1;
+            }
+
+            $invoice_number = $inv_prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
+            $should_increment = true;
+        }
 
         // VAT calculation
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate_pct = floatval($store->repair_vat_rate ?: 19.00);
         $is_klein = $vat_enabled ? 0 : 1;
+        $is_differenz = !empty($_POST['is_differenzbesteuerung']) ? 1 : 0;
 
-        // Calculate from brutto
-        if ($vat_enabled) {
+        // Calculate from brutto (no VAT if Kleinunternehmer or Differenzbesteuerung)
+        if ($vat_enabled && !$is_differenz) {
             $net_amount = round($subtotal / (1 + $vat_rate_pct / 100), 2);
             $vat_amount = round($subtotal - $net_amount, 2);
             $total = $subtotal;
@@ -582,6 +666,7 @@ class PPV_Repair_Invoice {
             'vat_amount'        => $vat_amount,
             'total'             => $total,
             'is_kleinunternehmer' => $is_klein,
+            'is_differenzbesteuerung' => $is_differenz,
             'punktepass_reward_applied' => 0,
             'points_used'       => 0,
             'notes'             => $notes,
@@ -591,8 +676,8 @@ class PPV_Repair_Invoice {
 
         $invoice_id = $wpdb->insert_id;
 
-        // Increment next invoice number
-        if ($invoice_id) {
+        // Increment next invoice number (only if auto-generated)
+        if ($invoice_id && $should_increment) {
             $wpdb->query($wpdb->prepare(
                 "UPDATE {$prefix}ppv_stores SET repair_invoice_next_number = %d WHERE id = %d",
                 $next_num + 1, $store_id
@@ -999,11 +1084,22 @@ class PPV_Repair_Invoice {
         $company = esc_html($store->repair_company_name ?: $store->name);
         $owner = esc_html($store->repair_owner_name ?: '');
         $addr = esc_html($store->address ?: '');
-        $plz_city = esc_html(trim(($store->plz ?: '') . ' ' . ($store->city ?: '')));
+        $plz = esc_html($store->plz ?: '');
+        $city = esc_html($store->city ?: '');
+        $plz_city = esc_html(trim($plz . ' ' . $city));
         $phone = esc_html($store->phone ?: '');
         $email = esc_html($store->email ?: '');
         $tax = esc_html($store->repair_tax_id ?: '');
         $logo_url = esc_url($store->logo ?: '');
+
+        // Additional store settings
+        $steuernummer = esc_html($store->repair_steuernummer ?? '');
+        $website = esc_html($store->repair_website_url ?? '');
+        $bank_name = esc_html($store->repair_bank_name ?? '');
+        $bank_iban = esc_html($store->repair_bank_iban ?? '');
+        $bank_bic = esc_html($store->repair_bank_bic ?? '');
+        $paypal = esc_html($store->repair_paypal_email ?? '');
+        $is_differenz = intval($invoice->is_differenzbesteuerung ?? 0);
 
         $inv_nr = esc_html($invoice->invoice_number);
         $inv_date = date('d.m.Y', strtotime($invoice->created_at));
@@ -1034,26 +1130,21 @@ class PPV_Repair_Invoice {
         $has_discount = $invoice->discount_type !== 'none' && $invoice->discount_value > 0;
 
         $logo_html = $logo_url ? '<img src="' . $logo_url . '" style="height:50px;border-radius:6px;">' : '';
-        $tax_line = $tax ? '<br>USt-IdNr.: ' . $tax : '';
-        $phone_line = $phone ? '<br>Tel: ' . $phone : '';
-        $cust_phone_line = $cust_phone ? '<br>Tel: ' . $cust_phone : '';
-        $cust_company_line = $cust_company ? '<br>' . $cust_company : '';
-        $cust_addr_line = $cust_address ? '<br>' . $cust_address : '';
+
+        // Customer address formatting
         $cust_plz_city = trim($cust_plz . ' ' . $cust_city);
-        $cust_plz_city_line = $cust_plz_city ? '<br>' . $cust_plz_city : '';
-        $cust_tax_line = $cust_tax_id ? '<br>USt-IdNr.: ' . $cust_tax_id : '';
 
         $discount_row = '';
         if ($has_discount) {
-            $discount_row = '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">PunktePass Belohnung: ' . $discount_desc . '</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;color:#059669;font-weight:600;">-' . $discount_val . ' &euro;</td></tr>';
+            $discount_row = '<tr><td></td><td colspan="3" style="color:#059669">PunktePass Belohnung: ' . $discount_desc . '</td><td style="color:#059669;font-weight:600">-' . $discount_val . ' &euro;</td></tr>';
         }
 
         $reward_notice = '';
         if ($invoice->punktepass_reward_applied) {
-            $reward_notice = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:12px;color:#065f46;"><strong>PunktePass Belohnung eingelöst!</strong><br>' . $discount_desc . ' (' . intval($invoice->points_used) . ' Punkte verwendet)</div>';
+            $reward_notice = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:10px 14px;margin-top:16px;font-size:11px;color:#065f46;"><strong>PunktePass Belohnung eingelöst!</strong> ' . $discount_desc . ' (' . intval($invoice->points_used) . ' Punkte verwendet)</div>';
         }
 
-        $notes_section = $notes ? '<div style="margin-top:16px;"><strong style="font-size:12px;color:#6b7280;">Anmerkungen:</strong><p style="font-size:12px;color:#374151;margin-top:4px;">' . $notes . '</p></div>' : '';
+        $notes_section = $notes ? '<div style="margin-top:16px;"><strong style="font-size:11px;color:#6b7280;">Anmerkungen:</strong><p style="font-size:11px;color:#374151;margin-top:4px;">' . $notes . '</p></div>' : '';
 
         // Payment info section (for paid invoices)
         $payment_section = '';
@@ -1072,7 +1163,7 @@ class PPV_Repair_Invoice {
             $method_display = $payment_method_labels[$payment_method] ?? $payment_method;
 
             if ($method_display || $paid_at) {
-                $payment_section = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:12px;color:#0369a1;">';
+                $payment_section = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;padding:10px 14px;margin-top:16px;font-size:11px;color:#0369a1;">';
                 $payment_section .= '<strong style="color:#0c4a6e;">Bezahlt</strong>';
                 if ($paid_at) {
                     $payment_section .= ' am ' . $paid_at;
@@ -1087,69 +1178,231 @@ class PPV_Repair_Invoice {
         // Build line items rows
         $line_items = json_decode($invoice->line_items ?? '', true);
         $items_html = '';
+        $pos = 1;
         if (!empty($line_items) && is_array($line_items)) {
             foreach ($line_items as $item) {
                 $item_desc = esc_html($item['description'] ?? 'Position');
                 $item_amt = number_format(floatval($item['amount'] ?? 0), 2, ',', '.');
-                $items_html .= '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">' . $item_desc . '</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $item_amt . ' &euro;</td></tr>';
-            }
-            if (count($line_items) > 1) {
-                $items_html .= '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;"><strong>Zwischensumme</strong></td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;"><strong>' . $subtotal . ' &euro;</strong></td></tr>';
+                $items_html .= '<tr><td>' . $pos . '</td><td>' . $item_desc . '</td><td>1,00</td><td>' . $item_amt . ' &euro;</td><td>' . $item_amt . ' &euro;</td></tr>';
+                $pos++;
             }
         } else {
             // Fallback: single line for legacy invoices
-            $items_html = '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;"><strong>Reparatur' . ($device ? ': ' . $device : '') . '</strong><br><span style="font-size:12px;color:#6b7280;">' . $desc . '</span></td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $subtotal . ' &euro;</td></tr>';
+            $item_label = $device ? $device : 'Reparatur';
+            $items_html = '<tr><td>1</td><td>' . $item_label . ($desc ? '<br><span style="font-size:8pt;color:#718096">' . $desc . '</span>' : '') . '</td><td>1,00</td><td>' . $subtotal . ' &euro;</td><td>' . $subtotal . ' &euro;</td></tr>';
         }
 
+        // Determine VAT text based on settings
+        $vat_text = '';
+        if ($is_klein) {
+            $vat_text = '<div style="font-size:10px;color:#6b7280;margin-top:8px">Gem&auml;&szlig; &sect;19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmer).</div>';
+        } elseif ($is_differenz) {
+            $vat_text = '<div style="font-size:10px;color:#6b7280;margin-top:8px">Differenzbesteuerung gem. &sect;25a UStG. Im Verkaufspreis ist keine Umsatzsteuer enthalten.</div>';
+        }
+
+        // Build footer columns
+        $footer_col1 = '<strong>' . $owner . ', ' . $company . '</strong><br>' . $addr . '<br>' . $plz_city . '<br>Deutschland';
+
+        $footer_col2 = 'Tel.: ' . $phone . '<br>E-Mail:<br>' . $email;
+        if ($website) {
+            $footer_col2 .= '<br>Web: ' . $website;
+        }
+        if ($paypal) {
+            $footer_col2 .= '<br>PayPal - Adresse:<br>' . $paypal;
+        }
+
+        $footer_col3 = '';
+        if ($tax) {
+            $footer_col3 .= 'USt.-ID: ' . $tax . '<br>';
+        }
+        if ($steuernummer) {
+            $footer_col3 .= 'Steuer-Nr.: ' . $steuernummer . '<br>';
+        }
+        if ($owner) {
+            $footer_col3 .= 'Inhaber/-in: ' . $owner;
+        }
+
+        $footer_col4 = '';
+        if ($bank_name || $bank_iban) {
+            $footer_col4 .= $bank_name . '<br>';
+            if ($bank_iban) {
+                $footer_col4 .= 'IBAN:<br>' . $bank_iban . '<br>';
+            }
+            if ($bank_bic) {
+                $footer_col4 .= 'BIC: ' . $bank_bic;
+            }
+        }
+
+        // Sender line for envelope window
+        $sender_line = $owner . ', ' . $addr . ', ' . $plz_city . ', Deutschland';
+
         return '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1f2937;font-size:13px;line-height:1.5;margin:0;padding:0}
-.inv-wrap{max-width:700px;margin:0 auto;padding:32px}
-.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:3px solid ' . $color . '}
-.inv-logo{display:flex;align-items:center;gap:12px}
-.inv-company{font-size:20px;font-weight:700;color:#111827}
-.inv-meta{text-align:right}
-.inv-nr{font-size:22px;font-weight:700;color:' . $color . '}
-.inv-date{font-size:13px;color:#6b7280;margin-top:4px}
-.inv-parties{display:flex;justify-content:space-between;margin-bottom:28px}
-.inv-from,.inv-to{width:48%}
-.inv-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;margin-bottom:6px}
-.inv-addr{font-size:13px;color:#374151;line-height:1.6}
-.inv-table{width:100%;border-collapse:collapse;margin-bottom:20px}
-.inv-table th{background:' . $color . ';color:#fff;padding:10px 12px;text-align:left;font-size:12px;font-weight:600}
-.inv-table th:last-child{text-align:right}
-.inv-table td{padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:13px}
-.inv-total-row td{font-weight:700;font-size:15px;border-top:2px solid #111827;border-bottom:none}
-.inv-footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af}
+@page{margin:15mm 15mm 28mm 15mm;size:A4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-height:1.5}
+.invoice{padding:0;max-width:100%}
+
+/* Header */
+.header{display:table;width:100%;margin-bottom:8mm;padding-bottom:5mm;border-bottom:2px solid ' . $color . '}
+.header-left{display:table-cell;vertical-align:top;width:50%}
+.header-right{display:table-cell;vertical-align:top;width:50%;text-align:right}
+.logo{height:40px;margin-bottom:3mm}
+.company-name{font-size:16pt;font-weight:600;color:' . $color . ';margin-bottom:1mm}
+.company-tagline{font-size:9pt;color:#718096}
+
+/* Address Section */
+.address-section{display:table;width:100%;margin-bottom:8mm}
+.address-left{display:table-cell;vertical-align:top;width:55%}
+.address-right{display:table-cell;vertical-align:top;width:45%}
+.sender-line{font-size:7pt;color:#a0aec0;margin-bottom:2mm;border-bottom:1px solid #cbd5e0;padding-bottom:1mm;display:inline-block}
+.customer-address{font-size:10pt;line-height:1.6}
+.customer-name{font-weight:600;font-size:11pt}
+
+/* Invoice Details Box */
+.invoice-details{background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;padding:4mm}
+.invoice-details table{width:100%;border-collapse:collapse}
+.invoice-details td{padding:2mm 0;font-size:10pt}
+.invoice-details td:first-child{color:#718096;width:45%}
+.invoice-details td:last-child{text-align:right;font-weight:500}
+.invoice-number{font-size:12pt;font-weight:700;color:' . $color . '}
+
+/* Title & Intro */
+.doc-title{font-size:18pt;font-weight:600;color:#2d3748;margin:6mm 0 4mm}
+.intro-text{font-size:10pt;color:#4a5568;margin-bottom:6mm;line-height:1.6}
+
+/* Items Table */
+.items-table{width:100%;border-collapse:collapse;margin-bottom:5mm}
+.items-table th{background:' . $color . ';color:#fff;padding:3mm 2mm;font-size:9pt;font-weight:600;text-align:left}
+.items-table th:nth-child(1){width:8%;text-align:center;border-radius:3px 0 0 0}
+.items-table th:nth-child(2){width:52%}
+.items-table th:nth-child(3){width:12%;text-align:center}
+.items-table th:nth-child(4){width:14%;text-align:right}
+.items-table th:nth-child(5){width:14%;text-align:right;border-radius:0 3px 0 0}
+.items-table td{padding:3mm 2mm;border-bottom:1px solid #e2e8f0;font-size:10pt;vertical-align:top}
+.items-table td:nth-child(1){text-align:center;color:#718096}
+.items-table td:nth-child(3){text-align:center}
+.items-table td:nth-child(4),.items-table td:nth-child(5){text-align:right}
+.items-table tr:last-child td{border-bottom:2px solid ' . $color . '}
+
+/* Summary */
+.summary-section{margin-left:auto;width:50%;margin-top:4mm}
+.summary-row{display:table;width:100%;padding:2mm 0;font-size:10pt}
+.summary-row span:first-child{display:table-cell;text-align:left;color:#718096}
+.summary-row span:last-child{display:table-cell;text-align:right}
+.summary-row.total{border-top:2px solid #2d3748;margin-top:2mm;padding-top:3mm;font-weight:700;font-size:12pt}
+.summary-row.total span{color:#2d3748}
+
+/* Info Boxes */
+.info-box{border-radius:4px;padding:3mm 4mm;margin-top:4mm;font-size:9pt}
+.info-box.payment{background:#ebf8ff;border:1px solid #90cdf4;color:#2b6cb0}
+.info-box.reward{background:#f0fff4;border:1px solid #9ae6b4;color:#276749}
+.info-box strong{font-weight:600}
+.vat-notice{font-size:8pt;color:#718096;margin-top:3mm}
+
+/* Footer */
+.footer{position:fixed;bottom:0;left:0;right:0;padding:4mm 15mm;background:#f7fafc;border-top:1px solid #e2e8f0;font-size:8pt;color:#718096}
+.footer-grid{display:table;width:100%;table-layout:fixed}
+.footer-col{display:table-cell;vertical-align:top;padding:0 2mm;line-height:1.5}
+.footer-col:first-child{padding-left:0}
+.footer-col:last-child{padding-right:0}
+.footer-col strong{color:#4a5568;font-weight:600}
+.footer-label{color:#a0aec0;font-size:7pt;text-transform:uppercase;letter-spacing:0.3px}
 </style></head><body>
-<div class="inv-wrap">
-<div class="inv-header">
-<div class="inv-logo">' . $logo_html . '<div><div class="inv-company">' . $company . '</div><div style="font-size:12px;color:#6b7280;">' . $owner . '</div></div></div>
-<div class="inv-meta"><div style="font-size:14px;font-weight:600;color:#6b7280;margin-bottom:2px;">' . $doc_type_label . '</div><div class="inv-nr">' . $inv_nr . '</div><div class="inv-date">Datum: ' . $inv_date . '</div>' . ($valid_until ? '<div class="inv-date">G&uuml;ltig bis: ' . $valid_until . '</div>' : '') . '</div>
+
+<div class="invoice">
+
+<div class="header">
+<div class="header-left">
+' . ($logo_url ? '<img src="' . $logo_url . '" class="logo" alt="">' : '') . '
+<div class="company-name">' . $company . '</div>
+<div class="company-tagline">' . ($owner ? $owner : '') . '</div>
 </div>
-<div class="inv-parties">
-<div class="inv-from"><div class="inv-label">Von</div><div class="inv-addr"><strong>' . $company . '</strong><br>' . $owner . '<br>' . $addr . '<br>' . $plz_city . $phone_line . '<br>E-Mail: ' . $email . $tax_line . '</div></div>
-<div class="inv-to"><div class="inv-label">An</div><div class="inv-addr"><strong>' . $cust_name . '</strong>' . $cust_company_line . $cust_addr_line . $cust_plz_city_line . '<br>E-Mail: ' . $cust_email . $cust_phone_line . $cust_tax_line . '</div></div>
+<div class="header-right">
+<div style="font-size:9pt;color:#718096;line-height:1.6">
+' . $addr . '<br>
+' . $plz_city . '<br>
+' . ($phone ? 'Tel: ' . $phone . '<br>' : '') . '
+' . $email . '
 </div>
-<table class="inv-table">
-<tr><th>Beschreibung</th><th>Betrag</th></tr>
+</div>
+</div>
+
+<div class="address-section">
+<div class="address-left">
+<div class="sender-line">' . $company . ' &middot; ' . $addr . ' &middot; ' . $plz_city . '</div>
+<div class="customer-address">
+' . ($cust_company ? $cust_company . '<br>' : '') . '
+<span class="customer-name">' . $cust_name . '</span><br>
+' . ($cust_address ? $cust_address . '<br>' : '') . '
+' . ($cust_plz_city ? $cust_plz_city : '') . '
+</div>
+</div>
+<div class="address-right">
+<div class="invoice-details">
+<table>
+<tr><td>' . $doc_type_label . '-Nr.:</td><td><span class="invoice-number">' . $inv_nr . '</span></td></tr>
+<tr><td>Datum:</td><td>' . $inv_date . '</td></tr>
+' . ($valid_until ? '<tr><td>G&uuml;ltig bis:</td><td>' . $valid_until . '</td></tr>' : '') . '
+' . ($cust_tax_id ? '<tr><td>Ihre USt-IdNr.:</td><td>' . $cust_tax_id . '</td></tr>' : '') . '
+</table>
+</div>
+</div>
+</div>
+
+<div class="doc-title">' . $doc_type_label . '</div>
+<p class="intro-text">Sehr geehrte Damen und Herren,<br>' . ($is_angebot ? 'vielen Dank f&uuml;r Ihre Anfrage. Gerne unterbreiten wir Ihnen folgendes Angebot:' : 'vielen Dank f&uuml;r Ihren Auftrag. Hiermit stellen wir Ihnen folgende Leistungen in Rechnung:') . '</p>
+
+<table class="items-table">
+<tr><th>Pos</th><th>Beschreibung</th><th>Menge</th><th>Einzelpreis</th><th>Gesamt</th></tr>
 ' . $items_html . '
 ' . $discount_row . '
-<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;"><strong>Nettobetrag</strong></td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $net_amount . ' &euro;</td></tr>
-' . ($is_klein
-    ? '<tr><td colspan="2" style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;">Gem&auml;&szlig; &sect;19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmer).</td></tr>'
-    : '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">MwSt ' . number_format($vat_rate, 0) . '%</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">' . $vat_amount . ' &euro;</td></tr>'
-) . '
-<tr class="inv-total-row"><td style="padding:10px 12px;border-top:2px solid #111827;border-bottom:none;"><strong>' . ($is_klein ? 'Gesamt' : 'Bruttobetrag') . '</strong></td><td style="padding:10px 12px;border-top:2px solid #111827;border-bottom:none;text-align:right;">' . $total . ' &euro;</td></tr>
 </table>
-' . $reward_notice . '
-' . $notes_section . '
-' . $payment_section . '
-<div class="inv-footer">
-' . $company . ' &middot; ' . $addr . ' &middot; ' . $plz_city . '<br>
-E-Mail: ' . $email . ($tax ? ' &middot; USt-IdNr.: ' . $tax : '') . '<br><br>
-Powered by PunktePass &middot; punktepass.de
+
+<div class="summary-section">
+<div class="summary-row"><span>Zwischensumme (netto)</span><span>' . $net_amount . ' &euro;</span></div>
+' . (!$is_klein && !$is_differenz ? '<div class="summary-row"><span>MwSt. ' . number_format($vat_rate, 0) . '%</span><span>' . $vat_amount . ' &euro;</span></div>' : '') . '
+<div class="summary-row total"><span>Gesamtbetrag</span><span>' . $total . ' &euro;</span></div>
+</div>
+
+' . ($is_klein ? '<p class="vat-notice">Gem&auml;&szlig; &sect;19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>' : '') . '
+' . ($is_differenz ? '<p class="vat-notice">Differenzbesteuerung gem. &sect;25a UStG. Im Rechnungsbetrag ist keine Umsatzsteuer enthalten.</p>' : '') . '
+
+' . ($invoice->status === 'paid' ? '<div class="info-box payment"><strong>Bezahlt</strong>' . ($paid_at ? ' am ' . date('d.m.Y', strtotime($invoice->paid_at)) : '') . ($method_display ? ' per ' . $method_display : '') . '</div>' : '') . '
+
+' . ($invoice->punktepass_reward_applied ? '<div class="info-box reward"><strong>PunktePass Belohnung eingel&ouml;st:</strong> ' . $discount_desc . '</div>' : '') . '
+
+' . ($notes ? '<div style="margin-top:5mm;padding-top:3mm;border-top:1px solid #e2e8f0"><strong style="font-size:9pt;color:#718096">Anmerkungen:</strong><p style="font-size:9pt;color:#4a5568;margin-top:1mm">' . $notes . '</p></div>' : '') . '
+
+</div>
+
+<div class="footer">
+<div class="footer-grid">
+<div class="footer-col">
+<strong>' . $company . '</strong><br>
+' . $addr . '<br>
+' . $plz_city . '
+</div>
+<div class="footer-col">
+<span class="footer-label">Kontakt</span><br>
+' . ($phone ? 'Tel: ' . $phone . '<br>' : '') . '
+' . $email . '
+' . ($website ? '<br>' . $website : '') . '
+</div>
+<div class="footer-col">
+<span class="footer-label">Steuerdaten</span><br>
+' . ($tax ? 'USt-IdNr: ' . $tax . '<br>' : '') . '
+' . ($steuernummer ? 'St-Nr: ' . $steuernummer . '<br>' : '') . '
+' . ($owner ? 'Inh: ' . $owner : '') . '
+</div>
+' . ($bank_iban ? '<div class="footer-col">
+<span class="footer-label">Bankverbindung</span><br>
+' . ($bank_name ? $bank_name . '<br>' : '') . '
+IBAN: ' . $bank_iban . '
+' . ($bank_bic ? '<br>BIC: ' . $bank_bic : '') . '
+</div>' : '') . '
 </div>
 </div>
+
 </body></html>';
     }
 
@@ -1257,6 +1510,642 @@ Powered by PunktePass &middot; punktepass.de
         } else {
             wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
         }
+    }
+
+    /**
+     * AJAX: Send payment reminder email
+     */
+    public static function ajax_send_reminder() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $invoice_id = intval($_POST['invoice_id'] ?? 0);
+        if (!$invoice_id) wp_send_json_error(['message' => 'Ungültige Rechnung']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $invoice = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_repair_invoices WHERE id = %d AND store_id = %d",
+            $invoice_id, $store_id
+        ));
+        if (!$invoice) wp_send_json_error(['message' => 'Rechnung nicht gefunden']);
+        if (empty($invoice->customer_email)) wp_send_json_error(['message' => 'Keine E-Mail-Adresse vorhanden']);
+        if ($invoice->status === 'paid') wp_send_json_error(['message' => 'Rechnung ist bereits bezahlt']);
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+
+        $company_name = $store->repair_company_name ?: $store->name;
+        $company_email = $store->repair_company_email ?: $store->email ?: '';
+        $company_phone = $store->repair_company_phone ?: $store->phone ?: '';
+        $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+        $days_overdue = floor((time() - strtotime($invoice->created_at)) / 86400);
+
+        $subject = "Zahlungserinnerung: Rechnung {$invoice->invoice_number}";
+
+        $body = "Sehr geehrte/r {$invoice->customer_name},\n\n";
+        $body .= "wir möchten Sie freundlich daran erinnern, dass die folgende Rechnung noch offen ist:\n\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $body .= "RECHNUNGSDETAILS\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $body .= "📋 Rechnungsnummer: {$invoice->invoice_number}\n";
+        $body .= "📅 Rechnungsdatum: {$invoice_date}\n";
+        $body .= "💰 Offener Betrag: " . number_format($invoice->total, 2, ',', '.') . " €\n";
+        if ($days_overdue > 0) {
+            $body .= "⏰ Überfällig seit: {$days_overdue} Tagen\n";
+        }
+        $body .= "\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $body .= "Bitte überweisen Sie den offenen Betrag zeitnah.\n\n";
+        $body .= "Falls Sie die Zahlung bereits veranlasst haben, betrachten Sie diese E-Mail bitte als gegenstandslos.\n\n";
+        $body .= "Bei Fragen stehen wir Ihnen gerne zur Verfügung:\n";
+        if ($company_phone) $body .= "📞 {$company_phone}\n";
+        if ($company_email) $body .= "📧 {$company_email}\n";
+        $body .= "\n";
+        $body .= "Mit freundlichen Grüßen,\n";
+        $body .= "{$company_name}\n";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            "From: {$company_name} <noreply@punktepass.de>"
+        ];
+        if ($company_email) {
+            $headers[] = "Reply-To: {$company_email}";
+        }
+
+        $sent = wp_mail($invoice->customer_email, $subject, $body, $headers);
+
+        if ($sent) {
+            // Update reminder_sent_at timestamp
+            $wpdb->update($prefix . 'ppv_repair_invoices',
+                ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] Zahlungserinnerung gesendet")],
+                ['id' => $invoice_id]
+            );
+            wp_send_json_success(['message' => 'Zahlungserinnerung wurde an ' . $invoice->customer_email . ' gesendet']);
+        } else {
+            wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
+        }
+    }
+
+    /**
+     * AJAX: Bulk operation on invoices
+     */
+    public static function ajax_bulk_operation() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $operation = sanitize_text_field($_POST['operation'] ?? '');
+        $invoice_ids = json_decode(stripslashes($_POST['invoice_ids'] ?? '[]'), true);
+
+        if (empty($invoice_ids) || !is_array($invoice_ids)) {
+            wp_send_json_error(['message' => 'Keine Rechnungen ausgewählt']);
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+
+        $success_count = 0;
+        $error_count = 0;
+
+        foreach ($invoice_ids as $invoice_id) {
+            $invoice_id = intval($invoice_id);
+            $invoice = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}ppv_repair_invoices WHERE id = %d AND store_id = %d",
+                $invoice_id, $store_id
+            ));
+            if (!$invoice) {
+                $error_count++;
+                continue;
+            }
+
+            switch ($operation) {
+                case 'mark_paid':
+                    $wpdb->update($prefix . 'ppv_repair_invoices', [
+                        'status' => 'paid',
+                        'paid_at' => current_time('mysql')
+                    ], ['id' => $invoice_id]);
+                    $success_count++;
+                    break;
+
+                case 'send_email':
+                    if (empty($invoice->customer_email)) {
+                        $error_count++;
+                        continue 2;
+                    }
+                    // Use existing send_email logic (simplified version without PDF for bulk)
+                    $_POST['invoice_id'] = $invoice_id;
+                    // Generate and send - this is a simplified approach
+                    $company_name = $store->repair_company_name ?: $store->name;
+                    $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+                    $subject = str_replace('{invoice_number}', $invoice->invoice_number,
+                        $store->repair_invoice_email_subject ?: 'Ihre Rechnung {invoice_number}');
+                    $body = str_replace(
+                        ['{customer_name}', '{invoice_number}', '{invoice_date}', '{total}', '{company_name}'],
+                        [$invoice->customer_name, $invoice->invoice_number, $invoice_date, number_format($invoice->total, 2, ',', '.'), $company_name],
+                        $store->repair_invoice_email_body ?: "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number}.\n\nGesamtbetrag: {total} €\n\nMit freundlichen Grüßen,\n{company_name}"
+                    );
+                    $headers = ['Content-Type: text/plain; charset=UTF-8', "From: {$company_name} <noreply@punktepass.de>"];
+                    if (wp_mail($invoice->customer_email, $subject, $body, $headers)) {
+                        if ($invoice->status === 'draft') {
+                            $wpdb->update($prefix . 'ppv_repair_invoices', ['status' => 'sent'], ['id' => $invoice_id]);
+                        }
+                        $success_count++;
+                    } else {
+                        $error_count++;
+                    }
+                    break;
+
+                case 'send_reminder':
+                    if (empty($invoice->customer_email) || $invoice->status === 'paid') {
+                        $error_count++;
+                        continue 2;
+                    }
+                    $company_name = $store->repair_company_name ?: $store->name;
+                    $company_email = $store->repair_company_email ?: '';
+                    $company_phone = $store->repair_company_phone ?: '';
+                    $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
+                    $days_overdue = floor((time() - strtotime($invoice->created_at)) / 86400);
+
+                    $subject = "Zahlungserinnerung: Rechnung {$invoice->invoice_number}";
+                    $body = "Sehr geehrte/r {$invoice->customer_name},\n\n";
+                    $body .= "wir möchten Sie freundlich daran erinnern, dass die folgende Rechnung noch offen ist:\n\n";
+                    $body .= "Rechnungsnummer: {$invoice->invoice_number}\n";
+                    $body .= "Rechnungsdatum: {$invoice_date}\n";
+                    $body .= "Offener Betrag: " . number_format($invoice->total, 2, ',', '.') . " €\n";
+                    if ($days_overdue > 0) $body .= "Überfällig seit: {$days_overdue} Tagen\n";
+                    $body .= "\nBitte überweisen Sie den offenen Betrag zeitnah.\n\n";
+                    $body .= "Mit freundlichen Grüßen,\n{$company_name}\n";
+
+                    $headers = ['Content-Type: text/plain; charset=UTF-8', "From: {$company_name} <noreply@punktepass.de>"];
+                    if (wp_mail($invoice->customer_email, $subject, $body, $headers)) {
+                        $wpdb->update($prefix . 'ppv_repair_invoices',
+                            ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] Zahlungserinnerung gesendet")],
+                            ['id' => $invoice_id]
+                        );
+                        $success_count++;
+                    } else {
+                        $error_count++;
+                    }
+                    break;
+
+                case 'delete':
+                    // Delete the invoice
+                    $deleted = $wpdb->delete($prefix . 'ppv_repair_invoices', ['id' => $invoice_id, 'store_id' => $store_id]);
+                    if ($deleted) {
+                        $success_count++;
+                    } else {
+                        $error_count++;
+                    }
+                    break;
+
+                case 'export':
+                    // Export is handled separately after the loop
+                    $success_count++;
+                    break;
+
+                default:
+                    wp_send_json_error(['message' => 'Unbekannte Operation']);
+            }
+        }
+
+        // Handle export operation separately (needs all invoices at once)
+        if ($operation === 'export') {
+            $format = sanitize_text_field($_POST['format'] ?? 'csv');
+            $invoices = [];
+            foreach ($invoice_ids as $invoice_id) {
+                $invoice_id = intval($invoice_id);
+                $invoice = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$prefix}ppv_repair_invoices WHERE id = %d AND store_id = %d",
+                    $invoice_id, $store_id
+                ));
+                if ($invoice) {
+                    $invoices[] = $invoice;
+                }
+            }
+            if (empty($invoices)) {
+                wp_send_json_error(['message' => 'Keine Rechnungen gefunden']);
+            }
+            return self::handle_bulk_export($invoices, $format, $store);
+        }
+
+        $message = "{$success_count} erfolgreich verarbeitet";
+        if ($error_count > 0) {
+            $message .= ", {$error_count} fehlgeschlagen";
+        }
+
+        wp_send_json_success(['message' => $message, 'success' => $success_count, 'errors' => $error_count]);
+    }
+
+    /**
+     * Handle bulk export of invoices
+     */
+    private static function handle_bulk_export($invoices, $format, $store) {
+        $upload_dir = wp_upload_dir();
+        $export_dir = $upload_dir['basedir'] . '/ppv-exports/';
+        if (!file_exists($export_dir)) {
+            wp_mkdir_p($export_dir);
+        }
+
+        $timestamp = date('Y-m-d_His');
+        $company = sanitize_file_name($store->repair_company_name ?: $store->name);
+
+        switch ($format) {
+            case 'datev':
+                return self::export_datev($invoices, $export_dir, $timestamp, $company, $store);
+
+            case 'csv':
+                return self::export_csv($invoices, $export_dir, $timestamp, $company);
+
+            case 'excel':
+                return self::export_excel($invoices, $export_dir, $timestamp, $company);
+
+            case 'pdf':
+                return self::export_pdf_zip($invoices, $export_dir, $timestamp, $company, $store);
+
+            case 'json':
+                return self::export_json($invoices, $export_dir, $timestamp, $company);
+
+            default:
+                wp_send_json_error(['message' => 'Unbekanntes Export-Format']);
+        }
+    }
+
+    /**
+     * Export DATEV format (German accounting standard)
+     */
+    private static function export_datev($invoices, $export_dir, $timestamp, $company, $store) {
+        $filename = "DATEV_Export_{$company}_{$timestamp}.csv";
+        $filepath = $export_dir . $filename;
+
+        // DATEV header
+        $header = [
+            'Umsatz (ohne Soll/Haben-Kz)',
+            'Soll/Haben-Kennzeichen',
+            'WKZ Umsatz',
+            'Kurs',
+            'Basis-Umsatz',
+            'WKZ Basis-Umsatz',
+            'Konto',
+            'Gegenkonto (ohne BU-Schlüssel)',
+            'BU-Schlüssel',
+            'Belegdatum',
+            'Belegfeld 1',
+            'Belegfeld 2',
+            'Skonto',
+            'Buchungstext',
+            'Postensperre',
+            'Diverse Adressnummer',
+            'Geschäftspartnerbank',
+            'Sachverhalt',
+            'Zinssperre',
+            'Beleglink',
+            'Beleginfo - Art 1',
+            'Beleginfo - Inhalt 1',
+            'Kostenstelle',
+            'Kostenträger',
+            'Kost-Menge',
+            'EU-Land u. UStID',
+            'EU-Steuersatz',
+            'Abw. Versteuerungsart',
+            'Sachverhalt L+L',
+            'Funktionsergänzung L+L',
+            'BU 49 Hauptfunktionstyp',
+            'BU 49 Hauptfunktionsnummer',
+            'BU 49 Funktionsergänzung',
+            'Zusatzinformation - Art 1',
+            'Zusatzinformation - Inhalt 1'
+        ];
+
+        $rows = [];
+        foreach ($invoices as $inv) {
+            $date = date('dmY', strtotime($inv->created_at)); // DATEV date format
+            $amount = number_format($inv->total, 2, ',', '');
+            $net = number_format($inv->net_amount, 2, ',', '');
+            $vat = number_format($inv->vat_amount, 2, ',', '');
+
+            // Main revenue booking
+            $row = array_fill(0, count($header), '');
+            $row[0] = $amount; // Umsatz
+            $row[1] = 'S'; // Soll
+            $row[2] = 'EUR';
+            $row[6] = '1000'; // Debitor account (generic)
+            $row[7] = '8400'; // Revenue account
+            $row[8] = $inv->vat_rate > 0 ? '3' : '0'; // Tax code (3 = 19% MwSt)
+            $row[9] = $date;
+            $row[10] = $inv->invoice_number;
+            $row[13] = $inv->customer_name;
+
+            $rows[] = $row;
+        }
+
+        // Write CSV with BOM for Excel compatibility
+        $fp = fopen($filepath, 'w');
+        fprintf($fp, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+        fputcsv($fp, $header, ';');
+        foreach ($rows as $row) {
+            fputcsv($fp, $row, ';');
+        }
+        fclose($fp);
+
+        $upload_url = $upload_dir = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export standard CSV
+     */
+    private static function export_csv($invoices, $export_dir, $timestamp, $company) {
+        $filename = "Rechnungen_{$company}_{$timestamp}.csv";
+        $filepath = $export_dir . $filename;
+
+        $header = [
+            'Rechnungsnummer',
+            'Typ',
+            'Datum',
+            'Kunde',
+            'E-Mail',
+            'Telefon',
+            'Adresse',
+            'PLZ/Ort',
+            'Nettobetrag',
+            'MwSt-Satz',
+            'MwSt-Betrag',
+            'Gesamtbetrag',
+            'Status',
+            'Bezahlt am',
+            'Zahlungsart',
+            'Anmerkungen'
+        ];
+
+        $fp = fopen($filepath, 'w');
+        fprintf($fp, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+        fputcsv($fp, $header, ';');
+
+        foreach ($invoices as $inv) {
+            $row = [
+                $inv->invoice_number,
+                $inv->doc_type === 'angebot' ? 'Angebot' : 'Rechnung',
+                date('d.m.Y', strtotime($inv->created_at)),
+                $inv->customer_name,
+                $inv->customer_email,
+                $inv->customer_phone,
+                $inv->customer_address,
+                $inv->customer_plz_city,
+                number_format($inv->net_amount, 2, ',', ''),
+                number_format($inv->vat_rate, 0) . '%',
+                number_format($inv->vat_amount, 2, ',', ''),
+                number_format($inv->total, 2, ',', ''),
+                $inv->status === 'paid' ? 'Bezahlt' : ($inv->status === 'sent' ? 'Gesendet' : 'Entwurf'),
+                $inv->paid_at ? date('d.m.Y', strtotime($inv->paid_at)) : '',
+                $inv->payment_method ?: '',
+                $inv->notes ?: ''
+            ];
+            fputcsv($fp, $row, ';');
+        }
+        fclose($fp);
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export Excel format (CSV with Excel dialect)
+     */
+    private static function export_excel($invoices, $export_dir, $timestamp, $company) {
+        // For true .xlsx we would need PhpSpreadsheet, so we create a TSV that Excel opens well
+        $filename = "Rechnungen_{$company}_{$timestamp}.xlsx.csv";
+        $filepath = $export_dir . $filename;
+
+        $header = [
+            'Rechnungsnummer',
+            'Dokumenttyp',
+            'Rechnungsdatum',
+            'Kundenname',
+            'Firma',
+            'E-Mail',
+            'Telefon',
+            'Straße',
+            'PLZ/Ort',
+            'USt-IdNr.',
+            'Nettobetrag (EUR)',
+            'MwSt-Satz (%)',
+            'MwSt-Betrag (EUR)',
+            'Bruttobetrag (EUR)',
+            'Status',
+            'Bezahldatum',
+            'Zahlungsart',
+            'Kleinunternehmer',
+            'Differenzbesteuerung',
+            'Positionen (JSON)',
+            'Anmerkungen',
+            'Erstellt am'
+        ];
+
+        $fp = fopen($filepath, 'w');
+        fprintf($fp, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+        fputcsv($fp, $header, "\t");
+
+        foreach ($invoices as $inv) {
+            $row = [
+                $inv->invoice_number,
+                $inv->doc_type === 'angebot' ? 'Angebot' : 'Rechnung',
+                date('d.m.Y', strtotime($inv->created_at)),
+                $inv->customer_name,
+                $inv->customer_company ?: '',
+                $inv->customer_email,
+                $inv->customer_phone,
+                $inv->customer_address,
+                $inv->customer_plz_city,
+                $inv->customer_tax_id ?: '',
+                number_format($inv->net_amount, 2, ',', ''),
+                number_format($inv->vat_rate, 0),
+                number_format($inv->vat_amount, 2, ',', ''),
+                number_format($inv->total, 2, ',', ''),
+                $inv->status === 'paid' ? 'Bezahlt' : ($inv->status === 'sent' ? 'Gesendet' : 'Entwurf'),
+                $inv->paid_at ? date('d.m.Y', strtotime($inv->paid_at)) : '',
+                $inv->payment_method ?: '',
+                $inv->is_kleinunternehmer ? 'Ja' : 'Nein',
+                $inv->is_differenzbesteuerung ? 'Ja' : 'Nein',
+                $inv->items_json ?: '',
+                str_replace(["\r", "\n"], ' ', $inv->notes ?: ''),
+                date('d.m.Y H:i', strtotime($inv->created_at))
+            ];
+            fputcsv($fp, $row, "\t");
+        }
+        fclose($fp);
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export all PDFs as ZIP
+     */
+    private static function export_pdf_zip($invoices, $export_dir, $timestamp, $company, $store) {
+        $filename = "Rechnungen_PDF_{$company}_{$timestamp}.zip";
+        $filepath = $export_dir . $filename;
+
+        $zip = new \ZipArchive();
+        if ($zip->open($filepath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            wp_send_json_error(['message' => 'ZIP-Erstellung fehlgeschlagen']);
+        }
+
+        require_once(PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php');
+
+        foreach ($invoices as $inv) {
+            $html = self::build_invoice_html($store, $inv);
+            $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $pdf_content = $dompdf->output();
+
+            $doc_type = $inv->doc_type === 'angebot' ? 'Angebot' : 'Rechnung';
+            $pdf_name = "{$doc_type}_{$inv->invoice_number}.pdf";
+            $zip->addFromString($pdf_name, $pdf_content);
+        }
+
+        $zip->close();
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * Export JSON format (for data migration/backup)
+     */
+    private static function export_json($invoices, $export_dir, $timestamp, $company) {
+        $filename = "Rechnungen_{$company}_{$timestamp}.json";
+        $filepath = $export_dir . $filename;
+
+        $data = [
+            'export_date' => date('Y-m-d H:i:s'),
+            'company' => $company,
+            'count' => count($invoices),
+            'invoices' => []
+        ];
+
+        foreach ($invoices as $inv) {
+            $items = json_decode($inv->items_json, true) ?: [];
+            $data['invoices'][] = [
+                'id' => $inv->id,
+                'invoice_number' => $inv->invoice_number,
+                'doc_type' => $inv->doc_type ?: 'rechnung',
+                'date' => date('Y-m-d', strtotime($inv->created_at)),
+                'customer' => [
+                    'name' => $inv->customer_name,
+                    'company' => $inv->customer_company ?: null,
+                    'email' => $inv->customer_email,
+                    'phone' => $inv->customer_phone,
+                    'address' => $inv->customer_address,
+                    'plz_city' => $inv->customer_plz_city,
+                    'tax_id' => $inv->customer_tax_id ?: null
+                ],
+                'amounts' => [
+                    'net' => floatval($inv->net_amount),
+                    'vat_rate' => floatval($inv->vat_rate),
+                    'vat' => floatval($inv->vat_amount),
+                    'total' => floatval($inv->total),
+                    'discount' => floatval($inv->discount_amount ?? 0)
+                ],
+                'items' => $items,
+                'status' => $inv->status,
+                'paid_at' => $inv->paid_at ? date('Y-m-d', strtotime($inv->paid_at)) : null,
+                'payment_method' => $inv->payment_method ?: null,
+                'is_kleinunternehmer' => (bool)$inv->is_kleinunternehmer,
+                'is_differenzbesteuerung' => (bool)$inv->is_differenzbesteuerung,
+                'notes' => $inv->notes ?: null,
+                'created_at' => $inv->created_at
+            ];
+        }
+
+        file_put_contents($filepath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        $upload_url = wp_upload_dir();
+        wp_send_json_success([
+            'download_url' => $upload_url['baseurl'] . '/ppv-exports/' . $filename,
+            'filename' => $filename
+        ]);
+    }
+
+    /**
+     * AJAX: Export all invoices (with optional date filter)
+     */
+    public static function ajax_export_all() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        $format = sanitize_text_field($_POST['format'] ?? 'csv');
+        $date_from = sanitize_text_field($_POST['date_from'] ?? '');
+        $date_to = sanitize_text_field($_POST['date_to'] ?? '');
+        $doc_type = sanitize_text_field($_POST['doc_type'] ?? '');
+
+        // Build query with filters
+        $where = "WHERE store_id = %d";
+        $params = [$store_id];
+
+        if ($date_from) {
+            $where .= " AND DATE(created_at) >= %s";
+            $params[] = $date_from;
+        }
+        if ($date_to) {
+            $where .= " AND DATE(created_at) <= %s";
+            $params[] = $date_to;
+        }
+        if ($doc_type && in_array($doc_type, ['rechnung', 'angebot'])) {
+            $where .= " AND (doc_type = %s OR (doc_type IS NULL AND %s = 'rechnung'))";
+            $params[] = $doc_type;
+            $params[] = $doc_type;
+        }
+
+        $invoices = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_repair_invoices {$where} ORDER BY created_at DESC",
+            ...$params
+        ));
+
+        if (empty($invoices)) {
+            wp_send_json_error(['message' => 'Keine Rechnungen gefunden']);
+        }
+
+        return self::handle_bulk_export($invoices, $format, $store);
     }
 
     /**
