@@ -292,6 +292,8 @@ $core_modules = [
     'includes/class-ppv-whatsapp.php',
     // Standalone Shell (lightweight page rendering without WP theme)
     'includes/class-ppv-standalone-shell.php',
+    // SEO System
+    'includes/class-ppv-seo.php',
     // Repair Form Module
     'includes/class-ppv-repair-core.php',
     'includes/class-ppv-repair-form.php',

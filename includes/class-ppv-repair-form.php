@@ -63,11 +63,9 @@ class PPV_Repair_Form {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <title><?php echo $form_title; ?> - <?php echo $store_name; ?></title>
-    <meta name="description" content="<?php echo $form_title; ?> von <?php echo $store_name; ?><?php echo $pp_enabled ? ' - Bonuspunkte sammeln!' : ''; ?>">
-    <meta name="theme-color" content="<?php echo $color; ?>">
-    <link rel="icon" href="<?php echo $logo; ?>" type="image/png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <?php echo PPV_SEO::get_form_page_head($store); ?>
+    <?php echo PPV_SEO::get_performance_hints(); ?>
+    <?php echo PPV_SEO::get_favicon_links($store->logo ?: null); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-repair.css?v=<?php echo PPV_VERSION; ?>">

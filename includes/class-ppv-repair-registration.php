@@ -37,9 +37,9 @@ class PPV_Repair_Registration {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reparaturverwaltung f&uuml;r Ihren Shop - PunktePass</title>
-    <meta name="description" content="Digitale Reparaturverwaltung mit Formular, Rechnungen, Angebote, Ankauf, DATEV-Export und Kundenverwaltung. Online &amp; Tablet nutzbar. Kostenlos starten.">
-    <meta name="robots" content="index, follow">
-    <link rel="icon" href="https://punktepass.de/wp-content/uploads/2025/04/cropped-ppfavicon-32x32.png" sizes="32x32">
+    <?php echo PPV_SEO::get_landing_page_head(); ?>
+    <?php echo PPV_SEO::get_performance_hints(); ?>
+    <?php echo PPV_SEO::get_favicon_links(); ?>
 
     <!-- Google Analytics (loads only with consent) -->
     <script>
