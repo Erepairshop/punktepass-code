@@ -795,6 +795,10 @@ a:hover{color:#5a67d8}
                     <input type="text" name="name" value="' . esc_attr($store->name) . '">
                 </div>
                 <div class="field">
+                    <label>Inhaber / Name</label>
+                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '" placeholder="Max Mustermann">
+                </div>
+                <div class="field">
                     <label>Adresse</label>
                     <input type="text" name="address" value="' . esc_attr($store->address) . '">
                 </div>
@@ -809,6 +813,10 @@ a:hover{color:#5a67d8}
                 <div class="field">
                     <label>Telefon</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
+                </div>
+                <div class="field">
+                    <label>USt-IdNr.</label>
+                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '" placeholder="DE123456789">
                 </div>
                 <div class="field">
                     <label>Login E-Mail <small style="color:#6b7280">(f&uuml;r Anmeldung)</small></label>
@@ -841,31 +849,24 @@ a:hover{color:#5a67d8}
             </div>
 
 
-                <h4><i class="ri-file-list-3-line"></i> Impressum / Rechtliches</h4>
+                <h4><i class="ri-file-list-3-line"></i> Impressum / Rechtliches <small style="font-weight:normal;color:#6b7280">(optional, falls abweichend)</small></h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Nur ausf&uuml;llen, wenn die Impressum-Daten von den Gesch&auml;ftsdaten abweichen.</p>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Firmenname (Impressum)</label>
-                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '">
+                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '" placeholder="Leer = Firmenname oben">
                 </div>
                 <div class="field">
-                    <label>Inhaber (Impressum)</label>
-                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '">
+                    <label>Abweichende Adresse</label>
+                    <input type="text" name="repair_company_address" value="' . esc_attr($store->repair_company_address) . '" placeholder="Nur wenn abweichend von oben">
                 </div>
                 <div class="field">
-                    <label>Adresse</label>
-                    <input type="text" name="repair_company_address" value="' . esc_attr($store->repair_company_address) . '" placeholder="Musterstraße 1, 12345 Stadt">
+                    <label>Abweichende Telefon</label>
+                    <input type="text" name="repair_company_phone" value="' . esc_attr($store->repair_company_phone) . '" placeholder="Nur wenn abweichend">
                 </div>
                 <div class="field">
-                    <label>Telefon</label>
-                    <input type="text" name="repair_company_phone" value="' . esc_attr($store->repair_company_phone) . '" placeholder="+49 123 456789">
-                </div>
-                <div class="field">
-                    <label>E-Mail</label>
-                    <input type="text" name="repair_company_email" value="' . esc_attr($store->repair_company_email) . '" placeholder="info@beispiel.de">
-                </div>
-                <div class="field">
-                    <label>USt-IdNr.</label>
-                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
+                    <label>Abweichende E-Mail</label>
+                    <input type="text" name="repair_company_email" value="' . esc_attr($store->repair_company_email) . '" placeholder="Nur wenn abweichend">
                 </div>
             </div>
             </div><!-- END PANEL: general -->
