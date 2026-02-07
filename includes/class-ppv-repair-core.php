@@ -97,11 +97,12 @@ class PPV_Repair_Core {
         // AJAX: Ankauf actions
         require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-ankauf.php';
         $ankauf_actions = [
-            'ppv_repair_ankauf_list'   => ['PPV_Repair_Ankauf', 'ajax_list'],
-            'ppv_repair_ankauf_create' => ['PPV_Repair_Ankauf', 'ajax_create'],
-            'ppv_repair_ankauf_delete' => ['PPV_Repair_Ankauf', 'ajax_delete'],
-            'ppv_repair_ankauf_pdf'    => ['PPV_Repair_Ankauf', 'ajax_pdf'],
-            'ppv_repair_ankauf_email'  => ['PPV_Repair_Ankauf', 'ajax_email'],
+            'ppv_repair_ankauf_list'        => ['PPV_Repair_Ankauf', 'ajax_list'],
+            'ppv_repair_ankauf_create'      => ['PPV_Repair_Ankauf', 'ajax_create'],
+            'ppv_repair_ankauf_delete'      => ['PPV_Repair_Ankauf', 'ajax_delete'],
+            'ppv_repair_ankauf_bulk_delete' => ['PPV_Repair_Ankauf', 'ajax_bulk_delete'],
+            'ppv_repair_ankauf_pdf'         => ['PPV_Repair_Ankauf', 'ajax_pdf'],
+            'ppv_repair_ankauf_email'       => ['PPV_Repair_Ankauf', 'ajax_email'],
         ];
         foreach ($ankauf_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -757,6 +758,36 @@ class PPV_Repair_Core {
             }
 
             update_option('ppv_repair_migration_version', '2.3');
+        }
+
+        // v2.4: Add new columns to ankauf table for item types (KFZ, Sonstiges)
+        if (version_compare($version, '2.4', '<')) {
+            $ankauf_table = $wpdb->prefix . 'ppv_repair_ankauf';
+
+            // Check if table exists
+            if ($wpdb->get_var("SHOW TABLES LIKE '$ankauf_table'") === $ankauf_table) {
+                $ankauf_columns = [
+                    'ankauf_type'       => "VARCHAR(50) DEFAULT 'handy' AFTER ankauf_number",
+                    'seller_plz'        => "VARCHAR(20) NULL AFTER seller_address",
+                    'seller_city'       => "VARCHAR(100) NULL AFTER seller_plz",
+                    'kfz_kennzeichen'   => "VARCHAR(20) NULL AFTER device_notes",
+                    'kfz_vin'           => "VARCHAR(50) NULL AFTER kfz_kennzeichen",
+                    'kfz_km_stand'      => "INT NULL AFTER kfz_vin",
+                    'kfz_erstzulassung' => "VARCHAR(20) NULL AFTER kfz_km_stand",
+                    'kfz_tuev'          => "VARCHAR(20) NULL AFTER kfz_erstzulassung",
+                    'kfz_hu_au'         => "VARCHAR(20) NULL AFTER kfz_tuev",
+                    'item_description'  => "TEXT NULL AFTER kfz_hu_au",
+                ];
+
+                foreach ($ankauf_columns as $col => $definition) {
+                    $exists = $wpdb->get_var("SHOW COLUMNS FROM {$ankauf_table} LIKE '{$col}'");
+                    if (!$exists) {
+                        $wpdb->query("ALTER TABLE {$ankauf_table} ADD COLUMN {$col} {$definition}");
+                    }
+                }
+            }
+
+            update_option('ppv_repair_migration_version', '2.4');
         }
     }
 

@@ -109,6 +109,18 @@ class PPV_Repair_Ankauf {
             $params = array_merge($params, [$like, $like, $like, $like, $like]);
         }
 
+        // Date filters
+        $date_from = sanitize_text_field($_POST['date_from'] ?? '');
+        $date_to = sanitize_text_field($_POST['date_to'] ?? '');
+        if ($date_from) {
+            $where .= " AND DATE(created_at) >= %s";
+            $params[] = $date_from;
+        }
+        if ($date_to) {
+            $where .= " AND DATE(created_at) <= %s";
+            $params[] = $date_to;
+        }
+
         $total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE $where", $params));
 
         $params[] = $per_page;
@@ -279,6 +291,46 @@ class PPV_Repair_Ankauf {
     }
 
     /**
+     * AJAX: Bulk Delete Ankäufe
+     */
+    public static function ajax_bulk_delete() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = PPV_Repair_Core::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $ankauf_ids = json_decode(stripslashes($_POST['ankauf_ids'] ?? '[]'), true);
+        if (empty($ankauf_ids) || !is_array($ankauf_ids)) {
+            wp_send_json_error(['message' => 'Keine Ankäufe ausgewählt']);
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_ankauf';
+
+        $deleted_count = 0;
+        foreach ($ankauf_ids as $ankauf_id) {
+            $ankauf_id = intval($ankauf_id);
+            if ($ankauf_id > 0) {
+                $deleted = $wpdb->delete($table, [
+                    'id' => $ankauf_id,
+                    'store_id' => $store_id
+                ]);
+                if ($deleted) {
+                    $deleted_count++;
+                }
+            }
+        }
+
+        if ($deleted_count > 0) {
+            wp_send_json_success(['message' => $deleted_count . ' Ankauf(e) gelöscht']);
+        } else {
+            wp_send_json_error(['message' => 'Keine Ankäufe gelöscht']);
+        }
+    }
+
+    /**
      * AJAX: Download Kaufvertrag PDF
      */
     public static function ajax_pdf() {
@@ -312,7 +364,7 @@ class PPV_Repair_Ankauf {
         $html = self::build_kaufvertrag_html($store, $ankauf);
 
         // Generate PDF with DomPDF
-        require_once PPV_PLUGIN_DIR . 'vendor/autoload.php';
+        require_once PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php';
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', true);
         $options->set('isHtml5ParserEnabled', true);
@@ -487,36 +539,37 @@ class PPV_Repair_Ankauf {
     <meta charset="UTF-8">
     <title>Kaufvertrag ' . esc_html($ankauf->ankauf_number) . '</title>
     <style>
+        @page { margin: 10mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1f2937; line-height: 1.4; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid ' . $color . '; padding-bottom: 15px; margin-bottom: 20px; }
-        .logo { font-size: 20px; font-weight: bold; color: ' . $color . '; }
-        .logo-sub { font-size: 11px; color: #6b7280; font-weight: normal; }
-        .header-right { text-align: right; font-size: 10px; color: #6b7280; }
-        .title { text-align: center; background: ' . $color . '; color: #fff; padding: 12px; border-radius: 6px; margin-bottom: 20px; }
-        .title h1 { font-size: 16px; margin: 0; }
-        .title p { font-size: 11px; margin-top: 4px; opacity: 0.9; }
-        .section { margin-bottom: 15px; }
-        .section-title { font-size: 10px; font-weight: bold; color: ' . $color . '; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-bottom: 10px; }
-        .two-col { display: flex; gap: 20px; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #1f2937; line-height: 1.3; padding: 10px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid ' . $color . '; padding-bottom: 8px; margin-bottom: 10px; }
+        .logo { font-size: 16px; font-weight: bold; color: ' . $color . '; }
+        .logo-sub { font-size: 10px; color: #6b7280; font-weight: normal; }
+        .header-right { text-align: right; font-size: 9px; color: #6b7280; }
+        .title { text-align: center; background: ' . $color . '; color: #fff; padding: 8px; border-radius: 4px; margin-bottom: 10px; }
+        .title h1 { font-size: 14px; margin: 0; }
+        .title p { font-size: 10px; margin-top: 2px; opacity: 0.9; }
+        .section { margin-bottom: 8px; }
+        .section-title { font-size: 9px; font-weight: bold; color: ' . $color . '; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; margin-bottom: 6px; }
+        .two-col { display: flex; gap: 12px; }
         .two-col > div { flex: 1; }
-        .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
-        .field { margin-bottom: 6px; }
-        .field-label { font-weight: 600; color: #6b7280; font-size: 10px; display: inline-block; width: 80px; }
-        .field-value { color: #1f2937; }
+        .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px; }
+        .field { margin-bottom: 3px; }
+        .field-label { font-weight: 600; color: #6b7280; font-size: 9px; display: inline-block; width: 70px; }
+        .field-value { color: #1f2937; font-size: 9px; }
         .highlight { background: #fef3c7; border-color: #f59e0b; }
-        .price-box { text-align: center; padding: 15px; background: linear-gradient(135deg, ' . $color . ', #764ba2); color: #fff; border-radius: 8px; margin: 15px 0; }
-        .price-box .label { font-size: 11px; opacity: 0.9; }
-        .price-box .amount { font-size: 28px; font-weight: bold; }
-        .legal { font-size: 9px; color: #6b7280; margin: 15px 0; padding: 10px; background: #f9fafb; border-radius: 6px; }
-        .legal h4 { font-size: 10px; color: #374151; margin-bottom: 6px; }
-        .legal ul { padding-left: 15px; }
-        .legal li { margin-bottom: 3px; }
-        .signatures { display: flex; gap: 30px; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #d1d5db; }
+        .price-box { text-align: center; padding: 8px; background: linear-gradient(135deg, ' . $color . ', #764ba2); color: #fff; border-radius: 6px; margin: 8px 0; }
+        .price-box .label { font-size: 9px; opacity: 0.9; }
+        .price-box .amount { font-size: 22px; font-weight: bold; }
+        .legal { font-size: 8px; color: #6b7280; margin: 8px 0; padding: 6px; background: #f9fafb; border-radius: 4px; }
+        .legal h4 { font-size: 9px; color: #374151; margin-bottom: 4px; }
+        .legal ul { padding-left: 12px; }
+        .legal li { margin-bottom: 2px; }
+        .signatures { display: flex; gap: 20px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #d1d5db; }
         .sig-box { flex: 1; }
-        .sig-box label { display: block; font-size: 9px; color: #6b7280; margin-bottom: 6px; }
-        .sig-line { border-bottom: 1px solid #1f2937; height: 50px; display: flex; align-items: flex-end; padding-bottom: 5px; }
-        .footer { text-align: center; margin-top: 15px; font-size: 9px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+        .sig-box label { display: block; font-size: 8px; color: #6b7280; margin-bottom: 4px; }
+        .sig-line { border-bottom: 1px solid #1f2937; height: 40px; display: flex; align-items: flex-end; padding-bottom: 3px; }
+        .footer { text-align: center; margin-top: 8px; font-size: 8px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 6px; }
     </style>
 </head>
 <body>
@@ -1101,7 +1154,7 @@ class PPV_Repair_Ankauf {
         function collectData() {
             var type = document.getElementById('ankauf-type').value;
             var data = {
-                action: 'ppv_ankauf_create',
+                action: 'ppv_repair_ankauf_create',
                 nonce: nonce,
                 ankauf_type: type,
                 seller_name: document.getElementById('seller-name').value,
@@ -1187,7 +1240,7 @@ class PPV_Repair_Ankauf {
                     ankaufId = resp.data.ankauf_id;
 
                     if (openPdf) {
-                        window.open(ajaxUrl + '?action=ppv_ankauf_pdf&nonce=' + nonce + '&ankauf_id=' + ankaufId, '_blank');
+                        window.open(ajaxUrl + '?action=ppv_repair_ankauf_pdf&nonce=' + nonce + '&ankauf_id=' + ankaufId, '_blank');
                     }
 
                     // Notify parent window
@@ -1245,7 +1298,7 @@ class PPV_Repair_Ankauf {
 
         // Generate PDF
         $html = self::build_kaufvertrag_html($store, $ankauf);
-        require_once PPV_PLUGIN_DIR . 'vendor/autoload.php';
+        require_once PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php';
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', true);
         $dompdf = new \Dompdf\Dompdf($options);

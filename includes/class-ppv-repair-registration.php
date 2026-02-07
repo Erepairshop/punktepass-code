@@ -37,7 +37,7 @@ class PPV_Repair_Registration {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reparaturverwaltung f&uuml;r Ihren Shop - PunktePass</title>
-    <meta name="description" content="Digitale Reparaturverwaltung mit Formular, Rechnungen, Angebote, DATEV-Export und Kundenverwaltung. Online &amp; Tablet nutzbar. Kostenlos starten.">
+    <meta name="description" content="Digitale Reparaturverwaltung mit Formular, Rechnungen, Angebote, Ankauf, DATEV-Export und Kundenverwaltung. Online &amp; Tablet nutzbar. Kostenlos starten.">
     <meta name="robots" content="index, follow">
     <link rel="icon" href="https://punktepass.de/wp-content/uploads/2025/04/cropped-ppfavicon-32x32.png" sizes="32x32">
 
@@ -483,7 +483,7 @@ class PPV_Repair_Registration {
 <div class="pp-reg-header">
     <img src="<?php echo esc_url($logo_url); ?>" alt="PunktePass" class="pp-reg-header-logo">
     <h1>Reparaturverwaltung f&uuml;r Ihren Shop</h1>
-    <p>Digitales Formular f&uuml;r Online &amp; Vor-Ort (Tablet) &ndash; inkl. Rechnungen, Angebote, Kundenverwaltung &amp; DATEV-Export</p>
+    <p>Digitales Formular f&uuml;r Online &amp; Vor-Ort (Tablet) &ndash; inkl. Rechnungen, Angebote, Ankauf &amp; DATEV-Export</p>
 </div>
 
 <div class="pp-reg-container">
@@ -506,9 +506,9 @@ class PPV_Repair_Registration {
             <span>CSV, Excel, DATEV f&uuml;r Buchhalter</span>
         </div>
         <div class="pp-reg-feature">
-            <div class="pp-reg-feature-icon amber">&#11088;</div>
-            <strong>Bonuspunkte</strong>
-            <span>Optional: Kunden sammeln Punkte</span>
+            <div class="pp-reg-feature-icon amber">&#128176;</div>
+            <strong>Digitaler Ankauf</strong>
+            <span>Kaufvertr&auml;ge f&uuml;r Handy, KFZ &amp; mehr</span>
         </div>
         <div class="pp-reg-feature">
             <div class="pp-reg-feature-icon rose">&#128101;</div>
