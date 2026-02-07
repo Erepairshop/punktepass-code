@@ -119,11 +119,14 @@ class PPV_SEO {
         // Detect specific pages by URL or slug
         $uri = $_SERVER['REQUEST_URI'] ?? '';
 
+        // Login page is the main landing page for PunktePass - should be indexed!
         if (strpos($uri, '/login') !== false || strpos($uri, '/anmelden') !== false) {
             return array_merge($default_seo, [
-                'title' => 'Anmelden - PunktePass',
-                'description' => 'Melden Sie sich bei PunktePass an, um Ihre Bonuspunkte zu verwalten und Prämien einzulösen.',
-                'robots' => 'noindex, follow',
+                'title' => 'PunktePass - Digitales Bonusprogramm & Treuepunkte für lokale Geschäfte',
+                'description' => 'PunktePass ist das digitale Treuepunkt-System für lokale Geschäfte. Kundenbindung, Bonuspunkte sammeln, QR-Code Stempelkarte, automatische Belohnungen. PWA App für Kunden. Jetzt kostenlos starten!',
+                'keywords' => 'Bonusprogramm, Treuepunkte, Kundenbindung, Stempelkarte digital, QR Code Bonus, PunktePass, Loyalty App, digitale Stempelkarte, Kundenbonus, Händler App, Einzelhandel Software, Bonuskarte, Treueprogramm',
+                'robots' => 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+                'canonical' => home_url('/login'),
             ]);
         }
 
