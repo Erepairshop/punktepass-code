@@ -30,6 +30,8 @@ class PPV_Lead_Finder {
                 self::handle_delete();
             } elseif (isset($_POST['export_emails'])) {
                 self::handle_export();
+            } elseif (isset($_POST['delete_all_leads'])) {
+                self::handle_delete_all();
             }
         }
 
@@ -163,9 +165,47 @@ class PPV_Lead_Finder {
 
         $found_count = 0;
 
-        // Extract business names - Google Maps typically shows them in specific patterns
-        // Pattern 1: Business names are often followed by ratings like "4.5" or "(123)"
-        preg_match_all('/([A-ZÄÖÜa-zäöüß][A-ZÄÖÜa-zäöüß0-9\s\-\&\.\,\']+(?:GmbH|UG|AG|e\.K\.|Ltd|Inc|Shop|Store|Service|Reparatur|Repair|Mobile|Phone|Handy|Tech|IT|Digital|Express|Center|Centre|Studio|Lab|Pro|Plus)?)\s*(?:\d[\d\,\.]*\s*(?:\(\d+\))?|Keine Rezensionen)/u', $content, $name_matches);
+        // Google Maps list format detection
+        // Business names appear before ratings like "5,0" or "4,6" followed by stars ★ or (reviews)
+        // Pattern: "Business Name\n5,0 ★★★★★ (36)" or "Business Name\n4,6(53)"
+
+        // Method 1: Split by lines and look for patterns
+        $lines = preg_split('/[\r\n]+/', $content);
+        $business_names = [];
+        $phones_found = [];
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = trim($lines[$i]);
+            $next_line = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
+
+            // Check if next line starts with a rating (e.g., "5,0", "4,6", "3,8") or "Keine Rezensionen"
+            // Google Maps ratings are X,X format followed by stars or (number)
+            if (preg_match('/^[1-5][,\.]\d\s*(?:★|⭐|\()|^Keine Rezensionen/u', $next_line)) {
+                // Current line is likely a business name
+                if (strlen($line) >= 4 && strlen($line) <= 150 && self::is_valid_business_name($line)) {
+                    $business_names[] = $line;
+                }
+            }
+
+            // Also extract phone numbers from lines
+            if (preg_match('/(0\d{3,4}\s*\d{5,8}|\+49\s*\d+|01\d{2,3}\s*\d{6,8})/u', $line, $phone_match)) {
+                $phones_found[] = preg_replace('/\s+/', '', $phone_match[1]);
+            }
+        }
+
+        // Fallback: Original pattern for different formats
+        if (empty($business_names)) {
+            preg_match_all('/([A-ZÄÖÜa-zäöüß][A-ZÄÖÜa-zäöüß0-9\s\-\&\.\,\']+(?:GmbH|UG|AG|e\.K\.|Ltd|Inc|Shop|Store|Service|Reparatur|Repair|Mobile|Phone|Handy|Tech|IT|Digital|Express|Center|Centre|Studio|Lab|Pro|Plus)?)\s*(?:\d[\d\,\.]*\s*(?:\(\d+\))?|Keine Rezensionen)/u', $content, $name_matches);
+
+            if (!empty($name_matches[1])) {
+                foreach ($name_matches[1] as $name) {
+                    $name = trim($name);
+                    if (strlen($name) >= 5 && strlen($name) <= 100 && self::is_valid_business_name($name)) {
+                        $business_names[] = $name;
+                    }
+                }
+            }
+        }
 
         // Pattern 2: Look for website URLs
         preg_match_all('/(https?:\/\/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:\/[^\s<>"\'\)]*)?)/i', $content, $url_matches);
@@ -178,19 +218,6 @@ class PPV_Lead_Finder {
 
         // Pattern 5: Addresses (German style: Street Number, PLZ City)
         preg_match_all('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)\s*[\,\n]\s*(\d{5})\s+([A-ZÄÖÜa-zäöüß\-\s]+)/iu', $content, $address_matches, PREG_SET_ORDER);
-
-        // Clean and filter business names
-        $business_names = [];
-        if (!empty($name_matches[1])) {
-            foreach ($name_matches[1] as $name) {
-                $name = trim($name);
-                // Filter out common non-business strings
-                if (strlen($name) >= 5 && strlen($name) <= 100 &&
-                    !preg_match('/^(Öffnungszeiten|Geschlossen|Geöffnet|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo|Di|Mi|Do|Fr|Sa|So|Uhr|Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern)/i', $name)) {
-                    $business_names[] = $name;
-                }
-            }
-        }
 
         // Clean URLs - filter business websites only
         $websites = [];
@@ -314,6 +341,59 @@ class PPV_Lead_Finder {
             ],
             ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
         );
+
+        return true;
+    }
+
+    /**
+     * Check if a string is a valid business name (not an address, time, etc.)
+     */
+    private static function is_valid_business_name($name) {
+        // Reject if starts with time/day patterns
+        if (preg_match('/^(Öffnet|Öffnungszeiten|Geschlossen|Geöffnet|Schließt|Jetzt|Heute|Morgen)/iu', $name)) {
+            return false;
+        }
+
+        // Reject day names at start
+        if (preg_match('/^(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo\s|Di\s|Mi\s|Do\s|Fr\s|Sa\s|So\s)/iu', $name)) {
+            return false;
+        }
+
+        // Reject Google Maps UI elements
+        if (preg_match('/^(Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern|Route|Wegbeschreibung|Fotos|Rezensionen|Übersicht|Info|Karte|Satellit|Gelände)/iu', $name)) {
+            return false;
+        }
+
+        // Reject addresses - street name + number patterns
+        // German street endings: str, straße, weg, allee, platz, gasse, ring, damm, ufer, hof, park, markt, chaussee, steig
+        if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+\s*(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm|ufer|hof|park|markt|chaussee|steig)\s*\d+/iu', $name)) {
+            return false;
+        }
+
+        // Reject if it looks like just "Word Number" (address pattern)
+        if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+\s+\d+[a-z]?$/iu', $name)) {
+            return false;
+        }
+
+        // Reject time patterns like "um 10:00" or "10:00 Uhr"
+        if (preg_match('/um\s+\d{1,2}[:\.]?\d{0,2}|^\d{1,2}[:\.]?\d{0,2}\s*Uhr/iu', $name)) {
+            return false;
+        }
+
+        // Reject PLZ + City patterns
+        if (preg_match('/^\d{5}\s+[A-ZÄÖÜa-zäöüß]/u', $name)) {
+            return false;
+        }
+
+        // Reject pure numbers or very short entries
+        if (preg_match('/^\d+$/', $name) || strlen(trim($name)) < 4) {
+            return false;
+        }
+
+        // Reject common non-business patterns
+        if (preg_match('/^(Mehr|Weniger|Zurück|Vor|Weiter|Schließen|Abbrechen|OK|Ja|Nein)/iu', $name)) {
+            return false;
+        }
 
         return true;
     }
@@ -663,6 +743,18 @@ class PPV_Lead_Finder {
     }
 
     /**
+     * Handle delete all leads
+     */
+    private static function handle_delete_all() {
+        global $wpdb;
+
+        $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}ppv_leads");
+
+        wp_redirect("/formular/lead-finder?success=deleted_all");
+        exit;
+    }
+
+    /**
      * Handle export emails
      */
     private static function handle_export() {
@@ -791,6 +883,10 @@ class PPV_Lead_Finder {
             <div class="alert alert-success">
                 <i class="ri-check-line"></i> Lead gelöscht.
             </div>
+        <?php elseif ($success === 'deleted_all'): ?>
+            <div class="alert alert-success">
+                <i class="ri-check-line"></i> Alle Leads wurden gelöscht.
+            </div>
         <?php endif; ?>
 
         <?php if ($error === 'empty_search'): ?>
@@ -907,6 +1003,11 @@ class PPV_Lead_Finder {
                         <input type="hidden" name="export_region" value="<?php echo esc_attr($filter_region); ?>">
                         <button type="submit" name="export_emails" class="btn btn-success btn-sm">
                             <i class="ri-mail-send-line"></i> Emails exportieren → Email Sender
+                        </button>
+                    </form>
+                    <form method="post" style="display:inline" onsubmit="return confirm('ALLE <?php echo $total_leads; ?> Leads wirklich löschen? Dies kann nicht rückgängig gemacht werden!')">
+                        <button type="submit" name="delete_all_leads" class="btn btn-danger btn-sm">
+                            <i class="ri-delete-bin-line"></i> Alle löschen
                         </button>
                     </form>
                     <div id="scrape-progress" style="display:none;flex:1">
