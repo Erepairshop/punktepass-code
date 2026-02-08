@@ -22,6 +22,8 @@ class PPV_Lead_Finder {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_POST['start_search'])) {
                 self::handle_search();
+            } elseif (isset($_POST['manual_import'])) {
+                self::handle_manual_import();
             } elseif (isset($_POST['scrape_website'])) {
                 self::handle_scrape();
             } elseif (isset($_POST['delete_lead'])) {
@@ -142,6 +144,130 @@ class PPV_Lead_Finder {
         }
 
         wp_redirect("/formular/lead-finder?success=search&found=$found_count&region=" . urlencode($region));
+        exit;
+    }
+
+    /**
+     * Handle manual import from Google Maps paste
+     */
+    private static function handle_manual_import() {
+        global $wpdb;
+
+        $content = $_POST['import_content'] ?? '';
+        $region = sanitize_text_field($_POST['import_region'] ?? '');
+
+        if (empty($content)) {
+            wp_redirect("/formular/lead-finder?error=empty_import");
+            exit;
+        }
+
+        $found_count = 0;
+
+        // Extract business names - Google Maps typically shows them in specific patterns
+        // Pattern 1: Business names are often followed by ratings like "4.5" or "(123)"
+        preg_match_all('/([A-ZÄÖÜa-zäöüß][A-ZÄÖÜa-zäöüß0-9\s\-\&\.\,\']+(?:GmbH|UG|AG|e\.K\.|Ltd|Inc|Shop|Store|Service|Reparatur|Repair|Mobile|Phone|Handy|Tech|IT|Digital|Express|Center|Centre|Studio|Lab|Pro|Plus)?)\s*(?:\d[\d\,\.]*\s*(?:\(\d+\))?|Keine Rezensionen)/u', $content, $name_matches);
+
+        // Pattern 2: Look for website URLs
+        preg_match_all('/(https?:\/\/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:\/[^\s<>"\'\)]*)?)/i', $content, $url_matches);
+
+        // Pattern 3: Phone numbers (German format)
+        preg_match_all('/(?:Tel(?:efon)?\.?:?\s*)?(\+49|0049|0)\s*[\d\s\-\/\(\)]{6,20}/i', $content, $phone_matches);
+
+        // Pattern 4: Email addresses
+        preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $email_matches);
+
+        // Pattern 5: Addresses (German style: Street Number, PLZ City)
+        preg_match_all('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)\s*[\,\n]\s*(\d{5})\s+([A-ZÄÖÜa-zäöüß\-\s]+)/iu', $content, $address_matches, PREG_SET_ORDER);
+
+        // Clean and filter business names
+        $business_names = [];
+        if (!empty($name_matches[1])) {
+            foreach ($name_matches[1] as $name) {
+                $name = trim($name);
+                // Filter out common non-business strings
+                if (strlen($name) >= 5 && strlen($name) <= 100 &&
+                    !preg_match('/^(Öffnungszeiten|Geschlossen|Geöffnet|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo|Di|Mi|Do|Fr|Sa|So|Uhr|Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern)/i', $name)) {
+                    $business_names[] = $name;
+                }
+            }
+        }
+
+        // Clean URLs - filter business websites only
+        $websites = [];
+        if (!empty($url_matches[1])) {
+            foreach ($url_matches[1] as $url) {
+                $url = rtrim($url, '.,;:)');
+                $domain = parse_url($url, PHP_URL_HOST);
+                // Skip social media and known non-business URLs
+                if (!preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest)/i', $domain)) {
+                    $websites[$domain] = $url; // Use domain as key to dedupe
+                }
+            }
+        }
+
+        // Create leads from extracted data
+        $websites_array = array_values($websites);
+
+        foreach ($business_names as $i => $name) {
+            $business = [
+                'name' => $name,
+                'website' => $websites_array[$i] ?? '',
+                'phone' => '',
+                'email' => '',
+                'address' => ''
+            ];
+
+            // Try to match address
+            foreach ($address_matches as $addr) {
+                if (stripos($content, $name) !== false) {
+                    $pos_name = stripos($content, $name);
+                    $pos_addr = stripos($content, $addr[0]);
+                    if ($pos_addr !== false && abs($pos_name - $pos_addr) < 500) {
+                        $business['address'] = $addr[1] . ', ' . $addr[2] . ' ' . trim($addr[3]);
+                        break;
+                    }
+                }
+            }
+
+            if (self::add_lead_if_new($business, $region, 'Google Maps Import')) {
+                $found_count++;
+            }
+
+            if ($found_count >= 100) break; // Limit
+        }
+
+        // Also add any websites we found but didn't match to a name
+        if ($found_count < 50) {
+            foreach ($websites as $domain => $url) {
+                $already_added = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_leads WHERE website LIKE %s",
+                    '%' . $wpdb->esc_like($domain) . '%'
+                ));
+
+                if (!$already_added) {
+                    // Use domain as name
+                    $name = preg_replace('/^www\./', '', $domain);
+                    $name = preg_replace('/\.(de|com|net|org|eu|info|shop|store)$/i', '', $name);
+                    $name = ucfirst($name);
+
+                    $wpdb->insert(
+                        $wpdb->prefix . 'ppv_leads',
+                        [
+                            'business_name' => $name,
+                            'region' => $region,
+                            'website' => $url,
+                            'search_query' => 'Google Maps Import'
+                        ],
+                        ['%s', '%s', '%s', '%s']
+                    );
+                    $found_count++;
+
+                    if ($found_count >= 100) break;
+                }
+            }
+        }
+
+        wp_redirect("/formular/lead-finder?success=import&found=$found_count&region=" . urlencode($region));
         exit;
     }
 
@@ -653,6 +779,10 @@ class PPV_Lead_Finder {
             <div class="alert alert-success">
                 <i class="ri-check-line"></i> Suche abgeschlossen! <?php echo intval($_GET['found'] ?? 0); ?> neue Leads gefunden.
             </div>
+        <?php elseif ($success === 'import'): ?>
+            <div class="alert alert-success">
+                <i class="ri-check-line"></i> Import erfolgreich! <?php echo intval($_GET['found'] ?? 0); ?> Leads importiert. Klicke jetzt "Alle scrapen" um die Emails zu finden!
+            </div>
         <?php elseif ($success === 'scraped'): ?>
             <div class="alert alert-success">
                 <i class="ri-check-line"></i> Website gescraped! <?php echo $_GET['email'] ? 'Email gefunden: ' . esc_html($_GET['email']) : 'Keine Email gefunden.'; ?>
@@ -689,10 +819,43 @@ class PPV_Lead_Finder {
             </div>
         </div>
 
-        <!-- Search Form -->
+        <!-- Manual Import (Google Maps) -->
         <div class="card">
-            <div class="card-header"><i class="ri-search-line"></i> Neue Suche</div>
+            <div class="card-header"><i class="ri-map-pin-line"></i> Google Maps Import <span style="font-weight:normal;color:#10b981;font-size:12px;margin-left:8px">EMPFOHLEN</span></div>
             <div class="card-body">
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:16px">
+                    <strong style="color:#065f46"><i class="ri-lightbulb-line"></i> So geht's:</strong>
+                    <ol style="margin:10px 0 0 20px;color:#065f46;font-size:13px;line-height:1.8">
+                        <li>Öffne <a href="https://www.google.com/maps/search/Handyreparatur+Hamburg" target="_blank" style="color:#059669;font-weight:600">Google Maps</a> und suche z.B. "Handyreparatur Hamburg"</li>
+                        <li>Scrolle durch die Ergebnisse (mehr laden)</li>
+                        <li>Drücke <kbd style="background:#fff;padding:2px 6px;border-radius:4px;border:1px solid #d1d5db">Ctrl+A</kbd> und dann <kbd style="background:#fff;padding:2px 6px;border-radius:4px;border:1px solid #d1d5db">Ctrl+C</kbd></li>
+                        <li>Füge hier ein und klicke "Importieren"</li>
+                    </ol>
+                </div>
+                <form method="post">
+                    <div class="form-group" style="margin-bottom:12px">
+                        <label>Region (für Gruppierung)</label>
+                        <input type="text" name="import_region" class="form-control" placeholder="z.B. Hamburg" style="max-width:300px">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px">
+                        <label>Google Maps Inhalt einf&uuml;gen</label>
+                        <textarea name="import_content" class="form-control" rows="6" placeholder="Kopiere den gesamten Google Maps Inhalt hier hinein..."></textarea>
+                    </div>
+                    <button type="submit" name="manual_import" class="btn btn-success">
+                        <i class="ri-download-line"></i> Importieren &amp; Websites extrahieren
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Auto Search (may be blocked) -->
+        <div class="card">
+            <div class="card-header" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+                <i class="ri-search-line"></i> Automatische Suche
+                <span style="font-weight:normal;color:#f59e0b;font-size:11px;margin-left:8px">(kann blockiert werden)</span>
+                <i class="ri-arrow-down-s-line" style="margin-left:auto"></i>
+            </div>
+            <div class="card-body" style="display:none">
                 <form method="post">
                     <div class="form-row">
                         <div class="form-group">
