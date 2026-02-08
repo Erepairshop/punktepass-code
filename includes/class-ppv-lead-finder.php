@@ -700,28 +700,28 @@ class PPV_Lead_Finder {
             exit;
         }
 
-        $result = ['email' => '', 'status' => ''];
+        // Smart search: Google snippets → website impressum/kontakt
+        $found = self::smart_find_email($lead->business_name, $lead->region);
 
-        // ONLY Google search: "[business name] [region] email"
-        $search_email = self::search_email_online($lead->business_name, $lead->region);
-        if (!empty($search_email)) {
-            $result['email'] = $search_email;
-            $result['status'] = 'email_from_search';
-        } else {
-            $result['status'] = 'no_email_found';
+        $status = !empty($found['email']) ? 'email_found' : 'no_email_found';
+
+        $update_data = [
+            'email' => $found['email'],
+            'phone' => $found['phone'] ?: $lead->phone,
+            'scraped_at' => current_time('mysql'),
+            'scrape_status' => $status
+        ];
+        if (!empty($found['website']) && empty($lead->website)) {
+            $update_data['website'] = $found['website'];
         }
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
-            [
-                'email' => $result['email'],
-                'scraped_at' => current_time('mysql'),
-                'scrape_status' => $result['status']
-            ],
+            $update_data,
             ['id' => $lead_id]
         );
 
-        wp_redirect("/formular/lead-finder?success=scraped&email=" . urlencode($result['email'] ?? ''));
+        wp_redirect("/formular/lead-finder?success=scraped&email=" . urlencode($found['email']));
         exit;
     }
 
@@ -744,25 +744,22 @@ class PPV_Lead_Finder {
             exit;
         }
 
-        $result = ['email' => '', 'phone' => '', 'status' => ''];
+        // Smart search: Google snippets → website impressum/kontakt
+        $found = self::smart_find_email($lead->business_name, $lead->region);
 
-        // ONLY Google search: "[business name] [region] email"
-        $search_email = self::search_email_online($lead->business_name, $lead->region);
-        if (!empty($search_email)) {
-            $result['email'] = $search_email;
-            $result['status'] = 'email_from_search';
-        } else {
-            $result['status'] = 'no_email_found';
-        }
+        $status = !empty($found['email']) ? 'email_found' : 'no_email_found';
 
         // Save results
         $update_data = [
-            'email' => $result['email'],
-            'phone' => $lead->phone,
+            'email' => $found['email'],
+            'phone' => $found['phone'] ?: $lead->phone,
             'address' => $lead->address,
             'scraped_at' => current_time('mysql'),
-            'scrape_status' => $result['status']
+            'scrape_status' => $status
         ];
+        if (!empty($found['website']) && empty($lead->website)) {
+            $update_data['website'] = $found['website'];
+        }
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
@@ -772,61 +769,239 @@ class PPV_Lead_Finder {
 
         echo json_encode([
             'success' => true,
-            'email' => $result['email'],
-            'phone' => $lead->phone ?: '',
-            'website' => $lead->website ?: '',
-            'status' => $result['status']
+            'email' => $found['email'],
+            'phone' => $found['phone'] ?: $lead->phone ?: '',
+            'website' => $found['website'] ?: $lead->website ?: '',
+            'status' => $status
         ]);
         exit;
     }
 
     /**
-     * Search for a business email via Google search "[name] email"
-     * Fast: single Google request, extracts emails from snippets
+     * Smart email search: Google search → extract from snippets → if not found, visit impressum
+     * Returns ['email' => '', 'website' => '', 'phone' => '']
      */
-    private static function search_email_online($business_name, $region = '') {
-        $all_emails = [];
+    private static function smart_find_email($business_name, $region = '') {
+        $result = ['email' => '', 'website' => '', 'phone' => ''];
+        $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-        // Build search query: "[business name] [region] email"
+        // --- STEP 1: Google search "[name] [region] email" ---
         $query = $business_name . (!empty($region) ? ' ' . $region : '') . ' email';
-
         $search_url = 'https://www.google.com/search?q=' . urlencode($query) . '&num=10&hl=de';
-        $response = wp_remote_get($search_url, [
-            'timeout' => 8,
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ]);
+        $response = wp_remote_get($search_url, ['timeout' => 8, 'user-agent' => $ua]);
 
+        $google_html = '';
         if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $html = wp_remote_retrieve_body($response);
-            $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $google_html = wp_remote_retrieve_body($response);
+            $decoded = html_entity_decode($google_html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            // Extract emails from snippets
             preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
             if (!empty($matches[0])) {
-                $all_emails = $matches[0];
+                $valid = self::filter_emails($matches[0]);
+                if (!empty($valid)) {
+                    $result['email'] = strtolower(reset($valid));
+                }
+            }
+
+            // Also extract the first relevant website URL from Google results (we'll need it later)
+            $result['website'] = self::extract_website_from_google($google_html);
+        }
+
+        // If email found in snippets, we're done! Fast path.
+        if (!empty($result['email'])) {
+            return $result;
+        }
+
+        // --- STEP 2: Try "Kontakt Impressum" query ---
+        $query2 = $business_name . (!empty($region) ? ' ' . $region : '') . ' Kontakt Impressum email';
+        $search_url2 = 'https://www.google.com/search?q=' . urlencode($query2) . '&num=10&hl=de';
+        $response2 = wp_remote_get($search_url2, ['timeout' => 8, 'user-agent' => $ua]);
+
+        if (!is_wp_error($response2) && wp_remote_retrieve_response_code($response2) === 200) {
+            $html2 = wp_remote_retrieve_body($response2);
+            $decoded2 = html_entity_decode($html2, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded2, $matches2);
+            if (!empty($matches2[0])) {
+                $valid2 = self::filter_emails($matches2[0]);
+                if (!empty($valid2)) {
+                    $result['email'] = strtolower(reset($valid2));
+                    return $result;
+                }
+            }
+
+            // Extract website if we didn't get one from step 1
+            if (empty($result['website'])) {
+                $result['website'] = self::extract_website_from_google($html2);
             }
         }
 
-        // If no results, try fallback query with "Kontakt Impressum"
-        if (empty($all_emails)) {
-            $query2 = $business_name . (!empty($region) ? ' ' . $region : '') . ' Kontakt Impressum';
-            $search_url2 = 'https://www.google.com/search?q=' . urlencode($query2) . '&num=10&hl=de';
-            $response2 = wp_remote_get($search_url2, [
-                'timeout' => 8,
-                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            ]);
+        // --- STEP 3 (SMART): We have a website URL from Google → visit its Impressum/Kontakt page ---
+        if (!empty($result['website'])) {
+            $found = self::scrape_contact_page_for_email($result['website'], $ua);
+            if (!empty($found['email'])) {
+                $result['email'] = $found['email'];
+            }
+            if (!empty($found['phone'])) {
+                $result['phone'] = $found['phone'];
+            }
+        }
 
-            if (!is_wp_error($response2) && wp_remote_retrieve_response_code($response2) === 200) {
-                $html2 = wp_remote_retrieve_body($response2);
-                $decoded2 = html_entity_decode($html2, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded2, $matches2);
-                if (!empty($matches2[0])) {
-                    $all_emails = $matches2[0];
+        return $result;
+    }
+
+    /**
+     * Extract first relevant business website URL from Google HTML results
+     */
+    private static function extract_website_from_google($html) {
+        $excluded = '/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft|gstatic|googleapis|apple\.com|play\.google)/i';
+
+        // Google wraps result URLs in /url?q=...
+        preg_match_all('/\/url\?q=(https?:\/\/[^&"]+)/i', $html, $url_matches);
+        if (!empty($url_matches[1])) {
+            foreach ($url_matches[1] as $url) {
+                $url = urldecode($url);
+                $domain = parse_url($url, PHP_URL_HOST);
+                if ($domain && !preg_match($excluded, $domain)) {
+                    return $url;
                 }
             }
         }
 
-        // Filter emails
-        $valid = self::filter_emails($all_emails);
-        return !empty($valid) ? reset($valid) : '';
+        // Fallback: any href with https
+        preg_match_all('/href="(https?:\/\/(?!www\.google)[^"]+)"/i', $html, $href_matches);
+        if (!empty($href_matches[1])) {
+            foreach ($href_matches[1] as $url) {
+                $domain = parse_url($url, PHP_URL_HOST);
+                if ($domain && !preg_match($excluded, $domain)) {
+                    return $url;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Visit a website's contact/impressum page and extract email
+     * Smart: first checks main page for email, then tries /impressum, /kontakt etc.
+     */
+    private static function scrape_contact_page_for_email($url, $ua) {
+        $result = ['email' => '', 'phone' => ''];
+
+        if (strpos($url, 'http') !== 0) {
+            $url = 'https://' . $url;
+        }
+
+        $parsed = parse_url($url);
+        $base_url = ($parsed['scheme'] ?? 'https') . '://' . ($parsed['host'] ?? '');
+
+        // First: quick check on main page
+        $response = wp_remote_get($base_url, [
+            'timeout' => 6, 'user-agent' => $ua, 'sslverify' => false, 'redirection' => 3
+        ]);
+
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) < 400) {
+            $html = wp_remote_retrieve_body($response);
+            $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            // Check mailto links first (most reliable)
+            preg_match_all('/mailto:([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i', $html, $mailto);
+            $all_emails = !empty($mailto[1]) ? $mailto[1] : [];
+
+            // Then plain text emails
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $plain);
+            if (!empty($plain[0])) {
+                $all_emails = array_merge($all_emails, $plain[0]);
+            }
+
+            // Check obfuscated: "info [at] domain [dot] de"
+            preg_match_all('/([a-zA-Z0-9._%+-]+)\s*[\[\(]\s*(?:at|@|AT)\s*[\]\)]\s*([a-zA-Z0-9.-]+)\s*[\[\(]\s*(?:dot|punkt|\.)\s*[\]\)]\s*([a-zA-Z]{2,})/i', $decoded, $obf, PREG_SET_ORDER);
+            foreach ($obf as $o) {
+                $all_emails[] = $o[1] . '@' . $o[2] . '.' . $o[3];
+            }
+
+            $valid = self::filter_emails($all_emails);
+            if (!empty($valid)) {
+                $result['email'] = strtolower(reset($valid));
+                return $result;
+            }
+
+            // Extract phone from main page
+            preg_match_all('/(?:tel:|telefon|fon)?:?\s*((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/iu', $decoded, $phones);
+            if (!empty($phones[1])) {
+                $phone = trim(preg_replace('/\s+/', ' ', $phones[1][0]));
+                if (strlen(preg_replace('/\D/', '', $phone)) >= 8) {
+                    $result['phone'] = $phone;
+                }
+            }
+
+            // Find contact/impressum links on the page
+            $contact_paths = [];
+            preg_match_all('/href=["\']([^"\']*(?:kontakt|contact|impressum|about|uber-uns|ueber-uns)[^"\']*)["\']/', strtolower($html), $link_matches);
+            if (!empty($link_matches[1])) {
+                $seen = [];
+                foreach ($link_matches[1] as $path) {
+                    if (strpos($path, 'javascript:') !== false || strpos($path, '#') !== false) continue;
+                    if (strpos($path, 'http') !== 0) {
+                        $path = (strpos($path, '/') === 0) ? $base_url . $path : $base_url . '/' . $path;
+                    }
+                    if (isset($seen[$path])) continue;
+                    $seen[$path] = true;
+                    $contact_paths[] = $path;
+                }
+            }
+
+            // Try common paths if no links found
+            if (empty($contact_paths)) {
+                $contact_paths = [
+                    $base_url . '/impressum',
+                    $base_url . '/kontakt',
+                ];
+            }
+
+            // Visit max 2 contact pages
+            foreach (array_slice($contact_paths, 0, 2) as $contact_url) {
+                $cr = wp_remote_get($contact_url, [
+                    'timeout' => 5, 'user-agent' => $ua, 'sslverify' => false, 'redirection' => 3
+                ]);
+
+                if (!is_wp_error($cr) && wp_remote_retrieve_response_code($cr) < 400) {
+                    $ch = wp_remote_retrieve_body($cr);
+                    $cd = html_entity_decode($ch, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                    // mailto first
+                    preg_match_all('/mailto:([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i', $ch, $cm);
+                    $page_emails = !empty($cm[1]) ? $cm[1] : [];
+                    preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $cd, $cp);
+                    if (!empty($cp[0])) $page_emails = array_merge($page_emails, $cp[0]);
+
+                    // Obfuscated
+                    preg_match_all('/([a-zA-Z0-9._%+-]+)\s*[\[\(]\s*(?:at|@|AT)\s*[\]\)]\s*([a-zA-Z0-9.-]+)\s*[\[\(]\s*(?:dot|punkt|\.)\s*[\]\)]\s*([a-zA-Z]{2,})/i', $cd, $co, PREG_SET_ORDER);
+                    foreach ($co as $o) $page_emails[] = $o[1] . '@' . $o[2] . '.' . $o[3];
+
+                    $pv = self::filter_emails($page_emails);
+                    if (!empty($pv)) {
+                        $result['email'] = strtolower(reset($pv));
+                        return $result;
+                    }
+
+                    // Phone fallback
+                    if (empty($result['phone'])) {
+                        preg_match_all('/(?:tel:|telefon|fon)?:?\s*((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/iu', $cd, $pp);
+                        if (!empty($pp[1])) {
+                            $phone = trim(preg_replace('/\s+/', ' ', $pp[1][0]));
+                            if (strlen(preg_replace('/\D/', '', $phone)) >= 8) {
+                                $result['phone'] = $phone;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 
     /**
