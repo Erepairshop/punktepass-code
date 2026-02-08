@@ -166,39 +166,31 @@ class PPV_Repair_Email_Sender {
     private static function handle_send_email() {
         global $wpdb;
 
-        $to_email = sanitize_email($_POST['to_email'] ?? '');
+        $to_emails_raw = $_POST['to_email'] ?? '';
         $to_name = sanitize_text_field($_POST['to_name'] ?? '');
         $subject = sanitize_text_field($_POST['subject'] ?? '');
         $message = wp_kses_post($_POST['message'] ?? '');
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
 
-        if (empty($to_email) || !is_email($to_email)) {
-            wp_redirect("/formular/email-sender?error=invalid_email");
-            exit;
-        }
-
         if (empty($subject) || empty($message)) {
             wp_redirect("/formular/email-sender?error=empty_fields");
             exit;
         }
 
-        // Check duplicate
-        $already_sent = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}ppv_repair_email_logs WHERE recipient_email = %s AND status = 'sent' LIMIT 1",
-            $to_email
-        ));
+        // Parse multiple emails (comma, semicolon, newline, or space separated)
+        $email_list = preg_split('/[\s,;]+/', $to_emails_raw, -1, PREG_SPLIT_NO_EMPTY);
+        $valid_emails = [];
 
-        if ($already_sent && !$force_send) {
-            set_transient('ppv_repair_email_form_data', [
-                'to_email' => $to_email,
-                'to_name' => $to_name,
-                'subject' => $subject,
-                'message' => $message,
-                'notes' => $notes
-            ], 300);
+        foreach ($email_list as $email) {
+            $email = trim(sanitize_email($email));
+            if (is_email($email)) {
+                $valid_emails[] = $email;
+            }
+        }
 
-            wp_redirect("/formular/email-sender?error=duplicate&email=" . urlencode($to_email));
+        if (empty($valid_emails)) {
+            wp_redirect("/formular/email-sender?error=invalid_email");
             exit;
         }
 
@@ -212,7 +204,7 @@ class PPV_Repair_Email_Sender {
             'Reply-To: Erik Borota <info@punktepass.de>',
         ];
 
-        // Handle attachment
+        // Handle attachment (once for all emails)
         $attachments = [];
         $attachment_name = '';
 
@@ -233,29 +225,69 @@ class PPV_Repair_Email_Sender {
             }
         }
 
-        // Send email
-        $sent = wp_mail($to_email, $subject, $html_message, $headers, $attachments);
+        // Send to each email
+        $sent_count = 0;
+        $failed_count = 0;
+        $skipped_count = 0;
+        $skipped_emails = [];
 
-        // Log
-        $wpdb->insert(
-            $wpdb->prefix . 'ppv_repair_email_logs',
-            [
-                'recipient_email' => $to_email,
-                'recipient_name' => $to_name,
-                'subject' => $subject,
-                'message_preview' => wp_trim_words(strip_tags($message), 30),
-                'attachment_name' => $attachment_name,
-                'status' => $sent ? 'sent' : 'failed',
-                'notes' => $notes
-            ],
-            ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
-        );
+        foreach ($valid_emails as $to_email) {
+            // Check duplicate (skip if already sent and not force_send)
+            $already_sent = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_repair_email_logs WHERE recipient_email = %s AND status = 'sent' LIMIT 1",
+                $to_email
+            ));
 
-        if ($sent) {
-            wp_redirect("/formular/email-sender?success=sent&to=" . urlencode($to_email));
-        } else {
-            wp_redirect("/formular/email-sender?error=send_failed");
+            if ($already_sent && !$force_send) {
+                $skipped_count++;
+                $skipped_emails[] = $to_email;
+                continue;
+            }
+
+            // Send email
+            $sent = wp_mail($to_email, $subject, $html_message, $headers, $attachments);
+
+            // Log
+            $wpdb->insert(
+                $wpdb->prefix . 'ppv_repair_email_logs',
+                [
+                    'recipient_email' => $to_email,
+                    'recipient_name' => $to_name,
+                    'subject' => $subject,
+                    'message_preview' => wp_trim_words(strip_tags($message), 30),
+                    'attachment_name' => $attachment_name,
+                    'status' => $sent ? 'sent' : 'failed',
+                    'notes' => $notes
+                ],
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+
+            if ($sent) {
+                $sent_count++;
+            } else {
+                $failed_count++;
+            }
+
+            // Small delay between emails to avoid rate limiting
+            if (count($valid_emails) > 1) {
+                usleep(200000); // 200ms delay
+            }
         }
+
+        // Build redirect URL with results
+        $redirect_params = [];
+        if ($sent_count > 0) {
+            $redirect_params[] = "sent=$sent_count";
+        }
+        if ($failed_count > 0) {
+            $redirect_params[] = "failed=$failed_count";
+        }
+        if ($skipped_count > 0) {
+            $redirect_params[] = "skipped=$skipped_count";
+        }
+
+        $redirect_url = "/formular/email-sender?" . ($sent_count > 0 ? "success=bulk&" : "error=bulk_partial&") . implode("&", $redirect_params);
+        wp_redirect($redirect_url);
         exit;
     }
 
@@ -850,6 +882,18 @@ Erik Borota';
         <div class="alert alert-success">
             <i class="ri-check-line"></i> Eintrag gel&ouml;scht
         </div>
+    <?php elseif ($success === 'bulk'): ?>
+        <div class="alert alert-success">
+            <i class="ri-mail-send-line"></i> <strong>Massen-Versand abgeschlossen!</strong><br>
+            <?php
+            $sent = intval($_GET['sent'] ?? 0);
+            $failed = intval($_GET['failed'] ?? 0);
+            $skipped = intval($_GET['skipped'] ?? 0);
+            echo "&#10004; $sent erfolgreich gesendet";
+            if ($failed > 0) echo " &bull; &#10060; $failed fehlgeschlagen";
+            if ($skipped > 0) echo " &bull; &#9888; $skipped &uuml;bersprungen (bereits gesendet)";
+            ?>
+        </div>
     <?php endif; ?>
 
     <?php if ($error === 'invalid_email'): ?>
@@ -904,19 +948,17 @@ Erik Borota';
                     </div>
                     <?php endif; ?>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Empf&auml;nger Email *</label>
-                            <input type="email" name="to_email" class="form-control" required
-                                   value="<?php echo esc_attr($prefill_to ?: ($saved_form_data['to_email'] ?? '')); ?>"
-                                   placeholder="email@beispiel.de">
-                        </div>
-                        <div class="form-group">
-                            <label>Empf&auml;nger Name</label>
-                            <input type="text" name="to_name" class="form-control"
-                                   value="<?php echo esc_attr($prefill_name ?: ($saved_form_data['to_name'] ?? '')); ?>"
-                                   placeholder="Max Mustermann">
-                        </div>
+                    <div class="form-group">
+                        <label>Empf&auml;nger Email(s) * <small style="font-weight:normal;color:#64748b">&mdash; Mehrere Adressen mit Komma, Semikolon oder Zeilenumbruch trennen</small></label>
+                        <textarea name="to_email" class="form-control" required rows="3"
+                                  placeholder="email1@beispiel.de, email2@beispiel.de, email3@beispiel.de"
+                                  style="font-family:monospace;font-size:13px"><?php echo esc_textarea($prefill_to ?: ($saved_form_data['to_email'] ?? '')); ?></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Empf&auml;nger Name <small style="font-weight:normal;color:#64748b">(optional, wird bei allen verwendet)</small></label>
+                        <input type="text" name="to_name" class="form-control"
+                               value="<?php echo esc_attr($prefill_name ?: ($saved_form_data['to_name'] ?? '')); ?>"
+                               placeholder="Max Mustermann">
                     </div>
 
                     <div class="form-group">
