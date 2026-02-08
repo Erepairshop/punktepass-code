@@ -784,7 +784,7 @@ class PPV_Lead_Finder {
     }
 
     // Tavily API key
-    private static $tavily_api_key = 'tvly-dev-qLZ9RhwWsFgfAVcTIW7k4KX3c';
+    private static $tavily_api_key = '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';
 
     /**
      * Tavily API debug test - visit /formular/lead-finder?tavily_test=1
