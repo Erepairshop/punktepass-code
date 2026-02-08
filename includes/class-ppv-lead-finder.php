@@ -851,54 +851,68 @@ class PPV_Lead_Finder {
      * Guess website domain from business name and check if it exists
      */
     private static function guess_website_domain($business_name) {
-        // Clean the name for domain generation
+        // Step 0: If name contains a domain directly (like "Lauer-Repair.de"), use it
+        if (preg_match('/\b([a-zA-Z0-9][\w\-]*\.(de|com|net|org|eu|shop|store|online))\b/i', $business_name, $domain_in_name)) {
+            $direct_domain = strtolower($domain_in_name[1]);
+            $url = 'https://' . $direct_domain;
+            $response = wp_remote_head($url, ['timeout' => 5, 'sslverify' => false, 'redirection' => 3]);
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) < 400) {
+                return $url;
+            }
+        }
+
+        // Step 1: Extract the actual business name (before description/location words)
         $name = $business_name;
 
-        // Remove common suffixes that wouldn't be in a domain
-        $name = preg_replace('/\s*[-|\/]\s*(Reparatur|Service|Repair|Shop|Store|Handy|Smartphone|Tablet|iPhone|Samsung|Computer|Laptop|für|und|in|Stuttgart|Hamburg|München|Berlin|Köln|Frankfurt|Düsseldorf|Hannover|Leipzig|Dresden|Nürnberg|Bremen|Essen|Dortmund|Duisburg|Bochum|Wuppertal|Bielefeld|Bonn|Münster|Karlsruhe|Mannheim|Augsburg|Wiesbaden|Gelsenkirchen|Mönchengladbach|Braunschweig|Chemnitz|Kiel|Aachen|Halle|Magdeburg|Freiburg|Krefeld|Lübeck|Oberhausen|Erfurt|Mainz|Rostock|Kassel|Hagen|Saarbrücken|Hamm|Potsdam|Ludwigshafen|Oldenburg|Leverkusen|Osnabrück|Solingen|Heidelberg|Herne|Neuss|Darmstadt|Paderborn|Regensburg|Ingolstadt|Würzburg|Wolfsburg|Offenbach|Ulm|Heilbronn|Pforzheim|Göttingen|Bottrop|Trier|Recklinghausen|Remscheid|Reutlingen|Koblenz|Bremerhaven|Bergisch|Jena|Erlangen|Moers|Siegen|Hildesheim|Salzgitter|Cottbus|Kaiserslautern|Schwerin|Gütersloh|Witten|Iserlohn|Gera|Düren|Esslingen|Ratingen|Marl|Lünen|Velbert|Hanau|Flensburg|Wilhelmshaven|Dorsten|Konstanz|Minden|Neumünster|Norderstedt|Detmold|Lüdenscheid|Arnsberg|Troisdorf|Marburg|Viersen|Bayreuth|Castrop|Rauxel|Pinneberg|Aalen|Lüneburg|Dinslaken|Kerpen|Fulda|Landshut|Bingen|Winnenden|Schorndorf|Waiblingen|Backnang|Feuerbach)\b.*/iu', '', $name);
-
-        // Remove "GmbH", "UG", "e.K." etc
+        // Remove everything after common separator patterns: " - ", " / ", " | ", " für ", " in "
+        $name = preg_replace('/\s+[-\/|]\s+.*/u', '', $name);
+        // Remove description words that come AFTER the business name
+        $name = preg_replace('/\s+(für|und|in|An\s*&|An\s+und|Reparatur\s+und|Service\s+für|Handy\s*reparatur|Smartphone|Tablet|iPhone|Samsung|Computer|Laptop|Reparatur|Service|Repair|Shop|Store)\b.*/iu', '', $name);
+        // Remove legal forms
         $name = preg_replace('/\s+(GmbH|UG|AG|e\.K\.|Ltd|Inc|Co\.?|KG|OHG)\b.*/i', '', $name);
+        // Remove city names at the end
+        $name = preg_replace('/\s+(Stuttgart|Hamburg|München|Berlin|Köln|Frankfurt|Düsseldorf|Hannover|Leipzig|Dresden|Nürnberg|Bremen|Essen|Dortmund|Bochum|Wuppertal|Bielefeld|Bonn|Münster|Karlsruhe|Mannheim|Augsburg|Wiesbaden|Braunschweig|Kiel|Aachen|Freiburg|Erfurt|Mainz|Rostock|Kassel|Potsdam|Heidelberg|Darmstadt|Regensburg|Ingolstadt|Würzburg|Wolfsburg|Ulm|Heilbronn|Göttingen|Trier|Reutlingen|Koblenz|Winnenden|Schorndorf|Waiblingen|Backnang|Feuerbach|West|Ost|Nord|Süd|Mitte|Zentrum)\s*$/iu', '', $name);
 
-        // Generate domain candidates
-        $candidates = [];
+        $name = trim($name);
 
-        // Variant 1: Full name without spaces -> domain.de
+        // If name is now too short, use original first part
+        if (strlen($name) < 3) {
+            $name = preg_replace('/\s+[-\/|]\s+.*/', '', $business_name);
+            $name = trim($name);
+        }
+
+        // Step 2: Convert to domain-friendly slug
         $slug = strtolower(trim($name));
         $slug = preg_replace('/[äÄ]/', 'ae', $slug);
         $slug = preg_replace('/[öÖ]/', 'oe', $slug);
         $slug = preg_replace('/[üÜ]/', 'ue', $slug);
         $slug = preg_replace('/ß/', 'ss', $slug);
+
         $slug_nospace = preg_replace('/[^a-z0-9]/', '', $slug);
         $slug_dashed = preg_replace('/[^a-z0-9]+/', '-', $slug);
         $slug_dashed = trim($slug_dashed, '-');
 
-        if (strlen($slug_nospace) >= 4) {
+        // Step 3: Generate domain candidates (ordered by likelihood)
+        $candidates = [];
+
+        // Only add if the slug is reasonable length for a domain (not too long, not too short)
+        if (strlen($slug_nospace) >= 5 && strlen($slug_nospace) <= 30) {
             $candidates[] = $slug_nospace . '.de';
             $candidates[] = $slug_dashed . '.de';
+        }
+        if (strlen($slug_nospace) >= 5 && strlen($slug_nospace) <= 25) {
             $candidates[] = $slug_nospace . '.com';
             $candidates[] = $slug_dashed . '.com';
-        }
-
-        // Variant 2: If name has "." in it (like "Lauer-Repair.de"), use it directly
-        if (preg_match('/([a-zA-Z0-9\-]+\.(de|com|net|org|eu|shop|store|online))/i', $business_name, $domain_in_name)) {
-            array_unshift($candidates, $domain_in_name[1]);
-        }
-
-        // Variant 3: First word only (for compound names)
-        $words = preg_split('/[\s\-\/\|]+/', $slug);
-        if (count($words) > 1 && strlen($words[0]) >= 4) {
-            $candidates[] = $words[0] . '.de';
         }
 
         // Deduplicate
         $candidates = array_unique($candidates);
 
-        // Check each candidate
+        // Step 4: Check each candidate with HTTP HEAD
         foreach (array_slice($candidates, 0, 6) as $domain) {
             $url = 'https://' . $domain;
             $response = wp_remote_head($url, [
-                'timeout' => 5,
+                'timeout' => 4,
                 'sslverify' => false,
                 'redirection' => 3
             ]);
@@ -913,7 +927,7 @@ class PPV_Lead_Finder {
             // Try www. prefix
             $url_www = 'https://www.' . $domain;
             $response = wp_remote_head($url_www, [
-                'timeout' => 5,
+                'timeout' => 4,
                 'sslverify' => false,
                 'redirection' => 3
             ]);
