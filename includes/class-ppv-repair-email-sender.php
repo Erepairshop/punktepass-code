@@ -923,6 +923,80 @@ Erik Borota';
         </div>
     <?php endif; ?>
 
+    <!-- Email Extractor Tool -->
+    <div class="card" style="margin-bottom:20px">
+        <div class="card-header" style="cursor:pointer" onclick="document.getElementById('extractor-body').style.display=document.getElementById('extractor-body').style.display==='none'?'block':'none';this.querySelector('.toggle-icon').classList.toggle('ri-arrow-down-s-line');this.querySelector('.toggle-icon').classList.toggle('ri-arrow-up-s-line')">
+            <i class="ri-search-eye-line"></i> Email Extractor
+            <i class="toggle-icon ri-arrow-down-s-line" style="float:right"></i>
+        </div>
+        <div class="card-body" id="extractor-body" style="display:none">
+            <p style="color:#64748b;font-size:13px;margin-bottom:12px">
+                <i class="ri-information-line"></i> Paste text, HTML or webpage content here and click "Extract" to find all email addresses.
+            </p>
+            <div class="form-group">
+                <textarea id="extractor-input" class="form-control" rows="5" placeholder="Paste website content, HTML, or any text containing email addresses here..."></textarea>
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:12px">
+                <button type="button" class="btn btn-primary" onclick="extractEmails()">
+                    <i class="ri-search-line"></i> Emails extrahieren
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('extractor-input').value=''">
+                    <i class="ri-delete-bin-line"></i> Leeren
+                </button>
+            </div>
+            <div id="extractor-result" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <strong><span id="extractor-count">0</span> Emails gefunden:</strong>
+                    <button type="button" class="btn btn-sm btn-success" onclick="useExtractedEmails()">
+                        <i class="ri-arrow-down-line"></i> In Formular &uuml;bernehmen
+                    </button>
+                </div>
+                <textarea id="extractor-output" class="form-control" rows="3" readonly style="font-family:monospace;font-size:12px;background:#f1f5f9"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function extractEmails() {
+        var input = document.getElementById('extractor-input').value;
+        // Regex to find email addresses
+        var emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        var matches = input.match(emailRegex) || [];
+        // Remove duplicates
+        var unique = [...new Set(matches.map(e => e.toLowerCase()))];
+
+        var resultDiv = document.getElementById('extractor-result');
+        var output = document.getElementById('extractor-output');
+        var count = document.getElementById('extractor-count');
+
+        if (unique.length > 0) {
+            output.value = unique.join(', ');
+            count.textContent = unique.length;
+            resultDiv.style.display = 'block';
+        } else {
+            output.value = '';
+            count.textContent = '0';
+            resultDiv.style.display = 'block';
+            alert('Keine Email-Adressen gefunden!');
+        }
+    }
+
+    function useExtractedEmails() {
+        var emails = document.getElementById('extractor-output').value;
+        var toField = document.querySelector('textarea[name="to_email"]');
+        if (toField && emails) {
+            if (toField.value.trim()) {
+                toField.value = toField.value.trim() + ', ' + emails;
+            } else {
+                toField.value = emails;
+            }
+            // Scroll to form
+            toField.scrollIntoView({behavior: 'smooth', block: 'center'});
+            toField.focus();
+        }
+    }
+    </script>
+
     <div class="grid">
         <!-- Email Form -->
         <div class="card">
