@@ -41,6 +41,12 @@ class PPV_Lead_Finder {
             exit;
         }
 
+        // Tavily API test endpoint: /formular/lead-finder?tavily_test=1
+        if (isset($_GET['tavily_test'])) {
+            self::tavily_test();
+            exit;
+        }
+
         // Get filters
         $filter_region = isset($_GET['region']) ? sanitize_text_field($_GET['region']) : '';
         $filter_status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
@@ -781,6 +787,68 @@ class PPV_Lead_Finder {
     private static $tavily_api_key = 'tvly-dev-qLZ9RhwWsFgfAVcTIW7k4KX3c';
 
     /**
+     * Tavily API debug test - visit /formular/lead-finder?tavily_test=1
+     */
+    private static function tavily_test() {
+        header('Content-Type: application/json');
+
+        $query = isset($_GET['q']) ? sanitize_text_field($_GET['q']) : 'City-Phone24 Stuttgart email';
+
+        $post_body = json_encode([
+            'query' => $query,
+            'max_results' => 3,
+            'search_depth' => 'basic',
+            'include_answer' => false,
+            'include_raw_content' => false,
+        ]);
+
+        $response = wp_remote_post('https://api.tavily.com/search', [
+            'timeout' => 15,
+            'headers' => [
+                'Authorization' => 'Bearer ' . self::$tavily_api_key,
+                'Content-Type' => 'application/json',
+            ],
+            'body' => $post_body,
+        ]);
+
+        $debug = [
+            'api_key_length' => strlen(self::$tavily_api_key),
+            'api_key_start' => substr(self::$tavily_api_key, 0, 10) . '...',
+            'query' => $query,
+            'request_body' => $post_body,
+        ];
+
+        if (is_wp_error($response)) {
+            $debug['error'] = $response->get_error_message();
+            $debug['error_code'] = $response->get_error_code();
+            echo json_encode($debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $debug['http_code'] = wp_remote_retrieve_response_code($response);
+        $debug['response_headers'] = wp_remote_retrieve_headers($response)->getAll();
+        $body = wp_remote_retrieve_body($response);
+        $debug['response_body'] = json_decode($body, true) ?: $body;
+
+        // Also extract emails from results
+        $data = json_decode($body, true);
+        $found_emails = [];
+        if (!empty($data['results'])) {
+            foreach ($data['results'] as $r) {
+                $content = ($r['content'] ?? '') . ' ' . ($r['title'] ?? '');
+                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $m);
+                if (!empty($m[0])) {
+                    $found_emails = array_merge($found_emails, $m[0]);
+                }
+            }
+        }
+        $debug['found_emails'] = array_unique($found_emails);
+
+        echo json_encode($debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    /**
      * Search via Tavily API - returns array of results with 'url', 'title', 'content'
      */
     private static function tavily_search($query, $max_results = 5) {
@@ -799,7 +867,14 @@ class PPV_Lead_Finder {
             ]),
         ]);
 
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+        if (is_wp_error($response)) {
+            error_log('Tavily API error: ' . $response->get_error_message());
+            return [];
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        if ($code !== 200) {
+            error_log('Tavily API HTTP ' . $code . ': ' . wp_remote_retrieve_body($response));
             return [];
         }
 
