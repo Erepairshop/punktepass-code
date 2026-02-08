@@ -178,6 +178,13 @@ class PPV_Repair_Core {
             exit;
         }
 
+        // /formular/lead-finder → Lead finder with Google Maps integration
+        if ($path === '/formular/lead-finder') {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-lead-finder.php';
+            PPV_Lead_Finder::render();
+            exit;
+        }
+
         // /formular/{slug}/status/{token} → Customer tracking page
         if (preg_match('#^/formular/([^/]+)/status/([a-f0-9]{32})$#', $path, $m)) {
             $store = self::get_store_by_slug($m[1]);

@@ -1,0 +1,47 @@
+# PunktePass Robots.txt
+# Optimiert für bessere Google-Indexierung
+
+User-agent: *
+
+# Erlaubte Bereiche
+Allow: /
+Allow: /formular
+Allow: /formular/*
+Allow: /haendler
+Allow: /so-funktionierts
+Allow: /preise
+Allow: /kontakt
+Allow: /registrierung
+
+# Verbotene Bereiche (privat/admin)
+Disallow: /formular/admin
+Disallow: /formular/admin/*
+Disallow: /formular/*/status/*
+Disallow: /wp-admin/
+Disallow: /wp-includes/
+Disallow: /wp-content/plugins/
+Disallow: /wp-content/cache/
+Disallow: /?s=
+Disallow: /search/
+Disallow: /*?*
+Disallow: /*.json$
+Disallow: /xmlrpc.php
+Disallow: /wp-login.php
+Disallow: /wp-register.php
+
+# Crawl-Delay für respektvolles Crawling
+Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://punktepass.de/sitemap.xml
+Sitemap: https://punktepass.de/formular-sitemap.xml
+
+# Google-spezifisch
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing-spezifisch
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1

@@ -768,6 +768,9 @@ a:hover{color:#5a67d8}
             <button class="ra-btn-copy" id="ra-copy-btn" title="Link kopieren">
                 <i class="ri-file-copy-line"></i>
             </button>
+            <button class="ra-btn-tips" id="ra-tips-btn" onclick="openKioskTips()" title="Tablet-Kiosk Tipps">
+                <i class="ri-lightbulb-line"></i>
+            </button>
         </div>
     </div>';
 
@@ -795,6 +798,10 @@ a:hover{color:#5a67d8}
                     <input type="text" name="name" value="' . esc_attr($store->name) . '">
                 </div>
                 <div class="field">
+                    <label>Inhaber / Name</label>
+                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '" placeholder="Max Mustermann">
+                </div>
+                <div class="field">
                     <label>Adresse</label>
                     <input type="text" name="address" value="' . esc_attr($store->address) . '">
                 </div>
@@ -809,6 +816,10 @@ a:hover{color:#5a67d8}
                 <div class="field">
                     <label>Telefon</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
+                </div>
+                <div class="field">
+                    <label>USt-IdNr.</label>
+                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '" placeholder="DE123456789">
                 </div>
                 <div class="field">
                     <label>Login E-Mail <small style="color:#6b7280">(f&uuml;r Anmeldung)</small></label>
@@ -841,31 +852,24 @@ a:hover{color:#5a67d8}
             </div>
 
 
-                <h4><i class="ri-file-list-3-line"></i> Impressum / Rechtliches</h4>
+                <h4><i class="ri-file-list-3-line"></i> Impressum / Rechtliches <small style="font-weight:normal;color:#6b7280">(optional, falls abweichend)</small></h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Nur ausf&uuml;llen, wenn die Impressum-Daten von den Gesch&auml;ftsdaten abweichen.</p>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Firmenname (Impressum)</label>
-                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '">
+                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '" placeholder="Leer = Firmenname oben">
                 </div>
                 <div class="field">
-                    <label>Inhaber (Impressum)</label>
-                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '">
+                    <label>Abweichende Adresse</label>
+                    <input type="text" name="repair_company_address" value="' . esc_attr($store->repair_company_address) . '" placeholder="Nur wenn abweichend von oben">
                 </div>
                 <div class="field">
-                    <label>Adresse</label>
-                    <input type="text" name="repair_company_address" value="' . esc_attr($store->repair_company_address) . '" placeholder="Musterstraße 1, 12345 Stadt">
+                    <label>Abweichende Telefon</label>
+                    <input type="text" name="repair_company_phone" value="' . esc_attr($store->repair_company_phone) . '" placeholder="Nur wenn abweichend">
                 </div>
                 <div class="field">
-                    <label>Telefon</label>
-                    <input type="text" name="repair_company_phone" value="' . esc_attr($store->repair_company_phone) . '" placeholder="+49 123 456789">
-                </div>
-                <div class="field">
-                    <label>E-Mail</label>
-                    <input type="text" name="repair_company_email" value="' . esc_attr($store->repair_company_email) . '" placeholder="info@beispiel.de">
-                </div>
-                <div class="field">
-                    <label>USt-IdNr.</label>
-                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
+                    <label>Abweichende E-Mail</label>
+                    <input type="text" name="repair_company_email" value="' . esc_attr($store->repair_company_email) . '" placeholder="Nur wenn abweichend">
                 </div>
             </div>
             </div><!-- END PANEL: general -->
@@ -1089,7 +1093,7 @@ echo '          </div>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Steuernummer</label>
-                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="z.B. 109/206/40309">
+                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="z.B. 123/456/78901">
                 </div>
                 <div class="field">
                     <label>Webseite</label>
@@ -4601,8 +4605,105 @@ echo '          </div>
     var savedTab=localStorage.getItem("ra_active_tab");
     if(savedTab&&document.querySelector(\'.ra-tab[data-tab="\'+savedTab+\'"]\'))switchTab(savedTab);
 
+    // Kiosk Tips Modal Functions
+    window.openKioskTips=function(){document.getElementById("kiosk-tips-modal").classList.add("active");document.body.style.overflow="hidden"};
+    window.closeKioskTips=function(){document.getElementById("kiosk-tips-modal").classList.remove("active");document.body.style.overflow=""};
+    window.copyKioskUrl=function(){var url=document.getElementById("kiosk-form-url").textContent;navigator.clipboard.writeText(url).then(function(){var btn=document.querySelector(".kiosk-copy-btn");btn.innerHTML=\'<i class="ri-check-line"></i>\';setTimeout(function(){btn.innerHTML=\'<i class="ri-file-copy-line"></i>\'},2000)})};
+    document.addEventListener("keydown",function(e){if(e.key==="Escape")closeKioskTips()});
+
 })();
 </script>
+
+<!-- Kiosk Tips Modal -->
+<div id="kiosk-tips-modal" class="kiosk-tips-modal" onclick="if(event.target===this)closeKioskTips()">
+    <div class="kiosk-tips-content">
+        <button type="button" class="kiosk-tips-close" onclick="closeKioskTips()"><i class="ri-close-line"></i></button>
+        <div class="kiosk-tips-header">
+            <div class="kiosk-tips-icon"><i class="ri-tablet-line"></i></div>
+            <h2>Tablet-Kiosk Modus</h2>
+            <p>Formular im Vollbildmodus auf einem Tablet betreiben</p>
+        </div>
+
+        <div class="kiosk-tips-body">
+            <div class="kiosk-tip-section">
+                <h3><i class="ri-download-2-line"></i> 1. App herunterladen</h3>
+                <p>Laden Sie <strong>Fully Kiosk Browser</strong> aus dem Google Play Store herunter:</p>
+                <a href="https://play.google.com/store/apps/details?id=de.ozerov.fully" target="_blank" class="kiosk-tip-link">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" style="height:40px">
+                </a>
+            </div>
+
+            <div class="kiosk-tip-section">
+                <h3><i class="ri-settings-3-line"></i> 2. URL einstellen</h3>
+                <p>&Ouml;ffnen Sie die Fully Kiosk App und geben Sie diese URL als Startseite ein:</p>
+                <div class="kiosk-tip-url">
+                    <code id="kiosk-form-url">' . esc_url($form_url) . '</code>
+                    <button type="button" onclick="copyKioskUrl()" class="kiosk-copy-btn"><i class="ri-file-copy-line"></i></button>
+                </div>
+            </div>
+
+            <div class="kiosk-tip-section">
+                <h3><i class="ri-fullscreen-line"></i> 3. Kiosk-Modus aktivieren</h3>
+                <p>Aktivieren Sie folgende Einstellungen in der App:</p>
+                <ul class="kiosk-tip-list">
+                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Web Content &rarr; Fullscreen Mode</strong> aktivieren</li>
+                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Device Management &rarr; Hide Status Bar</strong> aktivieren</li>
+                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Device Management &rarr; Hide Navigation Bar</strong> aktivieren</li>
+                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Device Management &rarr; Keep Screen On</strong> aktivieren</li>
+                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Kiosk Mode &rarr; Enable Kiosk Mode</strong> aktivieren</li>
+                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Kiosk Mode &rarr; Kiosk Exit PIN</strong> setzen (z.B. 1234)</li>
+                </ul>
+            </div>
+
+            <div class="kiosk-tip-section">
+                <h3><i class="ri-rocket-line"></i> 4. Fertig!</h3>
+                <p>Starten Sie die App und tippen Sie auf <strong>&quot;Start Kiosk Mode&quot;</strong>. Das Formular l&auml;uft jetzt im Vollbildmodus!</p>
+                <p class="kiosk-tip-note"><i class="ri-lock-line"></i> Zum Beenden: 5x schnell auf eine Ecke tippen und PIN eingeben</p>
+            </div>
+        </div>
+
+        <div class="kiosk-tips-footer">
+            <a href="https://www.fully-kiosk.com" target="_blank" class="kiosk-tip-external">
+                <i class="ri-external-link-line"></i> Fully Kiosk Webseite
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.ra-btn-tips{width:40px;height:40px;border:none;background:#fef3c7;border-radius:8px;color:#d97706;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s}
+.ra-btn-tips:hover{background:#fde68a;transform:scale(1.05)}
+.kiosk-tips-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;padding:20px;overflow-y:auto;backdrop-filter:blur(4px)}
+.kiosk-tips-modal.active{display:flex;align-items:flex-start;justify-content:center}
+.kiosk-tips-content{background:#fff;border-radius:16px;max-width:540px;width:100%;margin:20px auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:kioskSlideIn .3s ease;position:relative}
+@keyframes kioskSlideIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.kiosk-tips-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;background:rgba(0,0,0,0.05);border-radius:50%;cursor:pointer;font-size:20px;color:#64748b;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:1}
+.kiosk-tips-close:hover{background:rgba(0,0,0,0.1);color:#1e293b}
+.kiosk-tips-header{position:relative;padding:28px 24px 20px;text-align:center;border-bottom:1px solid #e2e8f0}
+.kiosk-tips-icon{width:56px;height:56px;background:linear-gradient(135deg,#667eea,#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:#fff}
+.kiosk-tips-header h2{font-size:20px;font-weight:700;color:#1e293b;margin:0 0 4px}
+.kiosk-tips-header p{font-size:14px;color:#64748b;margin:0}
+.kiosk-tips-body{padding:20px 24px}
+.kiosk-tip-section{margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #f1f5f9}
+.kiosk-tip-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.kiosk-tip-section h3{font-size:15px;font-weight:600;color:#1e293b;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.kiosk-tip-section h3 i{color:#667eea;font-size:18px}
+.kiosk-tip-section p{font-size:14px;color:#475569;margin:0 0 12px;line-height:1.6}
+.kiosk-tip-link{display:inline-block;margin:8px 0}
+.kiosk-tip-note{font-size:12px;color:#94a3b8;background:#f8fafc;padding:10px 12px;border-radius:8px;display:flex;align-items:flex-start;gap:6px}
+.kiosk-tip-note i{color:#f59e0b;font-size:14px;margin-top:1px}
+.kiosk-tip-url{display:flex;align-items:center;gap:8px;background:#f1f5f9;padding:10px 14px;border-radius:8px;margin:8px 0}
+.kiosk-tip-url code{flex:1;font-size:13px;color:#334155;word-break:break-all;font-family:monospace}
+.kiosk-copy-btn{width:32px;height:32px;border:none;background:#667eea;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.kiosk-copy-btn:hover{transform:scale(1.05)}
+.kiosk-tip-list{list-style:none;padding:0;margin:12px 0 0}
+.kiosk-tip-list li{display:flex;align-items:flex-start;gap:8px;padding:8px 0;font-size:13px;color:#475569}
+.kiosk-tip-list li i{color:#10b981;font-size:16px;margin-top:1px}
+.kiosk-tips-footer{padding:16px 24px;background:#f8fafc;border-radius:0 0 16px 16px;text-align:center}
+.kiosk-tip-external{font-size:13px;color:#667eea;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:500}
+.kiosk-tip-external:hover{text-decoration:underline}
+</style>
+
 </body>
 </html>';
     }
