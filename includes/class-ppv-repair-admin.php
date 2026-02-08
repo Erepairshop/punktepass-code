@@ -4631,7 +4631,6 @@ echo '          </div>
                 <a href="https://play.google.com/store/apps/details?id=de.ozerov.fully" target="_blank" class="kiosk-tip-link">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" style="height:40px">
                 </a>
-                <p class="kiosk-tip-note"><i class="ri-information-line"></i> Die App kostet ca. 9&euro; f&uuml;r die Vollversion (ohne Wasserzeichen)</p>
             </div>
 
             <div class="kiosk-tip-section">
