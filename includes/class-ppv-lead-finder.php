@@ -777,26 +777,56 @@ class PPV_Lead_Finder {
         exit;
     }
 
+    // Tavily API key
+    private static $tavily_api_key = 'tvly-dev-qLZ9RhwWsFgfAVcTIW7k4KX3c';
+
     /**
-     * Smart email search: Google search → extract from snippets → if not found, visit impressum
+     * Search via Tavily API - returns array of results with 'url', 'title', 'content'
+     */
+    private static function tavily_search($query, $max_results = 5) {
+        $response = wp_remote_post('https://api.tavily.com/search', [
+            'timeout' => 15,
+            'headers' => [
+                'Authorization' => 'Bearer ' . self::$tavily_api_key,
+                'Content-Type' => 'application/json',
+            ],
+            'body' => json_encode([
+                'query' => $query,
+                'max_results' => $max_results,
+                'search_depth' => 'basic',
+                'include_answer' => false,
+                'include_raw_content' => false,
+            ]),
+        ]);
+
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return [];
+        }
+
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+        return $data['results'] ?? [];
+    }
+
+    /**
+     * Smart email search using Tavily API
+     * Step 1: Tavily search "[name] email" → extract email from result content
+     * Step 2: If no email in results → visit the business website impressum/kontakt
      * Returns ['email' => '', 'website' => '', 'phone' => '']
      */
     private static function smart_find_email($business_name, $region = '') {
         $result = ['email' => '', 'website' => '', 'phone' => ''];
         $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+        $excluded_domains = '/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft)/i';
 
-        // --- STEP 1: Google search "[name] [region] email" ---
+        // --- STEP 1: Tavily search "[name] [region] email" ---
         $query = $business_name . (!empty($region) ? ' ' . $region : '') . ' email';
-        $search_url = 'https://www.google.com/search?q=' . urlencode($query) . '&num=10&hl=de';
-        $response = wp_remote_get($search_url, ['timeout' => 8, 'user-agent' => $ua]);
+        $results = self::tavily_search($query, 5);
 
-        $google_html = '';
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $google_html = wp_remote_retrieve_body($response);
-            $decoded = html_entity_decode($google_html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        foreach ($results as $r) {
+            $content = ($r['content'] ?? '') . ' ' . ($r['title'] ?? '') . ' ' . ($r['url'] ?? '');
 
-            // Extract emails from snippets
-            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
+            // Extract emails from result content
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $matches);
             if (!empty($matches[0])) {
                 $valid = self::filter_emails($matches[0]);
                 if (!empty($valid)) {
@@ -804,40 +834,48 @@ class PPV_Lead_Finder {
                 }
             }
 
-            // Also extract the first relevant website URL from Google results (we'll need it later)
-            $result['website'] = self::extract_website_from_google($google_html);
+            // Extract first relevant website URL
+            if (empty($result['website']) && !empty($r['url'])) {
+                $domain = parse_url($r['url'], PHP_URL_HOST);
+                if ($domain && !preg_match($excluded_domains, $domain)) {
+                    $result['website'] = $r['url'];
+                }
+            }
         }
 
-        // If email found in snippets, we're done! Fast path.
+        // If email found, we're done! (1 API call = 1 credit)
         if (!empty($result['email'])) {
             return $result;
         }
 
-        // --- STEP 2: Try "Kontakt Impressum" query ---
-        $query2 = $business_name . (!empty($region) ? ' ' . $region : '') . ' Kontakt Impressum email';
-        $search_url2 = 'https://www.google.com/search?q=' . urlencode($query2) . '&num=10&hl=de';
-        $response2 = wp_remote_get($search_url2, ['timeout' => 8, 'user-agent' => $ua]);
+        // --- STEP 2: Tavily search "[name] Kontakt Impressum" ---
+        $query2 = $business_name . (!empty($region) ? ' ' . $region : '') . ' Kontakt Impressum';
+        $results2 = self::tavily_search($query2, 5);
 
-        if (!is_wp_error($response2) && wp_remote_retrieve_response_code($response2) === 200) {
-            $html2 = wp_remote_retrieve_body($response2);
-            $decoded2 = html_entity_decode($html2, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        foreach ($results2 as $r) {
+            $content = ($r['content'] ?? '') . ' ' . ($r['title'] ?? '');
 
-            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded2, $matches2);
-            if (!empty($matches2[0])) {
-                $valid2 = self::filter_emails($matches2[0]);
-                if (!empty($valid2)) {
-                    $result['email'] = strtolower(reset($valid2));
-                    return $result;
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $matches);
+            if (!empty($matches[0])) {
+                $valid = self::filter_emails($matches[0]);
+                if (!empty($valid)) {
+                    $result['email'] = strtolower(reset($valid));
                 }
             }
 
-            // Extract website if we didn't get one from step 1
-            if (empty($result['website'])) {
-                $result['website'] = self::extract_website_from_google($html2);
+            if (empty($result['website']) && !empty($r['url'])) {
+                $domain = parse_url($r['url'], PHP_URL_HOST);
+                if ($domain && !preg_match($excluded_domains, $domain)) {
+                    $result['website'] = $r['url'];
+                }
             }
         }
 
-        // --- STEP 3 (SMART): We have a website URL from Google → visit its Impressum/Kontakt page ---
+        if (!empty($result['email'])) {
+            return $result;
+        }
+
+        // --- STEP 3: Visit website impressum/kontakt page directly ---
         if (!empty($result['website'])) {
             $found = self::scrape_contact_page_for_email($result['website'], $ua);
             if (!empty($found['email'])) {
@@ -849,38 +887,6 @@ class PPV_Lead_Finder {
         }
 
         return $result;
-    }
-
-    /**
-     * Extract first relevant business website URL from Google HTML results
-     */
-    private static function extract_website_from_google($html) {
-        $excluded = '/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft|gstatic|googleapis|apple\.com|play\.google)/i';
-
-        // Google wraps result URLs in /url?q=...
-        preg_match_all('/\/url\?q=(https?:\/\/[^&"]+)/i', $html, $url_matches);
-        if (!empty($url_matches[1])) {
-            foreach ($url_matches[1] as $url) {
-                $url = urldecode($url);
-                $domain = parse_url($url, PHP_URL_HOST);
-                if ($domain && !preg_match($excluded, $domain)) {
-                    return $url;
-                }
-            }
-        }
-
-        // Fallback: any href with https
-        preg_match_all('/href="(https?:\/\/(?!www\.google)[^"]+)"/i', $html, $href_matches);
-        if (!empty($href_matches[1])) {
-            foreach ($href_matches[1] as $url) {
-                $domain = parse_url($url, PHP_URL_HOST);
-                if ($domain && !preg_match($excluded, $domain)) {
-                    return $url;
-                }
-            }
-        }
-
-        return '';
     }
 
     /**
