@@ -1090,7 +1090,7 @@ echo '          </div>
             <div class="ra-settings-grid">
                 <div class="field">
                     <label>Steuernummer</label>
-                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="z.B. 109/206/40309">
+                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="z.B. 123/456/78901">
                 </div>
                 <div class="field">
                     <label>Webseite</label>
