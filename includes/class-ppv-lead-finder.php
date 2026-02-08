@@ -821,147 +821,176 @@ class PPV_Lead_Finder {
      * Find website for a business by searching the web
      */
     private static function find_website($business_name, $region = '') {
+        // Method 1: Try domain guessing (most reliable - doesn't depend on search engines)
+        $guessed = self::guess_website_domain($business_name);
+        if (!empty($guessed)) {
+            return $guessed;
+        }
+
         $search_query = $business_name;
         if (!empty($region)) {
             $search_query .= ' ' . $region;
         }
 
-        // Method 1: Try DuckDuckGo HTML search
-        $search_url = "https://html.duckduckgo.com/html/?q=" . urlencode($search_query);
-        $response = wp_remote_get($search_url, [
-            'timeout' => 15,
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ]);
+        // Method 2: Try DuckDuckGo HTML search
+        $ddg_result = self::search_engine_find_url("https://html.duckduckgo.com/html/?q=" . urlencode($search_query), 'duckduckgo');
+        if (!empty($ddg_result)) return $ddg_result;
 
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $html = wp_remote_retrieve_body($response);
+        // Method 3: Try Bing
+        $bing_result = self::search_engine_find_url("https://www.bing.com/search?q=" . urlencode($search_query), 'bing');
+        if (!empty($bing_result)) return $bing_result;
 
-            // Pattern 1: DuckDuckGo result links with uddg redirect
-            preg_match_all('/href="[^"]*uddg=([^&"]+)/i', $html, $uddg_matches);
-            if (!empty($uddg_matches[1])) {
-                foreach ($uddg_matches[1] as $encoded_url) {
-                    $url = urldecode($encoded_url);
-                    $domain = parse_url($url, PHP_URL_HOST);
-                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
-                        return $url;
-                    }
+        // Method 4: Try Google
+        $google_result = self::search_engine_find_url("https://www.google.com/search?q=" . urlencode($search_query) . "&num=5", 'google');
+        if (!empty($google_result)) return $google_result;
+
+        return '';
+    }
+
+    /**
+     * Guess website domain from business name and check if it exists
+     */
+    private static function guess_website_domain($business_name) {
+        // Clean the name for domain generation
+        $name = $business_name;
+
+        // Remove common suffixes that wouldn't be in a domain
+        $name = preg_replace('/\s*[-|\/]\s*(Reparatur|Service|Repair|Shop|Store|Handy|Smartphone|Tablet|iPhone|Samsung|Computer|Laptop|für|und|in|Stuttgart|Hamburg|München|Berlin|Köln|Frankfurt|Düsseldorf|Hannover|Leipzig|Dresden|Nürnberg|Bremen|Essen|Dortmund|Duisburg|Bochum|Wuppertal|Bielefeld|Bonn|Münster|Karlsruhe|Mannheim|Augsburg|Wiesbaden|Gelsenkirchen|Mönchengladbach|Braunschweig|Chemnitz|Kiel|Aachen|Halle|Magdeburg|Freiburg|Krefeld|Lübeck|Oberhausen|Erfurt|Mainz|Rostock|Kassel|Hagen|Saarbrücken|Hamm|Potsdam|Ludwigshafen|Oldenburg|Leverkusen|Osnabrück|Solingen|Heidelberg|Herne|Neuss|Darmstadt|Paderborn|Regensburg|Ingolstadt|Würzburg|Wolfsburg|Offenbach|Ulm|Heilbronn|Pforzheim|Göttingen|Bottrop|Trier|Recklinghausen|Remscheid|Reutlingen|Koblenz|Bremerhaven|Bergisch|Jena|Erlangen|Moers|Siegen|Hildesheim|Salzgitter|Cottbus|Kaiserslautern|Schwerin|Gütersloh|Witten|Iserlohn|Gera|Düren|Esslingen|Ratingen|Marl|Lünen|Velbert|Hanau|Flensburg|Wilhelmshaven|Dorsten|Konstanz|Minden|Neumünster|Norderstedt|Detmold|Lüdenscheid|Arnsberg|Troisdorf|Marburg|Viersen|Bayreuth|Castrop|Rauxel|Pinneberg|Aalen|Lüneburg|Dinslaken|Kerpen|Fulda|Landshut|Bingen|Winnenden|Schorndorf|Waiblingen|Backnang|Feuerbach)\b.*/iu', '', $name);
+
+        // Remove "GmbH", "UG", "e.K." etc
+        $name = preg_replace('/\s+(GmbH|UG|AG|e\.K\.|Ltd|Inc|Co\.?|KG|OHG)\b.*/i', '', $name);
+
+        // Generate domain candidates
+        $candidates = [];
+
+        // Variant 1: Full name without spaces -> domain.de
+        $slug = strtolower(trim($name));
+        $slug = preg_replace('/[äÄ]/', 'ae', $slug);
+        $slug = preg_replace('/[öÖ]/', 'oe', $slug);
+        $slug = preg_replace('/[üÜ]/', 'ue', $slug);
+        $slug = preg_replace('/ß/', 'ss', $slug);
+        $slug_nospace = preg_replace('/[^a-z0-9]/', '', $slug);
+        $slug_dashed = preg_replace('/[^a-z0-9]+/', '-', $slug);
+        $slug_dashed = trim($slug_dashed, '-');
+
+        if (strlen($slug_nospace) >= 4) {
+            $candidates[] = $slug_nospace . '.de';
+            $candidates[] = $slug_dashed . '.de';
+            $candidates[] = $slug_nospace . '.com';
+            $candidates[] = $slug_dashed . '.com';
+        }
+
+        // Variant 2: If name has "." in it (like "Lauer-Repair.de"), use it directly
+        if (preg_match('/([a-zA-Z0-9\-]+\.(de|com|net|org|eu|shop|store|online))/i', $business_name, $domain_in_name)) {
+            array_unshift($candidates, $domain_in_name[1]);
+        }
+
+        // Variant 3: First word only (for compound names)
+        $words = preg_split('/[\s\-\/\|]+/', $slug);
+        if (count($words) > 1 && strlen($words[0]) >= 4) {
+            $candidates[] = $words[0] . '.de';
+        }
+
+        // Deduplicate
+        $candidates = array_unique($candidates);
+
+        // Check each candidate
+        foreach (array_slice($candidates, 0, 6) as $domain) {
+            $url = 'https://' . $domain;
+            $response = wp_remote_head($url, [
+                'timeout' => 5,
+                'sslverify' => false,
+                'redirection' => 3
+            ]);
+
+            if (!is_wp_error($response)) {
+                $code = wp_remote_retrieve_response_code($response);
+                if ($code >= 200 && $code < 400) {
+                    return $url;
                 }
             }
 
-            // Pattern 2: Direct result links
-            preg_match_all('/class="result__a"[^>]+href="([^"]+)"/i', $html, $matches);
-            if (empty($matches[1])) {
-                // Try alternative pattern
-                preg_match_all('/href="([^"]+)"[^>]*class="result__a"/i', $html, $matches);
-            }
-            if (!empty($matches[1])) {
-                foreach ($matches[1] as $url) {
-                    if (preg_match('/uddg=([^&]+)/', $url, $uddg)) {
-                        $url = urldecode($uddg[1]);
-                    }
-                    if (strpos($url, 'http') !== 0) continue;
-                    $domain = parse_url($url, PHP_URL_HOST);
-                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
-                        return $url;
-                    }
-                }
-            }
+            // Try www. prefix
+            $url_www = 'https://www.' . $domain;
+            $response = wp_remote_head($url_www, [
+                'timeout' => 5,
+                'sslverify' => false,
+                'redirection' => 3
+            ]);
 
-            // Pattern 3: Any https links in result snippets
-            preg_match_all('/class="result__snippet"[^>]*>.*?<\/a>/is', $html, $snippet_matches);
-            if (!empty($snippet_matches[0])) {
-                foreach ($snippet_matches[0] as $snippet) {
-                    if (preg_match('/href="(https?:\/\/[^"]+)"/i', $snippet, $m)) {
-                        $domain = parse_url($m[1], PHP_URL_HOST);
-                        if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
-                            return $m[1];
-                        }
-                    }
-                }
-            }
-
-            // Pattern 4: Extract URLs from result__url spans
-            preg_match_all('/class="result__url"[^>]*>\s*(https?:\/\/[^\s<]+|[a-z0-9][\w\-]*\.[a-z]{2,}[^\s<]*)/i', $html, $url_text_matches);
-            if (!empty($url_text_matches[1])) {
-                foreach ($url_text_matches[1] as $url_text) {
-                    $url_text = trim(strip_tags($url_text));
-                    if (strpos($url_text, 'http') !== 0) {
-                        $url_text = 'https://' . $url_text;
-                    }
-                    $domain = parse_url($url_text, PHP_URL_HOST);
-                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
-                        return $url_text;
-                    }
+            if (!is_wp_error($response)) {
+                $code = wp_remote_retrieve_response_code($response);
+                if ($code >= 200 && $code < 400) {
+                    return $url_www;
                 }
             }
         }
 
-        // Method 2: Try Bing
-        $search_url = "https://www.bing.com/search?q=" . urlencode($search_query);
-        $response = wp_remote_get($search_url, [
-            'timeout' => 15,
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ]);
+        return '';
+    }
 
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $html = wp_remote_retrieve_body($response);
+    /**
+     * Search a search engine URL and extract the first relevant result URL
+     */
+    private static function search_engine_find_url($search_url, $engine) {
+        $excluded = '/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit|microsoft|gstatic|googleapis)/i';
 
-            // Bing result patterns (multiple formats)
-            $patterns = [
-                '/<a[^>]+href="(https?:\/\/[^"]+)"[^>]*><h2>/i',
-                '/<h2><a[^>]+href="(https?:\/\/[^"]+)"/i',
-                '/<cite[^>]*>(https?:\/\/[^<]+)<\/cite>/i',
-                '/<cite[^>]*>([^<]+\.[a-z]{2,}[^<]*)<\/cite>/i',
-            ];
-
-            foreach ($patterns as $pattern) {
-                preg_match_all($pattern, $html, $matches);
-                if (!empty($matches[1])) {
-                    foreach ($matches[1] as $url) {
-                        $url = trim(strip_tags($url));
-                        if (strpos($url, 'http') !== 0) {
-                            $url = 'https://' . $url;
-                        }
-                        $domain = parse_url($url, PHP_URL_HOST);
-                        if ($domain && !preg_match('/(bing|microsoft|google|facebook|instagram|twitter|youtube|wikipedia|reddit|amazon|ebay)/i', $domain)) {
-                            return $url;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Method 3: Try Google (may be blocked but worth trying)
-        $search_url = "https://www.google.com/search?q=" . urlencode($search_query) . "&num=5";
         $response = wp_remote_get($search_url, [
             'timeout' => 10,
             'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         ]);
 
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $html = wp_remote_retrieve_body($response);
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return '';
+        }
 
-            // Google puts URLs in /url?q= redirects
-            preg_match_all('/\/url\?q=(https?:\/\/[^&"]+)/i', $html, $matches);
-            if (!empty($matches[1])) {
-                foreach ($matches[1] as $url) {
-                    $url = urldecode($url);
-                    $domain = parse_url($url, PHP_URL_HOST);
-                    if ($domain && !preg_match('/(google|youtube|facebook|instagram|twitter|wikipedia|reddit|amazon|ebay)/i', $domain)) {
-                        return $url;
-                    }
-                }
+        $html = wp_remote_retrieve_body($response);
+
+        // Collect all URLs found with various patterns
+        $found_urls = [];
+
+        if ($engine === 'duckduckgo') {
+            // DuckDuckGo uddg redirect URLs
+            preg_match_all('/uddg=([^&"]+)/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) $found_urls[] = urldecode($u);
+
+            // result__url text
+            preg_match_all('/class="result__url"[^>]*>([^<]+)/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) {
+                $u = trim(strip_tags($u));
+                if (strpos($u, 'http') !== 0) $u = 'https://' . $u;
+                $found_urls[] = $u;
             }
+        } elseif ($engine === 'bing') {
+            preg_match_all('/<a[^>]+href="(https?:\/\/[^"]+)"[^>]*><h2/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) $found_urls[] = $u;
+            preg_match_all('/<h2><a[^>]+href="(https?:\/\/[^"]+)"/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) $found_urls[] = $u;
+            preg_match_all('/<cite[^>]*>(https?:\/\/[^<]+)<\/cite>/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) $found_urls[] = trim(strip_tags($u));
+            preg_match_all('/<cite[^>]*>([^<]+\.[a-z]{2,}[^<]*)<\/cite>/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) {
+                $u = trim(strip_tags($u));
+                if (strpos($u, 'http') !== 0) $u = 'https://' . $u;
+                $found_urls[] = $u;
+            }
+        } elseif ($engine === 'google') {
+            preg_match_all('/\/url\?q=(https?:\/\/[^&"]+)/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) $found_urls[] = urldecode($u);
+            preg_match_all('/href="(https?:\/\/(?!www\.google)[^"]+)"/i', $html, $m);
+            foreach ($m[1] ?? [] as $u) $found_urls[] = $u;
+        }
 
-            // Also try direct href patterns
-            preg_match_all('/href="(https?:\/\/(?!www\.google)[^"]+)"[^>]*>/i', $html, $matches);
-            if (!empty($matches[1])) {
-                foreach ($matches[1] as $url) {
-                    $domain = parse_url($url, PHP_URL_HOST);
-                    if ($domain && !preg_match('/(google|youtube|facebook|instagram|twitter|wikipedia|gstatic|googleapis|reddit|amazon|ebay)/i', $domain)) {
-                        return $url;
-                    }
-                }
+        // Also generic: find any https URLs in the HTML
+        preg_match_all('/href="(https?:\/\/[^"]+)"/i', $html, $m);
+        foreach ($m[1] ?? [] as $u) $found_urls[] = $u;
+
+        // Filter and return first valid
+        foreach ($found_urls as $url) {
+            $url = rtrim($url, '.,;:)');
+            $domain = parse_url($url, PHP_URL_HOST);
+            if ($domain && !preg_match($excluded, $domain)) {
+                return $url;
             }
         }
 
