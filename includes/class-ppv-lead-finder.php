@@ -381,6 +381,14 @@ class PPV_Lead_Finder {
             return false;
         }
 
+        // Clean the business name
+        $business['name'] = self::clean_business_name($business['name']);
+
+        // Validate again after cleaning
+        if (strlen($business['name']) < 4 || !self::is_valid_business_name($business['name'])) {
+            return false;
+        }
+
         // Check if already exists
         $exists = false;
         if (!empty($business['website'])) {
@@ -422,6 +430,14 @@ class PPV_Lead_Finder {
      * Check if a string is a valid business name (not an address, time, etc.)
      */
     private static function is_valid_business_name($name) {
+        // Clean the name first - remove trailing commas and whitespace
+        $name = rtrim(trim($name), ',;.');
+
+        // Reject if too short
+        if (strlen($name) < 4) {
+            return false;
+        }
+
         // Reject if starts with time/day patterns
         if (preg_match('/^(Öffnet|Öffnungszeiten|Geschlossen|Geöffnet|Schließt|Jetzt|Heute|Morgen)/iu', $name)) {
             return false;
@@ -433,18 +449,41 @@ class PPV_Lead_Finder {
         }
 
         // Reject Google Maps UI elements
-        if (preg_match('/^(Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern|Route|Wegbeschreibung|Fotos|Rezensionen|Übersicht|Info|Karte|Satellit|Gelände)/iu', $name)) {
+        if (preg_match('/^(Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern|Route|Wegbeschreibung|Fotos|Rezensionen|Übersicht|Info|Karte|Satellit|Gelände|Alle\s|Filter|Sortieren|Neuste|Neueste|Standort|Entfernung)/iu', $name)) {
             return false;
         }
 
-        // Reject addresses - street name + number patterns
-        // German street endings: str, straße, weg, allee, platz, gasse, ring, damm, ufer, hof, park, markt, chaussee, steig
-        if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+\s*(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm|ufer|hof|park|markt|chaussee|steig)\s*\d+/iu', $name)) {
+        // Reject standalone street names (with or without number)
+        // German street suffixes: straße, str, weg, allee, platz, gasse, ring, damm, ufer, hof, park, markt, chaussee, steig
+        $street_suffixes = 'str(?:a(?:ß|ss)e|\.)?|weg|allee|platz|gasse|ring|damm|ufer|hof|park|markt|chaussee|steig|pfad|stieg|brücke|graben|grund|berg|tal';
+
+        // Reject if the entire name IS a street name (e.g., "Schwabstraße", "Giescheweg", "Annonay-Straße")
+        if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+(?:' . $street_suffixes . ')(?:\s*\d+[a-z]?)?\s*,?\s*$/iu', $name)) {
             return false;
         }
 
-        // Reject if it looks like just "Word Number" (address pattern)
-        if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+\s+\d+[a-z]?$/iu', $name)) {
+        // Reject "Word-Straße" patterns (e.g., "Annonay-Straße")
+        if (preg_match('/^[A-ZÄÖÜa-zäöüß]+[\-\s](?:Straße|Strasse|Str\.|Weg|Allee|Platz|Gasse|Ring|Damm|Ufer)\s*\d*\s*,?\s*$/iu', $name)) {
+            return false;
+        }
+
+        // Reject addresses - street name + number patterns (multiword streets)
+        if (preg_match('/(?:' . $street_suffixes . ')\s+\d+/iu', $name)) {
+            // But allow if it's clearly a business name containing a street
+            // Business names typically have more than just street + number
+            $without_address = preg_replace('/[A-ZÄÖÜa-zäöüß\-]+(?:' . $street_suffixes . ')\s*\d+[a-z]?\s*,?/iu', '', $name);
+            if (strlen(trim($without_address)) < 5) {
+                return false;
+            }
+        }
+
+        // Reject if it looks like just "Word Number" or "Word Number," (address pattern)
+        if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+\s+\d+[a-z]?\s*,?\s*$/iu', $name)) {
+            return false;
+        }
+
+        // Reject short entries like "DHL 5," or similar
+        if (preg_match('/^[A-Z]{2,5}\s+\d+\s*,?\s*$/i', $name)) {
             return false;
         }
 
@@ -459,16 +498,33 @@ class PPV_Lead_Finder {
         }
 
         // Reject pure numbers or very short entries
-        if (preg_match('/^\d+$/', $name) || strlen(trim($name)) < 4) {
+        if (preg_match('/^\d+\s*,?\s*$/', $name)) {
             return false;
         }
 
         // Reject common non-business patterns
-        if (preg_match('/^(Mehr|Weniger|Zurück|Vor|Weiter|Schließen|Abbrechen|OK|Ja|Nein)/iu', $name)) {
+        if (preg_match('/^(Mehr|Weniger|Zurück|Vor|Weiter|Schließen|Abbrechen|OK|Ja|Nein|DHL|UPS|Hermes|DPD)\s*\d*\s*,?\s*$/iu', $name)) {
             return false;
         }
 
+        // Reject if name ends with just a number+comma (likely address fragment leaked into name)
+        // e.g., "Business Name 4," -> clean to "Business Name"
+        // This is handled in clean_business_name() instead
+
         return true;
+    }
+
+    /**
+     * Clean up a business name - remove address fragments, trailing numbers etc.
+     */
+    private static function clean_business_name($name) {
+        // Remove trailing house number + comma: "Business Name 4," -> "Business Name"
+        $name = preg_replace('/\s+\d+[a-z]?\s*,\s*$/', '', $name);
+        // Remove trailing comma
+        $name = rtrim(trim($name), ',;.');
+        // Remove trailing " -" or "- "
+        $name = preg_replace('/\s*-\s*$/', '', $name);
+        return trim($name);
     }
 
     /**
@@ -518,9 +574,9 @@ class PPV_Lead_Finder {
 
                     // Clean up name
                     $name = preg_replace('/\s*[-|–]\s*.*$/', '', $name); // Remove "- Site description" parts
-                    $name = trim($name);
+                    $name = self::clean_business_name($name);
 
-                    if (strlen($name) >= 5 && strlen($name) <= 150) {
+                    if (strlen($name) >= 5 && strlen($name) <= 150 && self::is_valid_business_name($name)) {
                         $results[] = [
                             'name' => $name,
                             'website' => $url
@@ -561,9 +617,9 @@ class PPV_Lead_Finder {
                 }
 
                 $name = preg_replace('/\s*[-|–]\s*.*$/', '', $name);
-                $name = trim($name);
+                $name = self::clean_business_name($name);
 
-                if (strlen($name) >= 5 && strlen($name) <= 150) {
+                if (strlen($name) >= 5 && strlen($name) <= 150 && self::is_valid_business_name($name)) {
                     $results[] = [
                         'name' => $name,
                         'website' => $url
@@ -598,14 +654,19 @@ class PPV_Lead_Finder {
                 $url = $match[1];
                 $name = strip_tags(html_entity_decode($match[2]));
 
+                // Follow DuckDuckGo redirects
+                if (preg_match('/uddg=([^&]+)/', $url, $uddg)) {
+                    $url = urldecode($uddg[1]);
+                }
+
                 if (preg_match('/(duckduckgo|google|youtube|facebook|instagram|twitter|wikipedia)/i', $url)) {
                     continue;
                 }
 
                 $name = preg_replace('/\s*[-|–]\s*.*$/', '', $name);
-                $name = trim($name);
+                $name = self::clean_business_name($name);
 
-                if (strlen($name) >= 5 && strlen($name) <= 150) {
+                if (strlen($name) >= 5 && strlen($name) <= 150 && self::is_valid_business_name($name)) {
                     $results[] = [
                         'name' => $name,
                         'website' => $url
