@@ -795,6 +795,7 @@ class PPV_Lead_Finder {
         $query = isset($_GET['q']) ? sanitize_text_field($_GET['q']) : 'City-Phone24 Stuttgart email';
 
         $post_body = json_encode([
+            'api_key' => self::$tavily_api_key,
             'query' => $query,
             'max_results' => 3,
             'search_depth' => 'basic',
@@ -805,7 +806,6 @@ class PPV_Lead_Finder {
         $response = wp_remote_post('https://api.tavily.com/search', [
             'timeout' => 15,
             'headers' => [
-                'Authorization' => 'Bearer ' . self::$tavily_api_key,
                 'Content-Type' => 'application/json',
             ],
             'body' => $post_body,
@@ -855,10 +855,10 @@ class PPV_Lead_Finder {
         $response = wp_remote_post('https://api.tavily.com/search', [
             'timeout' => 15,
             'headers' => [
-                'Authorization' => 'Bearer ' . self::$tavily_api_key,
                 'Content-Type' => 'application/json',
             ],
             'body' => json_encode([
+                'api_key' => self::$tavily_api_key,
                 'query' => $query,
                 'max_results' => $max_results,
                 'search_depth' => 'basic',
