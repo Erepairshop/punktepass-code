@@ -716,12 +716,20 @@ class PPV_Lead_Finder {
             }
         }
 
-        if (empty($website)) {
-            wp_redirect("/formular/lead-finder?error=no_website");
-            exit;
+        // Scrape website if we have one
+        $result = ['email' => '', 'phone' => '', 'address' => '', 'status' => 'scraped'];
+        if (!empty($website)) {
+            $result = self::scrape_website($website);
         }
 
-        $result = self::scrape_website($website);
+        // If no email found yet, search for it online
+        if (empty($result['email'])) {
+            $search_email = self::search_email_online($lead->business_name, $lead->region);
+            if (!empty($search_email)) {
+                $result['email'] = $search_email;
+                $result['status'] = 'email_from_search';
+            }
+        }
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
@@ -730,7 +738,7 @@ class PPV_Lead_Finder {
                 'phone' => $result['phone'] ?: $lead->phone,
                 'address' => $result['address'] ?: $lead->address,
                 'scraped_at' => current_time('mysql'),
-                'scrape_status' => $result['status']
+                'scrape_status' => $result['status'] ?: (empty($website) ? 'no_website_found' : 'no_email_found')
             ],
             ['id' => $lead_id],
             ['%s', '%s', '%s', '%s', '%s'],
@@ -776,22 +784,20 @@ class PPV_Lead_Finder {
             }
         }
 
-        if (empty($website)) {
-            $wpdb->update(
-                $wpdb->prefix . 'ppv_leads',
-                [
-                    'scraped_at' => current_time('mysql'),
-                    'scrape_status' => 'no_website_found'
-                ],
-                ['id' => $lead_id],
-                ['%s', '%s'],
-                ['%d']
-            );
-            echo json_encode(['success' => true, 'email' => '', 'phone' => '', 'website' => '', 'status' => 'no_website_found']);
-            exit;
+        // Scrape website if we have one
+        $result = ['email' => '', 'phone' => '', 'address' => '', 'status' => 'scraped'];
+        if (!empty($website)) {
+            $result = self::scrape_website($website);
         }
 
-        $result = self::scrape_website($website);
+        // If no email found yet, search for it on Google/Bing/DuckDuckGo
+        if (empty($result['email'])) {
+            $search_email = self::search_email_online($lead->business_name, $lead->region);
+            if (!empty($search_email)) {
+                $result['email'] = $search_email;
+                $result['status'] = !empty($website) ? 'email_from_search' : 'email_from_search_no_website';
+            }
+        }
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
@@ -799,11 +805,12 @@ class PPV_Lead_Finder {
                 'email' => $result['email'] ?? '',
                 'phone' => $result['phone'] ?: $lead->phone,
                 'address' => $result['address'] ?: $lead->address,
+                'website' => !empty($website) ? $website : '',
                 'scraped_at' => current_time('mysql'),
-                'scrape_status' => $result['status']
+                'scrape_status' => $result['status'] ?: (empty($website) ? 'no_website_found' : 'no_email_found')
             ],
             ['id' => $lead_id],
-            ['%s', '%s', '%s', '%s', '%s'],
+            ['%s', '%s', '%s', '%s', '%s', '%s'],
             ['%d']
         );
 
@@ -811,10 +818,100 @@ class PPV_Lead_Finder {
             'success' => true,
             'email' => $result['email'] ?? '',
             'phone' => $result['phone'] ?? '',
-            'website' => $website,
+            'website' => $website ?: '',
             'status' => $result['status']
         ]);
         exit;
+    }
+
+    /**
+     * Search for a business email by querying search engines for "[name] email"
+     * Extracts emails from search result snippets without visiting the actual pages
+     */
+    private static function search_email_online($business_name, $region = '') {
+        // Build search query: business name + region + "email"
+        $query = $business_name;
+        if (!empty($region)) {
+            $query .= ' ' . $region;
+        }
+        $query .= ' email';
+
+        $all_emails = [];
+
+        // Try Google first (best snippets)
+        $search_url = "https://www.google.com/search?q=" . urlencode($query) . "&num=10&hl=de";
+        $response = wp_remote_get($search_url, [
+            'timeout' => 10,
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ]);
+
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+            $html = wp_remote_retrieve_body($response);
+            $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
+            if (!empty($matches[0])) {
+                $all_emails = array_merge($all_emails, $matches[0]);
+            }
+        }
+
+        // Try Bing
+        if (empty($all_emails)) {
+            $search_url = "https://www.bing.com/search?q=" . urlencode($query);
+            $response = wp_remote_get($search_url, [
+                'timeout' => 10,
+                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ]);
+
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                $html = wp_remote_retrieve_body($response);
+                $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
+                if (!empty($matches[0])) {
+                    $all_emails = array_merge($all_emails, $matches[0]);
+                }
+            }
+        }
+
+        // Try DuckDuckGo
+        if (empty($all_emails)) {
+            $search_url = "https://html.duckduckgo.com/html/?q=" . urlencode($query);
+            $response = wp_remote_get($search_url, [
+                'timeout' => 10,
+                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ]);
+
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                $html = wp_remote_retrieve_body($response);
+                $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
+                if (!empty($matches[0])) {
+                    $all_emails = array_merge($all_emails, $matches[0]);
+                }
+            }
+        }
+
+        // Also try without "email" keyword but with "Kontakt" or "Impressum"
+        if (empty($all_emails)) {
+            $query2 = $business_name . (!empty($region) ? ' ' . $region : '') . ' Kontakt Impressum';
+            $search_url = "https://www.google.com/search?q=" . urlencode($query2) . "&num=10&hl=de";
+            $response = wp_remote_get($search_url, [
+                'timeout' => 10,
+                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ]);
+
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                $html = wp_remote_retrieve_body($response);
+                $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
+                if (!empty($matches[0])) {
+                    $all_emails = array_merge($all_emails, $matches[0]);
+                }
+            }
+        }
+
+        // Filter emails
+        $valid = self::filter_emails($all_emails);
+        return !empty($valid) ? reset($valid) : '';
     }
 
     /**
