@@ -171,27 +171,78 @@ class PPV_Lead_Finder {
 
         // Method 1: Split by lines and look for patterns
         $lines = preg_split('/[\r\n]+/', $content);
-        $business_names = [];
-        $phones_found = [];
+        $business_entries = []; // [{name, line_index, website, phone, address, email}]
+        $current_business_idx = -1;
 
         for ($i = 0; $i < count($lines); $i++) {
             $line = trim($lines[$i]);
+            if (empty($line)) continue;
             $next_line = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
 
             // Check if next line starts with a rating (e.g., "5,0", "4,6", "3,8") or "Keine Rezensionen"
-            // Google Maps ratings are X,X format followed by stars or (number)
             if (preg_match('/^[1-5][,\.]\d\s*(?:★|⭐|\()|^Keine Rezensionen/u', $next_line)) {
-                // Current line is likely a business name
                 if (strlen($line) >= 4 && strlen($line) <= 150 && self::is_valid_business_name($line)) {
-                    $business_names[] = $line;
+                    $current_business_idx = count($business_entries);
+                    $business_entries[] = [
+                        'name' => $line,
+                        'line_index' => $i,
+                        'website' => '',
+                        'phone' => '',
+                        'address' => '',
+                        'email' => ''
+                    ];
                 }
+                continue;
             }
 
-            // Also extract phone numbers from lines
-            if (preg_match('/(0\d{3,4}\s*\d{5,8}|\+49\s*\d+|01\d{2,3}\s*\d{6,8})/u', $line, $phone_match)) {
-                $phones_found[] = preg_replace('/\s+/', '', $phone_match[1]);
+            // For lines after a business name, try to extract data and associate it
+            if ($current_business_idx >= 0) {
+                // Extract website domain from line (Google Maps shows domains like "stuttgartphone.de" or "www.example.de")
+                if (empty($business_entries[$current_business_idx]['website'])) {
+                    // Full URLs
+                    if (preg_match('/(https?:\/\/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/i', $line, $url_m)) {
+                        $domain = parse_url($url_m[1], PHP_URL_HOST);
+                        if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest)/i', $domain)) {
+                            $business_entries[$current_business_idx]['website'] = $url_m[1];
+                        }
+                    }
+                    // Bare domain names like "example.de" or "www.example.de"
+                    elseif (preg_match('/^((?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2})?)$/i', $line, $domain_m)) {
+                        $domain = $domain_m[1];
+                        if (!preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest)/i', $domain)) {
+                            $business_entries[$current_business_idx]['website'] = 'https://' . $domain;
+                        }
+                    }
+                }
+
+                // Extract phone numbers
+                if (empty($business_entries[$current_business_idx]['phone'])) {
+                    if (preg_match('/((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/u', $line, $phone_m)) {
+                        $phone = trim(preg_replace('/\s+/', ' ', $phone_m[1]));
+                        if (strlen(preg_replace('/\D/', '', $phone)) >= 8) {
+                            $business_entries[$current_business_idx]['phone'] = $phone;
+                        }
+                    }
+                }
+
+                // Extract addresses
+                if (empty($business_entries[$current_business_idx]['address'])) {
+                    if (preg_match('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm|ufer)\s*\d+[a-z]?)/iu', $line, $addr_m)) {
+                        $business_entries[$current_business_idx]['address'] = $addr_m[1];
+                    }
+                }
+
+                // Extract email addresses
+                if (empty($business_entries[$current_business_idx]['email'])) {
+                    if (preg_match('/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i', $line, $email_m)) {
+                        $business_entries[$current_business_idx]['email'] = strtolower($email_m[1]);
+                    }
+                }
             }
         }
+
+        // Extract business_names for compatibility
+        $business_names = array_column($business_entries, 'name');
 
         // Fallback: Original pattern for different formats
         if (empty($business_names)) {
@@ -201,55 +252,78 @@ class PPV_Lead_Finder {
                 foreach ($name_matches[1] as $name) {
                     $name = trim($name);
                     if (strlen($name) >= 5 && strlen($name) <= 100 && self::is_valid_business_name($name)) {
-                        $business_names[] = $name;
+                        $business_entries[] = [
+                            'name' => $name,
+                            'website' => '',
+                            'phone' => '',
+                            'address' => '',
+                            'email' => ''
+                        ];
                     }
                 }
+                $business_names = array_column($business_entries, 'name');
             }
         }
 
-        // Pattern 2: Look for website URLs
+        // Also extract any full URLs and bare domains from entire content
+        $extra_websites = [];
+
+        // Full URLs
         preg_match_all('/(https?:\/\/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:\/[^\s<>"\'\)]*)?)/i', $content, $url_matches);
-
-        // Pattern 3: Phone numbers (German format)
-        preg_match_all('/(?:Tel(?:efon)?\.?:?\s*)?(\+49|0049|0)\s*[\d\s\-\/\(\)]{6,20}/i', $content, $phone_matches);
-
-        // Pattern 4: Email addresses
-        preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $email_matches);
-
-        // Pattern 5: Addresses (German style: Street Number, PLZ City)
-        preg_match_all('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)\s*[\,\n]\s*(\d{5})\s+([A-ZÄÖÜa-zäöüß\-\s]+)/iu', $content, $address_matches, PREG_SET_ORDER);
-
-        // Clean URLs - filter business websites only
-        $websites = [];
         if (!empty($url_matches[1])) {
             foreach ($url_matches[1] as $url) {
                 $url = rtrim($url, '.,;:)');
                 $domain = parse_url($url, PHP_URL_HOST);
-                // Skip social media and known non-business URLs
-                if (!preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest)/i', $domain)) {
-                    $websites[$domain] = $url; // Use domain as key to dedupe
+                if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest)/i', $domain)) {
+                    $extra_websites[$domain] = $url;
                 }
             }
         }
 
-        // Create leads from extracted data
-        $websites_array = array_values($websites);
+        // Bare domains on their own line (common in Google Maps copy)
+        preg_match_all('/(?:^|\n)\s*((?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-]+\.(?:de|com|net|org|eu|at|ch|info|shop|store|online|io)(?:\.[a-zA-Z]{2})?)\s*(?:\n|$)/im', $content, $bare_domain_matches);
+        if (!empty($bare_domain_matches[1])) {
+            foreach ($bare_domain_matches[1] as $domain) {
+                $domain = trim($domain);
+                $host = preg_replace('/^www\./', '', $domain);
+                if (!isset($extra_websites[$host]) && !isset($extra_websites['www.' . $host])) {
+                    $extra_websites[$host] = 'https://' . $domain;
+                }
+            }
+        }
 
-        foreach ($business_names as $i => $name) {
+        // Phone numbers from entire content
+        preg_match_all('/(?:Tel(?:efon)?\.?:?\s*)?(\+49|0049|0)\s*[\d\s\-\/\(\)]{6,20}/i', $content, $phone_matches);
+
+        // Email addresses from entire content
+        preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $email_matches);
+
+        // Addresses (German style)
+        preg_match_all('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)\s*[\,\n]\s*(\d{5})\s+([A-ZÄÖÜa-zäöüß\-\s]+)/iu', $content, $address_matches, PREG_SET_ORDER);
+
+        // Create leads from extracted business entries
+        $extra_websites_array = array_values($extra_websites);
+
+        foreach ($business_entries as $i => $entry) {
             $business = [
-                'name' => $name,
-                'website' => $websites_array[$i] ?? '',
-                'phone' => '',
-                'email' => '',
-                'address' => ''
+                'name' => $entry['name'],
+                'website' => $entry['website'],
+                'phone' => $entry['phone'],
+                'email' => $entry['email'],
+                'address' => $entry['address']
             ];
 
-            // Try to match address
-            foreach ($address_matches as $addr) {
-                if (stripos($content, $name) !== false) {
-                    $pos_name = stripos($content, $name);
+            // If no website from line-by-line parsing, try matching from extra_websites by position
+            if (empty($business['website']) && isset($extra_websites_array[$i])) {
+                $business['website'] = $extra_websites_array[$i];
+            }
+
+            // Try to match address from global address matches
+            if (empty($business['address'])) {
+                foreach ($address_matches as $addr) {
+                    $pos_name = stripos($content, $entry['name']);
                     $pos_addr = stripos($content, $addr[0]);
-                    if ($pos_addr !== false && abs($pos_name - $pos_addr) < 500) {
+                    if ($pos_name !== false && $pos_addr !== false && abs($pos_name - $pos_addr) < 500) {
                         $business['address'] = $addr[1] . ', ' . $addr[2] . ' ' . trim($addr[3]);
                         break;
                     }
@@ -260,19 +334,18 @@ class PPV_Lead_Finder {
                 $found_count++;
             }
 
-            if ($found_count >= 100) break; // Limit
+            if ($found_count >= 100) break;
         }
 
         // Also add any websites we found but didn't match to a name
         if ($found_count < 50) {
-            foreach ($websites as $domain => $url) {
+            foreach ($extra_websites as $domain => $url) {
                 $already_added = $wpdb->get_var($wpdb->prepare(
                     "SELECT id FROM {$wpdb->prefix}ppv_leads WHERE website LIKE %s",
                     '%' . $wpdb->esc_like($domain) . '%'
                 ));
 
                 if (!$already_added) {
-                    // Use domain as name
                     $name = preg_replace('/^www\./', '', $domain);
                     $name = preg_replace('/\.(de|com|net|org|eu|info|shop|store)$/i', '', $name);
                     $name = ucfirst($name);
@@ -692,46 +765,139 @@ class PPV_Lead_Finder {
             $search_query .= ' ' . $region;
         }
 
-        // Try DuckDuckGo first (less likely to block)
+        // Method 1: Try DuckDuckGo HTML search
         $search_url = "https://html.duckduckgo.com/html/?q=" . urlencode($search_query);
         $response = wp_remote_get($search_url, [
             'timeout' => 15,
             'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         ]);
 
-        if (!is_wp_error($response)) {
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             $html = wp_remote_retrieve_body($response);
-            preg_match_all('/<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>/i', $html, $matches);
 
+            // Pattern 1: DuckDuckGo result links with uddg redirect
+            preg_match_all('/href="[^"]*uddg=([^&"]+)/i', $html, $uddg_matches);
+            if (!empty($uddg_matches[1])) {
+                foreach ($uddg_matches[1] as $encoded_url) {
+                    $url = urldecode($encoded_url);
+                    $domain = parse_url($url, PHP_URL_HOST);
+                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
+                        return $url;
+                    }
+                }
+            }
+
+            // Pattern 2: Direct result links
+            preg_match_all('/class="result__a"[^>]+href="([^"]+)"/i', $html, $matches);
+            if (empty($matches[1])) {
+                // Try alternative pattern
+                preg_match_all('/href="([^"]+)"[^>]*class="result__a"/i', $html, $matches);
+            }
             if (!empty($matches[1])) {
                 foreach ($matches[1] as $url) {
-                    // Follow DuckDuckGo redirects
                     if (preg_match('/uddg=([^&]+)/', $url, $uddg)) {
                         $url = urldecode($uddg[1]);
                     }
+                    if (strpos($url, 'http') !== 0) continue;
                     $domain = parse_url($url, PHP_URL_HOST);
-                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo)/i', $domain)) {
+                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
                         return $url;
+                    }
+                }
+            }
+
+            // Pattern 3: Any https links in result snippets
+            preg_match_all('/class="result__snippet"[^>]*>.*?<\/a>/is', $html, $snippet_matches);
+            if (!empty($snippet_matches[0])) {
+                foreach ($snippet_matches[0] as $snippet) {
+                    if (preg_match('/href="(https?:\/\/[^"]+)"/i', $snippet, $m)) {
+                        $domain = parse_url($m[1], PHP_URL_HOST);
+                        if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
+                            return $m[1];
+                        }
+                    }
+                }
+            }
+
+            // Pattern 4: Extract URLs from result__url spans
+            preg_match_all('/class="result__url"[^>]*>\s*(https?:\/\/[^\s<]+|[a-z0-9][\w\-]*\.[a-z]{2,}[^\s<]*)/i', $html, $url_text_matches);
+            if (!empty($url_text_matches[1])) {
+                foreach ($url_text_matches[1] as $url_text) {
+                    $url_text = trim(strip_tags($url_text));
+                    if (strpos($url_text, 'http') !== 0) {
+                        $url_text = 'https://' . $url_text;
+                    }
+                    $domain = parse_url($url_text, PHP_URL_HOST);
+                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo|reddit)/i', $domain)) {
+                        return $url_text;
                     }
                 }
             }
         }
 
-        // Fallback: Try Bing
+        // Method 2: Try Bing
         $search_url = "https://www.bing.com/search?q=" . urlencode($search_query);
         $response = wp_remote_get($search_url, [
             'timeout' => 15,
             'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         ]);
 
-        if (!is_wp_error($response)) {
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             $html = wp_remote_retrieve_body($response);
-            preg_match_all('/<a[^>]+href="(https?:\/\/[^"]+)"[^>]*><h2>/i', $html, $matches);
 
+            // Bing result patterns (multiple formats)
+            $patterns = [
+                '/<a[^>]+href="(https?:\/\/[^"]+)"[^>]*><h2>/i',
+                '/<h2><a[^>]+href="(https?:\/\/[^"]+)"/i',
+                '/<cite[^>]*>(https?:\/\/[^<]+)<\/cite>/i',
+                '/<cite[^>]*>([^<]+\.[a-z]{2,}[^<]*)<\/cite>/i',
+            ];
+
+            foreach ($patterns as $pattern) {
+                preg_match_all($pattern, $html, $matches);
+                if (!empty($matches[1])) {
+                    foreach ($matches[1] as $url) {
+                        $url = trim(strip_tags($url));
+                        if (strpos($url, 'http') !== 0) {
+                            $url = 'https://' . $url;
+                        }
+                        $domain = parse_url($url, PHP_URL_HOST);
+                        if ($domain && !preg_match('/(bing|microsoft|google|facebook|instagram|twitter|youtube|wikipedia|reddit|amazon|ebay)/i', $domain)) {
+                            return $url;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Method 3: Try Google (may be blocked but worth trying)
+        $search_url = "https://www.google.com/search?q=" . urlencode($search_query) . "&num=5";
+        $response = wp_remote_get($search_url, [
+            'timeout' => 10,
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ]);
+
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+            $html = wp_remote_retrieve_body($response);
+
+            // Google puts URLs in /url?q= redirects
+            preg_match_all('/\/url\?q=(https?:\/\/[^&"]+)/i', $html, $matches);
+            if (!empty($matches[1])) {
+                foreach ($matches[1] as $url) {
+                    $url = urldecode($url);
+                    $domain = parse_url($url, PHP_URL_HOST);
+                    if ($domain && !preg_match('/(google|youtube|facebook|instagram|twitter|wikipedia|reddit|amazon|ebay)/i', $domain)) {
+                        return $url;
+                    }
+                }
+            }
+
+            // Also try direct href patterns
+            preg_match_all('/href="(https?:\/\/(?!www\.google)[^"]+)"[^>]*>/i', $html, $matches);
             if (!empty($matches[1])) {
                 foreach ($matches[1] as $url) {
                     $domain = parse_url($url, PHP_URL_HOST);
-                    if ($domain && !preg_match('/(bing|microsoft|google|facebook|instagram|twitter|youtube|wikipedia)/i', $domain)) {
+                    if ($domain && !preg_match('/(google|youtube|facebook|instagram|twitter|wikipedia|gstatic|googleapis|reddit|amazon|ebay)/i', $domain)) {
                         return $url;
                     }
                 }
@@ -752,83 +918,140 @@ class PPV_Lead_Finder {
             'status' => 'scraped'
         ];
 
+        // Ensure URL has protocol
+        if (strpos($url, 'http') !== 0) {
+            $url = 'https://' . $url;
+        }
+
         // Fetch main page
         $response = wp_remote_get($url, [
             'timeout' => 15,
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'sslverify' => false
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'sslverify' => false,
+            'redirection' => 5
         ]);
 
         if (is_wp_error($response)) {
-            $result['status'] = 'error: ' . $response->get_error_message();
-            return $result;
+            // Try with http:// if https:// failed
+            if (strpos($url, 'https://') === 0) {
+                $url = str_replace('https://', 'http://', $url);
+                $response = wp_remote_get($url, [
+                    'timeout' => 15,
+                    'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'sslverify' => false,
+                    'redirection' => 5
+                ]);
+            }
+            if (is_wp_error($response)) {
+                $result['status'] = 'error: ' . $response->get_error_message();
+                return $result;
+            }
         }
 
         $html = wp_remote_retrieve_body($response);
         $status_code = wp_remote_retrieve_response_code($response);
 
-        if ($status_code !== 200) {
+        if ($status_code >= 400) {
             $result['status'] = "error: HTTP $status_code";
             return $result;
         }
 
-        // Extract emails
-        preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $html, $emails);
-        if (!empty($emails[0])) {
-            // Filter out common non-business emails
-            $valid_emails = array_filter($emails[0], function($email) {
-                $email = strtolower($email);
-                return !preg_match('/(example|test|noreply|no-reply|wordpress|wix|google|facebook|sentry|schema)/i', $email);
-            });
-            if (!empty($valid_emails)) {
-                $result['email'] = strtolower(reset($valid_emails));
+        // Decode HTML entities for better email extraction
+        $decoded_html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Extract emails from multiple sources
+        $all_emails = self::extract_emails_from_html($decoded_html);
+
+        // Also check mailto: links specifically (most reliable)
+        preg_match_all('/mailto:([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i', $html, $mailto_matches);
+        if (!empty($mailto_matches[1])) {
+            $all_emails = array_merge($mailto_matches[1], $all_emails);
+        }
+
+        // Also check for obfuscated emails like "info [at] domain [dot] de"
+        preg_match_all('/([a-zA-Z0-9._%+-]+)\s*[\[\(]\s*(?:at|@|AT)\s*[\]\)]\s*([a-zA-Z0-9.-]+)\s*[\[\(]\s*(?:dot|punkt|\.)\s*[\]\)]\s*([a-zA-Z]{2,})/i', $decoded_html, $obf_matches, PREG_SET_ORDER);
+        foreach ($obf_matches as $obf) {
+            $all_emails[] = $obf[1] . '@' . $obf[2] . '.' . $obf[3];
+        }
+
+        // Filter and pick the best email
+        $valid_emails = self::filter_emails($all_emails);
+        if (!empty($valid_emails)) {
+            $result['email'] = strtolower(reset($valid_emails));
+        }
+
+        // Extract phone numbers (German format) from decoded HTML
+        preg_match_all('/(?:tel:|phone:|telefon|fon|fax)?:?\s*((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/iu', $decoded_html, $phones);
+        if (!empty($phones[1])) {
+            $phone = trim(preg_replace('/\s+/', ' ', $phones[1][0]));
+            if (strlen(preg_replace('/\D/', '', $phone)) >= 8) {
+                $result['phone'] = $phone;
             }
         }
 
-        // Try to find contact/impressum page for more info
+        // Try to find contact/impressum pages for more info
         if (empty($result['email'])) {
             $contact_urls = [];
-            preg_match_all('/href=["\']([^"\']*(?:kontakt|contact|impressum|about|uber-uns)[^"\']*)["\']/', $html, $contact_matches);
+            $parsed_url = parse_url($url);
+            $base = ($parsed_url['scheme'] ?? 'https') . '://' . ($parsed_url['host'] ?? '');
+
+            preg_match_all('/href=["\']([^"\']*(?:kontakt|contact|impressum|about|uber-uns|ueber-uns|datenschutz|legal|info)[^"\']*)["\']/', strtolower($html), $contact_matches);
             if (!empty($contact_matches[1])) {
-                foreach (array_slice($contact_matches[1], 0, 3) as $contact_path) {
+                $seen = [];
+                foreach ($contact_matches[1] as $contact_path) {
                     if (strpos($contact_path, 'http') !== 0) {
-                        $parsed = parse_url($url);
-                        $base = $parsed['scheme'] . '://' . $parsed['host'];
-                        $contact_path = $base . '/' . ltrim($contact_path, '/');
+                        if (strpos($contact_path, '/') === 0) {
+                            $contact_path = $base . $contact_path;
+                        } else {
+                            $contact_path = $base . '/' . $contact_path;
+                        }
                     }
+                    // Skip #anchors and javascript:
+                    if (strpos($contact_path, '#') !== false || strpos($contact_path, 'javascript:') !== false) continue;
+                    // Deduplicate
+                    if (isset($seen[$contact_path])) continue;
+                    $seen[$contact_path] = true;
                     $contact_urls[] = $contact_path;
                 }
             }
 
-            foreach ($contact_urls as $contact_url) {
+            foreach (array_slice($contact_urls, 0, 4) as $contact_url) {
                 $contact_response = wp_remote_get($contact_url, [
                     'timeout' => 10,
-                    'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'sslverify' => false
+                    'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'sslverify' => false,
+                    'redirection' => 3
                 ]);
 
-                if (!is_wp_error($contact_response)) {
+                if (!is_wp_error($contact_response) && wp_remote_retrieve_response_code($contact_response) < 400) {
                     $contact_html = wp_remote_retrieve_body($contact_response);
-                    preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $contact_html, $contact_emails);
-                    if (!empty($contact_emails[0])) {
-                        $valid = array_filter($contact_emails[0], function($email) {
-                            return !preg_match('/(example|test|noreply|no-reply|wordpress|wix|google|facebook|sentry|schema)/i', strtolower($email));
-                        });
-                        if (!empty($valid)) {
-                            $result['email'] = strtolower(reset($valid));
-                            break;
+                    $contact_decoded = html_entity_decode($contact_html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                    // mailto: links first
+                    preg_match_all('/mailto:([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i', $contact_html, $mailto_m);
+                    $page_emails = !empty($mailto_m[1]) ? $mailto_m[1] : [];
+                    $page_emails = array_merge($page_emails, self::extract_emails_from_html($contact_decoded));
+
+                    $valid = self::filter_emails($page_emails);
+                    if (!empty($valid)) {
+                        $result['email'] = strtolower(reset($valid));
+                        break;
+                    }
+
+                    // Also grab phone if we don't have one
+                    if (empty($result['phone'])) {
+                        preg_match_all('/(?:tel:|phone:|telefon|fon|fax)?:?\s*((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/iu', $contact_decoded, $cp);
+                        if (!empty($cp[1])) {
+                            $phone = trim(preg_replace('/\s+/', ' ', $cp[1][0]));
+                            if (strlen(preg_replace('/\D/', '', $phone)) >= 8) {
+                                $result['phone'] = $phone;
+                            }
                         }
                     }
                 }
 
-                usleep(500000); // 500ms delay between requests
+                usleep(300000); // 300ms delay between requests
             }
-        }
-
-        // Extract phone numbers (German format)
-        preg_match_all('/(?:\+49|0049|0)\s*[\d\s\-\/]{8,15}/', $html, $phones);
-        if (!empty($phones[0])) {
-            $result['phone'] = trim(preg_replace('/\s+/', ' ', $phones[0][0]));
         }
 
         if (empty($result['email'])) {
@@ -836,6 +1059,43 @@ class PPV_Lead_Finder {
         }
 
         return $result;
+    }
+
+    /**
+     * Extract emails from HTML content
+     */
+    private static function extract_emails_from_html($html) {
+        $emails = [];
+
+        // Standard email pattern
+        preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $html, $matches);
+        if (!empty($matches[0])) {
+            $emails = array_merge($emails, $matches[0]);
+        }
+
+        return array_unique($emails);
+    }
+
+    /**
+     * Filter out non-business emails
+     */
+    private static function filter_emails($emails) {
+        return array_values(array_filter(array_unique($emails), function($email) {
+            $email = strtolower(trim($email));
+            // Filter out technical/non-business emails
+            if (preg_match('/(example\.com|test\.|noreply|no-reply|wordpress|wix\.com|google\.com|facebook\.com|sentry\.io|schema\.org|jquery|bootstrap|cloudflare|w3\.org|gravatar|wp-content|placeholder|@sentry|@wix|@wordpress|\.png|\.jpg|\.gif|\.svg|protection@)/i', $email)) {
+                return false;
+            }
+            // Reject emails that look like CSS/JS code artifacts
+            if (strlen($email) > 60 || strlen($email) < 6) {
+                return false;
+            }
+            // Must have a valid TLD
+            if (!preg_match('/\.(de|com|net|org|eu|at|ch|info|biz|co|io|shop|store|online|site|app|dev|email|mail)$/i', $email)) {
+                return false;
+            }
+            return true;
+        }));
     }
 
     /**
@@ -1204,7 +1464,7 @@ class PPV_Lead_Finder {
         btn.disabled = true;
         btn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 1s linear infinite"></i>';
 
-        fetch('/formular/lead-finder?ajax_scrape=1&id=' + id)
+        return fetch('/formular/lead-finder?ajax_scrape=1&id=' + id)
             .then(r => r.json())
             .then(data => {
                 var row = document.querySelector('tr[data-id="' + id + '"]');
@@ -1212,7 +1472,7 @@ class PPV_Lead_Finder {
                     // Update website column if a website was found
                     if (data.website) {
                         var urlCell = row.querySelector('.url');
-                        if (urlCell && urlCell.querySelector('span')) {
+                        if (urlCell) {
                             try {
                                 var hostname = new URL(data.website).hostname;
                                 urlCell.innerHTML = '<a href="' + data.website + '" target="_blank">' + hostname + '</a>';
@@ -1225,14 +1485,20 @@ class PPV_Lead_Finder {
                     } else {
                         row.querySelector('.lead-status').innerHTML = '<span class="badge badge-warning">Keine Email</span>';
                     }
+                    if (data.phone) {
+                        var phoneCells = row.querySelectorAll('td');
+                        if (phoneCells[4]) phoneCells[4].textContent = data.phone;
+                    }
                 } else {
                     row.querySelector('.lead-status').innerHTML = '<span class="badge badge-error">Error</span>';
                 }
                 btn.remove();
+                return data;
             })
-            .catch(() => {
+            .catch((err) => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ri-robot-line"></i>';
+                return {success: false, error: err.message};
             });
     }
 
@@ -1243,30 +1509,37 @@ class PPV_Lead_Finder {
             return;
         }
 
-        if (!confirm('Alle ' + buttons.length + ' Leads scrapen? Das kann eine Weile dauern.')) {
+        if (!confirm('Alle ' + buttons.length + ' Leads scrapen? Das kann eine Weile dauern (Website-Suche + Scraping pro Lead).')) {
             return;
         }
 
         document.getElementById('scrape-progress').style.display = 'flex';
         var total = buttons.length;
         var current = 0;
+        var emailsFound = 0;
 
-        function scrapeNext() {
-            if (current >= buttons.length) {
-                document.getElementById('scrape-status').textContent = 'Fertig! ' + total + ' gescraped';
+        async function scrapeNext() {
+            if (current >= total) {
+                document.getElementById('scrape-status').textContent = 'Fertig! ' + emailsFound + ' Emails gefunden von ' + total + ' Leads';
+                document.getElementById('scrape-fill').style.width = '100%';
                 return;
             }
 
             var btn = buttons[current];
             var id = btn.closest('tr').dataset.id;
 
-            document.getElementById('scrape-status').textContent = (current + 1) + ' / ' + total;
+            document.getElementById('scrape-status').textContent = (current + 1) + ' / ' + total + ' (' + emailsFound + ' Emails)';
             document.getElementById('scrape-fill').style.width = ((current + 1) / total * 100) + '%';
 
-            btn.click();
+            try {
+                var data = await scrapeSingle(id, btn);
+                if (data && data.email) emailsFound++;
+            } catch(e) {}
 
             current++;
-            setTimeout(scrapeNext, 1500); // 1.5s delay between requests
+            // Small delay between requests to avoid overloading
+            await new Promise(resolve => setTimeout(resolve, 500));
+            scrapeNext();
         }
 
         scrapeNext();
