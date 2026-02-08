@@ -561,12 +561,33 @@ class PPV_Lead_Finder {
             $lead_id
         ));
 
-        if (!$lead || empty($lead->website)) {
+        if (!$lead) {
+            wp_redirect("/formular/lead-finder?error=invalid_lead");
+            exit;
+        }
+
+        $website = $lead->website;
+
+        // If no website, try to find one
+        if (empty($website)) {
+            $website = self::find_website($lead->business_name, $lead->region);
+            if (!empty($website)) {
+                $wpdb->update(
+                    $wpdb->prefix . 'ppv_leads',
+                    ['website' => $website],
+                    ['id' => $lead_id],
+                    ['%s'],
+                    ['%d']
+                );
+            }
+        }
+
+        if (empty($website)) {
             wp_redirect("/formular/lead-finder?error=no_website");
             exit;
         }
 
-        $result = self::scrape_website($lead->website);
+        $result = self::scrape_website($website);
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
@@ -600,12 +621,43 @@ class PPV_Lead_Finder {
             $lead_id
         ));
 
-        if (!$lead || empty($lead->website)) {
+        if (!$lead) {
             echo json_encode(['success' => false, 'error' => 'Invalid lead']);
             exit;
         }
 
-        $result = self::scrape_website($lead->website);
+        $website = $lead->website;
+
+        // If no website, try to find one
+        if (empty($website)) {
+            $website = self::find_website($lead->business_name, $lead->region);
+            if (!empty($website)) {
+                $wpdb->update(
+                    $wpdb->prefix . 'ppv_leads',
+                    ['website' => $website],
+                    ['id' => $lead_id],
+                    ['%s'],
+                    ['%d']
+                );
+            }
+        }
+
+        if (empty($website)) {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_leads',
+                [
+                    'scraped_at' => current_time('mysql'),
+                    'scrape_status' => 'no_website_found'
+                ],
+                ['id' => $lead_id],
+                ['%s', '%s'],
+                ['%d']
+            );
+            echo json_encode(['success' => true, 'email' => '', 'phone' => '', 'website' => '', 'status' => 'no_website_found']);
+            exit;
+        }
+
+        $result = self::scrape_website($website);
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
@@ -625,9 +677,68 @@ class PPV_Lead_Finder {
             'success' => true,
             'email' => $result['email'] ?? '',
             'phone' => $result['phone'] ?? '',
+            'website' => $website,
             'status' => $result['status']
         ]);
         exit;
+    }
+
+    /**
+     * Find website for a business by searching the web
+     */
+    private static function find_website($business_name, $region = '') {
+        $search_query = $business_name;
+        if (!empty($region)) {
+            $search_query .= ' ' . $region;
+        }
+
+        // Try DuckDuckGo first (less likely to block)
+        $search_url = "https://html.duckduckgo.com/html/?q=" . urlencode($search_query);
+        $response = wp_remote_get($search_url, [
+            'timeout' => 15,
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ]);
+
+        if (!is_wp_error($response)) {
+            $html = wp_remote_retrieve_body($response);
+            preg_match_all('/<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>/i', $html, $matches);
+
+            if (!empty($matches[1])) {
+                foreach ($matches[1] as $url) {
+                    // Follow DuckDuckGo redirects
+                    if (preg_match('/uddg=([^&]+)/', $url, $uddg)) {
+                        $url = urldecode($uddg[1]);
+                    }
+                    $domain = parse_url($url, PHP_URL_HOST);
+                    if ($domain && !preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|duckduckgo)/i', $domain)) {
+                        return $url;
+                    }
+                }
+            }
+        }
+
+        // Fallback: Try Bing
+        $search_url = "https://www.bing.com/search?q=" . urlencode($search_query);
+        $response = wp_remote_get($search_url, [
+            'timeout' => 15,
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ]);
+
+        if (!is_wp_error($response)) {
+            $html = wp_remote_retrieve_body($response);
+            preg_match_all('/<a[^>]+href="(https?:\/\/[^"]+)"[^>]*><h2>/i', $html, $matches);
+
+            if (!empty($matches[1])) {
+                foreach ($matches[1] as $url) {
+                    $domain = parse_url($url, PHP_URL_HOST);
+                    if ($domain && !preg_match('/(bing|microsoft|google|facebook|instagram|twitter|youtube|wikipedia)/i', $domain)) {
+                        return $url;
+                    }
+                }
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -1066,8 +1177,8 @@ class PPV_Lead_Finder {
                                     </td>
                                     <td>
                                         <div class="actions">
-                                            <?php if ($lead->website && !$lead->scraped_at): ?>
-                                                <button type="button" class="btn btn-primary btn-sm btn-icon scrape-btn" onclick="scrapeSingle(<?php echo $lead->id; ?>, this)" title="Scrapen">
+                                            <?php if (!$lead->scraped_at): ?>
+                                                <button type="button" class="btn btn-primary btn-sm btn-icon scrape-btn" onclick="scrapeSingle(<?php echo $lead->id; ?>, this)" title="<?php echo $lead->website ? 'Scrapen' : 'Website suchen & Scrapen'; ?>">
                                                     <i class="ri-robot-line"></i>
                                                 </button>
                                             <?php endif; ?>
@@ -1098,6 +1209,16 @@ class PPV_Lead_Finder {
             .then(data => {
                 var row = document.querySelector('tr[data-id="' + id + '"]');
                 if (data.success) {
+                    // Update website column if a website was found
+                    if (data.website) {
+                        var urlCell = row.querySelector('.url');
+                        if (urlCell && urlCell.querySelector('span')) {
+                            try {
+                                var hostname = new URL(data.website).hostname;
+                                urlCell.innerHTML = '<a href="' + data.website + '" target="_blank">' + hostname + '</a>';
+                            } catch(e) {}
+                        }
+                    }
                     if (data.email) {
                         row.querySelector('.lead-email').innerHTML = '<span class="badge badge-success">' + data.email + '</span>';
                         row.querySelector('.lead-status').innerHTML = '<span class="badge badge-success">OK</span>';
