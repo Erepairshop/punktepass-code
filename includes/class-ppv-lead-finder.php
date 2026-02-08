@@ -716,33 +716,53 @@ class PPV_Lead_Finder {
             }
         }
 
-        // Scrape website if we have one
-        $result = ['email' => '', 'phone' => '', 'address' => '', 'status' => 'scraped'];
-        if (!empty($website)) {
-            $result = self::scrape_website($website);
+        $result = ['email' => '', 'phone' => '', 'address' => '', 'status' => ''];
+
+        // STEP 1 (FAST): Search email in Google/Bing snippets
+        $search_email = self::search_email_online($lead->business_name, $lead->region);
+        if (!empty($search_email)) {
+            $result['email'] = $search_email;
+            $result['status'] = 'email_from_search';
         }
 
-        // If no email found yet, search for it online
-        if (empty($result['email'])) {
-            $search_email = self::search_email_online($lead->business_name, $lead->region);
-            if (!empty($search_email)) {
-                $result['email'] = $search_email;
-                $result['status'] = 'email_from_search';
+        // STEP 2: Scrape website if we have one and no email yet
+        if (!empty($website) && empty($result['email'])) {
+            $scrape_result = self::scrape_website($website);
+            if (!empty($scrape_result['email'])) {
+                $result['email'] = $scrape_result['email'];
+                $result['status'] = 'scraped';
             }
+            if (!empty($scrape_result['phone'])) $result['phone'] = $scrape_result['phone'];
+        }
+
+        // STEP 3 (SLOW): Domain guessing only if nothing found yet
+        if (empty($website) && empty($result['email'])) {
+            $website = self::find_website($lead->business_name, $lead->region);
+            if (!empty($website)) {
+                $scrape_result = self::scrape_website($website);
+                if (!empty($scrape_result['email'])) {
+                    $result['email'] = $scrape_result['email'];
+                    $result['status'] = 'scraped';
+                }
+                if (!empty($scrape_result['phone'])) $result['phone'] = $scrape_result['phone'];
+            }
+        }
+
+        $update_data = [
+            'email' => $result['email'] ?? '',
+            'phone' => $result['phone'] ?: $lead->phone,
+            'address' => $result['address'] ?: $lead->address,
+            'scraped_at' => current_time('mysql'),
+            'scrape_status' => $result['status'] ?: 'no_email_found'
+        ];
+        if (!empty($website) && empty($lead->website)) {
+            $update_data['website'] = $website;
         }
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
-            [
-                'email' => $result['email'] ?? '',
-                'phone' => $result['phone'] ?: $lead->phone,
-                'address' => $result['address'] ?: $lead->address,
-                'scraped_at' => current_time('mysql'),
-                'scrape_status' => $result['status'] ?: (empty($website) ? 'no_website_found' : 'no_email_found')
-            ],
-            ['id' => $lead_id],
-            ['%s', '%s', '%s', '%s', '%s'],
-            ['%d']
+            $update_data,
+            ['id' => $lead_id]
         );
 
         wp_redirect("/formular/lead-finder?success=scraped&email=" . urlencode($result['email'] ?? ''));
@@ -769,49 +789,56 @@ class PPV_Lead_Finder {
         }
 
         $website = $lead->website;
+        $result = ['email' => '', 'phone' => '', 'address' => '', 'status' => ''];
 
-        // If no website, try to find one
-        if (empty($website)) {
+        // STEP 1 (FAST): Search for email in Google/Bing snippets - this is the quickest method
+        $search_email = self::search_email_online($lead->business_name, $lead->region);
+        if (!empty($search_email)) {
+            $result['email'] = $search_email;
+            $result['status'] = 'email_from_search';
+        }
+
+        // STEP 2: If we have a website, scrape it for more info (email, phone)
+        if (!empty($website) && empty($result['email'])) {
+            $scrape_result = self::scrape_website($website);
+            if (!empty($scrape_result['email'])) {
+                $result['email'] = $scrape_result['email'];
+                $result['status'] = 'scraped';
+            }
+            if (!empty($scrape_result['phone'])) $result['phone'] = $scrape_result['phone'];
+            if (!empty($scrape_result['address'])) $result['address'] = $scrape_result['address'];
+        }
+
+        // STEP 3 (SLOW): If still no website, try to find one via domain guessing
+        if (empty($website) && empty($result['email'])) {
             $website = self::find_website($lead->business_name, $lead->region);
             if (!empty($website)) {
-                $wpdb->update(
-                    $wpdb->prefix . 'ppv_leads',
-                    ['website' => $website],
-                    ['id' => $lead_id],
-                    ['%s'],
-                    ['%d']
-                );
+                $scrape_result = self::scrape_website($website);
+                if (!empty($scrape_result['email'])) {
+                    $result['email'] = $scrape_result['email'];
+                    $result['status'] = 'scraped';
+                }
+                if (!empty($scrape_result['phone'])) $result['phone'] = $scrape_result['phone'];
+                if (!empty($scrape_result['address'])) $result['address'] = $scrape_result['address'];
             }
         }
 
-        // Scrape website if we have one
-        $result = ['email' => '', 'phone' => '', 'address' => '', 'status' => 'scraped'];
-        if (!empty($website)) {
-            $result = self::scrape_website($website);
-        }
-
-        // If no email found yet, search for it on Google/Bing/DuckDuckGo
-        if (empty($result['email'])) {
-            $search_email = self::search_email_online($lead->business_name, $lead->region);
-            if (!empty($search_email)) {
-                $result['email'] = $search_email;
-                $result['status'] = !empty($website) ? 'email_from_search' : 'email_from_search_no_website';
-            }
+        // Save results
+        $update_data = [
+            'email' => $result['email'] ?? '',
+            'phone' => $result['phone'] ?: $lead->phone,
+            'address' => $result['address'] ?: $lead->address,
+            'scraped_at' => current_time('mysql'),
+            'scrape_status' => $result['status'] ?: 'no_email_found'
+        ];
+        if (!empty($website) && empty($lead->website)) {
+            $update_data['website'] = $website;
         }
 
         $wpdb->update(
             $wpdb->prefix . 'ppv_leads',
-            [
-                'email' => $result['email'] ?? '',
-                'phone' => $result['phone'] ?: $lead->phone,
-                'address' => $result['address'] ?: $lead->address,
-                'website' => !empty($website) ? $website : '',
-                'scraped_at' => current_time('mysql'),
-                'scrape_status' => $result['status'] ?: (empty($website) ? 'no_website_found' : 'no_email_found')
-            ],
-            ['id' => $lead_id],
-            ['%s', '%s', '%s', '%s', '%s', '%s'],
-            ['%d']
+            $update_data,
+            ['id' => $lead_id]
         );
 
         echo json_encode([
@@ -829,82 +856,40 @@ class PPV_Lead_Finder {
      * Extracts emails from search result snippets without visiting the actual pages
      */
     private static function search_email_online($business_name, $region = '') {
-        // Build search query: business name + region + "email"
-        $query = $business_name;
-        if (!empty($region)) {
-            $query .= ' ' . $region;
-        }
-        $query .= ' email';
-
         $all_emails = [];
 
-        // Try Google first (best snippets)
-        $search_url = "https://www.google.com/search?q=" . urlencode($query) . "&num=10&hl=de";
-        $response = wp_remote_get($search_url, [
-            'timeout' => 10,
-            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ]);
+        // Build different search queries
+        $base_name = $business_name . (!empty($region) ? ' ' . $region : '');
+        $queries = [
+            $base_name . ' email',
+            $base_name . ' Kontakt Impressum',
+        ];
 
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $html = wp_remote_retrieve_body($response);
-            $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
-            if (!empty($matches[0])) {
-                $all_emails = array_merge($all_emails, $matches[0]);
-            }
-        }
+        // Search engines to try (ordered by usefulness)
+        $engines = [
+            ['url' => 'https://www.google.com/search?q=%s&num=10&hl=de', 'timeout' => 6],
+            ['url' => 'https://www.bing.com/search?q=%s', 'timeout' => 6],
+            ['url' => 'https://html.duckduckgo.com/html/?q=%s', 'timeout' => 6],
+        ];
 
-        // Try Bing
-        if (empty($all_emails)) {
-            $search_url = "https://www.bing.com/search?q=" . urlencode($query);
-            $response = wp_remote_get($search_url, [
-                'timeout' => 10,
-                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            ]);
+        foreach ($queries as $query) {
+            if (!empty($all_emails)) break;
 
-            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-                $html = wp_remote_retrieve_body($response);
-                $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
-                if (!empty($matches[0])) {
-                    $all_emails = array_merge($all_emails, $matches[0]);
-                }
-            }
-        }
+            foreach ($engines as $engine) {
+                $search_url = sprintf($engine['url'], urlencode($query));
+                $response = wp_remote_get($search_url, [
+                    'timeout' => $engine['timeout'],
+                    'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                ]);
 
-        // Try DuckDuckGo
-        if (empty($all_emails)) {
-            $search_url = "https://html.duckduckgo.com/html/?q=" . urlencode($query);
-            $response = wp_remote_get($search_url, [
-                'timeout' => 10,
-                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            ]);
-
-            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-                $html = wp_remote_retrieve_body($response);
-                $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
-                if (!empty($matches[0])) {
-                    $all_emails = array_merge($all_emails, $matches[0]);
-                }
-            }
-        }
-
-        // Also try without "email" keyword but with "Kontakt" or "Impressum"
-        if (empty($all_emails)) {
-            $query2 = $business_name . (!empty($region) ? ' ' . $region : '') . ' Kontakt Impressum';
-            $search_url = "https://www.google.com/search?q=" . urlencode($query2) . "&num=10&hl=de";
-            $response = wp_remote_get($search_url, [
-                'timeout' => 10,
-                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            ]);
-
-            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-                $html = wp_remote_retrieve_body($response);
-                $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
-                if (!empty($matches[0])) {
-                    $all_emails = array_merge($all_emails, $matches[0]);
+                if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                    $html = wp_remote_retrieve_body($response);
+                    $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $decoded, $matches);
+                    if (!empty($matches[0])) {
+                        $all_emails = array_merge($all_emails, $matches[0]);
+                        break; // Found emails, no need to try more engines for this query
+                    }
                 }
             }
         }
@@ -1005,34 +990,19 @@ class PPV_Lead_Finder {
         // Deduplicate
         $candidates = array_unique($candidates);
 
-        // Step 4: Check each candidate with HTTP HEAD
-        foreach (array_slice($candidates, 0, 6) as $domain) {
+        // Step 4: Check each candidate with HTTP HEAD (short timeout for speed)
+        foreach (array_slice($candidates, 0, 4) as $domain) {
             $url = 'https://' . $domain;
             $response = wp_remote_head($url, [
-                'timeout' => 4,
+                'timeout' => 3,
                 'sslverify' => false,
-                'redirection' => 3
+                'redirection' => 2
             ]);
 
             if (!is_wp_error($response)) {
                 $code = wp_remote_retrieve_response_code($response);
                 if ($code >= 200 && $code < 400) {
                     return $url;
-                }
-            }
-
-            // Try www. prefix
-            $url_www = 'https://www.' . $domain;
-            $response = wp_remote_head($url_www, [
-                'timeout' => 4,
-                'sslverify' => false,
-                'redirection' => 3
-            ]);
-
-            if (!is_wp_error($response)) {
-                $code = wp_remote_retrieve_response_code($response);
-                if ($code >= 200 && $code < 400) {
-                    return $url_www;
                 }
             }
         }
@@ -1126,10 +1096,10 @@ class PPV_Lead_Finder {
 
         // Fetch main page
         $response = wp_remote_get($url, [
-            'timeout' => 15,
+            'timeout' => 8,
             'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'sslverify' => false,
-            'redirection' => 5
+            'redirection' => 3
         ]);
 
         if (is_wp_error($response)) {
@@ -1137,10 +1107,10 @@ class PPV_Lead_Finder {
             if (strpos($url, 'https://') === 0) {
                 $url = str_replace('https://', 'http://', $url);
                 $response = wp_remote_get($url, [
-                    'timeout' => 15,
+                    'timeout' => 8,
                     'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'sslverify' => false,
-                    'redirection' => 5
+                    'redirection' => 3
                 ]);
             }
             if (is_wp_error($response)) {
@@ -1216,9 +1186,9 @@ class PPV_Lead_Finder {
                 }
             }
 
-            foreach (array_slice($contact_urls, 0, 4) as $contact_url) {
+            foreach (array_slice($contact_urls, 0, 2) as $contact_url) {
                 $contact_response = wp_remote_get($contact_url, [
-                    'timeout' => 10,
+                    'timeout' => 6,
                     'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'sslverify' => false,
                     'redirection' => 3
