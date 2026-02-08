@@ -923,6 +923,17 @@ Erik Borota';
         </div>
     <?php endif; ?>
 
+    <!-- Lead Finder Link -->
+    <div style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="color:#fff">
+            <strong style="font-size:16px"><i class="ri-search-eye-line"></i> Lead Finder</strong><br>
+            <span style="opacity:0.9;font-size:13px">Automatisch Gesch&auml;fte finden &amp; Emails extrahieren (Google, Bing, DuckDuckGo)</span>
+        </div>
+        <a href="/formular/lead-finder" class="btn" style="background:#fff;color:#667eea;font-weight:600">
+            <i class="ri-arrow-right-line"></i> Lead Finder &ouml;ffnen
+        </a>
+    </div>
+
     <!-- Email Extractor Tool -->
     <div class="card" style="margin-bottom:20px">
         <div class="card-header" style="cursor:pointer" onclick="document.getElementById('extractor-body').style.display=document.getElementById('extractor-body').style.display==='none'?'block':'none';this.querySelector('.toggle-icon').classList.toggle('ri-arrow-down-s-line');this.querySelector('.toggle-icon').classList.toggle('ri-arrow-up-s-line')">
