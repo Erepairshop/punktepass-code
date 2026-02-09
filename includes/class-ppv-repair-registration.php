@@ -930,38 +930,38 @@ class PPV_Repair_Registration {
 
                 <div class="pp-reg-field">
                     <label for="rr-shop-name">Firmenname / Shopname *</label>
-                    <input type="text" id="rr-shop-name" name="shop_name" required placeholder="z.B. Meister Reparatur Berlin">
+                    <input type="text" id="rr-shop-name" name="shop_name" required placeholder="z.B. Meister Reparatur Berlin" autocomplete="organization">
                 </div>
 
                 <div class="pp-reg-field">
                     <label for="rr-owner-name">Inhaber / Name *</label>
-                    <input type="text" id="rr-owner-name" name="owner_name" required placeholder="Max Mustermann">
+                    <input type="text" id="rr-owner-name" name="owner_name" required placeholder="Max Mustermann" autocomplete="name">
                 </div>
 
                 <div class="pp-reg-row">
                     <div class="pp-reg-field">
                         <label for="rr-address">Stra&szlig;e &amp; Nr.</label>
-                        <input type="text" id="rr-address" name="address" placeholder="Hauptstr. 1">
+                        <input type="text" id="rr-address" name="address" placeholder="Hauptstr. 1" autocomplete="street-address">
                     </div>
                     <div class="pp-reg-field pp-reg-field-sm">
                         <label for="rr-plz">PLZ</label>
-                        <input type="text" id="rr-plz" name="plz" placeholder="89415" maxlength="5">
+                        <input type="text" id="rr-plz" name="plz" placeholder="89415" maxlength="5" autocomplete="postal-code">
                     </div>
                 </div>
 
                 <div class="pp-reg-field">
                     <label for="rr-city">Stadt</label>
-                    <input type="text" id="rr-city" name="city" placeholder="Lauingen">
+                    <input type="text" id="rr-city" name="city" placeholder="Lauingen" autocomplete="address-level2">
                 </div>
 
                 <div class="pp-reg-row">
                     <div class="pp-reg-field">
                         <label for="rr-phone">Telefon</label>
-                        <input type="tel" id="rr-phone" name="phone" placeholder="+49 123 456789">
+                        <input type="tel" id="rr-phone" name="phone" placeholder="+49 123 456789" autocomplete="tel">
                     </div>
                     <div class="pp-reg-field">
                         <label for="rr-tax-id">USt-IdNr.</label>
-                        <input type="text" id="rr-tax-id" name="tax_id" placeholder="DE123456789">
+                        <input type="text" id="rr-tax-id" name="tax_id" placeholder="DE123456789" autocomplete="nope">
                     </div>
                 </div>
             </div>
@@ -975,17 +975,17 @@ class PPV_Repair_Registration {
 
                 <div class="pp-reg-field">
                     <label for="rr-email">E-Mail-Adresse *</label>
-                    <input type="email" id="rr-email" name="email" required placeholder="info@ihr-shop.de">
+                    <input type="email" id="rr-email" name="email" required placeholder="info@ihr-shop.de" autocomplete="email">
                 </div>
 
                 <div class="pp-reg-field">
                     <label for="rr-password">Passwort * <span style="font-weight:400;color:#9ca3af;">(min. 6 Zeichen)</span></label>
-                    <input type="password" id="rr-password" name="password" required minlength="6" placeholder="Sicheres Passwort">
+                    <input type="password" id="rr-password" name="password" required minlength="6" placeholder="Sicheres Passwort" autocomplete="new-password">
                 </div>
 
                 <div class="pp-reg-field">
                     <label for="rr-password2">Passwort best&auml;tigen *</label>
-                    <input type="password" id="rr-password2" name="password2" required minlength="6" placeholder="Passwort wiederholen">
+                    <input type="password" id="rr-password2" name="password2" required minlength="6" placeholder="Passwort wiederholen" autocomplete="new-password">
                 </div>
             </div>
 
