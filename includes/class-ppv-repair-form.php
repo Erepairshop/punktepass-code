@@ -87,19 +87,51 @@ class PPV_Repair_Form {
 <body class="ppv-repair-body">
 
 <div class="repair-page">
-    <!-- Header -->
+    <!-- Hero Header -->
     <div class="repair-header">
+        <div class="repair-hero-bg">
+            <div class="repair-hero-blob repair-hero-blob--1"></div>
+            <div class="repair-hero-blob repair-hero-blob--2"></div>
+            <div class="repair-hero-blob repair-hero-blob--3"></div>
+        </div>
         <div class="repair-header-inner">
             <?php if ($store->logo): ?>
-                <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>" class="repair-logo">
+                <div class="repair-logo-wrap">
+                    <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>" class="repair-logo">
+                </div>
             <?php endif; ?>
             <h1 class="repair-shop-name"><?php echo $store_name; ?></h1>
+            <?php if ($form_subtitle): ?>
+                <p class="repair-hero-subtitle"><?php echo $form_subtitle; ?></p>
+            <?php else: ?>
+                <p class="repair-hero-subtitle">Digitaler <?php echo $form_title; ?> - schnell &amp; unkompliziert</p>
+            <?php endif; ?>
             <?php if ($address): ?>
                 <p class="repair-shop-address"><i class="ri-map-pin-line"></i> <?php echo $address; ?></p>
             <?php endif; ?>
             <?php if ($opening_hours): ?>
                 <p class="repair-shop-address" style="margin-top:4px"><i class="ri-time-line"></i> <?php echo esc_html($opening_hours); ?></p>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Trust Bar -->
+    <div class="repair-trust-bar">
+        <div class="repair-trust-item">
+            <div class="repair-trust-icon"><i class="ri-timer-flash-line"></i></div>
+            <span>Schnell</span>
+        </div>
+        <div class="repair-trust-item">
+            <div class="repair-trust-icon"><i class="ri-shield-check-line"></i></div>
+            <span>Sicher</span>
+        </div>
+        <div class="repair-trust-item">
+            <div class="repair-trust-icon"><i class="ri-smartphone-line"></i></div>
+            <span>Digital</span>
+        </div>
+        <div class="repair-trust-item">
+            <div class="repair-trust-icon"><i class="ri-map-pin-time-line"></i></div>
+            <span>Live-Tracking</span>
         </div>
     </div>
 
@@ -361,21 +393,31 @@ class PPV_Repair_Form {
         <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
     </div>
 
-    <!-- Footer -->
+    <!-- Professional Footer -->
     <div class="repair-footer">
+        <div class="repair-footer-trust">
+            <div class="repair-footer-trust-item">
+                <i class="ri-lock-line"></i> SSL-verschl&uuml;sselt
+            </div>
+            <div class="repair-footer-trust-item">
+                <i class="ri-shield-check-line"></i> DSGVO-konform
+            </div>
+        </div>
         <div class="repair-footer-links">
             <a href="/formular/<?php echo $slug; ?>/datenschutz">Datenschutz</a>
+            <span class="repair-footer-dot"></span>
             <a href="/formular/<?php echo $slug; ?>/agb">AGB</a>
+            <span class="repair-footer-dot"></span>
             <a href="/formular/<?php echo $slug; ?>/impressum">Impressum</a>
         </div>
         <div class="repair-footer-powered">
-            Powered by
-            <a href="https://punktepass.de" target="_blank">
-                <svg class="repair-footer-logo" width="90" height="18" viewBox="0 0 90 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="3" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M5 9l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <text x="18" y="13" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="currentColor">PunktePass</text>
+            <span>Powered by</span>
+            <a href="https://punktepass.de" target="_blank" class="repair-footer-brand">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="14" height="14" rx="4" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
+                <strong>PunktePass</strong>
             </a>
         </div>
     </div>
