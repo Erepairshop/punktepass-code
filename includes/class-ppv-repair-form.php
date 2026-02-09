@@ -136,10 +136,10 @@ class PPV_Repair_Form {
                 <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>" autocomplete="name">
             </div>
 
-            <div class="repair-field">
+            <div class="repair-field" style="position:relative">
                 <label for="rf-email">E-Mail</label>
-                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email" list="rf-email-datalist">
-                <datalist id="rf-email-datalist"></datalist>
+                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email">
+                <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
                 <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
             </div>
 
@@ -151,10 +151,10 @@ class PPV_Repair_Form {
             <?php endif; ?>
 
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
-            <div class="repair-field">
+            <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="street-address" list="rf-address-datalist">
-                <datalist id="rf-address-datalist"></datalist>
+                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="street-address">
+                <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
             </div>
             <?php endif; ?>
         </div>
@@ -934,72 +934,86 @@ function toggleProblemTag(btn, text) {
         xhr.send();
     }
 
-    // ===== EMAIL AUTOCOMPLETE (native datalist) =====
+    function escH(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    // ===== DISMISS: hide dropdowns when tapping OUTSIDE (not blur!) =====
     var emailInput = document.getElementById('rf-email');
-    var emailList = document.getElementById('rf-email-datalist');
-    if (emailInput && emailList) {
+    var emailBox = document.getElementById('rf-email-suggestions');
+    var addrInput = document.getElementById('rf-address');
+    var addrBox = document.getElementById('rf-address-suggestions');
+
+    document.addEventListener('click', function(e) {
+        if (emailBox && emailInput && !emailInput.contains(e.target) && !emailBox.contains(e.target)) {
+            emailBox.style.display = 'none';
+        }
+        if (addrBox && addrInput && !addrInput.contains(e.target) && !addrBox.contains(e.target)) {
+            addrBox.style.display = 'none';
+        }
+    }, true);
+
+    // ===== EMAIL AUTOCOMPLETE =====
+    if (emailInput && emailBox) {
         var storeEl = document.querySelector('input[name="store_id"]');
         var storeId = storeEl ? storeEl.value : 0;
         var emailTimer = null;
         var lastEmailQ = '';
-        var emailCache = {}; // cache customer data by email for autofill
 
         function triggerEmailSearch(){
             clearTimeout(emailTimer);
             var q = emailInput.value.trim();
             if (q === lastEmailQ) return;
             lastEmailQ = q;
-            if (q.length < 2) return;
+            if (q.length < 2) { emailBox.style.display = 'none'; return; }
             emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
         }
 
         emailInput.addEventListener('input', triggerEmailSearch);
         emailInput.addEventListener('keyup', triggerEmailSearch);
 
-        // When user selects from datalist, auto-fill other fields
-        emailInput.addEventListener('change', function(){ fillFromEmail(emailInput.value.trim()); });
-        emailInput.addEventListener('blur', function(){ fillFromEmail(emailInput.value.trim()); });
-
-        function fillFromEmail(email) {
-            if (!email || !emailCache[email]) return;
-            var c = emailCache[email];
-            var nameF = document.getElementById('rf-name');
-            var phoneF = document.getElementById('rf-phone');
-            var addrF = document.getElementById('rf-address');
-            if (nameF && c.customer_name && !nameF.value) nameF.value = c.customer_name;
-            if (phoneF && c.customer_phone && !phoneF.value) phoneF.value = c.customer_phone;
-            if (addrF && c.customer_address && !addrF.value) addrF.value = c.customer_address;
-            // Flash effect
-            [nameF, phoneF, addrF].forEach(function(f){
-                if (f && f.value) {
-                    f.style.transition = 'background .3s';
-                    f.style.background = '#d1fae5';
-                    setTimeout(function(){ f.style.background = ''; }, 1000);
-                }
-            });
-        }
-
         function searchEmails(q) {
             var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, resp){
-                if (err || !resp || !resp.success || !resp.data) return;
-                // Clear and repopulate datalist
-                emailList.innerHTML = '';
+                if (err || !resp || !resp.success || !resp.data || !resp.data.length) {
+                    emailBox.style.display = 'none';
+                    return;
+                }
+                emailBox.innerHTML = '';
                 resp.data.forEach(function(c){
-                    emailCache[c.customer_email] = c;
-                    var opt = document.createElement('option');
-                    opt.value = c.customer_email;
-                    opt.label = c.customer_name || c.customer_email;
-                    emailList.appendChild(opt);
+                    var item = document.createElement('div');
+                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
+                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
+                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
+                    // Use onclick - works on both mouse and touch
+                    item.onclick = function(){
+                        emailInput.value = c.customer_email;
+                        emailBox.style.display = 'none';
+                        var nameF = document.getElementById('rf-name');
+                        var phoneF = document.getElementById('rf-phone');
+                        var addrF = document.getElementById('rf-address');
+                        if (nameF && c.customer_name) nameF.value = c.customer_name;
+                        if (phoneF && c.customer_phone) phoneF.value = c.customer_phone;
+                        if (addrF && c.customer_address) addrF.value = c.customer_address;
+                        [nameF, phoneF, addrF].forEach(function(f){
+                            if (f && f.value) {
+                                f.style.transition = 'background .3s';
+                                f.style.background = '#d1fae5';
+                                setTimeout(function(){ f.style.background = ''; }, 1000);
+                            }
+                        });
+                    };
+                    emailBox.appendChild(item);
                 });
+                emailBox.style.display = 'block';
             });
         }
     }
 
-    // ===== ADDRESS AUTOCOMPLETE (native datalist) =====
-    var addrInput = document.getElementById('rf-address');
-    var addrList = document.getElementById('rf-address-datalist');
-    if (addrInput && addrList) {
+    // ===== ADDRESS AUTOCOMPLETE =====
+    if (addrInput && addrBox) {
         var addrTimer = null;
         var lastAddrQ = '';
 
@@ -1016,7 +1030,7 @@ function toggleProblemTag(btn, text) {
             var q = addrInput.value.trim();
             if (q === lastAddrQ) return;
             lastAddrQ = q;
-            if (q.length < 3) return;
+            if (q.length < 3) { addrBox.style.display = 'none'; return; }
             addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 400);
         }
 
@@ -1026,10 +1040,12 @@ function toggleProblemTag(btn, text) {
         function fetchAddrSuggestions(q) {
             var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, results){
-                if (err || !results || !results.length) return;
+                if (err || !results || !results.length) {
+                    addrBox.style.display = 'none';
+                    return;
+                }
                 var userStreet = getUserStreet(addrInput.value);
-
-                addrList.innerHTML = '';
+                addrBox.innerHTML = '';
                 results.forEach(function(r){
                     var a = r.address || {};
                     var apiStreet = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
@@ -1042,13 +1058,20 @@ function toggleProblemTag(btn, text) {
                             street = userStreet;
                         }
                     }
-                    var formatted = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
-                    if (formatted.trim()) {
-                        var opt = document.createElement('option');
-                        opt.value = formatted;
-                        addrList.appendChild(opt);
-                    }
+                    var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
+                    var displayFull = r.display_name;
+                    var item = document.createElement('div');
+                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
+                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(displayShort || displayFull) + '</div>' +
+                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(displayFull) + '</div>';
+                    item.onclick = function(){
+                        var finalStreet = street || userStreet;
+                        addrInput.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
+                        addrBox.style.display = 'none';
+                    };
+                    addrBox.appendChild(item);
                 });
+                addrBox.style.display = 'block';
             });
         }
     }
