@@ -98,6 +98,7 @@ class PPV_Lead_Finder {
                 phone varchar(100) DEFAULT '',
                 website varchar(500) DEFAULT '',
                 email varchar(255) DEFAULT '',
+                keyword varchar(255) DEFAULT '',
                 search_query varchar(255) DEFAULT '',
                 scraped_at datetime DEFAULT NULL,
                 scrape_status varchar(50) DEFAULT '',
@@ -109,6 +110,12 @@ class PPV_Lead_Finder {
                 KEY scraped_at (scraped_at)
             ) $charset_collate;";
             dbDelta($sql);
+        }
+
+        // Add keyword column if it doesn't exist (for existing tables)
+        $col = $wpdb->get_results("SHOW COLUMNS FROM $table LIKE 'keyword'");
+        if (empty($col)) {
+            $wpdb->query("ALTER TABLE $table ADD COLUMN keyword varchar(255) DEFAULT '' AFTER email");
         }
     }
 
@@ -165,6 +172,7 @@ class PPV_Lead_Finder {
 
         $content = $_POST['import_content'] ?? '';
         $region = sanitize_text_field($_POST['import_region'] ?? '');
+        $keyword = sanitize_text_field($_POST['import_keyword'] ?? '');
 
         if (empty($content)) {
             wp_redirect("/formular/lead-finder?error=empty_import");
@@ -338,7 +346,7 @@ class PPV_Lead_Finder {
                 }
             }
 
-            if (self::add_lead_if_new($business, $region, 'Google Maps Import')) {
+            if (self::add_lead_if_new($business, $region, 'Google Maps Import', $keyword)) {
                 $found_count++;
             }
 
@@ -382,7 +390,7 @@ class PPV_Lead_Finder {
     /**
      * Add lead if it doesn't exist
      */
-    private static function add_lead_if_new($business, $region, $query) {
+    private static function add_lead_if_new($business, $region, $query, $keyword = '') {
         global $wpdb;
 
         if (empty($business['name']) || strlen($business['name']) < 3) {
@@ -426,9 +434,10 @@ class PPV_Lead_Finder {
                 'phone' => $business['phone'] ?? '',
                 'address' => $business['address'] ?? '',
                 'email' => $business['email'] ?? '',
+                'keyword' => $keyword,
                 'search_query' => $query
             ],
-            ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
+            ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
         );
 
         return true;
@@ -708,8 +717,9 @@ class PPV_Lead_Finder {
             exit;
         }
 
-        // Smart search: Google snippets → website impressum/kontakt
-        $found = self::smart_find_email($lead->business_name, $lead->region);
+        // Smart search: Tavily → website impressum/kontakt
+        $keyword = isset($lead->keyword) ? $lead->keyword : '';
+        $found = self::smart_find_email($lead->business_name, $lead->region, $keyword);
 
         $status = !empty($found['email']) ? 'email_found' : 'no_email_found';
 
@@ -752,8 +762,9 @@ class PPV_Lead_Finder {
             exit;
         }
 
-        // Smart search: Google snippets → website impressum/kontakt
-        $found = self::smart_find_email($lead->business_name, $lead->region);
+        // Smart search: Tavily → website impressum/kontakt
+        $keyword = isset($lead->keyword) ? $lead->keyword : '';
+        $found = self::smart_find_email($lead->business_name, $lead->region, $keyword);
 
         $status = !empty($found['email']) ? 'email_found' : 'no_email_found';
 
@@ -890,13 +901,20 @@ class PPV_Lead_Finder {
      * Step 2: If no email in results → visit the business website impressum/kontakt
      * Returns ['email' => '', 'website' => '', 'phone' => '']
      */
-    private static function smart_find_email($business_name, $region = '') {
+    private static function smart_find_email($business_name, $region = '', $keyword = '') {
         $result = ['email' => '', 'website' => '', 'phone' => ''];
         $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
         $excluded_domains = '/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft)/i';
 
-        // --- STEP 1: Tavily search "[name] [region] email" ---
-        $query = $business_name . (!empty($region) ? ' ' . $region : '') . ' email';
+        // Build search query: "[name] [keyword] [region] email"
+        // Keyword (e.g. "Handyreparatur") makes the search more precise
+        $parts = [$business_name];
+        if (!empty($keyword)) $parts[] = $keyword;
+        if (!empty($region)) $parts[] = $region;
+        $parts[] = 'email';
+
+        // --- STEP 1: Tavily search "[name] [keyword] [region] email" ---
+        $query = implode(' ', $parts);
         $results = self::tavily_search($query, 5);
 
         foreach ($results as $r) {
@@ -925,8 +943,12 @@ class PPV_Lead_Finder {
             return $result;
         }
 
-        // --- STEP 2: Tavily search "[name] Kontakt Impressum" ---
-        $query2 = $business_name . (!empty($region) ? ' ' . $region : '') . ' Kontakt Impressum';
+        // --- STEP 2: Tavily search "[name] [keyword] Kontakt Impressum" ---
+        $parts2 = [$business_name];
+        if (!empty($keyword)) $parts2[] = $keyword;
+        if (!empty($region)) $parts2[] = $region;
+        $parts2[] = 'Kontakt Impressum';
+        $query2 = implode(' ', $parts2);
         $results2 = self::tavily_search($query2, 5);
 
         foreach ($results2 as $r) {
@@ -1687,9 +1709,15 @@ class PPV_Lead_Finder {
                     </ol>
                 </div>
                 <form method="post">
-                    <div class="form-group" style="margin-bottom:12px">
-                        <label>Region (für Gruppierung)</label>
-                        <input type="text" name="import_region" class="form-control" placeholder="z.B. Hamburg" style="max-width:300px">
+                    <div style="display:flex;gap:12px;margin-bottom:12px">
+                        <div class="form-group" style="flex:1">
+                            <label>Region / Stadt</label>
+                            <input type="text" name="import_region" class="form-control" placeholder="z.B. Hamburg">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>Branche / Kulcsszó</label>
+                            <input type="text" name="import_keyword" class="form-control" placeholder="z.B. Handyreparatur" value="Handyreparatur">
+                        </div>
                     </div>
                     <div class="form-group" style="margin-bottom:12px">
                         <label>Google Maps Inhalt einf&uuml;gen</label>
