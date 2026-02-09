@@ -185,49 +185,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========================================
-   TRUST BAR - Social proof strip
-   ======================================== */
-.repair-trust-bar {
-    display: flex;
-    justify-content: center;
-    gap: 0;
-    background: var(--repair-card);
-    padding: 0;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    position: relative;
-    z-index: 5;
-}
-.repair-trust-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 16px 8px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--repair-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-right: 1px solid var(--repair-border-light);
-    transition: var(--repair-transition);
-}
-.repair-trust-item:last-child {
-    border-right: none;
-}
-.repair-trust-icon {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(102,126,234,0.15));
-    border-radius: 10px;
-    color: var(--repair-accent);
-    font-size: 18px;
-}
-
 /* Bonus badge - Modern pill style */
 .repair-bonus-badge {
     display: flex;
@@ -1909,24 +1866,6 @@
         height: 120px;
     }
 
-    /* Trust bar on mobile */
-    .repair-trust-bar {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    .repair-trust-item {
-        padding: 12px 6px;
-        font-size: 10px;
-        min-width: 0;
-    }
-    .repair-trust-icon {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
-        border-radius: 8px;
-    }
-
     /* Form styling */
     .repair-page {
         padding: 0;
@@ -2120,8 +2059,5 @@
     }
     .repair-section {
         padding: 14px 12px;
-    }
-    .repair-trust-item span {
-        font-size: 9px;
     }
 }

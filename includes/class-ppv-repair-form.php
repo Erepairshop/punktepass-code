@@ -115,26 +115,6 @@ class PPV_Repair_Form {
         </div>
     </div>
 
-    <!-- Trust Bar -->
-    <div class="repair-trust-bar">
-        <div class="repair-trust-item">
-            <div class="repair-trust-icon"><i class="ri-timer-flash-line"></i></div>
-            <span>Schnell</span>
-        </div>
-        <div class="repair-trust-item">
-            <div class="repair-trust-icon"><i class="ri-shield-check-line"></i></div>
-            <span>Sicher</span>
-        </div>
-        <div class="repair-trust-item">
-            <div class="repair-trust-icon"><i class="ri-smartphone-line"></i></div>
-            <span>Digital</span>
-        </div>
-        <div class="repair-trust-item">
-            <div class="repair-trust-icon"><i class="ri-map-pin-time-line"></i></div>
-            <span>Live-Tracking</span>
-        </div>
-    </div>
-
     <?php if ($limit_reached): ?>
     <!-- Limit reached message -->
     <div class="repair-limit-reached">
