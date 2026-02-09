@@ -1014,14 +1014,28 @@ function toggleProblemTag(btn, text) {
     var emailInput = document.getElementById('rf-email');
     if (!emailInput) return;
     var emailBox = document.getElementById('rf-email-suggestions');
-    var storeId = document.querySelector('input[name="store_id"]')?.value || 0;
+    var storeEl = document.querySelector('input[name="store_id"]');
+    var storeId = storeEl ? storeEl.value : 0;
     var emailTimer = null;
+    var lastQuery = '';
 
-    emailInput.addEventListener('input', function(){
+    function triggerSearch(){
         clearTimeout(emailTimer);
         var q = emailInput.value.trim();
+        if (q === lastQuery) return;
+        lastQuery = q;
         if (q.length < 2) { emailBox.style.display = 'none'; return; }
         emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
+    }
+
+    emailInput.addEventListener('input', triggerSearch);
+    emailInput.addEventListener('keyup', triggerSearch);
+
+    emailInput.addEventListener('focus', function(){
+        // Scroll input to top area so suggestions + keyboard both fit
+        setTimeout(function(){
+            emailInput.scrollIntoView({behavior:'smooth', block:'start'});
+        }, 300);
     });
 
     emailInput.addEventListener('blur', function(){
@@ -1067,7 +1081,7 @@ function toggleProblemTag(btn, text) {
             });
             emailBox.style.display = 'block';
         })
-        .catch(function(){});
+        .catch(function(err){ console.warn('Email search error:', err); });
     }
 
     function escH(s) {
@@ -1084,6 +1098,7 @@ function toggleProblemTag(btn, text) {
     if (!input) return;
     var box = document.getElementById('rf-address-suggestions');
     var timer = null;
+    var lastQ = '';
 
     // Extract street+number part from user input (before comma or before PLZ pattern)
     function getUserStreet(val) {
@@ -1096,11 +1111,22 @@ function toggleProblemTag(btn, text) {
         return val.trim();
     }
 
-    input.addEventListener('input', function(){
+    function triggerAddr(){
         clearTimeout(timer);
         var q = input.value.trim();
+        if (q === lastQ) return;
+        lastQ = q;
         if (q.length < 3) { box.style.display = 'none'; return; }
         timer = setTimeout(function(){ fetchSuggestions(q); }, 300);
+    }
+
+    input.addEventListener('input', triggerAddr);
+    input.addEventListener('keyup', triggerAddr);
+
+    input.addEventListener('focus', function(){
+        setTimeout(function(){
+            input.scrollIntoView({behavior:'smooth', block:'start'});
+        }, 300);
     });
 
     input.addEventListener('blur', function(){
@@ -1156,7 +1182,7 @@ function toggleProblemTag(btn, text) {
             });
             box.style.display = 'block';
         })
-        .catch(function(){});
+        .catch(function(err){ console.warn('Address search error:', err); });
     }
 
     function escHtml(s) {
