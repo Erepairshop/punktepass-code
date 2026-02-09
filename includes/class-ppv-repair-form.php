@@ -1025,7 +1025,7 @@ function toggleProblemTag(btn, text) {
     });
 
     emailInput.addEventListener('blur', function(){
-        setTimeout(function(){ emailBox.style.display = 'none'; }, 200);
+        setTimeout(function(){ emailBox.style.display = 'none'; }, 350);
     });
 
     function searchEmails(q) {
@@ -1041,7 +1041,7 @@ function toggleProblemTag(btn, text) {
                     '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
                 item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
                 item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
-                item.addEventListener('mousedown', function(e){
+                function selectEmail(e){
                     e.preventDefault();
                     emailInput.value = c.customer_email;
                     emailBox.style.display = 'none';
@@ -1060,7 +1060,9 @@ function toggleProblemTag(btn, text) {
                             setTimeout(function(){ f.style.background = ''; }, 1000);
                         }
                     });
-                });
+                }
+                item.addEventListener('mousedown', selectEmail);
+                item.addEventListener('touchstart', selectEmail, {passive: false});
                 emailBox.appendChild(item);
             });
             emailBox.style.display = 'block';
@@ -1102,7 +1104,7 @@ function toggleProblemTag(btn, text) {
     });
 
     input.addEventListener('blur', function(){
-        setTimeout(function(){ box.style.display = 'none'; }, 200);
+        setTimeout(function(){ box.style.display = 'none'; }, 350);
     });
 
     function fetchSuggestions(q) {
@@ -1141,13 +1143,15 @@ function toggleProblemTag(btn, text) {
                     '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escHtml(displayFull) + '</div>';
                 item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
                 item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
-                item.addEventListener('mousedown', function(e){
+                function selectAddr(e){
                     e.preventDefault();
                     // Always keep user's street+number, fill PLZ+city from result
                     var finalStreet = street || userStreet;
                     input.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
                     box.style.display = 'none';
-                });
+                }
+                item.addEventListener('mousedown', selectAddr);
+                item.addEventListener('touchstart', selectAddr, {passive: false});
                 box.appendChild(item);
             });
             box.style.display = 'block';
