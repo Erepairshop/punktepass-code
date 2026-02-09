@@ -56,12 +56,18 @@ class PPV_Repair_Form {
         $pf_model = esc_attr($_GET['model'] ?? '');
 
         ob_start();
+        // Prevent WebView caching (Fully Kiosk)
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
         ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <title><?php echo $form_title; ?> - <?php echo $store_name; ?></title>
     <?php echo PPV_SEO::get_form_page_head($store); ?>
     <?php echo PPV_SEO::get_performance_hints(); ?>
@@ -1009,79 +1015,60 @@ function toggleProblemTag(btn, text) {
 })();
 </script>
 
+<!-- Debug panel: 5x tap on logo to show -->
+<div id="ppv-debug" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:#22c55e;font-family:monospace;font-size:11px;padding:8px 12px;z-index:99999;max-height:40vh;overflow-y:auto"></div>
 <script>
 (function(){
-    var emailInput = document.getElementById('rf-email');
-    if (!emailInput) return;
-    var emailBox = document.getElementById('rf-email-suggestions');
-    var storeEl = document.querySelector('input[name="store_id"]');
-    var storeId = storeEl ? storeEl.value : 0;
-    var emailTimer = null;
-    var lastQuery = '';
-
-    function triggerSearch(){
-        clearTimeout(emailTimer);
-        var q = emailInput.value.trim();
-        if (q === lastQuery) return;
-        lastQuery = q;
-        if (q.length < 2) { emailBox.style.display = 'none'; return; }
-        emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
+    var dbg = document.getElementById('ppv-debug');
+    var logs = [];
+    var tapCount = 0;
+    var tapTimer = null;
+    window._ppvDbg = function(msg) {
+        var t = new Date().toLocaleTimeString();
+        logs.push('[' + t + '] ' + msg);
+        if (logs.length > 50) logs.shift();
+        dbg.innerHTML = logs.join('<br>');
+        if (typeof console !== 'undefined') console.log('[PPV] ' + msg);
+    };
+    // 5x tap on header logo to toggle debug
+    var logo = document.querySelector('.repair-header img, .repair-header');
+    if (logo) {
+        logo.addEventListener('click', function(){
+            tapCount++;
+            clearTimeout(tapTimer);
+            tapTimer = setTimeout(function(){ tapCount = 0; }, 2000);
+            if (tapCount >= 5) {
+                tapCount = 0;
+                dbg.style.display = dbg.style.display === 'none' ? 'block' : 'none';
+            }
+        });
     }
+    window._ppvDbg('JS loaded OK, UA: ' + navigator.userAgent.substr(0, 80));
+})();
+</script>
 
-    emailInput.addEventListener('input', triggerSearch);
-    emailInput.addEventListener('keyup', triggerSearch);
+<script>
+(function(){
+    var D = window._ppvDbg || function(){};
 
-    emailInput.addEventListener('focus', function(){
-        // Scroll input to top area so suggestions + keyboard both fit
-        setTimeout(function(){
-            emailInput.scrollIntoView({behavior:'smooth', block:'start'});
-        }, 300);
-    });
-
-    emailInput.addEventListener('blur', function(){
-        setTimeout(function(){ emailBox.style.display = 'none'; }, 350);
-    });
-
-    function searchEmails(q) {
-        fetch('<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q))
-        .then(function(r){ return r.json(); })
-        .then(function(resp){
-            emailBox.innerHTML = '';
-            if (!resp.success || !resp.data || !resp.data.length) { emailBox.style.display = 'none'; return; }
-            resp.data.forEach(function(c){
-                var item = document.createElement('div');
-                item.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;transition:background .15s';
-                item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
-                    '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
-                item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
-                item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
-                function selectEmail(e){
-                    e.preventDefault();
-                    emailInput.value = c.customer_email;
-                    emailBox.style.display = 'none';
-                    // Auto-fill other fields
-                    var nameF = document.getElementById('rf-name');
-                    var phoneF = document.getElementById('rf-phone');
-                    var addrF = document.getElementById('rf-address');
-                    if (nameF && c.customer_name) nameF.value = c.customer_name;
-                    if (phoneF && c.customer_phone) phoneF.value = c.customer_phone;
-                    if (addrF && c.customer_address) addrF.value = c.customer_address;
-                    // Flash effect
-                    [nameF, phoneF, addrF].forEach(function(f){
-                        if (f && f.value) {
-                            f.style.transition = 'background .3s';
-                            f.style.background = '#d1fae5';
-                            setTimeout(function(){ f.style.background = ''; }, 1000);
-                        }
-                    });
+    // XHR helper (works on all WebViews, unlike fetch)
+    function xhrGet(url, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try { cb(null, JSON.parse(xhr.responseText)); }
+                    catch(e) { cb('JSON parse error: ' + e.message); }
+                } else {
+                    cb('HTTP ' + xhr.status);
                 }
-                item.addEventListener('mousedown', selectEmail);
-                item.addEventListener('touchstart', selectEmail, {passive: false});
-                emailBox.appendChild(item);
-            });
-            emailBox.style.display = 'block';
-        })
-        .catch(function(err){ console.warn('Email search error:', err); });
+            }
+        };
+        xhr.onerror = function(){ cb('Network error'); };
+        xhr.timeout = 8000;
+        xhr.ontimeout = function(){ cb('Timeout'); };
+        xhr.send();
     }
 
     function escH(s) {
@@ -1089,106 +1076,159 @@ function toggleProblemTag(btn, text) {
         d.textContent = s || '';
         return d.innerHTML;
     }
-})();
-</script>
 
-<script>
-(function(){
-    var input = document.getElementById('rf-address');
-    if (!input) return;
-    var box = document.getElementById('rf-address-suggestions');
-    var timer = null;
-    var lastQ = '';
-
-    // Extract street+number part from user input (before comma or before PLZ pattern)
-    function getUserStreet(val) {
-        // Split at comma: "Siedlungsring 51, 89415 la" → "Siedlungsring 51"
-        var parts = val.split(',');
-        if (parts.length > 1) return parts[0].trim();
-        // Split at PLZ pattern: "Siedlungsring 51 89415" → "Siedlungsring 51"
-        var m = val.match(/^(.+?)\s+\d{5}\b/);
-        if (m) return m[1].trim();
-        return val.trim();
+    function makeSuggestionItem(html, onSelect) {
+        var item = document.createElement('div');
+        item.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;transition:background .15s';
+        item.innerHTML = html;
+        item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
+        item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
+        item.addEventListener('mousedown', function(e){ e.preventDefault(); onSelect(); });
+        item.addEventListener('touchstart', function(e){ e.preventDefault(); onSelect(); }, {passive: false});
+        item.addEventListener('click', function(e){ e.preventDefault(); onSelect(); });
+        return item;
     }
 
-    function triggerAddr(){
-        clearTimeout(timer);
-        var q = input.value.trim();
-        if (q === lastQ) return;
-        lastQ = q;
-        if (q.length < 3) { box.style.display = 'none'; return; }
-        timer = setTimeout(function(){ fetchSuggestions(q); }, 300);
-    }
+    // ===== EMAIL AUTOCOMPLETE =====
+    var emailInput = document.getElementById('rf-email');
+    if (emailInput) {
+        D('Email input found');
+        var emailBox = document.getElementById('rf-email-suggestions');
+        var storeEl = document.querySelector('input[name="store_id"]');
+        var storeId = storeEl ? storeEl.value : 0;
+        var emailTimer = null;
+        var lastEmailQ = '';
 
-    input.addEventListener('input', triggerAddr);
-    input.addEventListener('keyup', triggerAddr);
+        function triggerEmailSearch(){
+            clearTimeout(emailTimer);
+            var q = emailInput.value.trim();
+            if (q === lastEmailQ) return;
+            lastEmailQ = q;
+            if (q.length < 2) { emailBox.style.display = 'none'; return; }
+            D('Email typing: "' + q + '"');
+            emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
+        }
 
-    input.addEventListener('focus', function(){
-        setTimeout(function(){
-            input.scrollIntoView({behavior:'smooth', block:'start'});
-        }, 300);
-    });
+        emailInput.addEventListener('input', triggerEmailSearch);
+        emailInput.addEventListener('keyup', triggerEmailSearch);
+        emailInput.addEventListener('focus', function(){
+            setTimeout(function(){ emailInput.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);
+        });
+        emailInput.addEventListener('blur', function(){
+            setTimeout(function(){ emailBox.style.display = 'none'; }, 400);
+        });
 
-    input.addEventListener('blur', function(){
-        setTimeout(function(){ box.style.display = 'none'; }, 350);
-    });
-
-    function fetchSuggestions(q) {
-        fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q), {
-            headers: {'Accept-Language': 'de'}
-        })
-        .then(function(r){ return r.json(); })
-        .then(function(results){
-            box.innerHTML = '';
-            if (!results.length) { box.style.display = 'none'; return; }
-
-            var userStreet = getUserStreet(input.value);
-
-            results.forEach(function(r){
-                var a = r.address || {};
-                var apiStreet = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
-                var city = a.city || a.town || a.village || a.municipality || '';
-                var plz = a.postcode || '';
-
-                // Use user's typed street+number if API doesn't have house number
-                var street = apiStreet;
-                if (userStreet && !a.house_number) {
-                    // Check if user's input starts with the same road name
-                    var road = (a.road || '').toLowerCase();
-                    if (road && userStreet.toLowerCase().indexOf(road) === 0) {
-                        street = userStreet;
-                    }
-                }
-
-                var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
-                var displayFull = r.display_name;
-
-                var item = document.createElement('div');
-                item.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;transition:background .15s';
-                item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escHtml(displayShort || displayFull) + '</div>' +
-                    '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escHtml(displayFull) + '</div>';
-                item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
-                item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
-                function selectAddr(e){
-                    e.preventDefault();
-                    // Always keep user's street+number, fill PLZ+city from result
-                    var finalStreet = street || userStreet;
-                    input.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
-                    box.style.display = 'none';
-                }
-                item.addEventListener('mousedown', selectAddr);
-                item.addEventListener('touchstart', selectAddr, {passive: false});
-                box.appendChild(item);
+        function searchEmails(q) {
+            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
+            D('Email fetch: ' + url.substr(0, 80));
+            xhrGet(url, function(err, resp){
+                if (err) { D('Email fetch ERROR: ' + err); return; }
+                D('Email result: ' + (resp.success ? (resp.data ? resp.data.length : 0) + ' found' : 'no success'));
+                emailBox.innerHTML = '';
+                if (!resp.success || !resp.data || !resp.data.length) { emailBox.style.display = 'none'; return; }
+                resp.data.forEach(function(c){
+                    var html = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
+                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
+                    var item = makeSuggestionItem(html, function(){
+                        emailInput.value = c.customer_email;
+                        emailBox.style.display = 'none';
+                        var nameF = document.getElementById('rf-name');
+                        var phoneF = document.getElementById('rf-phone');
+                        var addrF = document.getElementById('rf-address');
+                        if (nameF && c.customer_name) nameF.value = c.customer_name;
+                        if (phoneF && c.customer_phone) phoneF.value = c.customer_phone;
+                        if (addrF && c.customer_address) addrF.value = c.customer_address;
+                        [nameF, phoneF, addrF].forEach(function(f){
+                            if (f && f.value) {
+                                f.style.transition = 'background .3s';
+                                f.style.background = '#d1fae5';
+                                setTimeout(function(){ f.style.background = ''; }, 1000);
+                            }
+                        });
+                    });
+                    emailBox.appendChild(item);
+                });
+                emailBox.style.display = 'block';
             });
-            box.style.display = 'block';
-        })
-        .catch(function(err){ console.warn('Address search error:', err); });
+        }
+    } else {
+        D('Email input NOT found!');
     }
 
-    function escHtml(s) {
-        var d = document.createElement('div');
-        d.textContent = s;
-        return d.innerHTML;
+    // ===== ADDRESS AUTOCOMPLETE =====
+    var addrInput = document.getElementById('rf-address');
+    if (addrInput) {
+        D('Address input found');
+        var addrBox = document.getElementById('rf-address-suggestions');
+        var addrTimer = null;
+        var lastAddrQ = '';
+
+        function getUserStreet(val) {
+            var parts = val.split(',');
+            if (parts.length > 1) return parts[0].trim();
+            var m = val.match(/^(.+?)\s+\d{5}\b/);
+            if (m) return m[1].trim();
+            return val.trim();
+        }
+
+        function triggerAddrSearch(){
+            clearTimeout(addrTimer);
+            var q = addrInput.value.trim();
+            if (q === lastAddrQ) return;
+            lastAddrQ = q;
+            if (q.length < 3) { addrBox.style.display = 'none'; return; }
+            D('Addr typing: "' + q + '"');
+            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 300);
+        }
+
+        addrInput.addEventListener('input', triggerAddrSearch);
+        addrInput.addEventListener('keyup', triggerAddrSearch);
+        addrInput.addEventListener('focus', function(){
+            setTimeout(function(){ addrInput.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);
+        });
+        addrInput.addEventListener('blur', function(){
+            setTimeout(function(){ addrBox.style.display = 'none'; }, 400);
+        });
+
+        function fetchAddrSuggestions(q) {
+            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q);
+            D('Addr fetch: nominatim q=' + q);
+            xhrGet(url, function(err, results){
+                if (err) { D('Addr fetch ERROR: ' + err); return; }
+                D('Addr result: ' + (results ? results.length : 0) + ' found');
+                addrBox.innerHTML = '';
+                if (!results || !results.length) { addrBox.style.display = 'none'; return; }
+
+                var userStreet = getUserStreet(addrInput.value);
+
+                results.forEach(function(r){
+                    var a = r.address || {};
+                    var apiStreet = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
+                    var city = a.city || a.town || a.village || a.municipality || '';
+                    var plz = a.postcode || '';
+                    var street = apiStreet;
+                    if (userStreet && !a.house_number) {
+                        var road = (a.road || '').toLowerCase();
+                        if (road && userStreet.toLowerCase().indexOf(road) === 0) {
+                            street = userStreet;
+                        }
+                    }
+                    var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
+                    var displayFull = r.display_name;
+                    var html = '<div style="font-weight:500;color:#0f172a">' + escH(displayShort || displayFull) + '</div>' +
+                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(displayFull) + '</div>';
+                    var item = makeSuggestionItem(html, function(){
+                        var finalStreet = street || userStreet;
+                        addrInput.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
+                        addrBox.style.display = 'none';
+                    });
+                    addrBox.appendChild(item);
+                });
+                addrBox.style.display = 'block';
+            });
+        }
+    } else {
+        D('Address input NOT found!');
     }
 })();
 </script>
