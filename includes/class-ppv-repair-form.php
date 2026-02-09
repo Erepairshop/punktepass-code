@@ -134,9 +134,10 @@ class PPV_Repair_Form {
                 <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>">
             </div>
 
-            <div class="repair-field">
+            <div class="repair-field" style="position:relative">
                 <label for="rf-email">E-Mail</label>
-                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>">
+                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="off">
+                <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
                 <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
             </div>
 
@@ -1004,6 +1005,73 @@ function toggleProblemTag(btn, text) {
             document.body.appendChild(confetti);
             setTimeout(function() { confetti.remove(); }, 4000);
         }
+    }
+})();
+</script>
+
+<script>
+(function(){
+    var emailInput = document.getElementById('rf-email');
+    if (!emailInput) return;
+    var emailBox = document.getElementById('rf-email-suggestions');
+    var storeId = document.querySelector('input[name="store_id"]')?.value || 0;
+    var emailTimer = null;
+
+    emailInput.addEventListener('input', function(){
+        clearTimeout(emailTimer);
+        var q = emailInput.value.trim();
+        if (q.length < 2) { emailBox.style.display = 'none'; return; }
+        emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
+    });
+
+    emailInput.addEventListener('blur', function(){
+        setTimeout(function(){ emailBox.style.display = 'none'; }, 200);
+    });
+
+    function searchEmails(q) {
+        fetch('<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q))
+        .then(function(r){ return r.json(); })
+        .then(function(resp){
+            emailBox.innerHTML = '';
+            if (!resp.success || !resp.data || !resp.data.length) { emailBox.style.display = 'none'; return; }
+            resp.data.forEach(function(c){
+                var item = document.createElement('div');
+                item.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;transition:background .15s';
+                item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
+                    '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
+                item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
+                item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
+                item.addEventListener('mousedown', function(e){
+                    e.preventDefault();
+                    emailInput.value = c.customer_email;
+                    emailBox.style.display = 'none';
+                    // Auto-fill other fields
+                    var nameF = document.getElementById('rf-name');
+                    var phoneF = document.getElementById('rf-phone');
+                    var addrF = document.getElementById('rf-address');
+                    if (nameF && c.customer_name) nameF.value = c.customer_name;
+                    if (phoneF && c.customer_phone) phoneF.value = c.customer_phone;
+                    if (addrF && c.customer_address) addrF.value = c.customer_address;
+                    // Flash effect
+                    [nameF, phoneF, addrF].forEach(function(f){
+                        if (f && f.value) {
+                            f.style.transition = 'background .3s';
+                            f.style.background = '#d1fae5';
+                            setTimeout(function(){ f.style.background = ''; }, 1000);
+                        }
+                    });
+                });
+                emailBox.appendChild(item);
+            });
+            emailBox.style.display = 'block';
+        })
+        .catch(function(){});
+    }
+
+    function escH(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
     }
 })();
 </script>

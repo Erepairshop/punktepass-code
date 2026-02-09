@@ -35,6 +35,10 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
         add_action('wp_ajax_nopriv_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
 
+        // AJAX: customer email search (autocomplete, public)
+        add_action('wp_ajax_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
+        add_action('wp_ajax_nopriv_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
+
         // AJAX: repair comments
         add_action('wp_ajax_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
         add_action('wp_ajax_nopriv_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
@@ -1096,6 +1100,31 @@ class PPV_Repair_Core {
             'From: ' . $store_name . ' <' . ($store->email ?: get_option('admin_email')) . '>',
         ];
         wp_mail($email, $subject, $body, $headers);
+    }
+
+    /** AJAX: Search customers by email prefix (for form email autocomplete) */
+    public static function ajax_customer_email_search() {
+        $q = sanitize_text_field($_GET['q'] ?? '');
+        $store_id = intval($_GET['store_id'] ?? 0);
+        if (strlen($q) < 2 || !$store_id) {
+            wp_send_json_success([]);
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $like = $wpdb->esc_like($q) . '%';
+
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT customer_name, customer_email, customer_phone, customer_address
+             FROM {$prefix}ppv_repairs
+             WHERE store_id = %d AND customer_email LIKE %s AND customer_email != ''
+             GROUP BY customer_email
+             ORDER BY MAX(created_at) DESC
+             LIMIT 8",
+            $store_id, $like
+        ));
+
+        wp_send_json_success($results ?: []);
     }
 
     /** AJAX: Lookup customer by email (for form autofill) */
