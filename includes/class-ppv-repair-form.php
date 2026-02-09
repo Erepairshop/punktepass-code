@@ -137,12 +137,12 @@ class PPV_Repair_Form {
 
             <div class="repair-field">
                 <label for="rf-name">Name *</label>
-                <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>">
+                <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>" autocomplete="name">
             </div>
 
             <div class="repair-field" style="position:relative">
                 <label for="rf-email">E-Mail</label>
-                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="off">
+                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email">
                 <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
                 <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
             </div>
@@ -150,14 +150,14 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['customer_phone']['enabled'])): ?>
             <div class="repair-field">
                 <label for="rf-phone"><?php echo esc_html($field_config['customer_phone']['label'] ?? 'Telefon'); ?></label>
-                <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>">
+                <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>" autocomplete="tel">
             </div>
             <?php endif; ?>
 
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
             <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="off">
+                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="street-address">
                 <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
             </div>
             <?php endif; ?>
