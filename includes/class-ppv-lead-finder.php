@@ -1938,7 +1938,7 @@ class PPV_Lead_Finder {
                     }
                     if (data.phone) {
                         var phoneCells = row.querySelectorAll('td');
-                        if (phoneCells[4]) phoneCells[4].textContent = data.phone;
+                        if (phoneCells[5]) phoneCells[5].textContent = data.phone;
                     }
                 } else {
                     row.querySelector('.lead-status').innerHTML = '<span class="badge badge-error">Error</span>';
