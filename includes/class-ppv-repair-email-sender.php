@@ -524,7 +524,7 @@ class PPV_Repair_Email_Sender {
         }
 
         // Pre-filled from URL
-        $prefill_to = isset($_GET['to']) ? sanitize_email($_GET['to']) : '';
+        $prefill_to = isset($_GET['to']) ? sanitize_textarea_field($_GET['to']) : '';
         $prefill_name = isset($_GET['name']) ? sanitize_text_field($_GET['name']) : '';
 
         // Default template for Repair Form promotion
