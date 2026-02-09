@@ -148,9 +148,10 @@ class PPV_Repair_Form {
             <?php endif; ?>
 
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
-            <div class="repair-field">
+            <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort">
+                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="off">
+                <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
             </div>
             <?php endif; ?>
         </div>
@@ -1003,6 +1004,66 @@ function toggleProblemTag(btn, text) {
             document.body.appendChild(confetti);
             setTimeout(function() { confetti.remove(); }, 4000);
         }
+    }
+})();
+</script>
+
+<script>
+(function(){
+    var input = document.getElementById('rf-address');
+    if (!input) return;
+    var box = document.getElementById('rf-address-suggestions');
+    var timer = null;
+
+    input.addEventListener('input', function(){
+        clearTimeout(timer);
+        var q = input.value.trim();
+        if (q.length < 3) { box.style.display = 'none'; return; }
+        timer = setTimeout(function(){ fetchSuggestions(q); }, 300);
+    });
+
+    input.addEventListener('blur', function(){
+        setTimeout(function(){ box.style.display = 'none'; }, 200);
+    });
+
+    function fetchSuggestions(q) {
+        fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q), {
+            headers: {'Accept-Language': 'de'}
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(results){
+            box.innerHTML = '';
+            if (!results.length) { box.style.display = 'none'; return; }
+            results.forEach(function(r){
+                var a = r.address || {};
+                var street = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
+                var city = a.city || a.town || a.village || a.municipality || '';
+                var plz = a.postcode || '';
+                var display = r.display_name;
+                var short = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
+
+                var item = document.createElement('div');
+                item.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;transition:background .15s';
+                item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escHtml(short || display) + '</div>' +
+                    (short && display !== short ? '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escHtml(display) + '</div>' : '');
+                item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
+                item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
+                item.addEventListener('mousedown', function(e){
+                    e.preventDefault();
+                    input.value = short || display;
+                    box.style.display = 'none';
+                });
+                box.appendChild(item);
+            });
+            box.style.display = 'block';
+        })
+        .catch(function(){});
+    }
+
+    function escHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
     }
 })();
 </script>
