@@ -1827,8 +1827,12 @@ class PPV_Standalone_Admin {
                                 </td>
                                 <td>
                                     <?php if ($req->status === 'pending'): ?>
-                                        <a href="/admin/approve/<?php echo $req->approval_token; ?>" class="btn btn-approve">Jóváhagyás</a>
-                                        <a href="/admin/reject/<?php echo $req->approval_token; ?>" class="btn btn-reject">Elutasítás</a>
+                                        <a href="/admin/approve/<?php echo $req->approval_token; ?>" class="btn btn-approve" style="font-size:12px;padding:5px 10px;">Jóváhagyás</a>
+                                        <a href="/admin/reject/<?php echo $req->approval_token; ?>" class="btn btn-reject" style="font-size:12px;padding:5px 10px;">Elutasítás</a>
+                                    <?php elseif ($req->status === 'approved'): ?>
+                                        <a href="/admin/rerun-approve/<?php echo $req->approval_token; ?>" class="btn btn-approve" style="font-size:12px;padding:5px 10px;" onclick="return confirm('Újrafuttatás?')">
+                                            <i class="ri-refresh-line"></i> Újrafuttatás
+                                        </a>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
