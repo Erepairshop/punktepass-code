@@ -2094,6 +2094,10 @@ class PPV_Device_Fingerprint {
             ['%d']
         );
 
+        // Send approval notification email to the store/handler
+        $notify_type = $is_new_slot ? 'new_slot' : $req->request_type;
+        self::send_approval_notification_email($req->store_id, $notify_type, $req->device_name);
+
         return self::render_approval_page('success', $action_text);
     }
 
@@ -2400,6 +2404,121 @@ class PPV_Device_Fingerprint {
         ppv_log("📧 [Device Email] Attempting to send to: {$admin_email}");
         $sent = wp_mail($admin_email, $subject, $message, $headers);
         ppv_log("📧 [Device Email] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$admin_email}, store_id={$store_id}");
+    }
+
+    /**
+     * Send approval confirmation email to the store/handler
+     * Language based on store country (DE/HU/RO)
+     */
+    public static function send_approval_notification_email($store_id, $request_type, $device_name) {
+        global $wpdb;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, email, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        if (!$store || empty($store->email)) {
+            ppv_log("📧 [Approval Notify] No store email for store_id={$store_id}, skipping");
+            return;
+        }
+
+        $lang = strtolower($store->country ?? 'de');
+        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+            $lang = 'de';
+        }
+
+        $store_name = $store->name ?? "Store #{$store_id}";
+
+        // Multilingual texts
+        $texts = [
+            'de' => [
+                'subject' => "[PunktePass] Ihre Geräteanfrage wurde genehmigt",
+                'title' => 'Geräteanfrage genehmigt',
+                'intro' => 'Ihre Geräteanfrage wurde erfolgreich genehmigt.',
+                'store_label' => 'Geschäft',
+                'device_label' => 'Gerät',
+                'action_label' => 'Aktion',
+                'time_label' => 'Zeitpunkt',
+                'footer' => 'Sie können Ihr Gerät jetzt verwenden. Falls Sie Fragen haben, kontaktieren Sie uns unter info@punktepass.de.',
+                'types' => [
+                    'add' => 'Neues Gerät hinzugefügt',
+                    'remove' => 'Gerät entfernt',
+                    'new_slot' => 'Zusätzlicher Geräteplatz genehmigt',
+                    'mobile_scanner' => 'Mobile Scanner aktiviert',
+                ],
+            ],
+            'hu' => [
+                'subject' => "[PunktePass] Eszközkérelme jóváhagyva",
+                'title' => 'Eszközkérelem jóváhagyva',
+                'intro' => 'Az eszközkérelme sikeresen jóvá lett hagyva.',
+                'store_label' => 'Üzlet',
+                'device_label' => 'Eszköz',
+                'action_label' => 'Művelet',
+                'time_label' => 'Időpont',
+                'footer' => 'Most már használhatja az eszközét. Ha kérdése van, keressen minket az info@punktepass.de címen.',
+                'types' => [
+                    'add' => 'Új eszköz hozzáadva',
+                    'remove' => 'Eszköz eltávolítva',
+                    'new_slot' => 'Új eszközhely jóváhagyva',
+                    'mobile_scanner' => 'Mobil szkenner aktiválva',
+                ],
+            ],
+            'ro' => [
+                'subject' => "[PunktePass] Cererea dvs. de dispozitiv a fost aprobată",
+                'title' => 'Cerere de dispozitiv aprobată',
+                'intro' => 'Cererea dvs. de dispozitiv a fost aprobată cu succes.',
+                'store_label' => 'Magazin',
+                'device_label' => 'Dispozitiv',
+                'action_label' => 'Acțiune',
+                'time_label' => 'Data',
+                'footer' => 'Acum puteți utiliza dispozitivul. Dacă aveți întrebări, contactați-ne la info@punktepass.de.',
+                'types' => [
+                    'add' => 'Dispozitiv nou adăugat',
+                    'remove' => 'Dispozitiv eliminat',
+                    'new_slot' => 'Loc suplimentar pentru dispozitiv aprobat',
+                    'mobile_scanner' => 'Scanner mobil activat',
+                ],
+            ],
+        ];
+
+        $t = $texts[$lang];
+        $type_text = $t['types'][$request_type] ?? $t['types']['add'];
+
+        $subject = $t['subject'] . " - {$store_name}";
+
+        $message = "
+        <html>
+        <head><style>
+            body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+            .card { background: #fff; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; }
+            h2 { color: #333; margin-top: 0; }
+            .info { background: #e8f5e9; border: 1px solid #4caf50; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .footer { color: #666; font-size: 13px; margin-top: 20px; }
+        </style></head>
+        <body>
+        <div class='card'>
+            <h2>✅ {$t['title']}</h2>
+            <p>{$t['intro']}</p>
+            <div class='info'>
+                <p><strong>{$t['store_label']}:</strong> {$store_name}</p>
+                <p><strong>{$t['device_label']}:</strong> {$device_name}</p>
+                <p><strong>{$t['action_label']}:</strong> {$type_text}</p>
+                <p><strong>{$t['time_label']}:</strong> " . current_time('d.m.Y H:i') . "</p>
+            </div>
+            <p class='footer'>{$t['footer']}</p>
+        </div>
+        </body>
+        </html>";
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass <noreply@punktepass.de>'
+        ];
+
+        ppv_log("📧 [Approval Notify] Sending to: {$store->email} (lang: {$lang})");
+        $sent = wp_mail($store->email, $subject, $message, $headers);
+        ppv_log("📧 [Approval Notify] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$store->email}, store_id={$store_id}, type={$request_type}");
     }
 
     // ========================================

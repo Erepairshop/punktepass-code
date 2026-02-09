@@ -1117,6 +1117,11 @@ class PPV_Standalone_Admin {
         );
 
         ppv_log("✅ [Admin] Kérelem jóváhagyva #{$req->id}: {$req->request_type}");
+
+        // Send approval notification email to the store/handler
+        $notify_type = $is_new_slot ? 'new_slot' : $req->request_type;
+        PPV_Device_Fingerprint::send_approval_notification_email($req->store_id, $notify_type, $req->device_name);
+
         wp_redirect('/admin/device-requests?success=' . urlencode($message));
         exit;
     }
