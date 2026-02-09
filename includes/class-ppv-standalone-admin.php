@@ -1070,7 +1070,8 @@ class PPV_Standalone_Admin {
                 ['%d', '%s']
             );
             $message = 'Készülék sikeresen eltávolítva!';
-        } elseif ($req->request_type === 'mobile_scanner') {
+        } else {
+            // Mobile scanner or any other type (handles 'mobile_scanner' and empty ENUM fallback)
             $wpdb->update(
                 $wpdb->prefix . 'ppv_stores',
                 ['scanner_type' => 'mobile'],
@@ -1079,9 +1080,6 @@ class PPV_Standalone_Admin {
                 ['%d']
             );
             $message = 'Mobile Scanner aktiválva!';
-        } else {
-            self::render_message_page('error', 'Ismeretlen kérelem típus');
-            return;
         }
 
         // Jóváhagyottként jelölés
