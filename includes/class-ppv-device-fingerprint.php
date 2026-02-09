@@ -334,6 +334,15 @@ class PPV_Device_Fingerprint {
             update_option('ppv_device_migration_version', '1.7');
             $migration_version = '1.7';
         }
+
+        // Migration 1.8: Extend request_type ENUM to include new_slot
+        if (version_compare($migration_version, '1.8', '<')) {
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+            $wpdb->query("ALTER TABLE {$table_requests} MODIFY COLUMN request_type ENUM('add', 'remove', 'mobile_scanner', 'new_slot') NOT NULL");
+            ppv_log("✅ [PPV_Device_Fingerprint] Added new_slot request type to ENUM");
+            update_option('ppv_device_migration_version', '1.8');
+            $migration_version = '1.8';
+        }
     }
 
     /**
@@ -1987,7 +1996,10 @@ class PPV_Device_Fingerprint {
         }
 
         // Process the request based on type
-        if ($req->request_type === 'add') {
+        // Also check fingerprint_hash prefix for new_slot (ENUM may store empty for old requests)
+        $is_new_slot = ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0);
+
+        if ($req->request_type === 'add' && !$is_new_slot) {
             // Add the device
             $ip_address = self::get_client_ip();
             $wpdb->insert(
@@ -2038,19 +2050,19 @@ class PPV_Device_Fingerprint {
                 ppv_log("📱 [Mobile Scanner Approved - Legacy Store] store_id={$req->store_id}");
                 $action_text = 'Mobile Scanner erfolgreich aktiviert!';
             }
-        } elseif ($req->request_type === 'new_slot') {
+        } elseif ($is_new_slot) {
             // Approve new device slot - create a placeholder entry with status='slot'
             // User can claim this slot when they register from a new device
             $wpdb->insert(
                 $wpdb->prefix . self::USER_DEVICES_TABLE,
                 [
                     'store_id' => $req->store_id,
-                    'fingerprint_hash' => $req->fingerprint_hash, // Placeholder hash
+                    'fingerprint_hash' => $req->fingerprint_hash,
                     'device_name' => $req->device_name . ' (reserviert)',
                     'user_agent' => 'Slot für neues Gerät genehmigt',
                     'ip_address' => null,
                     'registered_at' => current_time('mysql'),
-                    'status' => 'slot' // Special status - can be claimed
+                    'status' => 'slot'
                 ],
                 ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
             );

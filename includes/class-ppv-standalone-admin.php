@@ -1048,7 +1048,10 @@ class PPV_Standalone_Admin {
         }
 
         // Típus alapján feldolgozás
-        if ($req->request_type === 'add') {
+        // Note: Also check fingerprint_hash prefix for new_slot (ENUM may store empty for old requests)
+        $is_new_slot = ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0);
+
+        if ($req->request_type === 'add' && !$is_new_slot) {
             $wpdb->insert(
                 $wpdb->prefix . 'ppv_user_devices',
                 [
@@ -1070,8 +1073,24 @@ class PPV_Standalone_Admin {
                 ['%d', '%s']
             );
             $message = 'Készülék sikeresen eltávolítva!';
+        } elseif ($is_new_slot) {
+            // New device slot - create a placeholder that can be claimed
+            $wpdb->insert(
+                $wpdb->prefix . 'ppv_user_devices',
+                [
+                    'store_id' => $req->store_id,
+                    'fingerprint_hash' => $req->fingerprint_hash,
+                    'device_name' => $req->device_name . ' (reserviert)',
+                    'user_agent' => 'Slot für neues Gerät genehmigt',
+                    'ip_address' => null,
+                    'registered_at' => current_time('mysql'),
+                    'status' => 'slot'
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+            $message = 'Új készülék hely jóváhagyva! A felhasználó most már regisztrálhat új eszközt.';
         } else {
-            // Mobile scanner or any other type (handles 'mobile_scanner' and empty ENUM fallback)
+            // Mobile scanner activation
             $wpdb->update(
                 $wpdb->prefix . 'ppv_stores',
                 ['scanner_type' => 'mobile'],
@@ -1754,10 +1773,12 @@ class PPV_Standalone_Admin {
                                 <td><?php echo date('Y.m.d H:i', strtotime($req->requested_at)); ?></td>
                                 <td><?php echo esc_html($req->store_name ?: "Store #{$req->store_id}"); ?></td>
                                 <td>
-                                    <?php if ($req->request_type === 'add'): ?>
+                                    <?php if ($req->request_type === 'add' && strpos($req->fingerprint_hash, 'SLOT_PENDING_') !== 0): ?>
                                         <span class="badge badge-add">Hozzáadás</span>
                                     <?php elseif ($req->request_type === 'remove'): ?>
                                         <span class="badge badge-remove">Eltávolítás</span>
+                                    <?php elseif ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0): ?>
+                                        <span class="badge badge-add">Új készülék hely</span>
                                     <?php else: ?>
                                         <span class="badge badge-mobile">Mobile Scanner</span>
                                     <?php endif; ?>
@@ -1866,10 +1887,12 @@ class PPV_Standalone_Admin {
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($req->request_type === 'add'): ?>
+                                    <?php if ($req->request_type === 'add' && strpos($req->fingerprint_hash, 'SLOT_PENDING_') !== 0): ?>
                                         <span class="badge badge-add">Hozzáadás</span>
                                     <?php elseif ($req->request_type === 'remove'): ?>
                                         <span class="badge badge-remove">Eltávolítás</span>
+                                    <?php elseif ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0): ?>
+                                        <span class="badge badge-add">Új készülék hely</span>
                                     <?php else: ?>
                                         <span class="badge badge-mobile">Mobile Scanner</span>
                                     <?php endif; ?>
