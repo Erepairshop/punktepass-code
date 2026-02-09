@@ -51,9 +51,14 @@ class PPV_Scan_Monitoring {
     }
 
     /**
-     * Ensure required database columns exist
+     * Ensure required database columns exist (runs once, cached via option)
      */
     public static function ensure_db_columns() {
+        // Skip if already migrated - avoids 4+ INFORMATION_SCHEMA queries per page load
+        if (get_option('ppv_scan_monitoring_db_v', '0') === '2') {
+            return;
+        }
+
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ppv_stores';
@@ -135,6 +140,8 @@ class PPV_Scan_Monitoring {
 
         // Create pending scans table if not exists
         self::create_pending_scans_table();
+
+        update_option('ppv_scan_monitoring_db_v', '2', true);
     }
 
     /**

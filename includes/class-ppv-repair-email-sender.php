@@ -63,10 +63,15 @@ class PPV_Repair_Email_Sender {
             $logs = $wpdb->get_results($query);
         }
 
-        // Stats
-        $total_sent = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_repair_email_logs WHERE status = 'sent'");
-        $today_sent = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_repair_email_logs WHERE status = 'sent' AND DATE(sent_at) = CURDATE()");
-        $failed_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_repair_email_logs WHERE status = 'failed'");
+        // Stats - single query instead of 3 separate COUNT queries
+        $stats = $wpdb->get_row("SELECT
+            SUM(status = 'sent') AS total_sent,
+            SUM(status = 'sent' AND DATE(sent_at) = CURDATE()) AS today_sent,
+            SUM(status = 'failed') AS failed_count
+            FROM {$wpdb->prefix}ppv_repair_email_logs");
+        $total_sent = $stats ? (int)$stats->total_sent : 0;
+        $today_sent = $stats ? (int)$stats->today_sent : 0;
+        $failed_count = $stats ? (int)$stats->failed_count : 0;
 
         self::render_html($logs, $filter, $search, $total_sent, $today_sent, $failed_count);
     }
@@ -76,6 +81,12 @@ class PPV_Repair_Email_Sender {
      */
     private static function maybe_create_table() {
         global $wpdb;
+
+        // Use option flag to skip repeated schema checks
+        if (get_option('ppv_email_db_version', '0') === '1') {
+            return;
+        }
+
         $charset_collate = $wpdb->get_charset_collate();
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -100,6 +111,16 @@ class PPV_Repair_Email_Sender {
             dbDelta($sql);
         }
 
+        // Add composite index for duplicate check + stats queries
+        $idx = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'status_email'");
+        if (empty($idx)) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX status_email (status, recipient_email)");
+        }
+        $idx2 = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'status_sent_at'");
+        if (empty($idx2)) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX status_sent_at (status, sent_at)");
+        }
+
         // Email templates table
         $templates_table = $wpdb->prefix . 'ppv_repair_email_templates';
         if ($wpdb->get_var("SHOW TABLES LIKE '$templates_table'") !== $templates_table) {
@@ -113,6 +134,8 @@ class PPV_Repair_Email_Sender {
             ) $charset_collate;";
             dbDelta($sql);
         }
+
+        update_option('ppv_email_db_version', '1', true);
     }
 
     /**
@@ -231,14 +254,20 @@ class PPV_Repair_Email_Sender {
         $skipped_count = 0;
         $skipped_emails = [];
 
-        foreach ($valid_emails as $to_email) {
-            // Check duplicate (skip if already sent and not force_send)
-            $already_sent = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_repair_email_logs WHERE recipient_email = %s AND status = 'sent' LIMIT 1",
-                $to_email
+        // Batch duplicate check - single query instead of one per email
+        $already_sent_set = [];
+        if (!$force_send && !empty($valid_emails)) {
+            $placeholders = implode(',', array_fill(0, count($valid_emails), '%s'));
+            $already_sent_list = $wpdb->get_col($wpdb->prepare(
+                "SELECT DISTINCT recipient_email FROM {$wpdb->prefix}ppv_repair_email_logs WHERE status = 'sent' AND recipient_email IN ($placeholders)",
+                $valid_emails
             ));
+            $already_sent_set = array_flip($already_sent_list ?: []);
+        }
 
-            if ($already_sent && !$force_send) {
+        foreach ($valid_emails as $to_email) {
+            // Check duplicate from pre-fetched set
+            if (!$force_send && isset($already_sent_set[$to_email])) {
                 $skipped_count++;
                 $skipped_emails[] = $to_email;
                 continue;

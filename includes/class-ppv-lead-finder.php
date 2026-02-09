@@ -69,10 +69,15 @@ class PPV_Lead_Finder {
         // Get leads
         $leads = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppv_leads WHERE $where ORDER BY created_at DESC LIMIT 500");
 
-        // Get stats
-        $total_leads = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_leads");
-        $with_email = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_leads WHERE email != ''");
-        $not_scraped = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_leads WHERE scraped_at IS NULL");
+        // Get stats - single query instead of 3 separate COUNT queries
+        $stats = $wpdb->get_row("SELECT
+            COUNT(*) AS total_leads,
+            SUM(email != '') AS with_email,
+            SUM(scraped_at IS NULL) AS not_scraped
+            FROM {$wpdb->prefix}ppv_leads");
+        $total_leads = $stats ? (int)$stats->total_leads : 0;
+        $with_email = $stats ? (int)$stats->with_email : 0;
+        $not_scraped = $stats ? (int)$stats->not_scraped : 0;
 
         // Get unique regions
         $regions = $wpdb->get_col("SELECT DISTINCT region FROM {$wpdb->prefix}ppv_leads WHERE region != '' ORDER BY region");
@@ -85,6 +90,13 @@ class PPV_Lead_Finder {
      */
     private static function maybe_create_table() {
         global $wpdb;
+
+        // Use option flag to skip repeated schema checks
+        $db_version = get_option('ppv_leads_db_version', '0');
+        if ($db_version === '2') {
+            return;
+        }
+
         $charset_collate = $wpdb->get_charset_collate();
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -112,11 +124,15 @@ class PPV_Lead_Finder {
             dbDelta($sql);
         }
 
-        // Add keyword column if it doesn't exist (for existing tables)
-        $col = $wpdb->get_results("SHOW COLUMNS FROM $table LIKE 'keyword'");
-        if (empty($col)) {
-            $wpdb->query("ALTER TABLE $table ADD COLUMN keyword varchar(255) DEFAULT '' AFTER email");
+        // Add keyword column if it doesn't exist (one-time migration)
+        if ($db_version < '1') {
+            $col = $wpdb->get_results("SHOW COLUMNS FROM $table LIKE 'keyword'");
+            if (empty($col)) {
+                $wpdb->query("ALTER TABLE $table ADD COLUMN keyword varchar(255) DEFAULT '' AFTER email");
+            }
         }
+
+        update_option('ppv_leads_db_version', '2', true);
     }
 
     /**

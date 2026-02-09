@@ -26,9 +26,14 @@ class PPV_Filiale {
 
     /**
      * Ensure parent_store_id and max_filialen columns exist in ppv_stores table
-     * Runs on every init but only adds columns once
+     * Runs once, cached via option to avoid INFORMATION_SCHEMA queries per page load
      */
     public static function ensure_db_column() {
+        // Skip if already migrated
+        if (get_option('ppv_filiale_db_v', '0') === '1') {
+            return;
+        }
+
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ppv_stores';
@@ -69,6 +74,8 @@ class PPV_Filiale {
                 ADD COLUMN max_filialen INT(11) UNSIGNED NOT NULL DEFAULT 1 AFTER parent_store_id
             ");
         }
+
+        update_option('ppv_filiale_db_v', '1', true);
     }
 
     /**
