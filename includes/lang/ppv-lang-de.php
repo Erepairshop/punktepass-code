@@ -401,6 +401,7 @@ return [
     'login_no_account' => 'Noch kein Konto?',
     'login_register_now' => 'Jetzt registrieren',
     'login_demo_button' => 'So funktioniert PunktePass',
+    'login_repair_form_cta' => 'Reparatur-Formularsystem – Jetzt registrieren',
 
     // App Download
     'login_download_app' => 'App herunterladen',
