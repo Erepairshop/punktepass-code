@@ -140,10 +140,10 @@ class PPV_Repair_Form {
                 <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>" autocomplete="name">
             </div>
 
-            <div class="repair-field" style="position:relative">
+            <div class="repair-field">
                 <label for="rf-email">E-Mail</label>
-                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email">
-                <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email" list="rf-email-datalist">
+                <datalist id="rf-email-datalist"></datalist>
                 <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
             </div>
 
@@ -155,10 +155,10 @@ class PPV_Repair_Form {
             <?php endif; ?>
 
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
-            <div class="repair-field" style="position:relative">
+            <div class="repair-field">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="street-address">
-                <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="street-address" list="rf-address-datalist">
+                <datalist id="rf-address-datalist"></datalist>
             </div>
             <?php endif; ?>
         </div>
@@ -1015,43 +1015,9 @@ function toggleProblemTag(btn, text) {
 })();
 </script>
 
-<!-- Debug panel: 5x tap on logo to show -->
-<div id="ppv-debug" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:#22c55e;font-family:monospace;font-size:11px;padding:8px 12px;z-index:99999;max-height:40vh;overflow-y:auto"></div>
 <script>
 (function(){
-    var dbg = document.getElementById('ppv-debug');
-    var logs = [];
-    var tapCount = 0;
-    var tapTimer = null;
-    window._ppvDbg = function(msg) {
-        var t = new Date().toLocaleTimeString();
-        logs.push('[' + t + '] ' + msg);
-        if (logs.length > 50) logs.shift();
-        dbg.innerHTML = logs.join('<br>');
-        if (typeof console !== 'undefined') console.log('[PPV] ' + msg);
-    };
-    // 5x tap on header logo to toggle debug
-    var logo = document.querySelector('.repair-header img, .repair-header');
-    if (logo) {
-        logo.addEventListener('click', function(){
-            tapCount++;
-            clearTimeout(tapTimer);
-            tapTimer = setTimeout(function(){ tapCount = 0; }, 2000);
-            if (tapCount >= 5) {
-                tapCount = 0;
-                dbg.style.display = dbg.style.display === 'none' ? 'block' : 'none';
-            }
-        });
-    }
-    window._ppvDbg('JS loaded OK, UA: ' + navigator.userAgent.substr(0, 80));
-})();
-</script>
-
-<script>
-(function(){
-    var D = window._ppvDbg || function(){};
-
-    // XHR helper (works on all WebViews, unlike fetch)
+    // XHR helper (works on all WebViews)
     function xhrGet(url, cb) {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
@@ -1059,10 +1025,8 @@ function toggleProblemTag(btn, text) {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
                     try { cb(null, JSON.parse(xhr.responseText)); }
-                    catch(e) { cb('JSON parse error: ' + e.message); }
-                } else {
-                    cb('HTTP ' + xhr.status);
-                }
+                    catch(e) { cb('parse error'); }
+                } else { cb('HTTP ' + xhr.status); }
             }
         };
         xhr.onerror = function(){ cb('Network error'); };
@@ -1071,95 +1035,72 @@ function toggleProblemTag(btn, text) {
         xhr.send();
     }
 
-    function escH(s) {
-        var d = document.createElement('div');
-        d.textContent = s || '';
-        return d.innerHTML;
-    }
-
-    function makeSuggestionItem(html, onSelect) {
-        var item = document.createElement('div');
-        item.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;transition:background .15s';
-        item.innerHTML = html;
-        item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
-        item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
-        item.addEventListener('mousedown', function(e){ e.preventDefault(); onSelect(); });
-        item.addEventListener('touchstart', function(e){ e.preventDefault(); onSelect(); }, {passive: false});
-        item.addEventListener('click', function(e){ e.preventDefault(); onSelect(); });
-        return item;
-    }
-
-    // ===== EMAIL AUTOCOMPLETE =====
+    // ===== EMAIL AUTOCOMPLETE (native datalist) =====
     var emailInput = document.getElementById('rf-email');
-    if (emailInput) {
-        D('Email input found');
-        var emailBox = document.getElementById('rf-email-suggestions');
+    var emailList = document.getElementById('rf-email-datalist');
+    if (emailInput && emailList) {
         var storeEl = document.querySelector('input[name="store_id"]');
         var storeId = storeEl ? storeEl.value : 0;
         var emailTimer = null;
         var lastEmailQ = '';
+        var emailCache = {}; // cache customer data by email for autofill
 
         function triggerEmailSearch(){
             clearTimeout(emailTimer);
             var q = emailInput.value.trim();
             if (q === lastEmailQ) return;
             lastEmailQ = q;
-            if (q.length < 2) { emailBox.style.display = 'none'; return; }
-            D('Email typing: "' + q + '"');
+            if (q.length < 2) return;
             emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
         }
 
         emailInput.addEventListener('input', triggerEmailSearch);
         emailInput.addEventListener('keyup', triggerEmailSearch);
-        emailInput.addEventListener('focus', function(){
-            setTimeout(function(){ emailInput.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);
-        });
-        emailInput.addEventListener('blur', function(){
-            setTimeout(function(){ emailBox.style.display = 'none'; }, 400);
-        });
+
+        // When user selects from datalist, auto-fill other fields
+        emailInput.addEventListener('change', function(){ fillFromEmail(emailInput.value.trim()); });
+        emailInput.addEventListener('blur', function(){ fillFromEmail(emailInput.value.trim()); });
+
+        function fillFromEmail(email) {
+            if (!email || !emailCache[email]) return;
+            var c = emailCache[email];
+            var nameF = document.getElementById('rf-name');
+            var phoneF = document.getElementById('rf-phone');
+            var addrF = document.getElementById('rf-address');
+            if (nameF && c.customer_name && !nameF.value) nameF.value = c.customer_name;
+            if (phoneF && c.customer_phone && !phoneF.value) phoneF.value = c.customer_phone;
+            if (addrF && c.customer_address && !addrF.value) addrF.value = c.customer_address;
+            // Flash effect
+            [nameF, phoneF, addrF].forEach(function(f){
+                if (f && f.value) {
+                    f.style.transition = 'background .3s';
+                    f.style.background = '#d1fae5';
+                    setTimeout(function(){ f.style.background = ''; }, 1000);
+                }
+            });
+        }
 
         function searchEmails(q) {
             var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
-            D('Email fetch: ' + url.substr(0, 80));
             xhrGet(url, function(err, resp){
-                if (err) { D('Email fetch ERROR: ' + err); return; }
-                D('Email result: ' + (resp.success ? (resp.data ? resp.data.length : 0) + ' found' : 'no success'));
-                emailBox.innerHTML = '';
-                if (!resp.success || !resp.data || !resp.data.length) { emailBox.style.display = 'none'; return; }
+                if (err || !resp || !resp.success || !resp.data) return;
+                // Clear and repopulate datalist
+                emailList.innerHTML = '';
                 resp.data.forEach(function(c){
-                    var html = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
-                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
-                    var item = makeSuggestionItem(html, function(){
-                        emailInput.value = c.customer_email;
-                        emailBox.style.display = 'none';
-                        var nameF = document.getElementById('rf-name');
-                        var phoneF = document.getElementById('rf-phone');
-                        var addrF = document.getElementById('rf-address');
-                        if (nameF && c.customer_name) nameF.value = c.customer_name;
-                        if (phoneF && c.customer_phone) phoneF.value = c.customer_phone;
-                        if (addrF && c.customer_address) addrF.value = c.customer_address;
-                        [nameF, phoneF, addrF].forEach(function(f){
-                            if (f && f.value) {
-                                f.style.transition = 'background .3s';
-                                f.style.background = '#d1fae5';
-                                setTimeout(function(){ f.style.background = ''; }, 1000);
-                            }
-                        });
-                    });
-                    emailBox.appendChild(item);
+                    emailCache[c.customer_email] = c;
+                    var opt = document.createElement('option');
+                    opt.value = c.customer_email;
+                    opt.label = c.customer_name || c.customer_email;
+                    emailList.appendChild(opt);
                 });
-                emailBox.style.display = 'block';
             });
         }
-    } else {
-        D('Email input NOT found!');
     }
 
-    // ===== ADDRESS AUTOCOMPLETE =====
+    // ===== ADDRESS AUTOCOMPLETE (native datalist) =====
     var addrInput = document.getElementById('rf-address');
-    if (addrInput) {
-        D('Address input found');
-        var addrBox = document.getElementById('rf-address-suggestions');
+    var addrList = document.getElementById('rf-address-datalist');
+    if (addrInput && addrList) {
         var addrTimer = null;
         var lastAddrQ = '';
 
@@ -1176,31 +1117,20 @@ function toggleProblemTag(btn, text) {
             var q = addrInput.value.trim();
             if (q === lastAddrQ) return;
             lastAddrQ = q;
-            if (q.length < 3) { addrBox.style.display = 'none'; return; }
-            D('Addr typing: "' + q + '"');
-            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 300);
+            if (q.length < 3) return;
+            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 400);
         }
 
         addrInput.addEventListener('input', triggerAddrSearch);
         addrInput.addEventListener('keyup', triggerAddrSearch);
-        addrInput.addEventListener('focus', function(){
-            setTimeout(function(){ addrInput.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);
-        });
-        addrInput.addEventListener('blur', function(){
-            setTimeout(function(){ addrBox.style.display = 'none'; }, 400);
-        });
 
         function fetchAddrSuggestions(q) {
             var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q);
-            D('Addr fetch: nominatim q=' + q);
             xhrGet(url, function(err, results){
-                if (err) { D('Addr fetch ERROR: ' + err); return; }
-                D('Addr result: ' + (results ? results.length : 0) + ' found');
-                addrBox.innerHTML = '';
-                if (!results || !results.length) { addrBox.style.display = 'none'; return; }
-
+                if (err || !results || !results.length) return;
                 var userStreet = getUserStreet(addrInput.value);
 
+                addrList.innerHTML = '';
                 results.forEach(function(r){
                     var a = r.address || {};
                     var apiStreet = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
@@ -1213,22 +1143,15 @@ function toggleProblemTag(btn, text) {
                             street = userStreet;
                         }
                     }
-                    var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
-                    var displayFull = r.display_name;
-                    var html = '<div style="font-weight:500;color:#0f172a">' + escH(displayShort || displayFull) + '</div>' +
-                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(displayFull) + '</div>';
-                    var item = makeSuggestionItem(html, function(){
-                        var finalStreet = street || userStreet;
-                        addrInput.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
-                        addrBox.style.display = 'none';
-                    });
-                    addrBox.appendChild(item);
+                    var formatted = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
+                    if (formatted.trim()) {
+                        var opt = document.createElement('option');
+                        opt.value = formatted;
+                        addrList.appendChild(opt);
+                    }
                 });
-                addrBox.style.display = 'block';
             });
         }
-    } else {
-        D('Address input NOT found!');
     }
 })();
 </script>
