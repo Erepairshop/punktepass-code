@@ -1079,6 +1079,13 @@ Erik Borota';
                                placeholder="z.B. Quelle, Branche...">
                     </div>
 
+                    <div style="margin-bottom:16px">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="checkbox" name="force_send" value="1">
+                            <span style="font-size:13px;color:#64748b">Auch senden, wenn bereits gesendet (Duplikatschutz überspringen)</span>
+                        </label>
+                    </div>
+
                     <button type="submit" name="send_email" class="btn btn-primary">
                         <i class="ri-send-plane-fill"></i> Email senden
                     </button>
