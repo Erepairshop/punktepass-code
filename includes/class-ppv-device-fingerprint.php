@@ -51,24 +51,34 @@ class PPV_Device_Fingerprint {
             return self::MAX_DEVICES_PER_USER;
         }
 
-        // Get parent store ID
-        $parent_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+        // Get parent store ID and max_filialen (the plan limit)
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) AS parent_id, max_filialen
+             FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $store_id
         ));
 
-        if (!$parent_id) {
+        if (!$store) {
             return self::MAX_DEVICES_PER_USER;
         }
 
-        // Count filialen (children of parent)
-        $filiale_count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = %d",
-            $parent_id
-        ));
+        $parent_id = intval($store->parent_id);
+        $max_filialen = intval($store->max_filialen ?? 1);
 
-        // Base (2) + 1 per filiale
-        return self::MAX_DEVICES_PER_USER + intval($filiale_count);
+        // If this is a child store, get parent's max_filialen
+        if ($parent_id != $store_id) {
+            $parent_max = $wpdb->get_var($wpdb->prepare(
+                "SELECT max_filialen FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                $parent_id
+            ));
+            if ($parent_max !== null) {
+                $max_filialen = intval($parent_max);
+            }
+        }
+
+        // Base (2) + max_filialen (the plan limit, not actual count)
+        // e.g. 15 filialen plan = 2 + 15 = 17 devices allowed
+        return self::MAX_DEVICES_PER_USER + $max_filialen;
     }
 
     // Fingerprint validation constants
@@ -2047,7 +2057,16 @@ class PPV_Device_Fingerprint {
             ppv_log("📱 [Device Slot Approved] NEW_SLOT: store_id={$req->store_id}, name={$req->device_name}");
             $action_text = 'Zusätzlicher Geräteplatz genehmigt! Der Benutzer kann jetzt ein neues Gerät registrieren.';
         } else {
-            return self::render_approval_page('error', 'Unbekannter Anfragetyp');
+            // Fallback: treat unknown types as mobile scanner (handles empty ENUM values)
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['scanner_type' => 'mobile'],
+                ['id' => $req->store_id],
+                ['%s'],
+                ['%d']
+            );
+            ppv_log("📱 [Device Approved - Fallback] type={$req->request_type}, store_id={$req->store_id}");
+            $action_text = 'Mobile Scanner erfolgreich aktiviert!';
         }
 
         // Mark request as approved
@@ -2123,22 +2142,23 @@ class PPV_Device_Fingerprint {
         $color = $colors[$type] ?? '#999';
         $icon = $icons[$type] ?? '📱';
 
-        $html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+        // Output HTML directly (REST API would serialize as JSON otherwise)
+        header('Content-Type: text/html; charset=UTF-8');
+        echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
         <title>PunktePass - Geräteverwaltung</title>
         <style>body{font-family:Arial,sans-serif;background:#0f0f1e;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;}
         .card{background:#1a1a2e;padding:40px;border-radius:15px;text-align:center;max-width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
         .icon{font-size:48px;margin-bottom:20px;}
         .message{font-size:18px;color:{$color};margin-bottom:20px;}
-        .close-btn{background:{$color};color:#fff;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-size:16px;}
+        .close-btn{background:{$color};color:#fff;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-size:16px;text-decoration:none;display:inline-block;}
         </style></head><body>
         <div class='card'>
             <div class='icon'>{$icon}</div>
             <div class='message'>{$message}</div>
-            <button class='close-btn' onclick='window.close()'>Schließen</button>
+            <a href='/admin/device-requests' class='close-btn'>Zurück zur Verwaltung</a>
         </div>
         </body></html>";
-
-        return new WP_REST_Response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+        exit;
     }
 
     // ========================================
