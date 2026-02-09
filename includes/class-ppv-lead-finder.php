@@ -1546,9 +1546,10 @@ class PPV_Lead_Finder {
         $emails = $wpdb->get_col("SELECT DISTINCT email FROM {$wpdb->prefix}ppv_leads WHERE $where");
 
         if (!empty($emails)) {
-            $email_list = implode("\n", $emails);
-            // Redirect to email sender with pre-filled emails
-            wp_redirect("/formular/email-sender?to=" . urlencode($email_list));
+            // Store in transient (URL can't hold newlines safely due to wp_redirect sanitization)
+            $key = 'ppv_export_emails_' . md5(implode('', $emails));
+            set_transient($key, $emails, 300); // 5 min expiry
+            wp_redirect("/formular/email-sender?export_key=" . urlencode($key));
             exit;
         }
 

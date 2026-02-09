@@ -523,8 +523,17 @@ class PPV_Repair_Email_Sender {
             $saved_form_data = null;
         }
 
-        // Pre-filled from URL
-        $prefill_to = isset($_GET['to']) ? sanitize_textarea_field($_GET['to']) : '';
+        // Pre-filled from URL or from lead finder export (transient)
+        $prefill_to = '';
+        if (isset($_GET['export_key'])) {
+            $emails = get_transient(sanitize_text_field($_GET['export_key']));
+            if (!empty($emails) && is_array($emails)) {
+                $prefill_to = implode("\n", $emails);
+                delete_transient(sanitize_text_field($_GET['export_key']));
+            }
+        } elseif (isset($_GET['to'])) {
+            $prefill_to = sanitize_textarea_field($_GET['to']);
+        }
         $prefill_name = isset($_GET['name']) ? sanitize_text_field($_GET['name']) : '';
 
         // Default template for Repair Form promotion
