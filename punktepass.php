@@ -161,6 +161,8 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/punktepass/v1/push/register',
             '/wp-json/punktepass/v1/push/unregister',
             '/wp-json/punktepass/v1/repair-bonus',
+            '/wp-json/punktepass/v1/user-devices/approve/',
+            '/wp-json/punktepass/v1/user-devices/reject/',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
