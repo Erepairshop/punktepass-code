@@ -1083,6 +1083,17 @@ function toggleProblemTag(btn, text) {
     var box = document.getElementById('rf-address-suggestions');
     var timer = null;
 
+    // Extract street+number part from user input (before comma or before PLZ pattern)
+    function getUserStreet(val) {
+        // Split at comma: "Siedlungsring 51, 89415 la" → "Siedlungsring 51"
+        var parts = val.split(',');
+        if (parts.length > 1) return parts[0].trim();
+        // Split at PLZ pattern: "Siedlungsring 51 89415" → "Siedlungsring 51"
+        var m = val.match(/^(.+?)\s+\d{5}\b/);
+        if (m) return m[1].trim();
+        return val.trim();
+    }
+
     input.addEventListener('input', function(){
         clearTimeout(timer);
         var q = input.value.trim();
@@ -1102,23 +1113,39 @@ function toggleProblemTag(btn, text) {
         .then(function(results){
             box.innerHTML = '';
             if (!results.length) { box.style.display = 'none'; return; }
+
+            var userStreet = getUserStreet(input.value);
+
             results.forEach(function(r){
                 var a = r.address || {};
-                var street = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
+                var apiStreet = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
                 var city = a.city || a.town || a.village || a.municipality || '';
                 var plz = a.postcode || '';
-                var display = r.display_name;
-                var short = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
+
+                // Use user's typed street+number if API doesn't have house number
+                var street = apiStreet;
+                if (userStreet && !a.house_number) {
+                    // Check if user's input starts with the same road name
+                    var road = (a.road || '').toLowerCase();
+                    if (road && userStreet.toLowerCase().indexOf(road) === 0) {
+                        street = userStreet;
+                    }
+                }
+
+                var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
+                var displayFull = r.display_name;
 
                 var item = document.createElement('div');
                 item.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9;transition:background .15s';
-                item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escHtml(short || display) + '</div>' +
-                    (short && display !== short ? '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escHtml(display) + '</div>' : '');
+                item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escHtml(displayShort || displayFull) + '</div>' +
+                    '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escHtml(displayFull) + '</div>';
                 item.addEventListener('mouseenter', function(){ item.style.background = '#f0f9ff'; });
                 item.addEventListener('mouseleave', function(){ item.style.background = '#fff'; });
                 item.addEventListener('mousedown', function(e){
                     e.preventDefault();
-                    input.value = short || display;
+                    // Always keep user's street+number, fill PLZ+city from result
+                    var finalStreet = street || userStreet;
+                    input.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
                     box.style.display = 'none';
                 });
                 box.appendChild(item);
