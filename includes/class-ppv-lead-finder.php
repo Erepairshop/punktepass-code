@@ -32,6 +32,8 @@ class PPV_Lead_Finder {
                 self::handle_export();
             } elseif (isset($_POST['delete_all_leads'])) {
                 self::handle_delete_all();
+            } elseif (isset($_POST['delete_selected_leads'])) {
+                self::handle_delete_selected();
             }
         }
 
@@ -1483,6 +1485,30 @@ class PPV_Lead_Finder {
     }
 
     /**
+     * Handle delete selected leads
+     */
+    private static function handle_delete_selected() {
+        global $wpdb;
+
+        $ids = $_POST['selected_leads'] ?? [];
+        if (!empty($ids) && is_array($ids)) {
+            $ids = array_map('intval', $ids);
+            $ids = array_filter($ids);
+            if (!empty($ids)) {
+                $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+                $wpdb->query($wpdb->prepare(
+                    "DELETE FROM {$wpdb->prefix}ppv_leads WHERE id IN ($placeholders)",
+                    ...$ids
+                ));
+            }
+        }
+
+        $count = count($ids);
+        wp_redirect("/formular/lead-finder?success=deleted_selected&count=$count");
+        exit;
+    }
+
+    /**
      * Handle export emails
      */
     private static function handle_export() {
@@ -1615,6 +1641,10 @@ class PPV_Lead_Finder {
             <div class="alert alert-success">
                 <i class="ri-check-line"></i> Alle Leads wurden gelöscht.
             </div>
+        <?php elseif ($success === 'deleted_selected'): ?>
+            <div class="alert alert-success">
+                <i class="ri-check-line"></i> <?php echo intval($_GET['count'] ?? 0); ?> Leads gelöscht.
+            </div>
         <?php endif; ?>
 
         <?php if ($error === 'empty_search'): ?>
@@ -1730,9 +1760,12 @@ class PPV_Lead_Finder {
                     <form method="post" style="display:inline">
                         <input type="hidden" name="export_region" value="<?php echo esc_attr($filter_region); ?>">
                         <button type="submit" name="export_emails" class="btn btn-success btn-sm">
-                            <i class="ri-mail-send-line"></i> Emails exportieren → Email Sender
+                            <i class="ri-mail-send-line"></i> Emails exportieren &rarr; Email Sender
                         </button>
                     </form>
+                    <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" style="display:none" onclick="deleteSelected()">
+                        <i class="ri-delete-bin-line"></i> <span id="delete-selected-count">0</span> Ausgewählte löschen
+                    </button>
                     <form method="post" style="display:inline" onsubmit="return confirm('ALLE <?php echo $total_leads; ?> Leads wirklich löschen? Dies kann nicht rückgängig gemacht werden!')">
                         <button type="submit" name="delete_all_leads" class="btn btn-danger btn-sm">
                             <i class="ri-delete-bin-line"></i> Alle löschen
@@ -1744,9 +1777,11 @@ class PPV_Lead_Finder {
                     </div>
                 </div>
 
+                <form method="post" id="delete-selected-form">
                 <table>
                     <thead>
                         <tr>
+                            <th style="width:40px"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" title="Alle auswählen"></th>
                             <th>Name</th>
                             <th>Region</th>
                             <th>Website</th>
@@ -1758,10 +1793,11 @@ class PPV_Lead_Finder {
                     </thead>
                     <tbody>
                         <?php if (empty($leads)): ?>
-                            <tr><td colspan="7" style="text-align:center;color:#64748b;padding:40px">Keine Leads gefunden. Starte eine Suche!</td></tr>
+                            <tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px">Keine Leads gefunden. Starte eine Suche!</td></tr>
                         <?php else: ?>
                             <?php foreach ($leads as $lead): ?>
                                 <tr data-id="<?php echo $lead->id; ?>">
+                                    <td><input type="checkbox" name="selected_leads[]" value="<?php echo $lead->id; ?>" class="lead-checkbox" onclick="updateSelectedCount()"></td>
                                     <td><strong><?php echo esc_html($lead->business_name); ?></strong></td>
                                     <td><?php echo esc_html($lead->region); ?></td>
                                     <td class="url">
@@ -1812,9 +1848,38 @@ class PPV_Lead_Finder {
                         <?php endif; ?>
                     </tbody>
                 </table>
+                <input type="hidden" name="delete_selected_leads" value="1">
+                </form>
             </div>
         </div>
     </div>
+
+    <script>
+    function toggleSelectAll(masterCheckbox) {
+        var checkboxes = document.querySelectorAll('.lead-checkbox');
+        checkboxes.forEach(function(cb) { cb.checked = masterCheckbox.checked; });
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        var checked = document.querySelectorAll('.lead-checkbox:checked');
+        var btn = document.getElementById('delete-selected-btn');
+        var countEl = document.getElementById('delete-selected-count');
+        if (checked.length > 0) {
+            btn.style.display = 'inline-flex';
+            countEl.textContent = checked.length;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    function deleteSelected() {
+        var checked = document.querySelectorAll('.lead-checkbox:checked');
+        if (checked.length === 0) return;
+        if (!confirm(checked.length + ' Leads wirklich löschen?')) return;
+        document.getElementById('delete-selected-form').submit();
+    }
+    </script>
 
     <script>
     function scrapeSingle(id, btn) {
