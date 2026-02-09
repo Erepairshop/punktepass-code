@@ -1032,26 +1032,37 @@ add_action('rest_api_init', function () {
             if (!$user_id) {
                 return new WP_REST_Response(['success' => false, 'message' => 'Missing user_id'], 400);
             }
-            
+
+            // Check transient cache (30 sec TTL)
+            $cache_key = 'ppv_last_scan_' . $user_id;
+            $cached = get_transient($cache_key);
+            if ($cached !== false) {
+                return new WP_REST_Response($cached, 200);
+            }
+
             $last = $wpdb->get_row($wpdb->prepare("
-                SELECT p.*, s.company_name AS store_name
+                SELECT p.points, p.created, s.company_name AS store_name
                 FROM {$wpdb->prefix}ppv_points p
                 LEFT JOIN {$wpdb->prefix}ppv_stores s ON p.store_id = s.id
                 WHERE p.user_id = %d
                 ORDER BY p.created DESC
                 LIMIT 1
             ", $user_id));
-            
+
             if (!$last) {
                 return new WP_REST_Response(['success' => false, 'message' => 'No scans yet'], 200);
             }
-            
-            return new WP_REST_Response([
+
+            $response = [
                 'success' => true,
                 'points'  => intval($last->points),
                 'store'   => $last->store_name ?: 'PunktePass',
                 'created' => $last->created,
-            ], 200);
+            ];
+
+            set_transient($cache_key, $response, 30);
+
+            return new WP_REST_Response($response, 200);
         },
     ]);
 });
@@ -1116,12 +1127,19 @@ add_action('action_scheduler_init', function () {
     if (!class_exists('ActionScheduler') || !ActionScheduler::is_initialized()) {
         return;
     }
-    if (function_exists('as_next_scheduled_action') && function_exists('as_schedule_recurring_action')) {
-        if (!as_next_scheduled_action('ppv_daily_qr_regen')) {
-            as_schedule_recurring_action(time() + 3600, DAY_IN_SECONDS, 'ppv_daily_qr_regen');
+    // Delay to ensure data store is ready (fixes "called before data store was initialized" notice)
+    add_action('init', function () {
+        if (function_exists('as_next_scheduled_action') && function_exists('as_schedule_recurring_action')) {
+            try {
+                if (!as_next_scheduled_action('ppv_daily_qr_regen')) {
+                    as_schedule_recurring_action(time() + 3600, DAY_IN_SECONDS, 'ppv_daily_qr_regen');
+                }
+            } catch (Exception $e) {
+                // Action Scheduler not ready yet - will retry next page load
+            }
         }
-    }
-});
+    }, 99);
+}, 99);
 
 // ========================================
 // 💳 STRIPE DELAYED INIT

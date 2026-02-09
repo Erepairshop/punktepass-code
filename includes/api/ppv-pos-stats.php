@@ -13,6 +13,7 @@ class PPV_POS_STATS_API {
      * ============================================================ */
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
+        add_action('admin_init', [__CLASS__, 'ensure_indexes'], 20);
     }
 
     /** ============================================================
@@ -79,19 +80,40 @@ class PPV_POS_STATS_API {
             return rest_ensure_response(['success' => false, 'message' => 'Missing store_id']);
         }
 
+        // Check transient cache (30 sec TTL)
+        $cache_key = 'ppv_pos_stats_' . $store_id;
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            return rest_ensure_response($cached);
+        }
+
         $today = date('Y-m-d');
         $start = "$today 00:00:00";
         $end   = "$today 23:59:59";
 
-        $today_scans = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$prefix}ppv_points WHERE store_id=%d AND created BETWEEN %s AND %s",
+        // Combine 3 ppv_points queries into 1
+        $points_stats = $wpdb->get_row($wpdb->prepare(
+            "SELECT COUNT(*) AS scan_count,
+                    COALESCE(SUM(points), 0) AS total_points,
+                    COALESCE(SUM(CASE WHEN type='sale' THEN points ELSE 0 END), 0) AS sale_points,
+                    MAX(created) AS last_scan
+             FROM {$prefix}ppv_points
+             WHERE store_id = %d AND created BETWEEN %s AND %s",
             $store_id, $start, $end
         ));
 
-        $today_points = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points) FROM {$prefix}ppv_points WHERE store_id=%d AND created BETWEEN %s AND %s",
-            $store_id, $start, $end
-        ));
+        $today_scans  = (int) ($points_stats->scan_count ?? 0);
+        $today_points = (int) ($points_stats->total_points ?? 0);
+        $today_sales  = (float) ($points_stats->sale_points ?? 0);
+
+        // Last scan: use today's max if available, otherwise query all-time
+        $last_scan = $points_stats->last_scan;
+        if (!$last_scan) {
+            $last_scan = $wpdb->get_var($wpdb->prepare(
+                "SELECT MAX(created) FROM {$prefix}ppv_points WHERE store_id=%d",
+                $store_id
+            ));
+        }
 
         $today_rewards = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$prefix}ppv_rewards WHERE store_id=%d AND redeemed=1 AND redeemed_at BETWEEN %s AND %s",
@@ -103,22 +125,12 @@ class PPV_POS_STATS_API {
             $store_id
         ));
 
-        $today_sales = (float) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points) FROM {$prefix}ppv_points WHERE store_id=%d AND type='sale' AND created BETWEEN %s AND %s",
-            $store_id, $start, $end
-        ));
-
-        $last_scan = $wpdb->get_var($wpdb->prepare(
-            "SELECT MAX(created) FROM {$prefix}ppv_points WHERE store_id=%d",
-            $store_id
-        ));
-
         $chart_data = $wpdb->get_results($wpdb->prepare(
-            "SELECT DATE(created) as day, SUM(points) as total 
-             FROM {$prefix}ppv_points 
-             WHERE store_id=%d 
+            "SELECT DATE(created) as day, SUM(points) as total
+             FROM {$prefix}ppv_points
+             WHERE store_id=%d AND created >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
              GROUP BY DATE(created)
-             ORDER BY day DESC 
+             ORDER BY day DESC
              LIMIT 7",
             $store_id
         ));
@@ -131,7 +143,7 @@ class PPV_POS_STATS_API {
             ];
         }
 
-        return rest_ensure_response([
+        $response = [
             'success' => true,
             'stats' => [
                 'today_scans'      => $today_scans,
@@ -142,7 +154,37 @@ class PPV_POS_STATS_API {
                 'last_scan'        => $last_scan ?: '—',
                 'chart'            => $chart,
             ]
-        ]);
+        ];
+
+        // Cache for 30 seconds
+        set_transient($cache_key, $response, 30);
+
+        return rest_ensure_response($response);
+    }
+
+    /**
+     * Ensure ppv_points has proper indexes for stats queries (one-time)
+     */
+    public static function ensure_indexes() {
+        if (get_option('ppv_points_idx_v', '0') === '1') {
+            return;
+        }
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_points';
+
+        // Index for store stats queries (store_id + created range)
+        $idx = $wpdb->get_var("SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$table' AND INDEX_NAME = 'idx_store_created'");
+        if (!$idx) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX idx_store_created (store_id, created)");
+        }
+
+        // Index for user last_scan query (user_id + created DESC)
+        $idx2 = $wpdb->get_var("SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$table' AND INDEX_NAME = 'idx_user_created'");
+        if (!$idx2) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX idx_user_created (user_id, created)");
+        }
+
+        update_option('ppv_points_idx_v', '1', true);
     }
 }
 
