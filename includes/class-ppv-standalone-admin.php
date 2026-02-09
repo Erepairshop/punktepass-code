@@ -308,6 +308,8 @@ class PPV_Standalone_Admin {
             self::handle_handler_filialen();
         } elseif ($path === '/admin/device-mobile-enable') {
             self::handle_device_mobile_enable();
+        } elseif (preg_match('#/admin/rerun-approve/([a-zA-Z0-9]+)#', $path, $matches)) {
+            self::handle_rerun_approve($matches[1]);
         } elseif (preg_match('#/admin/approve/([a-zA-Z0-9]+)#', $path, $matches)) {
             self::handle_approve($matches[1]);
         } elseif (preg_match('#/admin/reject/([a-zA-Z0-9]+)#', $path, $matches)) {
@@ -1120,6 +1122,37 @@ class PPV_Standalone_Admin {
     }
 
     /**
+     * Újrafuttatás: visszaállítja pending-re, majd újra jóváhagyja (javított kóddal)
+     */
+    private static function handle_rerun_approve($token) {
+        global $wpdb;
+
+        $req = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_device_requests WHERE approval_token = %s AND status = 'approved'",
+            $token
+        ));
+
+        if (!$req) {
+            self::render_message_page('error', 'Kérelem nem található');
+            return;
+        }
+
+        // Reset to pending
+        $wpdb->update(
+            $wpdb->prefix . 'ppv_device_requests',
+            ['status' => 'pending', 'processed_at' => null, 'processed_by' => null],
+            ['id' => $req->id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+
+        ppv_log("🔄 [Admin] Kérelem újrafuttatás #{$req->id}: {$req->request_type}");
+
+        // Now run the normal approve
+        self::handle_approve($token);
+    }
+
+    /**
      * Elutasítás kezelése
      */
     private static function handle_reject($token) {
@@ -1929,6 +1962,7 @@ class PPV_Standalone_Admin {
                         <th>Típus</th>
                         <th>Állapot</th>
                         <th>Feldolgozta</th>
+                        <th>Műveletek</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1948,10 +1982,12 @@ class PPV_Standalone_Admin {
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if ($req->request_type === 'add'): ?>
+                                <?php if ($req->request_type === 'add' && strpos($req->fingerprint_hash, 'SLOT_PENDING_') !== 0): ?>
                                     <span class="badge badge-add">Hozzáadás</span>
                                 <?php elseif ($req->request_type === 'remove'): ?>
                                     <span class="badge badge-remove">Eltávolítás</span>
+                                <?php elseif ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0): ?>
+                                    <span class="badge badge-add">Új készülék hely</span>
                                 <?php else: ?>
                                     <span class="badge badge-mobile">Mobile Scanner</span>
                                 <?php endif; ?>
@@ -1967,6 +2003,15 @@ class PPV_Standalone_Admin {
                                 <?php endif; ?>
                             </td>
                             <td><small style="color: #888;"><?php echo esc_html($req->processed_by ?? '-'); ?></small></td>
+                            <td>
+                                <?php if ($req->status === 'approved'): ?>
+                                    <a href="/admin/rerun-approve/<?php echo $req->approval_token; ?>" class="btn btn-approve" style="font-size:12px;padding:6px 12px;" onclick="return confirm('Újrafuttatás?')">
+                                        <i class="ri-refresh-line"></i> Újrafuttatás
+                                    </a>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
