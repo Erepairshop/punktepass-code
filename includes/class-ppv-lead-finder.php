@@ -1546,7 +1546,7 @@ class PPV_Lead_Finder {
         $emails = $wpdb->get_col("SELECT DISTINCT email FROM {$wpdb->prefix}ppv_leads WHERE $where");
 
         if (!empty($emails)) {
-            $email_list = implode(', ', $emails);
+            $email_list = implode("\n", $emails);
             // Redirect to email sender with pre-filled emails
             wp_redirect("/formular/email-sender?to=" . urlencode($email_list));
             exit;
