@@ -189,6 +189,15 @@ class PPV_Lead_Finder {
         $content = $_POST['import_content'] ?? '';
         $region = sanitize_text_field($_POST['import_region'] ?? '');
         $keyword = sanitize_text_field($_POST['import_keyword'] ?? '');
+        $exclude_raw = sanitize_text_field($_POST['import_exclude'] ?? '');
+
+        // Parse exclusion words (comma-separated)
+        $exclude_words = [];
+        if (!empty($exclude_raw)) {
+            $exclude_words = array_filter(array_map('trim', explode(',', mb_strtolower($exclude_raw))));
+            // Save for next time
+            update_option('ppv_lead_exclude_words', $exclude_raw, true);
+        }
 
         if (empty($content)) {
             wp_redirect("/formular/lead-finder?error=empty_import");
@@ -196,6 +205,7 @@ class PPV_Lead_Finder {
         }
 
         $found_count = 0;
+        $filtered_count = 0;
 
         // Google Maps list format detection
         // Business names appear before ratings like "5,0" or "4,6" followed by stars ★ or (reviews)
@@ -337,6 +347,20 @@ class PPV_Lead_Finder {
         $extra_websites_array = array_values($extra_websites);
 
         foreach ($business_entries as $i => $entry) {
+            // Check exclusion filter
+            if (!empty($exclude_words)) {
+                $name_lower = mb_strtolower($entry['name']);
+                $excluded = false;
+                foreach ($exclude_words as $excl) {
+                    if (!empty($excl) && mb_strpos($name_lower, $excl) !== false) {
+                        $excluded = true;
+                        $filtered_count++;
+                        break;
+                    }
+                }
+                if ($excluded) continue;
+            }
+
             $business = [
                 'name' => $entry['name'],
                 'website' => $entry['website'],
@@ -399,7 +423,11 @@ class PPV_Lead_Finder {
             }
         }
 
-        wp_redirect("/formular/lead-finder?success=import&found=$found_count&region=" . urlencode($region));
+        $redirect = "/formular/lead-finder?success=import&found=$found_count&region=" . urlencode($region);
+        if ($filtered_count > 0) {
+            $redirect .= "&filtered=$filtered_count";
+        }
+        wp_redirect($redirect);
         exit;
     }
 
@@ -1666,7 +1694,7 @@ class PPV_Lead_Finder {
             </div>
         <?php elseif ($success === 'import'): ?>
             <div class="alert alert-success">
-                <i class="ri-check-line"></i> Import erfolgreich! <?php echo intval($_GET['found'] ?? 0); ?> Leads importiert. Klicke jetzt "Alle scrapen" um die Emails zu finden!
+                <i class="ri-check-line"></i> Import erfolgreich! <?php echo intval($_GET['found'] ?? 0); ?> Leads importiert.<?php if (!empty($_GET['filtered'])): ?> <strong><?php echo intval($_GET['filtered']); ?> herausgefiltert</strong> (Ausschlusswörter).<?php endif; ?> Klicke jetzt "Alle scrapen" um die Emails zu finden!
             </div>
         <?php elseif ($success === 'scraped'): ?>
             <div class="alert alert-success">
@@ -1735,6 +1763,10 @@ class PPV_Lead_Finder {
                             <label>Branche / Kulcsszó</label>
                             <input type="text" name="import_keyword" class="form-control" placeholder="z.B. Handyreparatur" value="Handyreparatur">
                         </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px">
+                        <label>Ausschlusswörter <span style="font-weight:normal;color:#6b7280;font-size:12px">(kommagetrennt – diese Firmen werden nicht importiert)</span></label>
+                        <input type="text" name="import_exclude" class="form-control" placeholder="z.B. MediaMarkt, Saturn, Amazon, O2" value="<?php echo esc_attr(get_option('ppv_lead_exclude_words', '')); ?>">
                     </div>
                     <div class="form-group" style="margin-bottom:12px">
                         <label>Google Maps Inhalt einf&uuml;gen</label>
