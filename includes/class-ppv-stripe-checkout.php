@@ -40,16 +40,33 @@ class PPV_Stripe_Checkout {
 
         \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
 
+        // Determine price based on store country (VAT only for DE)
+        $price_id = 'price_1SFWxYG5r7ItrUMax8uVCa9p'; // Default: gross (incl. VAT)
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $store_id = $_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_repair_store_id'] ?? 0;
+        if ($store_id) {
+            global $wpdb;
+            $country = $wpdb->get_var($wpdb->prepare(
+                "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                $store_id
+            ));
+            if (strtoupper($country ?: 'DE') !== 'DE' && defined('STRIPE_PRICE_ID_NET')) {
+                $price_id = STRIPE_PRICE_ID_NET;
+            }
+        }
+
         try {
             $session = \Stripe\Checkout\Session::create([
                 'mode' => 'subscription',
                 'line_items' => [[
-                    'price' => 'price_1SFWxYG5r7ItrUMax8uVCa9p',
+                    'price' => $price_id,
                     'quantity' => 1,
                 ]],
                 'subscription_data' => [
                     'trial_period_days' => 7,
+                    'metadata' => ['store_id' => $store_id],
                 ],
+                'metadata' => ['store_id' => $store_id],
                 'success_url' => site_url('/handler_dashboard?payment=success'),
                 'cancel_url'  => site_url('/handler_dashboard?payment=cancel'),
             ]);

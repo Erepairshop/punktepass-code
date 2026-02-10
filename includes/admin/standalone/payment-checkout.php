@@ -52,10 +52,13 @@ $bank_holder = get_option('ppv_bank_account_holder', 'Erik Borota');
 // Reference number
 $reference = 'PP-' . str_pad($store_id, 5, '0', STR_PAD_LEFT) . '-' . date('Ym');
 
-// Price
+// Price - VAT only for German stores
 $price_net = 39.00;
-$price_gross = 46.41;
-$vat = 7.41;
+$store_country = strtoupper($store->country ?? 'DE');
+$is_domestic = ($store_country === 'DE');
+$vat_rate = $is_domestic ? 0.19 : 0.00;
+$vat = round($price_net * $vat_rate, 2);
+$price_gross = round($price_net + $vat, 2);
 
 ?>
 <!DOCTYPE html>
@@ -341,8 +344,13 @@ $vat = 7.41;
             <div id="error-message" class="error-message"></div>
 
             <div class="price-summary">
-                <div class="price-amount"><?php echo number_format($price_net, 2, ',', '.'); ?> €</div>
-                <div class="price-period">pro Monat (netto)</div>
+                <div class="price-amount"><?php echo number_format($price_gross, 2, ',', '.'); ?> €</div>
+                <div class="price-period">pro Monat<?php if ($is_domestic): ?> (inkl. 19% MwSt)<?php else: ?> (netto, ohne MwSt)<?php endif; ?></div>
+                <?php if ($is_domestic): ?>
+                    <div class="price-details"><?php echo number_format($price_net, 2, ',', '.'); ?> € netto + <?php echo number_format($vat, 2, ',', '.'); ?> € MwSt</div>
+                <?php else: ?>
+                    <div class="price-details">Kein MwSt-Aufschlag für Unternehmen außerhalb Deutschlands</div>
+                <?php endif; ?>
             </div>
 
             <div class="features-list">
@@ -438,7 +446,14 @@ $vat = 7.41;
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
         const storeId = <?php echo $store_id; ?>;
-        const planId = '<?php echo defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : 'P-2AM08048AE701010RNGBQB6I'; ?>';
+        const isDomestic = <?php echo $is_domestic ? 'true' : 'false'; ?>;
+        const planId = '<?php
+            if ($is_domestic) {
+                echo defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : 'P-2AM08048AE701010RNGBQB6I';
+            } else {
+                echo defined('PAYPAL_PLAN_ID_NET') ? PAYPAL_PLAN_ID_NET : (defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : 'P-2AM08048AE701010RNGBQB6I');
+            }
+        ?>';
 
         // PayPal Button
         paypal.Buttons({

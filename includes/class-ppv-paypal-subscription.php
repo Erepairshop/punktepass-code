@@ -17,7 +17,30 @@ class PPV_PayPal_Subscription {
     // Subscription price
     const PRICE_NET = 39.00;
     const VAT_RATE = 0.19;
-    const PRICE_GROSS = 46.41; // 39 * 1.19
+    const PRICE_GROSS = 46.41; // 39 * 1.19 (DE only)
+
+    /**
+     * Get the correct PayPal plan ID based on store country
+     * DE stores: gross plan (46.41€ incl. 19% VAT)
+     * Non-DE stores: net plan (39€ without VAT)
+     */
+    public static function get_plan_id($store_id) {
+        global $wpdb;
+        $country = $wpdb->get_var($wpdb->prepare(
+            "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+        $is_domestic = (strtoupper($country ?: 'DE') === 'DE');
+
+        if ($is_domestic) {
+            return defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : '';
+        }
+        // Non-DE: use net plan (without VAT) - fallback to gross plan if net not configured
+        if (defined('PAYPAL_PLAN_ID_NET')) {
+            return PAYPAL_PLAN_ID_NET;
+        }
+        return defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : '';
+    }
 
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
@@ -225,7 +248,18 @@ class PPV_PayPal_Subscription {
             return new WP_REST_Response(['error' => 'Store ID required'], 400);
         }
 
-        $plan_id = defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : '';
+        // Get store info for custom_id
+        global $wpdb;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, store_name, email, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        if (!$store) {
+            return new WP_REST_Response(['error' => 'Store not found'], 404);
+        }
+
+        $plan_id = self::get_plan_id($store_id);
         if (empty($plan_id)) {
             return new WP_REST_Response(['error' => 'PayPal plan not configured'], 500);
         }
@@ -233,17 +267,6 @@ class PPV_PayPal_Subscription {
         $access_token = self::get_access_token();
         if (!$access_token) {
             return new WP_REST_Response(['error' => 'PayPal authentication failed'], 500);
-        }
-
-        // Get store info for custom_id
-        global $wpdb;
-        $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, store_name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-            $store_id
-        ));
-
-        if (!$store) {
-            return new WP_REST_Response(['error' => 'Store not found'], 404);
         }
 
         $return_url = site_url('/handler_dashboard?payment=success&method=paypal');
