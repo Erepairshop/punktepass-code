@@ -27,16 +27,38 @@ class PPV_Repair_Registration {
             exit;
         }
 
+        // Load repair-specific translations
+        PPV_Lang::load_extra('ppv-repair-lang');
+        $lang = PPV_Lang::current();
+
         $ajax_url = admin_url('admin-ajax.php');
         $nonce    = wp_create_nonce('ppv_repair_register');
         $logo_url = PPV_PLUGIN_URL . 'assets/img/punktepass-repair-logo.svg';
 
+        // JS translation strings for validation
+        $js_strings = json_encode([
+            'err_shop_name'   => PPV_Lang::t('repair_reg_err_shop_name'),
+            'err_owner'       => PPV_Lang::t('repair_reg_err_owner'),
+            'err_email'       => PPV_Lang::t('repair_reg_err_email'),
+            'err_email_invalid' => PPV_Lang::t('repair_reg_err_email_invalid'),
+            'err_password'    => PPV_Lang::t('repair_reg_err_password'),
+            'err_password2'   => PPV_Lang::t('repair_reg_err_password2'),
+            'err_terms'       => PPV_Lang::t('repair_reg_err_terms'),
+            'err_server'      => PPV_Lang::t('repair_reg_err_server'),
+            'err_unexpected'  => PPV_Lang::t('repair_reg_err_unexpected'),
+            'err_failed'      => PPV_Lang::t('repair_reg_err_failed'),
+            'err_network'     => PPV_Lang::t('repair_reg_err_network'),
+            'creating'        => PPV_Lang::t('repair_reg_creating'),
+            'submit_text'     => PPV_Lang::t('repair_reg_submit'),
+            'connection_error'=> PPV_Lang::t('repair_connection_error'),
+        ], JSON_UNESCAPED_UNICODE);
+
         ?><!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo esc_attr($lang); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reparaturverwaltung f&uuml;r Ihren Shop - PunktePass</title>
+    <title><?php echo esc_html(PPV_Lang::t('repair_reg_page_title')); ?></title>
     <?php echo PPV_SEO::get_landing_page_head(); ?>
     <?php echo PPV_SEO::get_performance_hints(); ?>
     <?php echo PPV_SEO::get_favicon_links(); ?>
@@ -729,6 +751,12 @@ class PPV_Repair_Registration {
             display: none !important;
         }
 
+        /* ── Language Switcher ── */
+        .pp-lang-switch{position:absolute;top:16px;right:16px;z-index:10;display:flex;gap:4px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:4px}
+        .pp-lang-btn{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
+        .pp-lang-btn:hover{color:#fff;background:rgba(255,255,255,0.15)}
+        .pp-lang-btn.active{color:#1f2937;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             .pp-hero {
@@ -827,35 +855,41 @@ class PPV_Repair_Registration {
 <body>
 
 <!-- ============ HERO ============ -->
-<div class="pp-hero">
+<div class="pp-hero" style="position:relative">
     <div class="pp-hero-bg">
         <div class="pp-hero-blob pp-hero-blob--1"></div>
         <div class="pp-hero-blob pp-hero-blob--2"></div>
         <div class="pp-hero-blob pp-hero-blob--3"></div>
     </div>
+    <!-- Language Switcher -->
+    <div class="pp-lang-switch">
+        <button class="pp-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
+        <button class="pp-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
+        <button class="pp-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
+    </div>
     <div class="pp-hero-inner">
         <div class="pp-hero-badge">
-            <i class="ri-star-fill"></i> Kostenlos starten &mdash; keine Kreditkarte n&ouml;tig
+            <i class="ri-star-fill"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_badge')); ?>
         </div>
-        <h1>Digitale Reparatur&shy;verwaltung <span>f&uuml;r Ihren Shop</span></h1>
+        <h1><?php echo PPV_Lang::t('repair_reg_hero_title'); ?></h1>
         <p class="pp-hero-sub">
-            Professionelles Formular, Rechnungen, Ankauf, Kundenverwaltung &amp; DATEV-Export &ndash; alles in einem System. Am Tablet vor Ort oder online.
+            <?php echo esc_html(PPV_Lang::t('repair_reg_hero_sub')); ?>
         </p>
         <a href="#register" class="pp-hero-cta" onclick="document.getElementById('register').scrollIntoView({behavior:'smooth'});return false;">
-            Jetzt registrieren <i class="ri-arrow-right-line"></i>
+            <?php echo esc_html(PPV_Lang::t('repair_reg_cta')); ?> <i class="ri-arrow-right-line"></i>
         </a>
         <div class="pp-hero-stats">
             <div class="pp-hero-stat">
                 <span class="pp-hero-stat-val">100%</span>
-                <span class="pp-hero-stat-label">Kostenlos</span>
+                <span class="pp-hero-stat-label"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_free')); ?></span>
             </div>
             <div class="pp-hero-stat">
                 <span class="pp-hero-stat-val">&lt; 2 Min</span>
-                <span class="pp-hero-stat-label">Einrichtung</span>
+                <span class="pp-hero-stat-label"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_setup')); ?></span>
             </div>
             <div class="pp-hero-stat">
                 <span class="pp-hero-stat-val">DSGVO</span>
-                <span class="pp-hero-stat-label">Konform</span>
+                <span class="pp-hero-stat-label"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_gdpr')); ?></span>
             </div>
         </div>
     </div>
@@ -867,43 +901,43 @@ class PPV_Repair_Registration {
         <div class="pp-feature pp-fade-in pp-fade-in-1">
             <div class="pp-feature-icon blue"><i class="ri-smartphone-line"></i></div>
             <div>
-                <h3>Online &amp; Vor-Ort</h3>
-                <p>Formular am Tablet oder Online nutzen</p>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_online_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_online_desc')); ?></p>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-2">
             <div class="pp-feature-icon green"><i class="ri-file-text-line"></i></div>
             <div>
-                <h3>Rechnungen &amp; Angebote</h3>
-                <p>PDF erstellen &amp; per E-Mail senden</p>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_desc')); ?></p>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-3">
             <div class="pp-feature-icon purple"><i class="ri-bar-chart-2-line"></i></div>
             <div>
-                <h3>DATEV &amp; Export</h3>
-                <p>CSV, Excel, DATEV f&uuml;r Buchhalter</p>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_export_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_export_desc')); ?></p>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-4">
             <div class="pp-feature-icon amber"><i class="ri-hand-coin-line"></i></div>
             <div>
-                <h3>Digitaler Ankauf</h3>
-                <p>Kaufvertr&auml;ge f&uuml;r Handy, KFZ &amp; mehr</p>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_desc')); ?></p>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-5">
             <div class="pp-feature-icon rose"><i class="ri-team-line"></i></div>
             <div>
-                <h3>Kundenverwaltung</h3>
-                <p>Alle Kunden &amp; Historie im Blick</p>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_crm_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_crm_desc')); ?></p>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-6">
             <div class="pp-feature-icon teal"><i class="ri-check-double-line"></i></div>
             <div>
-                <h3>Jede Branche</h3>
-                <p>Handy, PC, KFZ, Fahrrad &amp; mehr</p>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_branch_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_branch_desc')); ?></p>
             </div>
         </div>
     </div>
@@ -912,8 +946,8 @@ class PPV_Repair_Registration {
 <!-- ============ FORM ============ -->
 <div class="pp-form-section" id="register">
     <div class="pp-form-header pp-fade-in">
-        <h2>In 2 Minuten startklar</h2>
-        <p>Erstellen Sie jetzt Ihr kostenloses Reparaturformular</p>
+        <h2><?php echo esc_html(PPV_Lang::t('repair_reg_form_title')); ?></h2>
+        <p><?php echo esc_html(PPV_Lang::t('repair_reg_form_sub')); ?></p>
     </div>
 
     <div class="pp-reg-card pp-fade-in">
@@ -925,43 +959,43 @@ class PPV_Repair_Registration {
             <div class="pp-reg-section">
                 <div class="pp-reg-section-head">
                     <div class="pp-reg-section-icon"><i class="ri-store-2-line"></i></div>
-                    <h3>Gesch&auml;ftsdaten</h3>
+                    <h3><?php echo esc_html(PPV_Lang::t('repair_reg_business')); ?></h3>
                 </div>
 
                 <div class="pp-reg-field">
-                    <label for="rr-shop-name">Firmenname / Shopname *</label>
-                    <input type="text" id="rr-shop-name" name="shop_name" required placeholder="z.B. Meister Reparatur Berlin" autocomplete="organization">
+                    <label for="rr-shop-name"><?php echo esc_html(PPV_Lang::t('repair_reg_shop_name')); ?></label>
+                    <input type="text" id="rr-shop-name" name="shop_name" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_shop_placeholder')); ?>" autocomplete="organization">
                 </div>
 
                 <div class="pp-reg-field">
-                    <label for="rr-owner-name">Inhaber / Name *</label>
-                    <input type="text" id="rr-owner-name" name="owner_name" required placeholder="Max Mustermann" autocomplete="name">
+                    <label for="rr-owner-name"><?php echo esc_html(PPV_Lang::t('repair_reg_owner')); ?></label>
+                    <input type="text" id="rr-owner-name" name="owner_name" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_owner_placeholder')); ?>" autocomplete="name">
                 </div>
 
                 <div class="pp-reg-row">
                     <div class="pp-reg-field">
-                        <label for="rr-address">Stra&szlig;e &amp; Nr.</label>
-                        <input type="text" id="rr-address" name="address" placeholder="Hauptstr. 1" autocomplete="street-address">
+                        <label for="rr-address"><?php echo esc_html(PPV_Lang::t('repair_reg_street')); ?></label>
+                        <input type="text" id="rr-address" name="address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_street_placeholder')); ?>" autocomplete="street-address">
                     </div>
                     <div class="pp-reg-field pp-reg-field-sm">
-                        <label for="rr-plz">PLZ</label>
-                        <input type="text" id="rr-plz" name="plz" placeholder="89415" maxlength="5" autocomplete="postal-code">
+                        <label for="rr-plz"><?php echo esc_html(PPV_Lang::t('repair_reg_zip')); ?></label>
+                        <input type="text" id="rr-plz" name="plz" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_zip_placeholder')); ?>" maxlength="10" autocomplete="postal-code">
                     </div>
                 </div>
 
                 <div class="pp-reg-field">
-                    <label for="rr-city">Stadt</label>
-                    <input type="text" id="rr-city" name="city" placeholder="Lauingen" autocomplete="address-level2">
+                    <label for="rr-city"><?php echo esc_html(PPV_Lang::t('repair_reg_city')); ?></label>
+                    <input type="text" id="rr-city" name="city" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_city_placeholder')); ?>" autocomplete="address-level2">
                 </div>
 
                 <div class="pp-reg-row">
                     <div class="pp-reg-field">
-                        <label for="rr-phone">Telefon</label>
-                        <input type="tel" id="rr-phone" name="phone" placeholder="+49 123 456789" autocomplete="tel">
+                        <label for="rr-phone"><?php echo esc_html(PPV_Lang::t('repair_phone_label')); ?></label>
+                        <input type="tel" id="rr-phone" name="phone" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_phone_placeholder')); ?>" autocomplete="tel">
                     </div>
                     <div class="pp-reg-field">
-                        <label for="rr-tax-id">USt-IdNr.</label>
-                        <input type="text" id="rr-tax-id" name="tax_id" placeholder="DE123456789" autocomplete="nope">
+                        <label for="rr-tax-id"><?php echo esc_html(PPV_Lang::t('repair_reg_tax_id')); ?></label>
+                        <input type="text" id="rr-tax-id" name="tax_id" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_tax_placeholder')); ?>" autocomplete="nope">
                     </div>
                 </div>
             </div>
@@ -970,22 +1004,22 @@ class PPV_Repair_Registration {
             <div class="pp-reg-section">
                 <div class="pp-reg-section-head">
                     <div class="pp-reg-section-icon"><i class="ri-lock-line"></i></div>
-                    <h3>Zugangsdaten</h3>
+                    <h3><?php echo esc_html(PPV_Lang::t('repair_reg_credentials')); ?></h3>
                 </div>
 
                 <div class="pp-reg-field">
-                    <label for="rr-email">E-Mail-Adresse *</label>
-                    <input type="email" id="rr-email" name="email" required placeholder="info@ihr-shop.de" autocomplete="email">
+                    <label for="rr-email"><?php echo esc_html(PPV_Lang::t('repair_reg_email')); ?></label>
+                    <input type="email" id="rr-email" name="email" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_email_placeholder')); ?>" autocomplete="email">
                 </div>
 
                 <div class="pp-reg-field">
-                    <label for="rr-password">Passwort * <span style="font-weight:400;color:#9ca3af;">(min. 6 Zeichen)</span></label>
-                    <input type="password" id="rr-password" name="password" required minlength="6" placeholder="Sicheres Passwort" autocomplete="new-password">
+                    <label for="rr-password"><?php echo esc_html(PPV_Lang::t('repair_reg_password')); ?> <span style="font-weight:400;color:#9ca3af;"><?php echo esc_html(PPV_Lang::t('repair_reg_password_hint')); ?></span></label>
+                    <input type="password" id="rr-password" name="password" required minlength="6" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_password_placeholder')); ?>" autocomplete="new-password">
                 </div>
 
                 <div class="pp-reg-field">
-                    <label for="rr-password2">Passwort best&auml;tigen *</label>
-                    <input type="password" id="rr-password2" name="password2" required minlength="6" placeholder="Passwort wiederholen" autocomplete="new-password">
+                    <label for="rr-password2"><?php echo esc_html(PPV_Lang::t('repair_reg_password2')); ?></label>
+                    <input type="password" id="rr-password2" name="password2" required minlength="6" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_password2_placeholder')); ?>" autocomplete="new-password">
                 </div>
             </div>
 
@@ -993,13 +1027,13 @@ class PPV_Repair_Registration {
             <div class="pp-reg-terms">
                 <label>
                     <input type="checkbox" id="rr-terms" required>
-                    <span>Ich akzeptiere die <a href="/datenschutz" target="_blank">Datenschutzerkl&auml;rung</a> und <a href="/agb" target="_blank">AGB</a></span>
+                    <span><?php echo esc_html(PPV_Lang::t('repair_accept_terms')); ?> <a href="/datenschutz" target="_blank"><?php echo esc_html(PPV_Lang::t('repair_privacy_policy')); ?></a> <?php echo esc_html(PPV_Lang::t('repair_and')); ?> <a href="/agb" target="_blank"><?php echo esc_html(PPV_Lang::t('repair_agb')); ?></a></span>
                 </label>
             </div>
 
             <!-- Submit -->
             <button type="submit" id="rr-submit" class="pp-reg-submit">
-                <i class="ri-rocket-2-line"></i> Kostenlos registrieren
+                <i class="ri-rocket-2-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_submit')); ?>
             </button>
 
             <!-- Error -->
@@ -1009,22 +1043,22 @@ class PPV_Repair_Registration {
         <!-- Success Screen (hidden by default) -->
         <div id="rr-success" class="pp-reg-success pp-hidden">
             <div class="pp-reg-success-icon"><i class="ri-check-line"></i></div>
-            <h2>Registrierung erfolgreich!</h2>
-            <p>Ihr Reparaturformular ist bereit:</p>
+            <h2><?php echo esc_html(PPV_Lang::t('repair_reg_success_title')); ?></h2>
+            <p><?php echo esc_html(PPV_Lang::t('repair_reg_success_text')); ?></p>
             <div class="pp-reg-success-link">
-                <div class="pp-reg-link-label">Ihr Formular-Link</div>
+                <div class="pp-reg-link-label"><?php echo esc_html(PPV_Lang::t('repair_reg_form_link')); ?></div>
                 <a id="rr-form-url" href="#" target="_blank"></a>
             </div>
-            <p class="pp-reg-success-info">Sie erhalten alle Zugangsdaten per E-Mail.</p>
+            <p class="pp-reg-success-info"><?php echo esc_html(PPV_Lang::t('repair_reg_email_info')); ?></p>
             <div class="pp-reg-success-actions">
-                <a href="/formular/admin" class="pp-reg-btn-primary"><i class="ri-dashboard-line"></i> Zum Admin-Bereich</a>
-                <a id="rr-form-link" href="#" class="pp-reg-btn-secondary" target="_blank"><i class="ri-external-link-line"></i> Formular testen</a>
+                <a href="/formular/admin" class="pp-reg-btn-primary"><i class="ri-dashboard-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_to_admin')); ?></a>
+                <a id="rr-form-link" href="#" class="pp-reg-btn-secondary" target="_blank"><i class="ri-external-link-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_test_form')); ?></a>
             </div>
         </div>
 
         <!-- Login Link -->
         <div id="rr-login-row" class="pp-reg-login-link">
-            Bereits registriert? <a href="/formular/admin/login">Hier einloggen &rarr;</a>
+            <?php echo esc_html(PPV_Lang::t('repair_reg_login_text')); ?> <a href="/formular/admin/login"><?php echo esc_html(PPV_Lang::t('repair_reg_login_link')); ?> &rarr;</a>
         </div>
     </div>
 </div>
@@ -1032,18 +1066,18 @@ class PPV_Repair_Registration {
 <!-- ============ FOOTER ============ -->
 <div class="pp-reg-footer">
     <div class="pp-reg-footer-trust">
-        <div class="pp-reg-footer-trust-item"><i class="ri-lock-line"></i> SSL-verschl&uuml;sselt</div>
-        <div class="pp-reg-footer-trust-item"><i class="ri-shield-check-line"></i> DSGVO-konform</div>
+        <div class="pp-reg-footer-trust-item"><i class="ri-lock-line"></i> <?php echo esc_html(PPV_Lang::t('repair_ssl_encrypted')); ?></div>
+        <div class="pp-reg-footer-trust-item"><i class="ri-shield-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_dsgvo_conform')); ?></div>
     </div>
     <div class="pp-reg-footer-links">
-        <a href="/datenschutz">Datenschutz</a>
+        <a href="/datenschutz"><?php echo esc_html(PPV_Lang::t('repair_datenschutz')); ?></a>
         <span class="pp-reg-footer-dot"></span>
-        <a href="/agb">AGB</a>
+        <a href="/agb"><?php echo esc_html(PPV_Lang::t('repair_agb')); ?></a>
         <span class="pp-reg-footer-dot"></span>
-        <a href="/impressum">Impressum</a>
+        <a href="/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
     </div>
     <div class="pp-reg-footer-powered">
-        Powered by <a href="https://punktepass.de">PunktePass</a>
+        <?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?> <a href="https://punktepass.de">PunktePass</a>
     </div>
 </div>
 
@@ -1053,6 +1087,19 @@ class PPV_Repair_Registration {
 
     var AJAX_URL = <?php echo json_encode($ajax_url); ?>;
     var NONCE    = <?php echo json_encode($nonce); ?>;
+    var ppvLang  = <?php echo $js_strings; ?>;
+
+    // Language switcher
+    var langBtns = document.querySelectorAll('.pp-lang-btn');
+    langBtns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var lang = btn.getAttribute('data-lang');
+            var url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            document.cookie = 'ppv_lang=' + lang + ';path=/;max-age=31536000';
+            window.location.href = url.toString();
+        });
+    });
 
     var form       = document.getElementById('pp-reg-form');
     var submitBtn  = document.getElementById('rr-submit');
@@ -1073,10 +1120,10 @@ class PPV_Repair_Registration {
     function setLoading(loading) {
         if (loading) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="pp-reg-spinner"></span> Wird erstellt...';
+            submitBtn.innerHTML = '<span class="pp-reg-spinner"></span> ' + ppvLang.creating;
         } else {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="ri-rocket-2-line"></i> Kostenlos registrieren';
+            submitBtn.innerHTML = '<i class="ri-rocket-2-line"></i> ' + ppvLang.submit_text;
         }
     }
 
@@ -1097,13 +1144,13 @@ class PPV_Repair_Registration {
         var taxId     = document.getElementById('rr-tax-id').value.trim();
 
         // Validation
-        if (!shopName) { showError('Bitte geben Sie den Firmennamen ein.'); return; }
-        if (!ownerName) { showError('Bitte geben Sie den Inhaber-Namen ein.'); return; }
-        if (!email) { showError('Bitte geben Sie Ihre E-Mail-Adresse ein.'); return; }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Bitte geben Sie eine g\u00fcltige E-Mail-Adresse ein.'); return; }
-        if (!password || password.length < 6) { showError('Das Passwort muss mindestens 6 Zeichen lang sein.'); return; }
-        if (password !== password2) { showError('Die Passw\u00f6rter stimmen nicht \u00fcberein.'); return; }
-        if (!terms) { showError('Bitte akzeptieren Sie die AGB und Datenschutzerkl\u00e4rung.'); return; }
+        if (!shopName) { showError(ppvLang.err_shop_name); return; }
+        if (!ownerName) { showError(ppvLang.err_owner); return; }
+        if (!email) { showError(ppvLang.err_email); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError(ppvLang.err_email_invalid); return; }
+        if (!password || password.length < 6) { showError(ppvLang.err_password); return; }
+        if (password !== password2) { showError(ppvLang.err_password2); return; }
+        if (!terms) { showError(ppvLang.err_terms); return; }
 
         setLoading(true);
 
@@ -1126,14 +1173,14 @@ class PPV_Repair_Registration {
             setLoading(false);
 
             if (xhr.status !== 200) {
-                showError('Serverfehler. Bitte versuchen Sie es sp\u00e4ter erneut.');
+                showError(ppvLang.err_server);
                 return;
             }
 
             try {
                 var res = JSON.parse(xhr.responseText);
             } catch (err) {
-                showError('Unerwartete Antwort vom Server.');
+                showError(ppvLang.err_unexpected);
                 return;
             }
 
@@ -1150,12 +1197,12 @@ class PPV_Repair_Registration {
                 successBox.classList.remove('pp-hidden');
                 successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else {
-                showError(res.data && res.data.message ? res.data.message : 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+                showError(res.data && res.data.message ? res.data.message : ppvLang.err_failed);
             }
         };
         xhr.onerror = function() {
             setLoading(false);
-            showError('Netzwerkfehler. Bitte pr\u00fcfen Sie Ihre Internetverbindung.');
+            showError(ppvLang.err_network);
         };
         xhr.send(data);
     });
@@ -1167,13 +1214,13 @@ class PPV_Repair_Registration {
     <div style="max-width:1200px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
         <div style="flex:1; min-width:280px;">
             <p style="margin:0; font-size:14px; line-height:1.5;">
-                <strong>Cookie-Hinweis:</strong> Wir verwenden Cookies und Google Analytics, um unsere Website zu verbessern.
-                <a href="https://punktepass.de/datenschutz" target="_blank" style="color:#93c5fd; text-decoration:underline;">Datenschutzerkl&auml;rung</a>
+                <strong><?php echo esc_html(PPV_Lang::t('repair_cookie_heading')); ?></strong> <?php echo esc_html(PPV_Lang::t('repair_cookie_notice')); ?>
+                <a href="https://punktepass.de/datenschutz" target="_blank" style="color:#93c5fd; text-decoration:underline;"><?php echo esc_html(PPV_Lang::t('repair_privacy_policy')); ?></a>
             </p>
         </div>
         <div style="display:flex; gap:12px; flex-shrink:0;">
-            <button onclick="rejectCookies()" style="padding:10px 20px; background:transparent; border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; cursor:pointer; font-size:14px; transition:all 0.2s;">Ablehnen</button>
-            <button onclick="acceptCookies()" style="padding:10px 24px; background:linear-gradient(135deg,#667eea,#4338ca); border:none; color:#fff; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s;">Akzeptieren</button>
+            <button onclick="rejectCookies()" style="padding:10px 20px; background:transparent; border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; cursor:pointer; font-size:14px; transition:all 0.2s;"><?php echo esc_html(PPV_Lang::t('repair_cookie_reject')); ?></button>
+            <button onclick="acceptCookies()" style="padding:10px 24px; background:linear-gradient(135deg,#667eea,#4338ca); border:none; color:#fff; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s;"><?php echo esc_html(PPV_Lang::t('repair_cookie_accept')); ?></button>
         </div>
     </div>
 </div>

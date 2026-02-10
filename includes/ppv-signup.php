@@ -51,10 +51,11 @@ class PPV_Signup {
 
         if (isset($_COOKIE['ppv_lang'])) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang']);
-        } elseif (isset($_GET['lang'])) {
-            $lang = sanitize_text_field($_GET['lang']);
+        } elseif (isset($_GET['lang']) || isset($_GET['ppv_lang'])) {
+            $lang = sanitize_text_field($_GET['lang'] ?? $_GET['ppv_lang']);
         } else {
-            $lang = substr(get_locale(), 0, 2);
+            // Browser Accept-Language detection
+            $lang = self::detect_browser_lang();
         }
 
         if (!in_array($lang, ['de', 'hu', 'ro'])) {
@@ -62,6 +63,35 @@ class PPV_Signup {
         }
 
         return $lang;
+    }
+
+    /**
+     * Detect browser language from Accept-Language header
+     */
+    private static function detect_browser_lang() {
+        $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+        if (!$accept) return 'ro';
+
+        $supported = ['de', 'hu', 'ro'];
+        $langs = [];
+
+        foreach (explode(',', $accept) as $part) {
+            $part = trim($part);
+            if (preg_match('/^([a-z]{2})(?:-[A-Za-z]{2})?(?:\s*;\s*q=([0-9.]+))?$/', $part, $m)) {
+                $code = strtolower($m[1]);
+                $q = isset($m[2]) ? floatval($m[2]) : 1.0;
+                if (in_array($code, $supported)) {
+                    $langs[$code] = max($langs[$code] ?? 0, $q);
+                }
+            }
+        }
+
+        if (!empty($langs)) {
+            arsort($langs);
+            return array_key_first($langs);
+        }
+
+        return 'ro';
     }
 
     /** ============================================================

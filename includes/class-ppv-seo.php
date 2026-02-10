@@ -335,7 +335,8 @@ class PPV_SEO {
         $color = esc_attr($store->repair_color ?: '#667eea');
         $logo = esc_url($store->logo ?: '');
         $slug = esc_attr($store->store_slug);
-        $form_title = esc_attr($store->repair_form_title ?? 'Reparaturauftrag');
+        $raw_title_seo = $store->repair_form_title ?? '';
+        $form_title = esc_attr(($raw_title_seo === '' || $raw_title_seo === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title_seo);
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
         $city = esc_attr($store->city ?: '');
         $address = trim(($store->address ?: '') . ', ' . ($store->plz ?: '') . ' ' . $city);
@@ -708,15 +709,15 @@ class PPV_SEO {
                     'http://schema.org/MobileWebPlatform',
                 ],
             ],
-            'name' => 'Reparaturauftrag einreichen',
+            'name' => $form_title . ' einreichen',
         ];
 
         $webpage = [
             '@context' => 'https://schema.org',
             '@type' => 'WebPage',
-            'name' => ($store->repair_form_title ?? 'Reparaturauftrag') . ' - ' . $store_name,
+            'name' => $form_title . ' - ' . $store_name,
             'url' => $page_url,
-            'description' => "Reparaturauftrag online einreichen bei {$store_name}",
+            'description' => "{$form_title} online einreichen bei {$store_name}",
             'inLanguage' => 'de-DE',
             'about' => [
                 '@type' => 'Service',

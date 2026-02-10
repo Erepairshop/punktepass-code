@@ -195,6 +195,8 @@ class PPV_Repair_Email_Sender {
         $message = wp_kses_post($_POST['message'] ?? '');
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
+        $email_lang = sanitize_text_field($_POST['email_lang'] ?? 'de');
+        if (!in_array($email_lang, ['de', 'hu', 'ro'])) $email_lang = 'de';
 
         if (empty($subject) || empty($message)) {
             wp_redirect("/formular/email-sender?error=empty_fields");
@@ -218,12 +220,14 @@ class PPV_Repair_Email_Sender {
         }
 
         // Build HTML email
-        $html_message = self::build_html_email($message);
+        $html_message = self::build_html_email($message, $email_lang);
 
         // Headers
+        $from_labels = ['de' => 'Reparaturverwaltung', 'hu' => 'Javításkezelő', 'ro' => 'Gestionare Reparații'];
+        $from_label = $from_labels[$email_lang] ?? $from_labels['de'];
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
-            'From: Erik Borota - Reparaturverwaltung <info@punktepass.de>',
+            'From: Erik Borota - ' . $from_label . ' <info@punktepass.de>',
             'Reply-To: Erik Borota <info@punktepass.de>',
         ];
 
@@ -263,6 +267,20 @@ class PPV_Repair_Email_Sender {
                 $valid_emails
             ));
             $already_sent_set = array_flip($already_sent_list ?: []);
+        }
+
+        // Single email duplicate: show warning with re-send option
+        if (!$force_send && count($valid_emails) === 1 && isset($already_sent_set[$valid_emails[0]])) {
+            set_transient('ppv_repair_email_form_data', [
+                'to_email' => $to_emails_raw,
+                'to_name' => $to_name,
+                'subject' => $subject,
+                'message' => $_POST['message'] ?? '',
+                'notes' => $notes,
+                'email_lang' => $email_lang,
+            ], 300);
+            wp_redirect("/formular/email-sender?error=duplicate&email=" . urlencode($valid_emails[0]) . "&lang=" . $email_lang);
+            exit;
         }
 
         foreach ($valid_emails as $to_email) {
@@ -314,6 +332,9 @@ class PPV_Repair_Email_Sender {
         if ($skipped_count > 0) {
             $redirect_params[] = "skipped=$skipped_count";
         }
+        if ($email_lang !== 'de') {
+            $redirect_params[] = "lang=$email_lang";
+        }
 
         $redirect_url = "/formular/email-sender?" . ($sent_count > 0 ? "success=bulk&" : "error=bulk_partial&") . implode("&", $redirect_params);
         wp_redirect($redirect_url);
@@ -339,9 +360,25 @@ class PPV_Repair_Email_Sender {
     /**
      * Build HTML email with Repair Form branding
      */
-    private static function build_html_email($message) {
+    private static function build_html_email($message, $lang = 'de') {
+        // Style all <a href> links as buttons (wp_kses_post strips style/class attributes, so we re-add them here)
+        $cta_style = 'style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;"';
+        $message = preg_replace('/<a\s+href="([^"]+)"[^>]*>/', '<a href="$1" ' . $cta_style . '>', $message);
         $message = nl2br($message);
         $year = date('Y');
+
+        $header_titles = [
+            'de' => ['title' => 'Reparaturverwaltung', 'subtitle' => 'Digitale L&ouml;sung f&uuml;r Ihren Reparatur-Service'],
+            'hu' => ['title' => 'Javításkezelő', 'subtitle' => 'Digitális megoldás az Ön javítási szolgáltatásához'],
+            'ro' => ['title' => 'Gestionare Reparații', 'subtitle' => 'Soluție digitală pentru serviciul dvs. de reparații'],
+        ];
+        $footer_titles = [
+            'de' => 'Reparaturverwaltung &middot; PunktePass',
+            'hu' => 'Javításkezelő &middot; PunktePass',
+            'ro' => 'Gestionare Reparații &middot; PunktePass',
+        ];
+        $ht = $header_titles[$lang] ?? $header_titles['de'];
+        $ft = $footer_titles[$lang] ?? $footer_titles['de'];
 
         return '<!DOCTYPE html>
 <html>
@@ -498,8 +535,8 @@ class PPV_Repair_Email_Sender {
         <div class="email-container">
             <!-- Header -->
             <div class="email-header">
-                <p class="email-header-title">Reparaturverwaltung</p>
-                <p class="email-header-subtitle">Digitale L&ouml;sung f&uuml;r Ihren Reparatur-Service</p>
+                <p class="email-header-title">' . $ht['title'] . '</p>
+                <p class="email-header-subtitle">' . $ht['subtitle'] . '</p>
             </div>
 
             <!-- Body -->
@@ -510,7 +547,7 @@ class PPV_Repair_Email_Sender {
                 <div class="footer-main">
                     <div class="footer-left">
                         <p class="footer-name">Erik Borota</p>
-                        <p class="footer-title">Reparaturverwaltung &middot; PunktePass</p>
+                        <p class="footer-title">' . $ft . '</p>
                     </div>
                     <div class="footer-right">
                         <div class="footer-links">
@@ -565,6 +602,10 @@ class PPV_Repair_Email_Sender {
         }
         $prefill_name = isset($_GET['name']) ? sanitize_text_field($_GET['name']) : '';
 
+        // Selected language (persisted via URL param)
+        $selected_lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'de';
+        if (!in_array($selected_lang, ['de', 'hu', 'ro'])) $selected_lang = 'de';
+
         // Default template for Repair Form promotion
         $default_template = 'Guten Tag!
 
@@ -591,12 +632,84 @@ Mit unserer <strong>Reparaturverwaltung</strong> k&ouml;nnen Sie Ihren Reparatur
 Die Einrichtung dauert nur wenige Minuten und ist <strong>kostenlos</strong>.
 
 <strong>Probieren Sie es jetzt unverbindlich aus:</strong>
-<a href="https://punktepass.de/formular" class="cta-button">&#128073; Kostenlos starten</a>
+<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Kostenlos starten</a>
 
 Gerne stelle ich Ihnen das System kurz und unverbindlich, pers&ouml;nlich oder telefonisch, vor.
 
 Mit freundlichen Gr&uuml;&szlig;en
 Erik Borota';
+
+        $default_subject_de = 'Digitale Reparaturverwaltung für Ihren Shop';
+
+        // Hungarian template
+        $default_template_hu = 'Tisztelt Hölgyem/Uram!
+
+Nevem Erik Borota, a PunktePass digitális javításkezelő rendszerének üzemeltetője.
+
+A <strong>Javításkezelő</strong> rendszerünkkel teljesen digitalizálhatja javítási szolgáltatását &ndash; a megrendelés felvételétől a számlázásig.
+
+<strong>Az Ön előnyei:</strong>
+
+&#128241; <strong>Online és helyben használható</strong> &ndash; Ügyfelei online töltik ki az űrlapot, vagy Ön tabletet használ az üzletben
+
+&#128206; <strong>Számlák és ajánlatok</strong> &ndash; PDF készítés és közvetlen e-mail küldés
+
+&#128176; <strong>Digitális felvásárlás</strong> &ndash; Adásvételi szerződések mobilhoz, gépjárműhöz és egyebekhez digitális aláírással
+
+&#128202; <strong>DATEV és Export</strong> &ndash; CSV, Excel és DATEV export a könyvelője számára
+
+&#128101; <strong>Ügyfélkezelés</strong> &ndash; Minden ügyfél és javítási előzményeik egy helyen
+
+&#11088; <strong>Bónuszpontok (opcionális)</strong> &ndash; Ügyfelei pontokat gyűjtenek és törzsvendégekké válnak
+
+&#9989; <strong>Minden iparág</strong> &ndash; Mobiltelefon, számítógép, gépjármű, kerékpár, ékszer és több
+
+A beállítás csak néhány percet vesz igénybe és <strong>ingyenes</strong>.
+
+<strong>Próbálja ki most kötelezettségek nélkül:</strong>
+<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Ingyenes indítás</a>
+
+Szívesen bemutatom a rendszert röviden és kötelezettségek nélkül, személyesen vagy telefonon.
+
+Üdvözlettel,
+Erik Borota';
+
+        $default_subject_hu = 'Digitális javításkezelő az Ön üzlete számára';
+
+        // Romanian template
+        $default_template_ro = 'Bună ziua!
+
+Numele meu este Erik Borota, sunt operatorul sistemului digital de gestionare a reparațiilor de la PunktePass.
+
+Cu <strong>Sistemul nostru de gestionare a reparațiilor</strong> puteți digitaliza complet serviciul de reparații &ndash; de la preluarea comenzii până la facturare.
+
+<strong>Avantajele dumneavoastră:</strong>
+
+&#128241; <strong>Utilizabil online și la fața locului</strong> &ndash; Clienții completează formularul online sau utilizați o tabletă în magazin
+
+&#128206; <strong>Facturi și oferte</strong> &ndash; Creare PDF și trimitere directă prin e-mail
+
+&#128176; <strong>Achiziție digitală</strong> &ndash; Contracte de vânzare-cumpărare pentru telefoane, autovehicule și altele cu semnătură digitală
+
+&#128202; <strong>DATEV și Export</strong> &ndash; Export CSV, Excel și DATEV pentru contabilul dvs.
+
+&#128101; <strong>Gestionarea clienților</strong> &ndash; Toți clienții și istoricul reparațiilor într-un singur loc
+
+&#11088; <strong>Puncte bonus (opțional)</strong> &ndash; Clienții colectează puncte și devin clienți fideli
+
+&#9989; <strong>Orice domeniu</strong> &ndash; Telefoane mobile, calculatoare, autovehicule, biciclete, bijuterii și altele
+
+Configurarea durează doar câteva minute și este <strong>gratuită</strong>.
+
+<strong>Încercați acum fără obligații:</strong>
+<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Începeți gratuit</a>
+
+Vă prezint cu plăcere sistemul pe scurt și fără obligații, personal sau telefonic.
+
+Cu stimă,
+Erik Borota';
+
+        $default_subject_ro = 'Sistem digital de gestionare a reparațiilor pentru magazinul dvs.';
 
         ?>
 <!DOCTYPE html>
@@ -879,6 +992,21 @@ Erik Borota';
             color: #64748b;
             margin: 0;
         }
+        .lang-btn {
+            background: #f1f5f9;
+            color: #475569;
+            border: 2px solid transparent;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover {
+            background: #e2e8f0;
+        }
+        .lang-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-color: transparent;
+        }
     </style>
 </head>
 <body>
@@ -946,7 +1074,7 @@ Erik Borota';
         <div class="alert alert-error">
             <i class="ri-error-warning-line"></i> Email konnte nicht gesendet werden
         </div>
-    <?php elseif ($error === 'duplicate'): ?>
+    <?php elseif ($error === 'duplicate' && $saved_form_data): ?>
         <div class="alert alert-warning">
             <i class="ri-alert-line"></i> An diese Adresse wurde bereits eine Email gesendet: <strong><?php echo esc_html($duplicate_email); ?></strong>
             <form method="post" enctype="multipart/form-data" style="display:inline;margin-left:12px;">
@@ -955,9 +1083,22 @@ Erik Borota';
                 <input type="hidden" name="subject" value="<?php echo esc_attr($saved_form_data['subject'] ?? ''); ?>">
                 <input type="hidden" name="message" value="<?php echo esc_attr($saved_form_data['message'] ?? ''); ?>">
                 <input type="hidden" name="notes" value="<?php echo esc_attr($saved_form_data['notes'] ?? ''); ?>">
+                <input type="hidden" name="email_lang" value="<?php echo esc_attr($saved_form_data['email_lang'] ?? 'de'); ?>">
                 <input type="hidden" name="force_send" value="1">
                 <button type="submit" name="send_email" class="btn btn-sm btn-primary">Trotzdem senden</button>
             </form>
+        </div>
+    <?php elseif ($error === 'bulk_partial'): ?>
+        <div class="alert alert-warning">
+            <i class="ri-alert-line"></i>
+            <?php
+            $skipped = intval($_GET['skipped'] ?? 0);
+            $sent_n = intval($_GET['sent'] ?? 0);
+            $failed_n = intval($_GET['failed'] ?? 0);
+            if ($sent_n > 0) echo "&#10004; $sent_n erfolgreich gesendet &bull; ";
+            if ($failed_n > 0) echo "&#10060; $failed_n fehlgeschlagen &bull; ";
+            if ($skipped > 0) echo "&#9888; $skipped &uuml;bersprungen (bereits gesendet)";
+            ?>
         </div>
     <?php endif; ?>
 
@@ -1054,6 +1195,23 @@ Erik Borota';
             </div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="email_lang" id="email-lang" value="<?php echo esc_attr($selected_lang); ?>">
+                    <!-- Language Template Selector -->
+                    <div class="form-group">
+                        <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limbă</label>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'de' ? 'active' : ''; ?>" data-lang="de" onclick="loadLangTemplate('de')">
+                                DE Deutsch
+                            </button>
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'hu' ? 'active' : ''; ?>" data-lang="hu" onclick="loadLangTemplate('hu')">
+                                HU Magyar
+                            </button>
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'ro' ? 'active' : ''; ?>" data-lang="ro" onclick="loadLangTemplate('ro')">
+                                RO Română
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Template Select -->
                     <?php if (!empty($templates)): ?>
                     <div class="form-group template-select">
@@ -1086,14 +1244,20 @@ Erik Borota';
 
                     <div class="form-group">
                         <label>Betreff *</label>
+                        <?php
+                        $lang_subjects = ['de' => $default_subject_de, 'hu' => $default_subject_hu, 'ro' => $default_subject_ro];
+                        $lang_templates = ['de' => $default_template, 'hu' => $default_template_hu, 'ro' => $default_template_ro];
+                        $current_subject = $saved_form_data['subject'] ?? $lang_subjects[$selected_lang];
+                        $current_template = $saved_form_data['message'] ?? $lang_templates[$selected_lang];
+                        ?>
                         <input type="text" name="subject" id="email-subject" class="form-control" required
-                               value="<?php echo esc_attr($saved_form_data['subject'] ?? 'Digitale Reparaturverwaltung für Ihren Shop'); ?>"
+                               value="<?php echo esc_attr($current_subject); ?>"
                                placeholder="Betreff eingeben...">
                     </div>
 
                     <div class="form-group">
                         <label>Nachricht * (HTML erlaubt)</label>
-                        <textarea name="message" id="email-message" class="form-control" required placeholder="Nachricht eingeben..."><?php echo esc_textarea($saved_form_data['message'] ?? $default_template); ?></textarea>
+                        <textarea name="message" id="email-message" class="form-control" required placeholder="Nachricht eingeben..."><?php echo esc_textarea($current_template); ?></textarea>
                     </div>
 
                     <div class="form-group">
@@ -1195,12 +1359,46 @@ Erik Borota';
 </div>
 
 <script>
+var langTemplates = {
+    de: {
+        subject: <?php echo json_encode($default_subject_de); ?>,
+        message: <?php echo json_encode($default_template); ?>
+    },
+    hu: {
+        subject: <?php echo json_encode($default_subject_hu); ?>,
+        message: <?php echo json_encode($default_template_hu); ?>
+    },
+    ro: {
+        subject: <?php echo json_encode($default_subject_ro); ?>,
+        message: <?php echo json_encode($default_template_ro); ?>
+    }
+};
+
+function loadLangTemplate(lang) {
+    var tpl = langTemplates[lang];
+    if (!tpl) return;
+    document.getElementById('email-subject').value = tpl.subject;
+    document.getElementById('email-message').value = tpl.message;
+    document.getElementById('email-lang').value = lang;
+    // Update active button
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+    // Reset saved template selector
+    var sel = document.getElementById('template-select');
+    if (sel) sel.value = '';
+}
+
 function loadTemplate(id) {
     if (!id) return;
     var select = document.getElementById('template-select');
     var option = select.options[select.selectedIndex];
     document.getElementById('email-subject').value = option.getAttribute('data-subject') || '';
     document.getElementById('email-message').value = option.getAttribute('data-message') || '';
+    // Deactivate lang buttons
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
 }
 </script>
 

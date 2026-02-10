@@ -205,6 +205,27 @@ class PPV_Lang {
     }
 
     /** ============================================================
+     *  🔹 Load extra translation file and merge into $strings
+     *  Usage: PPV_Lang::load_extra('ppv-repair-lang');
+     * ============================================================ */
+    public static function load_extra($prefix) {
+        $lang = self::$active ?: 'ro';
+        $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-{$lang}.php";
+
+        if (!file_exists($path)) {
+            // Fallback to Romanian
+            $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-ro.php";
+        }
+
+        if (file_exists($path)) {
+            $data = include $path;
+            if (is_array($data)) {
+                self::$strings = array_merge(self::$strings, $data);
+            }
+        }
+    }
+
+    /** ============================================================
      *  🔹 Get active language
      * ============================================================ */
     public static function current() {

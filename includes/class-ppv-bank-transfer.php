@@ -19,7 +19,28 @@ class PPV_Bank_Transfer {
     // Subscription price
     const PRICE_NET = 39.00;
     const VAT_RATE = 0.19;
-    const PRICE_GROSS = 46.41;
+    const PRICE_GROSS = 46.41; // DE only
+
+    /**
+     * Get pricing based on store country (VAT only for DE)
+     */
+    public static function get_pricing($store_id) {
+        global $wpdb;
+        $country = $wpdb->get_var($wpdb->prepare(
+            "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+        $is_domestic = (strtoupper($country ?: 'DE') === 'DE');
+        $vat_rate = $is_domestic ? self::VAT_RATE : 0.00;
+        $vat = round(self::PRICE_NET * $vat_rate, 2);
+        return [
+            'price_net'   => self::PRICE_NET,
+            'vat_rate'    => $vat_rate,
+            'vat'         => $vat,
+            'price_gross' => round(self::PRICE_NET + $vat, 2),
+            'is_domestic' => $is_domestic,
+        ];
+    }
 
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
@@ -78,14 +99,24 @@ class PPV_Bank_Transfer {
         $bic = get_option('ppv_bank_bic', self::BIC);
         $account_holder = get_option('ppv_bank_account_holder', self::ACCOUNT_HOLDER);
 
+        // Get store-specific pricing
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $store_id = $_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_repair_store_id'] ?? 0;
+        $pricing = $store_id ? self::get_pricing($store_id) : [
+            'price_net' => self::PRICE_NET, 'price_gross' => self::PRICE_GROSS,
+            'vat_rate' => self::VAT_RATE, 'vat' => self::PRICE_GROSS - self::PRICE_NET,
+            'is_domestic' => true,
+        ];
+
         return new WP_REST_Response([
             'bank_name' => $bank_name,
             'iban' => $iban,
             'bic' => $bic,
             'account_holder' => $account_holder,
-            'price_net' => self::PRICE_NET,
-            'price_gross' => self::PRICE_GROSS,
-            'vat_rate' => self::VAT_RATE * 100,
+            'price_net' => $pricing['price_net'],
+            'price_gross' => $pricing['price_gross'],
+            'vat_rate' => $pricing['vat_rate'] * 100,
+            'is_domestic' => $pricing['is_domestic'],
         ], 200);
     }
 
@@ -106,7 +137,7 @@ class PPV_Bank_Transfer {
 
         // Get store info
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, store_name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            "SELECT id, store_name, email, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
 
@@ -116,6 +147,13 @@ class PPV_Bank_Transfer {
 
         // Generate unique reference number
         $reference = 'PP-' . str_pad($store_id, 5, '0', STR_PAD_LEFT) . '-' . date('Ym');
+
+        // Get country-based pricing
+        $pricing = self::get_pricing($store_id);
+        $amount = $pricing['price_gross'];
+        $vat_text = $pricing['is_domestic']
+            ? number_format($amount, 2, ',', '.') . " € (inkl. 19% MwSt)"
+            : number_format($amount, 2, ',', '.') . " € (netto, ohne MwSt)";
 
         // Update store with pending bank transfer
         $wpdb->update(
@@ -140,7 +178,8 @@ Hallo,
 Store ID: {$store_id}
 E-Mail: {$store->email}
 Referenz: {$reference}
-Betrag: " . number_format(self::PRICE_GROSS, 2, ',', '.') . " €
+Betrag: {$vat_text}
+Land: " . ($pricing['is_domestic'] ? 'Deutschland' : strtoupper($store->country ?? '?')) . "
 
 Bitte überprüfen Sie den Zahlungseingang und bestätigen Sie die Zahlung im Admin-Bereich.
 
@@ -159,7 +198,7 @@ vielen Dank für Ihre Bestellung des PunktePass Händler-Abos.
 
 Bitte überweisen Sie den folgenden Betrag auf unser Konto:
 
-Betrag: " . number_format(self::PRICE_GROSS, 2, ',', '.') . " € (inkl. 19% MwSt)
+Betrag: {$vat_text}
 Verwendungszweck: {$reference}
 
 Bankverbindung:
@@ -176,12 +215,12 @@ Ihr PunktePass Team
 
         wp_mail($store->email, $handler_subject, $handler_message);
 
-        ppv_log("💳 Bank transfer requested for store {$store_id}, reference: {$reference}");
+        ppv_log("💳 Bank transfer requested for store {$store_id}, reference: {$reference}, amount: {$amount}");
 
         return new WP_REST_Response([
             'success' => true,
             'reference' => $reference,
-            'amount' => self::PRICE_GROSS,
+            'amount' => $amount,
             'bank_details' => [
                 'account_holder' => get_option('ppv_bank_account_holder', self::ACCOUNT_HOLDER),
                 'iban' => get_option('ppv_bank_iban', self::IBAN),

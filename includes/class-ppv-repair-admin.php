@@ -19,13 +19,22 @@ class PPV_Repair_Admin {
      * Route: /formular/admin/login
      * ============================================================ */
     public static function render_login() {
+        // Load repair-specific translations
+        PPV_Lang::load_extra('ppv-repair-lang');
+        $lang = PPV_Lang::current();
         $ajax_url = admin_url('admin-ajax.php');
-        echo '<!DOCTYPE html>
-<html lang="de">
+
+        $js_strings = json_encode([
+            'login_failed'     => PPV_Lang::t('repair_login_failed'),
+            'connection_error' => PPV_Lang::t('repair_connection_error'),
+        ], JSON_UNESCAPED_UNICODE);
+
+        ?><!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Login - Reparatur Admin</title>
+<title><?php echo esc_html(PPV_Lang::t('repair_login_title')); ?></title>
 <meta name="theme-color" content="#667eea">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
 <style>
@@ -54,36 +63,60 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .register-link a:hover{text-decoration:underline}
 .footer-text{text-align:center;margin-top:24px;font-size:12px;color:#9ca3af}
 .footer-text a{color:#667eea;text-decoration:none}
+.login-lang-switch{display:flex;justify-content:center;gap:4px;margin-bottom:20px}
+.login-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
+.login-lang-btn:hover{background:#e5e7eb;color:#374151}
+.login-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
 </style>
 </head>
 <body>
 <div class="login-wrap">
     <div class="login-box">
+        <!-- Language Switcher -->
+        <div class="login-lang-switch">
+            <button class="login-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
+            <button class="login-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
+            <button class="login-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
+        </div>
         <div class="login-logo"><i class="ri-tools-line"></i></div>
-        <h2>Reparatur Admin</h2>
-        <p class="subtitle">Melden Sie sich an, um Ihre Reparaturen zu verwalten</p>
+        <h2><?php echo esc_html(PPV_Lang::t('repair_login_heading')); ?></h2>
+        <p class="subtitle"><?php echo esc_html(PPV_Lang::t('repair_login_subtitle')); ?></p>
         <form id="login-form" autocomplete="off">
             <div class="field">
-                <label for="login-email">E-Mail</label>
-                <input type="email" id="login-email" required placeholder="info@ihr-shop.de" autocomplete="email">
+                <label for="login-email"><?php echo esc_html(PPV_Lang::t('repair_email_label')); ?></label>
+                <input type="email" id="login-email" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_email_placeholder')); ?>" autocomplete="email">
             </div>
             <div class="field">
-                <label for="login-pass">Passwort</label>
-                <input type="password" id="login-pass" required placeholder="Passwort" autocomplete="current-password">
+                <label for="login-pass"><?php echo esc_html(PPV_Lang::t('repair_login_password')); ?></label>
+                <input type="password" id="login-pass" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_login_password_placeholder')); ?>" autocomplete="current-password">
             </div>
             <button type="submit" class="btn-login" id="login-btn">
                 <i class="ri-loader-4-line ri-spin spinner"></i>
-                <span class="label">Anmelden</span>
+                <span class="label"><?php echo esc_html(PPV_Lang::t('repair_login_submit')); ?></span>
             </button>
             <div class="error-msg" id="login-error"></div>
         </form>
-        <p class="register-link">Noch kein Konto? <a href="/formular">Jetzt registrieren</a></p>
+        <p class="register-link"><?php echo esc_html(PPV_Lang::t('repair_login_no_account')); ?> <a href="/formular"><?php echo esc_html(PPV_Lang::t('repair_login_register')); ?></a></p>
     </div>
-    <div class="footer-text">Powered by <a href="https://punktepass.de" target="_blank">PunktePass</a></div>
+    <div class="footer-text"><?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?> <a href="https://punktepass.de" target="_blank">PunktePass</a></div>
 </div>
 
 <script>
 (function(){
+    var ppvLang = <?php echo $js_strings; ?>;
+
+    // Language switcher
+    var langBtns = document.querySelectorAll('.login-lang-btn');
+    langBtns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var lang = btn.getAttribute('data-lang');
+            var url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            document.cookie = 'ppv_lang=' + lang + ';path=/;max-age=31536000';
+            window.location.href = url.toString();
+        });
+    });
+
     var form=document.getElementById("login-form"),
         btn=document.getElementById("login-btn"),
         err=document.getElementById("login-error"),
@@ -101,18 +134,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         fd.append("email",emailInput.value.trim());
         fd.append("password",passInput.value);
 
-        fetch("' . esc_url($ajax_url) . '",{method:"POST",body:fd,credentials:"same-origin"})
+        fetch(<?php echo json_encode(esc_url($ajax_url)); ?>,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
                 window.location.href=data.data.redirect||"/formular/admin";
             }else{
-                err.textContent=data.data&&data.data.message?data.data.message:"Anmeldung fehlgeschlagen.";
+                err.textContent=data.data&&data.data.message?data.data.message:ppvLang.login_failed;
                 err.style.display="block";
             }
         })
         .catch(function(){
-            err.textContent="Verbindungsfehler. Bitte versuchen Sie es erneut.";
+            err.textContent=ppvLang.connection_error;
             err.style.display="block";
         })
         .finally(function(){
@@ -123,7 +156,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 })();
 </script>
 </body>
-</html>';
+</html><?php
     }
 
     /** ============================================================
@@ -137,6 +170,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
         }
+
+        // Load translations
+        PPV_Lang::load_extra('ppv-repair-lang');
+        $lang = PPV_Lang::current();
 
         $store_id = (int)($_SESSION['ppv_repair_store_id'] ?? 0);
         if (!$store_id) {
@@ -206,7 +243,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $reward_name = esc_attr($store->repair_reward_name ?? '10 Euro Rabatt');
         $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
         $required_points = intval($store->repair_required_points ?? 4);
-        $form_title = esc_attr($store->repair_form_title ?? 'Reparaturauftrag');
+        $raw_title = $store->repair_form_title ?? '';
+        $form_title = esc_attr(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
         $form_subtitle = esc_attr($store->repair_form_subtitle ?? '');
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
         $reward_type = esc_attr($store->repair_reward_type ?? 'discount_fixed');
@@ -275,7 +313,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         // Build repairs HTML
         $repairs_html = '';
         if (empty($recent)) {
-            $repairs_html = '<div class="ra-empty"><i class="ri-inbox-line"></i><p>Noch keine Reparaturen. Teilen Sie Ihren Formular-Link!</p></div>';
+            $repairs_html = '<div class="ra-empty"><i class="ri-inbox-line"></i><p>' . esc_html(PPV_Lang::t('repair_admin_no_repairs')) . '</p></div>';
         } else {
             foreach ($recent as $r) {
                 $repairs_html .= self::build_repair_card_html($r, $store);
@@ -283,11 +321,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         }
 
         echo '<!DOCTYPE html>
-<html lang="de">
+<html lang="' . esc_attr($lang) . '">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>' . $store_name . ' - Reparatur Admin</title>
+<title>' . $store_name . ' - ' . esc_html(PPV_Lang::t('repair_admin_title')) . '</title>
 <meta name="theme-color" content="' . $store_color . '">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -675,6 +713,11 @@ a:hover{color:#5a67d8}
     .ra-inv-line{flex-wrap:wrap}
     .ra-inv-line-amount{width:100%}
 }
+/* Language Switcher */
+.ra-lang-switch{display:flex;gap:4px;align-items:center}
+.ra-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:.5px}
+.ra-lang-btn:hover{background:#e5e7eb;color:#374151}
+.ra-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,.3)}
 </style>
 </head>
 <body>
@@ -690,14 +733,19 @@ a:hover{color:#5a67d8}
 
         echo '<div>
                 <div class="ra-title">' . $store_name . '</div>
-                <div class="ra-subtitle">Reparatur Admin</div>
+                <div class="ra-subtitle">' . esc_html(PPV_Lang::t('repair_admin_title')) . '</div>
             </div>
         </div>
         <div class="ra-header-right">
+            <div class="ra-lang-switch">
+                <button class="ra-lang-btn ' . ($lang === 'de' ? 'active' : '') . '" data-lang="de">DE</button>
+                <button class="ra-lang-btn ' . ($lang === 'hu' ? 'active' : '') . '" data-lang="hu">HU</button>
+                <button class="ra-lang-btn ' . ($lang === 'ro' ? 'active' : '') . '" data-lang="ro">RO</button>
+            </div>
             <a href="' . esc_url($form_url) . '" target="_blank" class="ra-btn ra-btn-outline">
-                <i class="ri-external-link-line"></i> Formular ansehen
+                <i class="ri-external-link-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_view_form')) . '
             </a>
-            <button class="ra-btn-icon" id="ra-settings-toggle-btn" title="Einstellungen">
+            <button class="ra-btn-icon" id="ra-settings-toggle-btn" title="' . esc_attr(PPV_Lang::t('repair_admin_settings')) . '">
                 <i class="ri-settings-3-line"></i>
             </button>
         </div>
@@ -707,19 +755,19 @@ a:hover{color:#5a67d8}
     <div class="ra-stats">
         <div class="ra-stat-card">
             <div class="ra-stat-value">' . $total_repairs . '</div>
-            <div class="ra-stat-label">Gesamt</div>
+            <div class="ra-stat-label">' . esc_html(PPV_Lang::t('repair_admin_stat_total')) . '</div>
         </div>
         <div class="ra-stat-card ra-stat-highlight">
             <div class="ra-stat-value">' . $open_repairs . '</div>
-            <div class="ra-stat-label">Offen</div>
+            <div class="ra-stat-label">' . esc_html(PPV_Lang::t('repair_admin_stat_open')) . '</div>
         </div>
         <div class="ra-stat-card">
             <div class="ra-stat-value">' . $today_repairs . '</div>
-            <div class="ra-stat-label">Heute</div>
+            <div class="ra-stat-label">' . esc_html(PPV_Lang::t('repair_admin_stat_today')) . '</div>
         </div>
         <div class="ra-stat-card">
             <div class="ra-stat-value">' . $total_customers . '</div>
-            <div class="ra-stat-label">Kunden</div>
+            <div class="ra-stat-label">' . esc_html(PPV_Lang::t('repair_admin_stat_customers')) . '</div>
         </div>
     </div>';
 
@@ -737,10 +785,10 @@ a:hover{color:#5a67d8}
             if ($limit_reached_now) {
                 echo '<div class="ra-upgrade-banner" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:14px;padding:20px 24px;margin-bottom:16px;color:#fff;text-align:center">
                     <div style="font-size:24px;margin-bottom:8px"><i class="ri-error-warning-line"></i></div>
-                    <h3 style="font-size:18px;font-weight:700;margin-bottom:8px">Formularlimit erreicht!</h3>
-                    <p style="font-size:14px;opacity:0.9;margin-bottom:16px">Ihr Formular ist f&uuml;r Kunden nicht mehr verf&uuml;gbar. Upgraden Sie jetzt auf Premium f&uuml;r unbegrenzte Formulare.</p>
+                    <h3 style="font-size:18px;font-weight:700;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_limit_reached')) . '</h3>
+                    <p style="font-size:14px;opacity:0.9;margin-bottom:16px">' . esc_html(PPV_Lang::t('repair_admin_limit_text')) . '</p>
                     <a href="/checkout" class="ra-btn" style="background:#fff;color:#dc2626;padding:12px 24px;font-size:15px">
-                        <i class="ri-vip-crown-line"></i> Jetzt upgraden - 39,00 &euro; / Monat
+                        <i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_upgrade_price')) . '
                     </a>
                 </div>';
             } else {
@@ -748,7 +796,7 @@ a:hover{color:#5a67d8}
             <div class="ra-usage-info">
                 <span>Formulare: ' . intval($store->repair_form_count) . ' / ' . intval($store->repair_form_limit) . '</span>';
                 if ($limit_pct >= 80) {
-                    echo '<span class="ra-usage-warn"><a href="/checkout" style="color:#dc2626;text-decoration:underline">Jetzt upgraden</a></span>';
+                    echo '<span class="ra-usage-warn"><a href="/checkout" style="color:#dc2626;text-decoration:underline">' . esc_html(PPV_Lang::t('repair_admin_upgrade_now')) . '</a></span>';
                 }
                 echo '</div>
             <div class="ra-usage-bar">
@@ -757,18 +805,18 @@ a:hover{color:#5a67d8}
         </div>';
             }
         } else {
-            echo '<div class="ra-premium-badge"><i class="ri-vip-crown-line"></i> Premium aktiv</div>';
+            echo '<div class="ra-premium-badge"><i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_premium_active')) . '</div>';
         }
 
         // Formular-Link card
         echo '<div class="ra-link-card">
-        <div class="ra-link-label">Ihr Formular-Link</div>
+        <div class="ra-link-label">' . esc_html(PPV_Lang::t('repair_admin_form_link')) . '</div>
         <div class="ra-link-row">
             <input type="text" value="' . esc_attr($form_url) . '" readonly class="ra-link-input" id="ra-form-url">
-            <button class="ra-btn-copy" id="ra-copy-btn" title="Link kopieren">
+            <button class="ra-btn-copy" id="ra-copy-btn" title="' . esc_attr(PPV_Lang::t('repair_admin_copy_link')) . '">
                 <i class="ri-file-copy-line"></i>
             </button>
-            <button class="ra-btn-tips" id="ra-tips-btn" onclick="openKioskTips()" title="Tablet-Kiosk Tipps">
+            <button class="ra-btn-tips" id="ra-tips-btn" onclick="openKioskTips()" title="' . esc_attr(PPV_Lang::t('repair_admin_kiosk_tips')) . '">
                 <i class="ri-lightbulb-line"></i>
             </button>
         </div>
@@ -776,64 +824,74 @@ a:hover{color:#5a67d8}
 
         // Settings panel
         echo '<div id="ra-settings" class="ra-settings ra-hidden">
-        <h3><i class="ri-settings-3-line"></i> Einstellungen</h3>
+        <h3><i class="ri-settings-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_settings')) . '</h3>
 
         <!-- Settings Tabs Navigation -->
         <div class="ra-settings-tabs" id="ra-settings-tabs">
-            <button type="button" class="ra-settings-tab active" data-panel="general"><i class="ri-store-2-line"></i> Allgemein</button>
-            <button type="button" class="ra-settings-tab" data-panel="form"><i class="ri-edit-line"></i> Formular</button>
-            <button type="button" class="ra-settings-tab" data-panel="invoice"><i class="ri-file-list-3-line"></i> Rechnungen</button>
-            <button type="button" class="ra-settings-tab" data-panel="email"><i class="ri-mail-line"></i> E-Mails</button>
-            <button type="button" class="ra-settings-tab" data-panel="punktepass"><i class="ri-star-line"></i> PunktePass</button>
-            <button type="button" class="ra-settings-tab" data-panel="abo"><i class="ri-vip-crown-line"></i> Abo</button>
+            <button type="button" class="ra-settings-tab active" data-panel="general"><i class="ri-store-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_general')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="form"><i class="ri-edit-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_form')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="invoice"><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_invoices')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="email"><i class="ri-mail-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_emails')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="punktepass"><i class="ri-star-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_pp')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="abo"><i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_abo')) . '</button>
         </div>
 
         <form id="ra-settings-form">
             <!-- ==================== PANEL: Allgemein ==================== -->
             <div class="ra-settings-panel active" data-panel="general">
-                <h4><i class="ri-store-2-line"></i> Gesch&auml;ftsdaten</h4>
+                <h4><i class="ri-store-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_business_data')) . '</h4>
                 <div class="ra-settings-grid">
                 <div class="field">
-                    <label>Firmenname</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_company_name')) . '</label>
                     <input type="text" name="name" value="' . esc_attr($store->name) . '">
                 </div>
                 <div class="field">
-                    <label>Inhaber / Name</label>
-                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '" placeholder="Max Mustermann">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_owner_name')) . '</label>
+                    <input type="text" name="repair_owner_name" value="' . esc_attr($store->repair_owner_name) . '">
                 </div>
                 <div class="field">
-                    <label>Adresse</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_address')) . '</label>
                     <input type="text" name="address" value="' . esc_attr($store->address) . '">
                 </div>
                 <div class="field">
-                    <label>PLZ</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
                     <input type="text" name="plz" value="' . esc_attr($store->plz) . '">
                 </div>
                 <div class="field">
-                    <label>Stadt</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_city')) . '</label>
                     <input type="text" name="city" value="' . esc_attr($store->city) . '">
                 </div>
                 <div class="field">
-                    <label>Telefon</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_country')) . '</label>
+                    <select name="country">
+                        <option value="DE"' . (($store->country ?? '') === 'DE' ? ' selected' : '') . '>Deutschland</option>
+                        <option value="AT"' . (($store->country ?? '') === 'AT' ? ' selected' : '') . '>Österreich</option>
+                        <option value="CH"' . (($store->country ?? '') === 'CH' ? ' selected' : '') . '>Schweiz</option>
+                        <option value="HU"' . (($store->country ?? '') === 'HU' ? ' selected' : '') . '>Magyarország</option>
+                        <option value="RO"' . (($store->country ?? '') === 'RO' ? ' selected' : '') . '>România</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_phone')) . '</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
                 </div>
                 <div class="field">
-                    <label>USt-IdNr.</label>
-                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '" placeholder="DE123456789">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
+                    <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
                 </div>
                 <div class="field">
-                    <label>Login E-Mail <small style="color:#6b7280">(f&uuml;r Anmeldung)</small></label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_login_email')) . ' <small style="color:#6b7280">(' . esc_html(PPV_Lang::t('repair_admin_login_email_hint')) . ')</small></label>
                     <input type="email" name="email" value="' . esc_attr($store->email) . '" required>
                 </div>
                 <div class="field">
-                    <label>Akzentfarbe</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_accent_color')) . '</label>
                     <input type="color" name="repair_color" value="' . $store_color . '">
                 </div>
             </div>
 
             <!-- Logo upload -->
             <div class="ra-logo-section">
-                <label>Logo</label>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_logo')) . '</label>
                 <div class="ra-logo-upload">
                     <div class="ra-logo-preview" id="ra-logo-preview">';
 
@@ -846,45 +904,45 @@ a:hover{color:#5a67d8}
         echo '</div>
                     <input type="file" id="ra-logo-file" accept="image/*" style="display:none">
                     <button type="button" class="ra-btn ra-btn-outline ra-btn-sm" onclick="document.getElementById(\'ra-logo-file\').click()">
-                        <i class="ri-upload-2-line"></i> Logo hochladen
+                        <i class="ri-upload-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_upload_logo')) . '
                     </button>
                 </div>
             </div>
 
 
-                <h4><i class="ri-file-list-3-line"></i> Impressum / Rechtliches <small style="font-weight:normal;color:#6b7280">(optional, falls abweichend)</small></h4>
-            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Nur ausf&uuml;llen, wenn die Impressum-Daten von den Gesch&auml;ftsdaten abweichen.</p>
+                <h4><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_legal_title')) . ' <small style="font-weight:normal;color:#6b7280">(' . esc_html(PPV_Lang::t('repair_admin_legal_optional')) . ')</small></h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_legal_hint')) . '</p>
             <div class="ra-settings-grid">
                 <div class="field">
-                    <label>Firmenname (Impressum)</label>
-                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '" placeholder="Leer = Firmenname oben">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_imprint_company')) . '</label>
+                    <input type="text" name="repair_company_name" value="' . esc_attr($store->repair_company_name) . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_imprint_ph')) . '">
                 </div>
                 <div class="field">
-                    <label>Abweichende Adresse</label>
-                    <input type="text" name="repair_company_address" value="' . esc_attr($store->repair_company_address) . '" placeholder="Nur wenn abweichend von oben">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_diff_address')) . '</label>
+                    <input type="text" name="repair_company_address" value="' . esc_attr($store->repair_company_address) . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_diff_hint')) . '">
                 </div>
                 <div class="field">
-                    <label>Abweichende Telefon</label>
-                    <input type="text" name="repair_company_phone" value="' . esc_attr($store->repair_company_phone) . '" placeholder="Nur wenn abweichend">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_diff_phone')) . '</label>
+                    <input type="text" name="repair_company_phone" value="' . esc_attr($store->repair_company_phone) . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_diff_short')) . '">
                 </div>
                 <div class="field">
-                    <label>Abweichende E-Mail</label>
-                    <input type="text" name="repair_company_email" value="' . esc_attr($store->repair_company_email) . '" placeholder="Nur wenn abweichend">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_diff_email')) . '</label>
+                    <input type="text" name="repair_company_email" value="' . esc_attr($store->repair_company_email) . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_diff_short')) . '">
                 </div>
             </div>
             </div><!-- END PANEL: general -->
 
             <!-- ==================== PANEL: PunktePass ==================== -->
             <div class="ra-settings-panel" data-panel="punktepass">
-                <h4><i class="ri-star-line"></i> PunktePass Integration</h4>
+                <h4><i class="ri-star-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_pp_title')) . '</h4>
             <div class="ra-toggle">
                 <label class="ra-toggle-switch">
                     <input type="checkbox" id="ra-pp-toggle" ' . ($pp_enabled ? 'checked' : '') . '>
                     <span class="ra-toggle-slider"></span>
                 </label>
                 <div>
-                    <div class="ra-toggle-label">PunktePass aktivieren</div>
-                    <div class="ra-toggle-desc">Kunden sammeln Bonuspunkte bei jeder Formularabgabe</div>
+                    <div class="ra-toggle-label">' . esc_html(PPV_Lang::t('repair_admin_pp_enable')) . '</div>
+                    <div class="ra-toggle-desc">' . esc_html(PPV_Lang::t('repair_admin_pp_desc')) . '</div>
                 </div>
             </div>
             <input type="hidden" name="repair_punktepass_enabled" id="ra-pp-enabled-val" value="' . $pp_enabled . '">
@@ -892,40 +950,40 @@ a:hover{color:#5a67d8}
             <div id="ra-pp-settings" ' . ($pp_enabled ? '' : 'style="display:none"') . '>
                 <div class="ra-settings-grid">
                     <div class="field">
-                        <label>Punkte pro Formular</label>
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_pp_per_form')) . '</label>
                         <input type="number" name="repair_points_per_form" value="' . intval($store->repair_points_per_form) . '" min="0" max="50">
                     </div>
                     <div class="field">
-                        <label>Ben&ouml;tigte Punkte f&uuml;r Belohnung</label>
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_pp_required')) . '</label>
                         <input type="number" name="repair_required_points" value="' . $required_points . '" min="1" max="100">
                     </div>
                     <div class="field">
-                        <label>Belohnung</label>
-                        <input type="text" name="repair_reward_name" value="' . $reward_name . '" placeholder="z.B. 10 Euro Rabatt">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_pp_reward')) . '</label>
+                        <input type="text" name="repair_reward_name" value="' . $reward_name . '">
                     </div>
                     <div class="field">
-                        <label>Belohnungsbeschreibung</label>
-                        <input type="text" name="repair_reward_description" value="' . $reward_desc . '" placeholder="z.B. 10 Euro Rabatt auf Ihre n&auml;chste Reparatur">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_pp_reward_desc')) . '</label>
+                        <input type="text" name="repair_reward_description" value="' . $reward_desc . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_pp_reward_ph')) . '">
                     </div>
                 </div>
                 <hr style="border:none;border-top:1px solid #f0f0f0;margin:16px 0">
-                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px">BELOHNUNG BEI EINL&Ouml;SUNG</label>
+                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_pp_redemption')) . '</label>
                 <div class="ra-settings-grid">
                     <div class="field">
-                        <label>Belohnungstyp</label>
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_pp_type')) . '</label>
                         <select name="repair_reward_type" class="ra-status-select" style="max-width:none" id="ra-reward-type">
-                            <option value="discount_fixed" ' . ($reward_type === 'discount_fixed' ? 'selected' : '') . '>Fester Rabatt (&euro;)</option>
-                            <option value="discount_percent" ' . ($reward_type === 'discount_percent' ? 'selected' : '') . '>Prozent-Rabatt (%)</option>
-                            <option value="free_product" ' . ($reward_type === 'free_product' ? 'selected' : '') . '>Gratis Produkt</option>
+                            <option value="discount_fixed" ' . ($reward_type === 'discount_fixed' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_pp_discount_fixed')) . '</option>
+                            <option value="discount_percent" ' . ($reward_type === 'discount_percent' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_pp_discount_pct')) . '</option>
+                            <option value="free_product" ' . ($reward_type === 'free_product' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_pp_free_product')) . '</option>
                         </select>
                     </div>
                     <div class="field">
-                        <label>Wert</label>
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_pp_value')) . '</label>
                         <input type="number" name="repair_reward_value" value="' . $reward_value . '" min="0" step="0.01" placeholder="10.00">
                     </div>
                     <div class="field" id="ra-reward-product-field" ' . ($reward_type === 'free_product' ? '' : 'style="display:none"') . '>
-                        <label>Gratis-Produkt Name</label>
-                        <input type="text" name="repair_reward_product" value="' . $reward_product . '" placeholder="z.B. Panzerglasfolie">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_pp_product_name')) . '</label>
+                        <input type="text" name="repair_reward_product" value="' . $reward_product . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_pp_product_ph')) . '">
                     </div>
                 </div>
             </div>
@@ -933,47 +991,47 @@ a:hover{color:#5a67d8}
 
             <!-- ==================== PANEL: Formular ==================== -->
             <div class="ra-settings-panel" data-panel="form">
-                <h4><i class="ri-edit-line"></i> Formular anpassen</h4>
+                <h4><i class="ri-edit-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_form_customize')) . '</h4>
             <div class="ra-settings-grid">
                 <div class="field">
-                    <label>Formulartitel</label>
-                    <input type="text" name="repair_form_title" value="' . $form_title . '" placeholder="Reparaturauftrag">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_form_title')) . '</label>
+                    <input type="text" name="repair_form_title" value="' . $form_title . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_form_title_ph')) . '">
                 </div>
                 <div class="field">
-                    <label>Untertitel</label>
-                    <input type="text" name="repair_form_subtitle" value="' . $form_subtitle . '" placeholder="Optional">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_form_subtitle')) . '</label>
+                    <input type="text" name="repair_form_subtitle" value="' . $form_subtitle . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_form_optional')) . '">
                 </div>
                 <div class="field">
-                    <label>Branche / Service-Typ</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_service_type')) . '</label>
                     <select name="repair_service_type" class="ra-status-select" style="max-width:none">
-                        <option value="Allgemein" ' . ($service_type === 'Allgemein' ? 'selected' : '') . '>Allgemein</option>
-                        <option value="Handy-Reparatur" ' . ($service_type === 'Handy-Reparatur' ? 'selected' : '') . '>Handy-Reparatur</option>
-                        <option value="Computer-Reparatur" ' . ($service_type === 'Computer-Reparatur' ? 'selected' : '') . '>Computer-Reparatur</option>
-                        <option value="Fahrrad-Reparatur" ' . ($service_type === 'Fahrrad-Reparatur' ? 'selected' : '') . '>Fahrrad-Reparatur</option>
-                        <option value="KFZ-Reparatur" ' . ($service_type === 'KFZ-Reparatur' ? 'selected' : '') . '>KFZ-Reparatur</option>
-                        <option value="Schmuck-Reparatur" ' . ($service_type === 'Schmuck-Reparatur' ? 'selected' : '') . '>Schmuck-Reparatur</option>
-                        <option value="Elektro-Reparatur" ' . ($service_type === 'Elektro-Reparatur' ? 'selected' : '') . '>Elektro-Reparatur</option>
-                        <option value="Uhren-Reparatur" ' . ($service_type === 'Uhren-Reparatur' ? 'selected' : '') . '>Uhren-Reparatur</option>
-                        <option value="Schuh-Reparatur" ' . ($service_type === 'Schuh-Reparatur' ? 'selected' : '') . '>Schuh-Reparatur</option>
-                        <option value="Sonstige" ' . ($service_type === 'Sonstige' ? 'selected' : '') . '>Sonstige</option>
+                        <option value="Allgemein" ' . ($service_type === 'Allgemein' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_general')) . '</option>
+                        <option value="Handy-Reparatur" ' . ($service_type === 'Handy-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_handy')) . '</option>
+                        <option value="Computer-Reparatur" ' . ($service_type === 'Computer-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_computer')) . '</option>
+                        <option value="Fahrrad-Reparatur" ' . ($service_type === 'Fahrrad-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_bicycle')) . '</option>
+                        <option value="KFZ-Reparatur" ' . ($service_type === 'KFZ-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_car')) . '</option>
+                        <option value="Schmuck-Reparatur" ' . ($service_type === 'Schmuck-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_jewelry')) . '</option>
+                        <option value="Elektro-Reparatur" ' . ($service_type === 'Elektro-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_electrical')) . '</option>
+                        <option value="Uhren-Reparatur" ' . ($service_type === 'Uhren-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_watch')) . '</option>
+                        <option value="Schuh-Reparatur" ' . ($service_type === 'Schuh-Reparatur' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_shoe')) . '</option>
+                        <option value="Sonstige" ' . ($service_type === 'Sonstige' ? 'selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_svc_other')) . '</option>
                     </select>
                 </div>
             </div>
 
             <div style="margin-top:16px">
-                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:10px">FORMULARFELDER</label>
+                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:10px">' . esc_html(PPV_Lang::t('repair_admin_form_fields')) . '</label>
                 <div class="ra-field-config" id="ra-field-config">';
 
 // Field config rows
 $fc_field_names = [
-    'device_brand' => 'Marke',
-    'device_model' => 'Modell',
-    'device_imei' => 'Seriennummer',
-    'device_pattern' => 'Entsperrcode',
-    'muster_image' => 'Entsperrmuster',
-    'accessories' => 'Zubeh&ouml;r',
-    'customer_phone' => 'Telefon',
-    'customer_address' => 'Adresse',
+    'device_brand' => PPV_Lang::t('repair_brand_label'),
+    'device_model' => PPV_Lang::t('repair_model_label'),
+    'device_imei' => PPV_Lang::t('repair_imei_label'),
+    'device_pattern' => PPV_Lang::t('repair_pin_label'),
+    'muster_image' => PPV_Lang::t('repair_pattern_label'),
+    'accessories' => PPV_Lang::t('repair_accessories_label'),
+    'customer_phone' => PPV_Lang::t('repair_phone_label'),
+    'customer_address' => PPV_Lang::t('repair_address_label'),
 ];
 foreach ($fc_field_names as $fk => $fn) {
     $fc = $field_config[$fk] ?? $fc_defaults[$fk];
@@ -990,74 +1048,74 @@ echo '          </div>
             </div>
 
 
-                <h4><i class="ri-settings-4-line"></i> Branchenspezifische Optionen</h4>
-            <p style="font-size:12px;color:#6b7280;margin-bottom:16px">Passen Sie das Formular f&uuml;r Ihre Branche an (Handy, Computer, Fahrrad, KFZ, Schmuck, Uhren, Schuhe, etc.)</p>
+                <h4><i class="ri-settings-4-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_branch_options')) . '</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:16px">' . esc_html(PPV_Lang::t('repair_admin_branch_hint')) . '</p>
 
             <div class="field" style="margin-bottom:16px">
-                <label>Marken / Hersteller <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_brands_label')) . '</label>
                 <textarea name="repair_custom_brands" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Apple&#10;Samsung&#10;Huawei&#10;Xiaomi&#10;...">' . $custom_brands . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = freie Texteingabe im Formular</p>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_brands_hint')) . '</p>
             </div>
 
             <div class="field" style="margin-bottom:16px">
-                <label>H&auml;ufige Probleme / Reparaturarten <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_problems_label')) . '</label>
                 <textarea name="repair_custom_problems" rows="5" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Display gebrochen&#10;Akku tauschen&#10;Wasserschaden&#10;Ladebuchse defekt&#10;...">' . $custom_problems . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = nur Freitext. Wird als Schnellauswahl-Buttons im Formular angezeigt</p>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_problems_hint')) . '</p>
             </div>
 
             <div class="field" style="margin-bottom:16px">
-                <label>Zubeh&ouml;r-Optionen <span style="color:#9ca3af;font-weight:normal">(pro Zeile eine)</span></label>
-                <textarea name="repair_custom_accessories" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Ladekabel&#10;H&uuml;lle / Case&#10;Schl&uuml;ssel&#10;Originalkarton&#10;...">' . $custom_accessories . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer lassen = Standard-Zubeh&ouml;r (Ladekabel, H&uuml;lle, Schl&uuml;ssel, Sonstiges)</p>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_accessories_label')) . '</label>
+                <textarea name="repair_custom_accessories" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical">' . $custom_accessories . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_accessories_hint')) . '</p>
             </div>
 
             <div class="ra-settings-grid" style="margin-bottom:16px">
                 <div class="field">
-                    <label>&Ouml;ffnungszeiten <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
-                    <input type="text" name="repair_opening_hours" value="' . $opening_hours . '" placeholder="Mo-Fr 9-18, Sa 10-14">
-                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">Wird im Formular-Header angezeigt</p>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_opening_hours')) . '</label>
+                    <input type="text" name="repair_opening_hours" value="' . $opening_hours . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_opening_hours_ph')) . '">
+                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_opening_hint')) . '</p>
                 </div>
                 <div class="field">
-                    <label>Eigene AGB-URL <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
-                    <input type="text" name="repair_terms_url" value="' . $terms_url . '" placeholder="https://ihre-website.de/agb">
-                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer = automatisch generierte AGB</p>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_terms_url')) . '</label>
+                    <input type="text" name="repair_terms_url" value="' . $terms_url . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_terms_url_ph')) . '">
+                    <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_terms_hint')) . '</p>
                 </div>
             </div>
 
             <div class="field" style="margin-bottom:16px">
-                <label>Erfolgsmeldung nach Absenden <span style="color:#9ca3af;font-weight:normal">(optional)</span></label>
-                <textarea name="repair_success_message" rows="3" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.">' . $success_message . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">Leer = Standard-Meldung</p>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_success_msg')) . '</label>
+                <textarea name="repair_success_message" rows="3" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_success_msg_ph')) . '">' . $success_message . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_success_hint')) . '</p>
             </div>
 
             </div><!-- END PANEL: form -->
 
             <!-- ==================== PANEL: Rechnungen ==================== -->
             <div class="ra-settings-panel" data-panel="invoice">
-                <h4><i class="ri-file-list-3-line"></i> Rechnungsnummern</h4>
+                <h4><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_inv_numbers')) . '</h4>
             <div class="ra-settings-grid">
                 <div class="field">
-                    <label>Rechnungsnr. Pr&auml;fix</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_inv_prefix')) . '</label>
                     <input type="text" name="repair_invoice_prefix" id="ra-inv-prefix" value="' . $inv_prefix . '" placeholder="RE-" oninput="updateInvPreview()">
                 </div>
                 <div class="field">
-                    <label>N&auml;chste Rechnungsnr.</label>
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_inv_next')) . '</label>
                     <input type="number" name="repair_invoice_next_number" id="ra-inv-next" value="' . $inv_next . '" min="1" oninput="updateInvPreview()">
                 </div>
             </div>
             <div style="margin-top:12px;padding:12px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
                     <div>
-                        <div style="font-size:12px;color:#0369a1;font-weight:500">Vorschau n&auml;chste Rechnung</div>
+                        <div style="font-size:12px;color:#0369a1;font-weight:500">' . esc_html(PPV_Lang::t('repair_admin_inv_preview')) . '</div>
                         <div style="font-size:18px;font-weight:600;color:#0c4a6e;margin-top:2px" id="ra-inv-preview">' . esc_html($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '</div>
                     </div>
                     ' . ($inv_detected_max > 0 && $inv_suggested_next > $inv_next ? '
                     <div style="text-align:right">
-                        <div style="font-size:11px;color:#6b7280">H&ouml;chste mit "' . esc_html($inv_prefix) . '": <strong>' . esc_html($inv_detected_max) . '</strong></div>
-                        <button type="button" onclick="document.getElementById(\'ra-inv-next\').value=' . $inv_suggested_next . ';updateInvPreview()" style="margin-top:4px;padding:6px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer">&Uuml;bernehmen: ' . $inv_suggested_next . '</button>
+                        <div style="font-size:11px;color:#6b7280">' . esc_html(PPV_Lang::t('repair_admin_inv_highest')) . ' "' . esc_html($inv_prefix) . '": <strong>' . esc_html($inv_detected_max) . '</strong></div>
+                        <button type="button" onclick="document.getElementById(\'ra-inv-next\').value=' . $inv_suggested_next . ';updateInvPreview()" style="margin-top:4px;padding:6px 12px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer">' . esc_html(PPV_Lang::t('repair_admin_inv_apply')) . ': ' . $inv_suggested_next . '</button>
                     </div>' : '') . '
                 </div>
-                ' . ($inv_total_count > 0 ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #bae6fd;font-size:11px;color:#6b7280">Rechnungen gesamt: <strong>' . $inv_total_count . '</strong>' . ($inv_detected_max == 0 && count($all_invoice_numbers) == 0 ? ' (keine mit Pr&auml;fix "' . esc_html($inv_prefix) . '")' : ' (' . count($all_invoice_numbers) . ' mit Pr&auml;fix "' . esc_html($inv_prefix) . '")') . '</div>' : '') . '
+                ' . ($inv_total_count > 0 ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #bae6fd;font-size:11px;color:#6b7280">' . esc_html(PPV_Lang::t('repair_admin_inv_total_count')) . ': <strong>' . $inv_total_count . '</strong>' . ($inv_detected_max == 0 && count($all_invoice_numbers) == 0 ? ' (' . esc_html(PPV_Lang::t('repair_admin_inv_no_prefix')) . ' "' . esc_html($inv_prefix) . '")' : ' (' . count($all_invoice_numbers) . ' ' . esc_html(PPV_Lang::t('repair_admin_inv_with_prefix')) . ' "' . esc_html($inv_prefix) . '")') . '</div>' : '') . '
             </div>
             <script>
             function updateInvPreview(){
@@ -1068,108 +1126,108 @@ echo '          </div>
             </script>
 
 
-                <h4><i class="ri-percent-line"></i> Umsatzsteuer (MwSt)</h4>
+                <h4><i class="ri-percent-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_vat_title')) . '</h4>
             <div class="ra-toggle">
                 <label class="ra-toggle-switch">
                     <input type="checkbox" id="ra-vat-toggle" ' . ($vat_enabled ? 'checked' : '') . '>
                     <span class="ra-toggle-slider"></span>
                 </label>
                 <div>
-                    <div class="ra-toggle-label">Umsatzsteuerpflichtig</div>
-                    <div class="ra-toggle-desc">Deaktivieren f&uuml;r Kleinunternehmer gem. &sect;19 UStG</div>
+                    <div class="ra-toggle-label">' . esc_html(PPV_Lang::t('repair_admin_vat_liable')) . '</div>
+                    <div class="ra-toggle-desc">' . esc_html(PPV_Lang::t('repair_admin_vat_small')) . '</div>
                 </div>
             </div>
             <input type="hidden" name="repair_vat_enabled" id="ra-vat-enabled-val" value="' . $vat_enabled . '">
             <div id="ra-vat-settings" ' . ($vat_enabled ? '' : 'style="display:none"') . '>
                 <div class="ra-settings-grid">
                     <div class="field">
-                        <label>MwSt-Satz (%)</label>
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_vat_rate')) . '</label>
                         <input type="number" name="repair_vat_rate" value="' . $vat_rate . '" min="0" max="100" step="0.01" placeholder="19.00">
                     </div>
                 </div>
             </div>
 
-                <h4 style="margin-top:24px"><i class="ri-file-text-line"></i> Steuerdaten</h4>
+                <h4 style="margin-top:24px"><i class="ri-file-text-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tax_data')) . '</h4>
             <div class="ra-settings-grid">
                 <div class="field">
-                    <label>Steuernummer</label>
-                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="z.B. 123/456/78901">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_tax_number')) . '</label>
+                    <input type="text" name="repair_steuernummer" value="' . $steuernummer . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_tax_number_ph')) . '">
                 </div>
                 <div class="field">
-                    <label>Webseite</label>
-                    <input type="text" name="repair_website_url" value="' . $website_url . '" placeholder="www.example.de">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_website')) . '</label>
+                    <input type="text" name="repair_website_url" value="' . $website_url . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_website_ph')) . '">
                 </div>
             </div>
 
-                <h4 style="margin-top:24px"><i class="ri-bank-line"></i> Bankverbindung</h4>
-            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Wird im Fu&szlig;bereich der Rechnung angezeigt</p>
+                <h4 style="margin-top:24px"><i class="ri-bank-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_bank_details')) . '</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_bank_hint')) . '</p>
             <div class="ra-settings-grid">
                 <div class="field">
-                    <label>Bank Name</label>
-                    <input type="text" name="repair_bank_name" value="' . $bank_name . '" placeholder="z.B. Sparkasse">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_bank_name')) . '</label>
+                    <input type="text" name="repair_bank_name" value="' . $bank_name . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_bank_name_ph')) . '">
                 </div>
                 <div class="field">
-                    <label>IBAN</label>
-                    <input type="text" name="repair_bank_iban" value="' . $bank_iban . '" placeholder="DE...">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_iban')) . '</label>
+                    <input type="text" name="repair_bank_iban" value="' . $bank_iban . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_iban_ph')) . '">
                 </div>
                 <div class="field">
-                    <label>BIC</label>
-                    <input type="text" name="repair_bank_bic" value="' . $bank_bic . '" placeholder="z.B. BYLADEM1DLG">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_bic')) . '</label>
+                    <input type="text" name="repair_bank_bic" value="' . $bank_bic . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_bic_ph')) . '">
                 </div>
             </div>
 
-                <h4 style="margin-top:24px"><i class="ri-paypal-line"></i> PayPal</h4>
+                <h4 style="margin-top:24px"><i class="ri-paypal-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_paypal')) . '</h4>
             <div class="field">
-                <label>PayPal E-Mail / Adresse</label>
-                <input type="text" name="repair_paypal_email" value="' . $paypal_email . '" placeholder="paypal@example.de">
+                <label>' . esc_html(PPV_Lang::t('repair_admin_paypal_email')) . '</label>
+                <input type="text" name="repair_paypal_email" value="' . $paypal_email . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_paypal_ph')) . '">
             </div>
 
             </div><!-- END PANEL: invoice -->
 
             <!-- ==================== PANEL: E-Mail ==================== -->
             <div class="ra-settings-panel" data-panel="email">
-                <h4><i class="ri-mail-line"></i> Rechnungs-E-Mail Vorlage</h4>
-            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Wird verwendet wenn Sie Rechnungen per E-Mail versenden. Platzhalter: {customer_name}, {invoice_number}, {invoice_date}, {total}, {company_name}</p>
+                <h4><i class="ri-mail-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_email_template')) . '</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_email_tmpl_hint')) . '</p>
             <div class="field" style="margin-bottom:12px">
-                <label>Betreff</label>
-                <input type="text" name="repair_invoice_email_subject" value="' . $email_subject . '" placeholder="Ihre Rechnung {invoice_number}">
+                <label>' . esc_html(PPV_Lang::t('repair_admin_email_subject')) . '</label>
+                <input type="text" name="repair_invoice_email_subject" value="' . $email_subject . '" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_email_subject_ph')) . '">
             </div>
             <div class="field">
-                <label>Nachricht</label>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_email_message')) . '</label>
                 <textarea name="repair_invoice_email_body" rows="6" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">' . $email_body . '</textarea>
             </div>
 
 
-                <h4><i class="ri-notification-3-line"></i> Status-Benachrichtigungen</h4>
-            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Kunden automatisch per E-Mail informieren wenn sich der Reparatur-Status &auml;ndert.</p>
+                <h4><i class="ri-notification-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_status_notify')) . '</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_status_notify_hint')) . '</p>
             <div class="ra-toggle" style="margin-bottom:16px">
                 <label class="ra-toggle-switch">
                     <input type="checkbox" name="repair_status_notify_enabled" value="1" ' . ($status_notify_enabled ? 'checked' : '') . '>
                     <span class="ra-toggle-slider"></span>
                 </label>
                 <div>
-                    <strong>Status-Benachrichtigungen aktivieren</strong>
-                    <div style="font-size:12px;color:#6b7280">E-Mails bei Status&auml;nderungen versenden</div>
+                    <strong>' . esc_html(PPV_Lang::t('repair_admin_status_notify_enable')) . '</strong>
+                    <div style="font-size:12px;color:#6b7280">' . esc_html(PPV_Lang::t('repair_admin_status_notify_desc')) . '</div>
                 </div>
             </div>
             <div class="field" style="margin-bottom:8px">
-                <label style="margin-bottom:8px;display:block">Bei diesen Status benachrichtigen:</label>
+                <label style="margin-bottom:8px;display:block">' . esc_html(PPV_Lang::t('repair_admin_notify_statuses')) . '</label>
                 <div style="display:flex;flex-wrap:wrap;gap:12px">
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                         <input type="checkbox" name="notify_in_progress" value="1" ' . (in_array('in_progress', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
-                        <span style="color:#d97706"><i class="ri-loader-4-line"></i></span> In Bearbeitung
+                        <span style="color:#d97706"><i class="ri-loader-4-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_progress')) . '
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                         <input type="checkbox" name="notify_waiting_parts" value="1" ' . (in_array('waiting_parts', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
-                        <span style="color:#ec4899"><i class="ri-time-line"></i></span> Wartet auf Teile
+                        <span style="color:#ec4899"><i class="ri-time-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_waiting')) . '
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                         <input type="checkbox" name="notify_done" value="1" ' . (in_array('done', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
-                        <span style="color:#059669"><i class="ri-checkbox-circle-line"></i></span> Fertig
+                        <span style="color:#059669"><i class="ri-checkbox-circle-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_done')) . '
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                         <input type="checkbox" name="notify_delivered" value="1" ' . (in_array('delivered', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
-                        <span style="color:#6b7280"><i class="ri-truck-line"></i></span> Abgeholt
+                        <span style="color:#6b7280"><i class="ri-truck-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '
                     </label>
                 </div>
             </div>
@@ -1178,11 +1236,11 @@ echo '          </div>
 
             <!-- ==================== PANEL: Abo ==================== -->
             <div class="ra-settings-panel" data-panel="abo">
-                <h4><i class="ri-vip-crown-line"></i> Abo &amp; Zahlung</h4>
+                <h4><i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_title')) . '</h4>
             <div class="ra-abo-box" style="background:#fafafa;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:16px">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
                     <div>
-                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Status</div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_abo_status')) . '</div>
                         <div style="font-size:16px;font-weight:600;color:#111827">';
 
         // Subscription status display
@@ -1193,13 +1251,13 @@ echo '          </div>
 
         // Active subscription = either repair_premium=1 OR subscription_status=active with valid date
         if (($is_premium || $sub_status === 'active') && !$is_expired) {
-            echo '<span style="color:#059669"><i class="ri-checkbox-circle-line"></i> Premium aktiv</span>';
+            echo '<span style="color:#059669"><i class="ri-checkbox-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_premium')) . '</span>';
         } elseif ($sub_status === 'pending_payment') {
-            echo '<span style="color:#d97706"><i class="ri-time-line"></i> Zahlung ausstehend</span>';
+            echo '<span style="color:#d97706"><i class="ri-time-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_pending')) . '</span>';
         } elseif ($sub_status === 'canceled') {
-            echo '<span style="color:#dc2626"><i class="ri-close-circle-line"></i> Gekündigt</span>';
+            echo '<span style="color:#dc2626"><i class="ri-close-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_cancelled')) . '</span>';
         } elseif ($is_expired) {
-            echo '<span style="color:#dc2626"><i class="ri-error-warning-line"></i> Abgelaufen</span>';
+            echo '<span style="color:#dc2626"><i class="ri-error-warning-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_expired')) . '</span>';
         } else {
             echo '<span style="color:#6b7280"><i class="ri-information-line"></i> ' . ucfirst($sub_status) . '</span>';
         }
@@ -1207,11 +1265,11 @@ echo '          </div>
         echo '</div>
                     </div>
                     <div>
-                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Formularlimit</div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_abo_limit')) . '</div>
                         <div style="font-size:16px;font-weight:600;color:#111827">';
 
         if ($is_premium || ($sub_status === 'active' && !$is_expired)) {
-            echo '<span style="color:#059669"><i class="ri-infinity-line"></i> Unbegrenzt</span>';
+            echo '<span style="color:#059669"><i class="ri-infinity-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_unlimited')) . '</span>';
         } else {
             echo intval($store->repair_form_count) . ' / ' . intval($store->repair_form_limit);
         }
@@ -1221,19 +1279,19 @@ echo '          </div>
 
         if ($sub_expires) {
             echo '<div>
-                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">' . ($is_expired ? 'Abgelaufen am' : 'Gültig bis') . '</div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">' . ($is_expired ? esc_html(PPV_Lang::t('repair_admin_abo_expired_on')) : esc_html(PPV_Lang::t('repair_admin_abo_valid_until'))) . '</div>
                         <div style="font-size:16px;font-weight:600;color:' . ($is_expired ? '#dc2626' : '#111827') . '">' . date('d.m.Y', strtotime($sub_expires)) . '</div>
                     </div>';
         }
 
         if ($payment_method) {
             echo '<div>
-                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Zahlungsart</div>
+                        <div style="font-size:13px;color:#6b7280;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_abo_payment')) . '</div>
                         <div style="font-size:16px;font-weight:600;color:#111827">';
             if ($payment_method === 'paypal') {
-                echo '<i class="ri-paypal-line"></i> PayPal';
+                echo '<i class="ri-paypal-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_paypal'));
             } elseif ($payment_method === 'bank_transfer') {
-                echo '<i class="ri-bank-line"></i> Überweisung';
+                echo '<i class="ri-bank-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_transfer'));
             } else {
                 echo ucfirst($payment_method);
             }
@@ -1250,17 +1308,17 @@ echo '          </div>
         // Upgrade button for non-premium or expired
         if (!$has_active_sub) {
             echo '<a href="/checkout" class="ra-btn ra-btn-primary" style="margin-bottom:16px">
-                <i class="ri-vip-crown-line"></i> Jetzt upgraden - 39,00 € / Monat (netto)
+                <i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_upgrade')) . '
             </a>';
         }
 
         // Cancellation section for active subscription users
         if ($has_active_sub && $sub_status !== 'canceled') {
             echo '<div class="ra-kuendigung" style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb">
-                <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px"><i class="ri-close-circle-line"></i> Abo kündigen</div>
-                <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Bei Kündigung bleibt Ihr Abo bis zum Ende der bezahlten Periode aktiv.</p>
+                <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px"><i class="ri-close-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_cancel')) . '</div>
+                <p style="font-size:13px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_abo_cancel_hint')) . '</p>
                 <button type="button" class="ra-btn ra-btn-outline" style="color:#dc2626;border-color:#fecaca" id="ra-cancel-sub-btn">
-                    <i class="ri-close-line"></i> Abo zum Laufzeitende kündigen
+                    <i class="ri-close-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_abo_cancel_btn')) . '
                 </button>
             </div>';
         }
@@ -1271,36 +1329,36 @@ echo '          </div>
             <!-- Save button visible on all panels -->
             <div class="ra-settings-save" style="padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0">
                 <button type="submit" class="ra-btn ra-btn-primary ra-btn-full">
-                    <i class="ri-save-line"></i> Einstellungen speichern
+                    <i class="ri-save-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_save_settings')) . '
                 </button>
             </div>
         </form>
 
         <!-- Legal pages -->
         <div class="ra-legal-links" style="padding:0 24px 24px">
-            <h4>Automatisch generierte Seiten</h4>
-            <a href="/formular/' . $store_slug . '/datenschutz" target="_blank"><i class="ri-shield-check-line"></i> Datenschutz</a>
-            <a href="/formular/' . $store_slug . '/agb" target="_blank"><i class="ri-file-text-line"></i> AGB</a>
-            <a href="/formular/' . $store_slug . '/impressum" target="_blank"><i class="ri-building-line"></i> Impressum</a>
+            <h4>' . esc_html(PPV_Lang::t('repair_admin_auto_pages')) . '</h4>
+            <a href="/formular/' . $store_slug . '/datenschutz" target="_blank"><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_privacy')) . '</a>
+            <a href="/formular/' . $store_slug . '/agb" target="_blank"><i class="ri-file-text-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_terms')) . '</a>
+            <a href="/formular/' . $store_slug . '/impressum" target="_blank"><i class="ri-building-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_imprint')) . '</a>
         </div>
 
         <!-- PunktePass admin -->
         <div class="ra-pp-link" style="display:flex;gap:8px;align-items:center">
             <a href="/qr-center" class="ra-btn ra-btn-outline">
-                <i class="ri-qr-code-line"></i> PunktePass Admin &ouml;ffnen
+                <i class="ri-qr-code-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_pp_admin')) . '
             </a>
-            <button class="ra-btn ra-btn-outline" style="color:#dc2626;border-color:#fecaca" onclick="if(confirm(\'Wirklich abmelden?\')){var fd=new FormData();fd.append(\'action\',\'ppv_repair_logout\');fetch(\'' . esc_url($ajax_url) . '\',{method:\'POST\',body:fd,credentials:\'same-origin\'}).finally(function(){window.location.href=\'/formular/admin/login\';})}">
-                <i class="ri-logout-box-r-line"></i> Abmelden
+            <button class="ra-btn ra-btn-outline" style="color:#dc2626;border-color:#fecaca" onclick="if(confirm(\'' . esc_js(PPV_Lang::t('repair_admin_logout')) . '?\')){var fd=new FormData();fd.append(\'action\',\'ppv_repair_logout\');fetch(\'' . esc_url($ajax_url) . '\',{method:\'POST\',body:fd,credentials:\'same-origin\'}).finally(function(){window.location.href=\'/formular/admin/login\';})}">
+                <i class="ri-logout-box-r-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_logout')) . '
             </button>
         </div>
     </div>';
 
         // Tabs: Reparaturen | Rechnung/Angebot | Kunden | Feedback
         echo '<div class="ra-tabs">
-        <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> Reparaturen</div>
-        <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> Rechnung / Angebot</div>
-        <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> Kunden</div>
-        <div class="ra-tab" data-tab="feedback"><i class="ri-feedback-line"></i> Feedback</div>
+        <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_repairs')) . '</div>
+        <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_inv_quote')) . '</div>
+        <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_customers')) . '</div>
+        <div class="ra-tab" data-tab="feedback"><i class="ri-feedback-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_feedback')) . '</div>
     </div>';
 
         // ========== TAB: Reparaturen ==========
@@ -1310,17 +1368,17 @@ echo '          </div>
         echo '<div class="ra-toolbar">
         <div class="ra-search">
             <i class="ri-search-line"></i>
-            <input type="text" id="ra-search-input" placeholder="Name, E-Mail, Telefon oder Ger&auml;t suchen...">
+            <input type="text" id="ra-search-input" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_search_ph')) . '">
         </div>
         <div class="ra-filters">
             <select id="ra-filter-status">
-                <option value="">Alle Status</option>
-                <option value="new">Neu</option>
-                <option value="in_progress">In Bearbeitung</option>
-                <option value="waiting_parts">Wartet auf Teile</option>
-                <option value="done">Fertig</option>
-                <option value="delivered">Abgeholt</option>
-                <option value="cancelled">Storniert</option>
+                <option value="">' . esc_html(PPV_Lang::t('repair_admin_status_all')) . '</option>
+                <option value="new">' . esc_html(PPV_Lang::t('repair_admin_status_new')) . '</option>
+                <option value="in_progress">' . esc_html(PPV_Lang::t('repair_admin_status_progress')) . '</option>
+                <option value="waiting_parts">' . esc_html(PPV_Lang::t('repair_admin_status_waiting')) . '</option>
+                <option value="done">' . esc_html(PPV_Lang::t('repair_admin_status_done')) . '</option>
+                <option value="delivered">' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '</option>
+                <option value="cancelled">' . esc_html(PPV_Lang::t('repair_admin_status_cancelled')) . '</option>
             </select>
         </div>
     </div>';
@@ -1330,7 +1388,7 @@ echo '          </div>
 
         // Load more
         if ($total_repairs > 20) {
-            echo '<div class="ra-load-more"><button class="ra-btn ra-btn-outline" id="ra-load-more" data-page="1">Mehr laden</button></div>';
+            echo '<div class="ra-load-more"><button class="ra-btn ra-btn-outline" id="ra-load-more" data-page="1">' . esc_html(PPV_Lang::t('repair_admin_load_more')) . '</button></div>';
         }
 
         echo '</div>'; // end ra-tab-repairs
@@ -1341,71 +1399,71 @@ echo '          </div>
         // Filters + New Invoice/Angebot/Ankauf buttons
         echo '<div class="ra-inv-filters">
             <button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-new-invoice-btn">
-                <i class="ri-add-line"></i> Neue Rechnung
+                <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_new_invoice')) . '
             </button>
             <button class="ra-btn ra-btn-sm" id="ra-new-angebot-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">
-                <i class="ri-add-line"></i> Neues Angebot
+                <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_new_quote')) . '
             </button>
             <button class="ra-btn ra-btn-sm" id="ra-new-ankauf-btn" style="background:#fef3c7;color:#b45309;border:1px solid #fcd34d">
-                <i class="ri-shopping-basket-line"></i> Neuer Ankauf
+                <i class="ri-shopping-basket-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_new_purchase')) . '
             </button>
             <select id="ra-inv-type-filter" class="ra-input" style="padding:8px 12px;font-size:13px;min-width:120px">
-                <option value="">Alle Typen</option>
-                <option value="rechnung">Rechnungen</option>
-                <option value="angebot">Angebote</option>
-                <option value="ankauf">Ankäufe</option>
+                <option value="">' . esc_html(PPV_Lang::t('repair_admin_all_types')) . '</option>
+                <option value="rechnung">' . esc_html(PPV_Lang::t('repair_admin_invoices')) . '</option>
+                <option value="angebot">' . esc_html(PPV_Lang::t('repair_admin_quotes')) . '</option>
+                <option value="ankauf">' . esc_html(PPV_Lang::t('repair_admin_purchases')) . '</option>
             </select>
             <div class="field">
-                <label>Von</label>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_from')) . '</label>
                 <input type="date" id="ra-inv-from">
             </div>
             <div class="field">
-                <label>Bis</label>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_to')) . '</label>
                 <input type="date" id="ra-inv-to">
             </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-filter-btn">
-                <i class="ri-filter-line"></i> Filtern
+                <i class="ri-filter-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filter')) . '
             </button>
             <div style="position:relative;display:inline-block">
                 <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-export-btn">
-                    <i class="ri-download-2-line"></i> Export <i class="ri-arrow-down-s-line"></i>
+                    <i class="ri-download-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_export')) . ' <i class="ri-arrow-down-s-line"></i>
                 </button>
                 <div id="ra-inv-export-dropdown" style="display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:220px;z-index:100;margin-top:4px">
                     <div style="padding:8px 0">
-                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Buchhalter-Formate</div>
+                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">DATEV / CSV / Excel</div>
                         <a href="#" class="ra-inv-export-opt" data-format="datev" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-text-line" style="margin-right:8px;color:#8b5cf6"></i>DATEV-Export (.csv)</a>
                         <a href="#" class="ra-inv-export-opt" data-format="csv" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-2-line" style="margin-right:8px;color:#059669"></i>CSV-Export</a>
                         <a href="#" class="ra-inv-export-opt" data-format="excel" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-line" style="margin-right:8px;color:#217346"></i>Excel-Export (.xlsx)</a>
                         <div style="border-top:1px solid #e5e7eb;margin:6px 0"></div>
-                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Dokumente</div>
-                        <a href="#" class="ra-inv-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF-Sammlung (.zip)</a>
+                        <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">PDF / JSON</div>
+                        <a href="#" class="ra-inv-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF (.zip)</a>
                         <a href="#" class="ra-inv-export-opt" data-format="json" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-code-s-slash-line" style="margin-right:8px;color:#3b82f6"></i>JSON-Export</a>
                     </div>
                 </div>
             </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-billbee-import-btn" style="margin-left:auto;background:#fff7ed;color:#ea580c;border-color:#fed7aa">
-                <i class="ri-upload-cloud-line"></i> Billbee Import
+                <i class="ri-upload-cloud-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_billbee')) . '
             </button>
         </div>';
 
         // Summary toggle button
         echo '<button class="ra-btn ra-btn-outline ra-btn-sm ra-summary-toggle" id="ra-inv-summary-toggle" style="margin-bottom:12px">
-            <i class="ri-bar-chart-box-line"></i> Statistik anzeigen
+            <i class="ri-bar-chart-box-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_show_stats')) . '
         </button>';
 
         // Summary cards (hidden by default)
         echo '<div class="ra-inv-summary" id="ra-inv-summary" style="display:none">
             <div class="ra-inv-summary-card">
                 <div class="ra-inv-summary-val" id="ra-inv-count">-</div>
-                <div class="ra-inv-summary-label">Rechnungen</div>
+                <div class="ra-inv-summary-label">' . esc_html(PPV_Lang::t('repair_admin_invoices')) . '</div>
             </div>
             <div class="ra-inv-summary-card">
                 <div class="ra-inv-summary-val" id="ra-inv-revenue">-</div>
-                <div class="ra-inv-summary-label">Umsatz</div>
+                <div class="ra-inv-summary-label">' . esc_html(PPV_Lang::t('repair_admin_revenue')) . '</div>
             </div>
             <div class="ra-inv-summary-card">
                 <div class="ra-inv-summary-val" id="ra-inv-discounts">-</div>
-                <div class="ra-inv-summary-label">Rabatte</div>
+                <div class="ra-inv-summary-label">' . esc_html(PPV_Lang::t('repair_admin_discounts')) . '</div>
             </div>
         </div>';
 
@@ -1413,29 +1471,29 @@ echo '          </div>
         echo '<div id="ra-inv-bulk-bar" style="display:none;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px 16px;margin-bottom:12px">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
                 <div style="display:flex;align-items:center;gap:8px">
-                    <span style="font-weight:600;color:#4f46e5"><span id="ra-inv-selected-count">0</span> ausgew&auml;hlt</span>
+                    <span style="font-weight:600;color:#4f46e5"><span id="ra-inv-selected-count">0</span> ' . esc_html(PPV_Lang::t('repair_admin_selected')) . '</span>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button class="ra-btn ra-btn-sm" id="ra-bulk-paid" style="background:#059669;color:#fff"><i class="ri-checkbox-circle-line"></i> Als bezahlt</button>
-                    <button class="ra-btn ra-btn-sm" id="ra-bulk-send" style="background:#3b82f6;color:#fff"><i class="ri-mail-send-line"></i> E-Mails senden</button>
-                    <button class="ra-btn ra-btn-sm" id="ra-bulk-reminder" style="background:#d97706;color:#fff"><i class="ri-alarm-warning-line"></i> Erinnerungen</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-paid" style="background:#059669;color:#fff"><i class="ri-checkbox-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_mark_paid')) . '</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-send" style="background:#3b82f6;color:#fff"><i class="ri-mail-send-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_send_emails')) . '</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-reminder" style="background:#d97706;color:#fff"><i class="ri-alarm-warning-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reminders')) . '</button>
                     <div style="position:relative;display:inline-block">
                         <button class="ra-btn ra-btn-sm" id="ra-bulk-export" style="background:#8b5cf6;color:#fff"><i class="ri-download-2-line"></i> Export <i class="ri-arrow-down-s-line"></i></button>
                         <div id="ra-export-dropdown" style="display:none;position:absolute;top:100%;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:220px;z-index:100;margin-top:4px">
                             <div style="padding:8px 0">
-                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Buchhalter-Formate</div>
+                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">DATEV / CSV / Excel</div>
                                 <a href="#" class="ra-export-opt" data-format="datev" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-text-line" style="margin-right:8px;color:#8b5cf6"></i>DATEV-Export (.csv)</a>
                                 <a href="#" class="ra-export-opt" data-format="csv" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-2-line" style="margin-right:8px;color:#059669"></i>CSV-Export</a>
                                 <a href="#" class="ra-export-opt" data-format="excel" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-excel-line" style="margin-right:8px;color:#217346"></i>Excel-Export (.xlsx)</a>
                                 <div style="border-top:1px solid #e5e7eb;margin:6px 0"></div>
-                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">Dokumente</div>
-                                <a href="#" class="ra-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF-Sammlung (.zip)</a>
+                                <div style="padding:6px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase">PDF / JSON</div>
+                                <a href="#" class="ra-export-opt" data-format="pdf" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-file-pdf-line" style="margin-right:8px;color:#dc2626"></i>PDF (.zip)</a>
                                 <a href="#" class="ra-export-opt" data-format="json" style="display:block;padding:8px 12px;color:#374151;text-decoration:none;font-size:13px"><i class="ri-code-s-slash-line" style="margin-right:8px;color:#3b82f6"></i>JSON-Export</a>
                             </div>
                         </div>
                     </div>
-                    <button class="ra-btn ra-btn-sm" id="ra-bulk-delete" style="background:#dc2626;color:#fff"><i class="ri-delete-bin-line"></i> L&ouml;schen</button>
-                    <button class="ra-btn ra-btn-sm" id="ra-bulk-cancel" style="background:#6b7280;color:#fff"><i class="ri-close-line"></i> Abbrechen</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-delete" style="background:#dc2626;color:#fff"><i class="ri-delete-bin-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_delete')) . '</button>
+                    <button class="ra-btn ra-btn-sm" id="ra-bulk-cancel" style="background:#6b7280;color:#fff"><i class="ri-close-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
                 </div>
             </div>
         </div>';
@@ -1446,23 +1504,23 @@ echo '          </div>
             <thead>
                 <tr>
                     <th style="width:40px"><input type="checkbox" id="ra-inv-select-all" style="width:16px;height:16px;cursor:pointer"></th>
-                    <th class="ra-sortable" data-sort="invoice_number">Nr. <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
-                    <th class="ra-sortable" data-sort="created_at">Datum <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
-                    <th class="ra-sortable" data-sort="customer_name">Kunde <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
-                    <th class="ra-sortable" data-sort="net_amount">Netto <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
-                    <th>MwSt</th>
-                    <th class="ra-sortable" data-sort="total">Gesamt <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
-                    <th class="ra-sortable" data-sort="status">Status <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="invoice_number">' . esc_html(PPV_Lang::t('repair_admin_col_nr')) . ' <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="created_at">' . esc_html(PPV_Lang::t('repair_admin_col_date')) . ' <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="customer_name">' . esc_html(PPV_Lang::t('repair_admin_col_customer')) . ' <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="net_amount">' . esc_html(PPV_Lang::t('repair_admin_col_net')) . ' <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . '</th>
+                    <th class="ra-sortable" data-sort="total">' . esc_html(PPV_Lang::t('repair_admin_col_total')) . ' <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
+                    <th class="ra-sortable" data-sort="status">' . esc_html(PPV_Lang::t('repair_admin_col_status')) . ' <i class="ri-arrow-up-down-line ra-sort-icon"></i></th>
                     <th></th>
                 </tr>
             </thead>
             <tbody id="ra-inv-body">
-                <tr><td colspan="9" style="text-align:center;padding:32px;color:#9ca3af;">Rechnungen werden geladen...</td></tr>
+                <tr><td colspan="9" style="text-align:center;padding:32px;color:#9ca3af;">' . esc_html(PPV_Lang::t('repair_admin_loading_inv')) . '</td></tr>
             </tbody>
         </table>
         </div>
         <div class="ra-load-more" id="ra-inv-load-more" style="display:none">
-            <button class="ra-btn ra-btn-outline" id="ra-inv-more-btn" data-page="1">Mehr laden</button>
+            <button class="ra-btn ra-btn-outline" id="ra-inv-more-btn" data-page="1">' . esc_html(PPV_Lang::t('repair_admin_load_more')) . '</button>
         </div>';
 
         echo '</div>'; // end ra-tab-invoices
@@ -1473,11 +1531,11 @@ echo '          </div>
         // Customer toolbar
         echo '<div class="ra-inv-filters">
             <button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-new-customer-btn">
-                <i class="ri-user-add-line"></i> Neuer Kunde
+                <i class="ri-user-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_new_customer')) . '
             </button>
             <div class="ra-search" style="flex:1;max-width:400px">
                 <i class="ri-search-line"></i>
-                <input type="text" id="ra-customer-search" placeholder="Kunde suchen...">
+                <input type="text" id="ra-customer-search" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_search_customer')) . '">
             </div>
         </div>';
 
@@ -1485,7 +1543,7 @@ echo '          </div>
         echo '<div class="ra-inv-summary" id="ra-cust-summary">
             <div class="ra-inv-summary-card">
                 <div class="ra-inv-summary-val" id="ra-cust-count">-</div>
-                <div class="ra-inv-summary-label">Kunden</div>
+                <div class="ra-inv-summary-label">' . esc_html(PPV_Lang::t('repair_admin_customers')) . '</div>
             </div>
         </div>';
 
@@ -1494,21 +1552,21 @@ echo '          </div>
         <table class="ra-inv-table">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Firma</th>
-                    <th>E-Mail</th>
-                    <th>Telefon</th>
-                    <th>Stadt</th>
+                    <th>' . esc_html(PPV_Lang::t('repair_admin_col_name')) . '</th>
+                    <th>' . esc_html(PPV_Lang::t('repair_admin_col_company')) . '</th>
+                    <th>' . esc_html(PPV_Lang::t('repair_admin_col_email')) . '</th>
+                    <th>' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</th>
+                    <th>' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody id="ra-cust-body">
-                <tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">Kunden werden geladen...</td></tr>
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">' . esc_html(PPV_Lang::t('repair_admin_loading_cust')) . '</td></tr>
             </tbody>
         </table>
         </div>
         <div class="ra-load-more" id="ra-cust-load-more" style="display:none">
-            <button class="ra-btn ra-btn-outline" id="ra-cust-more-btn" data-page="1">Mehr laden</button>
+            <button class="ra-btn ra-btn-outline" id="ra-cust-more-btn" data-page="1">' . esc_html(PPV_Lang::t('repair_admin_load_more')) . '</button>
         </div>';
 
         echo '</div>'; // end ra-tab-customers
@@ -1516,21 +1574,21 @@ echo '          </div>
         // ========== TAB: Feedback ==========
         echo '<div class="ra-tab-content" id="ra-tab-feedback">
         <div class="ra-settings" style="max-width:600px">
-            <h3><i class="ri-feedback-line"></i> Feedback senden</h3>
-            <p style="font-size:14px;color:#6b7280;margin-bottom:20px">Wir freuen uns &uuml;ber Ihr Feedback! Teilen Sie uns Fehler, Ideen oder Fragen mit.</p>
+            <h3><i class="ri-feedback-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fb_title')) . '</h3>
+            <p style="font-size:14px;color:#6b7280;margin-bottom:20px">' . esc_html(PPV_Lang::t('repair_admin_fb_desc')) . '</p>
 
             <div style="margin-bottom:20px">
-                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">Kategorie</label>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_fb_category')) . '</label>
                 <div class="ra-feedback-cats-inline" id="ra-fb-cats">
-                    <button type="button" class="ra-fb-cat-btn" data-cat="bug"><i class="ri-bug-line"></i> Fehler</button>
-                    <button type="button" class="ra-fb-cat-btn" data-cat="feature"><i class="ri-lightbulb-line"></i> Idee</button>
-                    <button type="button" class="ra-fb-cat-btn" data-cat="question"><i class="ri-question-line"></i> Frage</button>
-                    <button type="button" class="ra-fb-cat-btn" data-cat="rating"><i class="ri-star-line"></i> Bewertung</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="bug"><i class="ri-bug-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fb_bug')) . '</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="feature"><i class="ri-lightbulb-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fb_idea')) . '</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="question"><i class="ri-question-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fb_question')) . '</button>
+                    <button type="button" class="ra-fb-cat-btn" data-cat="rating"><i class="ri-star-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fb_rating')) . '</button>
                 </div>
             </div>
 
             <div id="ra-fb-rating-section" style="display:none;margin-bottom:20px">
-                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">Bewertung</label>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_fb_rating')) . '</label>
                 <div class="ra-fb-stars">
                     <button type="button" class="ra-fb-star" data-rating="1"><i class="ri-star-line"></i></button>
                     <button type="button" class="ra-fb-star" data-rating="2"><i class="ri-star-line"></i></button>
@@ -1541,19 +1599,19 @@ echo '          </div>
             </div>
 
             <div class="field" style="margin-bottom:16px">
-                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Nachricht</label>
-                <textarea id="ra-fb-message" class="ra-input" rows="5" placeholder="Beschreiben Sie Ihr Anliegen..." style="width:100%;resize:vertical"></textarea>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">' . esc_html(PPV_Lang::t('repair_admin_fb_message')) . '</label>
+                <textarea id="ra-fb-message" class="ra-input" rows="5" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_fb_message_ph')) . '" style="width:100%;resize:vertical"></textarea>
             </div>
 
             <div class="field" style="margin-bottom:20px">
-                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">E-Mail (optional)</label>
-                <input type="email" id="ra-fb-email" class="ra-input" placeholder="Ihre E-Mail f&uuml;r R&uuml;ckfragen" style="width:100%">
+                <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">' . esc_html(PPV_Lang::t('repair_admin_fb_email')) . '</label>
+                <input type="email" id="ra-fb-email" class="ra-input" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_fb_email_ph')) . '" style="width:100%">
             </div>
 
             <div id="ra-fb-msg" class="ra-fb-msg"></div>
 
             <button type="button" class="ra-btn ra-btn-primary" id="ra-fb-submit" style="width:100%">
-                <i class="ri-send-plane-fill"></i> Feedback senden
+                <i class="ri-send-plane-fill"></i> ' . esc_html(PPV_Lang::t('repair_admin_fb_submit')) . '
             </button>
         </div>
         </div>'; // end ra-tab-feedback
@@ -1564,13 +1622,13 @@ echo '          </div>
         // Reward reject modal
         echo '<div class="ra-reject-modal" id="ra-reject-modal">
             <div class="ra-reject-modal-content">
-                <h3><i class="ri-close-circle-line"></i> Belohnung ablehnen</h3>
-                <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Bitte geben Sie einen Grund f&uuml;r die Ablehnung an. Der Kunde kann die Belohnung beim n&auml;chsten Besuch erneut einl&ouml;sen.</p>
-                <textarea id="ra-reject-reason" placeholder="Grund f&uuml;r die Ablehnung..."></textarea>
+                <h3><i class="ri-close-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reject_title')) . '</h3>
+                <p style="font-size:13px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_reject_hint')) . '</p>
+                <textarea id="ra-reject-reason" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_reject_ph')) . '"></textarea>
                 <input type="hidden" id="ra-reject-repair-id" value="">
                 <div class="ra-reject-modal-actions">
-                    <button class="ra-btn ra-btn-outline" id="ra-reject-cancel">Abbrechen</button>
-                    <button class="ra-btn" style="background:#dc2626;color:#fff" id="ra-reject-submit">Ablehnen</button>
+                    <button class="ra-btn ra-btn-outline" id="ra-reject-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+                    <button class="ra-btn" style="background:#dc2626;color:#fff" id="ra-reject-submit">' . esc_html(PPV_Lang::t('repair_admin_reject_btn')) . '</button>
                 </div>
             </div>
         </div>';
@@ -1578,30 +1636,30 @@ echo '          </div>
         // Invoice modal (shown when status changes to "Fertig")
         echo '<div class="ra-modal-overlay" id="ra-invoice-modal">
     <div class="ra-modal">
-        <h3 id="ra-inv-modal-title"><i class="ri-file-list-3-line"></i> Reparatur abschlie&szlig;en</h3>
-        <p class="ra-modal-sub" id="ra-inv-modal-subtitle">Leistungen und Bruttobetr&auml;ge f&uuml;r die Rechnung eingeben</p>
+        <h3 id="ra-inv-modal-title"><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_finish_repair')) . '</h3>
+        <p class="ra-modal-sub" id="ra-inv-modal-subtitle">' . esc_html(PPV_Lang::t('repair_admin_finish_sub')) . '</p>
         <div id="ra-inv-modal-info" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;display:none"></div>
         <div class="ra-inv-lines" id="ra-inv-lines">
             <div class="ra-inv-line">
-                <input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc">
-                <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
-                <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+                <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_service_ph')) . '" class="ra-inv-line-desc">
+                <input type="number" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_gross')) . '" step="0.01" min="0" class="ra-inv-line-amount">
+                <button type="button" class="ra-inv-line-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
             </div>
         </div>
         <button type="button" class="ra-inv-add" id="ra-inv-add-line">
-            <i class="ri-add-line"></i> Weitere Position hinzuf&uuml;gen
+            <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_line')) . '
         </button>
         <div class="ra-inv-totals">
             <div class="ra-inv-total-row">
-                <span>Netto:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
                 <span id="ra-inv-modal-net">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row" id="ra-inv-modal-vat-row">
-                <span>MwSt <span id="ra-inv-modal-vat-pct">' . intval($vat_rate) . '</span>%:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' <span id="ra-inv-modal-vat-pct">' . intval($vat_rate) . '</span>%:</span>
                 <span id="ra-inv-modal-vat">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row ra-inv-total-final">
-                <span>Gesamt:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_total')) . '</span>
                 <span id="ra-inv-modal-total">0,00 &euro;</span>
             </div>
         </div>
@@ -1609,24 +1667,24 @@ echo '          </div>
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
                 <input type="checkbox" id="ra-inv-paid-toggle" style="width:18px;height:18px;cursor:pointer">
-                Bereits bezahlt
+                ' . esc_html(PPV_Lang::t('repair_admin_already_paid')) . '
             </label>
             <div id="ra-inv-paid-fields" style="display:none;margin-top:12px">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                     <div>
-                        <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsart</label>
+                        <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_payment_method')) . '</label>
                         <select id="ra-inv-payment-method" class="ra-input" style="width:100%">
-                            <option value="">-- Bitte w&auml;hlen --</option>
-                            <option value="bar">Barzahlung</option>
-                            <option value="ec">EC-Karte</option>
-                            <option value="kreditkarte">Kreditkarte</option>
-                            <option value="ueberweisung">&Uuml;berweisung</option>
-                            <option value="paypal">PayPal</option>
-                            <option value="andere">Andere</option>
+                            <option value="">' . esc_html(PPV_Lang::t('repair_admin_please_select')) . '</option>
+                            <option value="bar">' . esc_html(PPV_Lang::t('repair_admin_pay_cash')) . '</option>
+                            <option value="ec">' . esc_html(PPV_Lang::t('repair_admin_pay_ec')) . '</option>
+                            <option value="kreditkarte">' . esc_html(PPV_Lang::t('repair_admin_pay_credit')) . '</option>
+                            <option value="ueberweisung">' . esc_html(PPV_Lang::t('repair_admin_pay_transfer')) . '</option>
+                            <option value="paypal">' . esc_html(PPV_Lang::t('repair_admin_pay_paypal')) . '</option>
+                            <option value="andere">' . esc_html(PPV_Lang::t('repair_admin_pay_other')) . '</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsdatum</label>
+                        <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
                         <input type="date" id="ra-inv-paid-date" class="ra-input" style="width:100%">
                     </div>
                 </div>
@@ -1636,17 +1694,17 @@ echo '          </div>
         <div style="margin-top:12px">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
                 <input type="checkbox" id="ra-inv-differenz" style="width:18px;height:18px;cursor:pointer">
-                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
             </label>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1;min-width:100px" id="ra-inv-modal-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1;min-width:100px" id="ra-inv-modal-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn" style="flex:1;min-width:140px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0" id="ra-inv-modal-skip">
-                <i class="ri-check-line"></i> Nur Fertig
+                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_only_done')) . '
             </button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2;min-width:180px" id="ra-inv-modal-submit">
-                <i class="ri-check-line"></i> Abschlie&szlig;en &amp; Rechnung
+                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_finish_invoice')) . '
             </button>
         </div>
     </div>
@@ -1655,86 +1713,86 @@ echo '          </div>
         // New Invoice Modal (standalone invoice creation)
         echo '<div class="ra-modal-overlay" id="ra-new-invoice-modal">
     <div class="ra-modal" style="max-width:600px">
-        <h3><i class="ri-file-list-3-line"></i> Neue Rechnung erstellen</h3>
-        <p class="ra-modal-sub">Rechnung ohne Reparaturauftrag erstellen</p>
+        <h3><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_invoice')) . '</h3>
+        <p class="ra-modal-sub">' . esc_html(PPV_Lang::t('repair_admin_create_inv_sub')) . '</p>
 
         <div style="margin-bottom:16px">
-            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Kunde suchen oder neu eingeben</label>
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">' . esc_html(PPV_Lang::t('repair_admin_search_or_new')) . '</label>
             <div class="ra-search" style="margin-bottom:8px">
                 <i class="ri-search-line"></i>
-                <input type="text" id="ra-ninv-customer-search" placeholder="Kundenname, E-Mail oder Firma suchen..." autocomplete="off">
+                <input type="text" id="ra-ninv-customer-search" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_cust_search_ph')) . '" autocomplete="off">
             </div>
             <div id="ra-ninv-customer-results" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:200px;overflow-y:auto;position:relative;z-index:10"></div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
                 <input type="text" id="ra-ninv-name" class="ra-input" placeholder="Max Mustermann" required>
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
                 <input type="text" id="ra-ninv-company" class="ra-input" placeholder="Firma GmbH">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
                 <input type="email" id="ra-ninv-email" class="ra-input" placeholder="email@example.de">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
                 <input type="text" id="ra-ninv-phone" class="ra-input" placeholder="+49...">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stra&szlig;e</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_street')) . '</label>
                 <input type="text" id="ra-ninv-address" class="ra-input" placeholder="Musterstra&szlig;e 1">
             </div>
             <div style="display:grid;grid-template-columns:80px 1fr;gap:8px">
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
                     <input type="text" id="ra-ninv-plz" class="ra-input" placeholder="12345">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</label>
                     <input type="text" id="ra-ninv-city" class="ra-input" placeholder="Berlin">
                 </div>
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">USt-IdNr.</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
                 <input type="text" id="ra-ninv-taxid" class="ra-input" placeholder="DE123456789">
             </div>
         </div>
 
         <div style="margin-bottom:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px">
-            <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer</label>
+            <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_inv_number')) . '</label>
             <input type="text" id="ra-ninv-number" class="ra-input" placeholder="' . esc_attr($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '" style="background:#fff">
-            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">N&auml;chste: <strong>' . esc_html($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '</strong> &ndash; Leer lassen f&uuml;r automatische Nummerierung</p>
+            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">' . sprintf(esc_html(PPV_Lang::t('repair_admin_inv_auto_hint')), '<strong>' . esc_html($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '</strong>') . '</p>
         </div>
 
         <div style="margin-bottom:16px">
-            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Positionen</label>
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">' . esc_html(PPV_Lang::t('repair_admin_positions')) . '</label>
             <div class="ra-inv-lines" id="ra-ninv-lines">
                 <div class="ra-inv-line">
-                    <input type="text" placeholder="Leistung" class="ra-inv-line-desc">
-                    <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
-                    <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+                    <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_service')) . '" class="ra-inv-line-desc">
+                    <input type="number" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_gross')) . '" step="0.01" min="0" class="ra-inv-line-amount">
+                    <button type="button" class="ra-inv-line-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
                 </div>
             </div>
             <button type="button" class="ra-inv-add" id="ra-ninv-add-line">
-                <i class="ri-add-line"></i> Position hinzuf&uuml;gen
+                <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_position')) . '
             </button>
         </div>
 
         <div class="ra-inv-totals" style="margin-bottom:16px">
             <div class="ra-inv-total-row">
-                <span>Netto:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
                 <span id="ra-ninv-net">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row" id="ra-ninv-vat-row">
-                <span>MwSt ' . intval($vat_rate) . '%:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' ' . intval($vat_rate) . '%:</span>
                 <span id="ra-ninv-vat">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row ra-inv-total-final">
-                <span>Gesamt:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_total')) . '</span>
                 <span id="ra-ninv-total">0,00 &euro;</span>
             </div>
         </div>
@@ -1742,21 +1800,21 @@ echo '          </div>
         <div style="margin-bottom:12px">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
                 <input type="checkbox" id="ra-ninv-differenz" style="width:18px;height:18px;cursor:pointer">
-                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
             </label>
         </div>
 
         <div>
-            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
-            <textarea id="ra-ninv-notes" class="ra-input" rows="2" placeholder="Interne Notizen..."></textarea>
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
+            <textarea id="ra-ninv-notes" class="ra-input" rows="2" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_notes_ph')) . '"></textarea>
         </div>
 
         <input type="hidden" id="ra-ninv-customer-id" value="">
 
         <div style="display:flex;gap:10px;margin-top:20px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-ninv-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-ninv-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-ninv-submit">
-                <i class="ri-check-line"></i> Rechnung erstellen
+                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_inv_btn')) . '
             </button>
         </div>
     </div>
@@ -1765,97 +1823,97 @@ echo '          </div>
         // New Angebot Modal (quote creation)
         echo '<div class="ra-modal-overlay" id="ra-new-angebot-modal">
     <div class="ra-modal" style="max-width:600px">
-        <h3 style="color:#16a34a"><i class="ri-draft-line"></i> Neues Angebot erstellen</h3>
-        <p class="ra-modal-sub">Kostenvoranschlag / Angebot f&uuml;r Kunden</p>
+        <h3 style="color:#16a34a"><i class="ri-draft-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_quote')) . '</h3>
+        <p class="ra-modal-sub">' . esc_html(PPV_Lang::t('repair_admin_create_quote_sub')) . '</p>
 
         <div style="margin-bottom:16px">
-            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Kunde suchen oder neu eingeben</label>
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">' . esc_html(PPV_Lang::t('repair_admin_search_or_new')) . '</label>
             <div class="ra-search" style="margin-bottom:8px">
                 <i class="ri-search-line"></i>
-                <input type="text" id="ra-nang-customer-search" placeholder="Kundenname, E-Mail oder Firma suchen..." autocomplete="off">
+                <input type="text" id="ra-nang-customer-search" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_cust_search_ph')) . '" autocomplete="off">
             </div>
             <div id="ra-nang-customer-results" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:200px;overflow-y:auto;position:relative;z-index:10"></div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
                 <input type="text" id="ra-nang-name" class="ra-input" placeholder="Max Mustermann" required>
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
                 <input type="text" id="ra-nang-company" class="ra-input" placeholder="Firma GmbH">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
                 <input type="email" id="ra-nang-email" class="ra-input" placeholder="email@example.de">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
                 <input type="text" id="ra-nang-phone" class="ra-input" placeholder="+49...">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stra&szlig;e</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_street')) . '</label>
                 <input type="text" id="ra-nang-address" class="ra-input" placeholder="Musterstra&szlig;e 1">
             </div>
             <div style="display:grid;grid-template-columns:80px 1fr;gap:8px">
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
                     <input type="text" id="ra-nang-plz" class="ra-input" placeholder="12345">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</label>
                     <input type="text" id="ra-nang-city" class="ra-input" placeholder="Berlin">
                 </div>
             </div>
         </div>
 
         <div style="margin-bottom:16px">
-            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">Positionen</label>
+            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">' . esc_html(PPV_Lang::t('repair_admin_positions')) . '</label>
             <div class="ra-inv-lines" id="ra-nang-lines">
                 <div class="ra-inv-line">
-                    <input type="text" placeholder="Leistung" class="ra-inv-line-desc">
-                    <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
-                    <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+                    <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_service')) . '" class="ra-inv-line-desc">
+                    <input type="number" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_gross')) . '" step="0.01" min="0" class="ra-inv-line-amount">
+                    <button type="button" class="ra-inv-line-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
                 </div>
             </div>
             <button type="button" class="ra-inv-add" id="ra-nang-add-line">
-                <i class="ri-add-line"></i> Position hinzuf&uuml;gen
+                <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_position')) . '
             </button>
         </div>
 
         <div class="ra-inv-totals" style="margin-bottom:16px">
             <div class="ra-inv-total-row">
-                <span>Netto:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
                 <span id="ra-nang-net">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row" id="ra-nang-vat-row">
-                <span>MwSt ' . intval($vat_rate) . '%:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' ' . intval($vat_rate) . '%:</span>
                 <span id="ra-nang-vat">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row ra-inv-total-final">
-                <span>Gesamt:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_total')) . '</span>
                 <span id="ra-nang-total">0,00 &euro;</span>
             </div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
             <div>
-                <label style="font-size:12px;color:#16a34a;display:block;margin-bottom:4px;font-weight:600">G&uuml;ltig bis</label>
+                <label style="font-size:12px;color:#16a34a;display:block;margin-bottom:4px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_valid_until')) . '</label>
                 <input type="date" id="ra-nang-valid-until" class="ra-input" style="width:100%">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
-                <input type="text" id="ra-nang-notes" class="ra-input" placeholder="z.B. Lieferzeit 2 Wochen">
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
+                <input type="text" id="ra-nang-notes" class="ra-input" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_notes_quote_ph')) . '">
             </div>
         </div>
 
         <input type="hidden" id="ra-nang-customer-id" value="">
 
         <div style="display:flex;gap:10px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-nang-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-nang-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn" style="flex:2;background:#16a34a;color:#fff" id="ra-nang-submit">
-                <i class="ri-draft-line"></i> Angebot erstellen
+                <i class="ri-draft-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_quote_btn')) . '
             </button>
         </div>
     </div>
@@ -1866,52 +1924,52 @@ echo '          </div>
         // Customer Modal (new/edit customer)
         echo '<div class="ra-modal-overlay" id="ra-customer-modal">
     <div class="ra-modal" style="max-width:500px">
-        <h3 id="ra-cust-modal-title"><i class="ri-user-add-line"></i> Neuer Kunde</h3>
+        <h3 id="ra-cust-modal-title"><i class="ri-user-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_cust_new')) . '</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
             <div style="grid-column:span 2">
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
                 <input type="text" id="ra-cust-name" class="ra-input" required>
             </div>
             <div style="grid-column:span 2">
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
                 <input type="text" id="ra-cust-company" class="ra-input">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
                 <input type="email" id="ra-cust-email" class="ra-input">
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
                 <input type="text" id="ra-cust-phone" class="ra-input">
             </div>
             <div style="grid-column:span 2">
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stra&szlig;e</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_street')) . '</label>
                 <input type="text" id="ra-cust-address" class="ra-input">
             </div>
             <div style="display:grid;grid-template-columns:80px 1fr;gap:8px">
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
                     <input type="text" id="ra-cust-plz" class="ra-input">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</label>
                     <input type="text" id="ra-cust-city" class="ra-input">
                 </div>
             </div>
             <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">USt-IdNr.</label>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
                 <input type="text" id="ra-cust-taxid" class="ra-input">
             </div>
             <div style="grid-column:span 2">
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
-                <textarea id="ra-cust-notes" class="ra-input" rows="2"></textarea>
+                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
+                <textarea id="ra-cust-notes" class="ra-input" rows="2" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_cust_notes_ph')) . '"></textarea>
             </div>
         </div>
         <input type="hidden" id="ra-cust-id" value="">
         <div style="display:flex;gap:10px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-cust-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-cust-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-cust-submit">
-                <i class="ri-check-line"></i> Speichern
+                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_save')) . '
             </button>
         </div>
     </div>
@@ -1920,84 +1978,84 @@ echo '          </div>
         // Invoice Edit Modal (with customer fields)
         echo '<div class="ra-modal-overlay" id="ra-edit-invoice-modal">
     <div class="ra-modal" style="max-width:650px;max-height:90vh;overflow-y:auto">
-        <h3><i class="ri-pencil-line"></i> Rechnung bearbeiten</h3>
-        <p class="ra-modal-sub" id="ra-einv-subtitle">Rechnung und Kundendaten bearbeiten</p>
+        <h3><i class="ri-pencil-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_edit_invoice')) . '</h3>
+        <p class="ra-modal-sub" id="ra-einv-subtitle">' . esc_html(PPV_Lang::t('repair_admin_edit_inv_sub')) . '</p>
 
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:16px">
             <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
                 <div>
-                    <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">Rechnungsnummer</label>
+                    <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_inv_number')) . '</label>
                     <input type="text" id="ra-einv-number-input" class="ra-input" style="background:#fff;font-weight:600">
                 </div>
                 <div style="font-size:13px;color:#6b7280;padding-bottom:10px">
-                    Datum: <span id="ra-einv-date"></span>
+                    ' . esc_html(PPV_Lang::t('repair_admin_date')) . ': <span id="ra-einv-date"></span>
                 </div>
             </div>
         </div>
 
         <details open style="margin-bottom:16px">
-            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">Kundendaten</summary>
+            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">' . esc_html(PPV_Lang::t('repair_admin_cust_data')) . '</summary>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
                 <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Name *</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
                     <input type="text" id="ra-einv-name" class="ra-input" required>
                 </div>
                 <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Firma</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
                     <input type="text" id="ra-einv-company" class="ra-input">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">E-Mail</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
                     <input type="email" id="ra-einv-email" class="ra-input">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Telefon</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
                     <input type="tel" id="ra-einv-phone" class="ra-input">
                 </div>
                 <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Adresse</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_address')) . '</label>
                     <input type="text" id="ra-einv-address" class="ra-input">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PLZ</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
                     <input type="text" id="ra-einv-plz" class="ra-input">
                 </div>
                 <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Stadt</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</label>
                     <input type="text" id="ra-einv-city" class="ra-input">
                 </div>
                 <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">USt-IdNr.</label>
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
                     <input type="text" id="ra-einv-taxid" class="ra-input">
                 </div>
             </div>
         </details>
 
         <details open style="margin-bottom:16px">
-            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">Positionen</summary>
+            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">' . esc_html(PPV_Lang::t('repair_admin_positions')) . '</summary>
             <div class="ra-inv-lines" id="ra-einv-lines" style="margin-top:12px">
                 <div class="ra-inv-line">
-                    <input type="text" placeholder="Leistung" class="ra-inv-line-desc">
-                    <input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount">
-                    <button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>
+                    <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_service')) . '" class="ra-inv-line-desc">
+                    <input type="number" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_gross')) . '" step="0.01" min="0" class="ra-inv-line-amount">
+                    <button type="button" class="ra-inv-line-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
                 </div>
             </div>
             <button type="button" class="ra-inv-add" id="ra-einv-add-line">
-                <i class="ri-add-line"></i> Position hinzuf&uuml;gen
+                <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_position')) . '
             </button>
         </details>
 
         <div class="ra-inv-totals" style="margin-bottom:16px">
             <div class="ra-inv-total-row">
-                <span>Netto:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
                 <span id="ra-einv-net">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row" id="ra-einv-vat-row">
-                <span>MwSt ' . intval($vat_rate) . '%:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' ' . intval($vat_rate) . '%:</span>
                 <span id="ra-einv-vat">0,00 &euro;</span>
             </div>
             <div class="ra-inv-total-row ra-inv-total-final">
-                <span>Gesamt:</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_total')) . '</span>
                 <span id="ra-einv-total">0,00 &euro;</span>
             </div>
         </div>
@@ -2005,21 +2063,21 @@ echo '          </div>
         <div style="margin-bottom:12px">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
                 <input type="checkbox" id="ra-einv-differenz" style="width:18px;height:18px;cursor:pointer">
-                <span>Differenzbesteuerung <span style="font-size:11px;color:#6b7280">(&sect;25a UStG - 0% MwSt)</span></span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
             </label>
         </div>
 
         <div style="margin-bottom:16px">
-            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Notizen</label>
-            <textarea id="ra-einv-notes" class="ra-input" rows="2" placeholder="Interne Notizen..."></textarea>
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
+            <textarea id="ra-einv-notes" class="ra-input" rows="2" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_notes_ph')) . '"></textarea>
         </div>
 
         <input type="hidden" id="ra-einv-id" value="">
 
         <div style="display:flex;gap:10px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-einv-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-einv-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-einv-submit">
-                <i class="ri-save-line"></i> Speichern
+                <i class="ri-save-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_save')) . '
             </button>
         </div>
     </div>
@@ -2028,33 +2086,33 @@ echo '          </div>
         // Payment Method Modal
         echo '<div class="ra-modal-overlay" id="ra-payment-modal">
     <div class="ra-modal" style="max-width:400px">
-        <h3><i class="ri-bank-card-line"></i> Zahlung erfassen</h3>
-        <p class="ra-modal-sub">Zahlungsart und Datum angeben</p>
+        <h3><i class="ri-bank-card-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_record_payment')) . '</h3>
+        <p class="ra-modal-sub">' . esc_html(PPV_Lang::t('repair_admin_record_pay_sub')) . '</p>
 
         <div style="margin-bottom:16px">
-            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsart</label>
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_payment_method')) . '</label>
             <select id="ra-payment-method" class="ra-input" style="width:100%">
-                <option value="">-- Bitte w&auml;hlen --</option>
-                <option value="bar">Barzahlung</option>
-                <option value="ec">EC-Karte</option>
-                <option value="kreditkarte">Kreditkarte</option>
-                <option value="ueberweisung">&Uuml;berweisung</option>
-                <option value="paypal">PayPal</option>
-                <option value="andere">Andere</option>
+                <option value="">' . esc_html(PPV_Lang::t('repair_admin_please_select')) . '</option>
+                <option value="bar">' . esc_html(PPV_Lang::t('repair_admin_pay_cash')) . '</option>
+                <option value="ec">' . esc_html(PPV_Lang::t('repair_admin_pay_ec')) . '</option>
+                <option value="kreditkarte">' . esc_html(PPV_Lang::t('repair_admin_pay_credit')) . '</option>
+                <option value="ueberweisung">' . esc_html(PPV_Lang::t('repair_admin_pay_transfer')) . '</option>
+                <option value="paypal">' . esc_html(PPV_Lang::t('repair_admin_pay_paypal')) . '</option>
+                <option value="andere">' . esc_html(PPV_Lang::t('repair_admin_pay_other')) . '</option>
             </select>
         </div>
 
         <div style="margin-bottom:20px">
-            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Zahlungsdatum</label>
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
             <input type="date" id="ra-payment-date" class="ra-input" style="width:100%">
         </div>
 
         <input type="hidden" id="ra-payment-inv-id" value="">
 
         <div style="display:flex;gap:10px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-payment-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-payment-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-payment-submit">
-                <i class="ri-check-line"></i> Best&auml;tigen
+                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_confirm')) . '
             </button>
         </div>
     </div>
@@ -2063,15 +2121,15 @@ echo '          </div>
         // Billbee Import Modal
         echo '<div class="ra-modal-overlay" id="ra-billbee-modal">
     <div class="ra-modal" style="max-width:500px">
-        <h3 style="color:#ea580c"><i class="ri-upload-cloud-line"></i> Billbee Import</h3>
-        <p style="font-size:13px;color:#6b7280;margin-bottom:20px">Importieren Sie Ihre Rechnungen aus Billbee. Exportieren Sie in Billbee als <strong>XML Datei</strong> und laden Sie diese hier hoch.</p>
+        <h3 style="color:#ea580c"><i class="ri-upload-cloud-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_billbee_title')) . '</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:20px">' . esc_html(PPV_Lang::t('repair_admin_billbee_hint')) . '</p>
 
         <div style="border:2px dashed #fed7aa;border-radius:12px;padding:32px 20px;text-align:center;background:#fffbeb;margin-bottom:20px" id="ra-billbee-dropzone">
             <i class="ri-file-upload-line" style="font-size:48px;color:#f97316;margin-bottom:12px;display:block"></i>
-            <p style="color:#92400e;font-weight:500;margin:0 0 8px">XML-Datei hier ablegen</p>
-            <p style="color:#a16207;font-size:12px;margin:0 0 12px">oder klicken zum Auswählen</p>
+            <p style="color:#92400e;font-weight:500;margin:0 0 8px">' . esc_html(PPV_Lang::t('repair_admin_drop_xml')) . '</p>
+            <p style="color:#a16207;font-size:12px;margin:0 0 12px">' . esc_html(PPV_Lang::t('repair_admin_or_click')) . '</p>
             <input type="file" id="ra-billbee-file" accept=".xml" style="display:none">
-            <button type="button" class="ra-btn ra-btn-sm" style="background:#f97316;color:#fff" id="ra-billbee-select">Datei auswählen</button>
+            <button type="button" class="ra-btn ra-btn-sm" style="background:#f97316;color:#fff" id="ra-billbee-select">' . esc_html(PPV_Lang::t('repair_admin_select_file')) . '</button>
         </div>
 
         <div id="ra-billbee-selected" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:20px">
@@ -2088,14 +2146,14 @@ echo '          </div>
         <div id="ra-billbee-progress" style="display:none;margin-bottom:20px">
             <div style="display:flex;align-items:center;gap:10px;color:#ea580c">
                 <i class="ri-loader-4-line ri-spin" style="font-size:20px"></i>
-                <span>Import läuft...</span>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_import_running')) . '</span>
             </div>
         </div>
 
         <div style="display:flex;gap:10px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-billbee-cancel">Abbrechen</button>
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-billbee-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn" style="flex:2;background:#ea580c;color:#fff" id="ra-billbee-submit" disabled>
-                <i class="ri-upload-2-line"></i> Importieren
+                <i class="ri-upload-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_import_btn')) . '
             </button>
         </div>
     </div>
@@ -2128,6 +2186,191 @@ echo '          </div>
         invSortBy="created_at",
         invSortDir="desc";
 
+    // Translation bridge
+    var L=' . json_encode([
+        'link_copied' => PPV_Lang::t('repair_admin_js_link_copied'),
+        'status_updated' => PPV_Lang::t('repair_admin_js_status_updated'),
+        'error' => PPV_Lang::t('repair_admin_js_error'),
+        'connection_error' => PPV_Lang::t('repair_admin_js_connection_error'),
+        'confirm_delete_repair' => PPV_Lang::t('repair_admin_js_confirm_delete_repair'),
+        'repair_deleted' => PPV_Lang::t('repair_admin_js_repair_deleted'),
+        'delete_error' => PPV_Lang::t('repair_admin_js_delete_error'),
+        'popup_blocked' => PPV_Lang::t('repair_admin_js_popup_blocked'),
+        'no_email' => PPV_Lang::t('repair_admin_js_no_email'),
+        'send_repair' => PPV_Lang::t('repair_admin_js_send_repair'),
+        'email_sent' => PPV_Lang::t('repair_admin_js_email_sent'),
+        'send_error' => PPV_Lang::t('repair_admin_js_send_error'),
+        'no_results' => PPV_Lang::t('repair_admin_js_no_results'),
+        'marked_done' => PPV_Lang::t('repair_admin_js_marked_done'),
+        'min_one_item' => PPV_Lang::t('repair_admin_js_min_one_item'),
+        'inv_updated' => PPV_Lang::t('repair_admin_js_inv_updated'),
+        'repair_completed' => PPV_Lang::t('repair_admin_js_repair_completed'),
+        'marked_paid' => PPV_Lang::t('repair_admin_js_marked_paid'),
+        'confirm_delete_inv' => PPV_Lang::t('repair_admin_js_confirm_delete_inv'),
+        'inv_deleted' => PPV_Lang::t('repair_admin_js_inv_deleted'),
+        'send_inv_email' => PPV_Lang::t('repair_admin_js_send_inv_email'),
+        'send_reminder' => PPV_Lang::t('repair_admin_js_send_reminder'),
+        'reminder_sent' => PPV_Lang::t('repair_admin_js_reminder_sent'),
+        'export_prep' => PPV_Lang::t('repair_admin_js_export_prep'),
+        'export_ok' => PPV_Lang::t('repair_admin_js_export_ok'),
+        'export_fail' => PPV_Lang::t('repair_admin_js_export_fail'),
+        'mark_paid_confirm' => PPV_Lang::t('repair_admin_js_mark_paid_confirm'),
+        'send_emails_confirm' => PPV_Lang::t('repair_admin_js_send_emails_confirm'),
+        'send_reminders_confirm' => PPV_Lang::t('repair_admin_js_send_reminders_confirm'),
+        'no_inv_selected' => PPV_Lang::t('repair_admin_js_no_inv_selected'),
+        'bulk_delete' => PPV_Lang::t('repair_admin_js_bulk_delete'),
+        'deleted_ok' => PPV_Lang::t('repair_admin_js_deleted_ok'),
+        'settings_saved' => PPV_Lang::t('repair_admin_js_settings_saved'),
+        'saved' => PPV_Lang::t('repair_admin_js_saved'),
+        'save_error' => PPV_Lang::t('repair_admin_js_save_error'),
+        'logo_uploaded' => PPV_Lang::t('repair_admin_js_logo_uploaded'),
+        'upload_failed' => PPV_Lang::t('repair_admin_js_upload_failed'),
+        'name_required' => PPV_Lang::t('repair_admin_js_name_required'),
+        'inv_created' => PPV_Lang::t('repair_admin_js_inv_created'),
+        'quote_created' => PPV_Lang::t('repair_admin_js_quote_created'),
+        'cust_name_req' => PPV_Lang::t('repair_admin_js_cust_name_req'),
+        'no_customers' => PPV_Lang::t('repair_admin_js_no_customers'),
+        'cant_delete_form_cust' => PPV_Lang::t('repair_admin_js_cant_delete_form_cust'),
+        'confirm_delete_cust' => PPV_Lang::t('repair_admin_js_confirm_delete_cust'),
+        'cust_deleted' => PPV_Lang::t('repair_admin_js_cust_deleted'),
+        'no_purchases' => PPV_Lang::t('repair_admin_js_no_purchases'),
+        'purchase_handy' => PPV_Lang::t('repair_admin_js_purchase_handy'),
+        'purchase_car' => PPV_Lang::t('repair_admin_js_purchase_car'),
+        'purchase_other' => PPV_Lang::t('repair_admin_js_purchase_other'),
+        'confirm_delete_purchase' => PPV_Lang::t('repair_admin_js_confirm_delete_purchase'),
+        'purchase_deleted' => PPV_Lang::t('repair_admin_js_purchase_deleted'),
+        'cust_saved' => PPV_Lang::t('repair_admin_js_cust_saved'),
+        'only_xml' => PPV_Lang::t('repair_admin_js_only_xml'),
+        'import_ok' => PPV_Lang::t('repair_admin_js_import_ok'),
+        'import_fail' => PPV_Lang::t('repair_admin_js_import_fail'),
+        'confirm_delete_comment' => PPV_Lang::t('repair_admin_js_confirm_delete_comment'),
+        'comment_deleted' => PPV_Lang::t('repair_admin_js_comment_deleted'),
+        'comment_added' => PPV_Lang::t('repair_admin_js_comment_added'),
+        'no_comments' => PPV_Lang::t('repair_admin_js_no_comments'),
+        'loading_error' => PPV_Lang::t('repair_admin_js_loading_error'),
+        'cancel_sub' => PPV_Lang::t('repair_admin_js_cancel_sub'),
+        'processing' => PPV_Lang::t('repair_admin_js_processing'),
+        'sub_cancelled' => PPV_Lang::t('repair_admin_js_sub_cancelled'),
+        'cancel_error' => PPV_Lang::t('repair_admin_js_cancel_error'),
+        'approve_confirm' => PPV_Lang::t('repair_admin_js_approve_confirm'),
+        'reward_approved' => PPV_Lang::t('repair_admin_js_reward_approved'),
+        'approve' => PPV_Lang::t('repair_admin_js_approve'),
+        'reject_reason' => PPV_Lang::t('repair_admin_js_reject_reason'),
+        'saving' => PPV_Lang::t('repair_admin_js_saving'),
+        'reward_rejected' => PPV_Lang::t('repair_admin_js_reward_rejected'),
+        'fb_category' => PPV_Lang::t('repair_admin_js_fb_category'),
+        'fb_rating' => PPV_Lang::t('repair_admin_js_fb_rating'),
+        'fb_describe' => PPV_Lang::t('repair_admin_js_fb_describe'),
+        'sending' => PPV_Lang::t('repair_admin_js_sending'),
+        'fb_thanks' => PPV_Lang::t('repair_admin_js_fb_thanks'),
+        'fb_error' => PPV_Lang::t('repair_admin_js_fb_error'),
+        'show_stats' => PPV_Lang::t('repair_admin_show_stats'),
+        'hide_stats' => PPV_Lang::t('repair_admin_hide_stats'),
+        'load_more' => PPV_Lang::t('repair_admin_load_more'),
+        'cancel' => PPV_Lang::t('repair_admin_cancel'),
+        'reject_btn' => PPV_Lang::t('repair_admin_reject_btn'),
+        'fb_submit' => PPV_Lang::t('repair_admin_fb_submit'),
+        'abo_cancel_btn' => PPV_Lang::t('repair_admin_abo_cancel_btn'),
+        'service' => PPV_Lang::t('repair_admin_service'),
+        'gross' => PPV_Lang::t('repair_admin_gross'),
+        'delete' => PPV_Lang::t('repair_admin_delete'),
+        'cust_edit' => PPV_Lang::t('repair_admin_cust_edit'),
+        'cust_save_as' => PPV_Lang::t('repair_admin_cust_new'),
+        'cust_new' => PPV_Lang::t('repair_admin_cust_new'),
+        'cust_form_badge' => PPV_Lang::t('repair_admin_cust_form_badge'),
+        'cust_saved_badge' => PPV_Lang::t('repair_admin_save'),
+        'orders_count' => PPV_Lang::t('repair_admin_repairs'),
+        'small_business' => PPV_Lang::t('repair_admin_small_business'),
+        'edit_btn' => PPV_Lang::t('repair_admin_js_edit_btn'),
+        'delete_btn' => PPV_Lang::t('repair_admin_js_delete_btn'),
+        'success' => PPV_Lang::t('repair_admin_js_success'),
+        'deleting' => PPV_Lang::t('repair_admin_js_deleting'),
+        'no_entries' => PPV_Lang::t('repair_admin_js_no_entries'),
+        'email_title' => PPV_Lang::t('repair_admin_js_email_title'),
+        'reminder_title' => PPV_Lang::t('repair_admin_js_reminder_title'),
+        'inv_subtitle' => PPV_Lang::t('repair_admin_inv_subtitle'),
+        'bulk_processing' => PPV_Lang::t('repair_admin_js_bulk_processing'),
+        'bulk_paid_btn' => PPV_Lang::t('repair_admin_js_bulk_paid_btn'),
+        'bulk_send_btn' => PPV_Lang::t('repair_admin_js_bulk_send_btn'),
+        'bulk_reminder_btn' => PPV_Lang::t('repair_admin_js_bulk_reminder_btn'),
+        'ankauf_item' => PPV_Lang::t('repair_admin_js_ankauf_item'),
+        'document_item' => PPV_Lang::t('repair_admin_js_document_item'),
+        'saved_btn' => PPV_Lang::t('repair_admin_js_saved_btn'),
+        // Invoice status labels
+        'inv_status_draft' => PPV_Lang::t('repair_admin_inv_status_draft'),
+        'inv_status_sent' => PPV_Lang::t('repair_admin_inv_status_sent'),
+        'inv_status_paid' => PPV_Lang::t('repair_admin_inv_status_paid'),
+        'inv_status_cancelled' => PPV_Lang::t('repair_admin_inv_status_cancelled'),
+        'inv_status_accepted' => PPV_Lang::t('repair_admin_inv_status_accepted'),
+        'inv_status_rejected' => PPV_Lang::t('repair_admin_inv_status_rejected'),
+        'inv_status_expired' => PPV_Lang::t('repair_admin_inv_status_expired'),
+        'inv_type_invoice' => PPV_Lang::t('repair_admin_inv_type_invoice'),
+        'inv_type_quote' => PPV_Lang::t('repair_admin_inv_type_quote'),
+        // Print template
+        'print_title' => PPV_Lang::t('repair_admin_print_title'),
+        'print_date' => PPV_Lang::t('repair_admin_print_date'),
+        'print_customer' => PPV_Lang::t('repair_admin_print_customer'),
+        'print_device' => PPV_Lang::t('repair_admin_print_device'),
+        'print_phone' => PPV_Lang::t('repair_admin_print_phone'),
+        'print_email' => PPV_Lang::t('repair_admin_print_email'),
+        'print_pin' => PPV_Lang::t('repair_admin_print_pin'),
+        'print_address' => PPV_Lang::t('repair_admin_print_address'),
+        'print_problem' => PPV_Lang::t('repair_admin_print_problem'),
+        'print_privacy' => PPV_Lang::t('repair_admin_print_privacy'),
+        'print_privacy_text' => PPV_Lang::t('repair_admin_print_privacy_text'),
+        'print_sig_customer' => PPV_Lang::t('repair_admin_print_sig_customer'),
+        'print_sig_shop' => PPV_Lang::t('repair_admin_print_sig_shop'),
+        // Table column labels
+        'col_nr' => PPV_Lang::t('repair_admin_col_nr'),
+        'col_date' => PPV_Lang::t('repair_admin_col_date'),
+        'col_customer' => PPV_Lang::t('repair_admin_col_customer'),
+        'col_net' => PPV_Lang::t('repair_admin_col_net'),
+        'col_vat' => PPV_Lang::t('repair_admin_col_vat'),
+        'col_total' => PPV_Lang::t('repair_admin_col_total'),
+        'col_status' => PPV_Lang::t('repair_admin_col_status'),
+        'col_name' => PPV_Lang::t('repair_admin_col_name'),
+        'col_company' => PPV_Lang::t('repair_admin_col_company'),
+        'col_email' => PPV_Lang::t('repair_admin_col_email'),
+        'col_phone' => PPV_Lang::t('repair_admin_col_phone'),
+        'col_city' => PPV_Lang::t('repair_admin_col_city'),
+        'col_seller' => PPV_Lang::t('repair_admin_col_seller'),
+        'col_article' => PPV_Lang::t('repair_admin_col_article'),
+        'col_imei' => PPV_Lang::t('repair_admin_col_imei'),
+        'col_price' => PPV_Lang::t('repair_admin_col_price'),
+        // Repair card buttons
+        'btn_print' => PPV_Lang::t('repair_admin_print'),
+        'btn_email' => PPV_Lang::t('repair_admin_send_email'),
+        'btn_resubmit' => PPV_Lang::t('repair_admin_resubmit'),
+        'btn_create_inv' => PPV_Lang::t('repair_admin_create_inv_card'),
+        'btn_delete' => PPV_Lang::t('repair_admin_delete_repair'),
+        'only_done' => PPV_Lang::t('repair_admin_only_done'),
+        'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
+        'finish_title' => PPV_Lang::t('repair_admin_finish_repair'),
+        'print_name' => PPV_Lang::t('repair_admin_print_name'),
+        'print_muster' => PPV_Lang::t('repair_admin_print_muster'),
+        'print_owner' => PPV_Lang::t('repair_admin_print_owner'),
+        'print_tel' => PPV_Lang::t('repair_admin_print_tel'),
+        'print_vatid' => PPV_Lang::t('repair_admin_print_vatid'),
+        // Status labels
+        'status_new' => PPV_Lang::t('repair_admin_status_new'),
+        'status_progress' => PPV_Lang::t('repair_admin_status_progress'),
+        'status_waiting' => PPV_Lang::t('repair_admin_status_waiting'),
+        'status_done' => PPV_Lang::t('repair_admin_status_done'),
+        'status_delivered' => PPV_Lang::t('repair_admin_status_delivered'),
+        'status_cancelled' => PPV_Lang::t('repair_admin_status_cancelled'),
+    ], JSON_UNESCAPED_UNICODE) . ';
+
+    // Language switcher
+    document.querySelectorAll(".ra-lang-btn").forEach(function(btn){
+        btn.addEventListener("click",function(){
+            var lang=this.getAttribute("data-lang");
+            document.cookie="ppv_lang="+lang+";path=/;max-age=31536000";
+            var url=new URL(window.location.href);
+            url.searchParams.set("lang",lang);
+            window.location.href=url.toString();
+        });
+    });
+
     /* ===== Toast ===== */
     function toast(msg){
         var t=document.getElementById("ra-toast");
@@ -2142,7 +2385,7 @@ echo '          </div>
         navigator.clipboard.writeText(input.value).then(function(){
             var btn=document.getElementById("ra-copy-btn");
             btn.innerHTML=\'<i class="ri-check-line"></i>\';
-            toast("Link kopiert!");
+            toast(L.link_copied);
             setTimeout(function(){btn.innerHTML=\'<i class="ri-file-copy-line"></i>\'},2000);
         });
     });
@@ -2169,26 +2412,26 @@ echo '          </div>
                 .then(function(r){return r.json()})
                 .then(function(data){
                     if(data.success){
-                        toast("Status aktualisiert");
+                        toast(L.status_updated);
                         updateBadge(self.closest(".ra-repair-card"),st);
                         self.setAttribute("data-prev",st);
                     }else{
-                        toast(data.data&&data.data.message?data.data.message:"Fehler");
+                        toast(data.data&&data.data.message?data.data.message:L.error);
                     }
                 })
-                .catch(function(){toast("Verbindungsfehler")});
+                .catch(function(){toast(L.connection_error)});
             });
         });
     }
 
     function updateBadge(card,status){
         var map={
-            new:["Neu","ra-status-new"],
-            in_progress:["In Bearbeitung","ra-status-progress"],
-            waiting_parts:["Wartet auf Teile","ra-status-waiting"],
-            done:["Fertig","ra-status-done"],
-            delivered:["Abgeholt","ra-status-delivered"],
-            cancelled:["Storniert","ra-status-cancelled"]
+            new:[L.status_new,"ra-status-new"],
+            in_progress:[L.status_progress,"ra-status-progress"],
+            waiting_parts:[L.status_waiting,"ra-status-waiting"],
+            done:[L.status_done,"ra-status-done"],
+            delivered:[L.status_delivered,"ra-status-delivered"],
+            cancelled:[L.status_cancelled,"ra-status-cancelled"]
         };
         card.setAttribute("data-status",status);
         var badge=card.querySelector(".ra-status");
@@ -2233,7 +2476,7 @@ echo '          </div>
         var card=btn.closest(".ra-repair-card");
         if(!card)return;
         var rid=card.dataset.id;
-        if(!confirm("Reparatur #"+rid+" wirklich l\u00f6schen?"))return;
+        if(!confirm(L.confirm_delete_repair.replace("%s",rid)))return;
         btn.disabled=true;
         btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
         var fd=new FormData();
@@ -2245,17 +2488,17 @@ echo '          </div>
         .then(function(res){
             if(res.success){
                 card.remove();
-                toast("Reparatur gel\u00f6scht");
+                toast(L.repair_deleted);
             }else{
                 btn.disabled=false;
                 btn.innerHTML=\'<i class="ri-delete-bin-line"></i>\';
-                toast(res.data&&res.data.message?res.data.message:"Fehler beim L\u00f6schen");
+                toast(res.data&&res.data.message?res.data.message:L.delete_error);
             }
         })
         .catch(function(){
             btn.disabled=false;
             btn.innerHTML=\'<i class="ri-delete-bin-line"></i>\';
-            toast("Verbindungsfehler");
+            toast(L.connection_error);
         });
     });
 
@@ -2284,13 +2527,13 @@ echo '          </div>
             signature: card.dataset.signature||""
         };
         var w=window.open("","_blank","width=800,height=900");
-        if(!w){alert("Popup blockiert! Bitte erlauben Sie Pop-ups.");return;}
+        if(!w){alert(L.popup_blocked);return;}
         var device=((data.brand||"")+" "+(data.model||"")).trim();
-        var musterHtml=data.muster&&data.muster.indexOf("data:image/")===0?\'<div class="field"><span class="label">Muster:</span><img src="\'+data.muster+\'" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>\':"";
-        var pinHtml=data.pin?\'<div class="field"><span class="label">PIN:</span><span class="value highlight">\'+esc(data.pin)+\'</span></div>\':"";
-        var addressHtml=data.address?\'<div class="field"><span class="label">Adresse:</span><span class="value">\'+esc(data.address)+\'</span></div>\':"";
+        var musterHtml=data.muster&&data.muster.indexOf("data:image/")===0?\'<div class="field"><span class="label">\'+L.print_muster+\':</span><img src="\'+data.muster+\'" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>\':"";
+        var pinHtml=data.pin?\'<div class="field"><span class="label">\'+L.print_pin+\':</span><span class="value highlight">\'+esc(data.pin)+\'</span></div>\':"";
+        var addressHtml=data.address?\'<div class="field"><span class="label">\'+L.print_address+\':</span><span class="value">\'+esc(data.address)+\'</span></div>\':"";
         var signatureHtml=data.signature&&data.signature.indexOf("data:image/")===0?\'<div class="sig-img"><img src="\'+data.signature+\'" style="max-height:40px"></div>\':\'<div class="signature-line"></div>\';
-        var html=\'<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reparaturauftrag #\'+data.id+\'</title><style>\'+
+        var html=\'<!DOCTYPE html><html><head><meta charset="UTF-8"><title>\'+L.print_title+\' #\'+data.id+\'</title><style>\'+
             \'*{margin:0;padding:0;box-sizing:border-box}\'+
             \'body{font-family:Arial,sans-serif;padding:15px 20px;color:#1f2937;line-height:1.3;font-size:11px}\'+
             \'.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:12px}\'+
@@ -2322,38 +2565,38 @@ echo '          </div>
             \'@media print{body{padding:10px 15px}@page{margin:10mm}}\'+
             \'</style></head><body>\'+
             \'<div class="header">\'+
-                \'<div class="logo">\'+esc(STORE_COMPANY)+(STORE_OWNER?\'<br><span style="font-size:10px;font-weight:normal;color:#6b7280">Inh. \'+esc(STORE_OWNER)+\'</span>\':\'\')+\'</div>\'+
+                \'<div class="logo">\'+esc(STORE_COMPANY)+(STORE_OWNER?\'<br><span style="font-size:10px;font-weight:normal;color:#6b7280">\'+L.print_owner+\' \'+esc(STORE_OWNER)+\'</span>\':\'\')+\'</div>\'+
                 \'<div class="header-info">\'+(STORE_ADDRESS?esc(STORE_ADDRESS)+\'<br>\':\'\')+
-                (STORE_PHONE?\'<strong>Tel: \'+esc(STORE_PHONE)+\'</strong><br>\':\'\')+
-                (STORE_EMAIL?\'E-Mail: \'+esc(STORE_EMAIL)+\'<br>\':\'\')+
-                (STORE_TAX_ID?\'USt-IdNr.: \'+esc(STORE_TAX_ID):\'\')+
+                (STORE_PHONE?\'<strong>\'+L.print_tel+\': \'+esc(STORE_PHONE)+\'</strong><br>\':\'\')+
+                (STORE_EMAIL?L.print_email+\': \'+esc(STORE_EMAIL)+\'<br>\':\'\')+
+                (STORE_TAX_ID?L.print_vatid+\': \'+esc(STORE_TAX_ID):\'\')+
                 \'</div>\'+
             \'</div>\'+
-            \'<div class="title"><h1>Reparaturauftrag #\'+data.id+\'</h1><p>Datum: \'+esc(data.date)+\'</p></div>\'+
+            \'<div class="title"><h1>\'+L.print_title+\' #\'+data.id+\'</h1><p>\'+L.print_date+\': \'+esc(data.date)+\'</p></div>\'+
             \'<div class="two-col">\'+
-                \'<div class="section"><div class="section-title">Kunde</div>\'+
-                    \'<div class="field"><span class="label">Name:</span><span class="value">\'+esc(data.name)+\'</span></div>\'+
-                    \'<div class="field"><span class="label">Telefon:</span><span class="value">\'+esc(data.phone)+\'</span></div>\'+
-                    \'<div class="field"><span class="label">E-Mail:</span><span class="value">\'+esc(data.email)+\'</span></div>\'+
+                \'<div class="section"><div class="section-title">\'+L.print_customer+\'</div>\'+
+                    \'<div class="field"><span class="label">\'+L.print_name+\':</span><span class="value">\'+esc(data.name)+\'</span></div>\'+
+                    \'<div class="field"><span class="label">\'+L.print_phone+\':</span><span class="value">\'+esc(data.phone)+\'</span></div>\'+
+                    \'<div class="field"><span class="label">\'+L.print_email+\':</span><span class="value">\'+esc(data.email)+\'</span></div>\'+
                     addressHtml+
                 \'</div>\'+
-                \'<div class="section"><div class="section-title">Ger\\u00e4t</div>\'+
-                    \'<div class="field"><span class="label">Ger\\u00e4t:</span><span class="value">\'+esc(device)+\'</span></div>\'+
+                \'<div class="section"><div class="section-title">\'+L.print_device+\'</div>\'+
+                    \'<div class="field"><span class="label">\'+L.print_device+\':</span><span class="value">\'+esc(device)+\'</span></div>\'+
                     pinHtml+
                     musterHtml+
                 \'</div>\'+
             \'</div>\'+
-            \'<div class="problem-section"><div class="section-title">Problembeschreibung</div>\'+
+            \'<div class="problem-section"><div class="section-title">\'+L.print_problem+\'</div>\'+
                 \'<div style="font-size:11px">\'+esc(data.problem)+\'</div>\'+
             \'</div>\'+
             \'<div class="datenschutz">\'+
-                \'<div class="datenschutz-title">Datenschutzhinweis</div>\'+
-                \'<div class="datenschutz-text">Mit meiner Unterschrift best\\u00e4tige ich:<ul><li>Die Richtigkeit der angegebenen Daten</li><li>Die Zustimmung zur Datenverarbeitung gem\\u00e4\\u00df DSGVO</li><li>Die Kenntnisnahme der Reparaturbedingungen</li></ul></div>\'+
+                \'<div class="datenschutz-title">\'+L.print_privacy+\'</div>\'+
+                \'<div class="datenschutz-text">\'+L.print_privacy_text+\'</div>\'+
             \'</div>\'+
             \'<div class="signature-area">\'+
-                \'<div class="signature-box" style="max-width:250px"><label>Unterschrift Kunde (Einwilligung Datenschutz):</label>\'+signatureHtml+\'</div>\'+
+                \'<div class="signature-box" style="max-width:250px"><label>\'+L.print_sig_customer+\':</label>\'+signatureHtml+\'</div>\'+
             \'</div>\'+
-            \'<div class="footer">\'+esc(STORE_COMPANY)+(STORE_ADDRESS?\' | \'+esc(STORE_ADDRESS):\'\')+(STORE_PHONE?\' | Tel: \'+esc(STORE_PHONE):\'\')+(STORE_EMAIL?\' | \'+esc(STORE_EMAIL):\'\')+\'</div>\'+
+            \'<div class="footer">\'+esc(STORE_COMPANY)+(STORE_ADDRESS?\' | \'+esc(STORE_ADDRESS):\'\')+(STORE_PHONE?\' | \'+L.print_tel+\': \'+esc(STORE_PHONE):\'\')+(STORE_EMAIL?\' | \'+esc(STORE_EMAIL):\'\')+\'</div>\'+
             \'<script>window.onload=function(){window.print();}<\\/script>\'+
             \'</body></html>\';
         w.document.write(html);
@@ -2368,10 +2611,10 @@ echo '          </div>
         if(!card)return;
         var email=card.dataset.email;
         if(!email){
-            toast("Keine E-Mail-Adresse vorhanden");
+            toast(L.no_email);
             return;
         }
-        if(!confirm("Reparaturauftrag an "+email+" senden?")){
+        if(!confirm(L.send_repair.replace("%s",email))){
             return;
         }
         btn.disabled=true;
@@ -2386,15 +2629,15 @@ echo '          </div>
             btn.disabled=false;
             btn.innerHTML=\'<i class="ri-mail-send-line"></i>\';
             if(res.success){
-                toast("E-Mail erfolgreich gesendet!");
+                toast(L.email_sent);
             }else{
-                toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden");
+                toast(res.data&&res.data.message?res.data.message:L.send_error);
             }
         })
         .catch(function(){
             btn.disabled=false;
             btn.innerHTML=\'<i class="ri-mail-send-line"></i>\';
-            toast("Verbindungsfehler");
+            toast(L.connection_error);
         });
     });
 
@@ -2419,7 +2662,7 @@ echo '          </div>
                 repairs=d.repairs||[];
             if(page===1)list.innerHTML="";
             if(repairs.length===0&&page===1){
-                list.innerHTML=\'<div class="ra-empty"><i class="ri-search-line"></i><p>Keine Reparaturen gefunden.</p></div>\';
+                list.innerHTML=\'<div class="ra-empty"><i class="ri-search-line"></i><p>"+L.no_results+"</p></div>\';
             }else{
                 repairs.forEach(function(r){
                     list.insertAdjacentHTML("beforeend",buildCardHTML(r));
@@ -2458,21 +2701,21 @@ echo '          </div>
     /* ===== Build Card HTML (client side) ===== */
     function buildCardHTML(r){
         var map={
-            new:["Neu","ra-status-new"],
-            in_progress:["In Bearbeitung","ra-status-progress"],
-            waiting_parts:["Wartet auf Teile","ra-status-waiting"],
-            done:["Fertig","ra-status-done"],
-            delivered:["Abgeholt","ra-status-delivered"],
-            cancelled:["Storniert","ra-status-cancelled"]
+            new:[L.status_new,"ra-status-new"],
+            in_progress:[L.status_progress,"ra-status-progress"],
+            waiting_parts:[L.status_waiting,"ra-status-waiting"],
+            done:[L.status_done,"ra-status-done"],
+            delivered:[L.status_delivered,"ra-status-delivered"],
+            cancelled:[L.status_cancelled,"ra-status-cancelled"]
         };
-        var st=map[r.status]||["Unbekannt",""];
+        var st=map[r.status]||["?",""];
         var device=((r.device_brand||"")+" "+(r.device_model||"")).trim();
         var d=r.created_at?new Date(r.created_at.replace(/-/g,"/")):"";
         var dateStr=d?pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear()+" "+pad(d.getHours())+":"+pad(d.getMinutes()):"";
         var problem=(r.problem_description||"");
         if(problem.length>150)problem=problem.substring(0,150)+"...";
         var opts=["new","in_progress","waiting_parts","done","delivered","cancelled"];
-        var labels=["Neu","In Bearbeitung","Wartet auf Teile","Fertig","Abgeholt","Storniert"];
+        var labels=[L.status_new,L.status_progress,L.status_waiting,L.status_done,L.status_delivered,L.status_cancelled];
         var selectHtml="";
         for(var i=0;i<opts.length;i++){
             selectHtml+=\'<option value="\'+opts[i]+\'" \'+(r.status===opts[i]?"selected":"")+\'>\'+labels[i]+\'</option>\';
@@ -2481,7 +2724,7 @@ echo '          </div>
         var deviceHtml=device?\'<div class="ra-repair-device"><i class="ri-smartphone-line"></i> \'+esc(device)+\'</div>\':"";
         var pinHtml=r.device_pattern?\'<div class="ra-repair-pin"><i class="ri-lock-password-line"></i> PIN: \'+esc(r.device_pattern)+\'</div>\':"";
         var addressHtml=r.customer_address?\'<div class="ra-repair-address"><i class="ri-map-pin-line"></i> \'+esc(r.customer_address)+\'</div>\':"";
-        var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="Muster" title="Entsperrmuster"></div>\':"";
+        var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="\'+L.print_muster+\'" title="\'+L.print_muster+\'"></div>\':"";
         var fullProblem=r.problem_description||"";
         return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
@@ -2491,7 +2734,7 @@ echo '          </div>
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
             \'</div>\'+
-            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="Ausdrucken"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="Per E-Mail senden"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button><button class="ra-btn-invoice" title="Rechnung erstellen"><i class="ri-file-list-3-line"></i></button><button class="ra-btn-delete" title="L\u00f6schen"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
+            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="ra-btn-invoice" title="\'+L.btn_create_inv+\'"><i class="ri-file-list-3-line"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
         \'</div>\';
     }
     function pad(n){return n<10?"0"+n:n}
@@ -2507,7 +2750,7 @@ echo '          </div>
     if(!VAT_ENABLED){document.getElementById("ra-inv-modal-vat-row").style.display="none"}
 
     function buildLineHtml(desc,amt){
-        return \'<div class="ra-inv-line"><input type="text" placeholder="Leistung (z.B. Displaytausch)" class="ra-inv-line-desc" value="\'+esc(desc||"")+\'"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount" value="\'+(amt||"")+\'"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        return \'<div class="ra-inv-line"><input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc" value="\'+esc(desc||"")+\'"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount" value="\'+(amt||"")+\'"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button></div>\';
     }
 
     function showInvoiceModal(repairId,selectEl){
@@ -2515,9 +2758,9 @@ echo '          </div>
         invoiceSelect=selectEl;
         invoiceEditId=null;
         // Title for create mode
-        document.getElementById("ra-inv-modal-title").innerHTML=\'<i class="ri-file-list-3-line"></i> Reparatur abschlie&szlig;en\';
-        document.getElementById("ra-inv-modal-subtitle").textContent="Leistungen und Bruttobetr\u00e4ge f\u00fcr die Rechnung eingeben";
-        document.getElementById("ra-inv-modal-submit").innerHTML=\'<i class="ri-check-line"></i> Abschlie\u00dfen & Rechnung\';
+        document.getElementById("ra-inv-modal-title").innerHTML=\'<i class="ri-file-list-3-line"></i> \'+L.finish_title;
+        document.getElementById("ra-inv-modal-subtitle").textContent=L.inv_subtitle;
+        document.getElementById("ra-inv-modal-submit").innerHTML=\'<i class="ri-check-line"></i> \'+L.finish_inv;
         // Show device info
         var card=selectEl.closest(".ra-repair-card");
         var info=document.getElementById("ra-inv-modal-info");
@@ -2656,7 +2899,7 @@ echo '          </div>
         var lines=document.getElementById("ra-inv-lines");
         var line=document.createElement("div");
         line.className="ra-inv-line";
-        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        line.innerHTML=\'<input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button>\';
         lines.appendChild(line);
         line.querySelector(".ra-inv-line-desc").focus();
     });
@@ -2682,7 +2925,7 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                toast("Reparatur als Fertig markiert");
+                toast(L.marked_done);
                 if(invoiceSelect){
                     updateBadge(invoiceSelect.closest(".ra-repair-card"),"done");
                     invoiceSelect.value="done";
@@ -2690,13 +2933,13 @@ echo '          </div>
                 }
                 hideInvoiceModal();
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Fehler");
+                toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast("Verbindungsfehler")})
+        .catch(function(){toast(L.connection_error)})
         .finally(function(){
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-check-line"></i> Nur Fertig\';
+            btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.only_done;
         });
     });
 
@@ -2707,7 +2950,7 @@ echo '          </div>
             var amt=parseFloat(line.querySelector(".ra-inv-line-amount").value)||0;
             if(desc||amt>0)items.push({description:desc,amount:amt});
         });
-        if(items.length===0){toast("Bitte mindestens eine Position eingeben");return}
+        if(items.length===0){toast(L.min_one_item);return}
         var totalAmt=0;
         items.forEach(function(i){totalAmt+=i.amount});
 
@@ -2748,9 +2991,9 @@ echo '          </div>
         .then(function(data){
             if(data.success){
                 if(invoiceEditId){
-                    toast("Rechnung aktualisiert");
+                    toast(L.inv_updated);
                 }else{
-                    toast("Reparatur abgeschlossen & Rechnung erstellt");
+                    toast(L.repair_completed);
                     if(invoiceSelect){
                         updateBadge(invoiceSelect.closest(".ra-repair-card"),"done");
                         invoiceSelect.setAttribute("data-prev","done");
@@ -2761,10 +3004,10 @@ echo '          </div>
                 // Reload invoices tab if visible
                 if(document.getElementById("ra-tab-invoices").classList.contains("active")){loadInvoices(1)}
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Fehler");
+                toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast("Verbindungsfehler")})
+        .catch(function(){toast(L.connection_error)})
         .finally(function(){btn.disabled=false});
     });
 
@@ -2941,44 +3184,44 @@ echo '          </div>
             var tbody=document.getElementById("ra-inv-body");
             if(page===1)tbody.innerHTML="";
             if(!d.invoices||d.invoices.length===0){
-                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Keine Eintr\u00e4ge vorhanden.</td></tr>\';
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">\'+L.no_entries+\'</td></tr>\';
             }else{
                 d.invoices.forEach(function(inv){
-                    var statusMap={draft:["Entwurf","ra-inv-status-draft"],sent:["Gesendet","ra-inv-status-sent"],paid:["Bezahlt","ra-inv-status-paid"],cancelled:["Storniert","ra-inv-status-cancelled"],accepted:["Angenommen","ra-inv-status-paid"],rejected:["Abgelehnt","ra-inv-status-cancelled"],expired:["Abgelaufen","ra-inv-status-cancelled"]};
+                    var statusMap={draft:[L.inv_status_draft,"ra-inv-status-draft"],sent:[L.inv_status_sent,"ra-inv-status-sent"],paid:[L.inv_status_paid,"ra-inv-status-paid"],cancelled:[L.inv_status_cancelled,"ra-inv-status-cancelled"],accepted:[L.inv_status_accepted,"ra-inv-status-paid"],rejected:[L.inv_status_rejected,"ra-inv-status-cancelled"],expired:[L.inv_status_expired,"ra-inv-status-cancelled"]};
                     var st=statusMap[inv.status]||["?",""];
                     var date=inv.created_at?new Date(inv.created_at.replace(/-/g,"/")):"";
                     var dateStr=date?pad(date.getDate())+"."+pad(date.getMonth()+1)+"."+date.getFullYear():"";
-                    var vatCol=parseInt(inv.is_kleinunternehmer)?"<span style=\'font-size:11px;color:#9ca3af\'>Kl.Unt.</span>":fmtEur(inv.vat_amount);
+                    var vatCol=parseInt(inv.is_kleinunternehmer)?"<span style=\'font-size:11px;color:#9ca3af\'>\'+L.small_business+\'</span>":fmtEur(inv.vat_amount);
                     var pdfUrl=AJAX+"?action=ppv_repair_invoice_pdf&invoice_id="+inv.id+"&nonce="+NONCE;
 
                     // Doc type badge
                     var isAngebot=inv.doc_type==="angebot";
                     var typeBadge=isAngebot
-                        ?"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#f0fdf4;color:#16a34a;margin-left:6px\'>Angebot</span>"
-                        :"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#eff6ff;color:#2563eb;margin-left:6px\'>Rechnung</span>";
+                        ?"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#f0fdf4;color:#16a34a;margin-left:6px\'>\'+L.inv_type_quote+\'</span>"
+                        :"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#eff6ff;color:#2563eb;margin-left:6px\'>\'+L.inv_type_invoice+\'</span>";
 
                     var row=document.createElement("tr");
                     row.setAttribute("data-inv-id",inv.id);
                     row.innerHTML=\'<td><input type="checkbox" class="ra-inv-checkbox" data-inv-id="\'+inv.id+\'" style="width:16px;height:16px;cursor:pointer"></td>\'+
-                        \'<td data-label="Nr."><strong>\'+esc(inv.invoice_number)+\'</strong>\'+typeBadge+\'</td>\'+
-                        \'<td data-label="Datum">\'+dateStr+\'</td>\'+
-                        \'<td data-label="Kunde">\'+esc(inv.customer_name)+\'</td>\'+
-                        \'<td data-label="Netto">\'+fmtEur(inv.net_amount)+\'</td>\'+
-                        \'<td data-label="MwSt">\'+vatCol+\'</td>\'+
-                        \'<td data-label="Gesamt"><strong>\'+fmtEur(inv.total)+\'</strong></td>\'+
-                        \'<td data-label="Status"><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
+                        \'<td data-label="\'+L.col_nr+\'"><strong>\'+esc(inv.invoice_number)+\'</strong>\'+typeBadge+\'</td>\'+
+                        \'<td data-label="\'+L.col_date+\'">\'+dateStr+\'</td>\'+
+                        \'<td data-label="\'+L.col_customer+\'">\'+esc(inv.customer_name)+\'</td>\'+
+                        \'<td data-label="\'+L.col_net+\'">\'+fmtEur(inv.net_amount)+\'</td>\'+
+                        \'<td data-label="\'+L.col_vat+\'">\'+vatCol+\'</td>\'+
+                        \'<td data-label="\'+L.col_total+\'"><strong>\'+fmtEur(inv.total)+\'</strong></td>\'+
+                        \'<td data-label="\'+L.col_status+\'"><span class="ra-inv-status \'+st[1]+\'">\'+st[0]+\'</span></td>\'+
                         \'<td data-label=""><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
-                            \'<button class="ra-inv-btn ra-inv-btn-email" data-inv-id="\'+inv.id+\'" data-customer-email="\'+esc(inv.customer_email||"")+\'" title="E-Mail senden"><i class="ri-mail-send-line"></i></button>\'+
-                            (inv.status!=="paid"&&inv.doc_type!=="angebot"?\'<button class="ra-inv-btn ra-inv-btn-reminder" data-inv-id="\'+inv.id+\'" title="Zahlungserinnerung" style="background:#fef3c7;color:#d97706"><i class="ri-alarm-warning-line"></i></button>\':\'\')+
-                            \'<button class="ra-inv-btn ra-inv-btn-edit" data-invoice=\\\'\'+JSON.stringify(inv).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
+                            \'<button class="ra-inv-btn ra-inv-btn-email" data-inv-id="\'+inv.id+\'" data-customer-email="\'+esc(inv.customer_email||"")+\'" title="\'+L.email_title+\'"><i class="ri-mail-send-line"></i></button>\'+
+                            (inv.status!=="paid"&&inv.doc_type!=="angebot"?\'<button class="ra-inv-btn ra-inv-btn-reminder" data-inv-id="\'+inv.id+\'" title="\'+L.reminder_title+\'" style="background:#fef3c7;color:#d97706"><i class="ri-alarm-warning-line"></i></button>\':\'\')+
+                            \'<button class="ra-inv-btn ra-inv-btn-edit" data-invoice=\\\'\'+JSON.stringify(inv).replace(/\'/g,"&#39;")+\'\\\' title="\'+L.edit_btn+\'"><i class="ri-pencil-line"></i></button>\'+
                             \'<select class="ra-inv-btn ra-inv-status-sel" data-inv-id="\'+inv.id+\'" data-old-status="\'+inv.status+\'" style="padding:5px 8px;font-size:12px;border-radius:6px">\'+
-                                \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>Entwurf</option>\'+
-                                \'<option value="sent" \'+(inv.status==="sent"?"selected":"")+\'>Gesendet</option>\'+
-                                \'<option value="paid" \'+(inv.status==="paid"?"selected":"")+\'>Bezahlt</option>\'+
-                                \'<option value="cancelled" \'+(inv.status==="cancelled"?"selected":"")+\'>Storniert</option>\'+
+                                \'<option value="draft" \'+(inv.status==="draft"?"selected":"")+\'>\'+L.inv_status_draft+\'</option>\'+
+                                \'<option value="sent" \'+(inv.status==="sent"?"selected":"")+\'>\'+L.inv_status_sent+\'</option>\'+
+                                \'<option value="paid" \'+(inv.status==="paid"?"selected":"")+\'>\'+L.inv_status_paid+\'</option>\'+
+                                \'<option value="cancelled" \'+(inv.status==="cancelled"?"selected":"")+\'>\'+L.inv_status_cancelled+\'</option>\'+
                             \'</select>\'+
-                            \'<button class="ra-inv-btn ra-inv-btn-del" data-inv-id="\'+inv.id+\'" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>\'+
+                            \'<button class="ra-inv-btn ra-inv-btn-del" data-inv-id="\'+inv.id+\'" title="\'+L.delete_btn+\'"><i class="ri-delete-bin-line"></i></button>\'+
                         \'</div></td>\';
                     tbody.appendChild(row);
                 });
@@ -3001,7 +3244,7 @@ echo '          </div>
                                 fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
                                 .then(function(r){return r.json()})
                                 .then(function(res){
-                                    toast(res.success?"Bezahlt markiert":"Fehler");
+                                    toast(res.success?L.marked_paid:L.error);
                                     if(res.success){selEl.setAttribute("data-old-status","paid");invoicesLoaded=false;loadInvoices(1)}
                                 });
                             },function(){
@@ -3017,7 +3260,7 @@ echo '          </div>
                             fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
                             .then(function(r){return r.json()})
                             .then(function(res){
-                                toast(res.success?"Status aktualisiert":"Fehler");
+                                toast(res.success?L.status_updated:L.error);
                                 if(res.success)selEl.setAttribute("data-old-status",ns);
                             });
                         }
@@ -3033,7 +3276,7 @@ echo '          </div>
                 // Bind delete
                 tbody.querySelectorAll(".ra-inv-btn-del").forEach(function(btn){
                     btn.addEventListener("click",function(){
-                        if(!confirm("Rechnung wirklich l\u00f6schen?"))return;
+                        if(!confirm(L.confirm_delete_inv))return;
                         var iid=this.getAttribute("data-inv-id");
                         var row=this.closest("tr");
                         var fd2=new FormData();
@@ -3043,8 +3286,8 @@ echo '          </div>
                         fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
                         .then(function(r){return r.json()})
                         .then(function(res){
-                            if(res.success){row.remove();toast("Rechnung gel\u00f6scht");invoicesLoaded=false;loadInvoices(1)}
-                            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+                            if(res.success){row.remove();toast(L.inv_deleted);invoicesLoaded=false;loadInvoices(1)}
+                            else{toast(res.data&&res.data.message?res.data.message:L.error)}
                         });
                     });
                 });
@@ -3053,8 +3296,8 @@ echo '          </div>
                     btn.addEventListener("click",function(){
                         var iid=this.getAttribute("data-inv-id");
                         var email=this.getAttribute("data-customer-email");
-                        if(!email){toast("Keine E-Mail-Adresse vorhanden");return;}
-                        if(!confirm("Rechnung per E-Mail an "+email+" senden?"))return;
+                        if(!email){toast(L.no_email);return;}
+                        if(!confirm(L.send_inv_email.replace("%s",email)))return;
                         btn.disabled=true;
                         btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
                         var fd2=new FormData();
@@ -3066,8 +3309,8 @@ echo '          </div>
                         .then(function(res){
                             btn.disabled=false;
                             btn.innerHTML=\'<i class="ri-mail-send-line"></i>\';
-                            if(res.success){toast("E-Mail erfolgreich gesendet!");invoicesLoaded=false;loadInvoices(1)}
-                            else{toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden")}
+                            if(res.success){toast(L.email_sent);invoicesLoaded=false;loadInvoices(1)}
+                            else{toast(res.data&&res.data.message?res.data.message:L.send_error)}
                         });
                     });
                 });
@@ -3075,7 +3318,7 @@ echo '          </div>
                 tbody.querySelectorAll(".ra-inv-btn-reminder").forEach(function(btn){
                     btn.addEventListener("click",function(){
                         var iid=this.getAttribute("data-inv-id");
-                        if(!confirm("Zahlungserinnerung an den Kunden senden?"))return;
+                        if(!confirm(L.send_reminder))return;
                         btn.disabled=true;
                         btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
                         var fd2=new FormData();
@@ -3088,7 +3331,7 @@ echo '          </div>
                             btn.disabled=false;
                             btn.innerHTML=\'<i class="ri-alarm-warning-line"></i>\';
                             if(res.success){toast(res.data.message||"Erinnerung gesendet!")}
-                            else{toast(res.data&&res.data.message?res.data.message:"Fehler beim Senden")}
+                            else{toast(res.data&&res.data.message?res.data.message:L.send_error)}
                         });
                     });
                 });
@@ -3117,11 +3360,11 @@ echo '          </div>
         var btn=this;
         if(summary.style.display==="none"){
             summary.style.display="grid";
-            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> Statistik ausblenden\';
+            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> "+L.hide_stats+"\';
             btn.classList.add("active");
         }else{
             summary.style.display="none";
-            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> Statistik anzeigen\';
+            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> "+L.show_stats+"\';
             btn.classList.remove("active");
         }
     });
@@ -3184,7 +3427,7 @@ echo '          </div>
             e.preventDefault();
             var format=this.getAttribute("data-format");
             invExportDropdown.style.display="none";
-            toast("Export wird vorbereitet...");
+            toast(L.export_prep);
             var df=document.getElementById("ra-inv-from").value;
             var dt=document.getElementById("ra-inv-to").value;
             var docType=document.getElementById("ra-inv-type").value;
@@ -3205,9 +3448,9 @@ echo '          </div>
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    toast("Export erfolgreich!");
+                    toast(L.export_ok);
                 }else{
-                    toast(res.data&&res.data.message?res.data.message:"Export fehlgeschlagen");
+                    toast(res.data&&res.data.message?res.data.message:L.export_fail);
                 }
             });
         });
@@ -3269,8 +3512,8 @@ echo '          </div>
     document.getElementById("ra-bulk-paid").addEventListener("click",function(){
         var ids=getSelectedInvoiceIds();
         if(!ids.length)return;
-        if(!confirm(ids.length+" Rechnung(en) als bezahlt markieren?"))return;
-        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird verarbeitet...\';
+        if(!confirm(L.mark_paid_confirm.replace("%d",ids.length)))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> \'+L.bulk_processing;
         var fd=new FormData();
         fd.append("action","ppv_repair_invoice_bulk");
         fd.append("nonce",NONCE);
@@ -3279,17 +3522,17 @@ echo '          </div>
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(res){
-            btn.disabled=false;btn.innerHTML=\'<i class="ri-checkbox-circle-line"></i> Als bezahlt\';
-            if(res.success){toast(res.data.message||"Erfolgreich!");invoicesLoaded=false;loadInvoices(1)}
-            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-checkbox-circle-line"></i> \'+L.bulk_paid_btn;
+            if(res.success){toast(res.data.message||L.success);invoicesLoaded=false;loadInvoices(1)}
+            else{toast(res.data&&res.data.message?res.data.message:L.error)}
         });
     });
     // Bulk send emails
     document.getElementById("ra-bulk-send").addEventListener("click",function(){
         var ids=getSelectedInvoiceIds();
         if(!ids.length)return;
-        if(!confirm(ids.length+" Rechnung(en) per E-Mail versenden?"))return;
-        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+        if(!confirm(L.send_emails_confirm.replace("%d",ids.length)))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> \'+L.sending;
         var fd=new FormData();
         fd.append("action","ppv_repair_invoice_bulk");
         fd.append("nonce",NONCE);
@@ -3298,17 +3541,17 @@ echo '          </div>
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(res){
-            btn.disabled=false;btn.innerHTML=\'<i class="ri-mail-send-line"></i> E-Mails senden\';
-            if(res.success){toast(res.data.message||"Erfolgreich!");invoicesLoaded=false;loadInvoices(1)}
-            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-mail-send-line"></i> \'+L.bulk_send_btn;
+            if(res.success){toast(res.data.message||L.success);invoicesLoaded=false;loadInvoices(1)}
+            else{toast(res.data&&res.data.message?res.data.message:L.error)}
         });
     });
     // Bulk reminders
     document.getElementById("ra-bulk-reminder").addEventListener("click",function(){
         var ids=getSelectedInvoiceIds();
         if(!ids.length)return;
-        if(!confirm(ids.length+" Zahlungserinnerung(en) senden?"))return;
-        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+        if(!confirm(L.send_reminders_confirm.replace("%d",ids.length)))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> \'+L.sending;
         var fd=new FormData();
         fd.append("action","ppv_repair_invoice_bulk");
         fd.append("nonce",NONCE);
@@ -3317,9 +3560,9 @@ echo '          </div>
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(res){
-            btn.disabled=false;btn.innerHTML=\'<i class="ri-alarm-warning-line"></i> Erinnerungen\';
-            if(res.success){toast(res.data.message||"Erfolgreich!")}
-            else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-alarm-warning-line"></i> \'+L.bulk_reminder_btn;
+            if(res.success){toast(res.data.message||L.success)}
+            else{toast(res.data&&res.data.message?res.data.message:L.error)}
         });
     });
 
@@ -3348,10 +3591,10 @@ echo '          </div>
         opt.addEventListener("click",function(e){
             e.preventDefault();
             var ids=getSelectedInvoiceIds();
-            if(!ids.length){toast("Keine Rechnungen ausgewählt");return;}
+            if(!ids.length){toast(L.no_inv_selected);return;}
             var format=this.getAttribute("data-format");
             exportDropdown.style.display="none";
-            toast("Export wird vorbereitet...");
+            toast(L.export_prep);
             var fd=new FormData();
             fd.append("action","ppv_repair_invoice_bulk");
             fd.append("nonce",NONCE);
@@ -3368,9 +3611,9 @@ echo '          </div>
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    toast("Export erfolgreich!");
+                    toast(L.export_ok);
                 }else{
-                    toast(res.data&&res.data.message?res.data.message:"Export fehlgeschlagen");
+                    toast(res.data&&res.data.message?res.data.message:L.export_fail);
                 }
             });
         });
@@ -3381,9 +3624,9 @@ echo '          </div>
         var ankaufMode=isAnkaufMode();
         var ids=ankaufMode?getSelectedAnkaufIds():getSelectedInvoiceIds();
         if(!ids.length)return;
-        var itemName=ankaufMode?"Ankauf":"Dokument";
-        if(!confirm("Möchten Sie "+ids.length+" "+itemName+"(e) wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!"))return;
-        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gelöscht...\';
+        var itemName=ankaufMode?L.ankauf_item:L.document_item;
+        if(!confirm(L.bulk_delete.replace("%d",ids.length).replace("%s",itemName)))return;
+        var btn=this;btn.disabled=true;btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> \'+L.deleting;
         var fd=new FormData();
         if(ankaufMode){
             fd.append("action","ppv_repair_ankauf_bulk_delete");
@@ -3398,13 +3641,13 @@ echo '          </div>
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(res){
-            btn.disabled=false;btn.innerHTML=\'<i class="ri-delete-bin-line"></i> Löschen\';
+            btn.disabled=false;btn.innerHTML=\'<i class="ri-delete-bin-line"></i> \'+L.delete_btn;
             if(res.success){
-                toast(res.data.message||"Erfolgreich gelöscht!");
+                toast(res.data.message||L.deleted_ok);
                 if(ankaufMode){loadAnkaufList(1)}
                 else{invoicesLoaded=false;loadInvoices(1)}
                 updateBulkSelection();
-            }else{toast(res.data&&res.data.message?res.data.message:"Fehler")}
+            }else{toast(res.data&&res.data.message?res.data.message:L.error)}
         });
     });
 
@@ -3436,20 +3679,20 @@ echo '          </div>
             .then(function(data){
                 console.log("DEBUG: JSON data:", data);
                 if(data.success){
-                    toast("Einstellungen gespeichert");
+                    toast(L.settings_saved);
                     // Visual feedback on button
                     var btn=settingsFormEl.querySelector("button[type=submit]");
                     if(btn){
                         var orig=btn.innerHTML;
-                        btn.innerHTML=\'<i class="ri-check-line"></i> Gespeichert!\';
+                        btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.saved_btn;
                         btn.style.background="#10b981";
                         setTimeout(function(){btn.innerHTML=orig;btn.style.background=""},2000);
                     }
                 }else{
-                    toast("Fehler beim Speichern");
+                    toast(L.save_error);
                 }
             })
-            .catch(function(err){console.log("DEBUG: Error:", err);toast("Verbindungsfehler")});
+            .catch(function(err){console.log("DEBUG: Error:", err);toast(L.connection_error)});
         });
     }else{
         console.log("DEBUG: Settings form NOT FOUND!");
@@ -3468,12 +3711,12 @@ echo '          </div>
             if(data.success&&data.data.url){
                 var preview=document.getElementById("ra-logo-preview");
                 preview.innerHTML=\'<img src="\'+data.data.url+\'" alt="">\';
-                toast("Logo hochgeladen");
+                toast(L.logo_uploaded);
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Upload fehlgeschlagen");
+                toast(data.data&&data.data.message?data.data.message:L.upload_failed);
             }
         })
-        .catch(function(){toast("Upload fehlgeschlagen")});
+        .catch(function(){toast(L.upload_failed)});
     });
 
     /* ===== NEW INVOICE MODAL ===== */
@@ -3504,7 +3747,7 @@ echo '          </div>
         document.getElementById("ra-ninv-number").value="";
         document.getElementById("ra-ninv-notes").value="";
         var lines=document.getElementById("ra-ninv-lines");
-        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button></div>\';
         updateNinvTotals();
     }
 
@@ -3531,8 +3774,8 @@ echo '          </div>
                     div.style.cssText="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6";
                     var isRepairSource=c.source==="repair"||parseInt(c.id)<0;
                     var badge=isRepairSource
-                        ?"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#fef3c7;color:#92400e;margin-left:4px;\'>Formular</span>"
-                        :"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#d1fae5;color:#065f46;margin-left:4px;\'>Gespeichert</span>";
+                        ?"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#fef3c7;color:#92400e;margin-left:4px;\'>"+L.cust_form_badge+"</span>"
+                        :"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#d1fae5;color:#065f46;margin-left:4px;\'>"+L.cust_saved_badge+"</span>";
                     div.innerHTML="<strong>"+esc(c.name)+"</strong>"+badge+(c.company_name?" <span style=\'color:#6b7280\'>("+esc(c.company_name)+")</span>":"")+"<br><span style=\'font-size:12px;color:#9ca3af\'>"+(c.email||"")+(c.phone?" &middot; "+c.phone:"")+"</span>";
                     div.addEventListener("click",function(){
                         // For repair-sourced customers (negative ID), don\'t set customer_id
@@ -3561,7 +3804,7 @@ echo '          </div>
     document.getElementById("ra-ninv-add-line").addEventListener("click",function(){
         var line=document.createElement("div");
         line.className="ra-inv-line";
-        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        line.innerHTML=\'<input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button>\';
         document.getElementById("ra-ninv-lines").appendChild(line);
     });
 
@@ -3596,7 +3839,7 @@ echo '          </div>
     // Submit new invoice
     document.getElementById("ra-ninv-submit").addEventListener("click",function(){
         var name=document.getElementById("ra-ninv-name").value.trim();
-        if(!name){toast("Name ist erforderlich");return;}
+        if(!name){toast(L.name_required);return;}
         var items=[];
         document.querySelectorAll("#ra-ninv-lines .ra-inv-line").forEach(function(line){
             var d=line.querySelector(".ra-inv-line-desc").value.trim();
@@ -3630,15 +3873,15 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                toast("Rechnung "+data.data.invoice_number+" erstellt");
+                toast(L.inv_created.replace("%s",data.data.invoice_number));
                 ninvModal.classList.remove("show");
                 invoicesLoaded=false;
                 loadInvoices(1);
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Fehler");
+                toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast("Verbindungsfehler")});
+        .catch(function(){toast(L.connection_error)});
     });
 
     /* ===== NEW ANGEBOT MODAL ===== */
@@ -3670,7 +3913,7 @@ echo '          </div>
         var d=new Date();d.setDate(d.getDate()+30);
         document.getElementById("ra-nang-valid-until").value=d.toISOString().split("T")[0];
         var lines=document.getElementById("ra-nang-lines");
-        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button></div>\';
+        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button></div>\';
         updateNangTotals();
     }
 
@@ -3721,7 +3964,7 @@ echo '          </div>
     document.getElementById("ra-nang-add-line").addEventListener("click",function(){
         var line=document.createElement("div");
         line.className="ra-inv-line";
-        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        line.innerHTML=\'<input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button>\';
         document.getElementById("ra-nang-lines").appendChild(line);
     });
 
@@ -3756,7 +3999,7 @@ echo '          </div>
     // Submit new Angebot
     document.getElementById("ra-nang-submit").addEventListener("click",function(){
         var name=document.getElementById("ra-nang-name").value.trim();
-        if(!name){toast("Name ist erforderlich");return;}
+        if(!name){toast(L.name_required);return;}
         var items=[];
         document.querySelectorAll("#ra-nang-lines .ra-inv-line").forEach(function(line){
             var d=line.querySelector(".ra-inv-line-desc").value.trim();
@@ -3786,15 +4029,15 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                toast("Angebot "+data.data.angebot_number+" erstellt");
+                toast(L.quote_created.replace("%s",data.data.angebot_number));
                 nangModal.classList.remove("show");
                 invoicesLoaded=false;
                 loadInvoices(1);
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Fehler");
+                toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast("Verbindungsfehler")});
+        .catch(function(){toast(L.connection_error)});
     });
 
     /* ===== EDIT INVOICE MODAL ===== */
@@ -3828,7 +4071,7 @@ echo '          </div>
     document.getElementById("ra-einv-add-line").addEventListener("click",function(){
         var line=document.createElement("div");
         line.className="ra-inv-line";
-        line.innerHTML=\'<input type="text" placeholder="Leistung" class="ra-inv-line-desc"><input type="number" placeholder="Brutto" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="Entfernen">&times;</button>\';
+        line.innerHTML=\'<input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button>\';
         document.getElementById("ra-einv-lines").appendChild(line);
     });
 
@@ -3845,7 +4088,7 @@ echo '          </div>
     // Submit edit
     document.getElementById("ra-einv-submit").addEventListener("click",function(){
         var name=document.getElementById("ra-einv-name").value.trim();
-        if(!name){toast("Kundenname ist erforderlich");return;}
+        if(!name){toast(L.cust_name_req);return;}
 
         // Collect line items
         var items=[];
@@ -3878,15 +4121,15 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                toast("Rechnung aktualisiert");
+                toast(L.inv_updated);
                 editInvModal.classList.remove("show");
                 invoicesLoaded=false;
                 loadInvoices(1);
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Fehler");
+                toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast("Verbindungsfehler")});
+        .catch(function(){toast(L.connection_error)});
     });
 
     /* ===== CUSTOMERS TAB ===== */
@@ -3910,22 +4153,22 @@ echo '          </div>
             var tbody=document.getElementById("ra-cust-body");
             if(page===1)tbody.innerHTML="";
             if(!d.customers||d.customers.length===0){
-                if(page===1)tbody.innerHTML=\'<tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">Keine Kunden vorhanden.</td></tr>\';
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">"+L.no_customers+"</td></tr>\';
             }else{
                 d.customers.forEach(function(c){
                     var row=document.createElement("tr");
                     var isRepairSource=c.source==="repair"||parseInt(c.id)<0;
                     var sourceBadge=isRepairSource
-                        ?\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;margin-left:6px;">Formular</span>\'
-                        :\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#d1fae5;color:#065f46;margin-left:6px;">Gespeichert</span>\';
-                    var repairCount=c.repair_count>0?\'<span style="font-size:11px;color:#6b7280;margin-left:4px;">(\'+c.repair_count+\' Auftr&auml;ge)</span>\':\'\';
-                    var actions=\'<button class="ra-inv-btn ra-inv-btn-edit ra-cust-edit" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="Bearbeiten"><i class="ri-pencil-line"></i></button>\'+
-                        \'<button class="ra-inv-btn ra-inv-btn-del ra-cust-del" data-cust-id="\'+c.id+\'" data-cust-source="\'+c.source+\'" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>\';
-                    row.innerHTML=\'<td data-label="Name"><strong>\'+esc(c.name)+\'</strong>\'+sourceBadge+repairCount+\'</td>\'+
-                        \'<td data-label="Firma">\'+esc(c.company_name||"-")+\'</td>\'+
-                        \'<td data-label="E-Mail">\'+esc(c.email||"-")+\'</td>\'+
-                        \'<td data-label="Telefon">\'+esc(c.phone||"-")+\'</td>\'+
-                        \'<td data-label="Stadt">\'+esc(c.city||"-")+\'</td>\'+
+                        ?\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;margin-left:6px;">\'+L.cust_form_badge+\'</span>\'
+                        :\'<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:6px;background:#d1fae5;color:#065f46;margin-left:6px;">\'+L.cust_saved_badge+\'</span>\';
+                    var repairCount=c.repair_count>0?\'<span style="font-size:11px;color:#6b7280;margin-left:4px;">(\'+c.repair_count+\' \'+L.orders_count+\')</span>\':\'\';
+                    var actions=\'<button class="ra-inv-btn ra-inv-btn-edit ra-cust-edit" data-cust=\\\'\'+JSON.stringify(c).replace(/\'/g,"&#39;")+\'\\\' title="\'+L.cust_edit+\'"><i class="ri-pencil-line"></i></button>\'+
+                        \'<button class="ra-inv-btn ra-inv-btn-del ra-cust-del" data-cust-id="\'+c.id+\'" data-cust-source="\'+c.source+\'" title="\'+L.delete+\'"><i class="ri-delete-bin-line"></i></button>\';
+                    row.innerHTML=\'<td data-label="\'+L.col_name+\'"><strong>\'+esc(c.name)+\'</strong>\'+sourceBadge+repairCount+\'</td>\'+
+                        \'<td data-label="\'+L.col_company+\'">\'+esc(c.company_name||"-")+\'</td>\'+
+                        \'<td data-label="\'+L.col_email+\'">\'+esc(c.email||"-")+\'</td>\'+
+                        \'<td data-label="\'+L.col_phone+\'">\'+esc(c.phone||"-")+\'</td>\'+
+                        \'<td data-label="\'+L.col_city+\'">\'+esc(c.city||"-")+\'</td>\'+
                         \'<td data-label=""><div class="ra-inv-actions">\'+actions+\'</div></td>\';
                     tbody.appendChild(row);
                 });
@@ -3964,10 +4207,10 @@ echo '          </div>
             var custSource=delBtn.getAttribute("data-cust-source");
             // Repair-sourced customers can\'t be deleted (they\'re from repair orders)
             if(custId<0||custSource==="repair"){
-                toast("Formular-Kunden k\u00f6nnen nicht gel\u00f6scht werden");
+                toast(L.cant_delete_form_cust);
                 return;
             }
-            if(!confirm("Kunde wirklich l\u00f6schen?"))return;
+            if(!confirm(L.confirm_delete_cust))return;
             var fd=new FormData();
             fd.append("action","ppv_repair_customer_delete");
             fd.append("nonce",NONCE);
@@ -3976,10 +4219,10 @@ echo '          </div>
             .then(function(r){return r.json()})
             .then(function(data){
                 if(data.success){
-                    toast("Kunde gel\u00f6scht");
+                    toast(L.cust_deleted);
                     loadCustomers(1);
                 }else{
-                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                    toast(data.data&&data.data.message?data.data.message:L.error);
                 }
             });
         }
@@ -4013,12 +4256,12 @@ echo '          </div>
             var tbody=document.getElementById("ra-inv-body");
             if(page===1)tbody.innerHTML="";
             if(!d.items||d.items.length===0){
-                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">Keine Ank\u00e4ufe vorhanden.</td></tr>\';
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">"+L.no_purchases+"</td></tr>\';
             }else{
                 d.items.forEach(function(a){
                     var date=a.created_at?new Date(a.created_at.replace(/-/g,"/")):"";
                     var dateStr=date?pad(date.getDate())+"."+pad(date.getMonth()+1)+"."+date.getFullYear():"";
-                    var typeLabels={handy:"Handy",kfz:"KFZ",sonstiges:"Sonstiges"};
+                    var typeLabels={handy:L.purchase_handy,kfz:L.purchase_car,sonstiges:L.purchase_other};
                     var typeLabel=typeLabels[a.ankauf_type]||"Handy";
                     var typeBadge="<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#fef3c7;color:#b45309;margin-left:6px\'>"+typeLabel+"</span>";
                     var pdfUrl=AJAX+"?action=ppv_repair_ankauf_pdf&ankauf_id="+a.id+"&nonce="+NONCE;
@@ -4027,16 +4270,16 @@ echo '          </div>
                     var row=document.createElement("tr");
                     row.setAttribute("data-ankauf-id",a.id);
                     row.innerHTML=\'<td><input type="checkbox" class="ra-ankauf-checkbox" data-ankauf-id="\'+a.id+\'" style="width:16px;height:16px;cursor:pointer"></td>\'+
-                        \'<td data-label="Nr."><strong>\'+esc(a.ankauf_number)+\'</strong>\'+typeBadge+\'</td>\'+
-                        \'<td data-label="Datum">\'+dateStr+\'</td>\'+
-                        \'<td data-label="Verk\u00e4ufer">\'+esc(a.seller_name)+\'</td>\'+
-                        \'<td data-label="Artikel">\'+device+\'</td>\'+
-                        \'<td data-label="IMEI/Kz.">\'+esc(a.device_imei||a.kfz_kennzeichen||"-")+\'</td>\'+
-                        \'<td data-label="Preis"><strong>\'+fmtEur(a.ankauf_price)+\'</strong></td>\'+
+                        \'<td data-label="\'+L.col_nr+\'"><strong>\'+esc(a.ankauf_number)+\'</strong>\'+typeBadge+\'</td>\'+
+                        \'<td data-label="\'+L.col_date+\'">\'+dateStr+\'</td>\'+
+                        \'<td data-label="\'+L.col_seller+\'">\'+esc(a.seller_name)+\'</td>\'+
+                        \'<td data-label="\'+L.col_article+\'">\'+device+\'</td>\'+
+                        \'<td data-label="\'+L.col_imei+\'">\'+esc(a.device_imei||a.kfz_kennzeichen||"-")+\'</td>\'+
+                        \'<td data-label="\'+L.col_price+\'"><strong>\'+fmtEur(a.ankauf_price)+\'</strong></td>\'+
                         \'<td data-label=""><div class="ra-inv-actions">\'+
                             \'<a href="\'+pdfUrl+\'" target="_blank" class="ra-inv-btn ra-inv-btn-pdf"><i class="ri-file-pdf-line"></i> PDF</a>\'+
-                            \'<button class="ra-inv-btn ra-ankauf-edit" data-ankauf-id="\'+a.id+\'" title="Bearbeiten" style="background:#e0f2fe;color:#0284c7"><i class="ri-pencil-line"></i></button>\'+
-                            \'<button class="ra-inv-btn ra-ankauf-del" data-ankauf-id="\'+a.id+\'" title="L\u00f6schen"><i class="ri-delete-bin-line"></i></button>\'+
+                            \'<button class="ra-inv-btn ra-ankauf-edit" data-ankauf-id="\'+a.id+\'" title="\'+L.edit_btn+\'" style="background:#e0f2fe;color:#0284c7"><i class="ri-pencil-line"></i></button>\'+
+                            \'<button class="ra-inv-btn ra-ankauf-del" data-ankauf-id="\'+a.id+\'" title="\'+L.delete_btn+\'"><i class="ri-delete-bin-line"></i></button>\'+
                         \'</div></td>\';
                     tbody.appendChild(row);
                 });
@@ -4053,7 +4296,7 @@ echo '          </div>
                 // Bind delete
                 tbody.querySelectorAll(".ra-ankauf-del").forEach(function(btn){
                     btn.addEventListener("click",function(){
-                        if(!confirm("Ankauf wirklich l\u00f6schen?"))return;
+                        if(!confirm(L.confirm_delete_purchase))return;
                         var aid=this.getAttribute("data-ankauf-id");
                         var fd2=new FormData();
                         fd2.append("action","ppv_repair_ankauf_delete");
@@ -4062,8 +4305,8 @@ echo '          </div>
                         fetch(AJAX,{method:"POST",body:fd2,credentials:"same-origin"})
                         .then(function(r){return r.json()})
                         .then(function(res){
-                            if(res.success){toast("Ankauf gel\u00f6scht");loadAnkaufList(1)}
-                            else{toast(res.data&&res.data.message||"Fehler")}
+                            if(res.success){toast(L.purchase_deleted);loadAnkaufList(1)}
+                            else{toast(res.data&&res.data.message||L.error)}
                         });
                     });
                 });
@@ -4108,8 +4351,8 @@ echo '          </div>
         var isRepairSource=c&&(c.source==="repair"||parseInt(c.id)<0);
         var hasValidId=c&&c.id&&parseInt(c.id)>0;
         document.getElementById("ra-cust-modal-title").innerHTML=hasValidId
-            ?\'<i class="ri-user-settings-line"></i> Kunde bearbeiten\'
-            :(isRepairSource?\'<i class="ri-save-line"></i> Als Kunde speichern\':\'<i class="ri-user-add-line"></i> Neuer Kunde\');
+            ?\'<i class="ri-user-settings-line"></i> \'+L.cust_edit
+            :(isRepairSource?\'<i class="ri-save-line"></i> \'+L.cust_save_as:\'<i class="ri-user-add-line"></i> \'+L.cust_new);
         document.getElementById("ra-cust-id").value=hasValidId?c.id:"";
         document.getElementById("ra-cust-name").value=c&&c.name?c.name:"";
         document.getElementById("ra-cust-company").value=c&&c.company_name?c.company_name:"";
@@ -4135,7 +4378,7 @@ echo '          </div>
 
     document.getElementById("ra-cust-submit").addEventListener("click",function(){
         var name=document.getElementById("ra-cust-name").value.trim();
-        if(!name){toast("Name ist erforderlich");return;}
+        if(!name){toast(L.name_required);return;}
         var fd=new FormData();
         fd.append("action","ppv_repair_customer_save");
         fd.append("nonce",NONCE);
@@ -4154,14 +4397,14 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                toast(data.data.message||"Kunde gespeichert");
+                toast(data.data.message||L.cust_saved);
                 custModal.classList.remove("show");
                 loadCustomers(1);
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Fehler");
+                toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast("Verbindungsfehler")});
+        .catch(function(){toast(L.connection_error)});
     });
 
     /* ===== Billbee Import ===== */
@@ -4199,7 +4442,7 @@ echo '          </div>
 
     function handleFileSelect(file){
         if(!file.name.toLowerCase().endsWith(".xml")){
-            toast("Nur XML-Dateien erlaubt");
+            toast(L.only_xml);
             return;
         }
         selectedFile=file;
@@ -4238,17 +4481,17 @@ echo '          </div>
         .then(function(data){
             bbProgress.style.display="none";
             if(data.success){
-                toast(data.data.message||"Import erfolgreich");
+                toast(data.data.message||L.import_ok);
                 bbModal.classList.remove("show");
                 loadInvoices(1);
             }else{
-                toast(data.data&&data.data.message?data.data.message:"Import fehlgeschlagen");
+                toast(data.data&&data.data.message?data.data.message:L.import_fail);
                 bbSubmit.disabled=false;
             }
         })
         .catch(function(){
             bbProgress.style.display="none";
-            toast("Verbindungsfehler");
+            toast(L.connection_error);
             bbSubmit.disabled=false;
         });
     });
@@ -4275,7 +4518,7 @@ echo '          </div>
         if(e.target.closest(".ra-comment-delete")){
             var btn=e.target.closest(".ra-comment-delete");
             var cid=btn.getAttribute("data-comment-id");
-            if(!confirm("Kommentar wirklich löschen?"))return;
+            if(!confirm(L.confirm_delete_comment))return;
             var fd=new FormData();
             fd.append("action","ppv_repair_comment_delete");
             fd.append("nonce",NONCE);
@@ -4285,9 +4528,9 @@ echo '          </div>
             .then(function(data){
                 if(data.success){
                     btn.closest(".ra-comment-item").remove();
-                    toast("Kommentar gelöscht");
+                    toast(L.comment_deleted);
                 }else{
-                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                    toast(data.data&&data.data.message?data.data.message:L.error);
                 }
             });
         }
@@ -4311,9 +4554,9 @@ echo '          </div>
                 if(data.success){
                     input.value="";
                     loadComments(rid,container);
-                    toast("Kommentar hinzugefügt");
+                    toast(L.comment_added);
                 }else{
-                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                    toast(data.data&&data.data.message?data.data.message:L.error);
                 }
             })
             .finally(function(){btn.disabled=false});
@@ -4341,7 +4584,7 @@ echo '          </div>
         .then(function(data){
             if(data.success&&data.data.comments){
                 if(data.data.comments.length===0){
-                    list.innerHTML=\'<div class="ra-comments-empty">Noch keine Kommentare</div>\';
+                    list.innerHTML=\'<div class="ra-comments-empty">"+L.no_comments+"</div>\';
                 }else{
                     var html="";
                     data.data.comments.forEach(function(c){
@@ -4354,7 +4597,7 @@ echo '          </div>
                     list.innerHTML=html;
                 }
             }else{
-                list.innerHTML=\'<div class="ra-comments-empty">Fehler beim Laden</div>\';
+                list.innerHTML=\'<div class="ra-comments-empty">"+L.loading_error+"</div>\';
             }
         });
     }
@@ -4369,11 +4612,11 @@ echo '          </div>
     var cancelSubBtn=document.getElementById("ra-cancel-sub-btn");
     if(cancelSubBtn){
         cancelSubBtn.addEventListener("click",function(){
-            if(!confirm("Möchten Sie Ihr Abo wirklich kündigen?\\n\\nIhr Abo bleibt bis zum Ende der bezahlten Periode aktiv.")){
+            if(!confirm(L.cancel_sub)){
                 return;
             }
             cancelSubBtn.disabled=true;
-            cancelSubBtn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird bearbeitet...\';
+            cancelSubBtn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> "+L.processing+"\';
             fetch("/wp-json/punktepass/v1/repair/cancel-subscription",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
@@ -4382,18 +4625,18 @@ echo '          </div>
             .then(function(r){return r.json()})
             .then(function(data){
                 if(data.success){
-                    toast("Abo wurde gekündigt. Es bleibt bis zum Ablaufdatum aktiv.");
+                    toast(L.sub_cancelled);
                     setTimeout(function(){location.reload()},2000);
                 }else{
-                    toast(data.error||data.message||"Fehler bei der Kündigung");
+                    toast(data.error||data.message||L.cancel_error);
                     cancelSubBtn.disabled=false;
-                    cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> Abo zum Laufzeitende kündigen\';
+                    cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> "+L.abo_cancel_btn+"\';
                 }
             })
             .catch(function(){
-                toast("Verbindungsfehler");
+                toast(L.connection_error);
                 cancelSubBtn.disabled=false;
-                cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> Abo zum Laufzeitende kündigen\';
+                cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> "+L.abo_cancel_btn+"\';
             });
         });
     }
@@ -4421,7 +4664,7 @@ echo '          </div>
             var btn=e.target.closest(".ra-reward-approve");
             var rid=btn.getAttribute("data-repair-id");
             var pts=btn.getAttribute("data-points")||4;
-            if(!confirm("Belohnung genehmigen?\\n\\nDie Punkte werden abgezogen und der Rabatt wird auf der nächsten Rechnung berücksichtigt."))return;
+            if(!confirm(L.approve_confirm))return;
             btn.disabled=true;
             btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
             var fd=new FormData();
@@ -4433,18 +4676,18 @@ echo '          </div>
             .then(function(r){return r.json()})
             .then(function(data){
                 if(data.success){
-                    toast("Belohnung genehmigt! Rabatt wird auf der Rechnung abgezogen.");
+                    toast(L.reward_approved);
                     setTimeout(function(){location.reload()},1500);
                 }else{
-                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                    toast(data.data&&data.data.message?data.data.message:L.error);
                     btn.disabled=false;
-                    btn.innerHTML=\'<i class="ri-check-line"></i> Genehmigen\';
+                    btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.approve;
                 }
             })
             .catch(function(){
-                toast("Verbindungsfehler");
+                toast(L.connection_error);
                 btn.disabled=false;
-                btn.innerHTML=\'<i class="ri-check-line"></i> Genehmigen\';
+                btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.approve;
             });
         }
 
@@ -4471,12 +4714,12 @@ echo '          </div>
             var rid=document.getElementById("ra-reject-repair-id").value;
             var reason=document.getElementById("ra-reject-reason").value.trim();
             if(!reason){
-                alert("Bitte geben Sie einen Grund f\\u00fcr die Ablehnung an.");
+                alert(L.reject_reason);
                 return;
             }
             var btn=this;
             btn.disabled=true;
-            btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gespeichert...\';
+            btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> "+L.saving+"\';
             var fd=new FormData();
             fd.append("action","ppv_repair_reward_reject");
             fd.append("nonce",NONCE);
@@ -4486,19 +4729,19 @@ echo '          </div>
             .then(function(r){return r.json()})
             .then(function(data){
                 if(data.success){
-                    toast("Belohnung abgelehnt.");
+                    toast(L.reward_rejected);
                     rejectModal.classList.remove("show");
                     setTimeout(function(){location.reload()},1500);
                 }else{
-                    toast(data.data&&data.data.message?data.data.message:"Fehler");
+                    toast(data.data&&data.data.message?data.data.message:L.error);
                     btn.disabled=false;
-                    btn.innerHTML="Ablehnen";
+                    btn.innerHTML=L.reject_btn;
                 }
             })
             .catch(function(){
-                toast("Verbindungsfehler");
+                toast(L.connection_error);
                 btn.disabled=false;
-                btn.innerHTML="Ablehnen";
+                btn.innerHTML=L.reject_btn;
             });
         });
     }
@@ -4542,23 +4785,23 @@ echo '          </div>
         var email=document.getElementById("ra-fb-email").value.trim();
 
         if(!fbCategory){
-            msg.textContent="Bitte w\u00e4hlen Sie eine Kategorie.";
+            msg.textContent=L.fb_category;
             msg.className="ra-fb-msg show error";
             return;
         }
         if(fbCategory==="rating"&&fbRating===0){
-            msg.textContent="Bitte geben Sie eine Bewertung ab.";
+            msg.textContent=L.fb_rating;
             msg.className="ra-fb-msg show error";
             return;
         }
         if(!message&&fbCategory!=="rating"){
-            msg.textContent="Bitte beschreiben Sie Ihr Anliegen.";
+            msg.textContent=L.fb_describe;
             msg.className="ra-fb-msg show error";
             return;
         }
 
         btn.disabled=true;
-        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Wird gesendet...\';
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> "+L.sending+"\';
 
         var fd=new FormData();
         fd.append("action","ppv_submit_feedback");
@@ -4576,7 +4819,7 @@ echo '          </div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                msg.textContent="Vielen Dank f\u00fcr Ihr Feedback!";
+                msg.textContent=L.fb_thanks;
                 msg.className="ra-fb-msg show success";
                 // Reset form
                 document.getElementById("ra-fb-message").value="";
@@ -4587,17 +4830,17 @@ echo '          </div>
                 fbCategory="";
                 fbRating=0;
             }else{
-                msg.textContent=data.data&&data.data.message?data.data.message:"Fehler beim Senden.";
+                msg.textContent=data.data&&data.data.message?data.data.message:L.fb_error;
                 msg.className="ra-fb-msg show error";
             }
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Feedback senden\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> "+L.fb_submit+"\';
         })
         .catch(function(){
-            msg.textContent="Verbindungsfehler.";
+            msg.textContent=L.connection_error;
             msg.className="ra-fb-msg show error";
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> Feedback senden\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> "+L.fb_submit+"\';
         });
     });
 
@@ -4620,22 +4863,22 @@ echo '          </div>
         <button type="button" class="kiosk-tips-close" onclick="closeKioskTips()"><i class="ri-close-line"></i></button>
         <div class="kiosk-tips-header">
             <div class="kiosk-tips-icon"><i class="ri-tablet-line"></i></div>
-            <h2>Tablet-Kiosk Modus</h2>
-            <p>Formular im Vollbildmodus auf einem Tablet betreiben</p>
+            <h2>' . esc_html(PPV_Lang::t('repair_admin_kiosk_title')) . '</h2>
+            <p>' . esc_html(PPV_Lang::t('repair_admin_kiosk_desc')) . '</p>
         </div>
 
         <div class="kiosk-tips-body">
             <div class="kiosk-tip-section">
-                <h3><i class="ri-download-2-line"></i> 1. App herunterladen</h3>
-                <p>Laden Sie <strong>Fully Kiosk Browser</strong> aus dem Google Play Store herunter:</p>
+                <h3><i class="ri-download-2-line"></i> ' . PPV_Lang::t('repair_admin_kiosk_step1') . '</h3>
+                <p>' . PPV_Lang::t('repair_admin_kiosk_step1_desc') . '</p>
                 <a href="https://play.google.com/store/apps/details?id=de.ozerov.fully" target="_blank" class="kiosk-tip-link">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" style="height:40px">
                 </a>
             </div>
 
             <div class="kiosk-tip-section">
-                <h3><i class="ri-settings-3-line"></i> 2. URL einstellen</h3>
-                <p>&Ouml;ffnen Sie die Fully Kiosk App und geben Sie diese URL als Startseite ein:</p>
+                <h3><i class="ri-settings-3-line"></i> ' . PPV_Lang::t('repair_admin_kiosk_step2') . '</h3>
+                <p>' . PPV_Lang::t('repair_admin_kiosk_step2_desc') . '</p>
                 <div class="kiosk-tip-url">
                     <code id="kiosk-form-url">' . esc_url($form_url) . '</code>
                     <button type="button" onclick="copyKioskUrl()" class="kiosk-copy-btn"><i class="ri-file-copy-line"></i></button>
@@ -4643,8 +4886,8 @@ echo '          </div>
             </div>
 
             <div class="kiosk-tip-section">
-                <h3><i class="ri-fullscreen-line"></i> 3. Kiosk-Modus aktivieren</h3>
-                <p>Aktivieren Sie folgende Einstellungen in der App:</p>
+                <h3><i class="ri-fullscreen-line"></i> ' . PPV_Lang::t('repair_admin_kiosk_step3') . '</h3>
+                <p>' . PPV_Lang::t('repair_admin_kiosk_step3_desc') . '</p>
                 <ul class="kiosk-tip-list">
                     <li><i class="ri-checkbox-circle-fill"></i> <strong>Web Content &rarr; Fullscreen Mode</strong> aktivieren</li>
                     <li><i class="ri-checkbox-circle-fill"></i> <strong>Device Management &rarr; Hide Status Bar</strong> aktivieren</li>
@@ -4656,15 +4899,15 @@ echo '          </div>
             </div>
 
             <div class="kiosk-tip-section">
-                <h3><i class="ri-rocket-line"></i> 4. Fertig!</h3>
-                <p>Starten Sie die App und tippen Sie auf <strong>&quot;Start Kiosk Mode&quot;</strong>. Das Formular l&auml;uft jetzt im Vollbildmodus!</p>
-                <p class="kiosk-tip-note"><i class="ri-lock-line"></i> Zum Beenden: 5x schnell auf eine Ecke tippen und PIN eingeben</p>
+                <h3><i class="ri-rocket-line"></i> ' . PPV_Lang::t('repair_admin_kiosk_step4') . '</h3>
+                <p>' . PPV_Lang::t('repair_admin_kiosk_step4_desc') . '</p>
+                <p class="kiosk-tip-note"><i class="ri-lock-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_kiosk_exit')) . '</p>
             </div>
         </div>
 
         <div class="kiosk-tips-footer">
             <a href="https://www.fully-kiosk.com" target="_blank" class="kiosk-tip-external">
-                <i class="ri-external-link-line"></i> Fully Kiosk Webseite
+                <i class="ri-external-link-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_kiosk_website')) . '
             </a>
         </div>
     </div>
@@ -4716,15 +4959,15 @@ echo '          </div>
         $prefix = $wpdb->prefix;
 
         $status_map = [
-            'new'           => ['Neu',              'ra-status-new'],
-            'in_progress'   => ['In Bearbeitung',   'ra-status-progress'],
-            'waiting_parts' => ['Wartet auf Teile', 'ra-status-waiting'],
-            'done'          => ['Fertig',            'ra-status-done'],
-            'delivered'     => ['Abgeholt',          'ra-status-delivered'],
-            'cancelled'     => ['Storniert',         'ra-status-cancelled'],
+            'new'           => [PPV_Lang::t('repair_admin_status_new'),       'ra-status-new'],
+            'in_progress'   => [PPV_Lang::t('repair_admin_status_progress'),  'ra-status-progress'],
+            'waiting_parts' => [PPV_Lang::t('repair_admin_status_waiting'),   'ra-status-waiting'],
+            'done'          => [PPV_Lang::t('repair_admin_status_done'),      'ra-status-done'],
+            'delivered'     => [PPV_Lang::t('repair_admin_status_delivered'), 'ra-status-delivered'],
+            'cancelled'     => [PPV_Lang::t('repair_admin_status_cancelled'),'ra-status-cancelled'],
         ];
 
-        $st    = $status_map[$r->status] ?? ['Unbekannt', ''];
+        $st    = $status_map[$r->status] ?? ['?', ''];
         $device = trim(($r->device_brand ?: '') . ' ' . ($r->device_model ?: ''));
         $date   = date('d.m.Y H:i', strtotime($r->created_at));
         $updated = !empty($r->updated_at) && $r->updated_at !== $r->created_at ? date('d.m.Y H:i', strtotime($r->updated_at)) : '';
@@ -4745,7 +4988,7 @@ echo '          </div>
         // Muster image display
         $muster_html = '';
         if (!empty($r->muster_image) && strpos($r->muster_image, 'data:image/') === 0) {
-            $muster_html = '<div class="ra-repair-muster"><img src="' . esc_attr($r->muster_image) . '" alt="Entsperrmuster" title="Entsperrmuster"></div>';
+            $muster_html = '<div class="ra-repair-muster"><img src="' . esc_attr($r->muster_image) . '" alt="' . esc_attr(PPV_Lang::t('repair_admin_unlock_pattern')) . '" title="' . esc_attr(PPV_Lang::t('repair_admin_unlock_pattern')) . '"></div>';
         }
 
         // Address display
@@ -4790,45 +5033,46 @@ echo '          </div>
 
             // Show reward section if customer has enough points
             if ($total_points >= $required_points && !$reward_approved) {
+                $discount_label = PPV_Lang::t('repair_admin_discount_suffix');
                 $reward_display = ($reward_type === 'discount_percent')
-                    ? $reward_value . '% Rabatt'
-                    : number_format($reward_value, 2, ',', '.') . ' &euro; Rabatt';
+                    ? $reward_value . '% ' . $discount_label
+                    : number_format($reward_value, 2, ',', '.') . ' &euro; ' . $discount_label;
 
                 $badge_class = $reward_rejected ? 'ra-reward-badge-rejected' : 'ra-reward-badge-available';
 
                 // Toggle button (always visible)
                 $reward_html = '<div class="ra-reward-toggle-section">'
                     . '<button class="ra-btn-reward-toggle ' . $badge_class . '" data-repair-id="' . intval($r->id) . '">'
-                        . '<i class="ri-gift-line"></i> ' . ($reward_rejected ? 'Belohnung (abgelehnt)' : 'Belohnung verf&uuml;gbar')
+                        . '<i class="ri-gift-line"></i> ' . ($reward_rejected ? esc_html(PPV_Lang::t('repair_admin_reward_rejected_label')) : esc_html(PPV_Lang::t('repair_admin_reward_available')))
                     . '</button>'
                     . '<div class="ra-reward-container" data-repair-id="' . intval($r->id) . '">';
 
                 if ($reward_rejected) {
                     // Show rejection info with option to reconsider
                     $reward_html .= '<div class="ra-reward-section ra-reward-rejected">'
-                        . '<div class="ra-reward-header"><i class="ri-gift-line"></i> Belohnung abgelehnt</div>'
+                        . '<div class="ra-reward-header"><i class="ri-gift-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reward_rejected_title')) . '</div>'
                         . '<div class="ra-reward-info">'
-                            . '<span class="ra-reward-badge"><i class="ri-star-fill"></i> ' . $total_points . '/' . $required_points . ' Punkte</span>'
+                            . '<span class="ra-reward-badge"><i class="ri-star-fill"></i> ' . $total_points . '/' . $required_points . ' ' . esc_html(PPV_Lang::t('repair_admin_points')) . '</span>'
                             . '<span class="ra-reward-name">' . $reward_name . '</span>'
                         . '</div>'
                         . '<div class="ra-reward-rejection-info">'
-                            . '<i class="ri-close-circle-line"></i> Grund: ' . esc_html($rejection_reason)
+                            . '<i class="ri-close-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reason')) . ': ' . esc_html($rejection_reason)
                         . '</div>'
                         . '<div class="ra-reward-actions">'
-                            . '<button class="ra-reward-approve" data-repair-id="' . intval($r->id) . '" data-points="' . $required_points . '"><i class="ri-check-line"></i> Doch genehmigen</button>'
+                            . '<button class="ra-reward-approve" data-repair-id="' . intval($r->id) . '" data-points="' . $required_points . '"><i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reward_still_approve')) . '</button>'
                         . '</div>'
                     . '</div>';
                 } else {
                     // Show approve/reject buttons
                     $reward_html .= '<div class="ra-reward-section">'
-                        . '<div class="ra-reward-header"><i class="ri-gift-line"></i> Belohnung einl&ouml;sen</div>'
+                        . '<div class="ra-reward-header"><i class="ri-gift-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reward_redeem')) . '</div>'
                         . '<div class="ra-reward-info">'
-                            . '<span class="ra-reward-badge"><i class="ri-star-fill"></i> ' . $total_points . '/' . $required_points . ' Punkte</span>'
+                            . '<span class="ra-reward-badge"><i class="ri-star-fill"></i> ' . $total_points . '/' . $required_points . ' ' . esc_html(PPV_Lang::t('repair_admin_points')) . '</span>'
                             . '<span class="ra-reward-name">' . $reward_name . ' (' . $reward_display . ')</span>'
                         . '</div>'
                         . '<div class="ra-reward-actions">'
-                            . '<button class="ra-reward-approve" data-repair-id="' . intval($r->id) . '" data-points="' . $required_points . '"><i class="ri-check-line"></i> Genehmigen</button>'
-                            . '<button class="ra-reward-reject" data-repair-id="' . intval($r->id) . '"><i class="ri-close-line"></i> Ablehnen</button>'
+                            . '<button class="ra-reward-approve" data-repair-id="' . intval($r->id) . '" data-points="' . $required_points . '"><i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reward_approve')) . '</button>'
+                            . '<button class="ra-reward-reject" data-repair-id="' . intval($r->id) . '"><i class="ri-close-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_reward_reject')) . '</button>'
                         . '</div>'
                     . '</div>';
                 }
@@ -4837,7 +5081,7 @@ echo '          </div>
             } elseif ($reward_approved) {
                 // Show approved status (small badge, no toggle needed)
                 $reward_html = '<div class="ra-reward-approved-badge">'
-                    . '<i class="ri-check-double-line"></i> ' . $reward_name . ' genehmigt'
+                    . '<i class="ri-check-double-line"></i> ' . $reward_name . ' ' . esc_html(PPV_Lang::t('repair_admin_reward_approved'))
                 . '</div>';
             }
         }
@@ -4869,25 +5113,25 @@ echo '          </div>
                 . $pin_html
                 . $muster_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
-                . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="Zuletzt ge&auml;ndert">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
+                . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="' . esc_attr(PPV_Lang::t('repair_admin_last_modified')) . '">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
             . '</div>'
             . $reward_html
             . '<div class="ra-repair-comments-section">'
-                . '<button class="ra-btn-comments-toggle" data-repair-id="' . intval($r->id) . '"><i class="ri-chat-3-line"></i> Kommentare</button>'
+                . '<button class="ra-btn-comments-toggle" data-repair-id="' . intval($r->id) . '"><i class="ri-chat-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_comments')) . '</button>'
                 . '<div class="ra-comments-container" style="display:none" data-repair-id="' . intval($r->id) . '">'
                     . '<div class="ra-comments-list"></div>'
                     . '<div class="ra-comment-add">'
-                        . '<input type="text" class="ra-comment-input" placeholder="Kommentar hinzuf&uuml;gen...">'
+                        . '<input type="text" class="ra-comment-input" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_add_comment_ph')) . '">'
                         . '<button class="ra-comment-submit"><i class="ri-send-plane-fill"></i></button>'
                     . '</div>'
                 . '</div>'
             . '</div>'
             . '<div class="ra-repair-actions">'
-                . '<button class="ra-btn-print" title="Ausdrucken"><i class="ri-printer-line"></i></button>'
-                . '<button class="ra-btn-email" title="Per E-Mail senden"><i class="ri-mail-send-line"></i></button>'
-                . '<button class="ra-btn-resubmit" title="Nochmal Anliegen"><i class="ri-repeat-line"></i> Nochmal</button>'
-                . '<button class="ra-btn-invoice" title="Rechnung erstellen"><i class="ri-file-list-3-line"></i></button>'
-                . '<button class="ra-btn-delete" title="L&ouml;schen"><i class="ri-delete-bin-line"></i></button>'
+                . '<button class="ra-btn-print" title="' . esc_attr(PPV_Lang::t('repair_admin_print')) . '"><i class="ri-printer-line"></i></button>'
+                . '<button class="ra-btn-email" title="' . esc_attr(PPV_Lang::t('repair_admin_send_email')) . '"><i class="ri-mail-send-line"></i></button>'
+                . '<button class="ra-btn-resubmit" title="' . esc_attr(PPV_Lang::t('repair_admin_resubmit')) . '"><i class="ri-repeat-line"></i></button>'
+                . '<button class="ra-btn-invoice" title="' . esc_attr(PPV_Lang::t('repair_admin_create_inv_card')) . '"><i class="ri-file-list-3-line"></i></button>'
+                . '<button class="ra-btn-delete" title="' . esc_attr(PPV_Lang::t('repair_admin_delete_repair')) . '"><i class="ri-delete-bin-line"></i></button>'
                 . '<select class="ra-status-select" data-repair-id="' . intval($r->id) . '">' . $options . '</select>'
             . '</div>'
         . '</div>';

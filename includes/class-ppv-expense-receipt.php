@@ -63,7 +63,7 @@ class PPV_Expense_Receipt {
 
         // 2️⃣ Nyelvválasztás
         $lang = strtoupper($redeem['country'] ?? 'DE');
-        if (!in_array($lang, ['DE', 'RO'])) {
+        if (!in_array($lang, ['DE', 'RO', 'HU'])) {
             $lang = 'DE';
         }
 
@@ -435,6 +435,8 @@ class PPV_Expense_Receipt {
 
         if ($lang === 'RO') {
             return self::html_receipt_ro($redeem, $customer_name, $receipt_num, $amount);
+        } elseif ($lang === 'HU') {
+            return self::html_receipt_hu($redeem, $customer_name, $receipt_num, $amount);
         } else {
             return self::html_receipt_de($redeem, $customer_name, $receipt_num, $amount);
         }
@@ -1086,6 +1088,165 @@ HTML;
             <p>Document generat automat, valabil fără semnătură.</p>
             <p>Program PunktePass · www.punktepass.de</p>
             <p>Pentru întrebări: info@punktepass.de</p>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * 🎨 HTML - Magyar verzió (HU) - Professional Design
+     */
+    private static function html_receipt_hu($redeem, $customer_name, $receipt_num, $amount) {
+        $company = htmlspecialchars($redeem['company_name'] ?? 'Vállalkozás', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($redeem['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($redeem['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($redeem['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($redeem['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        $customer = htmlspecialchars($customer_name, ENT_QUOTES, 'UTF-8');
+        $email = htmlspecialchars($redeem['user_email'] ?? '', ENT_QUOTES, 'UTF-8');
+        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Jutalom', ENT_QUOTES, 'UTF-8');
+        $points = intval($redeem['points_spent'] ?? 0);
+        $date = date('Y.m.d', strtotime($redeem['redeemed_at']));
+        $time = date('H:i', strtotime($redeem['redeemed_at']));
+        $amount_formatted = number_format($amount, 2, ',', '.');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Kiadási bizonylat {$receipt_num}</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt { max-width: 700px; margin: 0 auto; padding: 25px; }
+        .header { display: table; width: 100%; border-bottom: 3px solid #1a5276; padding-bottom: 20px; margin-bottom: 25px; }
+        .header-left { display: table-cell; vertical-align: top; width: 60%; }
+        .header-right { display: table-cell; vertical-align: top; text-align: right; width: 40%; }
+        .doc-title { font-size: 22pt; font-weight: 700; color: #1a5276; letter-spacing: -0.5px; margin-bottom: 5px; }
+        .doc-subtitle { font-size: 10pt; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px; }
+        .doc-number { font-size: 11pt; color: #1a5276; font-weight: 600; margin-bottom: 5px; }
+        .doc-date { font-size: 10pt; color: #7f8c8d; }
+        .info-grid { display: table; width: 100%; margin-bottom: 25px; }
+        .info-box { display: table-cell; width: 50%; vertical-align: top; padding-right: 15px; }
+        .info-box:last-child { padding-right: 0; padding-left: 15px; }
+        .info-label { font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: #95a5a6; margin-bottom: 8px; font-weight: 600; }
+        .info-content { background: #f8f9fa; border-left: 3px solid #1a5276; padding: 12px 15px; }
+        .info-content p { margin: 3px 0; font-size: 10pt; }
+        .info-content .name { font-weight: 600; font-size: 11pt; color: #2c3e50; }
+        .details-section { margin: 25px 0; }
+        .details-table { width: 100%; border-collapse: collapse; }
+        .details-table th { background: #1a5276; color: #fff; padding: 10px 12px; text-align: left; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        .details-table th:last-child { text-align: right; }
+        .details-table td { padding: 12px; border-bottom: 1px solid #ecf0f1; font-size: 10pt; }
+        .details-table td:last-child { text-align: right; }
+        .details-table .item-name { font-weight: 600; color: #2c3e50; }
+        .details-table .item-desc { font-size: 9pt; color: #7f8c8d; margin-top: 3px; }
+        .amount-box { background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%); color: #fff; padding: 20px 25px; margin: 25px 0; display: table; width: 100%; }
+        .amount-label { display: table-cell; vertical-align: middle; font-size: 10pt; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+        .amount-value { display: table-cell; vertical-align: middle; text-align: right; font-size: 28pt; font-weight: 700; }
+        .amount-currency { font-size: 14pt; opacity: 0.8; margin-left: 5px; }
+        .notes-grid { display: table; width: 100%; margin: 20px 0; }
+        .note-box { display: table-cell; width: 50%; vertical-align: top; padding-right: 10px; }
+        .note-box:last-child { padding-right: 0; padding-left: 10px; }
+        .note-card { padding: 12px 15px; font-size: 9pt; }
+        .note-card.booking { background: #fef9e7; border-left: 3px solid #f39c12; }
+        .note-card.legal { background: #eaf2f8; border-left: 3px solid #3498db; }
+        .note-title { font-weight: 600; margin-bottom: 8px; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.5px; }
+        .note-card.booking .note-title { color: #d68910; }
+        .note-card.legal .note-title { color: #2874a6; }
+        .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #ecf0f1; text-align: center; font-size: 8pt; color: #95a5a6; }
+        .footer p { margin: 3px 0; }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Kiadási bizonylat</div>
+                <div class="doc-subtitle">Vásárlói jutalom · Hűségprogram</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Sz. {$receipt_num}</div>
+                <div class="doc-date">{$date} {$time}</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-label">Kiállító</div>
+                <div class="info-content">
+                    <p class="name">{$company}</p>
+                    <p>{$address}</p>
+                    <p>{$plz} {$city}</p>
+                    {$tax_id}
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">Kedvezményezett</div>
+                <div class="info-content">
+                    <p class="name">{$customer}</p>
+                    <p>{$email}</p>
+                    <p>Felhasznált pontok: {$points}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-section">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Leírás</th>
+                        <th>Összeg</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="item-name">{$reward}</div>
+                            <div class="item-desc">Pontbeváltás a hűségprogram keretében</div>
+                        </td>
+                        <td>{$amount_formatted} EUR</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="amount-box">
+            <div class="amount-label">Végösszeg</div>
+            <div class="amount-value">{$amount_formatted}<span class="amount-currency">EUR</span></div>
+        </div>
+
+        <div class="notes-grid">
+            <div class="note-box">
+                <div class="note-card booking">
+                    <div class="note-title">Könyvelési útmutató</div>
+                    <p>Tartozik: 4930 (Reklámköltségek)</p>
+                    <p>Követel: 1000 (Pénztár)</p>
+                </div>
+            </div>
+            <div class="note-box">
+                <div class="note-card legal">
+                    <div class="note-title">Adózási megjegyzés</div>
+                    <p>ÁFA nélkül a § 1 UStG alapján</p>
+                    <p>Belső juttatás – nem adóköteles</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Ez a dokumentum automatikusan készült, aláírás nélkül is érvényes.</p>
+            <p>PunktePass Hűségprogram · www.punktepass.de</p>
         </div>
     </div>
 </body>
