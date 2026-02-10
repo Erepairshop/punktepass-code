@@ -152,4 +152,15 @@ return [
     'repair_reg_err_unexpected' => 'Váratlan válasz a szervertől.',
     'repair_reg_err_failed'     => 'A regisztráció sikertelen. Kérjük, próbálja újra.',
     'repair_reg_err_network'    => 'Hálózati hiba. Kérjük, ellenőrizze az internetkapcsolatot.',
+
+    // ========== LOGIN PAGE ==========
+    'repair_login_title'        => 'Bejelentkezés - Szerviz Admin',
+    'repair_login_heading'      => 'Szerviz Admin',
+    'repair_login_subtitle'     => 'Jelentkezzen be a szervizek kezeléséhez',
+    'repair_login_password'     => 'Jelszó',
+    'repair_login_password_placeholder' => 'Jelszó',
+    'repair_login_submit'       => 'Bejelentkezés',
+    'repair_login_no_account'   => 'Még nincs fiókja?',
+    'repair_login_register'     => 'Regisztráció most',
+    'repair_login_failed'       => 'Sikertelen bejelentkezés.',
 ];

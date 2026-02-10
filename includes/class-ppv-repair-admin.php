@@ -19,13 +19,22 @@ class PPV_Repair_Admin {
      * Route: /formular/admin/login
      * ============================================================ */
     public static function render_login() {
+        // Load repair-specific translations
+        PPV_Lang::load_extra('ppv-repair-lang');
+        $lang = PPV_Lang::current();
         $ajax_url = admin_url('admin-ajax.php');
-        echo '<!DOCTYPE html>
-<html lang="de">
+
+        $js_strings = json_encode([
+            'login_failed'     => PPV_Lang::t('repair_login_failed'),
+            'connection_error' => PPV_Lang::t('repair_connection_error'),
+        ], JSON_UNESCAPED_UNICODE);
+
+        ?><!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Login - Reparatur Admin</title>
+<title><?php echo esc_html(PPV_Lang::t('repair_login_title')); ?></title>
 <meta name="theme-color" content="#667eea">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
 <style>
@@ -54,36 +63,60 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .register-link a:hover{text-decoration:underline}
 .footer-text{text-align:center;margin-top:24px;font-size:12px;color:#9ca3af}
 .footer-text a{color:#667eea;text-decoration:none}
+.login-lang-switch{display:flex;justify-content:center;gap:4px;margin-bottom:20px}
+.login-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
+.login-lang-btn:hover{background:#e5e7eb;color:#374151}
+.login-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
 </style>
 </head>
 <body>
 <div class="login-wrap">
     <div class="login-box">
+        <!-- Language Switcher -->
+        <div class="login-lang-switch">
+            <button class="login-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
+            <button class="login-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
+            <button class="login-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
+        </div>
         <div class="login-logo"><i class="ri-tools-line"></i></div>
-        <h2>Reparatur Admin</h2>
-        <p class="subtitle">Melden Sie sich an, um Ihre Reparaturen zu verwalten</p>
+        <h2><?php echo esc_html(PPV_Lang::t('repair_login_heading')); ?></h2>
+        <p class="subtitle"><?php echo esc_html(PPV_Lang::t('repair_login_subtitle')); ?></p>
         <form id="login-form" autocomplete="off">
             <div class="field">
-                <label for="login-email">E-Mail</label>
-                <input type="email" id="login-email" required placeholder="info@ihr-shop.de" autocomplete="email">
+                <label for="login-email"><?php echo esc_html(PPV_Lang::t('repair_email_label')); ?></label>
+                <input type="email" id="login-email" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_email_placeholder')); ?>" autocomplete="email">
             </div>
             <div class="field">
-                <label for="login-pass">Passwort</label>
-                <input type="password" id="login-pass" required placeholder="Passwort" autocomplete="current-password">
+                <label for="login-pass"><?php echo esc_html(PPV_Lang::t('repair_login_password')); ?></label>
+                <input type="password" id="login-pass" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_login_password_placeholder')); ?>" autocomplete="current-password">
             </div>
             <button type="submit" class="btn-login" id="login-btn">
                 <i class="ri-loader-4-line ri-spin spinner"></i>
-                <span class="label">Anmelden</span>
+                <span class="label"><?php echo esc_html(PPV_Lang::t('repair_login_submit')); ?></span>
             </button>
             <div class="error-msg" id="login-error"></div>
         </form>
-        <p class="register-link">Noch kein Konto? <a href="/formular">Jetzt registrieren</a></p>
+        <p class="register-link"><?php echo esc_html(PPV_Lang::t('repair_login_no_account')); ?> <a href="/formular"><?php echo esc_html(PPV_Lang::t('repair_login_register')); ?></a></p>
     </div>
-    <div class="footer-text">Powered by <a href="https://punktepass.de" target="_blank">PunktePass</a></div>
+    <div class="footer-text"><?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?> <a href="https://punktepass.de" target="_blank">PunktePass</a></div>
 </div>
 
 <script>
 (function(){
+    var ppvLang = <?php echo $js_strings; ?>;
+
+    // Language switcher
+    var langBtns = document.querySelectorAll('.login-lang-btn');
+    langBtns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var lang = btn.getAttribute('data-lang');
+            var url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            document.cookie = 'ppv_lang=' + lang + ';path=/;max-age=31536000';
+            window.location.href = url.toString();
+        });
+    });
+
     var form=document.getElementById("login-form"),
         btn=document.getElementById("login-btn"),
         err=document.getElementById("login-error"),
@@ -101,18 +134,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         fd.append("email",emailInput.value.trim());
         fd.append("password",passInput.value);
 
-        fetch("' . esc_url($ajax_url) . '",{method:"POST",body:fd,credentials:"same-origin"})
+        fetch(<?php echo json_encode(esc_url($ajax_url)); ?>,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
                 window.location.href=data.data.redirect||"/formular/admin";
             }else{
-                err.textContent=data.data&&data.data.message?data.data.message:"Anmeldung fehlgeschlagen.";
+                err.textContent=data.data&&data.data.message?data.data.message:ppvLang.login_failed;
                 err.style.display="block";
             }
         })
         .catch(function(){
-            err.textContent="Verbindungsfehler. Bitte versuchen Sie es erneut.";
+            err.textContent=ppvLang.connection_error;
             err.style.display="block";
         })
         .finally(function(){
@@ -123,7 +156,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 })();
 </script>
 </body>
-</html>';
+</html><?php
     }
 
     /** ============================================================

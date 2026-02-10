@@ -152,4 +152,15 @@ return [
     'repair_reg_err_unexpected' => 'Răspuns neașteptat de la server.',
     'repair_reg_err_failed'     => 'Înregistrarea a eșuat. Vă rugăm încercați din nou.',
     'repair_reg_err_network'    => 'Eroare de rețea. Vă rugăm verificați conexiunea la internet.',
+
+    // ========== LOGIN PAGE ==========
+    'repair_login_title'        => 'Autentificare - Admin Service',
+    'repair_login_heading'      => 'Admin Service',
+    'repair_login_subtitle'     => 'Conectați-vă pentru a gestiona service-urile',
+    'repair_login_password'     => 'Parolă',
+    'repair_login_password_placeholder' => 'Parolă',
+    'repair_login_submit'       => 'Autentificare',
+    'repair_login_no_account'   => 'Nu aveți cont?',
+    'repair_login_register'     => 'Înregistrați-vă acum',
+    'repair_login_failed'       => 'Autentificare eșuată.',
 ];

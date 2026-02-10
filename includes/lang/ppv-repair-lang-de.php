@@ -152,4 +152,15 @@ return [
     'repair_reg_err_unexpected' => 'Unerwartete Antwort vom Server.',
     'repair_reg_err_failed'     => 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.',
     'repair_reg_err_network'    => 'Netzwerkfehler. Bitte prüfen Sie Ihre Internetverbindung.',
+
+    // ========== LOGIN PAGE ==========
+    'repair_login_title'        => 'Login - Reparatur Admin',
+    'repair_login_heading'      => 'Reparatur Admin',
+    'repair_login_subtitle'     => 'Melden Sie sich an, um Ihre Reparaturen zu verwalten',
+    'repair_login_password'     => 'Passwort',
+    'repair_login_password_placeholder' => 'Passwort',
+    'repair_login_submit'       => 'Anmelden',
+    'repair_login_no_account'   => 'Noch kein Konto?',
+    'repair_login_register'     => 'Jetzt registrieren',
+    'repair_login_failed'       => 'Anmeldung fehlgeschlagen.',
 ];
