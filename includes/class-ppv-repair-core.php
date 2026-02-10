@@ -960,19 +960,8 @@ class PPV_Repair_Core {
             }
         }
 
-        self::notify_store_owner($store, [
-            'repair_id' => $repair_id,
-            'name'      => $name,
-            'email'     => $email,
-            'phone'     => $phone,
-            'device'    => trim("{$device_brand} {$device_model}"),
-            'problem'   => $problem,
-        ]);
-
-        // Send tracking email to customer
         $store_slug = $store->store_slug;
         $tracking_url = home_url("/formular/{$store_slug}/status/{$tracking_token}");
-        self::send_tracking_email($store, $email, $name, $repair_id, $tracking_url);
 
         wp_send_json_success([
             'repair_id'      => $repair_id,
