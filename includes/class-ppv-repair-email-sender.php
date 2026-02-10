@@ -358,6 +358,9 @@ class PPV_Repair_Email_Sender {
      * Build HTML email with Repair Form branding
      */
     private static function build_html_email($message, $lang = 'de') {
+        // Convert class="cta-button" to inline styles (for saved templates that still use the old class)
+        $cta_inline = 'style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;"';
+        $message = str_replace('class="cta-button"', $cta_inline, $message);
         $message = nl2br($message);
         $year = date('Y');
 
@@ -622,7 +625,7 @@ Mit unserer <strong>Reparaturverwaltung</strong> k&ouml;nnen Sie Ihren Reparatur
 Die Einrichtung dauert nur wenige Minuten und ist <strong>kostenlos</strong>.
 
 <strong>Probieren Sie es jetzt unverbindlich aus:</strong>
-<a href="https://punktepass.de/formular" class="cta-button">&#128073; Kostenlos starten</a>
+<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Kostenlos starten</a>
 
 Gerne stelle ich Ihnen das System kurz und unverbindlich, pers&ouml;nlich oder telefonisch, vor.
 
@@ -657,7 +660,7 @@ A <strong>Javításkezelő</strong> rendszerünkkel teljesen digitalizálhatja j
 A beállítás csak néhány percet vesz igénybe és <strong>ingyenes</strong>.
 
 <strong>Próbálja ki most kötelezettségek nélkül:</strong>
-<a href="https://punktepass.de/formular" class="cta-button">&#128073; Ingyenes indítás</a>
+<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Ingyenes indítás</a>
 
 Szívesen bemutatom a rendszert röviden és kötelezettségek nélkül, személyesen vagy telefonon.
 
@@ -692,7 +695,7 @@ Cu <strong>Sistemul nostru de gestionare a reparațiilor</strong> puteți digita
 Configurarea durează doar câteva minute și este <strong>gratuită</strong>.
 
 <strong>Încercați acum fără obligații:</strong>
-<a href="https://punktepass.de/formular" class="cta-button">&#128073; Începeți gratuit</a>
+<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Începeți gratuit</a>
 
 Vă prezint cu plăcere sistemul pe scurt și fără obligații, personal sau telefonic.
 
