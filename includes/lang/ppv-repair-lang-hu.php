@@ -789,4 +789,49 @@ return [
     'repair_pdf_email_subj_quote' => 'Árajánlat: {invoice_number}',
     'repair_pdf_email_body_inv'   => "Tisztelt {customer_name}!\n\nMellékelten küldjük a(z) {invoice_number} számú számlát ({invoice_date}).\n\nVégösszeg: {total} €\n\nKérdés esetén állunk rendelkezésére.\n\nÜdvözlettel,\n{company_name}",
     'repair_pdf_email_body_quote' => "Tisztelt {customer_name}!\n\nMellékelten küldjük a(z) {invoice_number} számú árajánlatot ({invoice_date}).\n\nVégösszeg: {total} €\n\nKérdés esetén állunk rendelkezésére.\n\nÜdvözlettel,\n{company_name}",
+
+    // ===== Jogi oldalak (generált Adatvédelem/ÁSZF/Impresszum) =====
+    'repair_legal_back'                  => 'Vissza',
+    'repair_legal_powered_by'            => 'Üzemeltető',
+    'repair_legal_title_privacy'         => 'Adatvédelmi nyilatkozat',
+    'repair_legal_title_terms'           => 'ÁSZF',
+    'repair_legal_title_imprint'         => 'Impresszum',
+    'repair_legal_footer_privacy'        => 'Adatvédelem',
+    'repair_legal_footer_terms'          => 'ÁSZF',
+    'repair_legal_footer_imprint'        => 'Impresszum',
+
+    // Adatvédelem
+    'repair_legal_priv_responsible'      => 'Adatkezelő',
+    'repair_legal_priv_data'             => 'Gyűjtött adatok',
+    'repair_legal_priv_data_text'        => 'Név, e-mail, telefon, eszközinformáció, hibaleírás, IP-cím.',
+    'repair_legal_priv_purpose'          => 'Cél',
+    'repair_legal_priv_purpose_text'     => 'A javítási megrendelés feldolgozása és PunktePass hűségpont-kezelés.',
+    'repair_legal_priv_punktepass'       => 'PunktePass',
+    'repair_legal_priv_punktepass_text'  => 'Automatikus fiók létrehozása az űrlap beküldésekor. Részletek:',
+    'repair_legal_priv_rights'           => 'Az Ön jogai',
+    'repair_legal_priv_rights_text'      => 'Tájékoztatás, helyesbítés, törlés, tiltakozás. Kapcsolat:',
+
+    // ÁSZF
+    'repair_legal_terms_scope'           => 'Hatály',
+    'repair_legal_terms_scope_text'      => '{company} digitális űrlapján keresztül leadott összes javítási megrendelésre vonatkozik.',
+    'repair_legal_terms_contract'        => 'Szerződéskötés',
+    'repair_legal_terms_contract_text'   => 'Beküldés = ajánlat. Szerződés elfogadáskor.',
+    'repair_legal_terms_prices'          => 'Árak',
+    'repair_legal_terms_prices_text'     => 'Végleges költségek a diagnózis után. Tájékoztatás költségtúllépés esetén.',
+    'repair_legal_terms_punktepass'      => 'PunktePass',
+    'repair_legal_terms_punktepass_text' => 'Automatikus bónuszpontok. Részletek:',
+    'repair_legal_terms_pickup'          => 'Átvétel',
+    'repair_legal_terms_pickup_text'     => 'A javítás befejezésétől számított 30 napon belül.',
+    'repair_legal_terms_law'             => 'Jog',
+    'repair_legal_terms_law_text'        => 'A német jog az irányadó.',
+
+    // Impresszum
+    'repair_legal_imp_provider'          => 'Szolgáltató adatai',
+    'repair_legal_imp_contact'           => 'Kapcsolat',
+    'repair_legal_imp_contact_phone'     => 'Telefon',
+    'repair_legal_imp_responsible'       => 'Tartalomért felelős',
+    'repair_legal_imp_vat'               => 'Adószám',
+    'repair_legal_imp_dispute'           => 'EU vitarendezés',
+    'repair_legal_imp_punktepass'        => 'PunktePass',
+    'repair_legal_imp_punktepass_text'   => 'Üzemeltető: PunktePass, Erik Borota, Siedlungsring 51, 89415 Lauingen.',
 ];

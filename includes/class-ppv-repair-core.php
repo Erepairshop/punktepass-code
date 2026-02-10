@@ -208,6 +208,7 @@ class PPV_Repair_Core {
                 self::send_error_page(404, 'Formular nicht gefunden', 'Dieses Reparaturformular existiert nicht.');
                 exit;
             }
+            PPV_Lang::load_extra('ppv-repair-lang');
             echo self::render_legal_page($store, $m[2]);
             exit;
         }
@@ -2330,23 +2331,30 @@ class PPV_Repair_Core {
         $co = esc_attr($store->repair_color ?: '#667eea');
         $lg = esc_url($store->logo ?: '');
         $sl = esc_attr($store->store_slug);
+        $lang = PPV_Lang::$active ?: 'ro';
 
-        $titles = ['datenschutz' => 'Datenschutzerkl&auml;rung', 'agb' => 'AGB', 'impressum' => 'Impressum'];
-        $title = $titles[$page_type] ?? '';
+        $title_keys = ['datenschutz' => 'repair_legal_title_privacy', 'agb' => 'repair_legal_title_terms', 'impressum' => 'repair_legal_title_imprint'];
+        $title = PPV_Lang::t($title_keys[$page_type] ?? '');
 
         $content = '';
         if ($page_type === 'datenschutz') {
-            $content = "<h2>1. Verantwortlicher</h2><p>{$sn}<br>{$on}<br>{$ad}<br>{$pz} {$ct}<br>E-Mail: {$em}</p><h2>2. Erhobene Daten</h2><p>Name, E-Mail, Telefon, Ger&auml;teinfo, Problembeschreibung, IP-Adresse.</p><h2>3. Zweck</h2><p>Bearbeitung Ihres Reparaturauftrags und PunktePass-Treuepunkte-Verwaltung.</p><h2>4. PunktePass</h2><p>Automatische Kontoerstellung bei Formularabsendung. Details: <a href='https://punktepass.de/datenschutz'>punktepass.de/datenschutz</a></p><h2>5. Ihre Rechte</h2><p>Auskunft, Berichtigung, L&ouml;schung, Widerspruch. Kontakt: {$em}</p>";
+            $content = "<h2>1. " . esc_html(PPV_Lang::t('repair_legal_priv_responsible')) . "</h2><p>{$sn}<br>{$on}<br>{$ad}<br>{$pz} {$ct}<br>E-Mail: {$em}</p><h2>2. " . esc_html(PPV_Lang::t('repair_legal_priv_data')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_priv_data_text')) . "</p><h2>3. " . esc_html(PPV_Lang::t('repair_legal_priv_purpose')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_priv_purpose_text')) . "</p><h2>4. " . esc_html(PPV_Lang::t('repair_legal_priv_punktepass')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_priv_punktepass_text')) . " <a href='https://punktepass.de/datenschutz'>punktepass.de/datenschutz</a></p><h2>5. " . esc_html(PPV_Lang::t('repair_legal_priv_rights')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_priv_rights_text')) . " {$em}</p>";
         } elseif ($page_type === 'agb') {
-            $content = "<h2>1. Geltungsbereich</h2><p>F&uuml;r alle Reparaturauftr&auml;ge &uuml;ber das digitale Formular von {$sn}.</p><h2>2. Vertragsschluss</h2><p>Absenden = Angebot. Vertrag bei Annahme.</p><h2>3. Preise</h2><p>Endkosten nach Diagnose. Information bei Kosten&uuml;berschreitung.</p><h2>4. PunktePass</h2><p>Automatische Bonuspunkte. Details: <a href='https://punktepass.de/agb'>punktepass.de/agb</a></p><h2>5. Abholung</h2><p>Innerhalb von 30 Tagen nach Fertigstellung.</p><h2>6. Recht</h2><p>Es gilt deutsches Recht.</p>";
+            $scope_text = str_replace('{company}', $sn, PPV_Lang::t('repair_legal_terms_scope_text'));
+            $content = "<h2>1. " . esc_html(PPV_Lang::t('repair_legal_terms_scope')) . "</h2><p>" . esc_html($scope_text) . "</p><h2>2. " . esc_html(PPV_Lang::t('repair_legal_terms_contract')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_terms_contract_text')) . "</p><h2>3. " . esc_html(PPV_Lang::t('repair_legal_terms_prices')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_terms_prices_text')) . "</p><h2>4. " . esc_html(PPV_Lang::t('repair_legal_terms_punktepass')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_terms_punktepass_text')) . " <a href='https://punktepass.de/agb'>punktepass.de/agb</a></p><h2>5. " . esc_html(PPV_Lang::t('repair_legal_terms_pickup')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_terms_pickup_text')) . "</p><h2>6. " . esc_html(PPV_Lang::t('repair_legal_terms_law')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_terms_law_text')) . "</p>";
         } else {
-            $tax_line = $tx ? "<br><strong>USt-IdNr.:</strong> {$tx}" : '';
-            $phone_line = $ph ? "<br>Telefon: {$ph}" : '';
-            $content = "<h2>Angaben gem. &sect;5 TMG</h2><p>{$sn}<br>{$on}<br>{$ad}<br>{$pz} {$ct}</p><h2>Kontakt</h2><p>E-Mail: {$em}{$phone_line}</p><h2>Verantwortlich</h2><p>{$on}<br>{$ad}<br>{$pz} {$ct}{$tax_line}</p><h2>EU-Streitschlichtung</h2><p><a href='https://ec.europa.eu/consumers/odr' target='_blank'>ec.europa.eu/consumers/odr</a></p><h2>PunktePass</h2><p>Betreiber: PunktePass, Erik Borota, Siedlungsring 51, 89415 Lauingen. <a href='https://punktepass.de/impressum'>punktepass.de/impressum</a></p>";
+            $tax_line = $tx ? "<br><strong>" . esc_html(PPV_Lang::t('repair_legal_imp_vat')) . ":</strong> {$tx}" : '';
+            $phone_line = $ph ? "<br>" . esc_html(PPV_Lang::t('repair_legal_imp_contact_phone')) . ": {$ph}" : '';
+            $content = "<h2>" . esc_html(PPV_Lang::t('repair_legal_imp_provider')) . "</h2><p>{$sn}<br>{$on}<br>{$ad}<br>{$pz} {$ct}</p><h2>" . esc_html(PPV_Lang::t('repair_legal_imp_contact')) . "</h2><p>E-Mail: {$em}{$phone_line}</p><h2>" . esc_html(PPV_Lang::t('repair_legal_imp_responsible')) . "</h2><p>{$on}<br>{$ad}<br>{$pz} {$ct}{$tax_line}</p><h2>" . esc_html(PPV_Lang::t('repair_legal_imp_dispute')) . "</h2><p><a href='https://ec.europa.eu/consumers/odr' target='_blank'>ec.europa.eu/consumers/odr</a></p><h2>" . esc_html(PPV_Lang::t('repair_legal_imp_punktepass')) . "</h2><p>" . esc_html(PPV_Lang::t('repair_legal_imp_punktepass_text')) . " <a href='https://punktepass.de/impressum'>punktepass.de/impressum</a></p>";
         }
 
         $logo_html = $lg ? "<img src='{$lg}' alt='' style='height:40px;border-radius:8px;margin-bottom:8px;'>" : '';
+        $back_text = esc_html(PPV_Lang::t('repair_legal_back'));
+        $footer_priv = esc_html(PPV_Lang::t('repair_legal_footer_privacy'));
+        $footer_terms = esc_html(PPV_Lang::t('repair_legal_footer_terms'));
+        $footer_imp = esc_html(PPV_Lang::t('repair_legal_footer_imprint'));
+        $powered = esc_html(PPV_Lang::t('repair_legal_powered_by'));
 
-        return '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . $title . ' - ' . $sn . '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f5f7;color:#1f2937;line-height:1.6}.hd{background:linear-gradient(135deg,' . $co . ',#764ba2);padding:24px 20px;text-align:center}.hd h1{color:#fff;font-size:20px}.hd .bk{color:rgba(255,255,255,0.8);text-decoration:none;font-size:14px;display:inline-block;margin-top:8px}.ct{max-width:700px;margin:0 auto;padding:24px 20px}.ct h2{font-size:18px;margin:24px 0 8px;color:#111827}.ct p{font-size:14px;margin-bottom:12px;color:#4b5563}.ct a{color:' . $co . '}.ft{text-align:center;padding:20px;font-size:12px;color:#9ca3af}.ft a{color:' . $co . ';text-decoration:none}</style></head><body><div class="hd">' . $logo_html . '<h1>' . $title . '</h1><a href="/formular/' . $sl . '" class="bk">&larr; Zur&uuml;ck</a></div><div class="ct">' . $content . '</div><div class="ft"><a href="/formular/' . $sl . '/datenschutz">Datenschutz</a> &middot; <a href="/formular/' . $sl . '/agb">AGB</a> &middot; <a href="/formular/' . $sl . '/impressum">Impressum</a><br><br>Powered by <a href="https://punktepass.de">PunktePass</a></div></body></html>';
+        return '<!DOCTYPE html><html lang="' . $lang . '"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . esc_html($title) . ' - ' . $sn . '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f5f7;color:#1f2937;line-height:1.6}.hd{background:linear-gradient(135deg,' . $co . ',#764ba2);padding:24px 20px;text-align:center}.hd h1{color:#fff;font-size:20px}.hd .bk{color:rgba(255,255,255,0.8);text-decoration:none;font-size:14px;display:inline-block;margin-top:8px}.ct{max-width:700px;margin:0 auto;padding:24px 20px}.ct h2{font-size:18px;margin:24px 0 8px;color:#111827}.ct p{font-size:14px;margin-bottom:12px;color:#4b5563}.ct a{color:' . $co . '}.ft{text-align:center;padding:20px;font-size:12px;color:#9ca3af}.ft a{color:' . $co . ';text-decoration:none}</style></head><body><div class="hd">' . $logo_html . '<h1>' . esc_html($title) . '</h1><a href="/formular/' . $sl . '" class="bk">&larr; ' . $back_text . '</a></div><div class="ct">' . $content . '</div><div class="ft"><a href="/formular/' . $sl . '/datenschutz">' . $footer_priv . '</a> &middot; <a href="/formular/' . $sl . '/agb">' . $footer_terms . '</a> &middot; <a href="/formular/' . $sl . '/impressum">' . $footer_imp . '</a><br><br>' . $powered . ' <a href="https://punktepass.de">PunktePass</a></div></body></html>';
     }
 }

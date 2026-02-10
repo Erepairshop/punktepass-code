@@ -789,4 +789,49 @@ return [
     'repair_pdf_email_subj_quote' => 'Ihr Angebot {invoice_number}',
     'repair_pdf_email_body_inv'   => "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}",
     'repair_pdf_email_body_quote' => "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihr Angebot {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}",
+
+    // ===== Legal Pages (generated Datenschutz/AGB/Impressum) =====
+    'repair_legal_back'                  => 'Zurück',
+    'repair_legal_powered_by'            => 'Powered by',
+    'repair_legal_title_privacy'         => 'Datenschutzerklärung',
+    'repair_legal_title_terms'           => 'AGB',
+    'repair_legal_title_imprint'         => 'Impressum',
+    'repair_legal_footer_privacy'        => 'Datenschutz',
+    'repair_legal_footer_terms'          => 'AGB',
+    'repair_legal_footer_imprint'        => 'Impressum',
+
+    // Datenschutz
+    'repair_legal_priv_responsible'      => 'Verantwortlicher',
+    'repair_legal_priv_data'             => 'Erhobene Daten',
+    'repair_legal_priv_data_text'        => 'Name, E-Mail, Telefon, Geräteinfo, Problembeschreibung, IP-Adresse.',
+    'repair_legal_priv_purpose'          => 'Zweck',
+    'repair_legal_priv_purpose_text'     => 'Bearbeitung Ihres Reparaturauftrags und PunktePass-Treuepunkte-Verwaltung.',
+    'repair_legal_priv_punktepass'       => 'PunktePass',
+    'repair_legal_priv_punktepass_text'  => 'Automatische Kontoerstellung bei Formularabsendung. Details:',
+    'repair_legal_priv_rights'           => 'Ihre Rechte',
+    'repair_legal_priv_rights_text'      => 'Auskunft, Berichtigung, Löschung, Widerspruch. Kontakt:',
+
+    // AGB
+    'repair_legal_terms_scope'           => 'Geltungsbereich',
+    'repair_legal_terms_scope_text'      => 'Für alle Reparaturaufträge über das digitale Formular von {company}.',
+    'repair_legal_terms_contract'        => 'Vertragsschluss',
+    'repair_legal_terms_contract_text'   => 'Absenden = Angebot. Vertrag bei Annahme.',
+    'repair_legal_terms_prices'          => 'Preise',
+    'repair_legal_terms_prices_text'     => 'Endkosten nach Diagnose. Information bei Kostenüberschreitung.',
+    'repair_legal_terms_punktepass'      => 'PunktePass',
+    'repair_legal_terms_punktepass_text' => 'Automatische Bonuspunkte. Details:',
+    'repair_legal_terms_pickup'          => 'Abholung',
+    'repair_legal_terms_pickup_text'     => 'Innerhalb von 30 Tagen nach Fertigstellung.',
+    'repair_legal_terms_law'             => 'Recht',
+    'repair_legal_terms_law_text'        => 'Es gilt deutsches Recht.',
+
+    // Impressum
+    'repair_legal_imp_provider'          => 'Angaben gem. §5 TMG',
+    'repair_legal_imp_contact'           => 'Kontakt',
+    'repair_legal_imp_contact_phone'     => 'Telefon',
+    'repair_legal_imp_responsible'       => 'Verantwortlich',
+    'repair_legal_imp_vat'               => 'USt-IdNr.',
+    'repair_legal_imp_dispute'           => 'EU-Streitschlichtung',
+    'repair_legal_imp_punktepass'        => 'PunktePass',
+    'repair_legal_imp_punktepass_text'   => 'Betreiber: PunktePass, Erik Borota, Siedlungsring 51, 89415 Lauingen.',
 ];

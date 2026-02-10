@@ -789,4 +789,49 @@ return [
     'repair_pdf_email_subj_quote' => 'Oferta dvs. {invoice_number}',
     'repair_pdf_email_body_inv'   => "Stimate {customer_name},\n\nAtașat găsiți factura {invoice_number} din {invoice_date}.\n\nTotal: {total} €\n\nPentru întrebări, nu ezitați să ne contactați.\n\nCu stimă,\n{company_name}",
     'repair_pdf_email_body_quote' => "Stimate {customer_name},\n\nAtașat găsiți oferta {invoice_number} din {invoice_date}.\n\nTotal: {total} €\n\nPentru întrebări, nu ezitați să ne contactați.\n\nCu stimă,\n{company_name}",
+
+    // ===== Pagini juridice (Confidențialitate/Termeni/Impresum generate) =====
+    'repair_legal_back'                  => 'Înapoi',
+    'repair_legal_powered_by'            => 'Powered by',
+    'repair_legal_title_privacy'         => 'Politica de confidențialitate',
+    'repair_legal_title_terms'           => 'Termeni și condiții',
+    'repair_legal_title_imprint'         => 'Impresum',
+    'repair_legal_footer_privacy'        => 'Confidențialitate',
+    'repair_legal_footer_terms'          => 'Termeni',
+    'repair_legal_footer_imprint'        => 'Impresum',
+
+    // Confidențialitate
+    'repair_legal_priv_responsible'      => 'Responsabil',
+    'repair_legal_priv_data'             => 'Date colectate',
+    'repair_legal_priv_data_text'        => 'Nume, e-mail, telefon, informații dispozitiv, descrierea problemei, adresă IP.',
+    'repair_legal_priv_purpose'          => 'Scop',
+    'repair_legal_priv_purpose_text'     => 'Procesarea comenzii de reparație și gestionarea punctelor de fidelitate PunktePass.',
+    'repair_legal_priv_punktepass'       => 'PunktePass',
+    'repair_legal_priv_punktepass_text'  => 'Crearea automată a contului la trimiterea formularului. Detalii:',
+    'repair_legal_priv_rights'           => 'Drepturile dvs.',
+    'repair_legal_priv_rights_text'      => 'Informare, rectificare, ștergere, opoziție. Contact:',
+
+    // Termeni
+    'repair_legal_terms_scope'           => 'Domeniu de aplicare',
+    'repair_legal_terms_scope_text'      => 'Pentru toate comenzile de reparație prin formularul digital al {company}.',
+    'repair_legal_terms_contract'        => 'Încheierea contractului',
+    'repair_legal_terms_contract_text'   => 'Trimiterea = ofertă. Contract la acceptare.',
+    'repair_legal_terms_prices'          => 'Prețuri',
+    'repair_legal_terms_prices_text'     => 'Costurile finale după diagnostic. Informare în caz de depășire a costurilor.',
+    'repair_legal_terms_punktepass'      => 'PunktePass',
+    'repair_legal_terms_punktepass_text' => 'Puncte bonus automate. Detalii:',
+    'repair_legal_terms_pickup'          => 'Ridicare',
+    'repair_legal_terms_pickup_text'     => 'În termen de 30 de zile de la finalizare.',
+    'repair_legal_terms_law'             => 'Legislație',
+    'repair_legal_terms_law_text'        => 'Se aplică legislația germană.',
+
+    // Impresum
+    'repair_legal_imp_provider'          => 'Informații conform § 5 TMG',
+    'repair_legal_imp_contact'           => 'Contact',
+    'repair_legal_imp_contact_phone'     => 'Telefon',
+    'repair_legal_imp_responsible'       => 'Responsabil pentru conținut',
+    'repair_legal_imp_vat'               => 'CUI',
+    'repair_legal_imp_dispute'           => 'Soluționarea litigiilor UE',
+    'repair_legal_imp_punktepass'        => 'PunktePass',
+    'repair_legal_imp_punktepass_text'   => 'Operator: PunktePass, Erik Borota, Siedlungsring 51, 89415 Lauingen.',
 ];
