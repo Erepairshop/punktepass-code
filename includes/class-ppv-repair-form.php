@@ -56,12 +56,18 @@ class PPV_Repair_Form {
         $pf_model = esc_attr($_GET['model'] ?? '');
 
         ob_start();
+        // Prevent WebView caching (Fully Kiosk)
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
         ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <title><?php echo $form_title; ?> - <?php echo $store_name; ?></title>
     <?php echo PPV_SEO::get_form_page_head($store); ?>
     <?php echo PPV_SEO::get_performance_hints(); ?>
@@ -81,13 +87,25 @@ class PPV_Repair_Form {
 <body class="ppv-repair-body">
 
 <div class="repair-page">
-    <!-- Header -->
+    <!-- Hero Header -->
     <div class="repair-header">
+        <div class="repair-hero-bg">
+            <div class="repair-hero-blob repair-hero-blob--1"></div>
+            <div class="repair-hero-blob repair-hero-blob--2"></div>
+            <div class="repair-hero-blob repair-hero-blob--3"></div>
+        </div>
         <div class="repair-header-inner">
             <?php if ($store->logo): ?>
-                <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>" class="repair-logo">
+                <div class="repair-logo-wrap">
+                    <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>" class="repair-logo">
+                </div>
             <?php endif; ?>
             <h1 class="repair-shop-name"><?php echo $store_name; ?></h1>
+            <?php if ($form_subtitle): ?>
+                <p class="repair-hero-subtitle"><?php echo $form_subtitle; ?></p>
+            <?php else: ?>
+                <p class="repair-hero-subtitle">Digitaler <?php echo $form_title; ?> - schnell &amp; unkompliziert</p>
+            <?php endif; ?>
             <?php if ($address): ?>
                 <p class="repair-shop-address"><i class="ri-map-pin-line"></i> <?php echo $address; ?></p>
             <?php endif; ?>
@@ -95,10 +113,6 @@ class PPV_Repair_Form {
                 <p class="repair-shop-address" style="margin-top:4px"><i class="ri-time-line"></i> <?php echo esc_html($opening_hours); ?></p>
             <?php endif; ?>
         </div>
-        <!-- Tablet Kiosk Tips Button -->
-        <button type="button" class="repair-tips-btn" onclick="openKioskTips()" title="Tablet-Kiosk Tipps">
-            <i class="ri-lightbulb-line"></i>
-        </button>
     </div>
 
     <?php if ($limit_reached): ?>
@@ -131,26 +145,28 @@ class PPV_Repair_Form {
 
             <div class="repair-field">
                 <label for="rf-name">Name *</label>
-                <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>">
+                <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>" autocomplete="name">
             </div>
 
-            <div class="repair-field">
+            <div class="repair-field" style="position:relative">
                 <label for="rf-email">E-Mail</label>
-                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>">
+                <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email">
+                <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
                 <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
             </div>
 
             <?php if (!empty($field_config['customer_phone']['enabled'])): ?>
             <div class="repair-field">
                 <label for="rf-phone"><?php echo esc_html($field_config['customer_phone']['label'] ?? 'Telefon'); ?></label>
-                <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>">
+                <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>" autocomplete="tel">
             </div>
             <?php endif; ?>
 
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
-            <div class="repair-field">
+            <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort">
+                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="street-address">
+                <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
             </div>
             <?php endif; ?>
         </div>
@@ -357,123 +373,36 @@ class PPV_Repair_Form {
         <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
     </div>
 
-    <!-- Footer -->
+    <!-- Professional Footer -->
     <div class="repair-footer">
+        <div class="repair-footer-trust">
+            <div class="repair-footer-trust-item">
+                <i class="ri-lock-line"></i> SSL-verschl&uuml;sselt
+            </div>
+            <div class="repair-footer-trust-item">
+                <i class="ri-shield-check-line"></i> DSGVO-konform
+            </div>
+        </div>
         <div class="repair-footer-links">
             <a href="/formular/<?php echo $slug; ?>/datenschutz">Datenschutz</a>
+            <span class="repair-footer-dot"></span>
             <a href="/formular/<?php echo $slug; ?>/agb">AGB</a>
+            <span class="repair-footer-dot"></span>
             <a href="/formular/<?php echo $slug; ?>/impressum">Impressum</a>
         </div>
         <div class="repair-footer-powered">
-            Powered by
-            <a href="https://punktepass.de" target="_blank">
-                <svg class="repair-footer-logo" width="90" height="18" viewBox="0 0 90 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="3" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M5 9l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <text x="18" y="13" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="currentColor">PunktePass</text>
+            <span>Powered by</span>
+            <a href="https://punktepass.de" target="_blank" class="repair-footer-brand">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="14" height="14" rx="4" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
+                <strong>PunktePass</strong>
             </a>
         </div>
     </div>
 </div>
 
-<!-- Kiosk Tips Modal -->
-<div id="kiosk-tips-modal" class="kiosk-tips-modal" onclick="if(event.target===this)closeKioskTips()">
-    <div class="kiosk-tips-content">
-        <button type="button" class="kiosk-tips-close" onclick="closeKioskTips()"><i class="ri-close-line"></i></button>
-        <div class="kiosk-tips-header">
-            <div class="kiosk-tips-icon"><i class="ri-tablet-line"></i></div>
-            <h2>Tablet-Kiosk Modus</h2>
-            <p>Formular im Vollbildmodus auf einem Tablet betreiben</p>
-        </div>
-
-        <div class="kiosk-tips-body">
-            <div class="kiosk-tip-section">
-                <h3><i class="ri-download-2-line"></i> 1. App herunterladen</h3>
-                <p>Laden Sie <strong>Fully Kiosk Browser</strong> aus dem Google Play Store herunter:</p>
-                <a href="https://play.google.com/store/apps/details?id=de.ozerov.fully" target="_blank" class="kiosk-tip-link">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" style="height:40px">
-                </a>
-            </div>
-
-            <div class="kiosk-tip-section">
-                <h3><i class="ri-settings-3-line"></i> 2. URL einstellen</h3>
-                <p>Öffnen Sie die Fully Kiosk App und geben Sie diese URL als Startseite ein:</p>
-                <div class="kiosk-tip-url">
-                    <code id="kiosk-form-url"><?php echo esc_url(home_url('/formular/' . $slug)); ?></code>
-                    <button type="button" onclick="copyKioskUrl()" class="kiosk-copy-btn"><i class="ri-file-copy-line"></i></button>
-                </div>
-            </div>
-
-            <div class="kiosk-tip-section">
-                <h3><i class="ri-fullscreen-line"></i> 3. Kiosk-Modus aktivieren</h3>
-                <p>Aktivieren Sie folgende Einstellungen in der App:</p>
-                <ul class="kiosk-tip-list">
-                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Web Content → Fullscreen Mode</strong> aktivieren</li>
-                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Device Management → Hide Status Bar</strong> aktivieren</li>
-                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Device Management → Hide Navigation Bar</strong> aktivieren</li>
-                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Device Management → Keep Screen On</strong> aktivieren</li>
-                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Kiosk Mode → Enable Kiosk Mode</strong> aktivieren</li>
-                    <li><i class="ri-checkbox-circle-fill"></i> <strong>Kiosk Mode → Kiosk Exit PIN</strong> setzen (z.B. 1234)</li>
-                </ul>
-            </div>
-
-            <div class="kiosk-tip-section">
-                <h3><i class="ri-rocket-line"></i> 4. Fertig!</h3>
-                <p>Starten Sie die App und tippen Sie auf <strong>"Start Kiosk Mode"</strong>. Das Formular läuft jetzt im Vollbildmodus!</p>
-                <p class="kiosk-tip-note"><i class="ri-lock-line"></i> Zum Beenden: 5x schnell auf eine Ecke tippen und PIN eingeben</p>
-            </div>
-        </div>
-
-        <div class="kiosk-tips-footer">
-            <a href="https://www.fully-kiosk.com" target="_blank" class="kiosk-tip-external">
-                <i class="ri-external-link-line"></i> Fully Kiosk Webseite
-            </a>
-        </div>
-    </div>
-</div>
-
-<style>
-.repair-tips-btn{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.9);border:1px solid rgba(0,0,0,0.1);color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.repair-tips-btn:hover{background:#fff;color:var(--repair-accent);transform:scale(1.1)}
-.repair-header{position:relative}
-.kiosk-tips-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;padding:20px;overflow-y:auto;backdrop-filter:blur(4px)}
-.kiosk-tips-modal.active{display:flex;align-items:flex-start;justify-content:center}
-.kiosk-tips-content{background:#fff;border-radius:16px;max-width:540px;width:100%;margin:20px auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:kioskSlideIn .3s ease}
-@keyframes kioskSlideIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
-.kiosk-tips-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;background:rgba(0,0,0,0.05);border-radius:50%;cursor:pointer;font-size:20px;color:#64748b;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.kiosk-tips-close:hover{background:rgba(0,0,0,0.1);color:#1e293b}
-.kiosk-tips-header{position:relative;padding:28px 24px 20px;text-align:center;border-bottom:1px solid #e2e8f0}
-.kiosk-tips-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--repair-accent),#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:#fff}
-.kiosk-tips-header h2{font-size:20px;font-weight:700;color:#1e293b;margin:0 0 4px}
-.kiosk-tips-header p{font-size:14px;color:#64748b;margin:0}
-.kiosk-tips-body{padding:20px 24px}
-.kiosk-tip-section{margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #f1f5f9}
-.kiosk-tip-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
-.kiosk-tip-section h3{font-size:15px;font-weight:600;color:#1e293b;margin:0 0 10px;display:flex;align-items:center;gap:8px}
-.kiosk-tip-section h3 i{color:var(--repair-accent);font-size:18px}
-.kiosk-tip-section p{font-size:14px;color:#475569;margin:0 0 12px;line-height:1.6}
-.kiosk-tip-link{display:inline-block;margin:8px 0}
-.kiosk-tip-note{font-size:12px;color:#94a3b8;background:#f8fafc;padding:10px 12px;border-radius:8px;display:flex;align-items:flex-start;gap:6px}
-.kiosk-tip-note i{color:#f59e0b;font-size:14px;margin-top:1px}
-.kiosk-tip-url{display:flex;align-items:center;gap:8px;background:#f1f5f9;padding:10px 14px;border-radius:8px;margin:8px 0}
-.kiosk-tip-url code{flex:1;font-size:13px;color:#334155;word-break:break-all;font-family:monospace}
-.kiosk-copy-btn{width:32px;height:32px;border:none;background:var(--repair-accent);border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.kiosk-copy-btn:hover{transform:scale(1.05)}
-.kiosk-tip-list{list-style:none;padding:0;margin:12px 0 0}
-.kiosk-tip-list li{display:flex;align-items:flex-start;gap:8px;padding:8px 0;font-size:13px;color:#475569}
-.kiosk-tip-list li i{color:#10b981;font-size:16px;margin-top:1px}
-.kiosk-tips-footer{padding:16px 24px;background:#f8fafc;border-radius:0 0 16px 16px;text-align:center}
-.kiosk-tip-external{font-size:13px;color:var(--repair-accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:500}
-.kiosk-tip-external:hover{text-decoration:underline}
-</style>
-
-<script>
-function openKioskTips(){document.getElementById('kiosk-tips-modal').classList.add('active');document.body.style.overflow='hidden'}
-function closeKioskTips(){document.getElementById('kiosk-tips-modal').classList.remove('active');document.body.style.overflow=''}
-function copyKioskUrl(){var url=document.getElementById('kiosk-form-url').textContent;navigator.clipboard.writeText(url).then(function(){var btn=document.querySelector('.kiosk-copy-btn');btn.innerHTML='<i class="ri-check-line"></i>';setTimeout(function(){btn.innerHTML='<i class="ri-file-copy-line"></i>'},2000)})}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeKioskTips()});
-</script>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>
@@ -1002,6 +931,170 @@ function toggleProblemTag(btn, text) {
             confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
             document.body.appendChild(confetti);
             setTimeout(function() { confetti.remove(); }, 4000);
+        }
+    }
+})();
+</script>
+
+<script>
+(function(){
+    // XHR helper (works on all WebViews)
+    function xhrGet(url, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try { cb(null, JSON.parse(xhr.responseText)); }
+                    catch(e) { cb('parse error'); }
+                } else { cb('HTTP ' + xhr.status); }
+            }
+        };
+        xhr.onerror = function(){ cb('Network error'); };
+        xhr.timeout = 8000;
+        xhr.ontimeout = function(){ cb('Timeout'); };
+        xhr.send();
+    }
+
+    function escH(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    // ===== DISMISS: hide dropdowns when tapping OUTSIDE (not blur!) =====
+    var emailInput = document.getElementById('rf-email');
+    var emailBox = document.getElementById('rf-email-suggestions');
+    var addrInput = document.getElementById('rf-address');
+    var addrBox = document.getElementById('rf-address-suggestions');
+
+    document.addEventListener('click', function(e) {
+        if (emailBox && emailInput && !emailInput.contains(e.target) && !emailBox.contains(e.target)) {
+            emailBox.style.display = 'none';
+        }
+        if (addrBox && addrInput && !addrInput.contains(e.target) && !addrBox.contains(e.target)) {
+            addrBox.style.display = 'none';
+        }
+    }, true);
+
+    // ===== EMAIL AUTOCOMPLETE =====
+    if (emailInput && emailBox) {
+        var storeEl = document.querySelector('input[name="store_id"]');
+        var storeId = storeEl ? storeEl.value : 0;
+        var emailTimer = null;
+        var lastEmailQ = '';
+
+        function triggerEmailSearch(){
+            clearTimeout(emailTimer);
+            var q = emailInput.value.trim();
+            if (q === lastEmailQ) return;
+            lastEmailQ = q;
+            if (q.length < 2) { emailBox.style.display = 'none'; return; }
+            emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
+        }
+
+        emailInput.addEventListener('input', triggerEmailSearch);
+        emailInput.addEventListener('keyup', triggerEmailSearch);
+
+        function searchEmails(q) {
+            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
+            xhrGet(url, function(err, resp){
+                if (err || !resp || !resp.success || !resp.data || !resp.data.length) {
+                    emailBox.style.display = 'none';
+                    return;
+                }
+                emailBox.innerHTML = '';
+                resp.data.forEach(function(c){
+                    var item = document.createElement('div');
+                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
+                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
+                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
+                    // Use onclick - works on both mouse and touch
+                    item.onclick = function(){
+                        emailInput.value = c.customer_email;
+                        emailBox.style.display = 'none';
+                        var nameF = document.getElementById('rf-name');
+                        var phoneF = document.getElementById('rf-phone');
+                        var addrF = document.getElementById('rf-address');
+                        if (nameF && c.customer_name) nameF.value = c.customer_name;
+                        if (phoneF && c.customer_phone) phoneF.value = c.customer_phone;
+                        if (addrF && c.customer_address) addrF.value = c.customer_address;
+                        [nameF, phoneF, addrF].forEach(function(f){
+                            if (f && f.value) {
+                                f.style.transition = 'background .3s';
+                                f.style.background = '#d1fae5';
+                                setTimeout(function(){ f.style.background = ''; }, 1000);
+                            }
+                        });
+                    };
+                    emailBox.appendChild(item);
+                });
+                emailBox.style.display = 'block';
+            });
+        }
+    }
+
+    // ===== ADDRESS AUTOCOMPLETE =====
+    if (addrInput && addrBox) {
+        var addrTimer = null;
+        var lastAddrQ = '';
+
+        function getUserStreet(val) {
+            var parts = val.split(',');
+            if (parts.length > 1) return parts[0].trim();
+            var m = val.match(/^(.+?)\s+\d{5}\b/);
+            if (m) return m[1].trim();
+            return val.trim();
+        }
+
+        function triggerAddrSearch(){
+            clearTimeout(addrTimer);
+            var q = addrInput.value.trim();
+            if (q === lastAddrQ) return;
+            lastAddrQ = q;
+            if (q.length < 3) { addrBox.style.display = 'none'; return; }
+            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 400);
+        }
+
+        addrInput.addEventListener('input', triggerAddrSearch);
+        addrInput.addEventListener('keyup', triggerAddrSearch);
+
+        function fetchAddrSuggestions(q) {
+            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q);
+            xhrGet(url, function(err, results){
+                if (err || !results || !results.length) {
+                    addrBox.style.display = 'none';
+                    return;
+                }
+                var userStreet = getUserStreet(addrInput.value);
+                addrBox.innerHTML = '';
+                results.forEach(function(r){
+                    var a = r.address || {};
+                    var apiStreet = (a.road || '') + (a.house_number ? ' ' + a.house_number : '');
+                    var city = a.city || a.town || a.village || a.municipality || '';
+                    var plz = a.postcode || '';
+                    var street = apiStreet;
+                    if (userStreet && !a.house_number) {
+                        var road = (a.road || '').toLowerCase();
+                        if (road && userStreet.toLowerCase().indexOf(road) === 0) {
+                            street = userStreet;
+                        }
+                    }
+                    var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
+                    var displayFull = r.display_name;
+                    var item = document.createElement('div');
+                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
+                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(displayShort || displayFull) + '</div>' +
+                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(displayFull) + '</div>';
+                    item.onclick = function(){
+                        var finalStreet = street || userStreet;
+                        addrInput.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
+                        addrBox.style.display = 'none';
+                    };
+                    addrBox.appendChild(item);
+                });
+                addrBox.style.display = 'block';
+            });
         }
     }
 })();

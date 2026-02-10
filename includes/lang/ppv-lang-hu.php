@@ -428,6 +428,7 @@ return [
     'login_no_account' => 'Még nincs fiókod?',
     'login_register_now' => 'Regisztráció most',
     'login_demo_button' => 'Így működik a PunktePass',
+    'login_repair_form_cta' => 'Javítási űrlap rendszer – Regisztrálj itt',
 
     // App Download
     'login_download_app' => 'App letöltése',

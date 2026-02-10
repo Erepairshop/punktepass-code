@@ -534,8 +534,57 @@ Content-Type: application/json
 A `api-repair-bonus.php` a `ppv_pos_log` táblába is ír (`type = 'qr_scan'`),
 így a repair bonus megjelenik a QR Center "Letzte Scans" listájában is.
 
+## 📱 Mobile Autocomplete (Repair Form) - NEM MŰKÖDIK
+
+A `/formular/{slug}` repair form custom JS autocomplete (email keresés DB-ből + Nominatim cím) **nem működik touch eszközökön** (Fully Kiosk tablet, mobil böngészők). Desktopon egérrel működik.
+
+### Ami kipróbálva és NEM működött:
+- `touchstart`/`mousedown` events + `preventDefault`
+- `?.` optional chaining eltávolítás (régi WebView kompatibilitás)
+- `keyup` event az `input` mellé
+- `scrollIntoView` on focus
+- `fetch()` → `XMLHttpRequest` csere (WebView kompatibilitás)
+- `blur` timeout növelés (200→400ms)
+- `<datalist>` natív HTML elem (WebView-ban nem megbízható)
+- Document-level click dismiss (`blur` handler helyett)
+- `autocomplete="off"` → `autocomplete="email"/"street-address"` (Android Autofill)
+- `onclick` handler `mousedown`/`touchstart` helyett
+
+### Ami még hátra van (nem próbáltuk):
+- Chrome DevTools csatlakoztatás Fully Kiosk WebView-hoz (`chrome://inspect`) - ez kellene a debughoz
+- Fully Kiosk **"Enable Webview Contents Debugging"** beállítás bekapcsolása
+- Suggestions FÖLÉ az input-nak (`bottom:100%` a `top:100%` helyett)
+- Full-screen modal a suggestion dropdown helyett
+- `pointer-events: auto` és magasabb z-index
+
+### Tanulság:
+> A mobil WebView touch event handling alapvetően más mint desktop. A `blur` → `click` sorrend, a virtuális billentyűzet és a WebView korlátozások miatt a hagyományos dropdown autocomplete nem működik megbízhatóan. Natív `<datalist>` sem megbízható WebView-ban. Következő lépés: devtools csatlakoztatás a pontos hiba megtalálásához.
+
+## 🔧 Egyéb Tanulságok (2026-02)
+
+### WP_REST_Response HTML probléma
+- `WP_REST_Response` JSON-ként serializál → nyers HTML-hez `echo` + `exit` kell
+- Pl. approval page: `echo $html; exit;` a `return new WP_REST_Response($html)` helyett
+
+### MySQL ENUM gotcha
+- Ismeretlen ENUM érték beszúrásakor MySQL (non-strict mode) **üres stringet** tárol, nem hibát dob
+- Migráció: `ALTER TABLE ... MODIFY COLUMN ... ENUM('add','remove','mobile_scanner','new_slot')`
+
+### Device limit számítás
+- `MAX_DEVICES_PER_USER (2) + max_filialen` (terv limit, nem tényleges fiókok száma)
+- A `max_filialen` a store/parent store `ppv_stores` táblából jön
+
+### Approval email rendszer
+- `send_approval_notification_email()` a `class-ppv-device-fingerprint.php`-ben
+- Többnyelvű (DE/HU/RO) a store `country` mező alapján
+- Mindkét approval útvonalból hívva: standalone admin + REST API email link
+
+### Performance cache pattern
+- INFORMATION_SCHEMA / SHOW COLUMNS lekérdezéseket `get_option()` flag-ekkel cache-elni
+- Pl: `if (get_option('ppv_points_idx_v','0') === '1') return;`
+
 ---
 
-**Utolsó frissítés**: 2026-01-28
+**Utolsó frissítés**: 2026-02-09
 **Készítette**: Claude Code
 **Projekt**: PunktePass (Erepairshop/punktepass-code)

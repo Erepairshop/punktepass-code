@@ -51,24 +51,34 @@ class PPV_Device_Fingerprint {
             return self::MAX_DEVICES_PER_USER;
         }
 
-        // Get parent store ID
-        $parent_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+        // Get parent store ID and max_filialen (the plan limit)
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) AS parent_id, max_filialen
+             FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $store_id
         ));
 
-        if (!$parent_id) {
+        if (!$store) {
             return self::MAX_DEVICES_PER_USER;
         }
 
-        // Count filialen (children of parent)
-        $filiale_count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = %d",
-            $parent_id
-        ));
+        $parent_id = intval($store->parent_id);
+        $max_filialen = intval($store->max_filialen ?? 1);
 
-        // Base (2) + 1 per filiale
-        return self::MAX_DEVICES_PER_USER + intval($filiale_count);
+        // If this is a child store, get parent's max_filialen
+        if ($parent_id != $store_id) {
+            $parent_max = $wpdb->get_var($wpdb->prepare(
+                "SELECT max_filialen FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                $parent_id
+            ));
+            if ($parent_max !== null) {
+                $max_filialen = intval($parent_max);
+            }
+        }
+
+        // Base (2) + max_filialen (the plan limit, not actual count)
+        // e.g. 15 filialen plan = 2 + 15 = 17 devices allowed
+        return self::MAX_DEVICES_PER_USER + $max_filialen;
     }
 
     // Fingerprint validation constants
@@ -323,6 +333,15 @@ class PPV_Device_Fingerprint {
             ppv_log("✅ [PPV_Device_Fingerprint] Device deletion log table created");
             update_option('ppv_device_migration_version', '1.7');
             $migration_version = '1.7';
+        }
+
+        // Migration 1.8: Extend request_type ENUM to include new_slot
+        if (version_compare($migration_version, '1.8', '<')) {
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+            $wpdb->query("ALTER TABLE {$table_requests} MODIFY COLUMN request_type ENUM('add', 'remove', 'mobile_scanner', 'new_slot') NOT NULL");
+            ppv_log("✅ [PPV_Device_Fingerprint] Added new_slot request type to ENUM");
+            update_option('ppv_device_migration_version', '1.8');
+            $migration_version = '1.8';
         }
     }
 
@@ -1977,7 +1996,10 @@ class PPV_Device_Fingerprint {
         }
 
         // Process the request based on type
-        if ($req->request_type === 'add') {
+        // Also check fingerprint_hash prefix for new_slot (ENUM may store empty for old requests)
+        $is_new_slot = ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0);
+
+        if ($req->request_type === 'add' && !$is_new_slot) {
             // Add the device
             $ip_address = self::get_client_ip();
             $wpdb->insert(
@@ -2028,26 +2050,35 @@ class PPV_Device_Fingerprint {
                 ppv_log("📱 [Mobile Scanner Approved - Legacy Store] store_id={$req->store_id}");
                 $action_text = 'Mobile Scanner erfolgreich aktiviert!';
             }
-        } elseif ($req->request_type === 'new_slot') {
+        } elseif ($is_new_slot) {
             // Approve new device slot - create a placeholder entry with status='slot'
             // User can claim this slot when they register from a new device
             $wpdb->insert(
                 $wpdb->prefix . self::USER_DEVICES_TABLE,
                 [
                     'store_id' => $req->store_id,
-                    'fingerprint_hash' => $req->fingerprint_hash, // Placeholder hash
+                    'fingerprint_hash' => $req->fingerprint_hash,
                     'device_name' => $req->device_name . ' (reserviert)',
                     'user_agent' => 'Slot für neues Gerät genehmigt',
                     'ip_address' => null,
                     'registered_at' => current_time('mysql'),
-                    'status' => 'slot' // Special status - can be claimed
+                    'status' => 'slot'
                 ],
                 ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
             );
             ppv_log("📱 [Device Slot Approved] NEW_SLOT: store_id={$req->store_id}, name={$req->device_name}");
             $action_text = 'Zusätzlicher Geräteplatz genehmigt! Der Benutzer kann jetzt ein neues Gerät registrieren.';
         } else {
-            return self::render_approval_page('error', 'Unbekannter Anfragetyp');
+            // Fallback: treat unknown types as mobile scanner (handles empty ENUM values)
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['scanner_type' => 'mobile'],
+                ['id' => $req->store_id],
+                ['%s'],
+                ['%d']
+            );
+            ppv_log("📱 [Device Approved - Fallback] type={$req->request_type}, store_id={$req->store_id}");
+            $action_text = 'Mobile Scanner erfolgreich aktiviert!';
         }
 
         // Mark request as approved
@@ -2062,6 +2093,10 @@ class PPV_Device_Fingerprint {
             ['%s', '%s', '%s'],
             ['%d']
         );
+
+        // Send approval notification email to the store/handler
+        $notify_type = $is_new_slot ? 'new_slot' : $req->request_type;
+        self::send_approval_notification_email($req->store_id, $notify_type, $req->device_name);
 
         return self::render_approval_page('success', $action_text);
     }
@@ -2123,22 +2158,23 @@ class PPV_Device_Fingerprint {
         $color = $colors[$type] ?? '#999';
         $icon = $icons[$type] ?? '📱';
 
-        $html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+        // Output HTML directly (REST API would serialize as JSON otherwise)
+        header('Content-Type: text/html; charset=UTF-8');
+        echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
         <title>PunktePass - Geräteverwaltung</title>
         <style>body{font-family:Arial,sans-serif;background:#0f0f1e;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;}
         .card{background:#1a1a2e;padding:40px;border-radius:15px;text-align:center;max-width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
         .icon{font-size:48px;margin-bottom:20px;}
         .message{font-size:18px;color:{$color};margin-bottom:20px;}
-        .close-btn{background:{$color};color:#fff;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-size:16px;}
+        .close-btn{background:{$color};color:#fff;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-size:16px;text-decoration:none;display:inline-block;}
         </style></head><body>
         <div class='card'>
             <div class='icon'>{$icon}</div>
             <div class='message'>{$message}</div>
-            <button class='close-btn' onclick='window.close()'>Schließen</button>
+            <a href='/admin/device-requests' class='close-btn'>Zurück zur Verwaltung</a>
         </div>
         </body></html>";
-
-        return new WP_REST_Response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+        exit;
     }
 
     // ========================================
@@ -2368,6 +2404,121 @@ class PPV_Device_Fingerprint {
         ppv_log("📧 [Device Email] Attempting to send to: {$admin_email}");
         $sent = wp_mail($admin_email, $subject, $message, $headers);
         ppv_log("📧 [Device Email] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$admin_email}, store_id={$store_id}");
+    }
+
+    /**
+     * Send approval confirmation email to the store/handler
+     * Language based on store country (DE/HU/RO)
+     */
+    public static function send_approval_notification_email($store_id, $request_type, $device_name) {
+        global $wpdb;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, email, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        if (!$store || empty($store->email)) {
+            ppv_log("📧 [Approval Notify] No store email for store_id={$store_id}, skipping");
+            return;
+        }
+
+        $lang = strtolower($store->country ?? 'de');
+        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+            $lang = 'de';
+        }
+
+        $store_name = $store->name ?? "Store #{$store_id}";
+
+        // Multilingual texts
+        $texts = [
+            'de' => [
+                'subject' => "[PunktePass] Ihre Geräteanfrage wurde genehmigt",
+                'title' => 'Geräteanfrage genehmigt',
+                'intro' => 'Ihre Geräteanfrage wurde erfolgreich genehmigt.',
+                'store_label' => 'Geschäft',
+                'device_label' => 'Gerät',
+                'action_label' => 'Aktion',
+                'time_label' => 'Zeitpunkt',
+                'footer' => 'Sie können Ihr Gerät jetzt verwenden. Falls Sie Fragen haben, kontaktieren Sie uns unter info@punktepass.de.',
+                'types' => [
+                    'add' => 'Neues Gerät hinzugefügt',
+                    'remove' => 'Gerät entfernt',
+                    'new_slot' => 'Zusätzlicher Geräteplatz genehmigt',
+                    'mobile_scanner' => 'Mobile Scanner aktiviert',
+                ],
+            ],
+            'hu' => [
+                'subject' => "[PunktePass] Eszközkérelme jóváhagyva",
+                'title' => 'Eszközkérelem jóváhagyva',
+                'intro' => 'Az eszközkérelme sikeresen jóvá lett hagyva.',
+                'store_label' => 'Üzlet',
+                'device_label' => 'Eszköz',
+                'action_label' => 'Művelet',
+                'time_label' => 'Időpont',
+                'footer' => 'Most már használhatja az eszközét. Ha kérdése van, keressen minket az info@punktepass.de címen.',
+                'types' => [
+                    'add' => 'Új eszköz hozzáadva',
+                    'remove' => 'Eszköz eltávolítva',
+                    'new_slot' => 'Új eszközhely jóváhagyva',
+                    'mobile_scanner' => 'Mobil szkenner aktiválva',
+                ],
+            ],
+            'ro' => [
+                'subject' => "[PunktePass] Cererea dvs. de dispozitiv a fost aprobată",
+                'title' => 'Cerere de dispozitiv aprobată',
+                'intro' => 'Cererea dvs. de dispozitiv a fost aprobată cu succes.',
+                'store_label' => 'Magazin',
+                'device_label' => 'Dispozitiv',
+                'action_label' => 'Acțiune',
+                'time_label' => 'Data',
+                'footer' => 'Acum puteți utiliza dispozitivul. Dacă aveți întrebări, contactați-ne la info@punktepass.de.',
+                'types' => [
+                    'add' => 'Dispozitiv nou adăugat',
+                    'remove' => 'Dispozitiv eliminat',
+                    'new_slot' => 'Loc suplimentar pentru dispozitiv aprobat',
+                    'mobile_scanner' => 'Scanner mobil activat',
+                ],
+            ],
+        ];
+
+        $t = $texts[$lang];
+        $type_text = $t['types'][$request_type] ?? $t['types']['add'];
+
+        $subject = $t['subject'] . " - {$store_name}";
+
+        $message = "
+        <html>
+        <head><style>
+            body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+            .card { background: #fff; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; }
+            h2 { color: #333; margin-top: 0; }
+            .info { background: #e8f5e9; border: 1px solid #4caf50; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .footer { color: #666; font-size: 13px; margin-top: 20px; }
+        </style></head>
+        <body>
+        <div class='card'>
+            <h2>✅ {$t['title']}</h2>
+            <p>{$t['intro']}</p>
+            <div class='info'>
+                <p><strong>{$t['store_label']}:</strong> {$store_name}</p>
+                <p><strong>{$t['device_label']}:</strong> {$device_name}</p>
+                <p><strong>{$t['action_label']}:</strong> {$type_text}</p>
+                <p><strong>{$t['time_label']}:</strong> " . current_time('d.m.Y H:i') . "</p>
+            </div>
+            <p class='footer'>{$t['footer']}</p>
+        </div>
+        </body>
+        </html>";
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass <noreply@punktepass.de>'
+        ];
+
+        ppv_log("📧 [Approval Notify] Sending to: {$store->email} (lang: {$lang})");
+        $sent = wp_mail($store->email, $subject, $message, $headers);
+        ppv_log("📧 [Approval Notify] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$store->email}, store_id={$store_id}, type={$request_type}");
     }
 
     // ========================================

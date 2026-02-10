@@ -308,6 +308,8 @@ class PPV_Standalone_Admin {
             self::handle_handler_filialen();
         } elseif ($path === '/admin/device-mobile-enable') {
             self::handle_device_mobile_enable();
+        } elseif (preg_match('#/admin/rerun-approve/([a-zA-Z0-9]+)#', $path, $matches)) {
+            self::handle_rerun_approve($matches[1]);
         } elseif (preg_match('#/admin/approve/([a-zA-Z0-9]+)#', $path, $matches)) {
             self::handle_approve($matches[1]);
         } elseif (preg_match('#/admin/reject/([a-zA-Z0-9]+)#', $path, $matches)) {
@@ -1048,7 +1050,10 @@ class PPV_Standalone_Admin {
         }
 
         // Típus alapján feldolgozás
-        if ($req->request_type === 'add') {
+        // Note: Also check fingerprint_hash prefix for new_slot (ENUM may store empty for old requests)
+        $is_new_slot = ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0);
+
+        if ($req->request_type === 'add' && !$is_new_slot) {
             $wpdb->insert(
                 $wpdb->prefix . 'ppv_user_devices',
                 [
@@ -1070,7 +1075,24 @@ class PPV_Standalone_Admin {
                 ['%d', '%s']
             );
             $message = 'Készülék sikeresen eltávolítva!';
-        } elseif ($req->request_type === 'mobile_scanner') {
+        } elseif ($is_new_slot) {
+            // New device slot - create a placeholder that can be claimed
+            $wpdb->insert(
+                $wpdb->prefix . 'ppv_user_devices',
+                [
+                    'store_id' => $req->store_id,
+                    'fingerprint_hash' => $req->fingerprint_hash,
+                    'device_name' => $req->device_name . ' (reserviert)',
+                    'user_agent' => 'Slot für neues Gerät genehmigt',
+                    'ip_address' => null,
+                    'registered_at' => current_time('mysql'),
+                    'status' => 'slot'
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+            $message = 'Új készülék hely jóváhagyva! A felhasználó most már regisztrálhat új eszközt.';
+        } else {
+            // Mobile scanner activation
             $wpdb->update(
                 $wpdb->prefix . 'ppv_stores',
                 ['scanner_type' => 'mobile'],
@@ -1079,9 +1101,6 @@ class PPV_Standalone_Admin {
                 ['%d']
             );
             $message = 'Mobile Scanner aktiválva!';
-        } else {
-            self::render_message_page('error', 'Ismeretlen kérelem típus');
-            return;
         }
 
         // Jóváhagyottként jelölés
@@ -1098,8 +1117,44 @@ class PPV_Standalone_Admin {
         );
 
         ppv_log("✅ [Admin] Kérelem jóváhagyva #{$req->id}: {$req->request_type}");
+
+        // Send approval notification email to the store/handler
+        $notify_type = $is_new_slot ? 'new_slot' : $req->request_type;
+        PPV_Device_Fingerprint::send_approval_notification_email($req->store_id, $notify_type, $req->device_name);
+
         wp_redirect('/admin/device-requests?success=' . urlencode($message));
         exit;
+    }
+
+    /**
+     * Újrafuttatás: visszaállítja pending-re, majd újra jóváhagyja (javított kóddal)
+     */
+    private static function handle_rerun_approve($token) {
+        global $wpdb;
+
+        $req = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_device_requests WHERE approval_token = %s AND status = 'approved'",
+            $token
+        ));
+
+        if (!$req) {
+            self::render_message_page('error', 'Kérelem nem található');
+            return;
+        }
+
+        // Reset to pending
+        $wpdb->update(
+            $wpdb->prefix . 'ppv_device_requests',
+            ['status' => 'pending', 'processed_at' => null, 'processed_by' => null],
+            ['id' => $req->id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+
+        ppv_log("🔄 [Admin] Kérelem újrafuttatás #{$req->id}: {$req->request_type}");
+
+        // Now run the normal approve
+        self::handle_approve($token);
     }
 
     /**
@@ -1756,10 +1811,12 @@ class PPV_Standalone_Admin {
                                 <td><?php echo date('Y.m.d H:i', strtotime($req->requested_at)); ?></td>
                                 <td><?php echo esc_html($req->store_name ?: "Store #{$req->store_id}"); ?></td>
                                 <td>
-                                    <?php if ($req->request_type === 'add'): ?>
+                                    <?php if ($req->request_type === 'add' && strpos($req->fingerprint_hash, 'SLOT_PENDING_') !== 0): ?>
                                         <span class="badge badge-add">Hozzáadás</span>
                                     <?php elseif ($req->request_type === 'remove'): ?>
                                         <span class="badge badge-remove">Eltávolítás</span>
+                                    <?php elseif ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0): ?>
+                                        <span class="badge badge-add">Új készülék hely</span>
                                     <?php else: ?>
                                         <span class="badge badge-mobile">Mobile Scanner</span>
                                     <?php endif; ?>
@@ -1775,8 +1832,12 @@ class PPV_Standalone_Admin {
                                 </td>
                                 <td>
                                     <?php if ($req->status === 'pending'): ?>
-                                        <a href="/admin/approve/<?php echo $req->approval_token; ?>" class="btn btn-approve">Jóváhagyás</a>
-                                        <a href="/admin/reject/<?php echo $req->approval_token; ?>" class="btn btn-reject">Elutasítás</a>
+                                        <a href="/admin/approve/<?php echo $req->approval_token; ?>" class="btn btn-approve" style="font-size:12px;padding:5px 10px;">Jóváhagyás</a>
+                                        <a href="/admin/reject/<?php echo $req->approval_token; ?>" class="btn btn-reject" style="font-size:12px;padding:5px 10px;">Elutasítás</a>
+                                    <?php elseif ($req->status === 'approved'): ?>
+                                        <a href="/admin/rerun-approve/<?php echo $req->approval_token; ?>" class="btn btn-approve" style="font-size:12px;padding:5px 10px;" onclick="return confirm('Újrafuttatás?')">
+                                            <i class="ri-refresh-line"></i> Újrafuttatás
+                                        </a>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
@@ -1868,10 +1929,12 @@ class PPV_Standalone_Admin {
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($req->request_type === 'add'): ?>
+                                    <?php if ($req->request_type === 'add' && strpos($req->fingerprint_hash, 'SLOT_PENDING_') !== 0): ?>
                                         <span class="badge badge-add">Hozzáadás</span>
                                     <?php elseif ($req->request_type === 'remove'): ?>
                                         <span class="badge badge-remove">Eltávolítás</span>
+                                    <?php elseif ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0): ?>
+                                        <span class="badge badge-add">Új készülék hely</span>
                                     <?php else: ?>
                                         <span class="badge badge-mobile">Mobile Scanner</span>
                                     <?php endif; ?>
@@ -1908,6 +1971,7 @@ class PPV_Standalone_Admin {
                         <th>Típus</th>
                         <th>Állapot</th>
                         <th>Feldolgozta</th>
+                        <th>Műveletek</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1927,10 +1991,12 @@ class PPV_Standalone_Admin {
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if ($req->request_type === 'add'): ?>
+                                <?php if ($req->request_type === 'add' && strpos($req->fingerprint_hash, 'SLOT_PENDING_') !== 0): ?>
                                     <span class="badge badge-add">Hozzáadás</span>
                                 <?php elseif ($req->request_type === 'remove'): ?>
                                     <span class="badge badge-remove">Eltávolítás</span>
+                                <?php elseif ($req->request_type === 'new_slot' || strpos($req->fingerprint_hash, 'SLOT_PENDING_') === 0): ?>
+                                    <span class="badge badge-add">Új készülék hely</span>
                                 <?php else: ?>
                                     <span class="badge badge-mobile">Mobile Scanner</span>
                                 <?php endif; ?>
@@ -1946,6 +2012,15 @@ class PPV_Standalone_Admin {
                                 <?php endif; ?>
                             </td>
                             <td><small style="color: #888;"><?php echo esc_html($req->processed_by ?? '-'); ?></small></td>
+                            <td>
+                                <?php if ($req->status === 'approved'): ?>
+                                    <a href="/admin/rerun-approve/<?php echo $req->approval_token; ?>" class="btn btn-approve" style="font-size:12px;padding:6px 12px;" onclick="return confirm('Újrafuttatás?')">
+                                        <i class="ri-refresh-line"></i> Újrafuttatás
+                                    </a>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

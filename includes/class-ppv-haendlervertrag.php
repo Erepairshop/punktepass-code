@@ -19,14 +19,19 @@ class PPV_Haendlervertrag {
     }
 
     /**
-     * Create contracts table if not exists
+     * Create contracts table if not exists (cached via option)
      */
     public static function maybe_create_table() {
+        if (get_option('ppv_contracts_table_exists', false)) {
+            return;
+        }
+
         global $wpdb;
         $table = $wpdb->prefix . 'ppv_contracts';
 
         // Check if table exists
         if ($wpdb->get_var("SHOW TABLES LIKE '$table'") === $table) {
+            update_option('ppv_contracts_table_exists', true, true);
             return;
         }
 
@@ -62,6 +67,7 @@ class PPV_Haendlervertrag {
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
+        update_option('ppv_contracts_table_exists', true, true);
     }
 
     /**
