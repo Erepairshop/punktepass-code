@@ -598,6 +598,78 @@ Gerne stelle ich Ihnen das System kurz und unverbindlich, pers&ouml;nlich oder t
 Mit freundlichen Gr&uuml;&szlig;en
 Erik Borota';
 
+        $default_subject_de = 'Digitale Reparaturverwaltung für Ihren Shop';
+
+        // Hungarian template
+        $default_template_hu = 'Tisztelt Hölgyem/Uram!
+
+Nevem Erik Borota, a PunktePass digitális javításkezelő rendszerének üzemeltetője.
+
+A <strong>Javításkezelő</strong> rendszerünkkel teljesen digitalizálhatja javítási szolgáltatását &ndash; a megrendelés felvételétől a számlázásig.
+
+<strong>Az Ön előnyei:</strong>
+
+&#128241; <strong>Online és helyben használható</strong> &ndash; Ügyfelei online töltik ki az űrlapot, vagy Ön tabletet használ az üzletben
+
+&#128206; <strong>Számlák és ajánlatok</strong> &ndash; PDF készítés és közvetlen e-mail küldés
+
+&#128176; <strong>Digitális felvásárlás</strong> &ndash; Adásvételi szerződések mobilhoz, gépjárműhöz és egyebekhez digitális aláírással
+
+&#128202; <strong>DATEV és Export</strong> &ndash; CSV, Excel és DATEV export a könyvelője számára
+
+&#128101; <strong>Ügyfélkezelés</strong> &ndash; Minden ügyfél és javítási előzményeik egy helyen
+
+&#11088; <strong>Bónuszpontok (opcionális)</strong> &ndash; Ügyfelei pontokat gyűjtenek és törzsvendégekké válnak
+
+&#9989; <strong>Minden iparág</strong> &ndash; Mobiltelefon, számítógép, gépjármű, kerékpár, ékszer és több
+
+A beállítás csak néhány percet vesz igénybe és <strong>ingyenes</strong>.
+
+<strong>Próbálja ki most kötelezettségek nélkül:</strong>
+<a href="https://punktepass.de/formular" class="cta-button">&#128073; Ingyenes indítás</a>
+
+Szívesen bemutatom a rendszert röviden és kötelezettségek nélkül, személyesen vagy telefonon.
+
+Üdvözlettel,
+Erik Borota';
+
+        $default_subject_hu = 'Digitális javításkezelő az Ön üzlete számára';
+
+        // Romanian template
+        $default_template_ro = 'Bună ziua!
+
+Numele meu este Erik Borota, sunt operatorul sistemului digital de gestionare a reparațiilor de la PunktePass.
+
+Cu <strong>Sistemul nostru de gestionare a reparațiilor</strong> puteți digitaliza complet serviciul de reparații &ndash; de la preluarea comenzii până la facturare.
+
+<strong>Avantajele dumneavoastră:</strong>
+
+&#128241; <strong>Utilizabil online și la fața locului</strong> &ndash; Clienții completează formularul online sau utilizați o tabletă în magazin
+
+&#128206; <strong>Facturi și oferte</strong> &ndash; Creare PDF și trimitere directă prin e-mail
+
+&#128176; <strong>Achiziție digitală</strong> &ndash; Contracte de vânzare-cumpărare pentru telefoane, autovehicule și altele cu semnătură digitală
+
+&#128202; <strong>DATEV și Export</strong> &ndash; Export CSV, Excel și DATEV pentru contabilul dvs.
+
+&#128101; <strong>Gestionarea clienților</strong> &ndash; Toți clienții și istoricul reparațiilor într-un singur loc
+
+&#11088; <strong>Puncte bonus (opțional)</strong> &ndash; Clienții colectează puncte și devin clienți fideli
+
+&#9989; <strong>Orice domeniu</strong> &ndash; Telefoane mobile, calculatoare, autovehicule, biciclete, bijuterii și altele
+
+Configurarea durează doar câteva minute și este <strong>gratuită</strong>.
+
+<strong>Încercați acum fără obligații:</strong>
+<a href="https://punktepass.de/formular" class="cta-button">&#128073; Începeți gratuit</a>
+
+Vă prezint cu plăcere sistemul pe scurt și fără obligații, personal sau telefonic.
+
+Cu stimă,
+Erik Borota';
+
+        $default_subject_ro = 'Sistem digital de gestionare a reparațiilor pentru magazinul dvs.';
+
         ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -879,6 +951,21 @@ Erik Borota';
             color: #64748b;
             margin: 0;
         }
+        .lang-btn {
+            background: #f1f5f9;
+            color: #475569;
+            border: 2px solid transparent;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover {
+            background: #e2e8f0;
+        }
+        .lang-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-color: transparent;
+        }
     </style>
 </head>
 <body>
@@ -1054,6 +1141,22 @@ Erik Borota';
             </div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
+                    <!-- Language Template Selector -->
+                    <div class="form-group">
+                        <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limbă</label>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                            <button type="button" class="btn btn-sm lang-btn active" data-lang="de" onclick="loadLangTemplate('de')">
+                                DE Deutsch
+                            </button>
+                            <button type="button" class="btn btn-sm lang-btn" data-lang="hu" onclick="loadLangTemplate('hu')">
+                                HU Magyar
+                            </button>
+                            <button type="button" class="btn btn-sm lang-btn" data-lang="ro" onclick="loadLangTemplate('ro')">
+                                RO Română
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Template Select -->
                     <?php if (!empty($templates)): ?>
                     <div class="form-group template-select">
@@ -1195,12 +1298,45 @@ Erik Borota';
 </div>
 
 <script>
+var langTemplates = {
+    de: {
+        subject: <?php echo json_encode($default_subject_de); ?>,
+        message: <?php echo json_encode($default_template); ?>
+    },
+    hu: {
+        subject: <?php echo json_encode($default_subject_hu); ?>,
+        message: <?php echo json_encode($default_template_hu); ?>
+    },
+    ro: {
+        subject: <?php echo json_encode($default_subject_ro); ?>,
+        message: <?php echo json_encode($default_template_ro); ?>
+    }
+};
+
+function loadLangTemplate(lang) {
+    var tpl = langTemplates[lang];
+    if (!tpl) return;
+    document.getElementById('email-subject').value = tpl.subject;
+    document.getElementById('email-message').value = tpl.message;
+    // Update active button
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+    // Reset saved template selector
+    var sel = document.getElementById('template-select');
+    if (sel) sel.value = '';
+}
+
 function loadTemplate(id) {
     if (!id) return;
     var select = document.getElementById('template-select');
     var option = select.options[select.selectedIndex];
     document.getElementById('email-subject').value = option.getAttribute('data-subject') || '';
     document.getElementById('email-message').value = option.getAttribute('data-message') || '';
+    // Deactivate lang buttons
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
 }
 </script>
 
