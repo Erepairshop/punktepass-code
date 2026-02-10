@@ -195,6 +195,8 @@ class PPV_Repair_Email_Sender {
         $message = wp_kses_post($_POST['message'] ?? '');
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
+        $email_lang = sanitize_text_field($_POST['email_lang'] ?? 'de');
+        if (!in_array($email_lang, ['de', 'hu', 'ro'])) $email_lang = 'de';
 
         if (empty($subject) || empty($message)) {
             wp_redirect("/formular/email-sender?error=empty_fields");
@@ -218,12 +220,14 @@ class PPV_Repair_Email_Sender {
         }
 
         // Build HTML email
-        $html_message = self::build_html_email($message);
+        $html_message = self::build_html_email($message, $email_lang);
 
         // Headers
+        $from_labels = ['de' => 'Reparaturverwaltung', 'hu' => 'Javításkezelő', 'ro' => 'Gestionare Reparații'];
+        $from_label = $from_labels[$email_lang] ?? $from_labels['de'];
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
-            'From: Erik Borota - Reparaturverwaltung <info@punktepass.de>',
+            'From: Erik Borota - ' . $from_label . ' <info@punktepass.de>',
             'Reply-To: Erik Borota <info@punktepass.de>',
         ];
 
@@ -263,6 +267,20 @@ class PPV_Repair_Email_Sender {
                 $valid_emails
             ));
             $already_sent_set = array_flip($already_sent_list ?: []);
+        }
+
+        // Single email duplicate: show warning with re-send option
+        if (!$force_send && count($valid_emails) === 1 && isset($already_sent_set[$valid_emails[0]])) {
+            set_transient('ppv_repair_email_form_data', [
+                'to_email' => $to_emails_raw,
+                'to_name' => $to_name,
+                'subject' => $subject,
+                'message' => $_POST['message'] ?? '',
+                'notes' => $notes,
+                'email_lang' => $email_lang,
+            ], 300);
+            wp_redirect("/formular/email-sender?error=duplicate&email=" . urlencode($valid_emails[0]));
+            exit;
         }
 
         foreach ($valid_emails as $to_email) {
@@ -339,9 +357,22 @@ class PPV_Repair_Email_Sender {
     /**
      * Build HTML email with Repair Form branding
      */
-    private static function build_html_email($message) {
+    private static function build_html_email($message, $lang = 'de') {
         $message = nl2br($message);
         $year = date('Y');
+
+        $header_titles = [
+            'de' => ['title' => 'Reparaturverwaltung', 'subtitle' => 'Digitale L&ouml;sung f&uuml;r Ihren Reparatur-Service'],
+            'hu' => ['title' => 'Javításkezelő', 'subtitle' => 'Digitális megoldás az Ön javítási szolgáltatásához'],
+            'ro' => ['title' => 'Gestionare Reparații', 'subtitle' => 'Soluție digitală pentru serviciul dvs. de reparații'],
+        ];
+        $footer_titles = [
+            'de' => 'Reparaturverwaltung &middot; PunktePass',
+            'hu' => 'Javításkezelő &middot; PunktePass',
+            'ro' => 'Gestionare Reparații &middot; PunktePass',
+        ];
+        $ht = $header_titles[$lang] ?? $header_titles['de'];
+        $ft = $footer_titles[$lang] ?? $footer_titles['de'];
 
         return '<!DOCTYPE html>
 <html>
@@ -498,8 +529,8 @@ class PPV_Repair_Email_Sender {
         <div class="email-container">
             <!-- Header -->
             <div class="email-header">
-                <p class="email-header-title">Reparaturverwaltung</p>
-                <p class="email-header-subtitle">Digitale L&ouml;sung f&uuml;r Ihren Reparatur-Service</p>
+                <p class="email-header-title">' . $ht['title'] . '</p>
+                <p class="email-header-subtitle">' . $ht['subtitle'] . '</p>
             </div>
 
             <!-- Body -->
@@ -510,7 +541,7 @@ class PPV_Repair_Email_Sender {
                 <div class="footer-main">
                     <div class="footer-left">
                         <p class="footer-name">Erik Borota</p>
-                        <p class="footer-title">Reparaturverwaltung &middot; PunktePass</p>
+                        <p class="footer-title">' . $ft . '</p>
                     </div>
                     <div class="footer-right">
                         <div class="footer-links">
@@ -1033,7 +1064,7 @@ Erik Borota';
         <div class="alert alert-error">
             <i class="ri-error-warning-line"></i> Email konnte nicht gesendet werden
         </div>
-    <?php elseif ($error === 'duplicate'): ?>
+    <?php elseif ($error === 'duplicate' && $saved_form_data): ?>
         <div class="alert alert-warning">
             <i class="ri-alert-line"></i> An diese Adresse wurde bereits eine Email gesendet: <strong><?php echo esc_html($duplicate_email); ?></strong>
             <form method="post" enctype="multipart/form-data" style="display:inline;margin-left:12px;">
@@ -1042,9 +1073,22 @@ Erik Borota';
                 <input type="hidden" name="subject" value="<?php echo esc_attr($saved_form_data['subject'] ?? ''); ?>">
                 <input type="hidden" name="message" value="<?php echo esc_attr($saved_form_data['message'] ?? ''); ?>">
                 <input type="hidden" name="notes" value="<?php echo esc_attr($saved_form_data['notes'] ?? ''); ?>">
+                <input type="hidden" name="email_lang" value="<?php echo esc_attr($saved_form_data['email_lang'] ?? 'de'); ?>">
                 <input type="hidden" name="force_send" value="1">
                 <button type="submit" name="send_email" class="btn btn-sm btn-primary">Trotzdem senden</button>
             </form>
+        </div>
+    <?php elseif ($error === 'bulk_partial'): ?>
+        <div class="alert alert-warning">
+            <i class="ri-alert-line"></i>
+            <?php
+            $skipped = intval($_GET['skipped'] ?? 0);
+            $sent_n = intval($_GET['sent'] ?? 0);
+            $failed_n = intval($_GET['failed'] ?? 0);
+            if ($sent_n > 0) echo "&#10004; $sent_n erfolgreich gesendet &bull; ";
+            if ($failed_n > 0) echo "&#10060; $failed_n fehlgeschlagen &bull; ";
+            if ($skipped > 0) echo "&#9888; $skipped &uuml;bersprungen (bereits gesendet)";
+            ?>
         </div>
     <?php endif; ?>
 
@@ -1141,6 +1185,7 @@ Erik Borota';
             </div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="email_lang" id="email-lang" value="de">
                     <!-- Language Template Selector -->
                     <div class="form-group">
                         <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limbă</label>
@@ -1318,6 +1363,7 @@ function loadLangTemplate(lang) {
     if (!tpl) return;
     document.getElementById('email-subject').value = tpl.subject;
     document.getElementById('email-message').value = tpl.message;
+    document.getElementById('email-lang').value = lang;
     // Update active button
     document.querySelectorAll('.lang-btn').forEach(function(btn) {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
