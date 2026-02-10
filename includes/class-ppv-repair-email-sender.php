@@ -279,7 +279,7 @@ class PPV_Repair_Email_Sender {
                 'notes' => $notes,
                 'email_lang' => $email_lang,
             ], 300);
-            wp_redirect("/formular/email-sender?error=duplicate&email=" . urlencode($valid_emails[0]));
+            wp_redirect("/formular/email-sender?error=duplicate&email=" . urlencode($valid_emails[0]) . "&lang=" . $email_lang);
             exit;
         }
 
@@ -332,6 +332,9 @@ class PPV_Repair_Email_Sender {
         if ($skipped_count > 0) {
             $redirect_params[] = "skipped=$skipped_count";
         }
+        if ($email_lang !== 'de') {
+            $redirect_params[] = "lang=$email_lang";
+        }
 
         $redirect_url = "/formular/email-sender?" . ($sent_count > 0 ? "success=bulk&" : "error=bulk_partial&") . implode("&", $redirect_params);
         wp_redirect($redirect_url);
@@ -358,9 +361,9 @@ class PPV_Repair_Email_Sender {
      * Build HTML email with Repair Form branding
      */
     private static function build_html_email($message, $lang = 'de') {
-        // Convert class="cta-button" to inline styles (for saved templates that still use the old class)
-        $cta_inline = 'style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;"';
-        $message = str_replace('class="cta-button"', $cta_inline, $message);
+        // Style all <a href> links as buttons (wp_kses_post strips style/class attributes, so we re-add them here)
+        $cta_style = 'style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;"';
+        $message = preg_replace('/<a\s+href="([^"]+)"[^>]*>/', '<a href="$1" ' . $cta_style . '>', $message);
         $message = nl2br($message);
         $year = date('Y');
 
@@ -598,6 +601,10 @@ class PPV_Repair_Email_Sender {
             $prefill_to = sanitize_textarea_field($_GET['to']);
         }
         $prefill_name = isset($_GET['name']) ? sanitize_text_field($_GET['name']) : '';
+
+        // Selected language (persisted via URL param)
+        $selected_lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'de';
+        if (!in_array($selected_lang, ['de', 'hu', 'ro'])) $selected_lang = 'de';
 
         // Default template for Repair Form promotion
         $default_template = 'Guten Tag!
@@ -1188,18 +1195,18 @@ Erik Borota';
             </div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="email_lang" id="email-lang" value="de">
+                    <input type="hidden" name="email_lang" id="email-lang" value="<?php echo esc_attr($selected_lang); ?>">
                     <!-- Language Template Selector -->
                     <div class="form-group">
                         <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limbă</label>
                         <div style="display:flex;gap:8px;margin-bottom:8px;">
-                            <button type="button" class="btn btn-sm lang-btn active" data-lang="de" onclick="loadLangTemplate('de')">
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'de' ? 'active' : ''; ?>" data-lang="de" onclick="loadLangTemplate('de')">
                                 DE Deutsch
                             </button>
-                            <button type="button" class="btn btn-sm lang-btn" data-lang="hu" onclick="loadLangTemplate('hu')">
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'hu' ? 'active' : ''; ?>" data-lang="hu" onclick="loadLangTemplate('hu')">
                                 HU Magyar
                             </button>
-                            <button type="button" class="btn btn-sm lang-btn" data-lang="ro" onclick="loadLangTemplate('ro')">
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'ro' ? 'active' : ''; ?>" data-lang="ro" onclick="loadLangTemplate('ro')">
                                 RO Română
                             </button>
                         </div>
@@ -1237,14 +1244,20 @@ Erik Borota';
 
                     <div class="form-group">
                         <label>Betreff *</label>
+                        <?php
+                        $lang_subjects = ['de' => $default_subject_de, 'hu' => $default_subject_hu, 'ro' => $default_subject_ro];
+                        $lang_templates = ['de' => $default_template, 'hu' => $default_template_hu, 'ro' => $default_template_ro];
+                        $current_subject = $saved_form_data['subject'] ?? $lang_subjects[$selected_lang];
+                        $current_template = $saved_form_data['message'] ?? $lang_templates[$selected_lang];
+                        ?>
                         <input type="text" name="subject" id="email-subject" class="form-control" required
-                               value="<?php echo esc_attr($saved_form_data['subject'] ?? 'Digitale Reparaturverwaltung für Ihren Shop'); ?>"
+                               value="<?php echo esc_attr($current_subject); ?>"
                                placeholder="Betreff eingeben...">
                     </div>
 
                     <div class="form-group">
                         <label>Nachricht * (HTML erlaubt)</label>
-                        <textarea name="message" id="email-message" class="form-control" required placeholder="Nachricht eingeben..."><?php echo esc_textarea($saved_form_data['message'] ?? $default_template); ?></textarea>
+                        <textarea name="message" id="email-message" class="form-control" required placeholder="Nachricht eingeben..."><?php echo esc_textarea($current_template); ?></textarea>
                     </div>
 
                     <div class="form-group">
