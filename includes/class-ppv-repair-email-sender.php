@@ -192,7 +192,22 @@ class PPV_Repair_Email_Sender {
         $to_emails_raw = $_POST['to_email'] ?? '';
         $to_name = sanitize_text_field($_POST['to_name'] ?? '');
         $subject = sanitize_text_field($_POST['subject'] ?? '');
-        $message = wp_kses_post($_POST['message'] ?? '');
+        // Custom kses: allow <a> tags with href/target/style (wp_kses_post may strip them)
+        $allowed_html = wp_kses_allowed_html('post');
+        $allowed_html['a'] = array(
+            'href'   => true,
+            'target' => true,
+            'rel'    => true,
+            'title'  => true,
+            'style'  => true,
+            'class'  => true,
+        );
+        $raw_message = $_POST['message'] ?? '';
+        $message = wp_kses($raw_message, $allowed_html);
+        error_log('[PPV Email Debug v3] raw has <a>: ' . (strpos($raw_message, '<a ') !== false ? 'YES' : 'NO'));
+        error_log('[PPV Email Debug v3] raw has {{CTA: ' . (strpos($raw_message, '{{CTA:') !== false ? 'YES' : 'NO'));
+        error_log('[PPV Email Debug v3] after kses has <a>: ' . (strpos($message, '<a ') !== false ? 'YES' : 'NO'));
+        error_log('[PPV Email Debug v3] after kses has {{CTA: ' . (strpos($message, '{{CTA:') !== false ? 'YES' : 'NO'));
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
         $email_lang = sanitize_text_field($_POST['email_lang'] ?? 'de');
@@ -361,6 +376,10 @@ class PPV_Repair_Email_Sender {
      * Build HTML email with Repair Form branding
      */
     private static function build_html_email($message, $lang = 'de') {
+        error_log('[PPV Email Debug v3] build_html_email called, message length: ' . strlen($message));
+        error_log('[PPV Email Debug v3] message has {{CTA: ' . (strpos($message, '{{CTA:') !== false ? 'YES' : 'NO'));
+        error_log('[PPV Email Debug v3] message has <a: ' . (strpos($message, '<a ') !== false ? 'YES' : 'NO'));
+
         // 1) Convert {{CTA:url|text}} placeholders to table-based buttons (survives wp_kses_post)
         $message = preg_replace_callback(
             '/\{\{CTA:([^|]+)\|([^}]+)\}\}/',
@@ -411,6 +430,7 @@ class PPV_Repair_Email_Sender {
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
 </head>
+<!-- PPV-EMAIL-V3 -->
 <body style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1f2937;margin:0;padding:0;background-color:#f3f4f6;">
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f3f4f6;padding:30px 20px;" role="presentation">
     <tr><td align="center">
