@@ -35,11 +35,8 @@ class PPV_PayPal_Subscription {
         if ($is_domestic) {
             return defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : '';
         }
-        // Non-DE: use net plan (without VAT) - fallback to gross plan if net not configured
-        if (defined('PAYPAL_PLAN_ID_NET')) {
-            return PAYPAL_PLAN_ID_NET;
-        }
-        return defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : '';
+        // Non-DE: use net plan (without VAT)
+        return defined('PAYPAL_PLAN_ID_NET') ? PAYPAL_PLAN_ID_NET : 'P-7KM18573T8357751DNGFSNLY';
     }
 
     public static function hooks() {

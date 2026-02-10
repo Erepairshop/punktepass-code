@@ -451,7 +451,7 @@ $price_gross = round($price_net + $vat, 2);
             if ($is_domestic) {
                 echo defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : 'P-2AM08048AE701010RNGBQB6I';
             } else {
-                echo defined('PAYPAL_PLAN_ID_NET') ? PAYPAL_PLAN_ID_NET : (defined('PAYPAL_PLAN_ID') ? PAYPAL_PLAN_ID : 'P-2AM08048AE701010RNGBQB6I');
+                echo defined('PAYPAL_PLAN_ID_NET') ? PAYPAL_PLAN_ID_NET : 'P-7KM18573T8357751DNGFSNLY';
             }
         ?>';
 
