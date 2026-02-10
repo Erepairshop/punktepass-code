@@ -862,6 +862,16 @@ a:hover{color:#5a67d8}
                     <input type="text" name="city" value="' . esc_attr($store->city) . '">
                 </div>
                 <div class="field">
+                    <label>' . esc_html(PPV_Lang::t('repair_admin_country')) . '</label>
+                    <select name="country">
+                        <option value="DE"' . (($store->country ?? '') === 'DE' ? ' selected' : '') . '>Deutschland</option>
+                        <option value="AT"' . (($store->country ?? '') === 'AT' ? ' selected' : '') . '>Österreich</option>
+                        <option value="CH"' . (($store->country ?? '') === 'CH' ? ' selected' : '') . '>Schweiz</option>
+                        <option value="HU"' . (($store->country ?? '') === 'HU' ? ' selected' : '') . '>Magyarország</option>
+                        <option value="RO"' . (($store->country ?? '') === 'RO' ? ' selected' : '') . '>România</option>
+                    </select>
+                </div>
+                <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_phone')) . '</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
                 </div>
