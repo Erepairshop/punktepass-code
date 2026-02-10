@@ -361,8 +361,20 @@ class PPV_Repair_Email_Sender {
      * Build HTML email with Repair Form branding
      */
     private static function build_html_email($message, $lang = 'de') {
-        // Convert <a href> links to table-based "bulletproof buttons" for email client compatibility
-        // Gmail strips <head> styles and linear-gradient, so we use <td bgcolor> + inline styles
+        // 1) Convert {{CTA:url|text}} placeholders to table-based buttons (survives wp_kses_post)
+        $message = preg_replace_callback(
+            '/\{\{CTA:([^|]+)\|([^}]+)\}\}/',
+            function($matches) {
+                $url = trim($matches[1]);
+                $text = trim($matches[2]);
+                return '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:10px 0;"><tr>' .
+                    '<td align="center" bgcolor="#667eea" style="background-color:#667eea;border-radius:10px;">' .
+                    '<a href="' . esc_url($url) . '" target="_blank" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 28px;font-weight:600;font-size:15px;">' .
+                    $text . '</a></td></tr></table>';
+            },
+            $message
+        );
+        // 2) Also convert any surviving <a href> tags to buttons (fallback)
         $message = preg_replace_callback(
             '/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/s',
             function($matches) {
@@ -511,7 +523,7 @@ Mit unserer <strong>Reparaturverwaltung</strong> k&ouml;nnen Sie Ihren Reparatur
 Die Einrichtung dauert nur wenige Minuten und ist <strong>kostenlos</strong>.
 
 <strong>Probieren Sie es jetzt unverbindlich aus:</strong>
-<a href="https://punktepass.de/formular">&#128073; Kostenlos starten</a>
+{{CTA:https://punktepass.de/formular|&#128073; Kostenlos starten}}
 
 Gerne stelle ich Ihnen das System kurz und unverbindlich, pers&ouml;nlich oder telefonisch, vor.
 
@@ -546,7 +558,7 @@ A <strong>Javításkezelő</strong> rendszerünkkel teljesen digitalizálhatja j
 A beállítás csak néhány percet vesz igénybe és <strong>ingyenes</strong>.
 
 <strong>Próbálja ki most kötelezettségek nélkül:</strong>
-<a href="https://punktepass.de/formular">&#128073; Ingyenes ind&iacute;t&aacute;s</a>
+{{CTA:https://punktepass.de/formular|&#128073; Ingyenes ind&iacute;t&aacute;s}}
 
 Szívesen bemutatom a rendszert röviden és kötelezettségek nélkül, személyesen vagy telefonon.
 
@@ -581,7 +593,7 @@ Cu <strong>Sistemul nostru de gestionare a reparațiilor</strong> puteți digita
 Configurarea durează doar câteva minute și este <strong>gratuită</strong>.
 
 <strong>Încercați acum fără obligații:</strong>
-<a href="https://punktepass.de/formular">&#128073; &Icirc;ncepeți gratuit</a>
+{{CTA:https://punktepass.de/formular|&#128073; &Icirc;ncepeți gratuit}}
 
 Vă prezint cu plăcere sistemul pe scurt și fără obligații, personal sau telefonic.
 
