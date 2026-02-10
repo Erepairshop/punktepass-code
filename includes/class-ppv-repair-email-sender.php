@@ -202,12 +202,7 @@ class PPV_Repair_Email_Sender {
             'style'  => true,
             'class'  => true,
         );
-        $raw_message = $_POST['message'] ?? '';
-        $message = wp_kses($raw_message, $allowed_html);
-        error_log('[PPV Email Debug v3] raw has <a>: ' . (strpos($raw_message, '<a ') !== false ? 'YES' : 'NO'));
-        error_log('[PPV Email Debug v3] raw has {{CTA: ' . (strpos($raw_message, '{{CTA:') !== false ? 'YES' : 'NO'));
-        error_log('[PPV Email Debug v3] after kses has <a>: ' . (strpos($message, '<a ') !== false ? 'YES' : 'NO'));
-        error_log('[PPV Email Debug v3] after kses has {{CTA: ' . (strpos($message, '{{CTA:') !== false ? 'YES' : 'NO'));
+        $message = wp_kses($_POST['message'] ?? '', $allowed_html);
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
         $email_lang = sanitize_text_field($_POST['email_lang'] ?? 'de');
@@ -376,10 +371,6 @@ class PPV_Repair_Email_Sender {
      * Build HTML email with Repair Form branding
      */
     private static function build_html_email($message, $lang = 'de') {
-        error_log('[PPV Email Debug v3] build_html_email called, message length: ' . strlen($message));
-        error_log('[PPV Email Debug v3] message has {{CTA: ' . (strpos($message, '{{CTA:') !== false ? 'YES' : 'NO'));
-        error_log('[PPV Email Debug v3] message has <a: ' . (strpos($message, '<a ') !== false ? 'YES' : 'NO'));
-
         // 1) Convert {{CTA:url|text}} placeholders to table-based buttons (survives wp_kses_post)
         $message = preg_replace_callback(
             '/\{\{CTA:([^|]+)\|([^}]+)\}\}/',
@@ -430,7 +421,6 @@ class PPV_Repair_Email_Sender {
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
 </head>
-<!-- PPV-EMAIL-V3 -->
 <body style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1f2937;margin:0;padding:0;background-color:#f3f4f6;">
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f3f4f6;padding:30px 20px;" role="presentation">
     <tr><td align="center">
@@ -545,8 +535,6 @@ Die Einrichtung dauert nur wenige Minuten und ist <strong>kostenlos</strong>.
 <strong>Probieren Sie es jetzt unverbindlich aus:</strong>
 {{CTA:https://punktepass.de/formular|&#128073; Kostenlos starten}}
 
-Gerne stelle ich Ihnen das System kurz und unverbindlich, pers&ouml;nlich oder telefonisch, vor.
-
 Mit freundlichen Gr&uuml;&szlig;en
 Erik Borota';
 
@@ -580,8 +568,6 @@ A beállítás csak néhány percet vesz igénybe és <strong>ingyenes</strong>.
 <strong>Próbálja ki most kötelezettségek nélkül:</strong>
 {{CTA:https://punktepass.de/formular|&#128073; Ingyenes ind&iacute;t&aacute;s}}
 
-Szívesen bemutatom a rendszert röviden és kötelezettségek nélkül, személyesen vagy telefonon.
-
 Üdvözlettel,
 Erik Borota';
 
@@ -614,8 +600,6 @@ Configurarea durează doar câteva minute și este <strong>gratuită</strong>.
 
 <strong>Încercați acum fără obligații:</strong>
 {{CTA:https://punktepass.de/formular|&#128073; &Icirc;ncepeți gratuit}}
-
-Vă prezint cu plăcere sistemul pe scurt și fără obligații, personal sau telefonic.
 
 Cu stimă,
 Erik Borota';
