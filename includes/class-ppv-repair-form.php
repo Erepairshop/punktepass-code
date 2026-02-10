@@ -4,6 +4,8 @@
  * Renders a complete branded repair form for each store
  * URL: /formular/{shopslug}
  *
+ * Multi-language: DE, HU, RO via PPV_Lang
+ *
  * Author: Erik Borota / PunktePass
  */
 
@@ -16,6 +18,10 @@ class PPV_Repair_Form {
      * Called from PPV_Repair_Core::handle_repair_page()
      * ============================================================ */
     public static function render_standalone_page($store, $limit_reached = false) {
+        // Load repair-specific translations
+        PPV_Lang::load_extra('ppv-repair-lang');
+        $lang = PPV_Lang::current();
+
         $store_name = esc_html($store->repair_company_name ?: $store->name);
         $color      = esc_attr($store->repair_color ?: '#667eea');
         $logo       = esc_url($store->logo ?: PPV_PLUGIN_URL . 'assets/img/punktepass-logo.png');
@@ -31,7 +37,16 @@ class PPV_Repair_Form {
         $reward_name   = esc_html($store->repair_reward_name ?? '10 Euro Rabatt');
         $required_pts  = intval($store->repair_required_points ?? 4);
         $field_config  = json_decode($store->repair_field_config ?? '', true) ?: [];
-        $fc_defaults   = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster']];
+        $fc_defaults   = [
+            'device_brand'    => ['enabled' => true, 'label' => PPV_Lang::t('repair_brand_label')],
+            'device_model'    => ['enabled' => true, 'label' => PPV_Lang::t('repair_model_label')],
+            'device_imei'     => ['enabled' => true, 'label' => PPV_Lang::t('repair_imei_label')],
+            'device_pattern'  => ['enabled' => true, 'label' => PPV_Lang::t('repair_pin_label')],
+            'accessories'     => ['enabled' => true, 'label' => PPV_Lang::t('repair_accessories_label')],
+            'customer_phone'  => ['enabled' => true, 'label' => PPV_Lang::t('repair_phone_label')],
+            'customer_address'=> ['enabled' => true, 'label' => PPV_Lang::t('repair_address_label')],
+            'muster_image'    => ['enabled' => true, 'label' => PPV_Lang::t('repair_pattern_label')]
+        ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
         // Custom form options (branch-specific)
@@ -55,6 +70,23 @@ class PPV_Repair_Form {
         $pf_brand = esc_attr($_GET['brand'] ?? '');
         $pf_model = esc_attr($_GET['model'] ?? '');
 
+        // Country code for Nominatim address search
+        $nominatim_cc = 'de';
+        if ($lang === 'hu') $nominatim_cc = 'hu';
+        elseif ($lang === 'ro') $nominatim_cc = 'ro';
+
+        // JS translation strings
+        $js_strings = json_encode([
+            'welcome_back'     => PPV_Lang::t('repair_welcome_back'),
+            'error_generic'    => PPV_Lang::t('repair_error_generic'),
+            'connection_error' => PPV_Lang::t('repair_connection_error'),
+            'offline_saved'    => PPV_Lang::t('repair_offline_saved'),
+            'offline_mode'     => PPV_Lang::t('repair_offline_mode'),
+            'points_total'     => PPV_Lang::t('repair_points_total'),
+            'points_remaining' => PPV_Lang::t('repair_points_remaining'),
+            'points_redeemable'=> PPV_Lang::t('repair_points_redeemable'),
+        ], JSON_UNESCAPED_UNICODE);
+
         ob_start();
         // Prevent WebView caching (Fully Kiosk)
         header('Cache-Control: no-cache, no-store, must-revalidate');
@@ -62,7 +94,7 @@ class PPV_Repair_Form {
         header('Expires: 0');
         ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo esc_attr($lang); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -82,17 +114,28 @@ class PPV_Repair_Form {
     .repair-select:focus{border-color:var(--repair-accent);background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
     .repair-problem-tag{transition:all .2s cubic-bezier(.4,0,.2,1)}
     .repair-problem-tag.active{background:var(--repair-accent)!important;border-color:var(--repair-accent)!important;color:#fff!important;box-shadow:0 4px 12px rgba(102,126,234,0.25)}
+    /* Language switcher */
+    .repair-lang-switch{position:absolute;top:16px;right:16px;z-index:10;display:flex;gap:4px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:4px}
+    .repair-lang-btn{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
+    .repair-lang-btn:hover{color:#fff;background:rgba(255,255,255,0.15)}
+    .repair-lang-btn.active{color:#1f2937;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
     </style>
 </head>
 <body class="ppv-repair-body">
 
 <div class="repair-page">
     <!-- Hero Header -->
-    <div class="repair-header">
+    <div class="repair-header" style="position:relative">
         <div class="repair-hero-bg">
             <div class="repair-hero-blob repair-hero-blob--1"></div>
             <div class="repair-hero-blob repair-hero-blob--2"></div>
             <div class="repair-hero-blob repair-hero-blob--3"></div>
+        </div>
+        <!-- Language Switcher -->
+        <div class="repair-lang-switch">
+            <button class="repair-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
+            <button class="repair-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
+            <button class="repair-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
         </div>
         <div class="repair-header-inner">
             <?php if ($store->logo): ?>
@@ -104,7 +147,7 @@ class PPV_Repair_Form {
             <?php if ($form_subtitle): ?>
                 <p class="repair-hero-subtitle"><?php echo $form_subtitle; ?></p>
             <?php else: ?>
-                <p class="repair-hero-subtitle">Digitaler <?php echo $form_title; ?> - schnell &amp; unkompliziert</p>
+                <p class="repair-hero-subtitle"><?php echo esc_html(sprintf(PPV_Lang::t('repair_default_subtitle'), $form_title)); ?></p>
             <?php endif; ?>
             <?php if ($address): ?>
                 <p class="repair-shop-address"><i class="ri-map-pin-line"></i> <?php echo $address; ?></p>
@@ -119,8 +162,8 @@ class PPV_Repair_Form {
     <!-- Limit reached message -->
     <div class="repair-limit-reached">
         <div class="repair-limit-icon">&#9888;</div>
-        <h2>Formularlimit erreicht</h2>
-        <p>Dieses Formular ist momentan nicht verf&uuml;gbar. Bitte kontaktieren Sie den Anbieter direkt.</p>
+        <h2><?php echo esc_html(PPV_Lang::t('repair_limit_title')); ?></h2>
+        <p><?php echo esc_html(PPV_Lang::t('repair_limit_text')); ?></p>
         <?php if ($store->phone): ?>
             <a href="tel:<?php echo esc_attr($store->phone); ?>" class="repair-btn-phone">
                 <i class="ri-phone-line"></i> <?php echo esc_html($store->phone); ?>
@@ -140,32 +183,32 @@ class PPV_Repair_Form {
         <div class="repair-section" id="step-customer">
             <div class="repair-section-title">
                 <span class="repair-step-num">1</span>
-                <h2>Ihre Daten</h2>
+                <h2><?php echo esc_html(PPV_Lang::t('repair_step1_title')); ?></h2>
             </div>
 
             <div class="repair-field">
-                <label for="rf-name">Name *</label>
-                <input type="text" id="rf-name" name="customer_name" required placeholder="Vor- und Nachname" value="<?php echo $pf_name; ?>" autocomplete="name">
+                <label for="rf-name"><?php echo esc_html(PPV_Lang::t('repair_name_label')); ?></label>
+                <input type="text" id="rf-name" name="customer_name" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_name_placeholder')); ?>" value="<?php echo $pf_name; ?>" autocomplete="name">
             </div>
 
             <div class="repair-field" style="position:relative">
-                <label for="rf-email">E-Mail</label>
+                <label for="rf-email"><?php echo esc_html(PPV_Lang::t('repair_email_label')); ?></label>
                 <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email">
                 <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
-                <p class="repair-field-hint"><i class="ri-gift-line"></i> Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung</p>
+                <p class="repair-field-hint"><i class="ri-gift-line"></i> <?php echo esc_html(PPV_Lang::t('repair_email_hint')); ?></p>
             </div>
 
             <?php if (!empty($field_config['customer_phone']['enabled'])): ?>
             <div class="repair-field">
-                <label for="rf-phone"><?php echo esc_html($field_config['customer_phone']['label'] ?? 'Telefon'); ?></label>
-                <input type="tel" id="rf-phone" name="customer_phone" placeholder="+49 123 456789" value="<?php echo $pf_phone; ?>" autocomplete="tel">
+                <label for="rf-phone"><?php echo esc_html($field_config['customer_phone']['label'] ?? PPV_Lang::t('repair_phone_label')); ?></label>
+                <input type="tel" id="rf-phone" name="customer_phone" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_phone_placeholder')); ?>" value="<?php echo $pf_phone; ?>" autocomplete="tel">
             </div>
             <?php endif; ?>
 
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
             <div class="repair-field" style="position:relative">
-                <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? 'Adresse'); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="Straße, PLZ, Ort" autocomplete="street-address">
+                <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? PPV_Lang::t('repair_address_label')); ?></label>
+                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" autocomplete="street-address">
                 <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
             </div>
             <?php endif; ?>
@@ -179,33 +222,33 @@ class PPV_Repair_Form {
         <div class="repair-section" id="step-device">
             <div class="repair-section-title">
                 <span class="repair-step-num">2</span>
-                <h2><?php echo ($service_type !== 'Allgemein') ? esc_html($service_type) : 'Weitere Angaben'; ?></h2>
+                <h2><?php echo ($service_type !== 'Allgemein') ? esc_html($service_type) : esc_html(PPV_Lang::t('repair_step2_title')); ?></h2>
             </div>
 
             <?php if (!empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled'])): ?>
             <div class="repair-row">
                 <?php if (!empty($field_config['device_brand']['enabled'])): ?>
                 <div class="repair-field">
-                    <label for="rf-brand"><?php echo esc_html($field_config['device_brand']['label'] ?? 'Marke'); ?></label>
+                    <label for="rf-brand"><?php echo esc_html($field_config['device_brand']['label'] ?? PPV_Lang::t('repair_brand_label')); ?></label>
                     <?php if (!empty($custom_brands)): ?>
                     <select id="rf-brand-select" class="repair-select" onchange="if(this.value==='_other'){document.getElementById('rf-brand-other').style.display='block';document.getElementById('rf-brand').value=''}else{document.getElementById('rf-brand-other').style.display='none';document.getElementById('rf-brand').value=this.value}">
-                        <option value="">Bitte w&auml;hlen...</option>
+                        <option value=""><?php echo esc_html(PPV_Lang::t('repair_select_placeholder')); ?></option>
                         <?php foreach ($custom_brands as $brand): ?>
                         <option value="<?php echo esc_attr($brand); ?>" <?php echo ($pf_brand === $brand) ? 'selected' : ''; ?>><?php echo esc_html($brand); ?></option>
                         <?php endforeach; ?>
-                        <option value="_other">Andere...</option>
+                        <option value="_other"><?php echo esc_html(PPV_Lang::t('repair_other_option')); ?></option>
                     </select>
                     <input type="hidden" id="rf-brand" name="device_brand" value="<?php echo $pf_brand; ?>">
-                    <input type="text" id="rf-brand-other" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? 'Marke'); ?> eingeben" style="display:none;margin-top:8px" oninput="document.getElementById('rf-brand').value=this.value">
+                    <input type="text" id="rf-brand-other" placeholder="<?php echo esc_attr(($field_config['device_brand']['label'] ?? PPV_Lang::t('repair_brand_label')) . ' ' . PPV_Lang::t('repair_enter_suffix')); ?>" style="display:none;margin-top:8px" oninput="document.getElementById('rf-brand').value=this.value">
                     <?php else: ?>
-                    <input type="text" id="rf-brand" name="device_brand" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? 'Marke'); ?>" value="<?php echo $pf_brand; ?>">
+                    <input type="text" id="rf-brand" name="device_brand" placeholder="<?php echo esc_attr($field_config['device_brand']['label'] ?? PPV_Lang::t('repair_brand_label')); ?>" value="<?php echo $pf_brand; ?>">
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($field_config['device_model']['enabled'])): ?>
                 <div class="repair-field">
-                    <label for="rf-model"><?php echo esc_html($field_config['device_model']['label'] ?? 'Modell'); ?></label>
-                    <input type="text" id="rf-model" name="device_model" placeholder="<?php echo esc_attr($field_config['device_model']['label'] ?? 'Modell'); ?>" value="<?php echo $pf_model; ?>">
+                    <label for="rf-model"><?php echo esc_html($field_config['device_model']['label'] ?? PPV_Lang::t('repair_model_label')); ?></label>
+                    <input type="text" id="rf-model" name="device_model" placeholder="<?php echo esc_attr($field_config['device_model']['label'] ?? PPV_Lang::t('repair_model_label')); ?>" value="<?php echo $pf_model; ?>">
                 </div>
                 <?php endif; ?>
             </div>
@@ -213,8 +256,8 @@ class PPV_Repair_Form {
 
             <?php if (!empty($field_config['device_imei']['enabled'])): ?>
             <div class="repair-field">
-                <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?></label>
-                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? 'Seriennummer / IMEI'); ?>">
+                <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?></label>
+                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?>">
             </div>
             <?php endif; ?>
 
@@ -224,16 +267,16 @@ class PPV_Repair_Form {
             if ($show_pin || $show_muster):
             ?>
             <div class="repair-field repair-unlock-field">
-                <label><?php echo ($show_pin && $show_muster) ? 'Entsperrmethode' : ($show_pin ? esc_html($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN') : esc_html($field_config['muster_image']['label'] ?? 'Entsperrmuster')); ?></label>
+                <label><?php echo ($show_pin && $show_muster) ? esc_html(PPV_Lang::t('repair_unlock_method')) : ($show_pin ? esc_html($field_config['device_pattern']['label'] ?? PPV_Lang::t('repair_pin_label')) : esc_html($field_config['muster_image']['label'] ?? PPV_Lang::t('repair_pattern_label'))); ?></label>
                 <?php if ($show_pin && $show_muster): ?>
                 <div class="repair-unlock-toggle">
-                    <button type="button" class="repair-unlock-btn active" data-mode="pin"><i class="ri-lock-password-line"></i> PIN / Code</button>
-                    <button type="button" class="repair-unlock-btn" data-mode="muster"><i class="ri-grid-line"></i> Muster</button>
+                    <button type="button" class="repair-unlock-btn active" data-mode="pin"><i class="ri-lock-password-line"></i> <?php echo esc_html(PPV_Lang::t('repair_pin_code')); ?></button>
+                    <button type="button" class="repair-unlock-btn" data-mode="muster"><i class="ri-grid-line"></i> <?php echo esc_html(PPV_Lang::t('repair_pattern')); ?></button>
                 </div>
                 <?php endif; ?>
                 <?php if ($show_pin): ?>
-                <div class="repair-unlock-content" id="repair-unlock-pin" <?php echo (!$show_muster) ? '' : ''; ?>>
-                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? 'Entsperrcode / PIN'); ?>">
+                <div class="repair-unlock-content" id="repair-unlock-pin">
+                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? PPV_Lang::t('repair_pin_label')); ?>">
                 </div>
                 <?php endif; ?>
                 <?php if ($show_muster): ?>
@@ -241,7 +284,7 @@ class PPV_Repair_Form {
                     <div class="repair-muster-canvas-wrap">
                         <canvas id="rf-muster-canvas" width="200" height="200"></canvas>
                         <input type="hidden" name="muster_image" id="rf-muster-data">
-                        <button type="button" class="repair-muster-reset" id="rf-muster-reset"><i class="ri-refresh-line"></i> Zur&uuml;cksetzen</button>
+                        <button type="button" class="repair-muster-reset" id="rf-muster-reset"><i class="ri-refresh-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reset')); ?></button>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -250,16 +293,16 @@ class PPV_Repair_Form {
         </div>
         <?php endif; ?>
 
-        <!-- Step <?php echo $has_device_fields ? '3' : '2'; ?>: Problem -->
+        <!-- Step: Problem -->
         <div class="repair-section" id="step-problem">
             <div class="repair-section-title">
                 <span class="repair-step-num"><?php echo $has_device_fields ? '3' : '2'; ?></span>
-                <h2>Beschreibung</h2>
+                <h2><?php echo esc_html(PPV_Lang::t('repair_step3_title')); ?></h2>
             </div>
 
             <?php if (!empty($custom_problems)): ?>
             <div class="repair-field">
-                <label>Schnellauswahl</label>
+                <label><?php echo esc_html(PPV_Lang::t('repair_quick_select')); ?></label>
                 <div class="repair-problem-tags" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
                     <?php foreach ($custom_problems as $problem): ?>
                     <button type="button" class="repair-problem-tag" onclick="toggleProblemTag(this, '<?php echo esc_js($problem); ?>')" style="padding:8px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:13px;cursor:pointer;transition:all .2s"><?php echo esc_html($problem); ?></button>
@@ -269,24 +312,24 @@ class PPV_Repair_Form {
             <?php endif; ?>
 
             <div class="repair-field">
-                <label for="rf-problem">Was soll repariert werden? *</label>
-                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo !empty($custom_problems) ? 'Weitere Details oder andere Probleme...' : 'Beschreiben Sie das Problem möglichst genau...'; ?>"></textarea>
+                <label for="rf-problem"><?php echo esc_html(PPV_Lang::t('repair_problem_label')); ?></label>
+                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo esc_attr(!empty($custom_problems) ? PPV_Lang::t('repair_problem_detail_placeholder') : PPV_Lang::t('repair_problem_placeholder')); ?>"></textarea>
             </div>
 
 
             <?php if (!empty($field_config['accessories']['enabled'])): ?>
             <div class="repair-field">
-                <label><?php echo esc_html($field_config['accessories']['label'] ?? 'Mitgegebenes Zubehör'); ?></label>
+                <label><?php echo esc_html($field_config['accessories']['label'] ?? PPV_Lang::t('repair_accessories_label')); ?></label>
                 <div class="repair-accessories">
                     <?php if (!empty($custom_accessories)): ?>
                         <?php foreach ($custom_accessories as $acc): ?>
                         <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="<?php echo esc_attr(sanitize_title($acc)); ?>"> <?php echo esc_html($acc); ?></label>
                         <?php endforeach; ?>
                     <?php else: ?>
-                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="charger"> Ladekabel</label>
-                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="case"> H&uuml;lle / Case</label>
-                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="keys"> Schl&uuml;ssel</label>
-                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="other"> Sonstiges</label>
+                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="charger"> <?php echo esc_html(PPV_Lang::t('repair_acc_charger')); ?></label>
+                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="case"> <?php echo esc_html(PPV_Lang::t('repair_acc_case')); ?></label>
+                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="keys"> <?php echo esc_html(PPV_Lang::t('repair_acc_keys')); ?></label>
+                    <label class="repair-checkbox"><input type="checkbox" name="acc[]" value="other"> <?php echo esc_html(PPV_Lang::t('repair_acc_other')); ?></label>
                     <?php endif; ?>
                 </div>
             </div>
@@ -297,17 +340,17 @@ class PPV_Repair_Form {
         <div class="repair-section" id="step-signature">
             <div class="repair-section-title">
                 <span class="repair-step-num"><?php echo $has_device_fields ? '4' : '3'; ?></span>
-                <h2>Unterschrift</h2>
+                <h2><?php echo esc_html(PPV_Lang::t('repair_step4_title')); ?></h2>
             </div>
 
             <div class="repair-field">
-                <label><i class="ri-edit-line"></i> Unterschrift des Kunden</label>
+                <label><i class="ri-edit-line"></i> <?php echo esc_html(PPV_Lang::t('repair_signature_label')); ?></label>
                 <div class="repair-signature-container">
                     <canvas id="rf-signature-canvas" width="400" height="150"></canvas>
-                    <p class="repair-signature-hint">Bitte unterschreiben Sie mit dem Finger oder der Maus</p>
+                    <p class="repair-signature-hint"><?php echo esc_html(PPV_Lang::t('repair_signature_hint')); ?></p>
                     <div class="repair-signature-actions">
                         <button type="button" class="repair-signature-reset" id="rf-signature-reset">
-                            <i class="ri-refresh-line"></i> L&ouml;schen
+                            <i class="ri-refresh-line"></i> <?php echo esc_html(PPV_Lang::t('repair_signature_clear')); ?>
                         </button>
                     </div>
                 </div>
@@ -319,14 +362,14 @@ class PPV_Repair_Form {
         <div class="repair-terms">
             <label class="repair-checkbox">
                 <input type="checkbox" id="rf-terms" required>
-                Ich akzeptiere die <a href="/formular/<?php echo $slug; ?>/datenschutz" target="_blank">Datenschutzerkl&auml;rung</a> und <a href="<?php echo $terms_url ? esc_url($terms_url) : '/formular/' . $slug . '/agb'; ?>" target="_blank">AGB</a>
+                <?php echo esc_html(PPV_Lang::t('repair_accept_terms')); ?> <a href="/formular/<?php echo $slug; ?>/datenschutz" target="_blank"><?php echo esc_html(PPV_Lang::t('repair_privacy_policy')); ?></a> <?php echo esc_html(PPV_Lang::t('repair_and')); ?> <a href="<?php echo $terms_url ? esc_url($terms_url) : '/formular/' . $slug . '/agb'; ?>" target="_blank"><?php echo esc_html(PPV_Lang::t('repair_agb')); ?></a>
             </label>
         </div>
 
         <!-- Submit -->
         <button type="submit" id="rf-submit" class="repair-submit">
-            <span class="repair-submit-text"><i class="ri-send-plane-fill"></i> <?php echo $form_title; ?> einreichen</span>
-            <span class="repair-submit-loading" style="display:none"><i class="ri-loader-4-line ri-spin"></i> Wird gesendet...</span>
+            <span class="repair-submit-text"><i class="ri-send-plane-fill"></i> <?php echo $form_title; ?> <?php echo esc_html(PPV_Lang::t('repair_submit_suffix')); ?></span>
+            <span class="repair-submit-loading" style="display:none"><i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html(PPV_Lang::t('repair_submitting')); ?></span>
         </button>
 
         <div id="rf-error" class="repair-error" style="display:none"></div>
@@ -338,21 +381,21 @@ class PPV_Repair_Form {
         <div class="repair-success-animation">
             <div class="repair-success-check">&#10003;</div>
         </div>
-        <h2>Vielen Dank!</h2>
+        <h2><?php echo esc_html(PPV_Lang::t('repair_success_title')); ?></h2>
         <?php if ($success_message): ?>
         <p><?php echo esc_html($success_message); ?></p>
         <?php else: ?>
-        <p>Ihr <?php echo $form_title; ?> wurde erfolgreich eingereicht.</p>
+        <p><?php echo esc_html(sprintf(PPV_Lang::t('repair_success_text'), $form_title)); ?></p>
         <?php endif; ?>
 
         <!-- Tracking Card -->
         <div id="repair-tracking-card" class="repair-tracking-card" style="display:none">
             <div class="repair-tracking-qr" id="repair-qr-container"></div>
             <div class="repair-tracking-info">
-                <div class="repair-tracking-label">Ihre Auftragsnummer</div>
+                <div class="repair-tracking-label"><?php echo esc_html(PPV_Lang::t('repair_order_number')); ?></div>
                 <div class="repair-tracking-id" id="repair-tracking-id">#---</div>
                 <a href="#" id="repair-tracking-link" class="repair-tracking-link" target="_blank">
-                    <i class="ri-external-link-line"></i> Status verfolgen
+                    <i class="ri-external-link-line"></i> <?php echo esc_html(PPV_Lang::t('repair_track_status')); ?>
                 </a>
             </div>
         </div>
@@ -363,35 +406,35 @@ class PPV_Repair_Form {
                 <span class="repair-points-plus">+</span>
                 <span id="repair-points-count" class="repair-points-count">0</span>
             </div>
-            <div class="repair-points-label">PunktePass Bonuspunkte</div>
+            <div class="repair-points-label"><?php echo esc_html(PPV_Lang::t('repair_bonus_points')); ?></div>
             <div id="repair-points-total" class="repair-points-total"></div>
         </div>
         <?php endif; ?>
 
-        <p class="repair-success-info">Sie erhalten eine Best&auml;tigung per E-Mail mit Ihrem Tracking-Link.</p>
+        <p class="repair-success-info"><?php echo esc_html(PPV_Lang::t('repair_email_confirmation')); ?></p>
 
-        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back">Neues Formular ausf&uuml;llen</a>
+        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back"><?php echo esc_html(PPV_Lang::t('repair_new_form')); ?></a>
     </div>
 
     <!-- Professional Footer -->
     <div class="repair-footer">
         <div class="repair-footer-trust">
             <div class="repair-footer-trust-item">
-                <i class="ri-lock-line"></i> SSL-verschl&uuml;sselt
+                <i class="ri-lock-line"></i> <?php echo esc_html(PPV_Lang::t('repair_ssl_encrypted')); ?>
             </div>
             <div class="repair-footer-trust-item">
-                <i class="ri-shield-check-line"></i> DSGVO-konform
+                <i class="ri-shield-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_dsgvo_conform')); ?>
             </div>
         </div>
         <div class="repair-footer-links">
-            <a href="/formular/<?php echo $slug; ?>/datenschutz">Datenschutz</a>
+            <a href="/formular/<?php echo $slug; ?>/datenschutz"><?php echo esc_html(PPV_Lang::t('repair_datenschutz')); ?></a>
             <span class="repair-footer-dot"></span>
-            <a href="/formular/<?php echo $slug; ?>/agb">AGB</a>
+            <a href="/formular/<?php echo $slug; ?>/agb"><?php echo esc_html(PPV_Lang::t('repair_agb')); ?></a>
             <span class="repair-footer-dot"></span>
-            <a href="/formular/<?php echo $slug; ?>/impressum">Impressum</a>
+            <a href="/formular/<?php echo $slug; ?>/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
         </div>
         <div class="repair-footer-powered">
-            <span>Powered by</span>
+            <span><?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?></span>
             <a href="https://punktepass.de" target="_blank" class="repair-footer-brand">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="1" y="1" width="14" height="14" rx="4" stroke="currentColor" stroke-width="1.5"/>
@@ -406,6 +449,23 @@ class PPV_Repair_Form {
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>
+// Translation strings for JS
+var ppvLang = <?php echo $js_strings; ?>;
+
+// Language switcher
+(function(){
+    var btns = document.querySelectorAll('.repair-lang-btn');
+    btns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var lang = btn.getAttribute('data-lang');
+            var url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            document.cookie = 'ppv_lang=' + lang + ';path=/;max-age=31536000';
+            window.location.href = url.toString();
+        });
+    });
+})();
+
 // Problem tag toggle for quick selection
 function toggleProblemTag(btn, text) {
     var problemField = document.getElementById('rf-problem');
@@ -475,7 +535,7 @@ function toggleProblemTag(btn, text) {
                     if (brandField && !brandField.value) brandField.value = res.data.brand || '';
                     if (modelField && !modelField.value) modelField.value = res.data.model || '';
                     // Show hint
-                    showEmailHint('Willkommen zurück! Ihre Daten wurden automatisch eingetragen.');
+                    showEmailHint(ppvLang.welcome_back);
                 }
             })
             .catch(function() {});
@@ -705,7 +765,7 @@ function toggleProblemTag(btn, text) {
     var offlineIndicator = document.createElement('div');
     offlineIndicator.id = 'rf-offline-indicator';
     offlineIndicator.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 2px 10px rgba(0,0,0,0.2)';
-    offlineIndicator.innerHTML = '<i class="ri-wifi-off-line"></i> Offline-Modus — Formular wird gespeichert und bei Verbindung automatisch gesendet';
+    offlineIndicator.innerHTML = '<i class="ri-wifi-off-line"></i> ' + ppvLang.offline_mode;
     document.body.insertBefore(offlineIndicator, document.body.firstChild);
 
     function updateOnlineStatus() {
@@ -841,7 +901,7 @@ function toggleProblemTag(btn, text) {
             // Show offline success
             form.style.display = 'none';
             successDiv.style.display = 'block';
-            successDiv.querySelector('p').textContent = 'Ihr Auftrag wurde offline gespeichert und wird automatisch gesendet, sobald Sie wieder online sind.';
+            successDiv.querySelector('p').textContent = ppvLang.offline_saved;
 
             submitBtn.disabled = false;
             submitText.style.display = 'inline-flex';
@@ -891,9 +951,12 @@ function toggleProblemTag(btn, text) {
                         var reqPts = <?php echo $required_pts; ?>;
                         var rwName = <?php echo json_encode($reward_name); ?>;
                         var remaining = Math.max(0, reqPts - d.total_points);
-                        document.getElementById('repair-points-total').textContent =
-                            'Gesamt: ' + d.total_points + ' / ' + reqPts + ' Punkte' +
-                            (remaining > 0 ? ' — noch ' + remaining + ' bis ' + rwName + '!' : ' — ' + rwName + ' einlösbar!');
+                        // Use sprintf-style replacement from ppvLang
+                        var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
+                        var suffixStr = remaining > 0
+                            ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
+                            : ppvLang.points_redeemable.replace('%s', rwName);
+                        document.getElementById('repair-points-total').textContent = totalStr + ' — ' + suffixStr;
                     }
                 }
                 <?php endif; ?>
@@ -904,12 +967,12 @@ function toggleProblemTag(btn, text) {
                 // Scroll to top
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                errorDiv.textContent = data.data?.message || 'Ein Fehler ist aufgetreten.';
+                errorDiv.textContent = data.data?.message || ppvLang.error_generic;
                 errorDiv.style.display = 'block';
             }
         })
         .catch(function() {
-            errorDiv.textContent = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
+            errorDiv.textContent = ppvLang.connection_error;
             errorDiv.style.display = 'block';
         })
         .finally(function() {
@@ -1038,11 +1101,12 @@ function toggleProblemTag(btn, text) {
     if (addrInput && addrBox) {
         var addrTimer = null;
         var lastAddrQ = '';
+        var nominatimCC = '<?php echo esc_js($nominatim_cc); ?>';
 
         function getUserStreet(val) {
             var parts = val.split(',');
             if (parts.length > 1) return parts[0].trim();
-            var m = val.match(/^(.+?)\s+\d{5}\b/);
+            var m = val.match(/^(.+?)\s+\d{4,5}\b/);
             if (m) return m[1].trim();
             return val.trim();
         }
@@ -1060,7 +1124,7 @@ function toggleProblemTag(btn, text) {
         addrInput.addEventListener('keyup', triggerAddrSearch);
 
         function fetchAddrSuggestions(q) {
-            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q);
+            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, results){
                 if (err || !results || !results.length) {
                     addrBox.style.display = 'none';
