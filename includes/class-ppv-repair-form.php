@@ -31,7 +31,8 @@ class PPV_Repair_Form {
         $address    = esc_html(trim(($store->address ?: '') . ' ' . ($store->plz ?: '') . ' ' . ($store->city ?: '')));
 
         $pp_enabled   = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
-        $form_title   = esc_html($store->repair_form_title ?? 'Reparaturauftrag');
+        $raw_title    = $store->repair_form_title ?? '';
+        $form_title   = esc_html(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
         $form_subtitle = esc_html($store->repair_form_subtitle ?? '');
         $service_type  = esc_html($store->repair_service_type ?? 'Allgemein');
         $reward_name   = esc_html($store->repair_reward_name ?? '10 Euro Rabatt');

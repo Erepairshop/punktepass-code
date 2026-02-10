@@ -243,7 +243,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $reward_name = esc_attr($store->repair_reward_name ?? '10 Euro Rabatt');
         $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
         $required_points = intval($store->repair_required_points ?? 4);
-        $form_title = esc_attr($store->repair_form_title ?? 'Reparaturauftrag');
+        $raw_title = $store->repair_form_title ?? '';
+        $form_title = esc_attr(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
         $form_subtitle = esc_attr($store->repair_form_subtitle ?? '');
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
         $reward_type = esc_attr($store->repair_reward_type ?? 'discount_fixed');

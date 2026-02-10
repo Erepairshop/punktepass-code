@@ -382,6 +382,9 @@ class PPV_Repair_Ankauf {
      * Build Kaufvertrag HTML
      */
     private static function build_kaufvertrag_html($store, $ankauf) {
+        // Load repair translations for PDF
+        PPV_Lang::load_extra('ppv-repair-lang');
+
         $color = esc_attr($store->repair_color ?: '#667eea');
         $ankauf_type = $ankauf->ankauf_type ?: 'handy';
 
@@ -400,31 +403,34 @@ class PPV_Repair_Ankauf {
         $seller_plz_city = esc_html(trim(($ankauf->seller_plz ?: '') . ' ' . ($ankauf->seller_city ?: '')));
         $seller_phone = esc_html($ankauf->seller_phone ?: '');
         $seller_email = esc_html($ankauf->seller_email ?: '');
-        $id_type_labels = ['personalausweis' => 'Personalausweis', 'reisepass' => 'Reisepass', 'fuehrerschein' => 'Führerschein'];
-        $seller_id_type = $id_type_labels[$ankauf->seller_id_type] ?? 'Personalausweis';
+        $id_type_labels = ['personalausweis' => PPV_Lang::t('repair_ankauf_id_card'), 'reisepass' => PPV_Lang::t('repair_ankauf_passport'), 'fuehrerschein' => PPV_Lang::t('repair_ankauf_license')];
+        $seller_id_type = $id_type_labels[$ankauf->seller_id_type] ?? PPV_Lang::t('repair_ankauf_id_card');
         $seller_id_number = esc_html($ankauf->seller_id_number ?: '');
 
         // Item data
         $device = esc_html(trim(($ankauf->device_brand ?: '') . ' ' . ($ankauf->device_model ?: '')));
         $device_color = esc_html($ankauf->device_color ?: '-');
         $condition_labels = [
-            'neu' => 'Neu / Originalverpackt',
-            'sehr_gut' => 'Sehr gut (minimale Gebrauchsspuren)',
-            'gut' => 'Gut (leichte Gebrauchsspuren)',
-            'akzeptabel' => 'Akzeptabel (deutliche Gebrauchsspuren)',
-            'defekt' => 'Defekt / Nicht funktionsfähig'
+            'neu' => PPV_Lang::t('repair_ankauf_cond_new'),
+            'sehr_gut' => PPV_Lang::t('repair_ankauf_cond_very_good'),
+            'gut' => PPV_Lang::t('repair_ankauf_cond_good'),
+            'akzeptabel' => PPV_Lang::t('repair_ankauf_cond_fair'),
+            'defekt' => PPV_Lang::t('repair_ankauf_cond_defect')
         ];
         $condition = esc_html($condition_labels[$ankauf->device_condition] ?? $ankauf->device_condition);
         $device_notes = esc_html($ankauf->device_notes ?: '');
 
+        // Translated labels
+        $t = function($key) { return PPV_Lang::t($key); };
+
         // Build item section based on type
         $item_section = '';
         $item_type_label = '';
-        $legal_item_name = 'Kaufgegenstand';
+        $legal_item_name = $t('repair_ankauf_legal_device');
 
         if ($ankauf_type === 'kfz') {
-            $item_type_label = 'Fahrzeug (KFZ)';
-            $legal_item_name = 'Fahrzeug';
+            $item_type_label = $t('repair_ankauf_item_vehicle');
+            $legal_item_name = $t('repair_ankauf_legal_vehicle');
             $kennzeichen = esc_html($ankauf->kfz_kennzeichen ?: '-');
             $vin = esc_html($ankauf->kfz_vin ?: '-');
             $km = $ankauf->kfz_km_stand ? number_format($ankauf->kfz_km_stand, 0, ',', '.') . ' km' : '-';
@@ -435,54 +441,54 @@ class PPV_Repair_Ankauf {
             $item_section = '
             <div class="two-col">
                 <div>
-                    <div class="field"><span class="field-label">Fahrzeug:</span> <span class="field-value"><strong>' . $device . '</strong></span></div>
-                    <div class="field"><span class="field-label">Kennzeichen:</span> <span class="field-value" style="font-family:monospace;color:' . $color . ';font-weight:bold;">' . $kennzeichen . '</span></div>
-                    <div class="field"><span class="field-label">FIN/VIN:</span> <span class="field-value" style="font-family:monospace;font-size:9px;">' . $vin . '</span></div>
-                    <div class="field"><span class="field-label">Farbe:</span> <span class="field-value">' . $device_color . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_vehicle') . ':</span> <span class="field-value"><strong>' . $device . '</strong></span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_plate') . ':</span> <span class="field-value" style="font-family:monospace;color:' . $color . ';font-weight:bold;">' . $kennzeichen . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_vin') . ':</span> <span class="field-value" style="font-family:monospace;font-size:9px;">' . $vin . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_color') . ':</span> <span class="field-value">' . $device_color . '</span></div>
                 </div>
                 <div>
-                    <div class="field"><span class="field-label">Km-Stand:</span> <span class="field-value">' . $km . '</span></div>
-                    <div class="field"><span class="field-label">Erstzulassung:</span> <span class="field-value">' . $erstzulassung . '</span></div>
-                    <div class="field"><span class="field-label">TÜV bis:</span> <span class="field-value">' . $tuev . '</span></div>
-                    <div class="field"><span class="field-label">HU/AU bis:</span> <span class="field-value">' . $huau . '</span></div>
-                    <div class="field"><span class="field-label">Zustand:</span> <span class="field-value">' . $condition . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_mileage') . ':</span> <span class="field-value">' . $km . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_first_reg') . ':</span> <span class="field-value">' . $erstzulassung . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_tuev') . ':</span> <span class="field-value">' . $tuev . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_huau') . ':</span> <span class="field-value">' . $huau . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_condition') . ':</span> <span class="field-value">' . $condition . '</span></div>
                 </div>
             </div>';
 
         } elseif ($ankauf_type === 'sonstiges') {
-            $item_type_label = 'Artikel (Sonstiges)';
-            $legal_item_name = 'Artikel';
+            $item_type_label = $t('repair_ankauf_item_other');
+            $legal_item_name = $t('repair_ankauf_legal_article');
             $serial = esc_html($ankauf->device_imei ?: '-');
             $description = esc_html($ankauf->item_description ?: '');
 
             $item_section = '
             <div class="two-col">
                 <div>
-                    <div class="field"><span class="field-label">Artikel:</span> <span class="field-value"><strong>' . $device . '</strong></span></div>
-                    <div class="field"><span class="field-label">Seriennr.:</span> <span class="field-value" style="font-family:monospace;">' . $serial . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_article') . ':</span> <span class="field-value"><strong>' . $device . '</strong></span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_serial') . ':</span> <span class="field-value" style="font-family:monospace;">' . $serial . '</span></div>
                 </div>
                 <div>
-                    <div class="field"><span class="field-label">Zustand:</span> <span class="field-value">' . $condition . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_condition') . ':</span> <span class="field-value">' . $condition . '</span></div>
                 </div>
             </div>
-            ' . ($description ? '<div class="field" style="margin-top:8px;"><span class="field-label">Beschreibung:</span> <span class="field-value">' . nl2br($description) . '</span></div>' : '');
+            ' . ($description ? '<div class="field" style="margin-top:8px;"><span class="field-label">' . $t('repair_ankauf_description') . ':</span> <span class="field-value">' . nl2br($description) . '</span></div>' : '');
 
         } else {
             // Handy/Smartphone (default)
-            $item_type_label = 'Kaufgegenstand (Gerät)';
-            $legal_item_name = 'Gerät';
+            $item_type_label = $t('repair_ankauf_item_device');
+            $legal_item_name = $t('repair_ankauf_legal_device');
             $imei = esc_html($ankauf->device_imei ?: '-');
 
             $accessories = json_decode($ankauf->device_accessories ?: '[]', true);
             $acc_labels = [
-                'ladekabel' => 'Ladekabel',
-                'netzteil' => 'Netzteil',
-                'originalverpackung' => 'Originalverpackung',
-                'kopfhoerer' => 'Kopfhörer',
-                'huelle' => 'Hülle/Case',
-                'rechnung' => 'Kaufrechnung'
+                'ladekabel' => $t('repair_ankauf_acc_cable'),
+                'netzteil' => $t('repair_ankauf_acc_charger'),
+                'originalverpackung' => $t('repair_ankauf_acc_box'),
+                'kopfhoerer' => $t('repair_ankauf_acc_earphones'),
+                'huelle' => $t('repair_ankauf_acc_case'),
+                'rechnung' => $t('repair_ankauf_acc_receipt')
             ];
-            $acc_html = 'Keine';
+            $acc_html = $t('repair_ankauf_acc_none');
             if (!empty($accessories)) {
                 $acc_names = array_map(function($a) use ($acc_labels) {
                     return $acc_labels[$a] ?? $a;
@@ -493,25 +499,25 @@ class PPV_Repair_Ankauf {
             $item_section = '
             <div class="two-col">
                 <div>
-                    <div class="field"><span class="field-label">Gerät:</span> <span class="field-value"><strong>' . $device . '</strong></span></div>
-                    <div class="field"><span class="field-label">IMEI:</span> <span class="field-value" style="font-family:monospace;color:' . $color . ';font-weight:bold;">' . $imei . '</span></div>
-                    <div class="field"><span class="field-label">Farbe:</span> <span class="field-value">' . $device_color . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_device') . ':</span> <span class="field-value"><strong>' . $device . '</strong></span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_imei') . ':</span> <span class="field-value" style="font-family:monospace;color:' . $color . ';font-weight:bold;">' . $imei . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_color') . ':</span> <span class="field-value">' . $device_color . '</span></div>
                 </div>
                 <div>
-                    <div class="field"><span class="field-label">Zustand:</span> <span class="field-value">' . $condition . '</span></div>
-                    <div class="field"><span class="field-label">Zubehör:</span> <span class="field-value">' . $acc_html . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_condition') . ':</span> <span class="field-value">' . $condition . '</span></div>
+                    <div class="field"><span class="field-label">' . $t('repair_ankauf_accessories') . ':</span> <span class="field-value">' . $acc_html . '</span></div>
                 </div>
             </div>';
         }
 
         // Add notes if present
         if ($device_notes && $ankauf_type !== 'sonstiges') {
-            $item_section .= '<div class="field" style="margin-top:8px;"><span class="field-label">Hinweise:</span> <span class="field-value">' . $device_notes . '</span></div>';
+            $item_section .= '<div class="field" style="margin-top:8px;"><span class="field-label">' . $t('repair_ankauf_notes') . ':</span> <span class="field-value">' . $device_notes . '</span></div>';
         }
 
         // Price & Payment
         $price = number_format($ankauf->ankauf_price, 2, ',', '.') . ' €';
-        $payment_labels = ['bar' => 'Bar', 'ueberweisung' => 'Überweisung', 'paypal' => 'PayPal'];
+        $payment_labels = ['bar' => $t('repair_ankauf_pay_cash'), 'ueberweisung' => $t('repair_ankauf_pay_transfer'), 'paypal' => $t('repair_ankauf_pay_paypal')];
         $payment = esc_html($payment_labels[$ankauf->payment_method] ?? $ankauf->payment_method);
 
         // Date
@@ -530,14 +536,16 @@ class PPV_Repair_Ankauf {
 
         // Legal text varies by type
         $stolen_text = $ankauf_type === 'kfz'
-            ? 'Der Verkäufer versichert, dass das Fahrzeug nicht als gestohlen gemeldet ist und keine Pfandrechte bestehen.'
-            : 'Der Verkäufer versichert, dass der ' . $legal_item_name . ' nicht als gestohlen gemeldet ist.';
+            ? $t('repair_ankauf_legal_stolen_kfz')
+            : sprintf($t('repair_ankauf_legal_stolen'), $legal_item_name);
+
+        $lang_code = PPV_Lang::current() ?: 'de';
 
         return '<!DOCTYPE html>
-<html lang="de">
+<html lang="' . $lang_code . '">
 <head>
     <meta charset="UTF-8">
-    <title>Kaufvertrag ' . esc_html($ankauf->ankauf_number) . '</title>
+    <title>' . $t('repair_ankauf_title') . ' ' . esc_html($ankauf->ankauf_number) . '</title>
     <style>
         @page { margin: 10mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -574,36 +582,36 @@ class PPV_Repair_Ankauf {
 </head>
 <body>
     <div class="header">
-        <div class="logo">' . $company . ($owner ? '<br><span class="logo-sub">Inh. ' . $owner . '</span>' : '') . '</div>
+        <div class="logo">' . $company . ($owner ? '<br><span class="logo-sub">' . $t('repair_ankauf_owner_label') . '. ' . $owner . '</span>' : '') . '</div>
         <div class="header-right">
             ' . ($shop_address ? $shop_address . '<br>' : '') . '
             ' . ($shop_plz_city ? $shop_plz_city . '<br>' : '') . '
-            ' . ($shop_phone ? 'Tel: ' . $shop_phone . '<br>' : '') . '
+            ' . ($shop_phone ? $t('repair_ankauf_phone') . ': ' . $shop_phone . '<br>' : '') . '
             ' . ($shop_email ? $shop_email . '<br>' : '') . '
-            ' . ($tax_id ? 'USt-IdNr.: ' . $tax_id : '') . '
+            ' . ($tax_id ? PPV_Lang::t('repair_pdf_vat_id') . ': ' . $tax_id : '') . '
         </div>
     </div>
 
     <div class="title">
-        <h1>KAUFVERTRAG (Ankauf)</h1>
-        <p>Nr. ' . esc_html($ankauf->ankauf_number) . ' | Datum: ' . $date . ' ' . $time . '</p>
+        <h1>' . $t('repair_ankauf_title') . '</h1>
+        <p>' . $t('repair_ankauf_nr') . ' ' . esc_html($ankauf->ankauf_number) . ' | ' . $t('repair_ankauf_date') . ': ' . $date . ' ' . $time . '</p>
     </div>
 
     <div class="two-col section">
         <div class="box">
-            <div class="section-title">Käufer (Händler)</div>
-            <div class="field"><span class="field-label">Firma:</span> <span class="field-value">' . $company . '</span></div>
-            ' . ($owner ? '<div class="field"><span class="field-label">Inhaber:</span> <span class="field-value">' . $owner . '</span></div>' : '') . '
-            ' . ($shop_address ? '<div class="field"><span class="field-label">Adresse:</span> <span class="field-value">' . $shop_address . '</span></div>' : '') . '
+            <div class="section-title">' . $t('repair_ankauf_buyer') . '</div>
+            <div class="field"><span class="field-label">' . $t('repair_ankauf_company') . ':</span> <span class="field-value">' . $company . '</span></div>
+            ' . ($owner ? '<div class="field"><span class="field-label">' . $t('repair_ankauf_owner_label') . ':</span> <span class="field-value">' . $owner . '</span></div>' : '') . '
+            ' . ($shop_address ? '<div class="field"><span class="field-label">' . $t('repair_ankauf_address') . ':</span> <span class="field-value">' . $shop_address . '</span></div>' : '') . '
             ' . ($shop_plz_city ? '<div class="field"><span class="field-label"></span> <span class="field-value">' . $shop_plz_city . '</span></div>' : '') . '
-            ' . ($shop_phone ? '<div class="field"><span class="field-label">Telefon:</span> <span class="field-value">' . $shop_phone . '</span></div>' : '') . '
+            ' . ($shop_phone ? '<div class="field"><span class="field-label">' . $t('repair_ankauf_phone') . ':</span> <span class="field-value">' . $shop_phone . '</span></div>' : '') . '
         </div>
         <div class="box highlight">
-            <div class="section-title">Verkäufer</div>
-            <div class="field"><span class="field-label">Name:</span> <span class="field-value"><strong>' . $seller_name . '</strong></span></div>
-            ' . ($seller_address ? '<div class="field"><span class="field-label">Adresse:</span> <span class="field-value">' . $seller_address . '</span></div>' : '') . '
+            <div class="section-title">' . $t('repair_ankauf_seller') . '</div>
+            <div class="field"><span class="field-label">' . $t('repair_ankauf_name') . ':</span> <span class="field-value"><strong>' . $seller_name . '</strong></span></div>
+            ' . ($seller_address ? '<div class="field"><span class="field-label">' . $t('repair_ankauf_address') . ':</span> <span class="field-value">' . $seller_address . '</span></div>' : '') . '
             ' . ($seller_plz_city ? '<div class="field"><span class="field-label"></span> <span class="field-value">' . $seller_plz_city . '</span></div>' : '') . '
-            ' . ($seller_phone ? '<div class="field"><span class="field-label">Telefon:</span> <span class="field-value">' . $seller_phone . '</span></div>' : '') . '
+            ' . ($seller_phone ? '<div class="field"><span class="field-label">' . $t('repair_ankauf_phone') . ':</span> <span class="field-value">' . $seller_phone . '</span></div>' : '') . '
             ' . ($seller_id_number ? '<div class="field"><span class="field-label">' . $seller_id_type . ':</span> <span class="field-value">' . $seller_id_number . '</span></div>' : '') . '
         </div>
     </div>
@@ -616,37 +624,37 @@ class PPV_Repair_Ankauf {
     </div>
 
     <div class="price-box">
-        <div class="label">Ankaufspreis</div>
+        <div class="label">' . $t('repair_ankauf_price_label') . '</div>
         <div class="amount">' . $price . '</div>
-        <div class="label">Zahlungsart: ' . $payment . '</div>
+        <div class="label">' . $t('repair_ankauf_payment') . ': ' . $payment . '</div>
     </div>
 
     <div class="legal">
-        <h4>Rechtliche Hinweise</h4>
+        <h4>' . $t('repair_ankauf_legal_title') . '</h4>
         <ul>
-            <li>Der Verkäufer versichert, dass er der rechtmäßige Eigentümer des ' . $legal_item_name . 's ist und dieses frei von Rechten Dritter ist.</li>
+            <li>' . sprintf($t('repair_ankauf_legal_owner'), $legal_item_name) . '</li>
             <li>' . $stolen_text . '</li>
-            <li>Der ' . $legal_item_name . ' wird "wie besehen" ohne Gewährleistung verkauft.</li>
-            <li>Der Kaufpreis wurde bei Vertragsabschluss ' . ($ankauf->payment_method === 'bar' ? 'bar ausgezahlt' : 'per ' . $payment . ' überwiesen') . '.</li>
-            <li>Mit der Unterschrift bestätigt der Verkäufer die Richtigkeit aller Angaben und den Erhalt des Kaufpreises.</li>
+            <li>' . sprintf($t('repair_ankauf_legal_asis'), $legal_item_name) . '</li>
+            <li>' . ($ankauf->payment_method === 'bar' ? $t('repair_ankauf_legal_paid_cash') : sprintf($t('repair_ankauf_legal_paid_transfer'), $payment)) . '</li>
+            <li>' . $t('repair_ankauf_legal_confirm') . '</li>
         </ul>
     </div>
 
     <div class="signatures">
         <div class="sig-box">
-            <label>Unterschrift Verkäufer (Erhalt des Kaufpreises)</label>
+            <label>' . $t('repair_ankauf_sig_seller') . '</label>
             <div class="sig-line">' . $seller_sig . '</div>
             <div style="font-size:9px;color:#6b7280;margin-top:4px;">' . $seller_name . '</div>
         </div>
         <div class="sig-box">
-            <label>Unterschrift Käufer (Händler)</label>
+            <label>' . $t('repair_ankauf_sig_buyer') . '</label>
             <div class="sig-line">' . $buyer_sig . '</div>
             <div style="font-size:9px;color:#6b7280;margin-top:4px;">' . $company . '</div>
         </div>
     </div>
 
     <div class="footer">
-        ' . $company . ' | ' . $shop_address . ' ' . $shop_plz_city . ' | Tel: ' . $shop_phone . ' | ' . $shop_email . '
+        ' . $company . ' | ' . $shop_address . ' ' . $shop_plz_city . ' | ' . $t('repair_ankauf_phone') . ': ' . $shop_phone . ' | ' . $shop_email . '
     </div>
 </body>
 </html>';

@@ -1080,6 +1080,9 @@ class PPV_Repair_Invoice {
      * Build the HTML for invoice PDF
      */
     private static function build_invoice_html($store, $invoice) {
+        // Load repair translations for PDF
+        PPV_Lang::load_extra('ppv-repair-lang');
+
         $color = esc_attr($store->repair_color ?: '#667eea');
         $company = esc_html($store->repair_company_name ?: $store->name);
         $owner = esc_html($store->repair_owner_name ?: '');
@@ -1105,7 +1108,7 @@ class PPV_Repair_Invoice {
         $inv_date = date('d.m.Y', strtotime($invoice->created_at));
         $doc_type = $invoice->doc_type ?? 'rechnung';
         $is_angebot = ($doc_type === 'angebot');
-        $doc_type_label = $is_angebot ? 'Angebot' : 'Rechnung';
+        $doc_type_label = $is_angebot ? PPV_Lang::t('repair_pdf_quote') : PPV_Lang::t('repair_pdf_invoice');
         $valid_until = ($is_angebot && !empty($invoice->valid_until)) ? date('d.m.Y', strtotime($invoice->valid_until)) : '';
         $cust_name = esc_html($invoice->customer_name);
         $cust_email = esc_html($invoice->customer_email);
@@ -1134,17 +1137,26 @@ class PPV_Repair_Invoice {
         // Customer address formatting
         $cust_plz_city = trim($cust_plz . ' ' . $cust_city);
 
+        // Translated labels
+        $t_reward = PPV_Lang::t('repair_pdf_reward');
+        $t_reward_redeemed = PPV_Lang::t('repair_pdf_reward_redeemed');
+        $t_points_used = PPV_Lang::t('repair_pdf_points_used');
+        $t_notes = PPV_Lang::t('repair_pdf_notes');
+        $t_paid = PPV_Lang::t('repair_pdf_paid');
+        $t_paid_on = PPV_Lang::t('repair_pdf_paid_on');
+        $t_paid_via = PPV_Lang::t('repair_pdf_paid_via');
+
         $discount_row = '';
         if ($has_discount) {
-            $discount_row = '<tr><td></td><td colspan="3" style="color:#059669">PunktePass Belohnung: ' . $discount_desc . '</td><td style="color:#059669;font-weight:600">-' . $discount_val . ' &euro;</td></tr>';
+            $discount_row = '<tr><td></td><td colspan="3" style="color:#059669">' . $t_reward . ': ' . $discount_desc . '</td><td style="color:#059669;font-weight:600">-' . $discount_val . ' &euro;</td></tr>';
         }
 
         $reward_notice = '';
         if ($invoice->punktepass_reward_applied) {
-            $reward_notice = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:10px 14px;margin-top:16px;font-size:11px;color:#065f46;"><strong>PunktePass Belohnung eingelöst!</strong> ' . $discount_desc . ' (' . intval($invoice->points_used) . ' Punkte verwendet)</div>';
+            $reward_notice = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:10px 14px;margin-top:16px;font-size:11px;color:#065f46;"><strong>' . $t_reward_redeemed . '</strong> ' . $discount_desc . ' (' . intval($invoice->points_used) . ' ' . $t_points_used . ')</div>';
         }
 
-        $notes_section = $notes ? '<div style="margin-top:16px;"><strong style="font-size:11px;color:#6b7280;">Anmerkungen:</strong><p style="font-size:11px;color:#374151;margin-top:4px;">' . $notes . '</p></div>' : '';
+        $notes_section = $notes ? '<div style="margin-top:16px;"><strong style="font-size:11px;color:#6b7280;">' . $t_notes . ':</strong><p style="font-size:11px;color:#374151;margin-top:4px;">' . $notes . '</p></div>' : '';
 
         // Payment info section (for paid invoices)
         $payment_section = '';
@@ -1153,23 +1165,23 @@ class PPV_Repair_Invoice {
             $paid_at = $invoice->paid_at ? date('d.m.Y', strtotime($invoice->paid_at)) : '';
 
             $payment_method_labels = [
-                'bar' => 'Barzahlung',
-                'ec' => 'EC-Karte',
-                'kreditkarte' => 'Kreditkarte',
-                'ueberweisung' => 'Überweisung',
-                'paypal' => 'PayPal',
-                'andere' => 'Andere',
+                'bar' => PPV_Lang::t('repair_pdf_pay_cash'),
+                'ec' => PPV_Lang::t('repair_pdf_pay_ec'),
+                'kreditkarte' => PPV_Lang::t('repair_pdf_pay_credit'),
+                'ueberweisung' => PPV_Lang::t('repair_pdf_pay_transfer'),
+                'paypal' => PPV_Lang::t('repair_pdf_pay_paypal'),
+                'andere' => PPV_Lang::t('repair_pdf_pay_other'),
             ];
             $method_display = $payment_method_labels[$payment_method] ?? $payment_method;
 
             if ($method_display || $paid_at) {
                 $payment_section = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;padding:10px 14px;margin-top:16px;font-size:11px;color:#0369a1;">';
-                $payment_section .= '<strong style="color:#0c4a6e;">Bezahlt</strong>';
+                $payment_section .= '<strong style="color:#0c4a6e;">' . $t_paid . '</strong>';
                 if ($paid_at) {
-                    $payment_section .= ' am ' . $paid_at;
+                    $payment_section .= $t_paid_on . $paid_at;
                 }
                 if ($method_display) {
-                    $payment_section .= ' per ' . $method_display;
+                    $payment_section .= $t_paid_via . $method_display;
                 }
                 $payment_section .= '</div>';
             }
@@ -1181,45 +1193,54 @@ class PPV_Repair_Invoice {
         $pos = 1;
         if (!empty($line_items) && is_array($line_items)) {
             foreach ($line_items as $item) {
-                $item_desc = esc_html($item['description'] ?? 'Position');
+                $item_desc = esc_html($item['description'] ?? PPV_Lang::t('repair_pdf_position'));
                 $item_amt = number_format(floatval($item['amount'] ?? 0), 2, ',', '.');
                 $items_html .= '<tr><td>' . $pos . '</td><td>' . $item_desc . '</td><td>1,00</td><td>' . $item_amt . ' &euro;</td><td>' . $item_amt . ' &euro;</td></tr>';
                 $pos++;
             }
         } else {
             // Fallback: single line for legacy invoices
-            $item_label = $device ? $device : 'Reparatur';
+            $item_label = $device ? $device : PPV_Lang::t('repair_pdf_repair');
             $items_html = '<tr><td>1</td><td>' . $item_label . ($desc ? '<br><span style="font-size:8pt;color:#718096">' . $desc . '</span>' : '') . '</td><td>1,00</td><td>' . $subtotal . ' &euro;</td><td>' . $subtotal . ' &euro;</td></tr>';
         }
 
         // Determine VAT text based on settings
         $vat_text = '';
         if ($is_klein) {
-            $vat_text = '<div style="font-size:10px;color:#6b7280;margin-top:8px">Gem&auml;&szlig; &sect;19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmer).</div>';
+            $vat_text = '<div style="font-size:10px;color:#6b7280;margin-top:8px">' . esc_html(PPV_Lang::t('repair_pdf_small_biz')) . '</div>';
         } elseif ($is_differenz) {
-            $vat_text = '<div style="font-size:10px;color:#6b7280;margin-top:8px">Differenzbesteuerung gem. &sect;25a UStG. Im Verkaufspreis ist keine Umsatzsteuer enthalten.</div>';
+            $vat_text = '<div style="font-size:10px;color:#6b7280;margin-top:8px">' . esc_html(PPV_Lang::t('repair_pdf_diff_tax')) . '</div>';
         }
 
         // Build footer columns
-        $footer_col1 = '<strong>' . $owner . ', ' . $company . '</strong><br>' . $addr . '<br>' . $plz_city . '<br>Deutschland';
+        $t_country = PPV_Lang::t('repair_pdf_country');
+        $t_tel = PPV_Lang::t('repair_pdf_tel');
+        $t_email_label = PPV_Lang::t('repair_pdf_email');
+        $t_web = PPV_Lang::t('repair_pdf_web');
+        $t_paypal_addr = PPV_Lang::t('repair_pdf_paypal_addr');
+        $t_vat_id = PPV_Lang::t('repair_pdf_vat_id');
+        $t_tax_nr = PPV_Lang::t('repair_pdf_tax_nr');
+        $t_owner = PPV_Lang::t('repair_pdf_owner');
 
-        $footer_col2 = 'Tel.: ' . $phone . '<br>E-Mail:<br>' . $email;
+        $footer_col1 = '<strong>' . $owner . ', ' . $company . '</strong><br>' . $addr . '<br>' . $plz_city . '<br>' . $t_country;
+
+        $footer_col2 = $t_tel . ': ' . $phone . '<br>' . $t_email_label . ':<br>' . $email;
         if ($website) {
-            $footer_col2 .= '<br>Web: ' . $website;
+            $footer_col2 .= '<br>' . $t_web . ': ' . $website;
         }
         if ($paypal) {
-            $footer_col2 .= '<br>PayPal - Adresse:<br>' . $paypal;
+            $footer_col2 .= '<br>' . $t_paypal_addr . ':<br>' . $paypal;
         }
 
         $footer_col3 = '';
         if ($tax) {
-            $footer_col3 .= 'USt.-ID: ' . $tax . '<br>';
+            $footer_col3 .= $t_vat_id . ': ' . $tax . '<br>';
         }
         if ($steuernummer) {
-            $footer_col3 .= 'Steuer-Nr.: ' . $steuernummer . '<br>';
+            $footer_col3 .= $t_tax_nr . ': ' . $steuernummer . '<br>';
         }
         if ($owner) {
-            $footer_col3 .= 'Inhaber/-in: ' . $owner;
+            $footer_col3 .= $t_owner . ': ' . $owner;
         }
 
         $footer_col4 = '';
@@ -1234,9 +1255,31 @@ class PPV_Repair_Invoice {
         }
 
         // Sender line for envelope window
-        $sender_line = $owner . ', ' . $addr . ', ' . $plz_city . ', Deutschland';
+        $sender_line = $owner . ', ' . $addr . ', ' . $plz_city . ', ' . $t_country;
 
-        return '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>
+        // Translated labels for template
+        $t_date = PPV_Lang::t('repair_pdf_date');
+        $t_nr = PPV_Lang::t('repair_pdf_nr');
+        $t_valid_until = PPV_Lang::t('repair_pdf_valid_until');
+        $t_your_vat_id = PPV_Lang::t('repair_pdf_your_vat_id');
+        $t_greeting = PPV_Lang::t('repair_pdf_greeting');
+        $t_intro = $is_angebot ? PPV_Lang::t('repair_pdf_intro_quote') : PPV_Lang::t('repair_pdf_intro_invoice');
+        $t_pos = PPV_Lang::t('repair_pdf_pos');
+        $t_desc = PPV_Lang::t('repair_pdf_description');
+        $t_qty = PPV_Lang::t('repair_pdf_quantity');
+        $t_unit_price = PPV_Lang::t('repair_pdf_unit_price');
+        $t_total_col = PPV_Lang::t('repair_pdf_total');
+        $t_subtotal_net = PPV_Lang::t('repair_pdf_subtotal_net');
+        $t_vat_label = PPV_Lang::t('repair_pdf_vat');
+        $t_total_amount = PPV_Lang::t('repair_pdf_total_amount');
+        $t_small_biz = PPV_Lang::t('repair_pdf_small_biz');
+        $t_diff_tax = PPV_Lang::t('repair_pdf_diff_tax');
+        $t_contact = PPV_Lang::t('repair_pdf_contact');
+        $t_tax_data = PPV_Lang::t('repair_pdf_tax_data');
+        $t_bank = PPV_Lang::t('repair_pdf_bank');
+        $lang_code = PPV_Lang::current() ?: 'de';
+
+        return '<!DOCTYPE html><html lang="' . $lang_code . '"><head><meta charset="UTF-8"><style>
 @page{margin:15mm 15mm 28mm 15mm;size:A4}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-height:1.5}
@@ -1321,7 +1364,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 <div style="font-size:9pt;color:#718096;line-height:1.6">
 ' . $addr . '<br>
 ' . $plz_city . '<br>
-' . ($phone ? 'Tel: ' . $phone . '<br>' : '') . '
+' . ($phone ? $t_tel . ': ' . $phone . '<br>' : '') . '
 ' . $email . '
 </div>
 </div>
@@ -1340,38 +1383,38 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 <div class="address-right">
 <div class="invoice-details">
 <table>
-<tr><td>' . $doc_type_label . '-Nr.:</td><td><span class="invoice-number">' . $inv_nr . '</span></td></tr>
-<tr><td>Datum:</td><td>' . $inv_date . '</td></tr>
-' . ($valid_until ? '<tr><td>G&uuml;ltig bis:</td><td>' . $valid_until . '</td></tr>' : '') . '
-' . ($cust_tax_id ? '<tr><td>Ihre USt-IdNr.:</td><td>' . $cust_tax_id . '</td></tr>' : '') . '
+<tr><td>' . $doc_type_label . ' ' . $t_nr . ':</td><td><span class="invoice-number">' . $inv_nr . '</span></td></tr>
+<tr><td>' . $t_date . ':</td><td>' . $inv_date . '</td></tr>
+' . ($valid_until ? '<tr><td>' . $t_valid_until . ':</td><td>' . $valid_until . '</td></tr>' : '') . '
+' . ($cust_tax_id ? '<tr><td>' . $t_your_vat_id . ':</td><td>' . $cust_tax_id . '</td></tr>' : '') . '
 </table>
 </div>
 </div>
 </div>
 
 <div class="doc-title">' . $doc_type_label . '</div>
-<p class="intro-text">Sehr geehrte Damen und Herren,<br>' . ($is_angebot ? 'vielen Dank f&uuml;r Ihre Anfrage. Gerne unterbreiten wir Ihnen folgendes Angebot:' : 'vielen Dank f&uuml;r Ihren Auftrag. Hiermit stellen wir Ihnen folgende Leistungen in Rechnung:') . '</p>
+<p class="intro-text">' . $t_greeting . '<br>' . $t_intro . '</p>
 
 <table class="items-table">
-<tr><th>Pos</th><th>Beschreibung</th><th>Menge</th><th>Einzelpreis</th><th>Gesamt</th></tr>
+<tr><th>' . $t_pos . '</th><th>' . $t_desc . '</th><th>' . $t_qty . '</th><th>' . $t_unit_price . '</th><th>' . $t_total_col . '</th></tr>
 ' . $items_html . '
 ' . $discount_row . '
 </table>
 
 <div class="summary-section">
-<div class="summary-row"><span>Zwischensumme (netto)</span><span>' . $net_amount . ' &euro;</span></div>
-' . (!$is_klein && !$is_differenz ? '<div class="summary-row"><span>MwSt. ' . number_format($vat_rate, 0) . '%</span><span>' . $vat_amount . ' &euro;</span></div>' : '') . '
-<div class="summary-row total"><span>Gesamtbetrag</span><span>' . $total . ' &euro;</span></div>
+<div class="summary-row"><span>' . $t_subtotal_net . '</span><span>' . $net_amount . ' &euro;</span></div>
+' . (!$is_klein && !$is_differenz ? '<div class="summary-row"><span>' . $t_vat_label . ' ' . number_format($vat_rate, 0) . '%</span><span>' . $vat_amount . ' &euro;</span></div>' : '') . '
+<div class="summary-row total"><span>' . $t_total_amount . '</span><span>' . $total . ' &euro;</span></div>
 </div>
 
-' . ($is_klein ? '<p class="vat-notice">Gem&auml;&szlig; &sect;19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>' : '') . '
-' . ($is_differenz ? '<p class="vat-notice">Differenzbesteuerung gem. &sect;25a UStG. Im Rechnungsbetrag ist keine Umsatzsteuer enthalten.</p>' : '') . '
+' . ($is_klein ? '<p class="vat-notice">' . esc_html($t_small_biz) . '</p>' : '') . '
+' . ($is_differenz ? '<p class="vat-notice">' . esc_html($t_diff_tax) . '</p>' : '') . '
 
-' . ($invoice->status === 'paid' ? '<div class="info-box payment"><strong>Bezahlt</strong>' . ($paid_at ? ' am ' . date('d.m.Y', strtotime($invoice->paid_at)) : '') . ($method_display ? ' per ' . $method_display : '') . '</div>' : '') . '
+' . $payment_section . '
 
-' . ($invoice->punktepass_reward_applied ? '<div class="info-box reward"><strong>PunktePass Belohnung eingel&ouml;st:</strong> ' . $discount_desc . '</div>' : '') . '
+' . ($invoice->punktepass_reward_applied ? '<div class="info-box reward"><strong>' . $t_reward_redeemed . '</strong> ' . $discount_desc . '</div>' : '') . '
 
-' . ($notes ? '<div style="margin-top:5mm;padding-top:3mm;border-top:1px solid #e2e8f0"><strong style="font-size:9pt;color:#718096">Anmerkungen:</strong><p style="font-size:9pt;color:#4a5568;margin-top:1mm">' . $notes . '</p></div>' : '') . '
+' . ($notes ? '<div style="margin-top:5mm;padding-top:3mm;border-top:1px solid #e2e8f0"><strong style="font-size:9pt;color:#718096">' . $t_notes . ':</strong><p style="font-size:9pt;color:#4a5568;margin-top:1mm">' . $notes . '</p></div>' : '') . '
 
 </div>
 
@@ -1383,19 +1426,19 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 ' . $plz_city . '
 </div>
 <div class="footer-col">
-<span class="footer-label">Kontakt</span><br>
-' . ($phone ? 'Tel: ' . $phone . '<br>' : '') . '
+<span class="footer-label">' . $t_contact . '</span><br>
+' . ($phone ? $t_tel . ': ' . $phone . '<br>' : '') . '
 ' . $email . '
 ' . ($website ? '<br>' . $website : '') . '
 </div>
 <div class="footer-col">
-<span class="footer-label">Steuerdaten</span><br>
-' . ($tax ? 'USt-IdNr: ' . $tax . '<br>' : '') . '
-' . ($steuernummer ? 'St-Nr: ' . $steuernummer . '<br>' : '') . '
-' . ($owner ? 'Inh: ' . $owner : '') . '
+<span class="footer-label">' . $t_tax_data . '</span><br>
+' . ($tax ? $t_vat_id . ': ' . $tax . '<br>' : '') . '
+' . ($steuernummer ? $t_tax_nr . ': ' . $steuernummer . '<br>' : '') . '
+' . ($owner ? $t_owner . ': ' . $owner : '') . '
 </div>
 ' . ($bank_iban ? '<div class="footer-col">
-<span class="footer-label">Bankverbindung</span><br>
+<span class="footer-label">' . $t_bank . '</span><br>
 ' . ($bank_name ? $bank_name . '<br>' : '') . '
 IBAN: ' . $bank_iban . '
 ' . ($bank_bic ? '<br>BIC: ' . $bank_bic : '') . '
@@ -1463,10 +1506,9 @@ IBAN: ' . $bank_iban . '
         $doc_type_label_lower = $is_angebot ? 'Angebot' : 'Rechnung';
 
         // Get email template from store settings - use document type
-        $default_subject = $is_angebot ? 'Ihr Angebot {invoice_number}' : 'Ihre Rechnung {invoice_number}';
-        $default_body = $is_angebot
-            ? "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihr Angebot {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}"
-            : "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}";
+        PPV_Lang::load_extra('ppv-repair-lang');
+        $default_subject = $is_angebot ? PPV_Lang::t('repair_pdf_email_subj_quote') : PPV_Lang::t('repair_pdf_email_subj_inv');
+        $default_body = $is_angebot ? PPV_Lang::t('repair_pdf_email_body_quote') : PPV_Lang::t('repair_pdf_email_body_inv');
         $subject = $store->repair_invoice_email_subject ?: $default_subject;
         $body = $store->repair_invoice_email_body ?: $default_body;
 
