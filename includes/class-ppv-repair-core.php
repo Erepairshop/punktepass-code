@@ -866,6 +866,33 @@ class PPV_Repair_Core {
             wp_send_json_error(['message' => 'Bitte beschreiben Sie das Problem']);
         }
 
+        // Duplicate submission protection: check for same store + customer within last 5 minutes
+        $dup_where = [];
+        $dup_params = [$store_id];
+
+        if (!empty($email)) {
+            $dup_where[] = "customer_email = %s";
+            $dup_params[] = $email;
+        } elseif (!empty($phone)) {
+            $dup_where[] = "customer_phone = %s";
+            $dup_params[] = $phone;
+        } else {
+            // Fallback: match by name if no email/phone
+            $dup_where[] = "customer_name = %s";
+            $dup_params[] = $name;
+        }
+
+        if (!empty($dup_where)) {
+            $dup_sql = "SELECT id FROM {$prefix}ppv_repairs
+                        WHERE store_id = %d AND (" . implode(' OR ', $dup_where) . ")
+                        AND created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                        LIMIT 1";
+            $existing = $wpdb->get_var($wpdb->prepare($dup_sql, $dup_params));
+            if ($existing) {
+                wp_send_json_error(['message' => 'Dieses Formular wurde bereits eingereicht. Bitte warten Sie einige Minuten.', 'duplicate' => true]);
+            }
+        }
+
         // Handle muster pattern (base64 data URL from canvas)
         $muster_image = '';
         if (!empty($_POST['muster_image']) && strpos($_POST['muster_image'], 'data:image/') === 0) {

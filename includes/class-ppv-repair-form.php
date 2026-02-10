@@ -506,6 +506,15 @@ function toggleProblemTag(btn, text) {
     var successDiv = document.getElementById('repair-success');
     var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
     var storeId = <?php echo $store_id; ?>;
+    var formSubmitted = false;
+
+    // Check if form was already submitted in this session
+    var dupKey = 'ppv_repair_submitted_' + storeId;
+    var lastSubmit = sessionStorage.getItem(dupKey);
+    if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
+        form.style.display = 'none';
+        successDiv.style.display = 'block';
+    }
 
     // Email lookup for returning customers with debounce
     var emailField = document.getElementById('rf-email');
@@ -868,6 +877,9 @@ function toggleProblemTag(btn, text) {
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
+        // Prevent double submission
+        if (formSubmitted) return;
+
         // Validate
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -918,6 +930,9 @@ function toggleProblemTag(btn, text) {
         .then(function(res) { return res.json(); })
         .then(function(data) {
             if (data.success) {
+                formSubmitted = true;
+                sessionStorage.setItem(dupKey, Date.now().toString());
+
                 // Clear saved draft
                 localStorage.removeItem(offlineStorageKey);
 
@@ -970,6 +985,11 @@ function toggleProblemTag(btn, text) {
             } else {
                 errorDiv.textContent = data.data?.message || ppvLang.error_generic;
                 errorDiv.style.display = 'block';
+                // If server detected duplicate, block further attempts
+                if (data.data?.duplicate) {
+                    formSubmitted = true;
+                    sessionStorage.setItem(dupKey, Date.now().toString());
+                }
             }
         })
         .catch(function() {
@@ -977,9 +997,11 @@ function toggleProblemTag(btn, text) {
             errorDiv.style.display = 'block';
         })
         .finally(function() {
-            submitBtn.disabled = false;
-            submitText.style.display = 'inline-flex';
-            submitLoading.style.display = 'none';
+            if (!formSubmitted) {
+                submitBtn.disabled = false;
+                submitText.style.display = 'inline-flex';
+                submitLoading.style.display = 'none';
+            }
         });
     });
 
