@@ -137,6 +137,17 @@ class PPV_Repair_Invoice {
             $stored_vat_rate = 0;
         }
 
+        // Parse address into street, PLZ, city (format: "Straße Nr., PLZ Stadt" or "Straße Nr. PLZ Stadt")
+        $raw_address = $repair->customer_address ?: '';
+        $parsed_street = $raw_address;
+        $parsed_plz = '';
+        $parsed_city = '';
+        if ($raw_address && preg_match('/^(.+?)[\s,]+(\d{4,6})\s+(.+)$/', $raw_address, $m)) {
+            $parsed_street = trim($m[1], ', ');
+            $parsed_plz = $m[2];
+            $parsed_city = trim($m[3]);
+        }
+
         // Insert invoice
         $wpdb->insert("{$prefix}ppv_repair_invoices", [
             'store_id'                  => $store->id,
@@ -145,7 +156,9 @@ class PPV_Repair_Invoice {
             'customer_name'             => $repair->customer_name,
             'customer_email'            => $repair->customer_email,
             'customer_phone'            => $repair->customer_phone ?: '',
-            'customer_address'          => $repair->customer_address ?: '',
+            'customer_address'          => $parsed_street,
+            'customer_plz'              => $parsed_plz,
+            'customer_city'             => $parsed_city,
             'device_info'               => $device,
             'description'               => $repair->problem_description,
             'line_items'                => !empty($line_items) ? wp_json_encode($line_items) : null,
