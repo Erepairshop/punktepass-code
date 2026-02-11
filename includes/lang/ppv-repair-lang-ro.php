@@ -321,6 +321,8 @@ return [
     'repair_admin_filiale_name'         => 'Numele filialei',
     'repair_admin_filiale_name_ph'      => 'ex. Atelier București Centru',
     'repair_admin_filiale_create'       => 'Creează filiala',
+    'repair_admin_filiale_edit'         => 'Editare',
+    'repair_admin_filiale_delete'       => 'Ștergere',
 
     // General Settings
     'repair_admin_business_data'  => 'Date de afaceri',

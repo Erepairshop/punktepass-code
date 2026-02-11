@@ -68,6 +68,10 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_create_filiale', [__CLASS__, 'ajax_create_filiale']);
         add_action('wp_ajax_nopriv_ppv_repair_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
         add_action('wp_ajax_ppv_repair_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
+        add_action('wp_ajax_nopriv_ppv_repair_edit_filiale', [__CLASS__, 'ajax_edit_filiale']);
+        add_action('wp_ajax_ppv_repair_edit_filiale', [__CLASS__, 'ajax_edit_filiale']);
+        add_action('wp_ajax_nopriv_ppv_repair_delete_filiale', [__CLASS__, 'ajax_delete_filiale']);
+        add_action('wp_ajax_ppv_repair_delete_filiale', [__CLASS__, 'ajax_delete_filiale']);
 
         // AJAX: repair Google/Apple OAuth
         add_action('wp_ajax_nopriv_ppv_repair_google_login', [__CLASS__, 'ajax_google_login']);
@@ -1764,6 +1768,93 @@ class PPV_Repair_Core {
             'name' => $target->name,
             'message' => 'Filiale gewechselt',
         ]);
+    }
+
+    /** ============================================================
+     * AJAX: Edit filiale (name, city, plz)
+     * ============================================================ */
+    public static function ajax_edit_filiale() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+
+        $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
+        if (!$current_store_id) wp_send_json_error(['message' => 'Nicht angemeldet']);
+
+        $filiale_id = intval($_POST['filiale_id'] ?? 0);
+        if (!$filiale_id) wp_send_json_error(['message' => 'Ungültige Filiale']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Get current user's parent
+        $current = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d", $current_store_id
+        ));
+        $parent_id = $current->parent_store_id ? intval($current->parent_store_id) : intval($current->id);
+
+        // Verify filiale belongs to same parent
+        $filiale = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d AND (parent_store_id = %d OR id = %d)",
+            $filiale_id, $parent_id, $parent_id
+        ));
+        if (!$filiale) wp_send_json_error(['message' => 'Filiale nicht gefunden']);
+
+        $name = sanitize_text_field($_POST['filiale_name'] ?? '');
+        $city = sanitize_text_field($_POST['city'] ?? '');
+        $plz  = sanitize_text_field($_POST['plz'] ?? '');
+
+        if (empty($name)) wp_send_json_error(['message' => 'Name ist ein Pflichtfeld']);
+
+        $update = ['name' => $name, 'repair_company_name' => $name];
+        if ($city !== '') $update['city'] = $city;
+        if ($plz !== '')  $update['plz'] = $plz;
+
+        $wpdb->update("{$prefix}ppv_stores", $update, ['id' => $filiale_id]);
+
+        wp_send_json_success(['message' => 'Filiale aktualisiert']);
+    }
+
+    /** ============================================================
+     * AJAX: Delete filiale (child only, not parent)
+     * ============================================================ */
+    public static function ajax_delete_filiale() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+
+        $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
+        if (!$current_store_id) wp_send_json_error(['message' => 'Nicht angemeldet']);
+
+        $filiale_id = intval($_POST['filiale_id'] ?? 0);
+        if (!$filiale_id) wp_send_json_error(['message' => 'Ungültige Filiale']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Get current user's parent
+        $current = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d", $current_store_id
+        ));
+        $parent_id = $current->parent_store_id ? intval($current->parent_store_id) : intval($current->id);
+
+        // Verify filiale is a CHILD of parent (cannot delete parent)
+        $filiale = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, name, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d AND parent_store_id = %d",
+            $filiale_id, $parent_id
+        ));
+        if (!$filiale) wp_send_json_error(['message' => 'Hauptfiliale kann nicht gelöscht werden']);
+
+        // Delete related data
+        $wpdb->delete("{$prefix}ppv_rewards", ['store_id' => $filiale_id]);
+        $wpdb->delete("{$prefix}ppv_stores", ['id' => $filiale_id]);
+
+        // If current session was on deleted filiale, switch to parent
+        if ($current_store_id == $filiale_id) {
+            $_SESSION['ppv_repair_store_id'] = $parent_id;
+        }
+
+        if (function_exists('ppv_log')) {
+            ppv_log("🗑️ [PPV_Repair] Filiale deleted: #{$filiale_id} '{$filiale->name}' under parent #{$parent_id}");
+        }
+
+        wp_send_json_success(['message' => 'Filiale gelöscht']);
     }
 
     /** ============================================================

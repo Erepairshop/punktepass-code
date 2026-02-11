@@ -321,6 +321,8 @@ return [
     'repair_admin_filiale_name'         => 'Filiále neve',
     'repair_admin_filiale_name_ph'      => 'pl. Műhely Budapest Belváros',
     'repair_admin_filiale_create'       => 'Filiále létrehozása',
+    'repair_admin_filiale_edit'         => 'Szerkesztés',
+    'repair_admin_filiale_delete'       => 'Törlés',
 
     // General Settings
     'repair_admin_business_data'  => 'Üzleti adatok',

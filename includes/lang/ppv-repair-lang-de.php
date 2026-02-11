@@ -321,6 +321,8 @@ return [
     'repair_admin_filiale_name'         => 'Filialname',
     'repair_admin_filiale_name_ph'      => 'z.B. Werkstatt Berlin Mitte',
     'repair_admin_filiale_create'       => 'Filiale erstellen',
+    'repair_admin_filiale_edit'         => 'Bearbeiten',
+    'repair_admin_filiale_delete'       => 'Löschen',
 
     // General Settings
     'repair_admin_business_data'  => 'Geschäftsdaten',

@@ -1560,16 +1560,33 @@ echo '          </div>
                 </div>';
 
             // List existing filialen
+            $site_url = home_url();
             foreach ($filialen as $f) {
                 $f_is_parent = empty($f->parent_store_id);
                 $f_slug = esc_attr($f->store_slug);
-                echo '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px">
-                    <i class="' . ($f_is_parent ? 'ri-home-4-line' : 'ri-building-2-line') . '" style="color:#667eea;font-size:18px;flex-shrink:0"></i>
-                    <div style="flex:1;min-width:0">
-                        <div style="font-size:14px;font-weight:600;color:#1f2937">' . esc_html($f->name) . '</div>
-                        <div style="font-size:12px;color:#6b7280">' . esc_html($f->city ?: '') . ' · /formular/' . $f_slug . '</div>
+                $f_url  = $site_url . '/formular/' . $f_slug;
+                $f_id   = intval($f->id);
+                echo '<div class="ra-filiale-card" data-fid="' . $f_id . '" style="padding:12px 14px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <i class="' . ($f_is_parent ? 'ri-home-4-line' : 'ri-building-2-line') . '" style="color:#667eea;font-size:18px;flex-shrink:0"></i>
+                        <div style="flex:1;min-width:0">
+                            <div class="ra-filiale-name" style="font-size:14px;font-weight:600;color:#1f2937">' . esc_html($f->name) . '</div>
+                            <div style="font-size:12px;color:#6b7280">' . esc_html($f->city ?: '') . ($f->plz ? ' ' . esc_html($f->plz) : '') . '</div>
+                        </div>
+                        ' . ($f_is_parent ? '<span style="font-size:11px;background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:6px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_filialen_main')) . '</span>' : '') . '
                     </div>
-                    ' . ($f_is_parent ? '<span style="font-size:11px;background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:6px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_filialen_main')) . '</span>' : '') . '
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb">
+                        <button type="button" class="ra-filiale-copy" data-url="' . esc_attr($f_url) . '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;font-size:11px;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .15s" title="Link kopieren">
+                            <i class="ri-link"></i> <span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">/formular/' . $f_slug . '</span>
+                        </button>
+                        <div style="flex:1"></div>
+                        <button type="button" class="ra-filiale-edit" data-fid="' . $f_id . '" data-name="' . esc_attr($f->name) . '" data-city="' . esc_attr($f->city ?: '') . '" data-plz="' . esc_attr($f->plz ?: '') . '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;font-size:11px;color:#374151;cursor:pointer;font-family:inherit;transition:all .15s" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_edit')) . '">
+                            <i class="ri-pencil-line"></i>
+                        </button>
+                        ' . (!$f_is_parent ? '<button type="button" class="ra-filiale-delete" data-fid="' . $f_id . '" data-name="' . esc_attr($f->name) . '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fecaca;background:#fff;border-radius:6px;font-size:11px;color:#dc2626;cursor:pointer;font-family:inherit;transition:all .15s" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_delete')) . '">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>' : '') . '
+                    </div>
                 </div>';
             }
 
@@ -5270,6 +5287,74 @@ echo '          </div>
             });
         });
     }
+
+    /* ===== Copy Filiale Link ===== */
+    document.querySelectorAll(".ra-filiale-copy").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var url = this.getAttribute("data-url");
+            var el = this;
+            navigator.clipboard.writeText(url).then(function() {
+                var orig = el.innerHTML;
+                el.innerHTML = \'<i class="ri-check-line" style="color:#22c55e"></i> Kopiert!\';
+                setTimeout(function(){ el.innerHTML = orig; }, 2000);
+            });
+        });
+    });
+
+    /* ===== Edit Filiale ===== */
+    document.querySelectorAll(".ra-filiale-edit").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var fid = this.getAttribute("data-fid");
+            var card = this.closest(".ra-filiale-card");
+            var curName = this.getAttribute("data-name");
+            var curCity = this.getAttribute("data-city");
+            var curPlz  = this.getAttribute("data-plz");
+
+            var newName = prompt("Name:", curName);
+            if (newName === null) return;
+            var newCity = prompt("Stadt:", curCity);
+            if (newCity === null) return;
+            var newPlz  = prompt("PLZ:", curPlz);
+            if (newPlz === null) return;
+
+            var fd = new FormData();
+            fd.append("action", "ppv_repair_edit_filiale");
+            fd.append("nonce", NONCE);
+            fd.append("filiale_id", fid);
+            fd.append("filiale_name", newName);
+            fd.append("city", newCity);
+            fd.append("plz", newPlz);
+
+            fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success) window.location.reload();
+                else alert(data.data && data.data.message ? data.data.message : "Fehler");
+            });
+        });
+    });
+
+    /* ===== Delete Filiale ===== */
+    document.querySelectorAll(".ra-filiale-delete").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var fid = this.getAttribute("data-fid");
+            var fname = this.getAttribute("data-name");
+
+            if (!confirm("Filiale \\"" + fname + "\\" wirklich löschen? Alle Daten gehen verloren.")) return;
+
+            var fd = new FormData();
+            fd.append("action", "ppv_repair_delete_filiale");
+            fd.append("nonce", NONCE);
+            fd.append("filiale_id", fid);
+
+            fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success) window.location.reload();
+                else alert(data.data && data.data.message ? data.data.message : "Fehler");
+            });
+        });
+    });
 
 })();
 </script>
