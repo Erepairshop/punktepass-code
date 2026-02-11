@@ -27,6 +27,14 @@ class PPV_Repair_Core {
         // DB migration
         add_action('admin_init', [__CLASS__, 'run_migrations'], 6);
 
+        // Monthly form counter reset (cron)
+        add_action('ppv_repair_monthly_reset', [__CLASS__, 'cron_monthly_form_reset']);
+        if (!wp_next_scheduled('ppv_repair_monthly_reset')) {
+            // Schedule for 1st of next month at 00:05
+            $next_month = strtotime('first day of next month 00:05:00');
+            wp_schedule_event($next_month, 'monthly', 'ppv_repair_monthly_reset');
+        }
+
         // AJAX: submit repair form (public, no login required)
         add_action('wp_ajax_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
         add_action('wp_ajax_nopriv_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
@@ -1560,6 +1568,27 @@ class PPV_Repair_Core {
         $subject = "Willkommen bei PunktePass Reparatur - {$shop_name}";
         $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,sans-serif;"><div style="max-width:560px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 16px 0 0;padding:32px 28px;text-align:center;"><h1 style="color:#fff;font-size:22px;margin:0 0 8px;">Willkommen bei PunktePass!</h1><p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0;">Ihr Reparaturformular ist bereit</p></div><div style="background:#fff;padding:32px 28px;border-radius:0 0 16px 16px;"><p style="font-size:16px;color:#1f2937;margin:0 0 20px;">Hallo <strong>' . esc_html($first) . '</strong>,</p><div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;"><div style="font-size:12px;font-weight:600;color:#0369a1;margin-bottom:8px;">IHR FORMULAR-LINK</div><a href="' . esc_url($form_url) . '" style="font-size:16px;color:#1d4ed8;font-weight:600;">' . esc_html($form_url) . '</a></div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:0 0 24px;"><div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;">ZUGANGSDATEN</div><p style="margin:4px 0;font-size:14px;"><strong>E-Mail:</strong> ' . esc_html($email) . '</p><p style="margin:4px 0;font-size:14px;"><strong>Passwort:</strong> <code>' . esc_html($password) . '</code></p><p style="margin:4px 0;font-size:14px;"><strong>Admin:</strong> <a href="' . esc_url($admin_url) . '">' . esc_html($admin_url) . '</a></p></div><div style="text-align:center;"><a href="' . esc_url($admin_url) . '" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Zum Admin-Bereich</a></div></div></div></body></html>';
         wp_mail($email, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+    }
+
+    /** ============================================================
+     * CRON: Monthly form counter reset for free (non-premium) stores
+     * Resets repair_form_count to 0 on 1st of each month
+     * ============================================================ */
+    public static function cron_monthly_form_reset() {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $affected = $wpdb->query(
+            "UPDATE {$prefix}ppv_stores
+             SET repair_form_count = 0
+             WHERE repair_enabled = 1
+               AND repair_premium = 0
+               AND repair_form_count > 0"
+        );
+
+        if (function_exists('ppv_log')) {
+            ppv_log("🔄 [PPV_Repair] Monthly form counter reset: {$affected} stores reset to 0");
+        }
     }
 
     /** ============================================================
