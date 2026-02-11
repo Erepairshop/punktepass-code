@@ -55,6 +55,12 @@ class PPV_Repair_Core {
         add_action('wp_ajax_nopriv_ppv_repair_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_ppv_repair_login', [__CLASS__, 'ajax_login']);
 
+        // AJAX: repair Google/Apple OAuth
+        add_action('wp_ajax_nopriv_ppv_repair_google_login', [__CLASS__, 'ajax_google_login']);
+        add_action('wp_ajax_ppv_repair_google_login', [__CLASS__, 'ajax_google_login']);
+        add_action('wp_ajax_nopriv_ppv_repair_apple_login', [__CLASS__, 'ajax_apple_login']);
+        add_action('wp_ajax_ppv_repair_apple_login', [__CLASS__, 'ajax_apple_login']);
+
         // AJAX: repair admin actions (need nopriv because repair admin uses session auth, not WP login)
         $admin_actions = [
             'ppv_repair_update_status'  => [__CLASS__, 'ajax_update_status'],
@@ -1554,6 +1560,254 @@ class PPV_Repair_Core {
         $subject = "Willkommen bei PunktePass Reparatur - {$shop_name}";
         $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,sans-serif;"><div style="max-width:560px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 16px 0 0;padding:32px 28px;text-align:center;"><h1 style="color:#fff;font-size:22px;margin:0 0 8px;">Willkommen bei PunktePass!</h1><p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0;">Ihr Reparaturformular ist bereit</p></div><div style="background:#fff;padding:32px 28px;border-radius:0 0 16px 16px;"><p style="font-size:16px;color:#1f2937;margin:0 0 20px;">Hallo <strong>' . esc_html($first) . '</strong>,</p><div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;"><div style="font-size:12px;font-weight:600;color:#0369a1;margin-bottom:8px;">IHR FORMULAR-LINK</div><a href="' . esc_url($form_url) . '" style="font-size:16px;color:#1d4ed8;font-weight:600;">' . esc_html($form_url) . '</a></div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:0 0 24px;"><div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;">ZUGANGSDATEN</div><p style="margin:4px 0;font-size:14px;"><strong>E-Mail:</strong> ' . esc_html($email) . '</p><p style="margin:4px 0;font-size:14px;"><strong>Passwort:</strong> <code>' . esc_html($password) . '</code></p><p style="margin:4px 0;font-size:14px;"><strong>Admin:</strong> <a href="' . esc_url($admin_url) . '">' . esc_html($admin_url) . '</a></p></div><div style="text-align:center;"><a href="' . esc_url($admin_url) . '" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Zum Admin-Bereich</a></div></div></div></body></html>';
         wp_mail($email, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+    }
+
+    /** ============================================================
+     * Verify Google JWT Token (shared helper)
+     * ============================================================ */
+    private static function verify_google_token($credential) {
+        $web_client_id = defined('PPV_GOOGLE_CLIENT_ID')
+            ? PPV_GOOGLE_CLIENT_ID
+            : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
+        $ios_client_id = '645942978357-1bdviltt810gutpve9vjj2kab340man6.apps.googleusercontent.com';
+
+        $parts = explode('.', $credential);
+        if (count($parts) !== 3) return false;
+
+        $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
+        if (!$payload) return false;
+
+        $valid_audiences = [$web_client_id, $ios_client_id];
+        if (!isset($payload['aud']) || !in_array($payload['aud'], $valid_audiences)) return false;
+        if (!isset($payload['exp']) || $payload['exp'] < time()) return false;
+
+        return $payload;
+    }
+
+    /** ============================================================
+     * Verify Apple JWT Token (shared helper)
+     * ============================================================ */
+    private static function verify_apple_token($id_token) {
+        $parts = explode('.', $id_token);
+        if (count($parts) !== 3) return false;
+
+        $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
+        if (!$payload) return false;
+
+        if (!isset($payload['iss']) || $payload['iss'] !== 'https://appleid.apple.com') return false;
+
+        $client_id = defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', '');
+        if (!empty($client_id) && isset($payload['aud']) && $payload['aud'] !== $client_id) return false;
+
+        if (isset($payload['exp']) && $payload['exp'] < time()) return false;
+
+        return $payload;
+    }
+
+    /** ============================================================
+     * Helper: Find or create repair user + store, set session
+     * Used by Google and Apple OAuth flows
+     * ============================================================ */
+    private static function oauth_find_or_create($email, $first_name, $last_name, $provider_id_field, $provider_id, $mode) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $display_name = trim("{$first_name} {$last_name}") ?: $email;
+
+        // Check if user exists
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_users WHERE email=%s LIMIT 1", $email
+        ));
+
+        if (!$user) {
+            if ($mode === 'login') {
+                // Login mode: user must exist
+                wp_send_json_error(['message' => 'Kein Konto mit dieser E-Mail gefunden. Bitte zuerst registrieren.']);
+            }
+
+            // Registration mode: create user + store
+            $wpdb->insert("{$prefix}ppv_users", [
+                'email'        => $email,
+                'password'     => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
+                'first_name'   => $first_name,
+                'last_name'    => $last_name,
+                'display_name' => $display_name,
+                'qr_token'     => wp_generate_password(10, false, false),
+                'login_token'  => bin2hex(random_bytes(32)),
+                'user_type'    => 'handler',
+                $provider_id_field => $provider_id,
+                'active'       => 1,
+                'created_at'   => current_time('mysql'),
+                'updated_at'   => current_time('mysql'),
+            ]);
+            $user_id = $wpdb->insert_id;
+            if (!$user_id) {
+                wp_send_json_error(['message' => 'Registrierung fehlgeschlagen']);
+            }
+
+            // Create store
+            $shop_name = $display_name;
+            $slug = sanitize_title($shop_name);
+            $base_slug = $slug;
+            $counter = 1;
+            while ($wpdb->get_var($wpdb->prepare("SELECT id FROM {$prefix}ppv_stores WHERE store_slug=%s", $slug))) {
+                $slug = $base_slug . '-' . $counter++;
+            }
+
+            $wpdb->insert("{$prefix}ppv_stores", [
+                'user_id'              => $user_id,
+                'store_key'            => wp_generate_password(16, false, false),
+                'name'                 => $shop_name,
+                'store_slug'           => $slug,
+                'email'                => $email,
+                'qr_secret'            => wp_generate_password(32, false, false),
+                'pos_api_key'          => bin2hex(random_bytes(16)),
+                'active'               => 1,
+                'visible'              => 1,
+                'repair_enabled'       => 1,
+                'repair_points_per_form' => 2,
+                'repair_form_count'    => 0,
+                'repair_form_limit'    => 50,
+                'repair_premium'       => 0,
+                'repair_company_name'  => $shop_name,
+                'repair_owner_name'    => $display_name,
+                'repair_color'         => '#667eea',
+                'subscription_status'  => 'trial',
+                'trial_ends_at'        => date('Y-m-d H:i:s', strtotime('+30 days')),
+                'created_at'           => current_time('mysql'),
+            ]);
+            $store_id = $wpdb->insert_id;
+            if (!$store_id) {
+                $wpdb->delete("{$prefix}ppv_users", ['id' => $user_id]);
+                wp_send_json_error(['message' => 'Shop-Erstellung fehlgeschlagen']);
+            }
+
+            // Create default reward
+            $wpdb->insert("{$prefix}ppv_rewards", [
+                'store_id'        => $store_id,
+                'name'            => '10 Euro Rabatt',
+                'description'     => '10 Euro Rabatt auf Ihre nächste Reparatur',
+                'required_points' => 4,
+                'points_given'    => 0,
+                'active'          => 1,
+                'created_at'      => current_time('mysql'),
+            ]);
+
+            // Set session and redirect to admin
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+            $_SESSION['ppv_repair_store_id'] = $store_id;
+
+            $form_url  = home_url("/formular/{$slug}");
+            $admin_url = home_url('/formular/admin');
+            self::send_welcome_email($email, $display_name, $shop_name, $form_url, $admin_url, '(Google/Apple Login)');
+
+            wp_send_json_success([
+                'store_id' => $store_id,
+                'slug'     => $slug,
+                'redirect' => $admin_url,
+                'mode'     => 'register',
+                'message'  => 'Registrierung erfolgreich!',
+            ]);
+        }
+
+        // User exists - update provider ID if missing
+        if (empty($user->{$provider_id_field})) {
+            $wpdb->update("{$prefix}ppv_users", [$provider_id_field => $provider_id], ['id' => $user->id]);
+        }
+
+        // Find associated repair store
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE user_id=%d AND repair_enabled=1 LIMIT 1",
+            $user->id
+        ));
+
+        if (!$store) {
+            wp_send_json_error(['message' => 'Kein Reparatur-Shop für dieses Konto gefunden.']);
+        }
+
+        // Set session
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        $_SESSION['ppv_repair_store_id'] = $store->id;
+
+        wp_send_json_success([
+            'store_id' => $store->id,
+            'slug'     => $store->store_slug,
+            'redirect' => home_url('/formular/admin'),
+            'mode'     => 'login',
+            'message'  => 'Erfolgreich angemeldet!',
+        ]);
+    }
+
+    /** ============================================================
+     * AJAX: Repair Google Login/Register
+     * ============================================================ */
+    public static function ajax_google_login() {
+        $credential = sanitize_text_field($_POST['credential'] ?? '');
+        $mode       = sanitize_text_field($_POST['mode'] ?? 'register');
+
+        if (empty($credential)) {
+            wp_send_json_error(['message' => 'Google Login fehlgeschlagen']);
+        }
+
+        $payload = self::verify_google_token($credential);
+        if (!$payload) {
+            wp_send_json_error(['message' => 'Google Token ungültig']);
+        }
+
+        $email      = sanitize_email($payload['email'] ?? '');
+        $google_id  = sanitize_text_field($payload['sub'] ?? '');
+        $first_name = sanitize_text_field($payload['given_name'] ?? '');
+        $last_name  = sanitize_text_field($payload['family_name'] ?? '');
+
+        if (empty($email) || empty($google_id)) {
+            wp_send_json_error(['message' => 'Google Login fehlgeschlagen']);
+        }
+
+        self::oauth_find_or_create($email, $first_name, $last_name, 'google_id', $google_id, $mode);
+    }
+
+    /** ============================================================
+     * AJAX: Repair Apple Login/Register
+     * ============================================================ */
+    public static function ajax_apple_login() {
+        $id_token  = sanitize_text_field($_POST['id_token'] ?? '');
+        $user_data = isset($_POST['user']) ? json_decode(stripslashes($_POST['user']), true) : null;
+        $mode      = sanitize_text_field($_POST['mode'] ?? 'register');
+
+        if (empty($id_token)) {
+            wp_send_json_error(['message' => 'Apple Login fehlgeschlagen']);
+        }
+
+        $payload = self::verify_apple_token($id_token);
+        if (!$payload) {
+            wp_send_json_error(['message' => 'Apple Token ungültig']);
+        }
+
+        $apple_id   = sanitize_text_field($payload['sub'] ?? '');
+        $email      = sanitize_email($payload['email'] ?? '');
+        $first_name = '';
+        $last_name  = '';
+
+        // Apple only provides user data on first authorization
+        if ($user_data && isset($user_data['name'])) {
+            $first_name = sanitize_text_field($user_data['name']['firstName'] ?? '');
+            $last_name  = sanitize_text_field($user_data['name']['lastName'] ?? '');
+        }
+
+        if (empty($apple_id)) {
+            wp_send_json_error(['message' => 'Apple Login fehlgeschlagen']);
+        }
+
+        // If no email from Apple, try to find by apple_id
+        if (empty($email)) {
+            global $wpdb;
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT email FROM {$wpdb->prefix}ppv_users WHERE apple_id=%s LIMIT 1", $apple_id
+            ));
+            $email = $user ? $user->email : ($apple_id . '@privaterelay.appleid.com');
+        }
+
+        self::oauth_find_or_create($email, $first_name, $last_name, 'apple_id', $apple_id, $mode);
     }
 
     /** ============================================================

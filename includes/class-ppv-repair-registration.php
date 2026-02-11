@@ -83,6 +83,8 @@ class PPV_Repair_Registration {
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         /* ── Reset & Base ── */
@@ -1600,6 +1602,8 @@ class PPV_Repair_Registration {
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f2')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f3')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f4')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f5')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f6')); ?></li>
             </ul>
         </div>
         <div class="pp-pricing-card featured pp-fade-in pp-fade-in-2">
@@ -1612,7 +1616,6 @@ class PPV_Repair_Registration {
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f2')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f3')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f4')); ?></li>
-                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f5')); ?></li>
             </ul>
         </div>
     </div>
@@ -1629,11 +1632,11 @@ class PPV_Repair_Registration {
 
         <!-- OAuth Quick Registration -->
         <div style="padding:28px 28px 0">
-            <button type="button" id="rr-google-btn" class="pp-oauth-btn pp-oauth-google" onclick="ppvOAuthRegister('google')">
+            <button type="button" id="rr-google-btn" class="pp-oauth-btn pp-oauth-google">
                 <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
                 <?php echo esc_html(PPV_Lang::t('repair_reg_google')); ?>
             </button>
-            <button type="button" id="rr-apple-btn" class="pp-oauth-btn pp-oauth-apple" onclick="ppvOAuthRegister('apple')">
+            <button type="button" id="rr-apple-btn" class="pp-oauth-btn pp-oauth-apple" onclick="ppvOAuthApple()">
                 <svg width="18" height="18" viewBox="0 0 18 18"><path fill="currentColor" d="M14.94 9.88c-.02-2.07 1.69-3.06 1.77-3.11-.96-1.41-2.46-1.6-3-1.63-1.27-.13-2.49.75-3.14.75-.65 0-1.65-.73-2.72-.71-1.4.02-2.69.81-3.41 2.07-1.46 2.53-.37 6.27 1.05 8.32.69 1 1.52 2.13 2.61 2.09 1.05-.04 1.44-.68 2.71-.68 1.27 0 1.62.68 2.72.66 1.13-.02 1.84-1.02 2.53-2.03.8-1.16 1.12-2.28 1.14-2.34-.02-.01-2.19-.84-2.21-3.34zM12.87 3.53c.58-.7.97-1.67.86-2.64-.83.03-1.84.55-2.44 1.25-.53.62-1 1.61-.87 2.56.93.07 1.87-.47 2.45-1.17z"/></svg>
                 <?php echo esc_html(PPV_Lang::t('repair_reg_apple')); ?>
             </button>
@@ -1867,37 +1870,145 @@ class PPV_Repair_Registration {
     });
 })();
 
-// OAuth registration handler (Google / Apple)
-function ppvOAuthRegister(provider) {
-    var AJAX_URL = <?php echo json_encode($ajax_url); ?>;
-    var NONCE    = <?php echo json_encode($nonce); ?>;
+// ── Google OAuth (GSI) ──
+var ppvGoogleClientId = '<?php echo defined("PPV_GOOGLE_CLIENT_ID") ? PPV_GOOGLE_CLIENT_ID : get_option("ppv_google_client_id", "645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com"); ?>';
+var ppvAppleClientId  = '<?php echo defined("PPV_APPLE_CLIENT_ID") ? PPV_APPLE_CLIENT_ID : get_option("ppv_apple_client_id", ""); ?>';
+var ppvGoogleInit = false;
 
-    // Redirect to OAuth flow
+function ppvInitGoogle() {
+    if (ppvGoogleInit || typeof google === 'undefined' || !google.accounts) return false;
+    try {
+        google.accounts.id.initialize({
+            client_id: ppvGoogleClientId,
+            callback: ppvGoogleCallback,
+            auto_select: false
+        });
+        ppvGoogleInit = true;
+    } catch(e) {}
+    return ppvGoogleInit;
+}
+
+function ppvGoogleCallback(response) {
+    if (!response.credential) return;
+    var btn = document.getElementById('rr-google-btn');
+    btn.disabled = true;
+    btn.textContent = 'Google...';
+
     var data = new FormData();
-    data.append('action', 'ppv_repair_oauth_init');
-    data.append('nonce', NONCE);
-    data.append('provider', provider);
-    data.append('redirect_url', window.location.href);
+    data.append('action', 'ppv_repair_google_login');
+    data.append('credential', response.credential);
+    data.append('mode', 'register');
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', AJAX_URL, true);
     xhr.onload = function() {
+        btn.disabled = false;
         try {
             var res = JSON.parse(xhr.responseText);
-            if (res.success && res.data && res.data.auth_url) {
-                window.location.href = res.data.auth_url;
+            if (res.success && res.data) {
+                window.location.href = res.data.redirect || '/formular/admin';
             } else {
-                alert(res.data && res.data.message ? res.data.message : 'OAuth error');
+                var errBox = document.getElementById('rr-error');
+                errBox.textContent = res.data && res.data.message ? res.data.message : 'Google Login fehlgeschlagen';
+                errBox.classList.remove('pp-hidden');
             }
-        } catch (e) {
-            alert('Unexpected error');
+        } catch(e) {
+            alert('Unerwarteter Fehler');
         }
     };
-    xhr.onerror = function() {
-        alert('Network error');
-    };
+    xhr.onerror = function() { btn.disabled = false; alert('Netzwerkfehler'); };
     xhr.send(data);
 }
+
+// Google button click
+document.getElementById('rr-google-btn').addEventListener('click', function() {
+    ppvInitGoogle();
+    if (ppvGoogleInit && typeof google !== 'undefined' && google.accounts) {
+        try { google.accounts.id.cancel(); } catch(e) {}
+        google.accounts.id.prompt(function(notification) {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                // Fallback: render Google button
+                var container = document.createElement('div');
+                container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#fff;padding:24px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2)';
+                document.body.appendChild(container);
+                google.accounts.id.renderButton(container, { theme:'outline', size:'large', width:280 });
+                setTimeout(function() { var b = container.querySelector('[role="button"]'); if(b) b.click(); }, 200);
+                setTimeout(function() { if(container.parentNode) container.parentNode.removeChild(container); }, 30000);
+            }
+        });
+    } else {
+        // SDK not loaded yet, try again
+        setTimeout(function() { ppvInitGoogle(); }, 500);
+    }
+});
+
+// ── Apple Sign-In ──
+function ppvOAuthApple() {
+    if (!ppvAppleClientId) {
+        alert('Apple Sign-In ist derzeit nicht verfügbar');
+        return;
+    }
+    // Load Apple SDK if not loaded
+    if (typeof AppleID === 'undefined') {
+        var s = document.createElement('script');
+        s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+        s.onload = function() { ppvDoAppleSignIn(); };
+        document.head.appendChild(s);
+    } else {
+        ppvDoAppleSignIn();
+    }
+}
+
+function ppvDoAppleSignIn() {
+    try {
+        AppleID.auth.init({
+            clientId: ppvAppleClientId,
+            scope: 'name email',
+            redirectURI: window.location.origin + '/formular',
+            usePopup: true
+        });
+        AppleID.auth.signIn().then(function(response) {
+            if (!response.authorization || !response.authorization.id_token) return;
+            var btn = document.getElementById('rr-apple-btn');
+            btn.disabled = true;
+            btn.textContent = 'Apple...';
+
+            var data = new FormData();
+            data.append('action', 'ppv_repair_apple_login');
+            data.append('id_token', response.authorization.id_token);
+            data.append('mode', 'register');
+            if (response.user) data.append('user', JSON.stringify(response.user));
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', AJAX_URL, true);
+            xhr.onload = function() {
+                btn.disabled = false;
+                try {
+                    var res = JSON.parse(xhr.responseText);
+                    if (res.success && res.data) {
+                        window.location.href = res.data.redirect || '/formular/admin';
+                    } else {
+                        var errBox = document.getElementById('rr-error');
+                        errBox.textContent = res.data && res.data.message ? res.data.message : 'Apple Login fehlgeschlagen';
+                        errBox.classList.remove('pp-hidden');
+                    }
+                } catch(e) { alert('Unerwarteter Fehler'); }
+            };
+            xhr.onerror = function() { btn.disabled = false; alert('Netzwerkfehler'); };
+            xhr.send(data);
+        }).catch(function(err) {
+            if (err.error !== 'popup_closed_by_user') {
+                alert('Apple Sign-In fehlgeschlagen');
+            }
+        });
+    } catch(e) {
+        alert('Apple Sign-In fehlgeschlagen');
+    }
+}
+
+// Init Google on page load
+if (typeof google !== 'undefined' && google.accounts) { ppvInitGoogle(); }
+else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 500); }); }
 </script>
 
 <!-- ============ FEATURE MODAL ============ -->

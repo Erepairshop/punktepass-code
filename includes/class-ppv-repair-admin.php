@@ -37,6 +37,8 @@ class PPV_Repair_Admin {
 <title><?php echo esc_html(PPV_Lang::t('repair_login_title')); ?></title>
 <meta name="theme-color" content="#667eea">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+<link rel="preconnect" href="https://accounts.google.com" crossorigin>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f5f7;color:#1f2937;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -173,31 +175,139 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
     });
 })();
 
-// OAuth login handler
-function ppvOAuthLogin(provider) {
+// ── Google OAuth (GSI) for Login ──
+var ppvGoogleClientId = '<?php echo defined("PPV_GOOGLE_CLIENT_ID") ? PPV_GOOGLE_CLIENT_ID : get_option("ppv_google_client_id", "645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com"); ?>';
+var ppvAppleClientId  = '<?php echo defined("PPV_APPLE_CLIENT_ID") ? PPV_APPLE_CLIENT_ID : get_option("ppv_apple_client_id", ""); ?>';
+var AJAX_URL = <?php echo json_encode(esc_url($ajax_url)); ?>;
+var ppvGoogleInit = false;
+
+function ppvInitGoogle() {
+    if (ppvGoogleInit || typeof google === 'undefined' || !google.accounts) return false;
+    try {
+        google.accounts.id.initialize({
+            client_id: ppvGoogleClientId,
+            callback: ppvGoogleCallback,
+            auto_select: false
+        });
+        ppvGoogleInit = true;
+    } catch(e) {}
+    return ppvGoogleInit;
+}
+
+function ppvGoogleCallback(response) {
+    if (!response.credential) return;
+    var errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+
     var fd = new FormData();
-    fd.append('action', 'ppv_repair_oauth_init');
-    fd.append('provider', provider);
-    fd.append('redirect_url', window.location.href);
+    fd.append('action', 'ppv_repair_google_login');
+    fd.append('credential', response.credential);
     fd.append('mode', 'login');
 
-    fetch(<?php echo json_encode(esc_url($ajax_url)); ?>, {method: 'POST', body: fd, credentials: 'same-origin'})
+    fetch(AJAX_URL, {method: 'POST', body: fd, credentials: 'same-origin'})
     .then(function(r) { return r.json(); })
     .then(function(data) {
-        if (data.success && data.data && data.data.auth_url) {
-            window.location.href = data.data.auth_url;
+        if (data.success) {
+            window.location.href = data.data.redirect || '/formular/admin';
         } else {
-            var err = document.getElementById('login-error');
-            err.textContent = data.data && data.data.message ? data.data.message : 'OAuth error';
-            err.style.display = 'block';
+            errEl.textContent = data.data && data.data.message ? data.data.message : 'Google Login fehlgeschlagen';
+            errEl.style.display = 'block';
         }
     })
     .catch(function() {
-        var err = document.getElementById('login-error');
-        err.textContent = 'Network error';
-        err.style.display = 'block';
+        errEl.textContent = 'Netzwerkfehler';
+        errEl.style.display = 'block';
     });
 }
+
+function ppvOAuthLogin(provider) {
+    if (provider === 'google') {
+        ppvInitGoogle();
+        if (ppvGoogleInit && typeof google !== 'undefined' && google.accounts) {
+            try { google.accounts.id.cancel(); } catch(e) {}
+            google.accounts.id.prompt(function(notification) {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    var container = document.createElement('div');
+                    container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#fff;padding:24px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2)';
+                    document.body.appendChild(container);
+                    google.accounts.id.renderButton(container, { theme:'outline', size:'large', width:280 });
+                    setTimeout(function() { var b = container.querySelector('[role="button"]'); if(b) b.click(); }, 200);
+                    setTimeout(function() { if(container.parentNode) container.parentNode.removeChild(container); }, 30000);
+                }
+            });
+        }
+    } else if (provider === 'apple') {
+        ppvAppleLogin();
+    }
+}
+
+function ppvAppleLogin() {
+    if (!ppvAppleClientId) {
+        var errEl = document.getElementById('login-error');
+        errEl.textContent = 'Apple Sign-In ist derzeit nicht verfügbar';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (typeof AppleID === 'undefined') {
+        var s = document.createElement('script');
+        s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+        s.onload = function() { doAppleLogin(); };
+        document.head.appendChild(s);
+    } else {
+        doAppleLogin();
+    }
+}
+
+function doAppleLogin() {
+    try {
+        AppleID.auth.init({
+            clientId: ppvAppleClientId,
+            scope: 'name email',
+            redirectURI: window.location.origin + '/formular/admin/login',
+            usePopup: true
+        });
+        AppleID.auth.signIn().then(function(response) {
+            if (!response.authorization || !response.authorization.id_token) return;
+
+            var fd = new FormData();
+            fd.append('action', 'ppv_repair_apple_login');
+            fd.append('id_token', response.authorization.id_token);
+            fd.append('mode', 'login');
+            if (response.user) fd.append('user', JSON.stringify(response.user));
+
+            fetch(AJAX_URL, {method: 'POST', body: fd, credentials: 'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.location.href = data.data.redirect || '/formular/admin';
+                } else {
+                    var errEl = document.getElementById('login-error');
+                    errEl.textContent = data.data && data.data.message ? data.data.message : 'Apple Login fehlgeschlagen';
+                    errEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                var errEl = document.getElementById('login-error');
+                errEl.textContent = 'Netzwerkfehler';
+                errEl.style.display = 'block';
+            });
+        }).catch(function(err) {
+            if (err.error !== 'popup_closed_by_user') {
+                var errEl = document.getElementById('login-error');
+                errEl.textContent = 'Apple Sign-In fehlgeschlagen';
+                errEl.style.display = 'block';
+            }
+        });
+    } catch(e) {
+        var errEl = document.getElementById('login-error');
+        errEl.textContent = 'Apple Sign-In fehlgeschlagen';
+        errEl.style.display = 'block';
+    }
+}
+
+// Init Google on page load
+if (typeof google !== 'undefined' && google.accounts) { ppvInitGoogle(); }
+else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 500); }); }
 </script>
 </body>
 </html><?php
