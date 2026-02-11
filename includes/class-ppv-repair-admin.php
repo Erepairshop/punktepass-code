@@ -3099,18 +3099,47 @@ echo '</div></div>
             brand: card.dataset.brand||"",
             model: card.dataset.model||"",
             pin: card.dataset.pin||"",
+            imei: card.dataset.imei||"",
+            accessories: card.dataset.accessories||"",
             problem: card.dataset.problem||"",
             date: card.dataset.date||"",
             muster: card.dataset.muster||"",
-            signature: card.dataset.signature||""
+            signature: card.dataset.signature||"",
+            customfields: card.dataset.customfields||""
         };
         var w=window.open("","_blank","width=800,height=900");
         if(!w){alert(L.popup_blocked);return;}
         var device=((data.brand||"")+" "+(data.model||"")).trim();
         var musterHtml=data.muster&&data.muster.indexOf("data:image/")===0?\'<div class="field"><span class="label">\'+L.print_muster+\':</span><img src="\'+data.muster+\'" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>\':"";
         var pinHtml=data.pin?\'<div class="field"><span class="label">\'+L.print_pin+\':</span><span class="value highlight">\'+esc(data.pin)+\'</span></div>\':"";
+        var imeiHtml=data.imei?\'<div class="field"><span class="label">IMEI:</span><span class="value">\'+esc(data.imei)+\'</span></div>\':"";
         var addressHtml=data.address?\'<div class="field"><span class="label">\'+L.print_address+\':</span><span class="value">\'+esc(data.address)+\'</span></div>\':"";
+        var accHtml=data.accessories?\'<div class="field"><span class="label">Zubehör:</span><span class="value">\'+esc(data.accessories)+\'</span></div>\':"";
         var signatureHtml=data.signature&&data.signature.indexOf("data:image/")===0?\'<div class="sig-img"><img src="\'+data.signature+\'" style="max-height:40px"></div>\':\'<div class="signature-line"></div>\';
+        // Parse custom fields for print
+        var cfHtml="";
+        if(data.customfields){
+            try{
+                var cf=JSON.parse(data.customfields);
+                var cfLabels={device_color:"Farbe",purchase_date:"Kaufdatum",priority:"Priorität",cost_limit:"Kostenrahmen"};
+                for(var ck in cf){
+                    if(ck==="photos"||ck==="condition_check") continue;
+                    var lbl=cfLabels[ck]||ck;
+                    if(typeof cf[ck]==="string"&&cf[ck]) cfHtml+=\'<div class="field"><span class="label">\'+esc(lbl)+\':</span><span class="value">\'+esc(cf[ck])+\'</span></div>\';
+                }
+                if(cf.condition_check){
+                    var cond=typeof cf.condition_check==="string"?JSON.parse(cf.condition_check):cf.condition_check;
+                    var cParts=[];
+                    for(var cp in cond) cParts.push(cp+": "+cond[cp].toUpperCase());
+                    if(cParts.length) cfHtml+=\'<div class="field"><span class="label">Zustand:</span><span class="value">\'+esc(cParts.join(", "))+\'</span></div>\';
+                }
+                if(cf.photos&&cf.photos.length){
+                    cfHtml+=\'<div class="field"><span class="label">Fotos:</span><span class="value">\';
+                    cf.photos.forEach(function(u){cfHtml+=\'<img src="\'+u+\'" style="width:50px;height:50px;object-fit:cover;border-radius:4px;border:1px solid #ddd;margin-right:4px">\'});
+                    cfHtml+=\'</span></div>\';
+                }
+            }catch(e){}
+        }
         var html=\'<!DOCTYPE html><html><head><meta charset="UTF-8"><title>\'+L.print_title+\' #\'+data.id+\'</title><style>\'+
             \'*{margin:0;padding:0;box-sizing:border-box}\'+
             \'body{font-family:Arial,sans-serif;padding:15px 20px;color:#1f2937;line-height:1.3;font-size:11px}\'+
@@ -3160,12 +3189,15 @@ echo '</div></div>
                 \'</div>\'+
                 \'<div class="section"><div class="section-title">\'+L.print_device+\'</div>\'+
                     \'<div class="field"><span class="label">\'+L.print_device+\':</span><span class="value">\'+esc(device)+\'</span></div>\'+
+                    imeiHtml+
                     pinHtml+
                     musterHtml+
+                    cfHtml+
                 \'</div>\'+
             \'</div>\'+
             \'<div class="problem-section"><div class="section-title">\'+L.print_problem+\'</div>\'+
                 \'<div style="font-size:11px">\'+esc(data.problem)+\'</div>\'+
+                accHtml+
             \'</div>\'+
             \'<div class="datenschutz">\'+
                 \'<div class="datenschutz-title">\'+L.print_privacy+\'</div>\'+
@@ -5931,6 +5963,70 @@ echo '</div></div>
             $address_html = '<div class="ra-repair-address"><i class="ri-map-pin-line"></i> ' . esc_html($r->customer_address) . '</div>';
         }
 
+        // IMEI display
+        $imei_html = '';
+        if (!empty($r->device_imei)) {
+            $imei_html = '<div class="ra-repair-imei" style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-barcode-line"></i> IMEI: ' . esc_html($r->device_imei) . '</div>';
+        }
+
+        // Accessories display
+        $acc_html = '';
+        if (!empty($r->accessories)) {
+            $acc_html = '<div class="ra-repair-acc" style="font-size:12px;color:#6b7280;margin-top:4px"><i class="ri-checkbox-multiple-line"></i> ' . esc_html($r->accessories) . '</div>';
+        }
+
+        // Custom fields (includes new built-in extras: color, date, condition, priority, cost, photos)
+        $cf_html = '';
+        $cf_data_json = '';
+        if (!empty($r->custom_fields)) {
+            $cf = json_decode($r->custom_fields, true);
+            if (is_array($cf) && !empty($cf)) {
+                $cf_data_json = esc_attr($r->custom_fields);
+                $cf_parts = [];
+                $cf_labels = [
+                    'device_color' => ['icon' => 'ri-palette-line', 'label' => PPV_Lang::t('repair_fb_color')],
+                    'purchase_date' => ['icon' => 'ri-calendar-line', 'label' => PPV_Lang::t('repair_fb_purchase_date')],
+                    'priority' => ['icon' => 'ri-flashlight-line', 'label' => PPV_Lang::t('repair_fb_priority')],
+                    'cost_limit' => ['icon' => 'ri-money-euro-circle-line', 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+                ];
+                foreach ($cf as $ck => $cv) {
+                    if ($ck === 'photos' || $ck === 'condition_check') continue; // handled separately
+                    $icon = 'ri-file-text-line';
+                    $lbl = $ck;
+                    if (isset($cf_labels[$ck])) { $icon = $cf_labels[$ck]['icon']; $lbl = $cf_labels[$ck]['label']; }
+                    elseif (strpos($ck, 'custom_') === 0) {
+                        // Get label from field_config
+                        $fc_entry = $field_config[$ck] ?? null;
+                        if ($fc_entry && !empty($fc_entry['label'])) $lbl = $fc_entry['label'];
+                    }
+                    if (is_string($cv) && $cv !== '') {
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="' . $icon . '"></i> ' . esc_html($lbl) . ': <strong style="color:#374151">' . esc_html($cv) . '</strong></div>';
+                    }
+                }
+                // Condition check
+                if (!empty($cf['condition_check'])) {
+                    $cond = is_string($cf['condition_check']) ? json_decode($cf['condition_check'], true) : $cf['condition_check'];
+                    if (is_array($cond)) {
+                        $cond_items = [];
+                        foreach ($cond as $part => $status) {
+                            $color = $status === 'ok' ? '#059669' : '#dc2626';
+                            $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
+                        }
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition')) . ': ' . implode(', ', $cond_items) . '</div>';
+                    }
+                }
+                // Photos
+                if (!empty($cf['photos']) && is_array($cf['photos'])) {
+                    $photo_imgs = '';
+                    foreach ($cf['photos'] as $purl) {
+                        $photo_imgs .= '<img src="' . esc_url($purl) . '" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;margin-right:4px">';
+                    }
+                    $cf_parts[] = '<div style="margin-top:4px"><i class="ri-camera-line" style="font-size:12px;color:#6b7280"></i> ' . $photo_imgs . '</div>';
+                }
+                $cf_html = implode('', $cf_parts);
+            }
+        }
+
         // Check if invoice already exists for this repair
         $invoice_numbers = '';
         if (!empty($r->invoice_numbers)) {
@@ -6056,10 +6152,13 @@ echo '</div></div>
             . ' data-brand="' . esc_attr($r->device_brand) . '"'
             . ' data-model="' . esc_attr($r->device_model) . '"'
             . ' data-pin="' . esc_attr($r->device_pattern) . '"'
+            . ' data-imei="' . esc_attr($r->device_imei) . '"'
             . ' data-problem="' . esc_attr($r->problem_description) . '"'
             . ' data-date="' . esc_attr($date) . '"'
             . ' data-muster="' . esc_attr($r->muster_image) . '"'
             . ' data-signature="' . esc_attr($r->signature_image) . '"'
+            . ' data-accessories="' . esc_attr($r->accessories) . '"'
+            . ' data-customfields="' . $cf_data_json . '"'
             . ' data-invoice="' . esc_attr($invoice_numbers) . '">'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
@@ -6072,8 +6171,11 @@ echo '</div></div>
                     . $address_html
                 . '</div>'
                 . $device_html
+                . $imei_html
                 . $pin_html
                 . $muster_html
+                . $acc_html
+                . $cf_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="' . esc_attr(PPV_Lang::t('repair_admin_last_modified')) . '">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
                 . $invoice_badge_html
