@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Situație Lunară Ianuarie 2026 - Multi-Filiale</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .doc-date {
+            font-size: 9pt;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        /* Company Info */
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+        .company-box .tax {
+            font-size: 8pt;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Filiale header row */
+        .filiale-header td {
+            background: #e8f4f8 !important;
+            font-weight: 600;
+            padding: 10px !important;
+            border-top: 2px solid #1a5276;
+            font-size: 9.5pt;
+            color: #1a5276;
+        }
+
+        /* Filiale subtotal row */
+        .filiale-subtotal td {
+            background: #f0f4f7 !important;
+            font-weight: 600;
+            border-bottom: 2px solid #bdc3c7 !important;
+            font-size: 9pt;
+        }
+
+        /* Summary Row */
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 20pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+
+        /* Filiale Summary Table */
+        .filiale-summary {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .filiale-summary th {
+            background: #34495e;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .filiale-summary th.num {
+            text-align: right;
+        }
+        .filiale-summary td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .filiale-summary td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .filiale-summary tr.grand-total td {
+            background: #1a5276;
+            color: #fff;
+            font-weight: 700;
+            font-size: 10pt;
+            padding: 10px;
+        }
+
+        /* Notes */
+        .notes-row {
+            display: table;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .note-cell {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 8px;
+        }
+        .note-cell:last-child {
+            padding-right: 0;
+            padding-left: 8px;
+        }
+        .note-box {
+            padding: 10px 12px;
+            font-size: 8pt;
+        }
+        .note-box.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-box.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-box.booking .note-title { color: #d68910; }
+        .note-box.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
+        .footer p { margin: 2px 0; }
+
+        /* Print */
+        @media print {
+            body { background: #fff; }
+            .receipt { padding: 0; }
+            .no-print { display: none !important; }
+        }
+
+        /* Download button */
+        .download-bar {
+            max-width: 800px;
+            margin: 15px auto;
+            text-align: center;
+            padding: 10px;
+        }
+        .download-bar button {
+            background: #1a5276;
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            font-size: 11pt;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 0 5px;
+        }
+        .download-bar button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Download / Print bar -->
+    <div class="download-bar no-print">
+        <button onclick="window.print()">Printeaz&#259; / Salveaz&#259; PDF</button>
+    </div>
+
+    <div class="receipt">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Situa&#539;ie Lunar&#259;</div>
+                <div class="doc-subtitle">Centralizator Recompense Clien&#539;i &middot; Toate Filialele</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Nr. 2026-01-L</div>
+                <div class="doc-period">Ianuarie 2026</div>
+                <div class="doc-date">Emis: 01.02.2026</div>
+            </div>
+        </div>
+
+        <!-- Company info -->
+        <div class="company-box">
+            <p class="name">SC EXAMPLE PHONE SERVICE SRL</p>
+            <p>Str. Mihai Eminescu nr. 42</p>
+            <p>550012 Sibiu, Jud. Sibiu</p>
+            <p class="tax">CIF: RO12345678 &middot; Nr. Reg. Com.: J32/1234/2020</p>
+        </div>
+
+        <!-- Filiale Summary -->
+        <table class="filiale-summary">
+            <thead>
+                <tr>
+                    <th>Filial&#259;</th>
+                    <th>Ora&#537;</th>
+                    <th class="num">Utiliz&#259;ri</th>
+                    <th class="num">Puncte</th>
+                    <th class="num">Valoare (RON)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Example Phone Service - Centru</td>
+                    <td>Sibiu</td>
+                    <td class="num">5</td>
+                    <td class="num">2.350</td>
+                    <td class="num">485,00</td>
+                </tr>
+                <tr>
+                    <td>Example Phone Service - Mall</td>
+                    <td>Sibiu</td>
+                    <td class="num">4</td>
+                    <td class="num">1.800</td>
+                    <td class="num">365,00</td>
+                </tr>
+                <tr>
+                    <td>Example Phone Service - Media&#537;</td>
+                    <td>Media&#537;</td>
+                    <td class="num">3</td>
+                    <td class="num">1.450</td>
+                    <td class="num">290,00</td>
+                </tr>
+                <tr class="grand-total">
+                    <td colspan="2">TOTAL GENERAL</td>
+                    <td class="num">12</td>
+                    <td class="num">5.600</td>
+                    <td class="num">1.140,00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Detail Table with Filiale Grouping -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Client</th>
+                    <th>Recompens&#259;</th>
+                    <th class="num">Puncte</th>
+                    <th class="num">Valoare (RON)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- FILIALA 1: Sibiu Centru -->
+                <tr class="filiale-header">
+                    <td colspan="5">&#128205; Example Phone Service - Centru, Sibiu</td>
+                </tr>
+                <tr>
+                    <td>05.01.2026</td>
+                    <td>Popescu Maria</td>
+                    <td>Folie protec&#539;ie gratuit&#259;</td>
+                    <td class="num">500</td>
+                    <td class="num">45,00</td>
+                </tr>
+                <tr>
+                    <td>08.01.2026</td>
+                    <td>Ionescu Andrei</td>
+                    <td>Reducere 15% repara&#539;ie ecran</td>
+                    <td class="num">350</td>
+                    <td class="num">120,00</td>
+                </tr>
+                <tr>
+                    <td>12.01.2026</td>
+                    <td>Dumitrescu Elena</td>
+                    <td>Hus&#259; telefon gratuit&#259;</td>
+                    <td class="num">400</td>
+                    <td class="num">35,00</td>
+                </tr>
+                <tr>
+                    <td>19.01.2026</td>
+                    <td>Radu Cristian</td>
+                    <td>Reducere 20% accesorii</td>
+                    <td class="num">600</td>
+                    <td class="num">85,00</td>
+                </tr>
+                <tr>
+                    <td>25.01.2026</td>
+                    <td>Moldovan Ana</td>
+                    <td>&#206;nc&#259;rc&#259;tor wireless gratuit</td>
+                    <td class="num">500</td>
+                    <td class="num">200,00</td>
+                </tr>
+                <tr class="filiale-subtotal">
+                    <td colspan="3" style="text-align: right;">Subtotal Example Phone Service - Centru:</td>
+                    <td class="num">2.350</td>
+                    <td class="num">485,00 RON</td>
+                </tr>
+
+                <!-- FILIALA 2: Sibiu Mall -->
+                <tr class="filiale-header">
+                    <td colspan="5">&#128205; Example Phone Service - Mall, Sibiu</td>
+                </tr>
+                <tr>
+                    <td>03.01.2026</td>
+                    <td>Stanescu Mihai</td>
+                    <td>Folie protec&#539;ie gratuit&#259;</td>
+                    <td class="num">500</td>
+                    <td class="num">45,00</td>
+                </tr>
+                <tr>
+                    <td>10.01.2026</td>
+                    <td>Vasilescu Diana</td>
+                    <td>Reducere 10% repara&#539;ie</td>
+                    <td class="num">300</td>
+                    <td class="num">80,00</td>
+                </tr>
+                <tr>
+                    <td>17.01.2026</td>
+                    <td>Gheorghe Ion</td>
+                    <td>Cur&#259;&#539;are profesional&#259; gratuit&#259;</td>
+                    <td class="num">200</td>
+                    <td class="num">40,00</td>
+                </tr>
+                <tr>
+                    <td>28.01.2026</td>
+                    <td>Popa Simona</td>
+                    <td>Baterie extern&#259; gratuit&#259;</td>
+                    <td class="num">800</td>
+                    <td class="num">200,00</td>
+                </tr>
+                <tr class="filiale-subtotal">
+                    <td colspan="3" style="text-align: right;">Subtotal Example Phone Service - Mall:</td>
+                    <td class="num">1.800</td>
+                    <td class="num">365,00 RON</td>
+                </tr>
+
+                <!-- FILIALA 3: Mediaș -->
+                <tr class="filiale-header">
+                    <td colspan="5">&#128205; Example Phone Service - Media&#537;, Media&#537;</td>
+                </tr>
+                <tr>
+                    <td>07.01.2026</td>
+                    <td>Mure&#537;an Vlad</td>
+                    <td>Reducere 15% repara&#539;ie ecran</td>
+                    <td class="num">350</td>
+                    <td class="num">110,00</td>
+                </tr>
+                <tr>
+                    <td>15.01.2026</td>
+                    <td>Laz&#259;r Gabriela</td>
+                    <td>Folie protec&#539;ie + hus&#259;</td>
+                    <td class="num">600</td>
+                    <td class="num">80,00</td>
+                </tr>
+                <tr>
+                    <td>22.01.2026</td>
+                    <td>Neagu Alexandru</td>
+                    <td>Reducere 20% accesorii</td>
+                    <td class="num">500</td>
+                    <td class="num">100,00</td>
+                </tr>
+                <tr class="filiale-subtotal">
+                    <td colspan="3" style="text-align: right;">Subtotal Example Phone Service - Media&#537;:</td>
+                    <td class="num">1.450</td>
+                    <td class="num">290,00 RON</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Grand Total -->
+        <div class="summary-row">
+            <div class="summary-label">
+                Suma Total&#259; - Toate Filialele
+                <div class="summary-details">12 utiliz&#259;ri &middot; 5.600 puncte &middot; 3 filiale</div>
+            </div>
+            <div class="summary-value">1.140,00<span class="summary-currency">RON</span></div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes-row">
+            <div class="note-cell">
+                <div class="note-box booking">
+                    <div class="note-title">&#206;nregistrare Contabil&#259;</div>
+                    <p>Debit: 623 (Cheltuieli cu publicitatea)</p>
+                    <p>Credit: 5311 (Casa &#238;n lei)</p>
+                </div>
+            </div>
+            <div class="note-cell">
+                <div class="note-box legal">
+                    <div class="note-title">Men&#539;iuni Fiscale</div>
+                    <p>Opera&#539;iune f&#259;r&#259; TVA</p>
+                    <p>Consum intern &#8211; neimpozabil</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Document generat automat, valabil f&#259;r&#259; semn&#259;tur&#259;.</p>
+            <p>Program PunktePass &middot; www.punktepass.de</p>
+            <p>Pentru &#238;ntreb&#259;ri: info@punktepass.de</p>
+        </div>
+    </div>
+
+</body>
+</html>
