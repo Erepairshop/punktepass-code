@@ -2698,6 +2698,20 @@ echo '          </div>
         });
     }
 
+    /* ===== Auto-Polling: refresh repairs list every 15s ===== */
+    var pollTimer=null;
+    function pollRepairs(){
+        if(document.hidden)return;
+        if(searchInput.value.trim()!==""||filterSelect.value!=="")return;
+        doSearch(1);
+    }
+    function startPoll(){if(!pollTimer)pollTimer=setInterval(pollRepairs,15000)}
+    function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null}}
+    document.addEventListener("visibilitychange",function(){
+        if(document.hidden){stopPoll()}else{startPoll();pollRepairs()}
+    });
+    startPoll();
+
     /* ===== Build Card HTML (client side) ===== */
     function buildCardHTML(r){
         var map={
