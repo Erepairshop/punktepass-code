@@ -86,6 +86,7 @@ class PPV_Repair_Form {
             'points_total'     => PPV_Lang::t('repair_points_total'),
             'points_remaining' => PPV_Lang::t('repair_points_remaining'),
             'points_redeemable'=> PPV_Lang::t('repair_points_redeemable'),
+            'auto_redirect'    => PPV_Lang::t('repair_auto_redirect'),
         ], JSON_UNESCAPED_UNICODE);
 
         ob_start();
@@ -120,6 +121,7 @@ class PPV_Repair_Form {
     .repair-lang-btn{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
     .repair-lang-btn:hover{color:#fff;background:rgba(255,255,255,0.15)}
     .repair-lang-btn.active{color:#1f2937;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+    .repair-auto-redirect{text-align:center;margin-top:12px;font-size:13px;color:#94a3b8;font-weight:500}
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -414,7 +416,10 @@ class PPV_Repair_Form {
 
         <p class="repair-success-info"><?php echo esc_html(PPV_Lang::t('repair_email_confirmation')); ?></p>
 
-        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back"><?php echo esc_html(PPV_Lang::t('repair_new_form')); ?></a>
+        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back" id="repair-new-form-btn" onclick="sessionStorage.removeItem('ppv_repair_submitted_<?php echo $store_id; ?>')">
+            <i class="ri-restart-line"></i> <?php echo esc_html(PPV_Lang::t('repair_new_form')); ?>
+        </a>
+        <div id="repair-auto-redirect" class="repair-auto-redirect"></div>
     </div>
 
     <!-- Professional Footer -->
@@ -514,6 +519,7 @@ function toggleProblemTag(btn, text) {
     if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
         form.style.display = 'none';
         successDiv.style.display = 'block';
+        startAutoRedirect();
     }
 
     // Email lookup for returning customers with debounce
@@ -980,6 +986,9 @@ function toggleProblemTag(btn, text) {
                 // Confetti effect
                 createConfetti();
 
+                // Start auto-redirect countdown (2 min)
+                startAutoRedirect();
+
                 // Scroll to top
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
@@ -1018,6 +1027,34 @@ function toggleProblemTag(btn, text) {
             document.body.appendChild(confetti);
             setTimeout(function() { confetti.remove(); }, 4000);
         }
+    }
+
+    // Auto-redirect countdown (2 min)
+    function startAutoRedirect() {
+        var seconds = 120;
+        var redirectDiv = document.getElementById('repair-auto-redirect');
+        var newFormBtn = document.getElementById('repair-new-form-btn');
+        if (!redirectDiv || !newFormBtn) return;
+
+        var formUrl = newFormBtn.href;
+
+        function updateCountdown() {
+            redirectDiv.textContent = ppvLang.auto_redirect.replace('%d', seconds);
+            if (seconds <= 0) {
+                sessionStorage.removeItem(dupKey);
+                window.location.href = formUrl;
+                return;
+            }
+            seconds--;
+            setTimeout(updateCountdown, 1000);
+        }
+
+        // Reset timer on any touch/click
+        var resetTimer = function() { seconds = 120; };
+        document.addEventListener('click', resetTimer);
+        document.addEventListener('touchstart', resetTimer);
+
+        updateCountdown();
     }
 })();
 </script>

@@ -74,6 +74,7 @@ return [
     'repair_points_redeemable'  => '%s einlösbar!',
     'repair_email_confirmation' => 'Sie erhalten eine Bestätigung per E-Mail mit Ihrem Tracking-Link.',
     'repair_new_form'           => 'Neues Formular ausfüllen',
+    'repair_auto_redirect'      => 'Automatisch in %d Sek.',
     'repair_error_generic'      => 'Ein Fehler ist aufgetreten.',
     'repair_welcome_back'       => 'Willkommen zurück! Ihre Daten wurden automatisch eingetragen.',
     'repair_offline_saved'      => 'Ihr Auftrag wurde offline gespeichert und wird automatisch gesendet, sobald Sie wieder online sind.',
@@ -520,6 +521,8 @@ return [
     'repair_admin_send_email'     => 'Per E-Mail senden',
     'repair_admin_resubmit'       => 'Nochmal Anliegen',
     'repair_admin_create_inv_card' => 'Rechnung erstellen',
+    'repair_admin_invoice_exists' => 'Rechnung vorhanden',
+    'repair_admin_invoice_duplicate_warn' => 'Für diese Reparatur wurde bereits eine Rechnung erstellt (%s). Möchten Sie trotzdem eine neue Rechnung erstellen?',
     'repair_admin_delete_repair'  => 'Löschen',
 
     // Print Repair

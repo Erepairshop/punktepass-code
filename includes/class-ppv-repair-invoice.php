@@ -137,6 +137,17 @@ class PPV_Repair_Invoice {
             $stored_vat_rate = 0;
         }
 
+        // Parse address into street, PLZ, city (format: "Straße Nr., PLZ Stadt" or "Straße Nr. PLZ Stadt")
+        $raw_address = $repair->customer_address ?: '';
+        $parsed_street = $raw_address;
+        $parsed_plz = '';
+        $parsed_city = '';
+        if ($raw_address && preg_match('/^(.+?)[\s,]+(\d{4,6})\s+(.+)$/', $raw_address, $m)) {
+            $parsed_street = trim($m[1], ', ');
+            $parsed_plz = $m[2];
+            $parsed_city = trim($m[3]);
+        }
+
         // Insert invoice
         $wpdb->insert("{$prefix}ppv_repair_invoices", [
             'store_id'                  => $store->id,
@@ -145,6 +156,9 @@ class PPV_Repair_Invoice {
             'customer_name'             => $repair->customer_name,
             'customer_email'            => $repair->customer_email,
             'customer_phone'            => $repair->customer_phone ?: '',
+            'customer_address'          => $parsed_street,
+            'customer_plz'              => $parsed_plz,
+            'customer_city'             => $parsed_city,
             'device_info'               => $device,
             'description'               => $repair->problem_description,
             'line_items'                => !empty($line_items) ? wp_json_encode($line_items) : null,
@@ -492,6 +506,34 @@ class PPV_Repair_Invoice {
     }
 
     /**
+     * Recalculate repair_invoice_next_number after deletion
+     */
+    private static function recalc_next_invoice_number($store_id) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT repair_invoice_prefix FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) return;
+
+        $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
+        $all_remaining = $wpdb->get_col($wpdb->prepare(
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+            $store_id,
+            $wpdb->esc_like($inv_prefix) . '%'
+        ));
+        $max_num = 0;
+        foreach ($all_remaining as $inv_num) {
+            if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                $max_num = max($max_num, intval($m[1]));
+            }
+        }
+        $wpdb->update("{$prefix}ppv_stores", [
+            'repair_invoice_next_number' => $max_num + 1
+        ], ['id' => $store_id]);
+    }
+
+    /**
      * AJAX: Delete invoice
      */
     public static function ajax_delete_invoice() {
@@ -512,6 +554,8 @@ class PPV_Repair_Invoice {
         ]);
 
         if ($deleted) {
+            // Recalculate next invoice number based on remaining invoices
+            self::recalc_next_invoice_number($store_id);
             wp_send_json_success(['message' => 'Rechnung gelöscht']);
         } else {
             wp_send_json_error(['message' => 'Rechnung nicht gefunden']);
@@ -1151,41 +1195,7 @@ class PPV_Repair_Invoice {
             $discount_row = '<tr><td></td><td colspan="3" style="color:#059669">' . $t_reward . ': ' . $discount_desc . '</td><td style="color:#059669;font-weight:600">-' . $discount_val . ' &euro;</td></tr>';
         }
 
-        $reward_notice = '';
-        if ($invoice->punktepass_reward_applied) {
-            $reward_notice = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:10px 14px;margin-top:16px;font-size:11px;color:#065f46;"><strong>' . $t_reward_redeemed . '</strong> ' . $discount_desc . ' (' . intval($invoice->points_used) . ' ' . $t_points_used . ')</div>';
-        }
-
-        $notes_section = $notes ? '<div style="margin-top:16px;"><strong style="font-size:11px;color:#6b7280;">' . $t_notes . ':</strong><p style="font-size:11px;color:#374151;margin-top:4px;">' . $notes . '</p></div>' : '';
-
-        // Payment info section (for paid invoices)
-        $payment_section = '';
-        if ($invoice->status === 'paid') {
-            $payment_method = esc_html($invoice->payment_method ?? '');
-            $paid_at = $invoice->paid_at ? date('d.m.Y', strtotime($invoice->paid_at)) : '';
-
-            $payment_method_labels = [
-                'bar' => PPV_Lang::t('repair_pdf_pay_cash'),
-                'ec' => PPV_Lang::t('repair_pdf_pay_ec'),
-                'kreditkarte' => PPV_Lang::t('repair_pdf_pay_credit'),
-                'ueberweisung' => PPV_Lang::t('repair_pdf_pay_transfer'),
-                'paypal' => PPV_Lang::t('repair_pdf_pay_paypal'),
-                'andere' => PPV_Lang::t('repair_pdf_pay_other'),
-            ];
-            $method_display = $payment_method_labels[$payment_method] ?? $payment_method;
-
-            if ($method_display || $paid_at) {
-                $payment_section = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;padding:10px 14px;margin-top:16px;font-size:11px;color:#0369a1;">';
-                $payment_section .= '<strong style="color:#0c4a6e;">' . $t_paid . '</strong>';
-                if ($paid_at) {
-                    $payment_section .= $t_paid_on . $paid_at;
-                }
-                if ($method_display) {
-                    $payment_section .= $t_paid_via . $method_display;
-                }
-                $payment_section .= '</div>';
-            }
-        }
+        // (reward notice and payment section built in template below)
 
         // Build line items rows
         $line_items = json_decode($invoice->line_items ?? '', true);
@@ -1222,41 +1232,6 @@ class PPV_Repair_Invoice {
         $t_tax_nr = PPV_Lang::t('repair_pdf_tax_nr');
         $t_owner = PPV_Lang::t('repair_pdf_owner');
 
-        $footer_col1 = '<strong>' . $owner . ', ' . $company . '</strong><br>' . $addr . '<br>' . $plz_city . '<br>' . $t_country;
-
-        $footer_col2 = $t_tel . ': ' . $phone . '<br>' . $t_email_label . ':<br>' . $email;
-        if ($website) {
-            $footer_col2 .= '<br>' . $t_web . ': ' . $website;
-        }
-        if ($paypal) {
-            $footer_col2 .= '<br>' . $t_paypal_addr . ':<br>' . $paypal;
-        }
-
-        $footer_col3 = '';
-        if ($tax) {
-            $footer_col3 .= $t_vat_id . ': ' . $tax . '<br>';
-        }
-        if ($steuernummer) {
-            $footer_col3 .= $t_tax_nr . ': ' . $steuernummer . '<br>';
-        }
-        if ($owner) {
-            $footer_col3 .= $t_owner . ': ' . $owner;
-        }
-
-        $footer_col4 = '';
-        if ($bank_name || $bank_iban) {
-            $footer_col4 .= $bank_name . '<br>';
-            if ($bank_iban) {
-                $footer_col4 .= 'IBAN:<br>' . $bank_iban . '<br>';
-            }
-            if ($bank_bic) {
-                $footer_col4 .= 'BIC: ' . $bank_bic;
-            }
-        }
-
-        // Sender line for envelope window
-        $sender_line = $owner . ', ' . $addr . ', ' . $plz_city . ', ' . $t_country;
-
         // Translated labels for template
         $t_date = PPV_Lang::t('repair_pdf_date');
         $t_nr = PPV_Lang::t('repair_pdf_nr');
@@ -1279,78 +1254,117 @@ class PPV_Repair_Invoice {
         $t_bank = PPV_Lang::t('repair_pdf_bank');
         $lang_code = PPV_Lang::current() ?: 'de';
 
+        // Payment section with new design
+        $payment_html = '';
+        if ($invoice->status === 'paid') {
+            $payment_method = esc_html($invoice->payment_method ?? '');
+            $paid_at_date = $invoice->paid_at ? date('d.m.Y', strtotime($invoice->paid_at)) : '';
+            $payment_method_labels = [
+                'bar' => PPV_Lang::t('repair_pdf_pay_cash'),
+                'ec' => PPV_Lang::t('repair_pdf_pay_ec'),
+                'kreditkarte' => PPV_Lang::t('repair_pdf_pay_credit'),
+                'ueberweisung' => PPV_Lang::t('repair_pdf_pay_transfer'),
+                'paypal' => PPV_Lang::t('repair_pdf_pay_paypal'),
+                'andere' => PPV_Lang::t('repair_pdf_pay_other'),
+            ];
+            $method_display = $payment_method_labels[$payment_method] ?? $payment_method;
+            if ($method_display || $paid_at_date) {
+                $payment_html = '<div class="info-box payment"><strong>' . $t_paid . '</strong>';
+                if ($paid_at_date) $payment_html .= $t_paid_on . $paid_at_date;
+                if ($method_display) $payment_html .= $t_paid_via . $method_display;
+                $payment_html .= '</div>';
+            }
+        }
+
         return '<!DOCTYPE html><html lang="' . $lang_code . '"><head><meta charset="UTF-8"><style>
-@page{margin:15mm 15mm 28mm 15mm;size:A4}
+@page{margin:10mm 15mm 28mm 15mm;size:A4}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-height:1.5}
-.invoice{padding:0;max-width:100%}
+body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-size:9.5pt;line-height:1.5}
+.invoice{padding:0 4mm;max-width:100%}
+
+/* Accent bar */
+.accent-bar{background:' . $color . ';height:4mm;margin:0 -15mm;margin-top:-10mm}
 
 /* Header */
-.header{display:table;width:100%;margin-bottom:8mm;padding-bottom:5mm;border-bottom:2px solid ' . $color . '}
-.header-left{display:table-cell;vertical-align:top;width:50%}
-.header-right{display:table-cell;vertical-align:top;width:50%;text-align:right}
-.logo{height:40px;margin-bottom:3mm}
-.company-name{font-size:16pt;font-weight:600;color:' . $color . ';margin-bottom:1mm}
-.company-tagline{font-size:9pt;color:#718096}
+.header{display:table;width:100%;padding:6mm 0 5mm}
+.header-left{display:table-cell;vertical-align:middle;width:55%}
+.header-right{display:table-cell;vertical-align:middle;width:45%;text-align:right}
+.logo{height:44px;margin-bottom:2mm}
+.company-name{font-size:18pt;font-weight:700;color:' . $color . ';letter-spacing:-0.3px}
+.company-owner{font-size:9pt;color:#64748b;margin-top:1mm}
+.header-contact{font-size:8.5pt;color:#64748b;line-height:1.7;padding-right:1mm}
+.header-divider{height:0.5mm;background:#e2e8f0;margin-bottom:6mm}
 
 /* Address Section */
-.address-section{display:table;width:100%;margin-bottom:8mm}
+.address-section{display:table;width:100%;margin-bottom:6mm}
 .address-left{display:table-cell;vertical-align:top;width:55%}
 .address-right{display:table-cell;vertical-align:top;width:45%}
-.sender-line{font-size:7pt;color:#a0aec0;margin-bottom:2mm;border-bottom:1px solid #cbd5e0;padding-bottom:1mm;display:inline-block}
-.customer-address{font-size:10pt;line-height:1.6}
-.customer-name{font-weight:600;font-size:11pt}
+.sender-line{font-size:6.5pt;color:#94a3b8;border-bottom:0.5px solid #cbd5e1;padding-bottom:1mm;margin-bottom:3mm;display:inline-block;text-transform:uppercase;letter-spacing:0.3px}
+.customer-address{font-size:10pt;line-height:1.7;color:#1e293b}
+.customer-name{font-weight:700;font-size:11pt;color:#0f172a}
 
 /* Invoice Details Box */
-.invoice-details{background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;padding:4mm}
+.invoice-details{background:#f8fafc;border-left:3px solid ' . $color . ';padding:4mm 5mm}
 .invoice-details table{width:100%;border-collapse:collapse}
-.invoice-details td{padding:2mm 0;font-size:10pt}
-.invoice-details td:first-child{color:#718096;width:45%}
-.invoice-details td:last-child{text-align:right;font-weight:500}
-.invoice-number{font-size:12pt;font-weight:700;color:' . $color . '}
+.invoice-details td{padding:1.5mm 0;font-size:9.5pt}
+.invoice-details td:first-child{color:#64748b;width:48%}
+.invoice-details td:last-child{text-align:right;font-weight:500;color:#1e293b}
+.invoice-number{font-size:14pt;font-weight:800;color:' . $color . ';letter-spacing:-0.5px}
 
 /* Title & Intro */
-.doc-title{font-size:18pt;font-weight:600;color:#2d3748;margin:6mm 0 4mm}
-.intro-text{font-size:10pt;color:#4a5568;margin-bottom:6mm;line-height:1.6}
+.doc-title{font-size:20pt;font-weight:700;color:#0f172a;margin:5mm 0 1mm;letter-spacing:-0.5px}
+.doc-title-line{width:30mm;height:1mm;background:' . $color . ';margin-bottom:4mm}
+.intro-text{font-size:9.5pt;color:#475569;margin-bottom:5mm;line-height:1.6}
 
 /* Items Table */
 .items-table{width:100%;border-collapse:collapse;margin-bottom:5mm}
-.items-table th{background:' . $color . ';color:#fff;padding:3mm 2mm;font-size:9pt;font-weight:600;text-align:left}
-.items-table th:nth-child(1){width:8%;text-align:center;border-radius:3px 0 0 0}
-.items-table th:nth-child(2){width:52%}
+.items-table th{background:' . $color . ';color:#fff;padding:3mm 3mm;font-size:8pt;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;text-align:left}
+.items-table th:nth-child(1){width:7%;text-align:center}
+.items-table th:nth-child(2){width:51%}
 .items-table th:nth-child(3){width:12%;text-align:center}
-.items-table th:nth-child(4){width:14%;text-align:right}
-.items-table th:nth-child(5){width:14%;text-align:right;border-radius:0 3px 0 0}
-.items-table td{padding:3mm 2mm;border-bottom:1px solid #e2e8f0;font-size:10pt;vertical-align:top}
-.items-table td:nth-child(1){text-align:center;color:#718096}
+.items-table th:nth-child(4){width:15%;text-align:right}
+.items-table th:nth-child(5){width:15%;text-align:right;padding-right:4mm}
+.items-table td{padding:3.5mm 3mm;border-bottom:0.5px solid #e2e8f0;font-size:9.5pt;vertical-align:top;color:#334155}
+.items-table td:nth-child(1){text-align:center;color:#94a3b8}
 .items-table td:nth-child(3){text-align:center}
-.items-table td:nth-child(4),.items-table td:nth-child(5){text-align:right}
+.items-table td:nth-child(4),.items-table td:nth-child(5){text-align:right;font-weight:500;padding-right:4mm}
 .items-table tr:last-child td{border-bottom:2px solid ' . $color . '}
 
 /* Summary */
-.summary-section{margin-left:auto;width:50%;margin-top:4mm}
-.summary-row{display:table;width:100%;padding:2mm 0;font-size:10pt}
-.summary-row span:first-child{display:table-cell;text-align:left;color:#718096}
-.summary-row span:last-child{display:table-cell;text-align:right}
-.summary-row.total{border-top:2px solid #2d3748;margin-top:2mm;padding-top:3mm;font-weight:700;font-size:12pt}
-.summary-row.total span{color:#2d3748}
+.summary-wrapper{display:table;width:100%;margin-top:3mm}
+.summary-spacer{display:table-cell;width:50%}
+.summary-section{display:table-cell;width:50%}
+.summary-row{display:table;width:100%;padding:1.5mm 0;font-size:9.5pt}
+.summary-row span:first-child{display:table-cell;text-align:left;color:#64748b}
+.summary-row span:last-child{display:table-cell;text-align:right;color:#1e293b;font-weight:500;padding-right:4mm}
+.summary-divider{border-top:0.5px solid #e2e8f0;margin:1mm 0}
+.summary-row.total{border-top:2px solid #0f172a;margin-top:2mm;padding-top:3mm;font-weight:800;font-size:13pt}
+.summary-row.total span:first-child{color:#0f172a}
+.summary-row.total span:last-child{color:' . $color . '}
 
 /* Info Boxes */
-.info-box{border-radius:4px;padding:3mm 4mm;margin-top:4mm;font-size:9pt}
-.info-box.payment{background:#ebf8ff;border:1px solid #90cdf4;color:#2b6cb0}
-.info-box.reward{background:#f0fff4;border:1px solid #9ae6b4;color:#276749}
-.info-box strong{font-weight:600}
-.vat-notice{font-size:8pt;color:#718096;margin-top:3mm}
+.info-box{padding:3mm 4mm;margin-top:4mm;margin-right:1mm;font-size:9pt}
+.info-box.payment{background:#f0f9ff;border-left:3px solid ' . $color . ';color:#0c4a6e}
+.info-box.reward{background:#f0fdf4;border-left:3px solid #22c55e;color:#14532d}
+.info-box strong{font-weight:700}
+.vat-notice{font-size:8pt;color:#94a3b8;margin-top:3mm;font-style:italic}
+
+/* Notes */
+.notes-section{margin-top:5mm;padding-top:3mm;border-top:0.5px solid #e2e8f0}
+.notes-label{font-size:8pt;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+.notes-text{font-size:9pt;color:#475569;margin-top:1mm;line-height:1.5}
 
 /* Footer */
-.footer{position:fixed;bottom:0;left:0;right:0;padding:4mm 15mm;background:#f7fafc;border-top:1px solid #e2e8f0;font-size:8pt;color:#718096}
+.footer{position:fixed;bottom:0;left:0;right:0;padding:4mm 15mm;border-top:2px solid ' . $color . ';background:#f8fafc;font-size:7.5pt;color:#64748b}
 .footer-grid{display:table;width:100%;table-layout:fixed}
-.footer-col{display:table-cell;vertical-align:top;padding:0 2mm;line-height:1.5}
+.footer-col{display:table-cell;vertical-align:top;padding:0 2mm;line-height:1.6}
 .footer-col:first-child{padding-left:0}
 .footer-col:last-child{padding-right:0}
-.footer-col strong{color:#4a5568;font-weight:600}
-.footer-label{color:#a0aec0;font-size:7pt;text-transform:uppercase;letter-spacing:0.3px}
+.footer-col strong{color:#1e293b;font-weight:700;font-size:7pt}
+.footer-label{color:#94a3b8;font-size:6pt;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:1mm}
 </style></head><body>
+
+<div class="accent-bar"></div>
 
 <div class="invoice">
 
@@ -1358,10 +1372,10 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 <div class="header-left">
 ' . ($logo_url ? '<img src="' . $logo_url . '" class="logo" alt="">' : '') . '
 <div class="company-name">' . $company . '</div>
-<div class="company-tagline">' . ($owner ? $owner : '') . '</div>
+' . ($owner ? '<div class="company-owner">' . $owner . '</div>' : '') . '
 </div>
 <div class="header-right">
-<div style="font-size:9pt;color:#718096;line-height:1.6">
+<div class="header-contact">
 ' . $addr . '<br>
 ' . $plz_city . '<br>
 ' . ($phone ? $t_tel . ': ' . $phone . '<br>' : '') . '
@@ -1369,6 +1383,8 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 </div>
 </div>
 </div>
+
+<div class="header-divider"></div>
 
 <div class="address-section">
 <div class="address-left">
@@ -1393,6 +1409,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 </div>
 
 <div class="doc-title">' . $doc_type_label . '</div>
+<div class="doc-title-line"></div>
 <p class="intro-text">' . $t_greeting . '<br>' . $t_intro . '</p>
 
 <table class="items-table">
@@ -1401,20 +1418,24 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#2d3748;font-size:10pt;line-h
 ' . $discount_row . '
 </table>
 
+<div class="summary-wrapper">
+<div class="summary-spacer"></div>
 <div class="summary-section">
 <div class="summary-row"><span>' . $t_subtotal_net . '</span><span>' . $net_amount . ' &euro;</span></div>
+<div class="summary-divider"></div>
 ' . (!$is_klein && !$is_differenz ? '<div class="summary-row"><span>' . $t_vat_label . ' ' . number_format($vat_rate, 0) . '%</span><span>' . $vat_amount . ' &euro;</span></div>' : '') . '
 <div class="summary-row total"><span>' . $t_total_amount . '</span><span>' . $total . ' &euro;</span></div>
+</div>
 </div>
 
 ' . ($is_klein ? '<p class="vat-notice">' . esc_html($t_small_biz) . '</p>' : '') . '
 ' . ($is_differenz ? '<p class="vat-notice">' . esc_html($t_diff_tax) . '</p>' : '') . '
 
-' . $payment_section . '
+' . $payment_html . '
 
 ' . ($invoice->punktepass_reward_applied ? '<div class="info-box reward"><strong>' . $t_reward_redeemed . '</strong> ' . $discount_desc . '</div>' : '') . '
 
-' . ($notes ? '<div style="margin-top:5mm;padding-top:3mm;border-top:1px solid #e2e8f0"><strong style="font-size:9pt;color:#718096">' . $t_notes . ':</strong><p style="font-size:9pt;color:#4a5568;margin-top:1mm">' . $notes . '</p></div>' : '') . '
+' . ($notes ? '<div class="notes-section"><div class="notes-label">' . $t_notes . ':</div><p class="notes-text">' . $notes . '</p></div>' : '') . '
 
 </div>
 
@@ -1762,6 +1783,11 @@ IBAN: ' . $bank_iban . '
                 default:
                     wp_send_json_error(['message' => 'Unbekannte Operation']);
             }
+        }
+
+        // Recalculate next invoice number after bulk delete
+        if ($operation === 'delete' && $success_count > 0) {
+            self::recalc_next_invoice_number($store_id);
         }
 
         // Handle export operation separately (needs all invoices at once)

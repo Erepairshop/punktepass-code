@@ -74,6 +74,7 @@ return [
     'repair_points_redeemable'  => '%s beváltható!',
     'repair_email_confirmation' => 'E-mailben kap visszaigazolást a követési linkkel.',
     'repair_new_form'           => 'Új űrlap kitöltése',
+    'repair_auto_redirect'      => 'Automatikusan %d mp múlva',
     'repair_error_generic'      => 'Hiba történt.',
     'repair_welcome_back'       => 'Üdv újra! Adatai automatikusan kitöltésre kerültek.',
     'repair_offline_saved'      => 'Megrendelése offline elmentve, és automatikusan elküldjük, amint újra online lesz.',
@@ -520,6 +521,8 @@ return [
     'repair_admin_send_email'     => 'E-mailben küldés',
     'repair_admin_resubmit'       => 'Újra beküldés',
     'repair_admin_create_inv_card' => 'Számla létrehozása',
+    'repair_admin_invoice_exists' => 'Számla létezik',
+    'repair_admin_invoice_duplicate_warn' => 'Ehhez a javításhoz már készült számla (%s). Biztosan új számlát szeretne létrehozni?',
     'repair_admin_delete_repair'  => 'Törlés',
 
     // Print Repair

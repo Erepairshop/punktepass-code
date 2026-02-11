@@ -74,6 +74,7 @@ return [
     'repair_points_redeemable'  => '%s disponibil!',
     'repair_email_confirmation' => 'Veți primi o confirmare prin e-mail cu link-ul de urmărire.',
     'repair_new_form'           => 'Completați un formular nou',
+    'repair_auto_redirect'      => 'Automat în %d sec.',
     'repair_error_generic'      => 'A apărut o eroare.',
     'repair_welcome_back'       => 'Bine ați revenit! Datele dvs. au fost completate automat.',
     'repair_offline_saved'      => 'Comanda dvs. a fost salvată offline și va fi trimisă automat când veți fi din nou online.',
@@ -520,6 +521,8 @@ return [
     'repair_admin_send_email'     => 'Trimite prin e-mail',
     'repair_admin_resubmit'       => 'Retrimite cerere',
     'repair_admin_create_inv_card' => 'Creare factură',
+    'repair_admin_invoice_exists' => 'Factură existentă',
+    'repair_admin_invoice_duplicate_warn' => 'Pentru această reparație a fost deja creată o factură (%s). Doriți să creați o factură nouă?',
     'repair_admin_delete_repair'  => 'Șterge',
 
     // Print Repair

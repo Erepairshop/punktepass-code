@@ -1307,6 +1307,16 @@ trait PPV_QR_REST_Trait {
     public static function rest_get_logs(WP_REST_Request $r) {
         global $wpdb;
 
+        // Ensure index exists for fast log queries (cached via option)
+        if (get_option('ppv_pos_log_idx_v', '0') !== '1') {
+            $table = $wpdb->prefix . 'ppv_pos_log';
+            $idx = $wpdb->get_var("SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}' AND INDEX_NAME = 'idx_store_id'");
+            if (!$idx) {
+                $wpdb->query("ALTER TABLE {$table} ADD INDEX idx_store_id (store_id, id)");
+            }
+            update_option('ppv_pos_log_idx_v', '1', true);
+        }
+
         // 🏪 FILIALE SUPPORT: Use session-aware store ID
         $session_store = self::get_session_aware_store_id($r);
         if (!$session_store || !isset($session_store->id)) {
