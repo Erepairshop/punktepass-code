@@ -192,7 +192,17 @@ class PPV_Repair_Email_Sender {
         $to_emails_raw = $_POST['to_email'] ?? '';
         $to_name = sanitize_text_field($_POST['to_name'] ?? '');
         $subject = sanitize_text_field($_POST['subject'] ?? '');
-        $message = wp_kses_post($_POST['message'] ?? '');
+        // Custom kses: allow <a> tags with href/target/style (wp_kses_post may strip them)
+        $allowed_html = wp_kses_allowed_html('post');
+        $allowed_html['a'] = array(
+            'href'   => true,
+            'target' => true,
+            'rel'    => true,
+            'title'  => true,
+            'style'  => true,
+            'class'  => true,
+        );
+        $message = wp_kses($_POST['message'] ?? '', $allowed_html);
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
         $email_lang = sanitize_text_field($_POST['email_lang'] ?? 'de');
@@ -361,9 +371,32 @@ class PPV_Repair_Email_Sender {
      * Build HTML email with Repair Form branding
      */
     private static function build_html_email($message, $lang = 'de') {
-        // Style all <a href> links as buttons (wp_kses_post strips style/class attributes, so we re-add them here)
-        $cta_style = 'style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;"';
-        $message = preg_replace('/<a\s+href="([^"]+)"[^>]*>/', '<a href="$1" ' . $cta_style . '>', $message);
+        // 1) Convert {{CTA:url|text}} placeholders to table-based buttons (survives wp_kses_post)
+        $message = preg_replace_callback(
+            '/\{\{CTA:([^|]+)\|([^}]+)\}\}/',
+            function($matches) {
+                $url = trim($matches[1]);
+                $text = trim($matches[2]);
+                return '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:10px 0;"><tr>' .
+                    '<td align="center" bgcolor="#667eea" style="background-color:#667eea;border-radius:10px;">' .
+                    '<a href="' . esc_url($url) . '" target="_blank" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 28px;font-weight:600;font-size:15px;">' .
+                    $text . '</a></td></tr></table>';
+            },
+            $message
+        );
+        // 2) Also convert any surviving <a href> tags to buttons (fallback)
+        $message = preg_replace_callback(
+            '/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/s',
+            function($matches) {
+                $url = $matches[1];
+                $text = $matches[2];
+                return '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:10px 0;"><tr>' .
+                    '<td align="center" bgcolor="#667eea" style="background-color:#667eea;border-radius:10px;">' .
+                    '<a href="' . $url . '" target="_blank" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 28px;font-weight:600;font-size:15px;">' .
+                    $text . '</a></td></tr></table>';
+            },
+            $message
+        );
         $message = nl2br($message);
         $year = date('Y');
 
@@ -387,183 +420,51 @@ class PPV_Repair_Email_Sender {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
-    <style>
-        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
-        * { box-sizing: border-box; }
-        body {
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.6;
-            color: #1f2937;
-            margin: 0;
-            padding: 0;
-            background: #f3f4f6;
-        }
-
-        .email-wrapper {
-            padding: 30px 20px;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        .email-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 24px 35px;
-            text-align: center;
-        }
-
-        .email-header-title {
-            color: #fff;
-            font-size: 18px;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .email-header-subtitle {
-            color: rgba(255,255,255,0.8);
-            font-size: 13px;
-            margin: 4px 0 0 0;
-        }
-
-        .email-body {
-            padding: 35px;
-            font-size: 15px;
-            color: #374151;
-            line-height: 1.8;
-        }
-
-        .email-body p {
-            margin-bottom: 16px;
-        }
-
-        .email-body strong {
-            color: #1f2937;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff !important;
-            text-decoration: none;
-            padding: 14px 28px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 15px;
-            margin: 10px 0;
-        }
-
-        .email-footer {
-            background: #1e293b;
-            padding: 24px 35px;
-        }
-
-        .footer-main {
-            display: table;
-            width: 100%;
-        }
-
-        .footer-left {
-            display: table-cell;
-            vertical-align: middle;
-        }
-
-        .footer-right {
-            display: table-cell;
-            vertical-align: middle;
-            text-align: right;
-        }
-
-        .footer-name {
-            font-size: 15px;
-            font-weight: 600;
-            color: #fff;
-            margin: 0 0 2px 0;
-        }
-
-        .footer-title {
-            font-size: 12px;
-            color: #94a3b8;
-            margin: 0;
-        }
-
-        .footer-links a {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
-            line-height: 32px;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 14px;
-            margin-left: 8px;
-        }
-
-        .footer-bottom {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        .footer-bottom a {
-            color: #94a3b8;
-            text-decoration: none;
-            margin-right: 16px;
-        }
-
-        @media only screen and (max-width: 600px) {
-            .email-wrapper { padding: 15px; }
-            .email-body { padding: 25px; font-size: 14px; }
-            .email-footer { padding: 20px 25px; }
-            .footer-left, .footer-right { display: block; text-align: center; }
-            .footer-right { margin-top: 15px; }
-        }
-    </style>
 </head>
-<body>
-    <div class="email-wrapper">
-        <div class="email-container">
-            <!-- Header -->
-            <div class="email-header">
-                <p class="email-header-title">' . $ht['title'] . '</p>
-                <p class="email-header-subtitle">' . $ht['subtitle'] . '</p>
-            </div>
-
-            <!-- Body -->
-            <div class="email-body">' . $message . '</div>
-
-            <!-- Footer -->
-            <div class="email-footer">
-                <div class="footer-main">
-                    <div class="footer-left">
-                        <p class="footer-name">Erik Borota</p>
-                        <p class="footer-title">' . $ft . '</p>
-                    </div>
-                    <div class="footer-right">
-                        <div class="footer-links">
-                            <a href="https://wa.me/4917698479520" title="WhatsApp">&#9993;</a>
-                            <a href="https://punktepass.de/formular" title="Website">&#9679;</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="footer-bottom">
-                    <a href="tel:+4917698479520">+49 176 98479520</a>
-                    <a href="mailto:info@punktepass.de">info@punktepass.de</a>
-                    <span>Siedlungsring 51, 89415 Lauingen</span>
-                </div>
-            </div>
-        </div>
-    </div>
+<body style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1f2937;margin:0;padding:0;background-color:#f3f4f6;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f3f4f6;padding:30px 20px;" role="presentation">
+    <tr><td align="center">
+    <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;" role="presentation">
+        <!-- Header -->
+        <tr>
+            <td align="center" bgcolor="#667eea" style="background-color:#667eea;padding:24px 35px;">
+                <p style="color:#ffffff;font-size:18px;font-weight:700;margin:0;font-family:Arial,Helvetica,sans-serif;">' . $ht['title'] . '</p>
+                <p style="color:#c7d2fe;font-size:13px;margin:4px 0 0 0;font-family:Arial,Helvetica,sans-serif;">' . $ht['subtitle'] . '</p>
+            </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+            <td style="padding:35px;font-size:15px;color:#374151;line-height:1.8;font-family:Arial,Helvetica,sans-serif;">' . $message . '</td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+            <td bgcolor="#1e293b" style="background-color:#1e293b;padding:24px 35px;">
+                <table cellpadding="0" cellspacing="0" border="0" width="100%" role="presentation">
+                    <tr>
+                        <td style="vertical-align:middle;">
+                            <p style="font-size:15px;font-weight:600;color:#ffffff;margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;">Erik Borota</p>
+                            <p style="font-size:12px;color:#94a3b8;margin:0;font-family:Arial,Helvetica,sans-serif;">' . $ft . '</p>
+                        </td>
+                        <td align="right" style="vertical-align:middle;">
+                            <a href="https://wa.me/4917698479520" title="WhatsApp" style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;background-color:#334155;border-radius:8px;color:#94a3b8;text-decoration:none;font-size:14px;margin-left:8px;">&#9993;</a>
+                            <a href="https://punktepass.de/formular" title="Website" style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;background-color:#334155;border-radius:8px;color:#94a3b8;text-decoration:none;font-size:14px;margin-left:8px;">&#9679;</a>
+                        </td>
+                    </tr>
+                </table>
+                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px;padding-top:16px;border-top:1px solid #334155;" role="presentation">
+                    <tr>
+                        <td style="font-size:12px;color:#64748b;font-family:Arial,Helvetica,sans-serif;">
+                            <a href="tel:+4917698479520" style="color:#94a3b8;text-decoration:none;margin-right:16px;">+49 176 98479520</a>
+                            <a href="mailto:info@punktepass.de" style="color:#94a3b8;text-decoration:none;margin-right:16px;">info@punktepass.de</a>
+                            <span style="color:#64748b;">Siedlungsring 51, 89415 Lauingen</span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    </td></tr>
+    </table>
 </body>
 </html>';
     }
@@ -632,9 +533,7 @@ Mit unserer <strong>Reparaturverwaltung</strong> k&ouml;nnen Sie Ihren Reparatur
 Die Einrichtung dauert nur wenige Minuten und ist <strong>kostenlos</strong>.
 
 <strong>Probieren Sie es jetzt unverbindlich aus:</strong>
-<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Kostenlos starten</a>
-
-Gerne stelle ich Ihnen das System kurz und unverbindlich, pers&ouml;nlich oder telefonisch, vor.
+{{CTA:https://punktepass.de/formular|&#128073; Kostenlos starten}}
 
 Mit freundlichen Gr&uuml;&szlig;en
 Erik Borota';
@@ -667,9 +566,7 @@ A <strong>Javításkezelő</strong> rendszerünkkel teljesen digitalizálhatja j
 A beállítás csak néhány percet vesz igénybe és <strong>ingyenes</strong>.
 
 <strong>Próbálja ki most kötelezettségek nélkül:</strong>
-<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Ingyenes indítás</a>
-
-Szívesen bemutatom a rendszert röviden és kötelezettségek nélkül, személyesen vagy telefonon.
+{{CTA:https://punktepass.de/formular|&#128073; Ingyenes ind&iacute;t&aacute;s}}
 
 Üdvözlettel,
 Erik Borota';
@@ -702,9 +599,7 @@ Cu <strong>Sistemul nostru de gestionare a reparațiilor</strong> puteți digita
 Configurarea durează doar câteva minute și este <strong>gratuită</strong>.
 
 <strong>Încercați acum fără obligații:</strong>
-<a href="https://punktepass.de/formular" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;margin:10px 0;">&#128073; Începeți gratuit</a>
-
-Vă prezint cu plăcere sistemul pe scurt și fără obligații, personal sau telefonic.
+{{CTA:https://punktepass.de/formular|&#128073; &Icirc;ncepeți gratuit}}
 
 Cu stimă,
 Erik Borota';

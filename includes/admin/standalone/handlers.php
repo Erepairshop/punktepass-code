@@ -11,23 +11,24 @@ if (!defined('ABSPATH')) exit;
 global $wpdb;
 
 // ============================================================
-// DATABASE: Ensure linked_to_store_id column exists
+// DATABASE: Ensure handler columns exist (cached via option)
 // ============================================================
-$column_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'linked_to_store_id'");
-if (!$column_exists) {
-    $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN linked_to_store_id INT UNSIGNED DEFAULT NULL");
-    $wpdb->query("CREATE INDEX idx_linked_to_store ON {$wpdb->prefix}ppv_stores (linked_to_store_id)");
-    ppv_log("✅ [PPV_Admin] Added linked_to_store_id column to ppv_stores table");
-}
+if (get_option('ppv_handler_cols_v', '0') !== '1') {
+    $column_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'linked_to_store_id'");
+    if (!$column_exists) {
+        $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN linked_to_store_id INT UNSIGNED DEFAULT NULL");
+        $wpdb->query("CREATE INDEX idx_linked_to_store ON {$wpdb->prefix}ppv_stores (linked_to_store_id)");
+        ppv_log("✅ [PPV_Admin] Added linked_to_store_id column to ppv_stores table");
+    }
 
-// ============================================================
-// DATABASE: Ensure last_active_at column exists (for handler activity tracking)
-// ============================================================
-$last_active_col = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'last_active_at'");
-if (!$last_active_col) {
-    $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN last_active_at DATETIME DEFAULT NULL COMMENT 'Last handler activity timestamp'");
-    $wpdb->query("CREATE INDEX idx_last_active ON {$wpdb->prefix}ppv_stores (last_active_at)");
-    ppv_log("✅ [PPV_Admin] Added last_active_at column to ppv_stores table");
+    $last_active_col = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'last_active_at'");
+    if (!$last_active_col) {
+        $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN last_active_at DATETIME DEFAULT NULL COMMENT 'Last handler activity timestamp'");
+        $wpdb->query("CREATE INDEX idx_last_active ON {$wpdb->prefix}ppv_stores (last_active_at)");
+        ppv_log("✅ [PPV_Admin] Added last_active_at column to ppv_stores table");
+    }
+
+    update_option('ppv_handler_cols_v', '1', true);
 }
 
 // ============================================================

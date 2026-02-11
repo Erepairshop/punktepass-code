@@ -370,10 +370,15 @@ class PPV_Belohnungen {
         // Get points per store (stores where user has collected points OR redeemed rewards)
         // FIX: Removed s.active = 1 filter - show stores where user has points even if inactive
         // Users should see all their points, not just from active stores
-        // FIX: Check if logo_url column exists (some installations may not have it)
-        $has_logo_col = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'logo_url'");
-        $logo_select = !empty($has_logo_col) ? "s.logo_url," : "NULL AS logo_url,";
-        $logo_group = !empty($has_logo_col) ? ", s.logo_url" : "";
+        // Check if logo_url column exists (cached via option to avoid SHOW COLUMNS per page load)
+        $has_logo = get_option('ppv_stores_has_logo_url');
+        if ($has_logo === false) {
+            $col = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'logo_url'");
+            $has_logo = !empty($col) ? '1' : '0';
+            update_option('ppv_stores_has_logo_url', $has_logo, true);
+        }
+        $logo_select = $has_logo === '1' ? "s.logo_url," : "NULL AS logo_url,";
+        $logo_group = $has_logo === '1' ? ", s.logo_url" : "";
 
         $store_points = $wpdb->get_results($wpdb->prepare("
             SELECT

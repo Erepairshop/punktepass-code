@@ -256,7 +256,7 @@ if ($is_new_user) {
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:0 0 24px;">
         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;">IHRE ZUGANGSDATEN</div>
         <p style="margin:4px 0;font-size:14px;"><strong>E-Mail:</strong> ' . esc_html($email) . '</p>
-        <p style="margin:4px 0;font-size:14px;"><strong>Passwort:</strong> <code>' . esc_html($generated_password) . '</code></p>
+        <p style="margin:4px 0;font-size:13px;color:#6b7280;">Setzen Sie Ihr Passwort über die <a href="https://punktepass.de/passwort-vergessen" style="color:#667eea;font-weight:600;">Passwort vergessen</a> Funktion.</p>
     </div>
     <div style="text-align:center;"><a href="https://punktepass.de" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Jetzt anmelden</a></div>
 </div>

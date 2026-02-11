@@ -365,18 +365,18 @@ class PPV_Device_Fingerprint {
      * Register REST API routes
      */
     public static function register_routes() {
-        // Endpoint to check device limit before registration
+        // Endpoint to check device limit before registration (public - called during signup)
         register_rest_route('punktepass/v1', '/device/check', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_check_device'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
 
-        // Endpoint to store fingerprint after successful registration
+        // Endpoint to store fingerprint after successful registration (public - called during signup)
         register_rest_route('punktepass/v1', '/device/register', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_register_device'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
 
         // ========================================
@@ -387,70 +387,70 @@ class PPV_Device_Fingerprint {
         register_rest_route('punktepass/v1', '/user-devices/list', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_user_devices'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Register current device for user
         register_rest_route('punktepass/v1', '/user-devices/register', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_register_user_device'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Check if current device is registered for user
         register_rest_route('punktepass/v1', '/user-devices/check', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_check_user_device'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Update device fingerprint (when fingerprint changed)
         register_rest_route('punktepass/v1', '/user-devices/update-fingerprint', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_update_device_fingerprint'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Request device removal (needs admin approval) - LEGACY, kept for backwards compatibility
         register_rest_route('punktepass/v1', '/user-devices/request-remove', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_request_device_removal'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Direct device deletion (no admin approval needed)
         register_rest_route('punktepass/v1', '/user-devices/delete', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_delete_device_direct'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Request adding new device (when limit reached)
         register_rest_route('punktepass/v1', '/user-devices/request-add', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_request_device_add'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Request new device slot (for already registered users)
         register_rest_route('punktepass/v1', '/user-devices/request-new-slot', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_request_new_device_slot'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
-        // Admin approval endpoint (via email link)
+        // Admin approval endpoint (via email link - public, token-based auth)
         register_rest_route('punktepass/v1', '/user-devices/approve/(?P<token>[a-zA-Z0-9]+)', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_approve_device_request'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
 
-        // Admin rejection endpoint (via email link)
+        // Admin rejection endpoint (via email link - public, token-based auth)
         register_rest_route('punktepass/v1', '/user-devices/reject/(?P<token>[a-zA-Z0-9]+)', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_reject_device_request'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
 
         // ========================================
@@ -461,14 +461,14 @@ class PPV_Device_Fingerprint {
         register_rest_route('punktepass/v1', '/user-devices/request-mobile-scanner', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_request_mobile_scanner'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
 
         // Check mobile scanner status
         register_rest_route('punktepass/v1', '/user-devices/mobile-scanner-status', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_mobile_scanner_status'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated']
         ]);
     }
 
