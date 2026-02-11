@@ -116,12 +116,6 @@ class PPV_Repair_Form {
     .repair-select:focus{border-color:var(--repair-accent);background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
     .repair-problem-tag{transition:all .2s cubic-bezier(.4,0,.2,1)}
     .repair-problem-tag.active{background:var(--repair-accent)!important;border-color:var(--repair-accent)!important;color:#fff!important;box-shadow:0 4px 12px rgba(102,126,234,0.25)}
-    /* Language switcher */
-    .repair-lang-switch{position:absolute;top:16px;right:16px;z-index:10;display:flex;gap:4px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:4px}
-    .repair-lang-btn{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
-    .repair-lang-btn:hover{color:#fff;background:rgba(255,255,255,0.15)}
-    .repair-lang-btn.active{color:#1f2937;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-    .repair-auto-redirect{text-align:center;margin-top:12px;font-size:13px;color:#94a3b8;font-weight:500}
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -133,12 +127,6 @@ class PPV_Repair_Form {
             <div class="repair-hero-blob repair-hero-blob--1"></div>
             <div class="repair-hero-blob repair-hero-blob--2"></div>
             <div class="repair-hero-blob repair-hero-blob--3"></div>
-        </div>
-        <!-- Language Switcher -->
-        <div class="repair-lang-switch">
-            <button class="repair-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
-            <button class="repair-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
-            <button class="repair-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
         </div>
         <div class="repair-header-inner">
             <?php if ($store->logo): ?>
@@ -490,19 +478,6 @@ class PPV_Repair_Form {
 // Translation strings for JS
 var ppvLang = <?php echo $js_strings; ?>;
 
-// Language switcher
-(function(){
-    var btns = document.querySelectorAll('.repair-lang-btn');
-    btns.forEach(function(btn){
-        btn.addEventListener('click', function(){
-            var lang = btn.getAttribute('data-lang');
-            var url = new URL(window.location.href);
-            url.searchParams.set('lang', lang);
-            document.cookie = 'ppv_lang=' + lang + ';path=/;max-age=31536000';
-            window.location.href = url.toString();
-        });
-    });
-})();
 
 // Problem tag toggle for quick selection
 function toggleProblemTag(btn, text) {
