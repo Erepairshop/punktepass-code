@@ -1250,7 +1250,7 @@ class PPV_Repair_Invoice {
 @page{margin:10mm 15mm 28mm 15mm;size:A4}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-size:9.5pt;line-height:1.5}
-.invoice{padding:0;max-width:100%}
+.invoice{padding:0 4mm 0 0;max-width:100%}
 
 /* Accent bar */
 .accent-bar{background:' . $color . ';height:4mm;margin:0 -15mm;margin-top:-10mm}
@@ -1262,7 +1262,7 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 .logo{height:44px;margin-bottom:2mm}
 .company-name{font-size:18pt;font-weight:700;color:' . $color . ';letter-spacing:-0.3px}
 .company-owner{font-size:9pt;color:#64748b;margin-top:1mm}
-.header-contact{font-size:8.5pt;color:#64748b;line-height:1.7}
+.header-contact{font-size:8.5pt;color:#64748b;line-height:1.7;padding-right:1mm}
 .header-divider{height:0.5mm;background:#e2e8f0;margin-bottom:6mm}
 
 /* Address Section */
@@ -1313,7 +1313,7 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 .summary-row.total span:last-child{color:' . $color . '}
 
 /* Info Boxes */
-.info-box{padding:3mm 4mm;margin-top:4mm;font-size:9pt}
+.info-box{padding:3mm 4mm;margin-top:4mm;margin-right:1mm;font-size:9pt}
 .info-box.payment{background:#f0f9ff;border-left:3px solid ' . $color . ';color:#0c4a6e}
 .info-box.reward{background:#f0fdf4;border-left:3px solid #22c55e;color:#14532d}
 .info-box strong{font-weight:700}
