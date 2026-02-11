@@ -1610,28 +1610,30 @@ IBAN: ' . $bank_iban . '
         $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
         $days_overdue = floor((time() - strtotime($invoice->created_at)) / 86400);
 
-        $subject = "Zahlungserinnerung: Rechnung {$invoice->invoice_number}";
+        PPV_Lang::load_extra('ppv-repair-lang');
 
-        $body = "Sehr geehrte/r {$invoice->customer_name},\n\n";
-        $body .= "wir möchten Sie freundlich daran erinnern, dass die folgende Rechnung noch offen ist:\n\n";
+        $subject = str_replace('{invoice_number}', $invoice->invoice_number, PPV_Lang::t('repair_email_reminder_subject'));
+
+        $body = str_replace('{customer_name}', $invoice->customer_name, PPV_Lang::t('repair_email_reminder_greeting')) . "\n\n";
+        $body .= PPV_Lang::t('repair_email_reminder_intro') . "\n\n";
         $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $body .= "RECHNUNGSDETAILS\n";
+        $body .= PPV_Lang::t('repair_email_reminder_details') . "\n";
         $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
-        $body .= "📋 Rechnungsnummer: {$invoice->invoice_number}\n";
-        $body .= "📅 Rechnungsdatum: {$invoice_date}\n";
-        $body .= "💰 Offener Betrag: " . number_format($invoice->total, 2, ',', '.') . " €\n";
+        $body .= "📋 " . PPV_Lang::t('repair_email_reminder_invoice_nr') . ": {$invoice->invoice_number}\n";
+        $body .= "📅 " . PPV_Lang::t('repair_email_reminder_invoice_date') . ": {$invoice_date}\n";
+        $body .= "💰 " . PPV_Lang::t('repair_email_reminder_amount') . ": " . number_format($invoice->total, 2, ',', '.') . " €\n";
         if ($days_overdue > 0) {
-            $body .= "⏰ Überfällig seit: {$days_overdue} Tagen\n";
+            $body .= "⏰ " . str_replace('{days}', $days_overdue, PPV_Lang::t('repair_email_reminder_overdue')) . "\n";
         }
         $body .= "\n";
         $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
-        $body .= "Bitte überweisen Sie den offenen Betrag zeitnah.\n\n";
-        $body .= "Falls Sie die Zahlung bereits veranlasst haben, betrachten Sie diese E-Mail bitte als gegenstandslos.\n\n";
-        $body .= "Bei Fragen stehen wir Ihnen gerne zur Verfügung:\n";
+        $body .= PPV_Lang::t('repair_email_reminder_please_pay') . "\n\n";
+        $body .= PPV_Lang::t('repair_email_reminder_already_paid') . "\n\n";
+        $body .= PPV_Lang::t('repair_email_reminder_questions') . "\n";
         if ($company_phone) $body .= "📞 {$company_phone}\n";
         if ($company_email) $body .= "📧 {$company_email}\n";
         $body .= "\n";
-        $body .= "Mit freundlichen Grüßen,\n";
+        $body .= PPV_Lang::t('repair_email_reminder_regards') . "\n";
         $body .= "{$company_name}\n";
 
         $headers = [
@@ -1647,10 +1649,10 @@ IBAN: ' . $bank_iban . '
         if ($sent) {
             // Update reminder_sent_at timestamp
             $wpdb->update($prefix . 'ppv_repair_invoices',
-                ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] Zahlungserinnerung gesendet")],
+                ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] " . PPV_Lang::t('repair_email_reminder_sent_note'))],
                 ['id' => $invoice_id]
             );
-            wp_send_json_success(['message' => 'Zahlungserinnerung wurde an ' . $invoice->customer_email . ' gesendet']);
+            wp_send_json_success(['message' => PPV_Lang::t('repair_email_reminder_sent_note') . ' → ' . $invoice->customer_email]);
         } else {
             wp_send_json_error(['message' => 'E-Mail konnte nicht gesendet werden']);
         }
@@ -1680,6 +1682,8 @@ IBAN: ' . $bank_iban . '
         $store = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id
         ));
+
+        PPV_Lang::load_extra('ppv-repair-lang');
 
         $success_count = 0;
         $error_count = 0;
@@ -1715,11 +1719,11 @@ IBAN: ' . $bank_iban . '
                     $company_name = $store->repair_company_name ?: $store->name;
                     $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
                     $subject = str_replace('{invoice_number}', $invoice->invoice_number,
-                        $store->repair_invoice_email_subject ?: 'Ihre Rechnung {invoice_number}');
+                        $store->repair_invoice_email_subject ?: PPV_Lang::t('repair_pdf_email_subj_inv'));
                     $body = str_replace(
                         ['{customer_name}', '{invoice_number}', '{invoice_date}', '{total}', '{company_name}'],
                         [$invoice->customer_name, $invoice->invoice_number, $invoice_date, number_format($invoice->total, 2, ',', '.'), $company_name],
-                        $store->repair_invoice_email_body ?: "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number}.\n\nGesamtbetrag: {total} €\n\nMit freundlichen Grüßen,\n{company_name}"
+                        $store->repair_invoice_email_body ?: PPV_Lang::t('repair_pdf_email_body_inv')
                     );
                     $headers = ['Content-Type: text/plain; charset=UTF-8', "From: {$company_name} <noreply@punktepass.de>"];
                     if (wp_mail($invoice->customer_email, $subject, $body, $headers)) {
@@ -1743,20 +1747,20 @@ IBAN: ' . $bank_iban . '
                     $invoice_date = date('d.m.Y', strtotime($invoice->created_at));
                     $days_overdue = floor((time() - strtotime($invoice->created_at)) / 86400);
 
-                    $subject = "Zahlungserinnerung: Rechnung {$invoice->invoice_number}";
-                    $body = "Sehr geehrte/r {$invoice->customer_name},\n\n";
-                    $body .= "wir möchten Sie freundlich daran erinnern, dass die folgende Rechnung noch offen ist:\n\n";
-                    $body .= "Rechnungsnummer: {$invoice->invoice_number}\n";
-                    $body .= "Rechnungsdatum: {$invoice_date}\n";
-                    $body .= "Offener Betrag: " . number_format($invoice->total, 2, ',', '.') . " €\n";
-                    if ($days_overdue > 0) $body .= "Überfällig seit: {$days_overdue} Tagen\n";
-                    $body .= "\nBitte überweisen Sie den offenen Betrag zeitnah.\n\n";
-                    $body .= "Mit freundlichen Grüßen,\n{$company_name}\n";
+                    $subject = str_replace('{invoice_number}', $invoice->invoice_number, PPV_Lang::t('repair_email_reminder_subject'));
+                    $body = str_replace('{customer_name}', $invoice->customer_name, PPV_Lang::t('repair_email_reminder_greeting')) . "\n\n";
+                    $body .= PPV_Lang::t('repair_email_reminder_intro') . "\n\n";
+                    $body .= PPV_Lang::t('repair_email_reminder_invoice_nr') . ": {$invoice->invoice_number}\n";
+                    $body .= PPV_Lang::t('repair_email_reminder_invoice_date') . ": {$invoice_date}\n";
+                    $body .= PPV_Lang::t('repair_email_reminder_amount') . ": " . number_format($invoice->total, 2, ',', '.') . " €\n";
+                    if ($days_overdue > 0) $body .= str_replace('{days}', $days_overdue, PPV_Lang::t('repair_email_reminder_overdue')) . "\n";
+                    $body .= "\n" . PPV_Lang::t('repair_email_reminder_please_pay') . "\n\n";
+                    $body .= PPV_Lang::t('repair_email_reminder_regards') . "\n{$company_name}\n";
 
                     $headers = ['Content-Type: text/plain; charset=UTF-8', "From: {$company_name} <noreply@punktepass.de>"];
                     if (wp_mail($invoice->customer_email, $subject, $body, $headers)) {
                         $wpdb->update($prefix . 'ppv_repair_invoices',
-                            ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] Zahlungserinnerung gesendet")],
+                            ['notes' => trim(($invoice->notes ?: '') . "\n[" . current_time('d.m.Y H:i') . "] " . PPV_Lang::t('repair_email_reminder_sent_note'))],
                             ['id' => $invoice_id]
                         );
                         $success_count++;

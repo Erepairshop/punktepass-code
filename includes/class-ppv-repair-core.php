@@ -1835,74 +1835,76 @@ class PPV_Repair_Core {
         $date = date('d.m.Y H:i', strtotime($repair->created_at));
         $customer_address = $repair->customer_address ?: '';
 
-        $subject = "Reparaturauftrag #{$repair_id} - {$company_name}";
+        PPV_Lang::load_extra('ppv-repair-lang');
+
+        $subject = str_replace(['{id}', '{company}'], [$repair_id, $company_name], PPV_Lang::t('repair_email_order_subject'));
 
         // Build HTML email (same format as print version)
-        $address_html = $customer_address ? '<div class="field"><span class="label">Adresse:</span><span class="value">' . esc_html($customer_address) . '</span></div>' : '';
-        $pin_html = !empty($repair->device_pattern) ? '<div class="field"><span class="label">PIN:</span><span class="value highlight">' . esc_html($repair->device_pattern) . '</span></div>' : '';
         $signature_html = !empty($repair->signature_image) && strpos($repair->signature_image, 'data:image/') === 0
             ? '<div class="sig-img"><img src="' . $repair->signature_image . '" style="max-height:40px"></div>'
             : '<div class="signature-line"></div>';
 
-        $email_body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reparaturauftrag #' . $repair_id . '</title></head>
+        $t = function($key) { return PPV_Lang::t($key); };
+
+        $email_body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' . esc_html($t('repair_email_order_title')) . ' #' . $repair_id . '</title></head>
         <body style="font-family:Arial,sans-serif;padding:20px;color:#1f2937;line-height:1.4;font-size:14px;max-width:700px;margin:0 auto;background:#f9fafb;">
         <div style="background:#fff;padding:25px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
             <!-- Header with shop info -->
             <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #667eea;padding-bottom:15px;margin-bottom:20px;">
                 <div style="font-size:22px;font-weight:700;color:#667eea;">' . esc_html($company_name) .
-                    ($owner_name ? '<br><span style="font-size:12px;font-weight:normal;color:#6b7280;">Inh. ' . esc_html($owner_name) . '</span>' : '') .
+                    ($owner_name ? '<br><span style="font-size:12px;font-weight:normal;color:#6b7280;">' . esc_html($t('repair_email_order_owner')) . ' ' . esc_html($owner_name) . '</span>' : '') .
                 '</div>
                 <div style="text-align:right;font-size:12px;color:#6b7280;">' .
                     ($company_address ? esc_html($company_address) . '<br>' : '') .
-                    ($company_phone ? '<strong>Tel: ' . esc_html($company_phone) . '</strong><br>' : '') .
-                    ($company_email ? 'E-Mail: ' . esc_html($company_email) . '<br>' : '') .
-                    ($tax_id ? 'USt-IdNr.: ' . esc_html($tax_id) : '') .
+                    ($company_phone ? '<strong>' . esc_html($t('repair_email_order_tel')) . ': ' . esc_html($company_phone) . '</strong><br>' : '') .
+                    ($company_email ? esc_html($t('repair_email_order_email')) . ': ' . esc_html($company_email) . '<br>' : '') .
+                    ($tax_id ? esc_html($t('repair_email_order_taxid')) . ': ' . esc_html($tax_id) : '') .
                 '</div>
             </div>
 
             <!-- Title -->
             <div style="text-align:center;margin-bottom:20px;padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:8px;">
-                <h1 style="font-size:20px;margin:0;">Reparaturauftrag #' . $repair_id . '</h1>
-                <p style="font-size:13px;margin-top:5px;opacity:0.9;">Datum: ' . esc_html($date) . '</p>
+                <h1 style="font-size:20px;margin:0;">' . esc_html($t('repair_email_order_title')) . ' #' . $repair_id . '</h1>
+                <p style="font-size:13px;margin-top:5px;opacity:0.9;">' . esc_html($t('repair_email_order_date')) . ': ' . esc_html($date) . '</p>
             </div>
 
             <!-- Two columns: Customer & Device -->
             <div style="display:flex;gap:15px;margin-bottom:15px;">
                 <div style="flex:1;background:#f9fafb;border-radius:8px;padding:15px;border:1px solid #e5e7eb;">
-                    <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">Kunde</div>
-                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Name:</span><span style="color:#1f2937;">' . esc_html($repair->customer_name) . '</span></div>
-                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Telefon:</span><span style="color:#1f2937;">' . esc_html($repair->customer_phone) . '</span></div>
-                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">E-Mail:</span><span style="color:#1f2937;">' . esc_html($repair->customer_email) . '</span></div>
-                    ' . ($customer_address ? '<div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Adresse:</span><span style="color:#1f2937;">' . esc_html($customer_address) . '</span></div>' : '') . '
+                    <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">' . esc_html($t('repair_email_order_customer')) . '</div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">' . esc_html($t('repair_email_order_name')) . ':</span><span style="color:#1f2937;">' . esc_html($repair->customer_name) . '</span></div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">' . esc_html($t('repair_email_order_phone')) . ':</span><span style="color:#1f2937;">' . esc_html($repair->customer_phone) . '</span></div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">' . esc_html($t('repair_email_order_email')) . ':</span><span style="color:#1f2937;">' . esc_html($repair->customer_email) . '</span></div>
+                    ' . ($customer_address ? '<div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">' . esc_html($t('repair_email_order_address')) . ':</span><span style="color:#1f2937;">' . esc_html($customer_address) . '</span></div>' : '') . '
                 </div>
                 <div style="flex:1;background:#f9fafb;border-radius:8px;padding:15px;border:1px solid #e5e7eb;">
-                    <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">Gerät</div>
-                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">Gerät:</span><span style="color:#1f2937;">' . esc_html($device ?: '-') . '</span></div>
-                    ' . (!empty($repair->device_pattern) ? '<div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">PIN:</span><span style="color:#667eea;font-weight:600;">' . esc_html($repair->device_pattern) . '</span></div>' : '') . '
+                    <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">' . esc_html($t('repair_email_order_device_section')) . '</div>
+                    <div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">' . esc_html($t('repair_email_order_device')) . ':</span><span style="color:#1f2937;">' . esc_html($device ?: '-') . '</span></div>
+                    ' . (!empty($repair->device_pattern) ? '<div class="field" style="margin-bottom:6px;"><span style="display:inline-block;width:60px;font-weight:500;color:#6b7280;font-size:12px;">' . esc_html($t('repair_email_order_pin')) . ':</span><span style="color:#667eea;font-weight:600;">' . esc_html($repair->device_pattern) . '</span></div>' : '') . '
                 </div>
             </div>
 
             <!-- Problem description -->
             <div style="background:#f9fafb;border-radius:8px;padding:15px;border:1px solid #e5e7eb;margin-bottom:15px;">
-                <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">Problembeschreibung</div>
+                <div style="font-size:11px;font-weight:600;color:#667eea;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;">' . esc_html($t('repair_email_order_problem')) . '</div>
                 <div style="font-size:14px;color:#1f2937;">' . nl2br(esc_html($repair->problem_description)) . '</div>
             </div>
 
             <!-- Datenschutz -->
             <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 15px;margin-bottom:15px;">
-                <div style="font-weight:600;color:#92400e;margin-bottom:6px;font-size:11px;text-transform:uppercase;">Datenschutzhinweis</div>
-                <div style="font-size:11px;color:#78350f;line-height:1.5;">Mit meiner Unterschrift bestätige ich:
+                <div style="font-weight:600;color:#92400e;margin-bottom:6px;font-size:11px;text-transform:uppercase;">' . esc_html($t('repair_email_order_privacy_title')) . '</div>
+                <div style="font-size:11px;color:#78350f;line-height:1.5;">' . esc_html($t('repair_email_order_privacy_confirm')) . '
                     <ul style="margin:6px 0;padding-left:18px;">
-                        <li>Die Richtigkeit der angegebenen Daten</li>
-                        <li>Die Zustimmung zur Datenverarbeitung gemäß DSGVO</li>
-                        <li>Die Kenntnisnahme der Reparaturbedingungen</li>
+                        <li>' . esc_html($t('repair_email_order_privacy_data')) . '</li>
+                        <li>' . esc_html($t('repair_email_order_privacy_gdpr')) . '</li>
+                        <li>' . esc_html($t('repair_email_order_privacy_terms')) . '</li>
                     </ul>
                 </div>
             </div>
 
             <!-- Signature -->
             <div style="margin-top:15px;padding-top:12px;border-top:1px dashed #d1d5db;">
-                <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Unterschrift Kunde (Einwilligung Datenschutz):</div>
+                <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">' . esc_html($t('repair_email_order_signature')) . ':</div>
                 ' . $signature_html . '
             </div>
 
@@ -1910,7 +1912,7 @@ class PPV_Repair_Core {
             <div style="text-align:center;margin-top:20px;padding-top:15px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;">
                 ' . esc_html($company_name) .
                 ($company_address ? ' | ' . esc_html($company_address) : '') .
-                ($company_phone ? ' | Tel: ' . esc_html($company_phone) : '') .
+                ($company_phone ? ' | ' . esc_html($t('repair_email_order_tel')) . ': ' . esc_html($company_phone) : '') .
                 ($company_email ? ' | ' . esc_html($company_email) : '') . '
             </div>
         </div>
@@ -1937,13 +1939,15 @@ class PPV_Repair_Core {
      * Send status notification email to customer
      */
     private static function send_status_notification($store, $repair, $new_status) {
+        PPV_Lang::load_extra('ppv-repair-lang');
+
         $status_labels = [
-            'new' => 'Neu - Auftrag eingegangen',
-            'in_progress' => 'In Bearbeitung',
-            'waiting_parts' => 'Wartet auf Ersatzteile',
-            'done' => 'Fertig - Abholbereit',
-            'delivered' => 'Abgeholt',
-            'cancelled' => 'Storniert'
+            'new' => PPV_Lang::t('repair_email_status_new'),
+            'in_progress' => PPV_Lang::t('repair_email_status_in_progress'),
+            'waiting_parts' => PPV_Lang::t('repair_email_status_waiting_parts'),
+            'done' => PPV_Lang::t('repair_email_status_done'),
+            'delivered' => PPV_Lang::t('repair_email_status_delivered'),
+            'cancelled' => PPV_Lang::t('repair_email_status_cancelled'),
         ];
         $status_text = $status_labels[$new_status] ?? $new_status;
 
@@ -1952,45 +1956,34 @@ class PPV_Repair_Core {
         $company_email = $store->repair_company_email ?: '';
         $device = trim(($repair->device_brand ?: '') . ' ' . ($repair->device_model ?: ''));
 
-        $subject = "Reparatur-Status Update: {$status_text}";
+        $subject = str_replace('{status}', $status_text, PPV_Lang::t('repair_email_status_subject'));
 
-        $body = "Sehr geehrte/r {$repair->customer_name},\n\n";
+        $body = str_replace('{customer_name}', $repair->customer_name, PPV_Lang::t('repair_email_status_greeting')) . "\n\n";
 
-        switch ($new_status) {
-            case 'in_progress':
-                $body .= "Ihre Reparatur wird jetzt bearbeitet.\n\n";
-                break;
-            case 'waiting_parts':
-                $body .= "Für Ihre Reparatur werden Ersatzteile bestellt. Wir informieren Sie, sobald es weitergeht.\n\n";
-                break;
-            case 'done':
-                $body .= "Gute Nachrichten! Ihre Reparatur ist abgeschlossen und Ihr Gerät ist zur Abholung bereit.\n\n";
-                break;
-            case 'delivered':
-                $body .= "Vielen Dank für Ihren Besuch! Wir hoffen, Sie sind mit unserer Arbeit zufrieden.\n\n";
-                break;
-            case 'cancelled':
-                $body .= "Ihre Reparatur wurde storniert. Bei Fragen kontaktieren Sie uns bitte.\n\n";
-                break;
-            default:
-                $body .= "Der Status Ihrer Reparatur wurde aktualisiert.\n\n";
-        }
+        $status_messages = [
+            'in_progress'   => PPV_Lang::t('repair_email_status_msg_in_progress'),
+            'waiting_parts' => PPV_Lang::t('repair_email_status_msg_waiting_parts'),
+            'done'          => PPV_Lang::t('repair_email_status_msg_done'),
+            'delivered'     => PPV_Lang::t('repair_email_status_msg_delivered'),
+            'cancelled'     => PPV_Lang::t('repair_email_status_msg_cancelled'),
+        ];
+        $body .= ($status_messages[$new_status] ?? PPV_Lang::t('repair_email_status_msg_default')) . "\n\n";
 
         $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $body .= "REPARATUR-DETAILS\n";
+        $body .= PPV_Lang::t('repair_email_status_details') . "\n";
         $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
-        $body .= "📋 Auftragsnummer: #{$repair->id}\n";
-        $body .= "📊 Neuer Status: {$status_text}\n";
-        if ($device) $body .= "📱 Gerät: {$device}\n";
+        $body .= "📋 " . PPV_Lang::t('repair_email_status_order_nr') . ": #{$repair->id}\n";
+        $body .= "📊 " . PPV_Lang::t('repair_email_status_new_status') . ": {$status_text}\n";
+        if ($device) $body .= "📱 " . PPV_Lang::t('repair_email_status_device') . ": {$device}\n";
         $body .= "\n";
 
         $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $body .= "KONTAKT\n";
+        $body .= PPV_Lang::t('repair_email_status_contact') . "\n";
         $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         if ($company_phone) $body .= "📞 {$company_phone}\n";
         if ($company_email) $body .= "📧 {$company_email}\n";
         $body .= "\n";
-        $body .= "Mit freundlichen Grüßen,\n";
+        $body .= PPV_Lang::t('repair_email_status_regards') . "\n";
         $body .= "{$company_name}\n";
 
         $headers = [
