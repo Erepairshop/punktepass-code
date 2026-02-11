@@ -131,7 +131,7 @@ class PPV_Bottom_Nav {
         // --- User navigáció (prioritás!) ---
         // 🚀 Pure SPA navigation - no page refresh
         if ($is_user_page): ?>
-            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="user" id="ppv-bottom-nav" data-turbo-permanent>
+            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="user">
                 <a href="/user_dashboard" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_dashboard')); ?>"><i class="ri-home-smile-2-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_dashboard')); ?></span></a>
                 <a href="/meine-punkte" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_my_points')); ?>"><i class="ri-donut-chart-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_my_points')); ?></span></a>
                 <a href="/belohnungen" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_rewards')); ?>"><i class="ri-coupon-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_rewards')); ?></span></a>
@@ -142,7 +142,7 @@ class PPV_Bottom_Nav {
         <?php
         // --- Scanner navigáció (simplified for scanner users) ---
         elseif ($is_scanner): ?>
-            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="scanner" id="ppv-bottom-nav" data-turbo-permanent>
+            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="scanner">
                 <a href="/qr-center" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_scanner')); ?>"><i class="ri-qr-scan-2-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_scanner')); ?></span></a>
                 <a href="/mein-profil" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_profile')); ?>"><i class="ri-user-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_profile')); ?></span></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_feedback')); ?>"><i class="ri-feedback-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_feedback')); ?></span></a>
@@ -151,7 +151,7 @@ class PPV_Bottom_Nav {
         <?php
         // --- Händler / POS navigáció ---
         elseif ($is_vendor || $is_pos): ?>
-            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="handler" id="ppv-bottom-nav" data-turbo-permanent>
+            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="handler">
                 <a href="/qr-center" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_start')); ?>"><i class="ri-home-smile-2-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_start')); ?></span></a>
                 <a href="/rewards" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_rewards')); ?>"><i class="ri-coupon-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_rewards')); ?></span></a>
                 <a href="/mein-profil" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_profile')); ?>"><i class="ri-user-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_profile')); ?></span></a>
@@ -162,7 +162,7 @@ class PPV_Bottom_Nav {
         <?php
         // --- Alap user nav (basic users) ---
         else: ?>
-            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="user" id="ppv-bottom-nav" data-turbo-permanent>
+            <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="user">
                 <a href="/user_dashboard" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_dashboard')); ?>"><i class="ri-home-smile-2-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_dashboard')); ?></span></a>
                 <a href="/meine-punkte" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_my_points')); ?>"><i class="ri-donut-chart-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_my_points')); ?></span></a>
                 <a href="/belohnungen" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_rewards')); ?>"><i class="ri-coupon-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_rewards')); ?></span></a>
@@ -237,7 +237,7 @@ class PPV_Bottom_Nav {
         ];
         $t = $T[$lang];
         ?>
-        <div id="ppv-feedback-modal" class="ppv-feedback-modal" data-turbo-permanent data-user-type="<?php echo esc_attr($user_type); ?>" data-lang="<?php echo esc_attr($lang); ?>">
+        <div id="ppv-feedback-modal" class="ppv-feedback-modal" data-user-type="<?php echo esc_attr($user_type); ?>" data-lang="<?php echo esc_attr($lang); ?>">
             <div class="ppv-feedback-content">
                 <!-- Header -->
                 <div class="ppv-feedback-header">
