@@ -192,7 +192,7 @@
         }
 
         markWelcomeShown() {
-            $.post(this.config.ajax_url, { action: 'ppv_onboarding_mark_welcome' }, () => {
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_mark_welcome', nonce: this.config.ajax_nonce }, () => {
                 this.config.welcome_shown = true;
             });
         }
@@ -989,6 +989,7 @@
                 method: 'POST',
                 data: {
                     action: 'ppv_onboarding_complete_step',
+                    nonce: this.config.ajax_nonce,
                     step: step,
                     value: JSON.stringify(data)
                 },
@@ -1290,7 +1291,7 @@
                 return;
             }
 
-            $.post(this.config.ajax_url, { action: 'ppv_onboarding_progress' }, (response) => {
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_progress', nonce: this.config.ajax_nonce }, (response) => {
                 if (response.success && response.data) {
                     this.progress = response.data.progress;
                     this.renderProgressCard();
@@ -1308,7 +1309,7 @@
          *  ⏰ POSTPONE ONBOARDING (8 hours)
          * ============================================================ */
         postponeOnboarding() {
-            $.post(this.config.ajax_url, { action: 'ppv_onboarding_postpone' }, (response) => {
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_postpone', nonce: this.config.ajax_nonce }, (response) => {
                 if (response.success) {
                     this.showToast(L.onb_postponed || '⏰ 8 óra múlva emlékeztetünk!', 'info');
                 }
@@ -1321,7 +1322,7 @@
          *  ❌ DISMISS
          * ============================================================ */
         dismissOnboarding(type, callback) {
-            $.post(this.config.ajax_url, { action: 'ppv_onboarding_dismiss', type: type }, (response) => {
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_dismiss', nonce: this.config.ajax_nonce, type: type }, (response) => {
                 if (callback) callback();
             }).fail(() => {
                 console.error('❌ Failed to dismiss onboarding');

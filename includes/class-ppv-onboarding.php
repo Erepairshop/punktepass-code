@@ -189,6 +189,7 @@ if (!class_exists('PPV_Onboarding')) {
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'rest_url' => rest_url('ppv/v1/onboarding/'), // legacy
                 'nonce' => wp_create_nonce('wp_rest'),
+                'ajax_nonce' => wp_create_nonce('ppv_onboarding_nonce'),
                 'store_id' => $store_id,
                 'progress' => $progress,
                 'dismissed' => (bool) ($store->onboarding_dismissed ?? 0),
@@ -773,6 +774,7 @@ if (!class_exists('PPV_Onboarding')) {
          * AJAX: Mark welcome shown
          */
         public static function ajax_mark_welcome_shown() {
+            check_ajax_referer('ppv_onboarding_nonce', 'nonce');
             self::ensure_session();
             $auth = self::check_auth();
 
@@ -797,6 +799,7 @@ if (!class_exists('PPV_Onboarding')) {
          * AJAX: Complete step
          */
         public static function ajax_complete_step() {
+            check_ajax_referer('ppv_onboarding_nonce', 'nonce');
             self::ensure_session();
             $auth = self::check_auth();
 
@@ -880,6 +883,7 @@ if (!class_exists('PPV_Onboarding')) {
          * AJAX: Dismiss onboarding
          */
         public static function ajax_dismiss() {
+            check_ajax_referer('ppv_onboarding_nonce', 'nonce');
             self::ensure_session();
             $auth = self::check_auth();
 
@@ -905,6 +909,7 @@ if (!class_exists('PPV_Onboarding')) {
          * AJAX: Postpone onboarding
          */
         public static function ajax_postpone() {
+            check_ajax_referer('ppv_onboarding_nonce', 'nonce');
             self::ensure_session();
             $auth = self::check_auth();
 
