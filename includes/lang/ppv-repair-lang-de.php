@@ -74,6 +74,7 @@ return [
     'repair_points_redeemable'  => '%s einlösbar!',
     'repair_email_confirmation' => 'Sie erhalten eine Bestätigung per E-Mail mit Ihrem Tracking-Link.',
     'repair_new_form'           => 'Neues Formular ausfüllen',
+    'repair_auto_redirect'      => 'Automatisch in %d Sek.',
     'repair_error_generic'      => 'Ein Fehler ist aufgetreten.',
     'repair_welcome_back'       => 'Willkommen zurück! Ihre Daten wurden automatisch eingetragen.',
     'repair_offline_saved'      => 'Ihr Auftrag wurde offline gespeichert und wird automatisch gesendet, sobald Sie wieder online sind.',

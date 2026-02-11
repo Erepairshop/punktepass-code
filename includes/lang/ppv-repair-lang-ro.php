@@ -74,6 +74,7 @@ return [
     'repair_points_redeemable'  => '%s disponibil!',
     'repair_email_confirmation' => 'Veți primi o confirmare prin e-mail cu link-ul de urmărire.',
     'repair_new_form'           => 'Completați un formular nou',
+    'repair_auto_redirect'      => 'Automat în %d sec.',
     'repair_error_generic'      => 'A apărut o eroare.',
     'repair_welcome_back'       => 'Bine ați revenit! Datele dvs. au fost completate automat.',
     'repair_offline_saved'      => 'Comanda dvs. a fost salvată offline și va fi trimisă automat când veți fi din nou online.',

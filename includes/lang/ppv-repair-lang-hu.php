@@ -74,6 +74,7 @@ return [
     'repair_points_redeemable'  => '%s beváltható!',
     'repair_email_confirmation' => 'E-mailben kap visszaigazolást a követési linkkel.',
     'repair_new_form'           => 'Új űrlap kitöltése',
+    'repair_auto_redirect'      => 'Automatikusan %d mp múlva',
     'repair_error_generic'      => 'Hiba történt.',
     'repair_welcome_back'       => 'Üdv újra! Adatai automatikusan kitöltésre kerültek.',
     'repair_offline_saved'      => 'Megrendelése offline elmentve, és automatikusan elküldjük, amint újra online lesz.',
