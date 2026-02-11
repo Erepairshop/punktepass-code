@@ -1321,15 +1321,18 @@ class PPV_Repair_Ankauf {
         file_put_contents($pdf_path, $pdf_content);
 
         $company_name = $store->repair_company_name ?: $store->name;
-        $subject = "Kaufvertrag {$ankauf->ankauf_number} - {$company_name}";
 
-        $body = "Sehr geehrte/r {$ankauf->seller_name},\n\n";
-        $body .= "anbei erhalten Sie Ihren Kaufvertrag als PDF-Dokument.\n\n";
-        $body .= "Kaufvertrag: {$ankauf->ankauf_number}\n";
-        $body .= "Gerät: " . trim(($ankauf->device_brand ?: '') . ' ' . ($ankauf->device_model ?: '')) . "\n";
+        PPV_Lang::load_extra('ppv-repair-lang');
+
+        $subject = str_replace(['{number}', '{company}'], [$ankauf->ankauf_number, $company_name], PPV_Lang::t('repair_email_ankauf_subject'));
+
+        $body = str_replace('{name}', $ankauf->seller_name, PPV_Lang::t('repair_email_ankauf_greeting')) . "\n\n";
+        $body .= PPV_Lang::t('repair_email_ankauf_body') . "\n\n";
+        $body .= PPV_Lang::t('repair_email_ankauf_contract') . ": {$ankauf->ankauf_number}\n";
+        $body .= PPV_Lang::t('repair_email_ankauf_device') . ": " . trim(($ankauf->device_brand ?: '') . ' ' . ($ankauf->device_model ?: '')) . "\n";
         $body .= "IMEI: {$ankauf->device_imei}\n";
-        $body .= "Betrag: " . number_format($ankauf->ankauf_price, 2, ',', '.') . " €\n\n";
-        $body .= "Mit freundlichen Grüßen,\n{$company_name}";
+        $body .= PPV_Lang::t('repair_email_ankauf_amount') . ": " . number_format($ankauf->ankauf_price, 2, ',', '.') . " €\n\n";
+        $body .= PPV_Lang::t('repair_email_ankauf_regards') . "\n{$company_name}";
 
         $headers = [
             'Content-Type: text/plain; charset=UTF-8',

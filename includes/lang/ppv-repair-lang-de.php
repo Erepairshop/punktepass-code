@@ -104,6 +104,66 @@ return [
     'repair_feat_branch_title'  => 'Jede Branche',
     'repair_feat_branch_desc'   => 'Handy, PC, KFZ, Fahrrad & mehr',
 
+    // Feature modal CTA
+    'repair_feat_modal_cta'     => 'Jetzt kostenlos starten',
+
+    // Feature modal: Online & Vor-Ort
+    'repair_feat_online_b1'              => 'Reparaturformular direkt am Tablet ausfüllen',
+    'repair_feat_online_b2'              => 'Kunden füllen online aus – Sie erhalten die Daten sofort',
+    'repair_feat_online_b3'              => 'QR-Code zum Aufhängen für schnellen Zugriff vor Ort',
+    'repair_feat_online_mock_phone'      => 'Telefon',
+    'repair_feat_online_mock_device'     => 'Gerät',
+    'repair_feat_online_mock_problem'    => 'Problem',
+    'repair_feat_online_mock_problem_text' => 'Display gebrochen, reagiert nicht auf Touch...',
+    'repair_feat_online_mock_submit'     => 'Reparatur absenden',
+
+    // Feature modal: Rechnungen & Angebote
+    'repair_feat_invoice_b1'             => 'Professionelle Rechnungen & Angebote als PDF erstellen',
+    'repair_feat_invoice_b2'             => 'Per Klick als E-Mail an den Kunden senden',
+    'repair_feat_invoice_b3'             => 'Automatische Nummerierung & Statusverfolgung',
+    'repair_feat_invoice_mock_title'     => 'Rechnung',
+    'repair_feat_invoice_mock_sent'      => 'Gesendet',
+    'repair_feat_invoice_mock_display'   => 'Display-Reparatur',
+    'repair_feat_invoice_mock_battery'   => 'Akku-Tausch',
+    'repair_feat_invoice_mock_labor'     => 'Arbeitszeit',
+    'repair_feat_invoice_mock_send'      => 'Per E-Mail senden',
+
+    // Feature modal: DATEV & Export
+    'repair_feat_export_b1'              => 'DATEV-Export direkt für Ihren Steuerberater',
+    'repair_feat_export_b2'              => 'CSV & Excel für eigene Auswertungen',
+    'repair_feat_export_b3'              => 'Alle Daten jederzeit exportierbar',
+    'repair_feat_export_mock_csv'        => 'Tabellendaten',
+    'repair_feat_export_mock_excel'      => 'Diagramme & Filter',
+    'repair_feat_export_mock_datev'      => 'Buchhaltung',
+
+    // Feature modal: Digitaler Ankauf
+    'repair_feat_ankauf_b1'              => 'Digitale Kaufverträge für Gebrauchtgeräte',
+    'repair_feat_ankauf_b2'              => 'IMEI-Prüfung & Zustandsbewertung integriert',
+    'repair_feat_ankauf_b3'              => 'Kaufvertrag als PDF per E-Mail versenden',
+    'repair_feat_ankauf_mock_title'      => 'Kaufvertrag',
+    'repair_feat_ankauf_mock_device'     => 'Gerät',
+    'repair_feat_ankauf_mock_condition'  => 'Zustand',
+    'repair_feat_ankauf_mock_good'       => 'Gut',
+    'repair_feat_ankauf_mock_price'      => 'Ankaufspreis',
+    'repair_feat_ankauf_mock_signature'  => 'Digitale Unterschrift',
+
+    // Feature modal: Kundenverwaltung
+    'repair_feat_crm_b1'                => 'Alle Kunden & Reparaturen auf einen Blick',
+    'repair_feat_crm_b2'                => 'Komplette Reparaturhistorie & Kontaktdaten',
+    'repair_feat_crm_b3'                => 'Schnelle Suche nach Name, E-Mail oder Telefon',
+    'repair_feat_crm_mock_search'       => 'Kunde suchen...',
+    'repair_feat_crm_mock_repairs'      => 'Reparaturen',
+    'repair_feat_crm_mock_repair'       => 'Reparatur',
+
+    // Feature modal: Jede Branche
+    'repair_feat_branch_b1'             => 'Handy, Tablet, PC, Laptop – alles in einem System',
+    'repair_feat_branch_b2'             => 'KFZ, Fahrrad, E-Scooter – flexibel einsetzbar',
+    'repair_feat_branch_b3'             => 'Eigene Felder & Kategorien individuell anpassbar',
+    'repair_feat_branch_mock_phone'     => 'Handy',
+    'repair_feat_branch_mock_car'       => 'KFZ',
+    'repair_feat_branch_mock_bike'      => 'Fahrrad',
+    'repair_feat_branch_mock_console'   => 'Konsole',
+
     // Registration form
     'repair_reg_form_title'     => 'In 2 Minuten startklar',
     'repair_reg_form_sub'       => 'Erstellen Sie jetzt Ihr kostenloses Reparaturformular',
@@ -793,6 +853,75 @@ return [
     'repair_pdf_email_subj_quote' => 'Ihr Angebot {invoice_number}',
     'repair_pdf_email_body_inv'   => "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihre Rechnung {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}",
     'repair_pdf_email_body_quote' => "Sehr geehrte/r {customer_name},\n\nanbei erhalten Sie Ihr Angebot {invoice_number} vom {invoice_date}.\n\nGesamtbetrag: {total} €\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n{company_name}",
+
+    // ===== Email: Payment Reminder =====
+    'repair_email_reminder_subject'      => 'Zahlungserinnerung: Rechnung {invoice_number}',
+    'repair_email_reminder_greeting'     => 'Sehr geehrte/r {customer_name},',
+    'repair_email_reminder_intro'        => 'wir möchten Sie freundlich daran erinnern, dass die folgende Rechnung noch offen ist:',
+    'repair_email_reminder_details'      => 'RECHNUNGSDETAILS',
+    'repair_email_reminder_invoice_nr'   => 'Rechnungsnummer',
+    'repair_email_reminder_invoice_date' => 'Rechnungsdatum',
+    'repair_email_reminder_amount'       => 'Offener Betrag',
+    'repair_email_reminder_overdue'      => 'Überfällig seit: {days} Tagen',
+    'repair_email_reminder_please_pay'   => 'Bitte überweisen Sie den offenen Betrag zeitnah.',
+    'repair_email_reminder_already_paid' => 'Falls Sie die Zahlung bereits veranlasst haben, betrachten Sie diese E-Mail bitte als gegenstandslos.',
+    'repair_email_reminder_questions'    => 'Bei Fragen stehen wir Ihnen gerne zur Verfügung:',
+    'repair_email_reminder_regards'      => 'Mit freundlichen Grüßen,',
+    'repair_email_reminder_sent_note'    => 'Zahlungserinnerung gesendet',
+
+    // ===== Email: Repair Order Confirmation =====
+    'repair_email_order_subject'         => 'Reparaturauftrag #{id} - {company}',
+    'repair_email_order_title'           => 'Reparaturauftrag',
+    'repair_email_order_date'            => 'Datum',
+    'repair_email_order_customer'        => 'Kunde',
+    'repair_email_order_name'            => 'Name',
+    'repair_email_order_phone'           => 'Telefon',
+    'repair_email_order_email'           => 'E-Mail',
+    'repair_email_order_address'         => 'Adresse',
+    'repair_email_order_device_section'  => 'Gerät',
+    'repair_email_order_device'          => 'Gerät',
+    'repair_email_order_pin'             => 'PIN',
+    'repair_email_order_problem'         => 'Problembeschreibung',
+    'repair_email_order_privacy_title'   => 'Datenschutzhinweis',
+    'repair_email_order_privacy_confirm' => 'Mit meiner Unterschrift bestätige ich:',
+    'repair_email_order_privacy_data'    => 'Die Richtigkeit der angegebenen Daten',
+    'repair_email_order_privacy_gdpr'    => 'Die Zustimmung zur Datenverarbeitung gemäß DSGVO',
+    'repair_email_order_privacy_terms'   => 'Die Kenntnisnahme der Reparaturbedingungen',
+    'repair_email_order_signature'       => 'Unterschrift Kunde (Einwilligung Datenschutz)',
+    'repair_email_order_owner'           => 'Inh.',
+    'repair_email_order_tel'             => 'Tel',
+    'repair_email_order_taxid'           => 'USt-IdNr.',
+
+    // ===== Email: Status Notification =====
+    'repair_email_status_subject'            => 'Reparatur-Status Update: {status}',
+    'repair_email_status_new'                => 'Neu - Auftrag eingegangen',
+    'repair_email_status_in_progress'        => 'In Bearbeitung',
+    'repair_email_status_waiting_parts'      => 'Wartet auf Ersatzteile',
+    'repair_email_status_done'               => 'Fertig - Abholbereit',
+    'repair_email_status_delivered'           => 'Abgeholt',
+    'repair_email_status_cancelled'          => 'Storniert',
+    'repair_email_status_greeting'           => 'Sehr geehrte/r {customer_name},',
+    'repair_email_status_msg_in_progress'    => 'Ihre Reparatur wird jetzt bearbeitet.',
+    'repair_email_status_msg_waiting_parts'  => 'Für Ihre Reparatur werden Ersatzteile bestellt. Wir informieren Sie, sobald es weitergeht.',
+    'repair_email_status_msg_done'           => 'Gute Nachrichten! Ihre Reparatur ist abgeschlossen und Ihr Gerät ist zur Abholung bereit.',
+    'repair_email_status_msg_delivered'      => 'Vielen Dank für Ihren Besuch! Wir hoffen, Sie sind mit unserer Arbeit zufrieden.',
+    'repair_email_status_msg_cancelled'      => 'Ihre Reparatur wurde storniert. Bei Fragen kontaktieren Sie uns bitte.',
+    'repair_email_status_msg_default'        => 'Der Status Ihrer Reparatur wurde aktualisiert.',
+    'repair_email_status_details'            => 'REPARATUR-DETAILS',
+    'repair_email_status_order_nr'           => 'Auftragsnummer',
+    'repair_email_status_new_status'         => 'Neuer Status',
+    'repair_email_status_device'             => 'Gerät',
+    'repair_email_status_contact'            => 'KONTAKT',
+    'repair_email_status_regards'            => 'Mit freundlichen Grüßen,',
+
+    // ===== Email: Ankauf (Purchase Contract) =====
+    'repair_email_ankauf_subject'   => 'Kaufvertrag {number} - {company}',
+    'repair_email_ankauf_greeting'  => 'Sehr geehrte/r {name},',
+    'repair_email_ankauf_body'      => 'anbei erhalten Sie Ihren Kaufvertrag als PDF-Dokument.',
+    'repair_email_ankauf_contract'  => 'Kaufvertrag',
+    'repair_email_ankauf_device'    => 'Gerät',
+    'repair_email_ankauf_amount'    => 'Betrag',
+    'repair_email_ankauf_regards'   => 'Mit freundlichen Grüßen,',
 
     // ===== Legal Pages (generated Datenschutz/AGB/Impressum) =====
     'repair_legal_back'                  => 'Zurück',

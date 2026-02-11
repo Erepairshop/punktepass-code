@@ -104,6 +104,66 @@ return [
     'repair_feat_branch_title'  => 'Minden iparág',
     'repair_feat_branch_desc'   => 'Telefon, PC, autó, kerékpár és más',
 
+    // Feature modal CTA
+    'repair_feat_modal_cta'     => 'Ingyenes indulás most',
+
+    // Feature modal: Online és helyben
+    'repair_feat_online_b1'              => 'Javítási űrlap kitöltése közvetlenül tableten',
+    'repair_feat_online_b2'              => 'Az ügyfelek online töltik ki – Ön azonnal megkapja az adatokat',
+    'repair_feat_online_b3'              => 'QR-kód a helyszíni gyors hozzáféréshez',
+    'repair_feat_online_mock_phone'      => 'Telefon',
+    'repair_feat_online_mock_device'     => 'Készülék',
+    'repair_feat_online_mock_problem'    => 'Probléma',
+    'repair_feat_online_mock_problem_text' => 'Kijelző törött, nem reagál az érintésre...',
+    'repair_feat_online_mock_submit'     => 'Javítás beküldése',
+
+    // Feature modal: Számlák és ajánlatok
+    'repair_feat_invoice_b1'             => 'Professzionális számlák és árajánlatok PDF-ben',
+    'repair_feat_invoice_b2'             => 'Egy kattintással e-mailben küldés az ügyfélnek',
+    'repair_feat_invoice_b3'             => 'Automatikus számozás és státuszkövetés',
+    'repair_feat_invoice_mock_title'     => 'Számla',
+    'repair_feat_invoice_mock_sent'      => 'Elküldve',
+    'repair_feat_invoice_mock_display'   => 'Kijelző javítás',
+    'repair_feat_invoice_mock_battery'   => 'Akkumulátor csere',
+    'repair_feat_invoice_mock_labor'     => 'Munkadíj',
+    'repair_feat_invoice_mock_send'      => 'Küldés e-mailben',
+
+    // Feature modal: DATEV és export
+    'repair_feat_export_b1'              => 'DATEV export közvetlenül a könyvelőnek',
+    'repair_feat_export_b2'              => 'CSV és Excel saját kimutatásokhoz',
+    'repair_feat_export_b3'              => 'Minden adat bármikor exportálható',
+    'repair_feat_export_mock_csv'        => 'Táblázat',
+    'repair_feat_export_mock_excel'      => 'Diagramok',
+    'repair_feat_export_mock_datev'      => 'Könyvelés',
+
+    // Feature modal: Digitális felvásárlás
+    'repair_feat_ankauf_b1'              => 'Digitális adásvételi szerződések használt készülékekhez',
+    'repair_feat_ankauf_b2'              => 'IMEI ellenőrzés és állapotfelmérés beépítve',
+    'repair_feat_ankauf_b3'              => 'Szerződés PDF-ben e-mailben küldve',
+    'repair_feat_ankauf_mock_title'      => 'Adásvételi szerződés',
+    'repair_feat_ankauf_mock_device'     => 'Készülék',
+    'repair_feat_ankauf_mock_condition'  => 'Állapot',
+    'repair_feat_ankauf_mock_good'       => 'Jó',
+    'repair_feat_ankauf_mock_price'      => 'Felvásárlási ár',
+    'repair_feat_ankauf_mock_signature'  => 'Digitális aláírás',
+
+    // Feature modal: Ügyfélkezelés
+    'repair_feat_crm_b1'                => 'Minden ügyfél és javítás egy pillantásra',
+    'repair_feat_crm_b2'                => 'Teljes javítási előzmények és elérhetőségek',
+    'repair_feat_crm_b3'                => 'Gyors keresés név, e-mail vagy telefon alapján',
+    'repair_feat_crm_mock_search'       => 'Ügyfél keresése...',
+    'repair_feat_crm_mock_repairs'      => 'javítás',
+    'repair_feat_crm_mock_repair'       => 'javítás',
+
+    // Feature modal: Minden iparág
+    'repair_feat_branch_b1'             => 'Telefon, tablet, PC, laptop – minden egy rendszerben',
+    'repair_feat_branch_b2'             => 'Autó, kerékpár, e-roller – rugalmasan használható',
+    'repair_feat_branch_b3'             => 'Egyéni mezők és kategóriák szabadon testreszabhatók',
+    'repair_feat_branch_mock_phone'     => 'Telefon',
+    'repair_feat_branch_mock_car'       => 'Autó',
+    'repair_feat_branch_mock_bike'      => 'Kerékpár',
+    'repair_feat_branch_mock_console'   => 'Konzol',
+
     // Registration form
     'repair_reg_form_title'     => '2 perc alatt indulhat',
     'repair_reg_form_sub'       => 'Hozza létre most ingyenes szervizűrlapját',
@@ -793,6 +853,75 @@ return [
     'repair_pdf_email_subj_quote' => 'Árajánlat: {invoice_number}',
     'repair_pdf_email_body_inv'   => "Tisztelt {customer_name}!\n\nMellékelten küldjük a(z) {invoice_number} számú számlát ({invoice_date}).\n\nVégösszeg: {total} €\n\nKérdés esetén állunk rendelkezésére.\n\nÜdvözlettel,\n{company_name}",
     'repair_pdf_email_body_quote' => "Tisztelt {customer_name}!\n\nMellékelten küldjük a(z) {invoice_number} számú árajánlatot ({invoice_date}).\n\nVégösszeg: {total} €\n\nKérdés esetén állunk rendelkezésére.\n\nÜdvözlettel,\n{company_name}",
+
+    // ===== E-mail: Fizetési emlékeztető =====
+    'repair_email_reminder_subject'      => 'Fizetési emlékeztető: Számla {invoice_number}',
+    'repair_email_reminder_greeting'     => 'Tisztelt {customer_name}!',
+    'repair_email_reminder_intro'        => 'Szeretnénk emlékeztetni, hogy az alábbi számla még kiegyenlítésre vár:',
+    'repair_email_reminder_details'      => 'SZÁMLA ADATOK',
+    'repair_email_reminder_invoice_nr'   => 'Számlaszám',
+    'repair_email_reminder_invoice_date' => 'Számla kelte',
+    'repair_email_reminder_amount'       => 'Nyitott összeg',
+    'repair_email_reminder_overdue'      => 'Késedelem: {days} nap',
+    'repair_email_reminder_please_pay'   => 'Kérjük, mielőbb egyenlítse ki a nyitott összeget.',
+    'repair_email_reminder_already_paid' => 'Amennyiben a fizetést már teljesítette, kérjük tekintse tárgytalannak ezt az e-mailt.',
+    'repair_email_reminder_questions'    => 'Kérdés esetén állunk rendelkezésére:',
+    'repair_email_reminder_regards'      => 'Üdvözlettel,',
+    'repair_email_reminder_sent_note'    => 'Fizetési emlékeztető elküldve',
+
+    // ===== E-mail: Javítási megbízás =====
+    'repair_email_order_subject'         => 'Javítási megbízás #{id} - {company}',
+    'repair_email_order_title'           => 'Javítási megbízás',
+    'repair_email_order_date'            => 'Dátum',
+    'repair_email_order_customer'        => 'Ügyfél',
+    'repair_email_order_name'            => 'Név',
+    'repair_email_order_phone'           => 'Telefon',
+    'repair_email_order_email'           => 'E-mail',
+    'repair_email_order_address'         => 'Cím',
+    'repair_email_order_device_section'  => 'Készülék',
+    'repair_email_order_device'          => 'Készülék',
+    'repair_email_order_pin'             => 'PIN',
+    'repair_email_order_problem'         => 'Hibaleírás',
+    'repair_email_order_privacy_title'   => 'Adatvédelmi nyilatkozat',
+    'repair_email_order_privacy_confirm' => 'Aláírásommal megerősítem:',
+    'repair_email_order_privacy_data'    => 'A megadott adatok helyességét',
+    'repair_email_order_privacy_gdpr'    => 'Az adatkezeléshez való hozzájárulásomat a GDPR szerint',
+    'repair_email_order_privacy_terms'   => 'A javítási feltételek tudomásulvételét',
+    'repair_email_order_signature'       => 'Ügyfél aláírása (adatvédelmi hozzájárulás)',
+    'repair_email_order_owner'           => 'Tul.',
+    'repair_email_order_tel'             => 'Tel',
+    'repair_email_order_taxid'           => 'Adószám',
+
+    // ===== E-mail: Státusz értesítés =====
+    'repair_email_status_subject'            => 'Javítás státusz frissítés: {status}',
+    'repair_email_status_new'                => 'Új - Megbízás beérkezett',
+    'repair_email_status_in_progress'        => 'Folyamatban',
+    'repair_email_status_waiting_parts'      => 'Alkatrészre vár',
+    'repair_email_status_done'               => 'Kész - Átvehető',
+    'repair_email_status_delivered'           => 'Átadva',
+    'repair_email_status_cancelled'          => 'Visszavonva',
+    'repair_email_status_greeting'           => 'Tisztelt {customer_name}!',
+    'repair_email_status_msg_in_progress'    => 'Javítása folyamatban van.',
+    'repair_email_status_msg_waiting_parts'  => 'A javításhoz alkatrészeket rendelünk. Értesítjük, amint tovább haladunk.',
+    'repair_email_status_msg_done'           => 'Jó hír! A javítás elkészült, készüléke átvételre kész.',
+    'repair_email_status_msg_delivered'      => 'Köszönjük látogatását! Reméljük, elégedett munkánkkal.',
+    'repair_email_status_msg_cancelled'      => 'Javítása visszavonásra került. Kérdés esetén kérjük, keressen minket.',
+    'repair_email_status_msg_default'        => 'Javítása státusza frissült.',
+    'repair_email_status_details'            => 'JAVÍTÁS RÉSZLETEI',
+    'repair_email_status_order_nr'           => 'Megbízás szám',
+    'repair_email_status_new_status'         => 'Új státusz',
+    'repair_email_status_device'             => 'Készülék',
+    'repair_email_status_contact'            => 'KAPCSOLAT',
+    'repair_email_status_regards'            => 'Üdvözlettel,',
+
+    // ===== E-mail: Felvásárlás (Adásvételi szerződés) =====
+    'repair_email_ankauf_subject'   => 'Adásvételi szerződés {number} - {company}',
+    'repair_email_ankauf_greeting'  => 'Tisztelt {name}!',
+    'repair_email_ankauf_body'      => 'Mellékelten küldjük az adásvételi szerződést PDF formátumban.',
+    'repair_email_ankauf_contract'  => 'Adásvételi szerződés',
+    'repair_email_ankauf_device'    => 'Készülék',
+    'repair_email_ankauf_amount'    => 'Összeg',
+    'repair_email_ankauf_regards'   => 'Üdvözlettel,',
 
     // ===== Jogi oldalak (generált Adatvédelem/ÁSZF/Impresszum) =====
     'repair_legal_back'                  => 'Vissza',

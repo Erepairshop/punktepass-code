@@ -104,6 +104,66 @@ return [
     'repair_feat_branch_title'  => 'Orice industrie',
     'repair_feat_branch_desc'   => 'Telefon, PC, auto, bicicletă și altele',
 
+    // Feature modal CTA
+    'repair_feat_modal_cta'     => 'Începe gratuit acum',
+
+    // Feature modal: Online și la fața locului
+    'repair_feat_online_b1'              => 'Completați formularul de reparație direct pe tabletă',
+    'repair_feat_online_b2'              => 'Clienții completează online – primiți datele instant',
+    'repair_feat_online_b3'              => 'Cod QR pentru acces rapid la fața locului',
+    'repair_feat_online_mock_phone'      => 'Telefon',
+    'repair_feat_online_mock_device'     => 'Dispozitiv',
+    'repair_feat_online_mock_problem'    => 'Problemă',
+    'repair_feat_online_mock_problem_text' => 'Ecran spart, nu răspunde la atingere...',
+    'repair_feat_online_mock_submit'     => 'Trimite reparația',
+
+    // Feature modal: Facturi și oferte
+    'repair_feat_invoice_b1'             => 'Facturi și oferte profesionale în format PDF',
+    'repair_feat_invoice_b2'             => 'Trimiteți prin e-mail cu un singur click',
+    'repair_feat_invoice_b3'             => 'Numerotare automată și urmărirea statusului',
+    'repair_feat_invoice_mock_title'     => 'Factură',
+    'repair_feat_invoice_mock_sent'      => 'Trimisă',
+    'repair_feat_invoice_mock_display'   => 'Reparație ecran',
+    'repair_feat_invoice_mock_battery'   => 'Înlocuire baterie',
+    'repair_feat_invoice_mock_labor'     => 'Manoperă',
+    'repair_feat_invoice_mock_send'      => 'Trimite prin e-mail',
+
+    // Feature modal: DATEV și export
+    'repair_feat_export_b1'              => 'Export DATEV direct pentru contabilul dvs.',
+    'repair_feat_export_b2'              => 'CSV și Excel pentru analize proprii',
+    'repair_feat_export_b3'              => 'Toate datele exportabile oricând',
+    'repair_feat_export_mock_csv'        => 'Date tabel',
+    'repair_feat_export_mock_excel'      => 'Grafice',
+    'repair_feat_export_mock_datev'      => 'Contabilitate',
+
+    // Feature modal: Achiziție digitală
+    'repair_feat_ankauf_b1'              => 'Contracte digitale de vânzare pentru dispozitive uzate',
+    'repair_feat_ankauf_b2'              => 'Verificare IMEI și evaluarea stării integrate',
+    'repair_feat_ankauf_b3'              => 'Contract PDF trimis prin e-mail',
+    'repair_feat_ankauf_mock_title'      => 'Contract de vânzare',
+    'repair_feat_ankauf_mock_device'     => 'Dispozitiv',
+    'repair_feat_ankauf_mock_condition'  => 'Stare',
+    'repair_feat_ankauf_mock_good'       => 'Bună',
+    'repair_feat_ankauf_mock_price'      => 'Preț achiziție',
+    'repair_feat_ankauf_mock_signature'  => 'Semnătură digitală',
+
+    // Feature modal: Management clienți
+    'repair_feat_crm_b1'                => 'Toți clienții și reparațiile dintr-o privire',
+    'repair_feat_crm_b2'                => 'Istoric complet al reparațiilor și date de contact',
+    'repair_feat_crm_b3'                => 'Căutare rapidă după nume, e-mail sau telefon',
+    'repair_feat_crm_mock_search'       => 'Caută client...',
+    'repair_feat_crm_mock_repairs'      => 'reparații',
+    'repair_feat_crm_mock_repair'       => 'reparație',
+
+    // Feature modal: Orice industrie
+    'repair_feat_branch_b1'             => 'Telefon, tabletă, PC, laptop – totul într-un sistem',
+    'repair_feat_branch_b2'             => 'Auto, bicicletă, trotinetă – utilizare flexibilă',
+    'repair_feat_branch_b3'             => 'Câmpuri și categorii personalizabile',
+    'repair_feat_branch_mock_phone'     => 'Telefon',
+    'repair_feat_branch_mock_car'       => 'Auto',
+    'repair_feat_branch_mock_bike'      => 'Bicicletă',
+    'repair_feat_branch_mock_console'   => 'Consolă',
+
     // Registration form
     'repair_reg_form_title'     => 'Gata în 2 minute',
     'repair_reg_form_sub'       => 'Creați acum formularul gratuit de service',
@@ -793,6 +853,75 @@ return [
     'repair_pdf_email_subj_quote' => 'Oferta dvs. {invoice_number}',
     'repair_pdf_email_body_inv'   => "Stimate {customer_name},\n\nAtașat găsiți factura {invoice_number} din {invoice_date}.\n\nTotal: {total} €\n\nPentru întrebări, nu ezitați să ne contactați.\n\nCu stimă,\n{company_name}",
     'repair_pdf_email_body_quote' => "Stimate {customer_name},\n\nAtașat găsiți oferta {invoice_number} din {invoice_date}.\n\nTotal: {total} €\n\nPentru întrebări, nu ezitați să ne contactați.\n\nCu stimă,\n{company_name}",
+
+    // ===== E-mail: Reamintire plată =====
+    'repair_email_reminder_subject'      => 'Reamintire plată: Factura {invoice_number}',
+    'repair_email_reminder_greeting'     => 'Stimate {customer_name},',
+    'repair_email_reminder_intro'        => 'vă reamintim cu amabilitate că următoarea factură este încă neachitată:',
+    'repair_email_reminder_details'      => 'DETALII FACTURĂ',
+    'repair_email_reminder_invoice_nr'   => 'Număr factură',
+    'repair_email_reminder_invoice_date' => 'Data facturii',
+    'repair_email_reminder_amount'       => 'Sumă restantă',
+    'repair_email_reminder_overdue'      => 'Întârziere: {days} zile',
+    'repair_email_reminder_please_pay'   => 'Vă rugăm să achitați suma restantă cât mai curând.',
+    'repair_email_reminder_already_paid' => 'Dacă ați efectuat deja plata, vă rugăm să ignorați acest e-mail.',
+    'repair_email_reminder_questions'    => 'Pentru întrebări, nu ezitați să ne contactați:',
+    'repair_email_reminder_regards'      => 'Cu stimă,',
+    'repair_email_reminder_sent_note'    => 'Reamintire plată trimisă',
+
+    // ===== E-mail: Confirmare comandă reparație =====
+    'repair_email_order_subject'         => 'Comandă reparație #{id} - {company}',
+    'repair_email_order_title'           => 'Comandă reparație',
+    'repair_email_order_date'            => 'Data',
+    'repair_email_order_customer'        => 'Client',
+    'repair_email_order_name'            => 'Nume',
+    'repair_email_order_phone'           => 'Telefon',
+    'repair_email_order_email'           => 'E-mail',
+    'repair_email_order_address'         => 'Adresă',
+    'repair_email_order_device_section'  => 'Dispozitiv',
+    'repair_email_order_device'          => 'Dispozitiv',
+    'repair_email_order_pin'             => 'PIN',
+    'repair_email_order_problem'         => 'Descrierea problemei',
+    'repair_email_order_privacy_title'   => 'Notă privind protecția datelor',
+    'repair_email_order_privacy_confirm' => 'Prin semnătura mea confirm:',
+    'repair_email_order_privacy_data'    => 'Corectitudinea datelor furnizate',
+    'repair_email_order_privacy_gdpr'    => 'Consimțământul pentru prelucrarea datelor conform GDPR',
+    'repair_email_order_privacy_terms'   => 'Luarea la cunoștință a condițiilor de reparație',
+    'repair_email_order_signature'       => 'Semnătura clientului (consimțământ protecția datelor)',
+    'repair_email_order_owner'           => 'Prop.',
+    'repair_email_order_tel'             => 'Tel',
+    'repair_email_order_taxid'           => 'CUI',
+
+    // ===== E-mail: Notificare status =====
+    'repair_email_status_subject'            => 'Actualizare status reparație: {status}',
+    'repair_email_status_new'                => 'Nou - Comandă primită',
+    'repair_email_status_in_progress'        => 'În lucru',
+    'repair_email_status_waiting_parts'      => 'Așteptare piese de schimb',
+    'repair_email_status_done'               => 'Gata - Pregătit pentru ridicare',
+    'repair_email_status_delivered'           => 'Ridicat',
+    'repair_email_status_cancelled'          => 'Anulat',
+    'repair_email_status_greeting'           => 'Stimate {customer_name},',
+    'repair_email_status_msg_in_progress'    => 'Reparația dvs. este acum în curs de procesare.',
+    'repair_email_status_msg_waiting_parts'  => 'Pentru reparația dvs. sunt comandate piese de schimb. Vă vom informa când continuăm.',
+    'repair_email_status_msg_done'           => 'Vești bune! Reparația este finalizată și dispozitivul dvs. este pregătit pentru ridicare.',
+    'repair_email_status_msg_delivered'      => 'Vă mulțumim pentru vizită! Sperăm că sunteți mulțumit de serviciile noastre.',
+    'repair_email_status_msg_cancelled'      => 'Reparația dvs. a fost anulată. Pentru întrebări, vă rugăm să ne contactați.',
+    'repair_email_status_msg_default'        => 'Statusul reparației dvs. a fost actualizat.',
+    'repair_email_status_details'            => 'DETALII REPARAȚIE',
+    'repair_email_status_order_nr'           => 'Număr comandă',
+    'repair_email_status_new_status'         => 'Status nou',
+    'repair_email_status_device'             => 'Dispozitiv',
+    'repair_email_status_contact'            => 'CONTACT',
+    'repair_email_status_regards'            => 'Cu stimă,',
+
+    // ===== E-mail: Achiziție (Contract de vânzare) =====
+    'repair_email_ankauf_subject'   => 'Contract de vânzare {number} - {company}',
+    'repair_email_ankauf_greeting'  => 'Stimate {name},',
+    'repair_email_ankauf_body'      => 'atașat găsiți contractul de vânzare în format PDF.',
+    'repair_email_ankauf_contract'  => 'Contract de vânzare',
+    'repair_email_ankauf_device'    => 'Dispozitiv',
+    'repair_email_ankauf_amount'    => 'Sumă',
+    'repair_email_ankauf_regards'   => 'Cu stimă,',
 
     // ===== Pagini juridice (Confidențialitate/Termeni/Impresum generate) =====
     'repair_legal_back'                  => 'Înapoi',
