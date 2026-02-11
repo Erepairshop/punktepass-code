@@ -2662,7 +2662,7 @@ echo '          </div>
                 repairs=d.repairs||[];
             if(page===1)list.innerHTML="";
             if(repairs.length===0&&page===1){
-                list.innerHTML=\'<div class="ra-empty"><i class="ri-search-line"></i><p>"+L.no_results+"</p></div>\';
+                list.innerHTML=\'<div class="ra-empty"><i class="ri-search-line"></i><p>\'+L.no_results+\'</p></div>\';
             }else{
                 repairs.forEach(function(r){
                     list.insertAdjacentHTML("beforeend",buildCardHTML(r));
@@ -3191,14 +3191,14 @@ echo '          </div>
                     var st=statusMap[inv.status]||["?",""];
                     var date=inv.created_at?new Date(inv.created_at.replace(/-/g,"/")):"";
                     var dateStr=date?pad(date.getDate())+"."+pad(date.getMonth()+1)+"."+date.getFullYear():"";
-                    var vatCol=parseInt(inv.is_kleinunternehmer)?"<span style=\'font-size:11px;color:#9ca3af\'>\'+L.small_business+\'</span>":fmtEur(inv.vat_amount);
+                    var vatCol=parseInt(inv.is_kleinunternehmer)?\'<span style="font-size:11px;color:#9ca3af">\'+L.small_business+\'</span>\':fmtEur(inv.vat_amount);
                     var pdfUrl=AJAX+"?action=ppv_repair_invoice_pdf&invoice_id="+inv.id+"&nonce="+NONCE;
 
                     // Doc type badge
                     var isAngebot=inv.doc_type==="angebot";
                     var typeBadge=isAngebot
-                        ?"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#f0fdf4;color:#16a34a;margin-left:6px\'>\'+L.inv_type_quote+\'</span>"
-                        :"<span style=\'display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#eff6ff;color:#2563eb;margin-left:6px\'>\'+L.inv_type_invoice+\'</span>";
+                        ?\'<span style="display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#f0fdf4;color:#16a34a;margin-left:6px">\'+L.inv_type_quote+\'</span>\'
+                        :\'<span style="display:inline-block;font-size:9px;padding:2px 5px;border-radius:4px;background:#eff6ff;color:#2563eb;margin-left:6px">\'+L.inv_type_invoice+\'</span>\';
 
                     var row=document.createElement("tr");
                     row.setAttribute("data-inv-id",inv.id);
@@ -3360,11 +3360,11 @@ echo '          </div>
         var btn=this;
         if(summary.style.display==="none"){
             summary.style.display="grid";
-            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> "+L.hide_stats+"\';
+            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> \'+L.hide_stats;
             btn.classList.add("active");
         }else{
             summary.style.display="none";
-            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> "+L.show_stats+"\';
+            btn.innerHTML=\'<i class="ri-bar-chart-box-line"></i> \'+L.show_stats;
             btn.classList.remove("active");
         }
     });
@@ -4153,7 +4153,7 @@ echo '          </div>
             var tbody=document.getElementById("ra-cust-body");
             if(page===1)tbody.innerHTML="";
             if(!d.customers||d.customers.length===0){
-                if(page===1)tbody.innerHTML=\'<tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">"+L.no_customers+"</td></tr>\';
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">\'+L.no_customers+\'</td></tr>\';
             }else{
                 d.customers.forEach(function(c){
                     var row=document.createElement("tr");
@@ -4256,7 +4256,7 @@ echo '          </div>
             var tbody=document.getElementById("ra-inv-body");
             if(page===1)tbody.innerHTML="";
             if(!d.items||d.items.length===0){
-                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">"+L.no_purchases+"</td></tr>\';
+                if(page===1)tbody.innerHTML=\'<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;">\'+L.no_purchases+\'</td></tr>\';
             }else{
                 d.items.forEach(function(a){
                     var date=a.created_at?new Date(a.created_at.replace(/-/g,"/")):"";
@@ -4584,7 +4584,7 @@ echo '          </div>
         .then(function(data){
             if(data.success&&data.data.comments){
                 if(data.data.comments.length===0){
-                    list.innerHTML=\'<div class="ra-comments-empty">"+L.no_comments+"</div>\';
+                    list.innerHTML=\'<div class="ra-comments-empty">\'+L.no_comments+\'</div>\';
                 }else{
                     var html="";
                     data.data.comments.forEach(function(c){
@@ -4597,7 +4597,7 @@ echo '          </div>
                     list.innerHTML=html;
                 }
             }else{
-                list.innerHTML=\'<div class="ra-comments-empty">"+L.loading_error+"</div>\';
+                list.innerHTML=\'<div class="ra-comments-empty">\'+L.loading_error+\'</div>\';
             }
         });
     }
@@ -4616,7 +4616,7 @@ echo '          </div>
                 return;
             }
             cancelSubBtn.disabled=true;
-            cancelSubBtn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> "+L.processing+"\';
+            cancelSubBtn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> \'+L.processing;
             fetch("/wp-json/punktepass/v1/repair/cancel-subscription",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
@@ -4630,13 +4630,13 @@ echo '          </div>
                 }else{
                     toast(data.error||data.message||L.cancel_error);
                     cancelSubBtn.disabled=false;
-                    cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> "+L.abo_cancel_btn+"\';
+                    cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> \'+L.abo_cancel_btn;
                 }
             })
             .catch(function(){
                 toast(L.connection_error);
                 cancelSubBtn.disabled=false;
-                cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> "+L.abo_cancel_btn+"\';
+                cancelSubBtn.innerHTML=\'<i class="ri-close-line"></i> \'+L.abo_cancel_btn;
             });
         });
     }
@@ -4719,7 +4719,7 @@ echo '          </div>
             }
             var btn=this;
             btn.disabled=true;
-            btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> "+L.saving+"\';
+            btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> \'+L.saving;
             var fd=new FormData();
             fd.append("action","ppv_repair_reward_reject");
             fd.append("nonce",NONCE);
@@ -4801,7 +4801,7 @@ echo '          </div>
         }
 
         btn.disabled=true;
-        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> "+L.sending+"\';
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> \'+L.sending;
 
         var fd=new FormData();
         fd.append("action","ppv_submit_feedback");
@@ -4834,13 +4834,13 @@ echo '          </div>
                 msg.className="ra-fb-msg show error";
             }
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> "+L.fb_submit+"\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> \'+L.fb_submit;
         })
         .catch(function(){
             msg.textContent=L.connection_error;
             msg.className="ra-fb-msg show error";
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> "+L.fb_submit+"\';
+            btn.innerHTML=\'<i class="ri-send-plane-fill"></i> \'+L.fb_submit;
         });
     });
 
