@@ -825,6 +825,16 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '2.4');
         }
+
+        // v2.5: Add custom_fields JSON column to repairs table
+        if (version_compare($version, '2.5', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'custom_fields'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN custom_fields TEXT NULL AFTER signature_image");
+            }
+            update_option('ppv_repair_migration_version', '2.5');
+        }
     }
 
     /** ============================================================
@@ -935,6 +945,15 @@ class PPV_Repair_Core {
             }
         }
 
+        // Collect custom fields (cf_custom_*)
+        $custom_fields = [];
+        foreach ($_POST as $pk => $pv) {
+            if (strpos($pk, 'cf_custom_') === 0) {
+                $custom_fields[substr($pk, 3)] = sanitize_text_field($pv); // key = custom_TIMESTAMP
+            }
+        }
+        $custom_fields_json = !empty($custom_fields) ? wp_json_encode($custom_fields) : '';
+
         // Generate unique tracking token
         $tracking_token = bin2hex(random_bytes(16));
 
@@ -953,6 +972,7 @@ class PPV_Repair_Core {
             'accessories'         => $accessories,
             'muster_image'        => $muster_image,
             'signature_image'     => $signature_image,
+            'custom_fields'       => $custom_fields_json,
             'status'              => 'new',
             'created_at'          => current_time('mysql'),
             'updated_at'          => current_time('mysql'),

@@ -337,6 +337,38 @@ class PPV_Repair_Form {
                 </div>
             </div>
             <?php endif; ?>
+
+            <?php
+            // Custom fields from field_config
+            foreach ($field_config as $cf_key => $cf) {
+                if (strpos($cf_key, 'custom_') !== 0) continue;
+                if (empty($cf['enabled'])) continue;
+                $cf_label = esc_html($cf['label'] ?? '');
+                $cf_type  = $cf['type'] ?? 'text';
+                $cf_req   = !empty($cf['required']) ? 'required' : '';
+                $cf_name  = 'cf_' . esc_attr($cf_key);
+                if (!$cf_label) continue;
+            ?>
+            <div class="repair-field">
+                <label for="<?php echo $cf_name; ?>"><?php echo $cf_label; ?><?php if ($cf_req): ?> <span style="color:#f59e0b">*</span><?php endif; ?></label>
+                <?php if ($cf_type === 'textarea'): ?>
+                    <textarea id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" rows="3" <?php echo $cf_req; ?> placeholder="<?php echo $cf_label; ?>"></textarea>
+                <?php elseif ($cf_type === 'select' && !empty($cf['options'])): ?>
+                    <select id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" class="repair-select" <?php echo $cf_req; ?>>
+                        <option value=""><?php echo esc_html(PPV_Lang::t('repair_select_placeholder')); ?></option>
+                        <?php foreach (explode("\n", $cf['options']) as $opt): $opt = trim($opt); if ($opt === '') continue; ?>
+                        <option value="<?php echo esc_attr($opt); ?>"><?php echo esc_html($opt); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php elseif ($cf_type === 'checkbox'): ?>
+                    <label class="repair-checkbox" style="margin-top:4px"><input type="checkbox" name="<?php echo $cf_name; ?>" value="1"> <?php echo $cf_label; ?></label>
+                <?php elseif ($cf_type === 'number'): ?>
+                    <input type="number" id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" <?php echo $cf_req; ?> placeholder="<?php echo $cf_label; ?>">
+                <?php else: ?>
+                    <input type="text" id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" <?php echo $cf_req; ?> placeholder="<?php echo $cf_label; ?>">
+                <?php endif; ?>
+            </div>
+            <?php } ?>
         </div>
 
         <!-- Signature Section -->

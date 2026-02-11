@@ -1264,33 +1264,123 @@ a:hover{color:#5a67d8}
                 </div>
             </div>
 
-            <div style="margin-top:16px">
-                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:10px">' . esc_html(PPV_Lang::t('repair_admin_form_fields')) . '</label>
+            <div style="margin-top:20px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <label style="display:block;font-size:13px;font-weight:700;color:#374151">' . esc_html(PPV_Lang::t('repair_admin_form_fields')) . '</label>
+                    <span style="font-size:11px;color:#9ca3af">' . esc_html(PPV_Lang::t('repair_admin_fc_drag_hint')) . '</span>
+                </div>
                 <div class="ra-field-config" id="ra-field-config">';
 
-// Field config rows
-$fc_field_names = [
-    'device_brand' => PPV_Lang::t('repair_brand_label'),
-    'device_model' => PPV_Lang::t('repair_model_label'),
-    'device_imei' => PPV_Lang::t('repair_imei_label'),
-    'device_pattern' => PPV_Lang::t('repair_pin_label'),
-    'muster_image' => PPV_Lang::t('repair_pattern_label'),
-    'accessories' => PPV_Lang::t('repair_accessories_label'),
-    'customer_phone' => PPV_Lang::t('repair_phone_label'),
-    'customer_address' => PPV_Lang::t('repair_address_label'),
+// Built-in field definitions with icons and type labels
+$fc_fields_meta = [
+    'device_brand'    => ['icon' => 'ri-smartphone-line',   'color' => 'blue',   'name' => PPV_Lang::t('repair_brand_label'),       'type_label' => PPV_Lang::t('repair_admin_fc_type_text')],
+    'device_model'    => ['icon' => 'ri-device-line',       'color' => 'blue',   'name' => PPV_Lang::t('repair_model_label'),       'type_label' => PPV_Lang::t('repair_admin_fc_type_text')],
+    'device_imei'     => ['icon' => 'ri-barcode-line',      'color' => 'purple', 'name' => PPV_Lang::t('repair_imei_label'),        'type_label' => PPV_Lang::t('repair_admin_fc_type_text')],
+    'device_pattern'  => ['icon' => 'ri-lock-password-line', 'color' => 'amber',  'name' => PPV_Lang::t('repair_pin_label'),         'type_label' => PPV_Lang::t('repair_admin_fc_type_text')],
+    'muster_image'    => ['icon' => 'ri-grid-line',         'color' => 'amber',  'name' => PPV_Lang::t('repair_pattern_label'),     'type_label' => PPV_Lang::t('repair_admin_fc_type_drawing')],
+    'accessories'     => ['icon' => 'ri-checkbox-multiple-line', 'color' => 'green', 'name' => PPV_Lang::t('repair_accessories_label'), 'type_label' => PPV_Lang::t('repair_admin_fc_type_checkbox')],
+    'customer_phone'  => ['icon' => 'ri-phone-line',        'color' => 'teal',   'name' => PPV_Lang::t('repair_phone_label'),       'type_label' => PPV_Lang::t('repair_admin_fc_type_phone')],
+    'customer_address' => ['icon' => 'ri-map-pin-line',      'color' => 'rose',   'name' => PPV_Lang::t('repair_address_label'),     'type_label' => PPV_Lang::t('repair_admin_fc_type_address')],
 ];
-foreach ($fc_field_names as $fk => $fn) {
+
+$fc_order = 0;
+foreach ($fc_fields_meta as $fk => $meta) {
     $fc = $field_config[$fk] ?? $fc_defaults[$fk];
-    $checked = !empty($fc['enabled']) ? 'checked' : '';
+    $enabled = !empty($fc['enabled']);
     $label = esc_attr($fc['label'] ?? $fc_defaults[$fk]['label']);
-    echo '<div class="ra-field-row">
-        <label class="ra-fc-toggle"><input type="checkbox" data-field="' . $fk . '" ' . $checked . '></label>
-        <span class="ra-fc-name">' . $fn . '</span>
-        <input type="text" data-field-label="' . $fk . '" value="' . $label . '" placeholder="Feldbezeichnung">
+    $required = !empty($fc['required']);
+    $fc_order++;
+
+    echo '<div class="ra-fc-card' . (!$enabled ? ' disabled' : '') . '" data-key="' . $fk . '" data-builtin="1" data-order="' . $fc_order . '">
+        <div class="ra-fc-head">
+            <i class="ri-draggable ra-fc-drag"></i>
+            <div class="ra-fc-icon ' . $meta['color'] . '"><i class="' . $meta['icon'] . '"></i></div>
+            <div class="ra-fc-info">
+                <div class="ra-fc-title">' . esc_html($meta['name']) . (!$enabled ? '' : ($required ? '<span class="ra-fc-required">*</span>' : '')) . '</div>
+                <div class="ra-fc-type">' . esc_html($meta['type_label']) . '</div>
+            </div>
+            <div class="ra-fc-actions">
+                <button type="button" class="ra-fc-btn-icon ra-fc-toggle-expand" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_edit')) . '"><i class="ri-settings-3-line"></i></button>
+                <label class="ra-fc-toggle-sw"><input type="checkbox" data-field="' . $fk . '" ' . ($enabled ? 'checked' : '') . '><span class="ra-fc-slider"></span></label>
+            </div>
+        </div>
+        <div class="ra-fc-expand">
+            <div class="ra-fc-field">
+                <label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . '</label>
+                <input type="text" data-field-label="' . $fk . '" value="' . $label . '" placeholder="' . esc_attr($meta['name']) . '">
+            </div>
+            <div class="ra-fc-field">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                    <input type="checkbox" data-field-required="' . $fk . '" ' . ($required ? 'checked' : '') . ' style="width:16px;height:16px;accent-color:#667eea">
+                    ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '
+                </label>
+            </div>
+        </div>
+    </div>';
+}
+
+// Custom fields from field_config
+foreach ($field_config as $fk => $fc) {
+    if (isset($fc_fields_meta[$fk])) continue; // skip built-in
+    if (strpos($fk, 'custom_') !== 0) continue; // skip unknown
+    $enabled = !empty($fc['enabled']);
+    $label = esc_attr($fc['label'] ?? '');
+    $type = esc_attr($fc['type'] ?? 'text');
+    $options = esc_attr($fc['options'] ?? '');
+    $required = !empty($fc['required']);
+    $fc_order++;
+
+    $type_icons = ['text' => 'ri-text', 'textarea' => 'ri-file-text-line', 'number' => 'ri-hashtag', 'select' => 'ri-list-check', 'checkbox' => 'ri-checkbox-line'];
+    $type_icon = $type_icons[$type] ?? 'ri-text';
+
+    echo '<div class="ra-fc-card' . (!$enabled ? ' disabled' : '') . '" data-key="' . $fk . '" data-builtin="0" data-order="' . $fc_order . '">
+        <div class="ra-fc-head">
+            <i class="ri-draggable ra-fc-drag"></i>
+            <div class="ra-fc-icon slate"><i class="' . $type_icon . '"></i></div>
+            <div class="ra-fc-info">
+                <div class="ra-fc-title">' . ($label ? esc_html($label) : '<em style="color:#9ca3af">Ohne Name</em>') . ($required ? '<span class="ra-fc-required">*</span>' : '') . '</div>
+                <div class="ra-fc-type">' . esc_html(PPV_Lang::t('repair_admin_fc_custom')) . ' · ' . esc_html($type) . '</div>
+            </div>
+            <div class="ra-fc-actions">
+                <button type="button" class="ra-fc-btn-icon ra-fc-toggle-expand" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_edit')) . '"><i class="ri-settings-3-line"></i></button>
+                <button type="button" class="ra-fc-btn-icon danger ra-fc-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_delete')) . '"><i class="ri-delete-bin-line"></i></button>
+                <label class="ra-fc-toggle-sw"><input type="checkbox" data-field="' . $fk . '" ' . ($enabled ? 'checked' : '') . '><span class="ra-fc-slider"></span></label>
+            </div>
+        </div>
+        <div class="ra-fc-expand">
+            <div class="ra-fc-field">
+                <label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . '</label>
+                <input type="text" data-field-label="' . $fk . '" value="' . $label . '" placeholder="Feldname">
+            </div>
+            <div class="ra-fc-field">
+                <label>' . esc_html(PPV_Lang::t('repair_admin_fc_fieldtype')) . '</label>
+                <select data-field-type="' . $fk . '">
+                    <option value="text"' . ($type === 'text' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_text')) . '</option>
+                    <option value="textarea"' . ($type === 'textarea' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_textarea')) . '</option>
+                    <option value="number"' . ($type === 'number' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_number')) . '</option>
+                    <option value="select"' . ($type === 'select' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_select')) . '</option>
+                    <option value="checkbox"' . ($type === 'checkbox' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_checkbox')) . '</option>
+                </select>
+            </div>
+            <div class="ra-fc-field ra-fc-options-field"' . ($type !== 'select' ? ' style="display:none"' : '') . '>
+                <label>' . esc_html(PPV_Lang::t('repair_admin_fc_options')) . '</label>
+                <textarea data-field-options="' . $fk . '" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3">' . esc_textarea($fc['options'] ?? '') . '</textarea>
+                <p style="font-size:11px;color:#9ca3af;margin-top:2px">' . esc_html(PPV_Lang::t('repair_admin_fc_options_hint')) . '</p>
+            </div>
+            <div class="ra-fc-field">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                    <input type="checkbox" data-field-required="' . $fk . '" ' . ($required ? 'checked' : '') . ' style="width:16px;height:16px;accent-color:#667eea">
+                    ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '
+                </label>
+            </div>
+        </div>
     </div>';
 }
 
 echo '          </div>
+                <button type="button" class="ra-fc-add-btn" id="ra-fc-add-custom">
+                    <i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_add_custom')) . '
+                </button>
             </div>
 
 
@@ -4015,36 +4105,139 @@ echo '          </div>
         });
     });
 
+    /* ===== Field Config: Toggle expand ===== */
+    document.querySelectorAll(".ra-fc-toggle-expand").forEach(function(btn){
+        btn.addEventListener("click",function(){
+            var expand=this.closest(".ra-fc-card").querySelector(".ra-fc-expand");
+            expand.classList.toggle("open");
+            this.querySelector("i").className=expand.classList.contains("open")?"ri-arrow-up-s-line":"ri-settings-3-line";
+        });
+    });
+    /* ===== Field Config: Toggle enable/disable ===== */
+    document.querySelectorAll(".ra-fc-card .ra-fc-toggle-sw input").forEach(function(cb){
+        cb.addEventListener("change",function(){
+            this.closest(".ra-fc-card").classList.toggle("disabled",!this.checked);
+        });
+    });
+    /* ===== Field Config: Type change (show/hide options) ===== */
+    document.querySelectorAll("select[data-field-type]").forEach(function(sel){
+        sel.addEventListener("change",function(){
+            var optField=this.closest(".ra-fc-expand").querySelector(".ra-fc-options-field");
+            if(optField) optField.style.display=this.value==="select"?"block":"none";
+        });
+    });
+    /* ===== Field Config: Remove custom field ===== */
+    document.querySelectorAll(".ra-fc-remove").forEach(function(btn){
+        btn.addEventListener("click",function(){
+            if(confirm("Feld wirklich entfernen?")) this.closest(".ra-fc-card").remove();
+        });
+    });
+    /* ===== Field Config: Add custom field ===== */
+    var fcAddBtn=document.getElementById("ra-fc-add-custom");
+    if(fcAddBtn){
+        fcAddBtn.addEventListener("click",function(){
+            var key="custom_"+Date.now();
+            var container=document.getElementById("ra-field-config");
+            var order=container.querySelectorAll(".ra-fc-card").length+1;
+            var card=document.createElement("div");
+            card.className="ra-fc-card";
+            card.setAttribute("data-key",key);
+            card.setAttribute("data-builtin","0");
+            card.setAttribute("data-order",order);
+            card.innerHTML=\'<div class="ra-fc-head">\
+                <i class="ri-draggable ra-fc-drag"></i>\
+                <div class="ra-fc-icon slate"><i class="ri-text"></i></div>\
+                <div class="ra-fc-info">\
+                    <div class="ra-fc-title"><em style="color:#9ca3af">Neues Feld</em></div>\
+                    <div class="ra-fc-type">Eigenes Feld · text</div>\
+                </div>\
+                <div class="ra-fc-actions">\
+                    <button type="button" class="ra-fc-btn-icon ra-fc-toggle-expand"><i class="ri-arrow-up-s-line"></i></button>\
+                    <button type="button" class="ra-fc-btn-icon danger ra-fc-remove"><i class="ri-delete-bin-line"></i></button>\
+                    <label class="ra-fc-toggle-sw"><input type="checkbox" data-field="\'+key+\'" checked><span class="ra-fc-slider"></span></label>\
+                </div>\
+            </div>\
+            <div class="ra-fc-expand open">\
+                <div class="ra-fc-field">\
+                    <label>Feldname</label>\
+                    <input type="text" data-field-label="\'+key+\'" value="" placeholder="z.B. Garantie, Farbe, Zustand...">\
+                </div>\
+                <div class="ra-fc-field">\
+                    <label>Feldtyp</label>\
+                    <select data-field-type="\'+key+\'">\
+                        <option value="text">Textfeld</option>\
+                        <option value="textarea">Textbereich</option>\
+                        <option value="number">Zahl</option>\
+                        <option value="select">Auswahl (Dropdown)</option>\
+                        <option value="checkbox">Checkbox</option>\
+                    </select>\
+                </div>\
+                <div class="ra-fc-field ra-fc-options-field" style="display:none">\
+                    <label>Optionen</label>\
+                    <textarea data-field-options="\'+key+\'" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>\
+                    <p style="font-size:11px;color:#9ca3af;margin-top:2px">Eine Option pro Zeile</p>\
+                </div>\
+                <div class="ra-fc-field">\
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer">\
+                        <input type="checkbox" data-field-required="\'+key+\'" style="width:16px;height:16px;accent-color:#667eea">\
+                        Pflichtfeld\
+                    </label>\
+                </div>\
+            </div>\';
+            container.appendChild(card);
+            // Wire up events on new card
+            card.querySelector(".ra-fc-toggle-expand").addEventListener("click",function(){
+                var exp=card.querySelector(".ra-fc-expand");
+                exp.classList.toggle("open");
+                this.querySelector("i").className=exp.classList.contains("open")?"ri-arrow-up-s-line":"ri-settings-3-line";
+            });
+            card.querySelector(".ra-fc-toggle-sw input").addEventListener("change",function(){
+                card.classList.toggle("disabled",!this.checked);
+            });
+            card.querySelector(".ra-fc-remove").addEventListener("click",function(){
+                if(confirm("Feld wirklich entfernen?")) card.remove();
+            });
+            var typeSel=card.querySelector("select[data-field-type]");
+            if(typeSel) typeSel.addEventListener("change",function(){
+                var of=card.querySelector(".ra-fc-options-field");
+                if(of) of.style.display=this.value==="select"?"block":"none";
+            });
+            card.querySelector("input[data-field-label]").focus();
+        });
+    }
     /* ===== Settings Form ===== */
-    console.log("DEBUG: Looking for settings form...");
     var settingsFormEl = document.getElementById("ra-settings-form");
-    console.log("DEBUG: Settings form element:", settingsFormEl);
     if(settingsFormEl){
         settingsFormEl.addEventListener("submit",function(e){
-            console.log("DEBUG: Form submit triggered!");
             e.preventDefault();
             var fd=new FormData(this);
-            console.log("DEBUG: FormData created, AJAX URL:", AJAX);
-            // Collect field config
+            // Collect field config from cards
             var fc={};
-            document.querySelectorAll("#ra-field-config .ra-field-row").forEach(function(row){
-                var cb=row.querySelector("input[type=checkbox]");
-                var inp=row.querySelector("input[type=text]");
-                if(cb&&inp){
-                    fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
+            var order=0;
+            document.querySelectorAll("#ra-field-config .ra-fc-card").forEach(function(card){
+                order++;
+                var key=card.getAttribute("data-key");
+                var cb=card.querySelector("input[data-field]");
+                var labelInp=card.querySelector("input[data-field-label]");
+                var reqCb=card.querySelector("input[data-field-required]");
+                var entry={enabled:cb?cb.checked:false, label:labelInp?labelInp.value:"", required:reqCb?reqCb.checked:false, order:order};
+                // Custom field extras
+                if(card.getAttribute("data-builtin")==="0"){
+                    var typeSel=card.querySelector("select[data-field-type]");
+                    var optsTa=card.querySelector("textarea[data-field-options]");
+                    entry.type=typeSel?typeSel.value:"text";
+                    entry.options=optsTa?optsTa.value:"";
                 }
+                fc[key]=entry;
             });
             fd.append("repair_field_config",JSON.stringify(fc));
             fd.append("action","ppv_repair_save_settings");
             fd.append("nonce",NONCE);
-            console.log("DEBUG: Sending fetch request...");
             fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-            .then(function(r){console.log("DEBUG: Response received:", r.status);return r.json()})
+            .then(function(r){return r.json()})
             .then(function(data){
-                console.log("DEBUG: JSON data:", data);
                 if(data.success){
                     toast(L.settings_saved);
-                    // Visual feedback on button
                     var btn=settingsFormEl.querySelector("button[type=submit]");
                     if(btn){
                         var orig=btn.innerHTML;
@@ -4056,10 +4249,8 @@ echo '          </div>
                     toast(L.save_error);
                 }
             })
-            .catch(function(err){console.log("DEBUG: Error:", err);toast(L.connection_error)});
+            .catch(function(err){toast(L.connection_error)});
         });
-    }else{
-        console.log("DEBUG: Settings form NOT FOUND!");
     }
 
     /* ===== Logo Upload ===== */
