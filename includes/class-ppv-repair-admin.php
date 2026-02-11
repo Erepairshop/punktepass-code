@@ -5207,7 +5207,7 @@ echo '          </div>
                 filialeDropdown.classList.add("ra-hidden");
                 // Open settings panel on filialen tab
                 toggleSettings(true);
-                var filialenTab = document.querySelector('[data-panel="filialen"]');
+                var filialenTab = document.querySelector(\'[data-panel="filialen"]\');
                 if (filialenTab) filialenTab.click();
             });
         }
@@ -5231,7 +5231,7 @@ echo '          </div>
             }
 
             createFilialeBtn.disabled = true;
-            createFilialeBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Erstelle...';
+            createFilialeBtn.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i> Erstelle...\';
 
             var fd = new FormData();
             fd.append("action", "ppv_repair_create_filiale");
@@ -5255,7 +5255,7 @@ echo '          </div>
                     msgEl.style.color = "#991b1b";
                     msgEl.classList.remove("ra-hidden");
                     createFilialeBtn.disabled = false;
-                    createFilialeBtn.innerHTML = '<i class="ri-add-line"></i> Filiale erstellen';
+                    createFilialeBtn.innerHTML = \'<i class="ri-add-line"></i> Filiale erstellen\';
                 }
             })
             .catch(function(){
@@ -5264,7 +5264,7 @@ echo '          </div>
                 msgEl.style.color = "#991b1b";
                 msgEl.classList.remove("ra-hidden");
                 createFilialeBtn.disabled = false;
-                createFilialeBtn.innerHTML = '<i class="ri-add-line"></i> Filiale erstellen';
+                createFilialeBtn.innerHTML = \'<i class="ri-add-line"></i> Filiale erstellen\';
             });
         });
     }
