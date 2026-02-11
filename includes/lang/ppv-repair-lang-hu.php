@@ -521,6 +521,8 @@ return [
     'repair_admin_send_email'     => 'E-mailben küldés',
     'repair_admin_resubmit'       => 'Újra beküldés',
     'repair_admin_create_inv_card' => 'Számla létrehozása',
+    'repair_admin_invoice_exists' => 'Számla létezik',
+    'repair_admin_invoice_duplicate_warn' => 'Ehhez a javításhoz már készült számla (%s). Biztosan új számlát szeretne létrehozni?',
     'repair_admin_delete_repair'  => 'Törlés',
 
     // Print Repair

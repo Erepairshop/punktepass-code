@@ -2033,7 +2033,12 @@ class PPV_Repair_Core {
         $total = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$prefix}ppv_repairs r WHERE {$where_sql}", ...$params));
         $params[] = $per_page;
         $params[] = $offset;
-        $repairs = $wpdb->get_results($wpdb->prepare("SELECT r.* FROM {$prefix}ppv_repairs r WHERE {$where_sql} ORDER BY CASE WHEN r.status IN ('done','delivered','cancelled') THEN 1 ELSE 0 END ASC, r.created_at DESC LIMIT %d OFFSET %d", ...$params));
+        $repairs = $wpdb->get_results($wpdb->prepare(
+            "SELECT r.*, (SELECT GROUP_CONCAT(i.invoice_number ORDER BY i.id DESC) FROM {$prefix}ppv_repair_invoices i WHERE i.repair_id = r.id AND (i.doc_type = 'rechnung' OR i.doc_type IS NULL)) AS invoice_numbers
+             FROM {$prefix}ppv_repairs r WHERE {$where_sql}
+             ORDER BY CASE WHEN r.status IN ('done','delivered','cancelled') THEN 1 ELSE 0 END ASC, r.created_at DESC LIMIT %d OFFSET %d",
+            ...$params
+        ));
 
         wp_send_json_success(['repairs' => $repairs, 'total' => $total, 'pages' => ceil($total / $per_page), 'page' => $page]);
     }

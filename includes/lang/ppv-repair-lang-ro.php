@@ -521,6 +521,8 @@ return [
     'repair_admin_send_email'     => 'Trimite prin e-mail',
     'repair_admin_resubmit'       => 'Retrimite cerere',
     'repair_admin_create_inv_card' => 'Creare factură',
+    'repair_admin_invoice_exists' => 'Factură existentă',
+    'repair_admin_invoice_duplicate_warn' => 'Pentru această reparație a fost deja creată o factură (%s). Doriți să creați o factură nouă?',
     'repair_admin_delete_repair'  => 'Șterge',
 
     // Print Repair

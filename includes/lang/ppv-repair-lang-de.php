@@ -521,6 +521,8 @@ return [
     'repair_admin_send_email'     => 'Per E-Mail senden',
     'repair_admin_resubmit'       => 'Nochmal Anliegen',
     'repair_admin_create_inv_card' => 'Rechnung erstellen',
+    'repair_admin_invoice_exists' => 'Rechnung vorhanden',
+    'repair_admin_invoice_duplicate_warn' => 'Für diese Reparatur wurde bereits eine Rechnung erstellt (%s). Möchten Sie trotzdem eine neue Rechnung erstellen?',
     'repair_admin_delete_repair'  => 'Löschen',
 
     // Print Repair

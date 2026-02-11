@@ -1280,7 +1280,7 @@ class PPV_Repair_Invoice {
 @page{margin:10mm 15mm 28mm 15mm;size:A4}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-size:9.5pt;line-height:1.5}
-.invoice{padding:0 4mm 0 0;max-width:100%}
+.invoice{padding:0 4mm;max-width:100%}
 
 /* Accent bar */
 .accent-bar{background:' . $color . ';height:4mm;margin:0 -15mm;margin-top:-10mm}

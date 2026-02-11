@@ -501,6 +501,10 @@ a:hover{color:#5a67d8}
 .ra-btn-resubmit:hover{background:#667eea;color:#fff;border-color:#667eea}
 .ra-btn-invoice{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bbf7d0;background:#f0fdf4;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-invoice:hover{background:#16a34a;color:#fff;border-color:#16a34a}
+.ra-btn-invoice-exists{border-color:#fbbf24;background:#fffbeb;color:#d97706}
+.ra-btn-invoice-exists:hover{background:#d97706;color:#fff;border-color:#d97706}
+.ra-invoice-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:2px 8px;margin-top:4px}
+.ra-invoice-badge i{font-size:12px}
 .ra-btn-delete{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
 .ra-btn-print{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
@@ -2344,6 +2348,8 @@ echo '          </div>
         'btn_email' => PPV_Lang::t('repair_admin_send_email'),
         'btn_resubmit' => PPV_Lang::t('repair_admin_resubmit'),
         'btn_create_inv' => PPV_Lang::t('repair_admin_create_inv_card'),
+        'invoice_exists' => PPV_Lang::t('repair_admin_invoice_exists'),
+        'invoice_duplicate_warn' => PPV_Lang::t('repair_admin_invoice_duplicate_warn'),
         'btn_delete' => PPV_Lang::t('repair_admin_delete_repair'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
@@ -2401,6 +2407,14 @@ echo '          </div>
                     st=this.value;
                 // If "done" → show invoice modal instead of immediate AJAX
                 if(st==="done"){
+                    var card=this.closest(".ra-repair-card");
+                    var existingInv=card?card.dataset.invoice:"";
+                    if(existingInv){
+                        if(!confirm(L.invoice_duplicate_warn.replace("%s",existingInv))){
+                            this.value=this.getAttribute("data-prev")||"in_progress";
+                            return;
+                        }
+                    }
                     showInvoiceModal(rid,this);
                     return;
                 }
@@ -2467,6 +2481,10 @@ echo '          </div>
         var card=btn.closest(".ra-repair-card");
         if(!card)return;
         var rid=card.dataset.id;
+        var existingInv=card.dataset.invoice;
+        if(existingInv){
+            if(!confirm(L.invoice_duplicate_warn.replace("%s",existingInv))){return}
+        }
         var sel=card.querySelector(".ra-status-select");
         showInvoiceModal(rid,sel);
     });
@@ -2742,15 +2760,21 @@ echo '          </div>
         var addressHtml=r.customer_address?\'<div class="ra-repair-address"><i class="ri-map-pin-line"></i> \'+esc(r.customer_address)+\'</div>\':"";
         var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="\'+L.print_muster+\'" title="\'+L.print_muster+\'"></div>\':"";
         var fullProblem=r.problem_description||"";
-        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'">\'+
+        var hasInvoice=!!(r.invoice_numbers);
+        var invoiceBadgeHtml=hasInvoice?\'<div class="ra-invoice-badge"><i class="ri-file-list-3-line"></i> \'+esc(r.invoice_numbers)+\'</div>\':"";
+        var invBtnClass=hasInvoice?"ra-btn-invoice ra-btn-invoice-exists":"ra-btn-invoice";
+        var invBtnTitle=hasInvoice?(L.invoice_exists+": "+esc(r.invoice_numbers)):L.btn_create_inv;
+        var invBtnIcon=hasInvoice?"ri-file-list-3-fill":"ri-file-list-3-line";
+        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'" data-invoice="\'+esc(r.invoice_numbers||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
                 \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span>\'+addressHtml+\'</div>\'+
                 deviceHtml+pinHtml+musterHtml+
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
+                invoiceBadgeHtml+
             \'</div>\'+
-            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="ra-btn-invoice" title="\'+L.btn_create_inv+\'"><i class="ri-file-list-3-line"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
+            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
         \'</div>\';
     }
     function pad(n){return n<10?"0"+n:n}
@@ -5013,6 +5037,19 @@ echo '          </div>
             $address_html = '<div class="ra-repair-address"><i class="ri-map-pin-line"></i> ' . esc_html($r->customer_address) . '</div>';
         }
 
+        // Check if invoice already exists for this repair
+        $invoice_numbers = '';
+        if (!empty($r->invoice_numbers)) {
+            $invoice_numbers = $r->invoice_numbers;
+        } else {
+            $inv_num = $wpdb->get_var($wpdb->prepare(
+                "SELECT GROUP_CONCAT(invoice_number ORDER BY id DESC) FROM {$prefix}ppv_repair_invoices WHERE repair_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL)",
+                $r->id
+            ));
+            if ($inv_num) $invoice_numbers = $inv_num;
+        }
+        $has_invoice = !empty($invoice_numbers);
+
         // Status options
         $options = '';
         foreach ($status_map as $key => $label) {
@@ -5102,6 +5139,20 @@ echo '          </div>
             }
         }
 
+        // Invoice badge HTML
+        $invoice_badge_html = '';
+        if ($has_invoice) {
+            $inv_list = esc_html($invoice_numbers);
+            $invoice_badge_html = '<div class="ra-invoice-badge"><i class="ri-file-list-3-line"></i> ' . $inv_list . '</div>';
+        }
+
+        // Invoice button: different style if invoice already exists
+        $inv_btn_class = $has_invoice ? 'ra-btn-invoice ra-btn-invoice-exists' : 'ra-btn-invoice';
+        $inv_btn_title = $has_invoice
+            ? esc_attr(PPV_Lang::t('repair_admin_invoice_exists') . ': ' . $invoice_numbers)
+            : esc_attr(PPV_Lang::t('repair_admin_create_inv_card'));
+        $inv_btn_icon = $has_invoice ? 'ri-file-list-3-fill' : 'ri-file-list-3-line';
+
         return '<div class="ra-repair-card" data-id="' . intval($r->id) . '"'
             . ' data-status="' . esc_attr($r->status) . '"'
             . ' data-name="' . esc_attr($r->customer_name) . '"'
@@ -5114,7 +5165,8 @@ echo '          </div>
             . ' data-problem="' . esc_attr($r->problem_description) . '"'
             . ' data-date="' . esc_attr($date) . '"'
             . ' data-muster="' . esc_attr($r->muster_image) . '"'
-            . ' data-signature="' . esc_attr($r->signature_image) . '">'
+            . ' data-signature="' . esc_attr($r->signature_image) . '"'
+            . ' data-invoice="' . esc_attr($invoice_numbers) . '">'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
                 . '<span class="ra-status ' . esc_attr($st[1]) . '">' . esc_html($st[0]) . '</span>'
@@ -5130,6 +5182,7 @@ echo '          </div>
                 . $muster_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="' . esc_attr(PPV_Lang::t('repair_admin_last_modified')) . '">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
+                . $invoice_badge_html
             . '</div>'
             . $reward_html
             . '<div class="ra-repair-comments-section">'
@@ -5146,7 +5199,7 @@ echo '          </div>
                 . '<button class="ra-btn-print" title="' . esc_attr(PPV_Lang::t('repair_admin_print')) . '"><i class="ri-printer-line"></i></button>'
                 . '<button class="ra-btn-email" title="' . esc_attr(PPV_Lang::t('repair_admin_send_email')) . '"><i class="ri-mail-send-line"></i></button>'
                 . '<button class="ra-btn-resubmit" title="' . esc_attr(PPV_Lang::t('repair_admin_resubmit')) . '"><i class="ri-repeat-line"></i></button>'
-                . '<button class="ra-btn-invoice" title="' . esc_attr(PPV_Lang::t('repair_admin_create_inv_card')) . '"><i class="ri-file-list-3-line"></i></button>'
+                . '<button class="' . $inv_btn_class . '" title="' . $inv_btn_title . '"><i class="' . $inv_btn_icon . '"></i></button>'
                 . '<button class="ra-btn-delete" title="' . esc_attr(PPV_Lang::t('repair_admin_delete_repair')) . '"><i class="ri-delete-bin-line"></i></button>'
                 . '<select class="ra-status-select" data-repair-id="' . intval($r->id) . '">' . $options . '</select>'
             . '</div>'
