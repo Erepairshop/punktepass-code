@@ -1610,8 +1610,11 @@ class PPV_Repair_Core {
         ), ARRAY_A);
         if (!$parent) wp_send_json_error(['message' => 'Hauptfiliale nicht gefunden']);
 
-        // Check premium
-        if (empty($parent['repair_premium'])) {
+        // Check premium (repair_premium OR active subscription)
+        $is_premium = !empty($parent['repair_premium'])
+            || (($parent['subscription_status'] ?? '') === 'active'
+                && (!$parent['subscription_expires_at'] || strtotime($parent['subscription_expires_at']) > time()));
+        if (!$is_premium) {
             wp_send_json_error(['message' => 'Filialen sind nur im Premium-Plan verfügbar']);
         }
 

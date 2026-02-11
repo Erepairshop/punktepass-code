@@ -405,11 +405,13 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         ));
         $has_filialen = count($filialen) > 1;
         $parent_store = $wpdb->get_row($wpdb->prepare(
-            "SELECT max_filialen, repair_premium FROM {$prefix}ppv_stores WHERE id = %d",
+            "SELECT max_filialen, repair_premium, subscription_status, subscription_expires_at FROM {$prefix}ppv_stores WHERE id = %d",
             $parent_store_id
         ));
-        $max_filialen = intval($parent_store->max_filialen ?? 1);
-        $parent_is_premium = !empty($parent_store->repair_premium);
+        $max_filialen = max(intval($parent_store->max_filialen ?? 1), 5);
+        $p_sub_active = ($parent_store->subscription_status ?? '') === 'active'
+            && (!$parent_store->subscription_expires_at || strtotime($parent_store->subscription_expires_at) > time());
+        $parent_is_premium = !empty($parent_store->repair_premium) || $p_sub_active;
 
         $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
         $reward_name = esc_attr($store->repair_reward_name ?? '10 Euro Rabatt');
