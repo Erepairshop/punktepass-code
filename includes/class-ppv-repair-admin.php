@@ -271,6 +271,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             }
         }
         $inv_suggested_next = $inv_detected_max > 0 ? $inv_detected_max + 1 : $inv_next;
+        // Effective next = what will actually be used (matches creation logic)
+        $effective_next = $inv_detected_max >= $inv_next ? $inv_detected_max + 1 : $inv_next;
 
         // Count total invoices (all prefixes) for info display
         $inv_total_count = (int)$wpdb->get_var($wpdb->prepare(
@@ -1100,14 +1102,14 @@ echo '          </div>
                 </div>
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_inv_next')) . '</label>
-                    <input type="number" name="repair_invoice_next_number" id="ra-inv-next" value="' . $inv_next . '" min="1" oninput="updateInvPreview()">
+                    <input type="number" name="repair_invoice_next_number" id="ra-inv-next" value="' . $effective_next . '" min="1" oninput="updateInvPreview()">
                 </div>
             </div>
             <div style="margin-top:12px;padding:12px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
                     <div>
                         <div style="font-size:12px;color:#0369a1;font-weight:500">' . esc_html(PPV_Lang::t('repair_admin_inv_preview')) . '</div>
-                        <div style="font-size:18px;font-weight:600;color:#0c4a6e;margin-top:2px" id="ra-inv-preview">' . esc_html($inv_prefix . str_pad($inv_next, 4, '0', STR_PAD_LEFT)) . '</div>
+                        <div style="font-size:18px;font-weight:600;color:#0c4a6e;margin-top:2px" id="ra-inv-preview">' . esc_html($inv_prefix . str_pad($effective_next, 4, '0', STR_PAD_LEFT)) . '</div>
                     </div>
                     ' . ($inv_detected_max > 0 && $inv_suggested_next > $inv_next ? '
                     <div style="text-align:right">

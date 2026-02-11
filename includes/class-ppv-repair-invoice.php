@@ -506,6 +506,34 @@ class PPV_Repair_Invoice {
     }
 
     /**
+     * Recalculate repair_invoice_next_number after deletion
+     */
+    private static function recalc_next_invoice_number($store_id) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT repair_invoice_prefix FROM {$prefix}ppv_stores WHERE id = %d", $store_id
+        ));
+        if (!$store) return;
+
+        $inv_prefix = $store->repair_invoice_prefix ?: 'RE-';
+        $all_remaining = $wpdb->get_col($wpdb->prepare(
+            "SELECT invoice_number FROM {$prefix}ppv_repair_invoices WHERE store_id = %d AND (doc_type = 'rechnung' OR doc_type IS NULL) AND invoice_number LIKE %s",
+            $store_id,
+            $wpdb->esc_like($inv_prefix) . '%'
+        ));
+        $max_num = 0;
+        foreach ($all_remaining as $inv_num) {
+            if (preg_match('/(\d+)$/', $inv_num, $m)) {
+                $max_num = max($max_num, intval($m[1]));
+            }
+        }
+        $wpdb->update("{$prefix}ppv_stores", [
+            'repair_invoice_next_number' => $max_num + 1
+        ], ['id' => $store_id]);
+    }
+
+    /**
      * AJAX: Delete invoice
      */
     public static function ajax_delete_invoice() {
@@ -526,6 +554,8 @@ class PPV_Repair_Invoice {
         ]);
 
         if ($deleted) {
+            // Recalculate next invoice number based on remaining invoices
+            self::recalc_next_invoice_number($store_id);
             wp_send_json_success(['message' => 'Rechnung gelöscht']);
         } else {
             wp_send_json_error(['message' => 'Rechnung nicht gefunden']);
@@ -1753,6 +1783,11 @@ IBAN: ' . $bank_iban . '
                 default:
                     wp_send_json_error(['message' => 'Unbekannte Operation']);
             }
+        }
+
+        // Recalculate next invoice number after bulk delete
+        if ($operation === 'delete' && $success_count > 0) {
+            self::recalc_next_invoice_number($store_id);
         }
 
         // Handle export operation separately (needs all invoices at once)
