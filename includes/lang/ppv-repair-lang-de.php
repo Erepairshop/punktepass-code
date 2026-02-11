@@ -104,6 +104,66 @@ return [
     'repair_feat_branch_title'  => 'Jede Branche',
     'repair_feat_branch_desc'   => 'Handy, PC, KFZ, Fahrrad & mehr',
 
+    // Feature modal CTA
+    'repair_feat_modal_cta'     => 'Jetzt kostenlos starten',
+
+    // Feature modal: Online & Vor-Ort
+    'repair_feat_online_b1'              => 'Reparaturformular direkt am Tablet ausfüllen',
+    'repair_feat_online_b2'              => 'Kunden füllen online aus – Sie erhalten die Daten sofort',
+    'repair_feat_online_b3'              => 'QR-Code zum Aufhängen für schnellen Zugriff vor Ort',
+    'repair_feat_online_mock_phone'      => 'Telefon',
+    'repair_feat_online_mock_device'     => 'Gerät',
+    'repair_feat_online_mock_problem'    => 'Problem',
+    'repair_feat_online_mock_problem_text' => 'Display gebrochen, reagiert nicht auf Touch...',
+    'repair_feat_online_mock_submit'     => 'Reparatur absenden',
+
+    // Feature modal: Rechnungen & Angebote
+    'repair_feat_invoice_b1'             => 'Professionelle Rechnungen & Angebote als PDF erstellen',
+    'repair_feat_invoice_b2'             => 'Per Klick als E-Mail an den Kunden senden',
+    'repair_feat_invoice_b3'             => 'Automatische Nummerierung & Statusverfolgung',
+    'repair_feat_invoice_mock_title'     => 'Rechnung',
+    'repair_feat_invoice_mock_sent'      => 'Gesendet',
+    'repair_feat_invoice_mock_display'   => 'Display-Reparatur',
+    'repair_feat_invoice_mock_battery'   => 'Akku-Tausch',
+    'repair_feat_invoice_mock_labor'     => 'Arbeitszeit',
+    'repair_feat_invoice_mock_send'      => 'Per E-Mail senden',
+
+    // Feature modal: DATEV & Export
+    'repair_feat_export_b1'              => 'DATEV-Export direkt für Ihren Steuerberater',
+    'repair_feat_export_b2'              => 'CSV & Excel für eigene Auswertungen',
+    'repair_feat_export_b3'              => 'Alle Daten jederzeit exportierbar',
+    'repair_feat_export_mock_csv'        => 'Tabellendaten',
+    'repair_feat_export_mock_excel'      => 'Diagramme & Filter',
+    'repair_feat_export_mock_datev'      => 'Buchhaltung',
+
+    // Feature modal: Digitaler Ankauf
+    'repair_feat_ankauf_b1'              => 'Digitale Kaufverträge für Gebrauchtgeräte',
+    'repair_feat_ankauf_b2'              => 'IMEI-Prüfung & Zustandsbewertung integriert',
+    'repair_feat_ankauf_b3'              => 'Kaufvertrag als PDF per E-Mail versenden',
+    'repair_feat_ankauf_mock_title'      => 'Kaufvertrag',
+    'repair_feat_ankauf_mock_device'     => 'Gerät',
+    'repair_feat_ankauf_mock_condition'  => 'Zustand',
+    'repair_feat_ankauf_mock_good'       => 'Gut',
+    'repair_feat_ankauf_mock_price'      => 'Ankaufspreis',
+    'repair_feat_ankauf_mock_signature'  => 'Digitale Unterschrift',
+
+    // Feature modal: Kundenverwaltung
+    'repair_feat_crm_b1'                => 'Alle Kunden & Reparaturen auf einen Blick',
+    'repair_feat_crm_b2'                => 'Komplette Reparaturhistorie & Kontaktdaten',
+    'repair_feat_crm_b3'                => 'Schnelle Suche nach Name, E-Mail oder Telefon',
+    'repair_feat_crm_mock_search'       => 'Kunde suchen...',
+    'repair_feat_crm_mock_repairs'      => 'Reparaturen',
+    'repair_feat_crm_mock_repair'       => 'Reparatur',
+
+    // Feature modal: Jede Branche
+    'repair_feat_branch_b1'             => 'Handy, Tablet, PC, Laptop – alles in einem System',
+    'repair_feat_branch_b2'             => 'KFZ, Fahrrad, E-Scooter – flexibel einsetzbar',
+    'repair_feat_branch_b3'             => 'Eigene Felder & Kategorien individuell anpassbar',
+    'repair_feat_branch_mock_phone'     => 'Handy',
+    'repair_feat_branch_mock_car'       => 'KFZ',
+    'repair_feat_branch_mock_bike'      => 'Fahrrad',
+    'repair_feat_branch_mock_console'   => 'Konsole',
+
     // Registration form
     'repair_reg_form_title'     => 'In 2 Minuten startklar',
     'repair_reg_form_sub'       => 'Erstellen Sie jetzt Ihr kostenloses Reparaturformular',

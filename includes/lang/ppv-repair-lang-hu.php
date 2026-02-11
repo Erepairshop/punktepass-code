@@ -104,6 +104,66 @@ return [
     'repair_feat_branch_title'  => 'Minden iparág',
     'repair_feat_branch_desc'   => 'Telefon, PC, autó, kerékpár és más',
 
+    // Feature modal CTA
+    'repair_feat_modal_cta'     => 'Ingyenes indulás most',
+
+    // Feature modal: Online és helyben
+    'repair_feat_online_b1'              => 'Javítási űrlap kitöltése közvetlenül tableten',
+    'repair_feat_online_b2'              => 'Az ügyfelek online töltik ki – Ön azonnal megkapja az adatokat',
+    'repair_feat_online_b3'              => 'QR-kód a helyszíni gyors hozzáféréshez',
+    'repair_feat_online_mock_phone'      => 'Telefon',
+    'repair_feat_online_mock_device'     => 'Készülék',
+    'repair_feat_online_mock_problem'    => 'Probléma',
+    'repair_feat_online_mock_problem_text' => 'Kijelző törött, nem reagál az érintésre...',
+    'repair_feat_online_mock_submit'     => 'Javítás beküldése',
+
+    // Feature modal: Számlák és ajánlatok
+    'repair_feat_invoice_b1'             => 'Professzionális számlák és árajánlatok PDF-ben',
+    'repair_feat_invoice_b2'             => 'Egy kattintással e-mailben küldés az ügyfélnek',
+    'repair_feat_invoice_b3'             => 'Automatikus számozás és státuszkövetés',
+    'repair_feat_invoice_mock_title'     => 'Számla',
+    'repair_feat_invoice_mock_sent'      => 'Elküldve',
+    'repair_feat_invoice_mock_display'   => 'Kijelző javítás',
+    'repair_feat_invoice_mock_battery'   => 'Akkumulátor csere',
+    'repair_feat_invoice_mock_labor'     => 'Munkadíj',
+    'repair_feat_invoice_mock_send'      => 'Küldés e-mailben',
+
+    // Feature modal: DATEV és export
+    'repair_feat_export_b1'              => 'DATEV export közvetlenül a könyvelőnek',
+    'repair_feat_export_b2'              => 'CSV és Excel saját kimutatásokhoz',
+    'repair_feat_export_b3'              => 'Minden adat bármikor exportálható',
+    'repair_feat_export_mock_csv'        => 'Táblázat',
+    'repair_feat_export_mock_excel'      => 'Diagramok',
+    'repair_feat_export_mock_datev'      => 'Könyvelés',
+
+    // Feature modal: Digitális felvásárlás
+    'repair_feat_ankauf_b1'              => 'Digitális adásvételi szerződések használt készülékekhez',
+    'repair_feat_ankauf_b2'              => 'IMEI ellenőrzés és állapotfelmérés beépítve',
+    'repair_feat_ankauf_b3'              => 'Szerződés PDF-ben e-mailben küldve',
+    'repair_feat_ankauf_mock_title'      => 'Adásvételi szerződés',
+    'repair_feat_ankauf_mock_device'     => 'Készülék',
+    'repair_feat_ankauf_mock_condition'  => 'Állapot',
+    'repair_feat_ankauf_mock_good'       => 'Jó',
+    'repair_feat_ankauf_mock_price'      => 'Felvásárlási ár',
+    'repair_feat_ankauf_mock_signature'  => 'Digitális aláírás',
+
+    // Feature modal: Ügyfélkezelés
+    'repair_feat_crm_b1'                => 'Minden ügyfél és javítás egy pillantásra',
+    'repair_feat_crm_b2'                => 'Teljes javítási előzmények és elérhetőségek',
+    'repair_feat_crm_b3'                => 'Gyors keresés név, e-mail vagy telefon alapján',
+    'repair_feat_crm_mock_search'       => 'Ügyfél keresése...',
+    'repair_feat_crm_mock_repairs'      => 'javítás',
+    'repair_feat_crm_mock_repair'       => 'javítás',
+
+    // Feature modal: Minden iparág
+    'repair_feat_branch_b1'             => 'Telefon, tablet, PC, laptop – minden egy rendszerben',
+    'repair_feat_branch_b2'             => 'Autó, kerékpár, e-roller – rugalmasan használható',
+    'repair_feat_branch_b3'             => 'Egyéni mezők és kategóriák szabadon testreszabhatók',
+    'repair_feat_branch_mock_phone'     => 'Telefon',
+    'repair_feat_branch_mock_car'       => 'Autó',
+    'repair_feat_branch_mock_bike'      => 'Kerékpár',
+    'repair_feat_branch_mock_console'   => 'Konzol',
+
     // Registration form
     'repair_reg_form_title'     => '2 perc alatt indulhat',
     'repair_reg_form_sub'       => 'Hozza létre most ingyenes szervizűrlapját',

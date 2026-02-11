@@ -311,11 +311,14 @@ class PPV_Repair_Registration {
             text-align: center;
             box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02);
             transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-            cursor: default;
+            cursor: pointer;
         }
         .pp-feature:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 36px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.02);
+        }
+        .pp-feature:active {
+            transform: translateY(-2px);
         }
         .pp-feature-icon {
             display: flex;
@@ -757,6 +760,321 @@ class PPV_Repair_Registration {
         .pp-lang-btn:hover{color:#fff;background:rgba(255,255,255,0.15)}
         .pp-lang-btn.active{color:#1f2937;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
 
+        /* ── FEATURE MODAL ── */
+        .pp-feat-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .pp-feat-overlay.active { display: flex; }
+        .pp-feat-modal {
+            position: relative;
+            background: #fff;
+            border-radius: 20px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 88vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            animation: scaleIn 0.25s ease;
+        }
+        .pp-feat-modal-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 24px 24px 0;
+        }
+        .pp-feat-modal-head .pp-feature-icon {
+            margin: 0;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+        }
+        .pp-feat-modal-head h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+        }
+        .pp-feat-modal-head p {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 2px 0 0;
+        }
+        .pp-feat-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 34px;
+            height: 34px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            transition: all 0.2s;
+            z-index: 1;
+        }
+        .pp-feat-close:hover { background: #e5e7eb; color: #1f2937; }
+        .pp-feat-body { padding: 20px 24px 24px; }
+        .pp-feat-body[hidden] { display: none; }
+
+        /* Mockup window */
+        .pp-mockup {
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .pp-mockup-bar {
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pp-mockup-bar span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .pp-mockup-bar span:nth-child(1) { background: #fca5a5; }
+        .pp-mockup-bar span:nth-child(2) { background: #fcd34d; }
+        .pp-mockup-bar span:nth-child(3) { background: #86efac; }
+        .pp-mockup-inner {
+            padding: 16px;
+        }
+
+        /* Mockup: form fields */
+        .pp-mock-field {
+            margin-bottom: 8px;
+        }
+        .pp-mock-field label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .pp-mock-field .pp-mock-input {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 12px;
+            color: #334155;
+        }
+        .pp-mock-field .pp-mock-input.tall {
+            min-height: 36px;
+        }
+        .pp-mock-btn {
+            background: linear-gradient(135deg, #667eea, #4338ca);
+            color: #fff;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Mockup: invoice */
+        .pp-mock-inv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .pp-mock-inv-header h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 0;
+        }
+        .pp-mock-inv-header span {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .pp-mock-inv-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 11px;
+            color: #475569;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .pp-mock-inv-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0 0;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* Mockup: export cards */
+        .pp-mock-exports {
+            display: flex;
+            gap: 10px;
+        }
+        .pp-mock-export-card {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 10px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .pp-mock-export-card i {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .pp-mock-export-card .ext {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .pp-mock-export-card .desc {
+            font-size: 9px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .pp-mock-export-card:nth-child(1) i { color: #22c55e; }
+        .pp-mock-export-card:nth-child(2) i { color: #3b82f6; }
+        .pp-mock-export-card:nth-child(3) i { color: #8b5cf6; }
+
+        /* Mockup: customer list */
+        .pp-mock-search {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .pp-mock-customer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .pp-mock-customer:last-child { border-bottom: none; }
+        .pp-mock-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .pp-mock-customer:nth-child(1) .pp-mock-avatar { background: #667eea; }
+        .pp-mock-customer:nth-child(2) .pp-mock-avatar { background: #f43f5e; }
+        .pp-mock-customer:nth-child(3) .pp-mock-avatar { background: #14b8a6; }
+        .pp-mock-customer-info strong {
+            display: block;
+            font-size: 12px;
+            color: #1f2937;
+        }
+        .pp-mock-customer-info span {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        /* Mockup: branch grid */
+        .pp-mock-branches {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .pp-mock-branch {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        .pp-mock-branch i {
+            font-size: 22px;
+            display: block;
+            margin-bottom: 4px;
+            color: #667eea;
+        }
+        .pp-mock-branch span {
+            font-size: 10px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        /* Bullet points */
+        .pp-feat-bullets {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px;
+        }
+        .pp-feat-bullets li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.4;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .pp-feat-bullets li:last-child { border-bottom: none; }
+        .pp-feat-bullets li i {
+            color: #22c55e;
+            font-size: 15px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        /* CTA */
+        .pp-feat-cta {
+            display: block;
+            text-align: center;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #4338ca);
+            color: #fff !important;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none !important;
+            transition: all 0.2s;
+        }
+        .pp-feat-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(102,126,234,0.4);
+        }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             .pp-hero {
@@ -782,6 +1100,10 @@ class PPV_Repair_Registration {
             .pp-feature {
                 padding: 20px 14px;
             }
+            .pp-feat-overlay { padding: 12px; }
+            .pp-feat-modal { max-height: 92vh; }
+            .pp-feat-modal-head { padding: 20px 20px 0; }
+            .pp-feat-body { padding: 16px 20px 20px; }
             .pp-form-section {
                 margin-top: 36px;
             }
@@ -830,6 +1152,8 @@ class PPV_Repair_Registration {
                 margin: 0;
                 flex-shrink: 0;
             }
+            .pp-mock-exports { flex-direction: column; }
+            .pp-mock-branches { grid-template-columns: repeat(2, 1fr); }
             .pp-reg-form {
                 padding: 20px 16px;
             }
@@ -898,42 +1222,42 @@ class PPV_Repair_Registration {
 <!-- ============ FEATURES ============ -->
 <div class="pp-features-section">
     <div class="pp-features">
-        <div class="pp-feature pp-fade-in pp-fade-in-1">
+        <div class="pp-feature pp-fade-in pp-fade-in-1" data-feature="online">
             <div class="pp-feature-icon blue"><i class="ri-smartphone-line"></i></div>
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_online_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_online_desc')); ?></p>
             </div>
         </div>
-        <div class="pp-feature pp-fade-in pp-fade-in-2">
+        <div class="pp-feature pp-fade-in pp-fade-in-2" data-feature="invoice">
             <div class="pp-feature-icon green"><i class="ri-file-text-line"></i></div>
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_desc')); ?></p>
             </div>
         </div>
-        <div class="pp-feature pp-fade-in pp-fade-in-3">
+        <div class="pp-feature pp-fade-in pp-fade-in-3" data-feature="export">
             <div class="pp-feature-icon purple"><i class="ri-bar-chart-2-line"></i></div>
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_export_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_export_desc')); ?></p>
             </div>
         </div>
-        <div class="pp-feature pp-fade-in pp-fade-in-4">
+        <div class="pp-feature pp-fade-in pp-fade-in-4" data-feature="ankauf">
             <div class="pp-feature-icon amber"><i class="ri-hand-coin-line"></i></div>
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_desc')); ?></p>
             </div>
         </div>
-        <div class="pp-feature pp-fade-in pp-fade-in-5">
+        <div class="pp-feature pp-fade-in pp-fade-in-5" data-feature="crm">
             <div class="pp-feature-icon rose"><i class="ri-team-line"></i></div>
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_crm_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_crm_desc')); ?></p>
             </div>
         </div>
-        <div class="pp-feature pp-fade-in pp-fade-in-6">
+        <div class="pp-feature pp-fade-in pp-fade-in-6" data-feature="branch">
             <div class="pp-feature-icon teal"><i class="ri-check-double-line"></i></div>
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_branch_title')); ?></h3>
@@ -1205,6 +1529,253 @@ class PPV_Repair_Registration {
             showError(ppvLang.err_network);
         };
         xhr.send(data);
+    });
+})();
+</script>
+
+<!-- ============ FEATURE MODAL ============ -->
+<div class="pp-feat-overlay" id="ppFeatOverlay">
+    <div class="pp-feat-modal">
+        <button class="pp-feat-close" id="ppFeatClose"><i class="ri-close-line"></i></button>
+
+        <!-- === Online & Vor-Ort === -->
+        <div class="pp-feat-body" data-feat="online" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon blue"><i class="ri-smartphone-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_online_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_online_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div class="pp-mock-field"><label>Name</label><div class="pp-mock-input">Max Mustermann</div></div>
+                    <div class="pp-mock-field"><label><?php echo esc_html(PPV_Lang::t('repair_feat_online_mock_phone')); ?></label><div class="pp-mock-input">+49 176 1234567</div></div>
+                    <div class="pp-mock-field"><label><?php echo esc_html(PPV_Lang::t('repair_feat_online_mock_device')); ?></label><div class="pp-mock-input">iPhone 15 Pro Max</div></div>
+                    <div class="pp-mock-field"><label><?php echo esc_html(PPV_Lang::t('repair_feat_online_mock_problem')); ?></label><div class="pp-mock-input tall"><?php echo esc_html(PPV_Lang::t('repair_feat_online_mock_problem_text')); ?></div></div>
+                    <div class="pp-mock-btn"><i class="ri-send-plane-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_online_mock_submit')); ?></div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_online_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_online_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_online_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === Rechnungen & Angebote === -->
+        <div class="pp-feat-body" data-feat="invoice" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon green"><i class="ri-file-text-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div class="pp-mock-inv-header">
+                        <div>
+                            <h4><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_mock_title')); ?></h4>
+                            <span style="font-size:11px;color:#64748b">#2025-0042 · 11.02.2025</span>
+                        </div>
+                        <span style="background:#dcfce7;color:#16a34a;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px"><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_mock_sent')); ?></span>
+                    </div>
+                    <div class="pp-mock-inv-row"><span><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_mock_display')); ?></span><span>89,00 €</span></div>
+                    <div class="pp-mock-inv-row"><span><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_mock_battery')); ?></span><span>49,00 €</span></div>
+                    <div class="pp-mock-inv-row"><span><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_mock_labor')); ?></span><span>25,00 €</span></div>
+                    <div class="pp-mock-inv-total"><span>Total</span><span>163,00 €</span></div>
+                    <div class="pp-mock-btn" style="margin-top:12px"><i class="ri-mail-send-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_invoice_mock_send')); ?></div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_invoice_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_invoice_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_invoice_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === DATEV & Export === -->
+        <div class="pp-feat-body" data-feat="export" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon purple"><i class="ri-bar-chart-2-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_export_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_export_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div class="pp-mock-exports">
+                        <div class="pp-mock-export-card">
+                            <i class="ri-file-excel-2-line"></i>
+                            <div class="ext">CSV</div>
+                            <div class="desc"><?php echo esc_html(PPV_Lang::t('repair_feat_export_mock_csv')); ?></div>
+                        </div>
+                        <div class="pp-mock-export-card">
+                            <i class="ri-file-chart-line"></i>
+                            <div class="ext">Excel</div>
+                            <div class="desc"><?php echo esc_html(PPV_Lang::t('repair_feat_export_mock_excel')); ?></div>
+                        </div>
+                        <div class="pp-mock-export-card">
+                            <i class="ri-bank-line"></i>
+                            <div class="ext">DATEV</div>
+                            <div class="desc"><?php echo esc_html(PPV_Lang::t('repair_feat_export_mock_datev')); ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_export_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_export_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_export_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === Digitaler Ankauf === -->
+        <div class="pp-feat-body" data-feat="ankauf" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon amber"><i class="ri-hand-coin-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div class="pp-mock-inv-header">
+                        <div>
+                            <h4><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_mock_title')); ?></h4>
+                            <span style="font-size:11px;color:#64748b">AK-2025-0018</span>
+                        </div>
+                    </div>
+                    <div class="pp-mock-inv-row"><span><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_mock_device')); ?></span><span>Samsung Galaxy S24</span></div>
+                    <div class="pp-mock-inv-row"><span>IMEI</span><span>356789012345678</span></div>
+                    <div class="pp-mock-inv-row"><span><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_mock_condition')); ?></span><span>⭐⭐⭐⭐ <?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_mock_good')); ?></span></div>
+                    <div class="pp-mock-inv-total"><span><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_mock_price')); ?></span><span>350,00 €</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0">
+                        <i class="ri-quill-pen-line" style="color:#667eea;font-size:18px"></i>
+                        <span style="font-size:11px;color:#64748b"><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_mock_signature')); ?></span>
+                        <span style="font-family:cursive;font-size:16px;color:#667eea;margin-left:auto">M. Schmidt</span>
+                    </div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === Kundenverwaltung === -->
+        <div class="pp-feat-body" data-feat="crm" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon rose"><i class="ri-team-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_crm_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_crm_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div class="pp-mock-search"><i class="ri-search-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_crm_mock_search')); ?></div>
+                    <div class="pp-mock-customer">
+                        <div class="pp-mock-avatar">MM</div>
+                        <div class="pp-mock-customer-info">
+                            <strong>Max Mustermann</strong>
+                            <span>5 <?php echo esc_html(PPV_Lang::t('repair_feat_crm_mock_repairs')); ?> · max@example.de</span>
+                        </div>
+                    </div>
+                    <div class="pp-mock-customer">
+                        <div class="pp-mock-avatar">AS</div>
+                        <div class="pp-mock-customer-info">
+                            <strong>Anna Schmidt</strong>
+                            <span>2 <?php echo esc_html(PPV_Lang::t('repair_feat_crm_mock_repairs')); ?> · anna@example.de</span>
+                        </div>
+                    </div>
+                    <div class="pp-mock-customer">
+                        <div class="pp-mock-avatar">TB</div>
+                        <div class="pp-mock-customer-info">
+                            <strong>Thomas Braun</strong>
+                            <span>1 <?php echo esc_html(PPV_Lang::t('repair_feat_crm_mock_repair')); ?> · thomas@example.de</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_crm_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_crm_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_crm_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === Jede Branche === -->
+        <div class="pp-feat-body" data-feat="branch" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon teal"><i class="ri-check-double-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_branch_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_branch_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div class="pp-mock-branches">
+                        <div class="pp-mock-branch"><i class="ri-smartphone-line"></i><span><?php echo esc_html(PPV_Lang::t('repair_feat_branch_mock_phone')); ?></span></div>
+                        <div class="pp-mock-branch"><i class="ri-computer-line"></i><span>PC / Laptop</span></div>
+                        <div class="pp-mock-branch"><i class="ri-tablet-line"></i><span>Tablet</span></div>
+                        <div class="pp-mock-branch"><i class="ri-roadster-line"></i><span><?php echo esc_html(PPV_Lang::t('repair_feat_branch_mock_car')); ?></span></div>
+                        <div class="pp-mock-branch"><i class="ri-riding-line"></i><span><?php echo esc_html(PPV_Lang::t('repair_feat_branch_mock_bike')); ?></span></div>
+                        <div class="pp-mock-branch"><i class="ri-gamepad-line"></i><span><?php echo esc_html(PPV_Lang::t('repair_feat_branch_mock_console')); ?></span></div>
+                    </div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_branch_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_branch_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_branch_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var overlay = document.getElementById('ppFeatOverlay');
+    var bodies = overlay.querySelectorAll('.pp-feat-body');
+
+    // Open modal on card click
+    document.querySelectorAll('.pp-feature[data-feature]').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var feat = this.getAttribute('data-feature');
+            bodies.forEach(function(b) { b.hidden = b.getAttribute('data-feat') !== feat; });
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    });
+
+    // Close modal
+    function closeModal() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    document.getElementById('ppFeatClose').addEventListener('click', closeModal);
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
     });
 })();
 </script>

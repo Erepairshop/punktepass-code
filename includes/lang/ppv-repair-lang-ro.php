@@ -104,6 +104,66 @@ return [
     'repair_feat_branch_title'  => 'Orice industrie',
     'repair_feat_branch_desc'   => 'Telefon, PC, auto, bicicletă și altele',
 
+    // Feature modal CTA
+    'repair_feat_modal_cta'     => 'Începe gratuit acum',
+
+    // Feature modal: Online și la fața locului
+    'repair_feat_online_b1'              => 'Completați formularul de reparație direct pe tabletă',
+    'repair_feat_online_b2'              => 'Clienții completează online – primiți datele instant',
+    'repair_feat_online_b3'              => 'Cod QR pentru acces rapid la fața locului',
+    'repair_feat_online_mock_phone'      => 'Telefon',
+    'repair_feat_online_mock_device'     => 'Dispozitiv',
+    'repair_feat_online_mock_problem'    => 'Problemă',
+    'repair_feat_online_mock_problem_text' => 'Ecran spart, nu răspunde la atingere...',
+    'repair_feat_online_mock_submit'     => 'Trimite reparația',
+
+    // Feature modal: Facturi și oferte
+    'repair_feat_invoice_b1'             => 'Facturi și oferte profesionale în format PDF',
+    'repair_feat_invoice_b2'             => 'Trimiteți prin e-mail cu un singur click',
+    'repair_feat_invoice_b3'             => 'Numerotare automată și urmărirea statusului',
+    'repair_feat_invoice_mock_title'     => 'Factură',
+    'repair_feat_invoice_mock_sent'      => 'Trimisă',
+    'repair_feat_invoice_mock_display'   => 'Reparație ecran',
+    'repair_feat_invoice_mock_battery'   => 'Înlocuire baterie',
+    'repair_feat_invoice_mock_labor'     => 'Manoperă',
+    'repair_feat_invoice_mock_send'      => 'Trimite prin e-mail',
+
+    // Feature modal: DATEV și export
+    'repair_feat_export_b1'              => 'Export DATEV direct pentru contabilul dvs.',
+    'repair_feat_export_b2'              => 'CSV și Excel pentru analize proprii',
+    'repair_feat_export_b3'              => 'Toate datele exportabile oricând',
+    'repair_feat_export_mock_csv'        => 'Date tabel',
+    'repair_feat_export_mock_excel'      => 'Grafice',
+    'repair_feat_export_mock_datev'      => 'Contabilitate',
+
+    // Feature modal: Achiziție digitală
+    'repair_feat_ankauf_b1'              => 'Contracte digitale de vânzare pentru dispozitive uzate',
+    'repair_feat_ankauf_b2'              => 'Verificare IMEI și evaluarea stării integrate',
+    'repair_feat_ankauf_b3'              => 'Contract PDF trimis prin e-mail',
+    'repair_feat_ankauf_mock_title'      => 'Contract de vânzare',
+    'repair_feat_ankauf_mock_device'     => 'Dispozitiv',
+    'repair_feat_ankauf_mock_condition'  => 'Stare',
+    'repair_feat_ankauf_mock_good'       => 'Bună',
+    'repair_feat_ankauf_mock_price'      => 'Preț achiziție',
+    'repair_feat_ankauf_mock_signature'  => 'Semnătură digitală',
+
+    // Feature modal: Management clienți
+    'repair_feat_crm_b1'                => 'Toți clienții și reparațiile dintr-o privire',
+    'repair_feat_crm_b2'                => 'Istoric complet al reparațiilor și date de contact',
+    'repair_feat_crm_b3'                => 'Căutare rapidă după nume, e-mail sau telefon',
+    'repair_feat_crm_mock_search'       => 'Caută client...',
+    'repair_feat_crm_mock_repairs'      => 'reparații',
+    'repair_feat_crm_mock_repair'       => 'reparație',
+
+    // Feature modal: Orice industrie
+    'repair_feat_branch_b1'             => 'Telefon, tabletă, PC, laptop – totul într-un sistem',
+    'repair_feat_branch_b2'             => 'Auto, bicicletă, trotinetă – utilizare flexibilă',
+    'repair_feat_branch_b3'             => 'Câmpuri și categorii personalizabile',
+    'repair_feat_branch_mock_phone'     => 'Telefon',
+    'repair_feat_branch_mock_car'       => 'Auto',
+    'repair_feat_branch_mock_bike'      => 'Bicicletă',
+    'repair_feat_branch_mock_console'   => 'Consolă',
+
     // Registration form
     'repair_reg_form_title'     => 'Gata în 2 minute',
     'repair_reg_form_sub'       => 'Creați acum formularul gratuit de service',
