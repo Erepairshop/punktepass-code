@@ -81,14 +81,60 @@ return [
     'repair_offline_mode'       => 'Offline-Modus — Formular wird gespeichert und bei Verbindung automatisch gesendet',
 
     // ========== REGISTRATION PAGE ==========
-    'repair_reg_page_title'     => 'Reparaturverwaltung für Ihren Shop - PunktePass',
-    'repair_reg_badge'          => 'Kostenlos starten — keine Kreditkarte nötig',
-    'repair_reg_hero_title'     => 'Digitale Reparatur&shy;verwaltung <span>für Ihren Shop</span>',
-    'repair_reg_hero_sub'       => 'Professionelles Formular, Rechnungen, Ankauf, Kundenverwaltung & DATEV-Export – alles in einem System. Am Tablet vor Ort oder online.',
-    'repair_reg_cta'            => 'Jetzt registrieren',
-    'repair_reg_stat_free'      => 'Kostenlos',
+    'repair_reg_page_title'     => 'Digitales Reparaturformular für Ihren Betrieb - PunktePass',
+    'repair_reg_badge'          => '50 Formulare kostenlos — keine Kreditkarte nötig',
+    'repair_reg_hero_title'     => 'Schluss mit Papier-Chaos <span>in Ihrer Werkstatt</span>',
+    'repair_reg_hero_sub'       => 'Digitales Reparaturformular für Ihren Betrieb – Kunden füllen online oder am Tablet aus, Sie behalten den Überblick über jeden Auftrag.',
+    'repair_reg_cta'            => 'Kostenlos starten',
+    'repair_reg_stat_free'      => 'Gratis',
+    'repair_reg_stat_free_label'=> '50 Formulare',
     'repair_reg_stat_setup'     => 'Einrichtung',
-    'repair_reg_stat_gdpr'      => 'Konform',
+    'repair_reg_stat_gdpr'      => 'Nötig',
+    'repair_reg_stat_gdpr_label'=> 'Keine Kreditkarte',
+
+    // Pain section
+    'repair_reg_pain_title'     => 'Kennen Sie das?',
+    'repair_reg_pain_1'         => 'Unleserliche Handschrift auf Reparaturzetteln',
+    'repair_reg_pain_2'         => 'Verlorene Aufträge & keine Übersicht',
+    'repair_reg_pain_3'         => 'Kunden fragen ständig nach dem Status',
+    'repair_reg_pain_solution'  => 'PunktePass digitalisiert Ihren kompletten Reparaturprozess.',
+
+    // How it works
+    'repair_reg_steps_title'    => 'So funktioniert\'s',
+    'repair_reg_step1_title'    => 'Registrieren',
+    'repair_reg_step1_desc'     => 'Kostenloses Konto in 2 Minuten erstellen',
+    'repair_reg_step2_title'    => 'Formular teilen',
+    'repair_reg_step2_desc'     => 'Link teilen oder Tablet im Laden aufstellen',
+    'repair_reg_step3_title'    => 'Aufträge verwalten',
+    'repair_reg_step3_desc'     => 'Alle Reparaturen im Blick, Rechnungen erstellen',
+
+    // Pricing
+    'repair_reg_pricing_title'  => 'Transparent & fair',
+    'repair_reg_pricing_sub'    => 'Starten Sie kostenlos – upgraden Sie, wenn Sie wachsen',
+    'repair_reg_price_free'     => 'Starter',
+    'repair_reg_price_free_val' => '0 €',
+    'repair_reg_price_free_per' => 'dauerhaft kostenlos',
+    'repair_reg_price_free_f1'  => 'Bis 50 Formulare / Monat',
+    'repair_reg_price_free_f2'  => 'Reparaturformular',
+    'repair_reg_price_free_f3'  => 'Kundenverwaltung',
+    'repair_reg_price_free_f4'  => 'E-Mail-Benachrichtigungen',
+    'repair_reg_price_pro'      => 'Premium',
+    'repair_reg_price_pro_val'  => '39 €',
+    'repair_reg_price_pro_per'  => 'pro Monat (netto)',
+    'repair_reg_price_pro_f1'   => 'Unbegrenzte Formulare',
+    'repair_reg_price_pro_f2'   => 'Rechnungen & Angebote (PDF)',
+    'repair_reg_price_pro_f3'   => 'DATEV & Excel Export',
+    'repair_reg_price_pro_f4'   => 'Digitaler Ankauf',
+    'repair_reg_price_pro_f5'   => 'Mehrere Filialen',
+    'repair_reg_price_popular'  => 'Beliebt',
+
+    // OAuth
+    'repair_reg_google'         => 'Mit Google registrieren',
+    'repair_reg_apple'          => 'Mit Apple registrieren',
+    'repair_reg_or'             => 'oder per E-Mail',
+    'repair_login_google'       => 'Mit Google anmelden',
+    'repair_login_apple'        => 'Mit Apple anmelden',
+    'repair_login_or'           => 'oder per E-Mail',
 
     // Features
     'repair_feat_online_title'  => 'Online & Vor-Ort',

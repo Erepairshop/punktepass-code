@@ -81,14 +81,60 @@ return [
     'repair_offline_mode'       => 'Offline mód — Az űrlap mentésre kerül, és kapcsolódáskor automatikusan elküldjük',
 
     // ========== REGISTRATION PAGE ==========
-    'repair_reg_page_title'     => 'Szervizkezelés az Ön boltjához - PunktePass',
-    'repair_reg_badge'          => 'Ingyenes kezdés — bankkártya nem szükséges',
-    'repair_reg_hero_title'     => 'Digitális szerviz&shy;kezelés <span>az Ön boltjához</span>',
-    'repair_reg_hero_sub'       => 'Professzionális űrlap, számlák, felvásárlás, ügyfélkezelés és DATEV-export – minden egy rendszerben. Tableten helyben vagy online.',
-    'repair_reg_cta'            => 'Regisztráció most',
-    'repair_reg_stat_free'      => 'Ingyenes',
+    'repair_reg_page_title'     => 'Digitális szervizűrlap az Ön üzletéhez - PunktePass',
+    'repair_reg_badge'          => '50 űrlap ingyen — bankkártya nem szükséges',
+    'repair_reg_hero_title'     => 'Vége a papír-káosznak <span>az Ön műhelyében</span>',
+    'repair_reg_hero_sub'       => 'Digitális szervizűrlap az Ön üzletéhez – ügyfelei online vagy tableten töltik ki, Ön minden megrendelést átlát.',
+    'repair_reg_cta'            => 'Ingyenes kezdés',
+    'repair_reg_stat_free'      => 'Ingyen',
+    'repair_reg_stat_free_label'=> '50 űrlap',
     'repair_reg_stat_setup'     => 'Beállítás',
-    'repair_reg_stat_gdpr'      => 'Kompatibilis',
+    'repair_reg_stat_gdpr'      => 'Szükséges',
+    'repair_reg_stat_gdpr_label'=> 'Bankkártya nem',
+
+    // Pain section
+    'repair_reg_pain_title'     => 'Ismerős helyzet?',
+    'repair_reg_pain_1'         => 'Olvashatatlan kézírás a szervizlapokon',
+    'repair_reg_pain_2'         => 'Elveszett megrendelések és átláthatatlanság',
+    'repair_reg_pain_3'         => 'Ügyfelek állandóan a státuszt kérdezik',
+    'repair_reg_pain_solution'  => 'A PunktePass digitalizálja az Ön teljes szervizfolyamatát.',
+
+    // How it works
+    'repair_reg_steps_title'    => 'Így működik',
+    'repair_reg_step1_title'    => 'Regisztráció',
+    'repair_reg_step1_desc'     => 'Ingyenes fiók létrehozása 2 perc alatt',
+    'repair_reg_step2_title'    => 'Űrlap megosztása',
+    'repair_reg_step2_desc'     => 'Link megosztása vagy tablet felállítása az üzletben',
+    'repair_reg_step3_title'    => 'Megrendelések kezelése',
+    'repair_reg_step3_desc'     => 'Minden szerviz egy helyen, számlák készítése',
+
+    // Pricing
+    'repair_reg_pricing_title'  => 'Átlátható és fair',
+    'repair_reg_pricing_sub'    => 'Kezdjen ingyen – frissítsen, amikor nő',
+    'repair_reg_price_free'     => 'Kezdő',
+    'repair_reg_price_free_val' => '0 Ft',
+    'repair_reg_price_free_per' => 'tartósan ingyenes',
+    'repair_reg_price_free_f1'  => 'Havi 50 űrlap',
+    'repair_reg_price_free_f2'  => 'Szervizűrlap',
+    'repair_reg_price_free_f3'  => 'Ügyfélkezelés',
+    'repair_reg_price_free_f4'  => 'E-mail értesítések',
+    'repair_reg_price_pro'      => 'Prémium',
+    'repair_reg_price_pro_val'  => '39 €',
+    'repair_reg_price_pro_per'  => 'havonta (nettó)',
+    'repair_reg_price_pro_f1'   => 'Korlátlan űrlapok',
+    'repair_reg_price_pro_f2'   => 'Számlák és ajánlatok (PDF)',
+    'repair_reg_price_pro_f3'   => 'DATEV és Excel export',
+    'repair_reg_price_pro_f4'   => 'Digitális felvásárlás',
+    'repair_reg_price_pro_f5'   => 'Több telephely',
+    'repair_reg_price_popular'  => 'Népszerű',
+
+    // OAuth
+    'repair_reg_google'         => 'Regisztráció Google-lel',
+    'repair_reg_apple'          => 'Regisztráció Apple-lel',
+    'repair_reg_or'             => 'vagy e-maillel',
+    'repair_login_google'       => 'Bejelentkezés Google-lel',
+    'repair_login_apple'        => 'Bejelentkezés Apple-lel',
+    'repair_login_or'           => 'vagy e-maillel',
 
     // Features
     'repair_feat_online_title'  => 'Online és helyben',

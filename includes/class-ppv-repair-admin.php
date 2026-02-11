@@ -67,6 +67,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .login-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
 .login-lang-btn:hover{background:#e5e7eb;color:#374151}
 .login-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
+.oauth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 14px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit;margin-bottom:8px}
+.oauth-google{background:#fff;border:1.5px solid #e5e7eb;color:#374151}
+.oauth-google:hover{border-color:#d1d5db;background:#f9fafb}
+.oauth-apple{background:#000;border:1.5px solid #000;color:#fff}
+.oauth-apple:hover{background:#1a1a1a}
+.oauth-divider{display:flex;align-items:center;margin:16px 0;gap:10px}
+.oauth-divider::before,.oauth-divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.oauth-divider span{font-size:12px;font-weight:500;color:#9ca3af;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -81,6 +89,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         <div class="login-logo"><i class="ri-tools-line"></i></div>
         <h2><?php echo esc_html(PPV_Lang::t('repair_login_heading')); ?></h2>
         <p class="subtitle"><?php echo esc_html(PPV_Lang::t('repair_login_subtitle')); ?></p>
+        <!-- OAuth Login -->
+        <button type="button" class="oauth-btn oauth-google" onclick="ppvOAuthLogin('google')">
+            <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+            <?php echo esc_html(PPV_Lang::t('repair_login_google')); ?>
+        </button>
+        <button type="button" class="oauth-btn oauth-apple" onclick="ppvOAuthLogin('apple')">
+            <svg width="16" height="16" viewBox="0 0 18 18"><path fill="currentColor" d="M14.94 9.88c-.02-2.07 1.69-3.06 1.77-3.11-.96-1.41-2.46-1.6-3-1.63-1.27-.13-2.49.75-3.14.75-.65 0-1.65-.73-2.72-.71-1.4.02-2.69.81-3.41 2.07-1.46 2.53-.37 6.27 1.05 8.32.69 1 1.52 2.13 2.61 2.09 1.05-.04 1.44-.68 2.71-.68 1.27 0 1.62.68 2.72.66 1.13-.02 1.84-1.02 2.53-2.03.8-1.16 1.12-2.28 1.14-2.34-.02-.01-2.19-.84-2.21-3.34zM12.87 3.53c.58-.7.97-1.67.86-2.64-.83.03-1.84.55-2.44 1.25-.53.62-1 1.61-.87 2.56.93.07 1.87-.47 2.45-1.17z"/></svg>
+            <?php echo esc_html(PPV_Lang::t('repair_login_apple')); ?>
+        </button>
+        <div class="oauth-divider"><span><?php echo esc_html(PPV_Lang::t('repair_login_or')); ?></span></div>
         <form id="login-form" autocomplete="off">
             <div class="field">
                 <label for="login-email"><?php echo esc_html(PPV_Lang::t('repair_email_label')); ?></label>
@@ -154,6 +172,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         });
     });
 })();
+
+// OAuth login handler
+function ppvOAuthLogin(provider) {
+    var fd = new FormData();
+    fd.append('action', 'ppv_repair_oauth_init');
+    fd.append('provider', provider);
+    fd.append('redirect_url', window.location.href);
+    fd.append('mode', 'login');
+
+    fetch(<?php echo json_encode(esc_url($ajax_url)); ?>, {method: 'POST', body: fd, credentials: 'same-origin'})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success && data.data && data.data.auth_url) {
+            window.location.href = data.data.auth_url;
+        } else {
+            var err = document.getElementById('login-error');
+            err.textContent = data.data && data.data.message ? data.data.message : 'OAuth error';
+            err.style.display = 'block';
+        }
+    })
+    .catch(function() {
+        var err = document.getElementById('login-error');
+        err.textContent = 'Network error';
+        err.style.display = 'block';
+    });
+}
 </script>
 </body>
 </html><?php

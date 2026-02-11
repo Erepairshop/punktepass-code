@@ -81,14 +81,60 @@ return [
     'repair_offline_mode'       => 'Mod offline — Formularul este salvat și va fi trimis automat la reconectare',
 
     // ========== REGISTRATION PAGE ==========
-    'repair_reg_page_title'     => 'Management service pentru magazinul dvs. - PunktePass',
-    'repair_reg_badge'          => 'Start gratuit — nu este nevoie de card',
-    'repair_reg_hero_title'     => 'Management digital <span>pentru magazinul dvs.</span>',
-    'repair_reg_hero_sub'       => 'Formular profesional, facturi, achiziții, management clienți și export DATEV – totul într-un singur sistem. Pe tabletă la fața locului sau online.',
-    'repair_reg_cta'            => 'Înregistrează-te acum',
+    'repair_reg_page_title'     => 'Formular digital de service pentru afacerea dvs. - PunktePass',
+    'repair_reg_badge'          => '50 formulare gratuit — nu este nevoie de card',
+    'repair_reg_hero_title'     => 'Gata cu haosul de hârtie <span>în atelierul dvs.</span>',
+    'repair_reg_hero_sub'       => 'Formular digital de service pentru afacerea dvs. – clienții completează online sau pe tabletă, dvs. aveți controlul asupra fiecărei comenzi.',
+    'repair_reg_cta'            => 'Start gratuit',
     'repair_reg_stat_free'      => 'Gratuit',
+    'repair_reg_stat_free_label'=> '50 formulare',
     'repair_reg_stat_setup'     => 'Configurare',
-    'repair_reg_stat_gdpr'      => 'Conform',
+    'repair_reg_stat_gdpr'      => 'Necesar',
+    'repair_reg_stat_gdpr_label'=> 'Fără card bancar',
+
+    // Pain section
+    'repair_reg_pain_title'     => 'Vă sună cunoscut?',
+    'repair_reg_pain_1'         => 'Scris de mână ilizibil pe fișele de reparații',
+    'repair_reg_pain_2'         => 'Comenzi pierdute și lipsă de organizare',
+    'repair_reg_pain_3'         => 'Clienții întreabă permanent de status',
+    'repair_reg_pain_solution'  => 'PunktePass digitalizează întregul proces de service.',
+
+    // How it works
+    'repair_reg_steps_title'    => 'Cum funcționează',
+    'repair_reg_step1_title'    => 'Înregistrare',
+    'repair_reg_step1_desc'     => 'Cont gratuit în 2 minute',
+    'repair_reg_step2_title'    => 'Partajare formular',
+    'repair_reg_step2_desc'     => 'Partajați link-ul sau puneți tableta în magazin',
+    'repair_reg_step3_title'    => 'Gestionare comenzi',
+    'repair_reg_step3_desc'     => 'Toate reparațiile într-un loc, creare facturi',
+
+    // Pricing
+    'repair_reg_pricing_title'  => 'Transparent și corect',
+    'repair_reg_pricing_sub'    => 'Începeți gratuit – faceți upgrade când creșteți',
+    'repair_reg_price_free'     => 'Starter',
+    'repair_reg_price_free_val' => '0 €',
+    'repair_reg_price_free_per' => 'gratuit permanent',
+    'repair_reg_price_free_f1'  => 'Până la 50 formulare / lună',
+    'repair_reg_price_free_f2'  => 'Formular de service',
+    'repair_reg_price_free_f3'  => 'Management clienți',
+    'repair_reg_price_free_f4'  => 'Notificări e-mail',
+    'repair_reg_price_pro'      => 'Premium',
+    'repair_reg_price_pro_val'  => '39 €',
+    'repair_reg_price_pro_per'  => 'pe lună (net)',
+    'repair_reg_price_pro_f1'   => 'Formulare nelimitate',
+    'repair_reg_price_pro_f2'   => 'Facturi și oferte (PDF)',
+    'repair_reg_price_pro_f3'   => 'Export DATEV și Excel',
+    'repair_reg_price_pro_f4'   => 'Achiziție digitală',
+    'repair_reg_price_pro_f5'   => 'Mai multe filiale',
+    'repair_reg_price_popular'  => 'Popular',
+
+    // OAuth
+    'repair_reg_google'         => 'Înregistrare cu Google',
+    'repair_reg_apple'          => 'Înregistrare cu Apple',
+    'repair_reg_or'             => 'sau prin e-mail',
+    'repair_login_google'       => 'Conectare cu Google',
+    'repair_login_apple'        => 'Conectare cu Apple',
+    'repair_login_or'           => 'sau prin e-mail',
 
     // Features
     'repair_feat_online_title'  => 'Online și la fața locului',

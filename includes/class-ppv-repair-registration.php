@@ -754,11 +754,9 @@ class PPV_Repair_Registration {
             display: none !important;
         }
 
-        /* ── Language Switcher ── */
-        .pp-lang-switch{position:absolute;top:16px;right:16px;z-index:10;display:flex;gap:4px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:4px}
-        .pp-lang-btn{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
-        .pp-lang-btn:hover{color:#fff;background:rgba(255,255,255,0.15)}
-        .pp-lang-btn.active{color:#1f2937;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+        /* ── Language Switcher (footer) ── */
+        .pp-lang-btn{font-family:inherit;letter-spacing:0.5px;transition:all .2s}
+        .pp-lang-btn:hover{opacity:0.8}
 
         /* ── FEATURE MODAL ── */
         .pp-feat-overlay {
@@ -1075,6 +1073,267 @@ class PPV_Repair_Registration {
             box-shadow: 0 4px 16px rgba(102,126,234,0.4);
         }
 
+        /* ── OAuth Buttons ── */
+        .pp-oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 13px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            margin-bottom: 10px;
+        }
+        .pp-oauth-google {
+            background: #fff;
+            border: 2px solid #e5e7eb;
+            color: #374151;
+        }
+        .pp-oauth-google:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .pp-oauth-apple {
+            background: #000;
+            border: 2px solid #000;
+            color: #fff;
+        }
+        .pp-oauth-apple:hover {
+            background: #1a1a1a;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .pp-oauth-divider {
+            display: flex;
+            align-items: center;
+            margin: 18px 0 0;
+            gap: 12px;
+        }
+        .pp-oauth-divider::before,
+        .pp-oauth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+        .pp-oauth-divider span {
+            font-size: 13px;
+            font-weight: 500;
+            color: #9ca3af;
+            white-space: nowrap;
+        }
+
+        /* ── PAIN SECTION ── */
+        .pp-pain-section {
+            max-width: 880px;
+            margin: 48px auto 0;
+            padding: 0 20px;
+        }
+        .pp-pain-title {
+            text-align: center;
+            font-size: 26px;
+            font-weight: 800;
+            color: #1f2937;
+            letter-spacing: -0.5px;
+            margin-bottom: 28px;
+        }
+        .pp-pain-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .pp-pain-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #fecaca;
+            border-top: 3px solid #f87171;
+        }
+        .pp-pain-card-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            background: #fef2f2;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #ef4444;
+        }
+        .pp-pain-card p {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .pp-pain-solution {
+            text-align: center;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border-radius: 14px;
+            border: 1px solid #bbf7d0;
+        }
+        .pp-pain-solution i {
+            color: #22c55e;
+            font-size: 18px;
+            margin-right: 6px;
+        }
+        .pp-pain-solution p {
+            display: inline;
+            font-size: 15px;
+            font-weight: 600;
+            color: #166534;
+            margin: 0;
+        }
+
+        /* ── STEPS SECTION ── */
+        .pp-steps-section {
+            max-width: 880px;
+            margin: 48px auto 0;
+            padding: 0 20px;
+        }
+        .pp-steps-title {
+            text-align: center;
+            font-size: 26px;
+            font-weight: 800;
+            color: #1f2937;
+            letter-spacing: -0.5px;
+            margin-bottom: 32px;
+        }
+        .pp-steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .pp-step-card {
+            text-align: center;
+            position: relative;
+        }
+        .pp-step-num {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 14px;
+            background: linear-gradient(135deg, #667eea, #4338ca);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+        }
+        .pp-step-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+        .pp-step-card p {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* ── PRICING SECTION ── */
+        .pp-pricing-section {
+            max-width: 720px;
+            margin: 48px auto 0;
+            padding: 0 20px;
+        }
+        .pp-pricing-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .pp-pricing-header h2 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1f2937;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        .pp-pricing-header p {
+            font-size: 15px;
+            color: #6b7280;
+        }
+        .pp-pricing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .pp-pricing-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px 24px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            border: 2px solid #e5e7eb;
+            position: relative;
+        }
+        .pp-pricing-card.featured {
+            border-color: #667eea;
+            box-shadow: 0 4px 24px rgba(102,126,234,0.15);
+        }
+        .pp-pricing-popular {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea, #4338ca);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 14px;
+            border-radius: 100px;
+            letter-spacing: 0.3px;
+        }
+        .pp-pricing-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .pp-pricing-price {
+            font-size: 36px;
+            font-weight: 900;
+            color: #1f2937;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .pp-pricing-per {
+            font-size: 13px;
+            color: #9ca3af;
+            margin-bottom: 20px;
+        }
+        .pp-pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .pp-pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #374151;
+            padding: 6px 0;
+        }
+        .pp-pricing-features li i {
+            color: #22c55e;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             .pp-hero {
@@ -1109,6 +1368,15 @@ class PPV_Repair_Registration {
             }
             .pp-reg-form {
                 padding: 24px 20px;
+            }
+            .pp-pain-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .pp-steps-grid {
+                gap: 16px;
+            }
+            .pp-pricing-grid {
+                grid-template-columns: 1fr 1fr;
             }
             input, select, textarea {
                 font-size: 16px !important;
@@ -1152,17 +1420,27 @@ class PPV_Repair_Registration {
                 margin: 0;
                 flex-shrink: 0;
             }
+            .pp-pain-grid {
+                grid-template-columns: 1fr;
+            }
+            .pp-pain-title, .pp-steps-title {
+                font-size: 22px;
+            }
+            .pp-steps-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .pp-pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+            .pp-pricing-price {
+                font-size: 30px;
+            }
             .pp-mock-exports { flex-direction: column; }
             .pp-mock-branches { grid-template-columns: repeat(2, 1fr); }
             .pp-reg-form {
                 padding: 20px 16px;
-            }
-            .pp-reg-row {
-                flex-direction: column;
-                gap: 0;
-            }
-            .pp-reg-row .pp-reg-field-sm {
-                flex: 1;
             }
             .pp-reg-success-actions {
                 flex-direction: column;
@@ -1185,12 +1463,6 @@ class PPV_Repair_Registration {
         <div class="pp-hero-blob pp-hero-blob--2"></div>
         <div class="pp-hero-blob pp-hero-blob--3"></div>
     </div>
-    <!-- Language Switcher -->
-    <div class="pp-lang-switch">
-        <button class="pp-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
-        <button class="pp-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
-        <button class="pp-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
-    </div>
     <div class="pp-hero-inner">
         <div class="pp-hero-badge">
             <i class="ri-star-fill"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_badge')); ?>
@@ -1204,7 +1476,7 @@ class PPV_Repair_Registration {
         </a>
         <div class="pp-hero-stats">
             <div class="pp-hero-stat">
-                <span class="pp-hero-stat-val">100%</span>
+                <span class="pp-hero-stat-val"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_free_label')); ?></span>
                 <span class="pp-hero-stat-label"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_free')); ?></span>
             </div>
             <div class="pp-hero-stat">
@@ -1212,7 +1484,7 @@ class PPV_Repair_Registration {
                 <span class="pp-hero-stat-label"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_setup')); ?></span>
             </div>
             <div class="pp-hero-stat">
-                <span class="pp-hero-stat-val">DSGVO</span>
+                <span class="pp-hero-stat-val"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_gdpr_label')); ?></span>
                 <span class="pp-hero-stat-label"><?php echo esc_html(PPV_Lang::t('repair_reg_stat_gdpr')); ?></span>
             </div>
         </div>
@@ -1267,6 +1539,85 @@ class PPV_Repair_Registration {
     </div>
 </div>
 
+<!-- ============ PAIN SECTION ============ -->
+<div class="pp-pain-section">
+    <h2 class="pp-pain-title pp-fade-in"><?php echo esc_html(PPV_Lang::t('repair_reg_pain_title')); ?></h2>
+    <div class="pp-pain-grid">
+        <div class="pp-pain-card pp-fade-in pp-fade-in-1">
+            <div class="pp-pain-card-icon"><i class="ri-edit-line"></i></div>
+            <p><?php echo esc_html(PPV_Lang::t('repair_reg_pain_1')); ?></p>
+        </div>
+        <div class="pp-pain-card pp-fade-in pp-fade-in-2">
+            <div class="pp-pain-card-icon"><i class="ri-file-unknow-line"></i></div>
+            <p><?php echo esc_html(PPV_Lang::t('repair_reg_pain_2')); ?></p>
+        </div>
+        <div class="pp-pain-card pp-fade-in pp-fade-in-3">
+            <div class="pp-pain-card-icon"><i class="ri-question-line"></i></div>
+            <p><?php echo esc_html(PPV_Lang::t('repair_reg_pain_3')); ?></p>
+        </div>
+    </div>
+    <div class="pp-pain-solution pp-fade-in">
+        <i class="ri-arrow-right-circle-fill"></i>
+        <p><?php echo esc_html(PPV_Lang::t('repair_reg_pain_solution')); ?></p>
+    </div>
+</div>
+
+<!-- ============ STEPS SECTION ============ -->
+<div class="pp-steps-section">
+    <h2 class="pp-steps-title pp-fade-in"><?php echo esc_html(PPV_Lang::t('repair_reg_steps_title')); ?></h2>
+    <div class="pp-steps-grid">
+        <div class="pp-step-card pp-fade-in pp-fade-in-1">
+            <div class="pp-step-num">1</div>
+            <h3><?php echo esc_html(PPV_Lang::t('repair_reg_step1_title')); ?></h3>
+            <p><?php echo esc_html(PPV_Lang::t('repair_reg_step1_desc')); ?></p>
+        </div>
+        <div class="pp-step-card pp-fade-in pp-fade-in-2">
+            <div class="pp-step-num">2</div>
+            <h3><?php echo esc_html(PPV_Lang::t('repair_reg_step2_title')); ?></h3>
+            <p><?php echo esc_html(PPV_Lang::t('repair_reg_step2_desc')); ?></p>
+        </div>
+        <div class="pp-step-card pp-fade-in pp-fade-in-3">
+            <div class="pp-step-num">3</div>
+            <h3><?php echo esc_html(PPV_Lang::t('repair_reg_step3_title')); ?></h3>
+            <p><?php echo esc_html(PPV_Lang::t('repair_reg_step3_desc')); ?></p>
+        </div>
+    </div>
+</div>
+
+<!-- ============ PRICING ============ -->
+<div class="pp-pricing-section">
+    <div class="pp-pricing-header pp-fade-in">
+        <h2><?php echo esc_html(PPV_Lang::t('repair_reg_pricing_title')); ?></h2>
+        <p><?php echo esc_html(PPV_Lang::t('repair_reg_pricing_sub')); ?></p>
+    </div>
+    <div class="pp-pricing-grid">
+        <div class="pp-pricing-card pp-fade-in pp-fade-in-1">
+            <div class="pp-pricing-name"><?php echo esc_html(PPV_Lang::t('repair_reg_price_free')); ?></div>
+            <div class="pp-pricing-price"><?php echo esc_html(PPV_Lang::t('repair_reg_price_free_val')); ?></div>
+            <div class="pp-pricing-per"><?php echo esc_html(PPV_Lang::t('repair_reg_price_free_per')); ?></div>
+            <ul class="pp-pricing-features">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f3')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f4')); ?></li>
+            </ul>
+        </div>
+        <div class="pp-pricing-card featured pp-fade-in pp-fade-in-2">
+            <div class="pp-pricing-popular"><?php echo esc_html(PPV_Lang::t('repair_reg_price_popular')); ?></div>
+            <div class="pp-pricing-name"><?php echo esc_html(PPV_Lang::t('repair_reg_price_pro')); ?></div>
+            <div class="pp-pricing-price"><?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_val')); ?></div>
+            <div class="pp-pricing-per"><?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_per')); ?></div>
+            <ul class="pp-pricing-features">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f3')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f4')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f5')); ?></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- ============ FORM ============ -->
 <div class="pp-form-section" id="register">
     <div class="pp-form-header pp-fade-in">
@@ -1276,8 +1627,23 @@ class PPV_Repair_Registration {
 
     <div class="pp-reg-card pp-fade-in">
 
+        <!-- OAuth Quick Registration -->
+        <div style="padding:28px 28px 0">
+            <button type="button" id="rr-google-btn" class="pp-oauth-btn pp-oauth-google" onclick="ppvOAuthRegister('google')">
+                <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+                <?php echo esc_html(PPV_Lang::t('repair_reg_google')); ?>
+            </button>
+            <button type="button" id="rr-apple-btn" class="pp-oauth-btn pp-oauth-apple" onclick="ppvOAuthRegister('apple')">
+                <svg width="18" height="18" viewBox="0 0 18 18"><path fill="currentColor" d="M14.94 9.88c-.02-2.07 1.69-3.06 1.77-3.11-.96-1.41-2.46-1.6-3-1.63-1.27-.13-2.49.75-3.14.75-.65 0-1.65-.73-2.72-.71-1.4.02-2.69.81-3.41 2.07-1.46 2.53-.37 6.27 1.05 8.32.69 1 1.52 2.13 2.61 2.09 1.05-.04 1.44-.68 2.71-.68 1.27 0 1.62.68 2.72.66 1.13-.02 1.84-1.02 2.53-2.03.8-1.16 1.12-2.28 1.14-2.34-.02-.01-2.19-.84-2.21-3.34zM12.87 3.53c.58-.7.97-1.67.86-2.64-.83.03-1.84.55-2.44 1.25-.53.62-1 1.61-.87 2.56.93.07 1.87-.47 2.45-1.17z"/></svg>
+                <?php echo esc_html(PPV_Lang::t('repair_reg_apple')); ?>
+            </button>
+            <div class="pp-oauth-divider">
+                <span><?php echo esc_html(PPV_Lang::t('repair_reg_or')); ?></span>
+            </div>
+        </div>
+
         <!-- Registration Form -->
-        <form id="pp-reg-form" class="pp-reg-form" autocomplete="off" novalidate>
+        <form id="pp-reg-form" class="pp-reg-form" autocomplete="off" novalidate style="padding-top:0">
 
             <!-- Business Details -->
             <div class="pp-reg-section">
@@ -1294,33 +1660,6 @@ class PPV_Repair_Registration {
                 <div class="pp-reg-field">
                     <label for="rr-owner-name"><?php echo esc_html(PPV_Lang::t('repair_reg_owner')); ?></label>
                     <input type="text" id="rr-owner-name" name="owner_name" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_owner_placeholder')); ?>" autocomplete="name">
-                </div>
-
-                <div class="pp-reg-row">
-                    <div class="pp-reg-field">
-                        <label for="rr-address"><?php echo esc_html(PPV_Lang::t('repair_reg_street')); ?></label>
-                        <input type="text" id="rr-address" name="address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_street_placeholder')); ?>" autocomplete="street-address">
-                    </div>
-                    <div class="pp-reg-field pp-reg-field-sm">
-                        <label for="rr-plz"><?php echo esc_html(PPV_Lang::t('repair_reg_zip')); ?></label>
-                        <input type="text" id="rr-plz" name="plz" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_zip_placeholder')); ?>" maxlength="10" autocomplete="postal-code">
-                    </div>
-                </div>
-
-                <div class="pp-reg-field">
-                    <label for="rr-city"><?php echo esc_html(PPV_Lang::t('repair_reg_city')); ?></label>
-                    <input type="text" id="rr-city" name="city" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_city_placeholder')); ?>" autocomplete="address-level2">
-                </div>
-
-                <div class="pp-reg-row">
-                    <div class="pp-reg-field">
-                        <label for="rr-phone"><?php echo esc_html(PPV_Lang::t('repair_phone_label')); ?></label>
-                        <input type="tel" id="rr-phone" name="phone" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_phone_placeholder')); ?>" autocomplete="tel">
-                    </div>
-                    <div class="pp-reg-field">
-                        <label for="rr-tax-id"><?php echo esc_html(PPV_Lang::t('repair_reg_tax_id')); ?></label>
-                        <input type="text" id="rr-tax-id" name="tax_id" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_reg_tax_placeholder')); ?>" autocomplete="nope">
-                    </div>
                 </div>
             </div>
 
@@ -1400,6 +1739,12 @@ class PPV_Repair_Registration {
         <span class="pp-reg-footer-dot"></span>
         <a href="/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
     </div>
+    <!-- Language Switcher (footer) -->
+    <div style="display:flex;justify-content:center;gap:6px;margin:12px 0 8px">
+        <button class="pp-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de" style="background:<?php echo $lang === 'de' ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === 'de' ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">DE</button>
+        <button class="pp-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu" style="background:<?php echo $lang === 'hu' ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === 'hu' ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">HU</button>
+        <button class="pp-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro" style="background:<?php echo $lang === 'ro' ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === 'ro' ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">RO</button>
+    </div>
     <div class="pp-reg-footer-powered">
         <?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?> <a href="https://punktepass.de">PunktePass</a>
     </div>
@@ -1461,11 +1806,6 @@ class PPV_Repair_Registration {
         var password  = document.getElementById('rr-password').value;
         var password2 = document.getElementById('rr-password2').value;
         var terms     = document.getElementById('rr-terms').checked;
-        var address   = document.getElementById('rr-address').value.trim();
-        var plz       = document.getElementById('rr-plz').value.trim();
-        var city      = document.getElementById('rr-city').value.trim();
-        var phone     = document.getElementById('rr-phone').value.trim();
-        var taxId     = document.getElementById('rr-tax-id').value.trim();
 
         // Validation
         if (!shopName) { showError(ppvLang.err_shop_name); return; }
@@ -1485,11 +1825,6 @@ class PPV_Repair_Registration {
         data.append('owner_name', ownerName);
         data.append('email', email);
         data.append('password', password);
-        data.append('address', address);
-        data.append('plz', plz);
-        data.append('city', city);
-        data.append('phone', phone);
-        data.append('tax_id', taxId);
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', AJAX_URL, true);
@@ -1531,6 +1866,38 @@ class PPV_Repair_Registration {
         xhr.send(data);
     });
 })();
+
+// OAuth registration handler (Google / Apple)
+function ppvOAuthRegister(provider) {
+    var AJAX_URL = <?php echo json_encode($ajax_url); ?>;
+    var NONCE    = <?php echo json_encode($nonce); ?>;
+
+    // Redirect to OAuth flow
+    var data = new FormData();
+    data.append('action', 'ppv_repair_oauth_init');
+    data.append('nonce', NONCE);
+    data.append('provider', provider);
+    data.append('redirect_url', window.location.href);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', AJAX_URL, true);
+    xhr.onload = function() {
+        try {
+            var res = JSON.parse(xhr.responseText);
+            if (res.success && res.data && res.data.auth_url) {
+                window.location.href = res.data.auth_url;
+            } else {
+                alert(res.data && res.data.message ? res.data.message : 'OAuth error');
+            }
+        } catch (e) {
+            alert('Unexpected error');
+        }
+    };
+    xhr.onerror = function() {
+        alert('Network error');
+    };
+    xhr.send(data);
+}
 </script>
 
 <!-- ============ FEATURE MODAL ============ -->
