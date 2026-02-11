@@ -5193,7 +5193,7 @@ echo '          </div>
                 fd.append("action", "ppv_repair_switch_filiale");
                 fd.append("nonce", NONCE);
                 fd.append("filiale_id", id);
-                fetch(AJAX_URL, {method:"POST", body:fd, credentials:"same-origin"})
+                fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
                 .then(function(r){return r.json()})
                 .then(function(data){
                     if(data.success) window.location.reload();
@@ -5242,7 +5242,7 @@ echo '          </div>
             fd.append("city", city);
             fd.append("plz", plz);
 
-            fetch(AJAX_URL, {method:"POST", body:fd, credentials:"same-origin"})
+            fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
             .then(function(r){return r.json()})
             .then(function(data){
                 if (data.success) {
