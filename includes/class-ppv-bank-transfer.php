@@ -271,6 +271,7 @@ Ihr PunktePass Team
                 'bank_transfer_confirmed_at' => current_time('mysql'),
                 'active' => 1,
                 'repair_premium' => 1,
+                'max_filialen' => 5,
             ],
             ['id' => $store_id]
         );

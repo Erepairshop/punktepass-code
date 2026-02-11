@@ -350,6 +350,21 @@ class PPV_Repair_Registration {
             line-height: 1.4;
             margin: 0;
         }
+        .pp-feature-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            margin-top: 12px;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: all 0.3s;
+        }
+        .pp-feature-more i { font-size: 14px; transition: transform 0.2s; }
+        .pp-feature:hover .pp-feature-more { opacity: 1; transform: translateY(0); }
+        .pp-feature:hover .pp-feature-more i { transform: translateX(2px); }
 
         /* ── FORM SECTION ── */
         .pp-form-section {
@@ -1422,6 +1437,7 @@ class PPV_Repair_Registration {
                 margin: 0;
                 flex-shrink: 0;
             }
+            .pp-feature-more { opacity: 1; transform: none; }
             .pp-pain-grid {
                 grid-template-columns: 1fr;
             }
@@ -1501,6 +1517,7 @@ class PPV_Repair_Registration {
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_online_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_online_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-2" data-feature="invoice">
@@ -1508,6 +1525,7 @@ class PPV_Repair_Registration {
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_invoice_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-3" data-feature="export">
@@ -1515,6 +1533,7 @@ class PPV_Repair_Registration {
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_export_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_export_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-4" data-feature="ankauf">
@@ -1522,6 +1541,7 @@ class PPV_Repair_Registration {
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_ankauf_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-5" data-feature="crm">
@@ -1529,6 +1549,7 @@ class PPV_Repair_Registration {
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_crm_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_crm_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
             </div>
         </div>
         <div class="pp-feature pp-fade-in pp-fade-in-6" data-feature="branch">
@@ -1536,6 +1557,7 @@ class PPV_Repair_Registration {
             <div>
                 <h3><?php echo esc_html(PPV_Lang::t('repair_feat_branch_title')); ?></h3>
                 <p><?php echo esc_html(PPV_Lang::t('repair_feat_branch_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
             </div>
         </div>
     </div>

@@ -170,6 +170,7 @@ class PPV_PayPal_Subscription {
                 'payment_method' => 'paypal',
                 'active' => 1,
                 'repair_premium' => 1,
+                'max_filialen' => 5,
             ],
             ['id' => $store_id]
         );
@@ -378,6 +379,7 @@ class PPV_PayPal_Subscription {
                             'payment_method' => 'paypal',
                             'active' => 1,
                             'repair_premium' => 1,
+                            'max_filialen' => 5,
                         ],
                         ['id' => $store_id]
                     );

@@ -151,6 +151,9 @@ return [
     'repair_feat_branch_title'  => 'Orice industrie',
     'repair_feat_branch_desc'   => 'Telefon, PC, auto, bicicletă și altele',
 
+    // Feature card
+    'repair_feat_more'          => 'Află mai multe',
+
     // Feature modal CTA
     'repair_feat_modal_cta'     => 'Începe gratuit acum',
 
@@ -305,6 +308,19 @@ return [
     'repair_admin_tab_emails'   => 'E-mailuri',
     'repair_admin_tab_pp'       => 'PunktePass',
     'repair_admin_tab_abo'      => 'Abonament',
+    'repair_admin_tab_filialen' => 'Filiale',
+
+    // Filialen
+    'repair_admin_filialen_title'       => 'Gestionare filiale',
+    'repair_admin_filialen_premium_only'=> 'Funcție Premium',
+    'repair_admin_filialen_premium_desc'=> 'Gestionați mai multe locații cu planul Premium.',
+    'repair_admin_filialen_count'       => 'Filiale',
+    'repair_admin_filialen_main'        => 'Filiala principală',
+    'repair_admin_filialen_limit_reached' => 'Limita de filiale atinsă. Contactați-ne pentru mai multe.',
+    'repair_admin_filiale_add'          => 'Creează filială nouă',
+    'repair_admin_filiale_name'         => 'Numele filialei',
+    'repair_admin_filiale_name_ph'      => 'ex. Atelier București Centru',
+    'repair_admin_filiale_create'       => 'Creează filiala',
 
     // General Settings
     'repair_admin_business_data'  => 'Date de afaceri',

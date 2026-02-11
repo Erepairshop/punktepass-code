@@ -151,6 +151,9 @@ return [
     'repair_feat_branch_title'  => 'Minden iparág',
     'repair_feat_branch_desc'   => 'Telefon, PC, autó, kerékpár és más',
 
+    // Feature card
+    'repair_feat_more'          => 'Tovább',
+
     // Feature modal CTA
     'repair_feat_modal_cta'     => 'Ingyenes indulás most',
 
@@ -305,6 +308,19 @@ return [
     'repair_admin_tab_emails'   => 'E-mailek',
     'repair_admin_tab_pp'       => 'PunktePass',
     'repair_admin_tab_abo'      => 'Előfizetés',
+    'repair_admin_tab_filialen' => 'Filiálék',
+
+    // Filialen
+    'repair_admin_filialen_title'       => 'Filiálék kezelése',
+    'repair_admin_filialen_premium_only'=> 'Prémium funkció',
+    'repair_admin_filialen_premium_desc'=> 'Kezeljen több telephelyet a Prémium csomaggal.',
+    'repair_admin_filialen_count'       => 'Filiálék',
+    'repair_admin_filialen_main'        => 'Főtelephely',
+    'repair_admin_filialen_limit_reached' => 'Filiále-limit elérve. Lépjen kapcsolatba velünk.',
+    'repair_admin_filiale_add'          => 'Új filiále létrehozása',
+    'repair_admin_filiale_name'         => 'Filiále neve',
+    'repair_admin_filiale_name_ph'      => 'pl. Műhely Budapest Belváros',
+    'repair_admin_filiale_create'       => 'Filiále létrehozása',
 
     // General Settings
     'repair_admin_business_data'  => 'Üzleti adatok',

@@ -393,6 +393,24 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $store_slug  = esc_attr($store->store_slug);
         $store_color = esc_attr($store->repair_color ?: '#667eea');
 
+        // Filialen: get parent ID and all repair-enabled filialen
+        $parent_store_id = $store->parent_store_id ? intval($store->parent_store_id) : $store->id;
+        $filialen = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, name, city, store_slug, parent_store_id
+             FROM {$prefix}ppv_stores
+             WHERE (parent_store_id = %d OR id = %d)
+               AND repair_enabled = 1
+             ORDER BY CASE WHEN parent_store_id IS NULL THEN 0 ELSE 1 END, id ASC",
+            $parent_store_id, $parent_store_id
+        ));
+        $has_filialen = count($filialen) > 1;
+        $parent_store = $wpdb->get_row($wpdb->prepare(
+            "SELECT max_filialen, repair_premium FROM {$prefix}ppv_stores WHERE id = %d",
+            $parent_store_id
+        ));
+        $max_filialen = intval($parent_store->max_filialen ?? 1);
+        $parent_is_premium = !empty($parent_store->repair_premium);
+
         $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
         $reward_name = esc_attr($store->repair_reward_name ?? '10 Euro Rabatt');
         $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
@@ -894,8 +912,42 @@ a:hover{color:#5a67d8}
         echo '<div>
                 <div class="ra-title">' . $store_name . '</div>
                 <div class="ra-subtitle">' . esc_html(PPV_Lang::t('repair_admin_title')) . '</div>
-            </div>
-        </div>
+            </div>';
+
+        // Filiale switcher (only if multiple filialen exist OR premium)
+        if ($has_filialen || $parent_is_premium) {
+            echo '<div class="ra-filiale-switch" style="position:relative;margin-left:8px">
+                <button type="button" id="ra-filiale-btn" class="ra-btn ra-btn-outline" style="font-size:12px;padding:6px 12px;gap:6px">
+                    <i class="ri-building-2-line"></i>
+                    <span id="ra-filiale-current">' . esc_html($store->city ?: $store->name) . '</span>
+                    <i class="ri-arrow-down-s-line" style="font-size:14px"></i>
+                </button>
+                <div id="ra-filiale-dropdown" class="ra-hidden" style="position:absolute;top:100%;left:0;z-index:50;min-width:220px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid #e5e7eb;margin-top:4px;overflow:hidden">';
+
+            foreach ($filialen as $f) {
+                $is_current = ($f->id == $store->id);
+                $f_label = esc_html($f->name . ($f->city ? " ({$f->city})" : ''));
+                $f_is_parent = empty($f->parent_store_id);
+                echo '<button type="button" class="ra-filiale-item' . ($is_current ? ' active' : '') . '" data-id="' . intval($f->id) . '" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:' . ($is_current ? '#f0f4ff' : '#fff') . ';cursor:pointer;font-size:13px;color:#374151;text-align:left;transition:background .15s;font-family:inherit">
+                    <i class="' . ($f_is_parent ? 'ri-home-4-line' : 'ri-building-2-line') . '" style="color:#667eea;font-size:15px"></i>
+                    <span style="flex:1;' . ($is_current ? 'font-weight:600;color:#4338ca' : '') . '">' . $f_label . '</span>
+                    ' . ($is_current ? '<i class="ri-check-line" style="color:#667eea"></i>' : '') . '
+                </button>';
+            }
+
+            // Add new filiale button (premium only)
+            if ($parent_is_premium && count($filialen) < $max_filialen) {
+                echo '<div style="border-top:1px solid #e5e7eb;padding:8px">
+                    <button type="button" id="ra-filiale-add-btn" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:none;cursor:pointer;font-size:13px;color:#667eea;font-weight:600;border-radius:8px;transition:background .15s;font-family:inherit" onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'none\'">
+                        <i class="ri-add-circle-line" style="font-size:16px"></i> ' . esc_html(PPV_Lang::t('repair_admin_filiale_add')) . '
+                    </button>
+                </div>';
+            }
+
+            echo '</div></div>';
+        }
+
+        echo '</div>
         <div class="ra-header-right">
             <div class="ra-lang-switch">
                 <button class="ra-lang-btn ' . ($lang === 'de' ? 'active' : '') . '" data-lang="de">DE</button>
@@ -994,6 +1046,7 @@ a:hover{color:#5a67d8}
             <button type="button" class="ra-settings-tab" data-panel="email"><i class="ri-mail-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_emails')) . '</button>
             <button type="button" class="ra-settings-tab" data-panel="punktepass"><i class="ri-star-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_pp')) . '</button>
             <button type="button" class="ra-settings-tab" data-panel="abo"><i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_abo')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="filialen"><i class="ri-building-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_filialen')) . '</button>
         </div>
 
         <form id="ra-settings-form">
@@ -1485,6 +1538,73 @@ echo '          </div>
 
         echo '
             </div><!-- END PANEL: abo -->
+
+            <!-- ==================== PANEL: Filialen ==================== -->
+            <div class="ra-settings-panel" data-panel="filialen">
+                <h4><i class="ri-building-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filialen_title')) . '</h4>';
+
+        if (!$parent_is_premium) {
+            // Free tier - show upgrade prompt
+            echo '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px">
+                <i class="ri-vip-crown-line" style="font-size:28px;color:#d97706;margin-bottom:8px;display:block"></i>
+                <div style="font-size:15px;font-weight:600;color:#92400e;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_filialen_premium_only')) . '</div>
+                <div style="font-size:13px;color:#a16207">' . esc_html(PPV_Lang::t('repair_admin_filialen_premium_desc')) . '</div>
+            </div>';
+        } else {
+            // Premium - show filiale list and add button
+            echo '<div style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <span style="font-size:13px;color:#6b7280">' . count($filialen) . ' / ' . $max_filialen . ' ' . esc_html(PPV_Lang::t('repair_admin_filialen_count')) . '</span>
+                </div>';
+
+            // List existing filialen
+            foreach ($filialen as $f) {
+                $f_is_parent = empty($f->parent_store_id);
+                $f_slug = esc_attr($f->store_slug);
+                echo '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px">
+                    <i class="' . ($f_is_parent ? 'ri-home-4-line' : 'ri-building-2-line') . '" style="color:#667eea;font-size:18px;flex-shrink:0"></i>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:14px;font-weight:600;color:#1f2937">' . esc_html($f->name) . '</div>
+                        <div style="font-size:12px;color:#6b7280">' . esc_html($f->city ?: '') . ' · /formular/' . $f_slug . '</div>
+                    </div>
+                    ' . ($f_is_parent ? '<span style="font-size:11px;background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:6px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_filialen_main')) . '</span>' : '') . '
+                </div>';
+            }
+
+            echo '</div>';
+
+            // Add filiale form
+            if (count($filialen) < $max_filialen) {
+                echo '<div style="border-top:1px solid #e5e7eb;padding-top:16px">
+                    <h5 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:12px"><i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filiale_add')) . '</h5>
+                    <div class="ra-settings-grid">
+                        <div class="field">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_filiale_name')) . ' *</label>
+                            <input type="text" id="ra-new-filiale-name" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_filiale_name_ph')) . '">
+                        </div>
+                        <div class="field">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_city')) . ' *</label>
+                            <input type="text" id="ra-new-filiale-city" placeholder="Berlin">
+                        </div>
+                        <div class="field">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
+                            <input type="text" id="ra-new-filiale-plz" placeholder="10115">
+                        </div>
+                    </div>
+                    <button type="button" id="ra-create-filiale-btn" class="ra-btn ra-btn-primary" style="margin-top:12px">
+                        <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filiale_create')) . '
+                    </button>
+                    <div id="ra-filiale-msg" class="ra-hidden" style="margin-top:8px;padding:8px 12px;border-radius:8px;font-size:13px"></div>
+                </div>';
+            } else {
+                echo '<div style="text-align:center;padding:16px;color:#6b7280;font-size:13px">
+                    <i class="ri-information-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filialen_limit_reached')) . '
+                </div>';
+            }
+        }
+
+        echo '
+            </div><!-- END PANEL: filialen -->
 
             <!-- Save button visible on all panels -->
             <div class="ra-settings-save" style="padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0">
@@ -5047,6 +5167,107 @@ echo '          </div>
     window.closeKioskTips=function(){document.getElementById("kiosk-tips-modal").classList.remove("active");document.body.style.overflow=""};
     window.copyKioskUrl=function(){var url=document.getElementById("kiosk-form-url").textContent;navigator.clipboard.writeText(url).then(function(){var btn=document.querySelector(".kiosk-copy-btn");btn.innerHTML=\'<i class="ri-check-line"></i>\';setTimeout(function(){btn.innerHTML=\'<i class="ri-file-copy-line"></i>\'},2000)})};
     document.addEventListener("keydown",function(e){if(e.key==="Escape")closeKioskTips()});
+
+    /* ===== Filiale Switcher ===== */
+    var filialeBtn = document.getElementById("ra-filiale-btn");
+    var filialeDropdown = document.getElementById("ra-filiale-dropdown");
+
+    if (filialeBtn && filialeDropdown) {
+        filialeBtn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            filialeDropdown.classList.toggle("ra-hidden");
+        });
+        document.addEventListener("click", function() {
+            if (filialeDropdown) filialeDropdown.classList.add("ra-hidden");
+        });
+        filialeDropdown.addEventListener("click", function(e) { e.stopPropagation(); });
+
+        // Switch filiale
+        var filialeItems = document.querySelectorAll(".ra-filiale-item");
+        filialeItems.forEach(function(item) {
+            item.addEventListener("click", function() {
+                var id = this.getAttribute("data-id");
+                var fd = new FormData();
+                fd.append("action", "ppv_repair_switch_filiale");
+                fd.append("nonce", NONCE);
+                fd.append("filiale_id", id);
+                fetch(AJAX_URL, {method:"POST", body:fd, credentials:"same-origin"})
+                .then(function(r){return r.json()})
+                .then(function(data){
+                    if(data.success) window.location.reload();
+                    else alert(data.data && data.data.message ? data.data.message : "Fehler");
+                });
+            });
+        });
+
+        // Add filiale button (in dropdown)
+        var addBtnDropdown = document.getElementById("ra-filiale-add-btn");
+        if (addBtnDropdown) {
+            addBtnDropdown.addEventListener("click", function() {
+                filialeDropdown.classList.add("ra-hidden");
+                // Open settings panel on filialen tab
+                toggleSettings(true);
+                var filialenTab = document.querySelector('[data-panel="filialen"]');
+                if (filialenTab) filialenTab.click();
+            });
+        }
+    }
+
+    /* ===== Create Filiale (Settings Panel) ===== */
+    var createFilialeBtn = document.getElementById("ra-create-filiale-btn");
+    if (createFilialeBtn) {
+        createFilialeBtn.addEventListener("click", function() {
+            var name = document.getElementById("ra-new-filiale-name").value.trim();
+            var city = document.getElementById("ra-new-filiale-city").value.trim();
+            var plz  = document.getElementById("ra-new-filiale-plz").value.trim();
+            var msgEl = document.getElementById("ra-filiale-msg");
+
+            if (!name || !city) {
+                msgEl.textContent = "Name und Stadt sind Pflichtfelder";
+                msgEl.style.background = "#fef2f2";
+                msgEl.style.color = "#991b1b";
+                msgEl.classList.remove("ra-hidden");
+                return;
+            }
+
+            createFilialeBtn.disabled = true;
+            createFilialeBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Erstelle...';
+
+            var fd = new FormData();
+            fd.append("action", "ppv_repair_create_filiale");
+            fd.append("nonce", NONCE);
+            fd.append("filiale_name", name);
+            fd.append("city", city);
+            fd.append("plz", plz);
+
+            fetch(AJAX_URL, {method:"POST", body:fd, credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if (data.success) {
+                    msgEl.textContent = data.data.message || "Filiale erstellt!";
+                    msgEl.style.background = "#f0fdf4";
+                    msgEl.style.color = "#166534";
+                    msgEl.classList.remove("ra-hidden");
+                    setTimeout(function(){ window.location.reload(); }, 1500);
+                } else {
+                    msgEl.textContent = data.data && data.data.message ? data.data.message : "Fehler";
+                    msgEl.style.background = "#fef2f2";
+                    msgEl.style.color = "#991b1b";
+                    msgEl.classList.remove("ra-hidden");
+                    createFilialeBtn.disabled = false;
+                    createFilialeBtn.innerHTML = '<i class="ri-add-line"></i> Filiale erstellen';
+                }
+            })
+            .catch(function(){
+                msgEl.textContent = "Netzwerkfehler";
+                msgEl.style.background = "#fef2f2";
+                msgEl.style.color = "#991b1b";
+                msgEl.classList.remove("ra-hidden");
+                createFilialeBtn.disabled = false;
+                createFilialeBtn.innerHTML = '<i class="ri-add-line"></i> Filiale erstellen';
+            });
+        });
+    }
 
 })();
 </script>

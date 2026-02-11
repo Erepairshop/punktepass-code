@@ -151,6 +151,9 @@ return [
     'repair_feat_branch_title'  => 'Jede Branche',
     'repair_feat_branch_desc'   => 'Handy, PC, KFZ, Fahrrad & mehr',
 
+    // Feature card
+    'repair_feat_more'          => 'Mehr erfahren',
+
     // Feature modal CTA
     'repair_feat_modal_cta'     => 'Jetzt kostenlos starten',
 
@@ -305,6 +308,19 @@ return [
     'repair_admin_tab_emails'   => 'E-Mails',
     'repair_admin_tab_pp'       => 'PunktePass',
     'repair_admin_tab_abo'      => 'Abo',
+    'repair_admin_tab_filialen' => 'Filialen',
+
+    // Filialen
+    'repair_admin_filialen_title'       => 'Filialen verwalten',
+    'repair_admin_filialen_premium_only'=> 'Premium-Funktion',
+    'repair_admin_filialen_premium_desc'=> 'Verwalten Sie mehrere Standorte mit dem Premium-Plan.',
+    'repair_admin_filialen_count'       => 'Filialen',
+    'repair_admin_filialen_main'        => 'Hauptfiliale',
+    'repair_admin_filialen_limit_reached' => 'Filiale-Limit erreicht. Kontaktieren Sie uns für mehr.',
+    'repair_admin_filiale_add'          => 'Neue Filiale anlegen',
+    'repair_admin_filiale_name'         => 'Filialname',
+    'repair_admin_filiale_name_ph'      => 'z.B. Werkstatt Berlin Mitte',
+    'repair_admin_filiale_create'       => 'Filiale erstellen',
 
     // General Settings
     'repair_admin_business_data'  => 'Geschäftsdaten',

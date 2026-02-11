@@ -106,10 +106,10 @@ class PPV_Lang {
             }
         }
 
-        // 6️⃣ Default: Romanian
+        // 6️⃣ Default: German
         if (!$lang) {
-            $lang = 'ro';
-            ppv_log("🌍 [PPV_Lang] Default → ro");
+            $lang = 'de';
+            ppv_log("🌍 [PPV_Lang] Default → de");
         }
 
         // Set cookie if not already set (for subsequent requests)
@@ -172,11 +172,11 @@ class PPV_Lang {
      * ============================================================ */
     public static function load($lang) {
         $path = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
-        $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-ro.php"; // Romanian fallback
+        $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php"; // German fallback
 
         if (!file_exists($path)) {
             $path = $fallback;
-            $lang = 'ro';
+            $lang = 'de';
         }
 
         $data = include $path;
@@ -209,12 +209,12 @@ class PPV_Lang {
      *  Usage: PPV_Lang::load_extra('ppv-repair-lang');
      * ============================================================ */
     public static function load_extra($prefix) {
-        $lang = self::$active ?: 'ro';
+        $lang = self::$active ?: 'de';
         $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-{$lang}.php";
 
         if (!file_exists($path)) {
-            // Fallback to Romanian
-            $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-ro.php";
+            // Fallback to German
+            $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-de.php";
         }
 
         if (file_exists($path)) {
