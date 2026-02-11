@@ -457,7 +457,7 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate = floatval($store->repair_vat_rate ?? 19);
         $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
-        $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster']];
+        $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster'], 'photo_upload' => ['enabled' => false, 'label' => 'Fotos'], 'condition_check' => ['enabled' => false, 'label' => 'Gerätezustand'], 'priority' => ['enabled' => false, 'label' => 'Priorität'], 'purchase_date' => ['enabled' => false, 'label' => 'Kaufdatum'], 'device_color' => ['enabled' => false, 'label' => 'Gerätefarbe'], 'cost_limit' => ['enabled' => false, 'label' => 'Kostenrahmen']];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
         // Email template settings
@@ -764,18 +764,22 @@ a:hover{color:#5a67d8}
 .ra-fb-toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
 .ra-fb-toolbar-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 .ra-fb-toolbar-hint{font-size:11px;opacity:0.8;font-weight:500}
-.ra-fb-preview{padding:20px;max-width:540px;margin:0 auto}
+.ra-fb-body{display:flex;min-height:500px}
+.ra-fb-main{flex:1;min-width:0;padding:20px;overflow-y:auto}
+.ra-fb-preview{max-width:520px;margin:0 auto}
 .ra-fb-section{background:#fff;border-radius:14px;padding:20px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.03)}
 .ra-fb-section-title{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .ra-fb-step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .ra-fb-section-title h3{font-size:15px;font-weight:700;color:#0f172a;margin:0}
-.ra-fb-field{position:relative;border:2px dashed transparent;border-radius:10px;padding:10px 12px;margin-bottom:6px;transition:all .2s;cursor:default}
+.ra-fb-field{position:relative;border:2px dashed transparent;border-radius:10px;padding:10px 12px;margin-bottom:6px;transition:all .25s;cursor:default}
 .ra-fb-field:hover{border-color:#c7d2fe;background:rgba(102,126,234,0.02)}
-.ra-fb-field.disabled{opacity:0.3;filter:grayscale(0.8)}
+.ra-fb-field.ra-fb-hidden{display:none}
 .ra-fb-field.dragging{opacity:0.4;border-color:#667eea;background:rgba(102,126,234,0.06)}
 .ra-fb-field.drag-over{border-color:#667eea;background:rgba(102,126,234,0.08);box-shadow:inset 0 0 0 2px rgba(102,126,234,0.15)}
 .ra-fb-field.locked{cursor:default}
 .ra-fb-field.locked:hover{border-color:transparent;background:transparent}
+.ra-fb-field.ra-fb-flash{animation:fbFlash .6s ease}
+@keyframes fbFlash{0%{background:rgba(102,126,234,0.15);border-color:#667eea}100%{background:transparent;border-color:transparent}}
 .ra-fb-controls{position:absolute;top:6px;right:6px;display:flex;align-items:center;gap:3px;opacity:0;transition:opacity .15s;z-index:5}
 .ra-fb-field:hover .ra-fb-controls{opacity:1}
 .ra-fb-field.locked .ra-fb-controls{display:none}
@@ -786,15 +790,9 @@ a:hover{color:#5a67d8}
 .ra-fb-drag:active{cursor:grabbing}
 .ra-fb-field:hover .ra-fb-drag{opacity:0.7}
 .ra-fb-field:hover .ra-fb-drag:hover{opacity:1;color:#667eea}
-.ra-fb-toggle{position:relative;width:30px;height:16px;display:inline-block;vertical-align:middle}
-.ra-fb-toggle input{opacity:0;width:0;height:0;position:absolute}
-.ra-fb-toggle span{position:absolute;inset:0;background:#d1d5db;border-radius:8px;cursor:pointer;transition:all .2s}
-.ra-fb-toggle span:before{content:"";position:absolute;width:12px;height:12px;left:2px;top:2px;background:#fff;border-radius:50%;transition:all .2s}
-.ra-fb-toggle input:checked+span{background:#667eea}
-.ra-fb-toggle input:checked+span:before{transform:translateX(14px)}
 .ra-fb-field-body label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;cursor:pointer;user-select:none}
 .ra-fb-field-body label:hover{color:#667eea}
-.ra-fb-field-body input[type=text],.ra-fb-field-body input[type=tel],.ra-fb-field-body input[type=email],.ra-fb-field-body input[type=number],.ra-fb-field-body textarea,.ra-fb-field-body select{width:100%;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;color:#94a3b8;background:#f8fafc;pointer-events:none;font-family:inherit;box-sizing:border-box}
+.ra-fb-field-body input[type=text],.ra-fb-field-body input[type=tel],.ra-fb-field-body input[type=email],.ra-fb-field-body input[type=number],.ra-fb-field-body input[type=date],.ra-fb-field-body textarea,.ra-fb-field-body select{width:100%;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;color:#94a3b8;background:#f8fafc;pointer-events:none;font-family:inherit;box-sizing:border-box}
 .ra-fb-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ra-fb-label-input{border:none;border-bottom:2px solid #667eea;background:transparent;font-size:13px;font-weight:600;color:#667eea;padding:0 0 2px 0;outline:none;width:100%;font-family:inherit}
 .ra-fb-req{color:#f59e0b;font-weight:700;margin-left:2px}
@@ -807,12 +805,45 @@ a:hover{color:#5a67d8}
 .ra-fb-settings-row select,.ra-fb-settings-row textarea{padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;background:#fff;font-family:inherit;outline:none}
 .ra-fb-settings-row select:focus,.ra-fb-settings-row textarea:focus{border-color:#667eea}
 .ra-fb-settings-row textarea{width:100%;resize:vertical}
-.ra-fb-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:2px dashed #d1d5db;border-radius:10px;background:transparent;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;margin-top:4px}
-.ra-fb-add:hover{border-color:#667eea;color:#667eea;background:rgba(102,126,234,0.04)}
 .ra-fb-checkbox-preview{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:100px;border:1.5px solid #e2e8f0;font-size:13px;color:#64748b;margin-right:6px;margin-bottom:4px}
 .ra-fb-muster-preview{display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border:2px dashed #e2e8f0;border-radius:10px;background:#f8fafc;color:#94a3b8;font-size:24px}
 .ra-fb-sig-preview{width:100%;height:60px;border:2px dashed #e2e8f0;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;gap:6px}
-@media(max-width:600px){.ra-fb-preview{padding:12px}.ra-fb-row{grid-template-columns:1fr}.ra-fb-toolbar{flex-direction:column;gap:6px;text-align:center}}
+.ra-fb-photo-preview{display:flex;gap:8px;flex-wrap:wrap}
+.ra-fb-photo-box{width:70px;height:70px;border:2px dashed #e2e8f0;border-radius:10px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-size:18px;gap:2px}
+.ra-fb-photo-box span{font-size:9px;font-weight:600}
+.ra-fb-condition-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ra-fb-condition-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#64748b;background:#f8fafc}
+.ra-fb-condition-item .ra-fb-cond-btns{display:flex;gap:4px}
+.ra-fb-condition-item .ra-fb-cond-btn{padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;border:none}
+.ra-fb-cond-btn.ok{background:#d1fae5;color:#059669}
+.ra-fb-cond-btn.nok{background:#fef2f2;color:#dc2626;opacity:0.4}
+.ra-fb-priority-cards{display:flex;gap:8px}
+.ra-fb-priority-card{flex:1;padding:10px 8px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;font-size:11px;color:#64748b;background:#f8fafc}
+.ra-fb-priority-card.active{border-color:#667eea;background:#eff6ff;color:#667eea}
+.ra-fb-priority-card i{font-size:18px;display:block;margin-bottom:4px}
+.ra-fb-priority-card strong{display:block;font-size:12px;color:#0f172a}
+.ra-fb-color-swatches{display:flex;gap:8px;flex-wrap:wrap}
+.ra-fb-color-dot{width:28px;height:28px;border-radius:50%;border:2px solid #e2e8f0;cursor:default}
+.ra-fb-color-dot.active{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.2)}
+.ra-fb-cost-options{display:flex;gap:6px;flex-wrap:wrap}
+.ra-fb-cost-opt{padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:12px;font-weight:600;color:#64748b;background:#f8fafc}
+.ra-fb-cost-opt.active{border-color:#667eea;background:#eff6ff;color:#667eea}
+/* ===== Palette Sidebar ===== */
+.ra-fb-palette{width:230px;flex-shrink:0;background:#fff;border-left:2px solid #e2e8f0;padding:16px 14px;overflow-y:auto}
+.ra-fb-pal-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.ra-fb-pal-title i{color:#667eea;font-size:16px}
+.ra-fb-pal-group{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;margin:14px 0 6px;padding-top:10px;border-top:1px solid #f1f5f9}
+.ra-fb-pal-group:first-of-type{margin-top:0;border-top:none;padding-top:0}
+.ra-fb-pal-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;transition:all .2s;border:1.5px solid transparent;margin-bottom:3px;user-select:none}
+.ra-fb-pal-item:hover{background:#f0f2ff;border-color:#c7d2fe;color:#667eea}
+.ra-fb-pal-item i{font-size:15px;width:20px;text-align:center;color:#667eea;flex-shrink:0}
+.ra-fb-pal-item .ra-fb-pal-check{margin-left:auto;font-size:14px;color:#10b981;display:none}
+.ra-fb-pal-item.used{opacity:0.4;background:#f8fafc}
+.ra-fb-pal-item.used .ra-fb-pal-check{display:inline}
+.ra-fb-pal-item.used:hover{opacity:0.6}
+.ra-fb-pal-add{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;border:1.5px dashed #d1d5db;border-radius:9px;background:none;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;margin-top:6px}
+.ra-fb-pal-add:hover{border-color:#667eea;color:#667eea;background:rgba(102,126,234,0.04)}
+@media(max-width:768px){.ra-fb-body{flex-direction:column-reverse}.ra-fb-palette{width:100%;border-left:none;border-top:2px solid #e2e8f0;max-height:200px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:12px}.ra-fb-pal-group{width:100%;margin:6px 0 2px}.ra-fb-pal-title{display:none}.ra-fb-pal-item{flex:0 0 auto}.ra-fb-main{padding:14px}.ra-fb-row{grid-template-columns:1fr}.ra-fb-toolbar{flex-direction:column;gap:6px;text-align:center}.ra-fb-condition-grid{grid-template-columns:1fr}.ra-fb-priority-cards{flex-direction:column}}
 /* ========== Tabs - Modern Pill Style ========== */
 .ra-tabs{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f1f5f9;padding:6px;border-radius:14px}
 .ra-tab{padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
@@ -1286,157 +1317,123 @@ a:hover{color:#5a67d8}
                         <span class="ra-fb-toolbar-title"><i class="ri-eye-line"></i> Live-Vorschau</span>
                         <span class="ra-fb-toolbar-hint"><i class="ri-drag-move-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_drag_hint')) . '</span>
                     </div>
-                    <div class="ra-fb-preview">';
+                    <div class="ra-fb-body">
+                    <div class="ra-fb-main"><div class="ra-fb-preview">';
 
-// === Section 1: Customer Info ===
-echo '              <div class="ra-fb-section">
-                        <div class="ra-fb-section-title"><span class="ra-fb-step-num">1</span><h3>' . esc_html(PPV_Lang::t('repair_step1_title')) . '</h3></div>
-                        <div class="ra-fb-field locked">
-                            <div class="ra-fb-field-body">
-                                <label>' . esc_html(PPV_Lang::t('repair_name_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
-                                <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_name_placeholder')) . '">
-                            </div>
-                        </div>
-                        <div class="ra-fb-field locked">
-                            <div class="ra-fb-field-body">
-                                <label>' . esc_html(PPV_Lang::t('repair_email_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
-                                <input type="email" placeholder="ihre@email.de">
-                            </div>
-                        </div>';
-
-// Phone field (configurable)
-$fc_phone = $field_config['customer_phone'] ?? $fc_defaults['customer_phone'];
-$phone_enabled = !empty($fc_phone['enabled']);
-$phone_label = esc_attr($fc_phone['label'] ?? $fc_defaults['customer_phone']['label']);
-$phone_req = !empty($fc_phone['required']);
-echo '                  <div class="ra-fb-field' . (!$phone_enabled ? ' disabled' : '') . '" data-key="customer_phone" data-builtin="1" draggable="true">
-                            <i class="ri-draggable ra-fb-drag"></i>
-                            <div class="ra-fb-controls">
-                                <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>
-                                <label class="ra-fb-toggle"><input type="checkbox" data-field="customer_phone" ' . ($phone_enabled ? 'checked' : '') . '><span></span></label>
-                            </div>
-                            <div class="ra-fb-field-body">
-                                <label data-label-for="customer_phone">' . esc_html($phone_label) . ($phone_req ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-                                <input type="tel" placeholder="' . esc_attr(PPV_Lang::t('repair_phone_placeholder')) . '">
-                            </div>
-                            <div class="ra-fb-settings">
-                                <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . ':</label><input type="text" data-field-label="customer_phone" value="' . $phone_label . '" class="ra-fb-label-input" style="flex:1"></div>
-                                <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="customer_phone" ' . ($phone_req ? 'checked' : '') . ' style="accent-color:#667eea"> ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '</label></div>
-                            </div>
-                        </div>';
-
-// Address field (configurable)
-$fc_addr = $field_config['customer_address'] ?? $fc_defaults['customer_address'];
-$addr_enabled = !empty($fc_addr['enabled']);
-$addr_label = esc_attr($fc_addr['label'] ?? $fc_defaults['customer_address']['label']);
-$addr_req = !empty($fc_addr['required']);
-echo '                  <div class="ra-fb-field' . (!$addr_enabled ? ' disabled' : '') . '" data-key="customer_address" data-builtin="1" draggable="true">
-                            <i class="ri-draggable ra-fb-drag"></i>
-                            <div class="ra-fb-controls">
-                                <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>
-                                <label class="ra-fb-toggle"><input type="checkbox" data-field="customer_address" ' . ($addr_enabled ? 'checked' : '') . '><span></span></label>
-                            </div>
-                            <div class="ra-fb-field-body">
-                                <label data-label-for="customer_address">' . esc_html($addr_label) . ($addr_req ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-                                <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_address_placeholder')) . '">
-                            </div>
-                            <div class="ra-fb-settings">
-                                <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . ':</label><input type="text" data-field-label="customer_address" value="' . $addr_label . '" class="ra-fb-label-input" style="flex:1"></div>
-                                <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="customer_address" ' . ($addr_req ? 'checked' : '') . ' style="accent-color:#667eea"> ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '</label></div>
-                            </div>
-                        </div>';
-echo '              </div>';
-
-// === Section 2: Device Info ===
-echo '              <div class="ra-fb-section">
-                        <div class="ra-fb-section-title"><span class="ra-fb-step-num">2</span><h3>' . esc_html(PPV_Lang::t('repair_step2_title')) . '</h3></div>
-                        <div id="ra-fb-device-fields">';
-
-// Device fields in configurable order
-$device_fields_meta = [
-    'device_brand'   => ['placeholder' => PPV_Lang::t('repair_brand_label'),   'input' => 'text'],
-    'device_model'   => ['placeholder' => PPV_Lang::t('repair_model_label'),   'input' => 'text'],
-    'device_imei'    => ['placeholder' => PPV_Lang::t('repair_imei_label'),    'input' => 'text'],
-    'device_pattern' => ['placeholder' => PPV_Lang::t('repair_pin_label'),     'input' => 'text'],
-    'muster_image'   => ['placeholder' => PPV_Lang::t('repair_pattern_label'), 'input' => 'canvas'],
+// Helper to render a built-in field block
+$fb_all_builtins = [
+    'customer_phone'  => ['section' => 1, 'icon' => 'ri-phone-line',    'ph' => PPV_Lang::t('repair_phone_placeholder'),   'input' => 'tel'],
+    'customer_address'=> ['section' => 1, 'icon' => 'ri-map-pin-line',  'ph' => PPV_Lang::t('repair_address_placeholder'), 'input' => 'text'],
+    'device_brand'    => ['section' => 2, 'icon' => 'ri-smartphone-line','ph' => PPV_Lang::t('repair_brand_label'),  'input' => 'text'],
+    'device_model'    => ['section' => 2, 'icon' => 'ri-device-line',   'ph' => PPV_Lang::t('repair_model_label'),  'input' => 'text'],
+    'device_imei'     => ['section' => 2, 'icon' => 'ri-barcode-line',  'ph' => PPV_Lang::t('repair_imei_label'),   'input' => 'text'],
+    'device_pattern'  => ['section' => 2, 'icon' => 'ri-lock-password-line','ph' => PPV_Lang::t('repair_pin_label'),'input' => 'text'],
+    'muster_image'    => ['section' => 2, 'icon' => 'ri-grid-line',     'ph' => PPV_Lang::t('repair_pattern_label'),'input' => 'muster'],
+    'device_color'    => ['section' => 2, 'icon' => 'ri-palette-line',  'ph' => '',    'input' => 'color'],
+    'purchase_date'   => ['section' => 2, 'icon' => 'ri-calendar-line', 'ph' => '',    'input' => 'date'],
+    'condition_check' => ['section' => 2, 'icon' => 'ri-shield-check-line','ph' => '', 'input' => 'condition'],
+    'accessories'     => ['section' => 3, 'icon' => 'ri-checkbox-multiple-line','ph' => '', 'input' => 'accessories'],
+    'photo_upload'    => ['section' => 3, 'icon' => 'ri-camera-line',   'ph' => '',    'input' => 'photo'],
+    'priority'        => ['section' => 3, 'icon' => 'ri-flashlight-line','ph' => '',   'input' => 'priority'],
+    'cost_limit'      => ['section' => 3, 'icon' => 'ri-money-euro-circle-line','ph'=>'','input' => 'cost'],
 ];
 
-// Sort by order from field_config
-$device_keys = array_keys($device_fields_meta);
-usort($device_keys, function($a, $b) use ($field_config) {
-    $oa = $field_config[$a]['order'] ?? 99;
-    $ob = $field_config[$b]['order'] ?? 99;
-    return $oa - $ob;
-});
-
-foreach ($device_keys as $fk) {
-    $meta = $device_fields_meta[$fk];
-    $fc = $field_config[$fk] ?? $fc_defaults[$fk];
+// Render a single built-in field block
+function ppv_fb_render_field($fk, $meta, $fc, $fc_defaults) {
     $enabled = !empty($fc['enabled']);
     $label = esc_attr($fc['label'] ?? $fc_defaults[$fk]['label']);
     $required = !empty($fc['required']);
+    $hidden = !$enabled ? ' ra-fb-hidden' : '';
 
-    echo '<div class="ra-fb-field' . (!$enabled ? ' disabled' : '') . '" data-key="' . $fk . '" data-builtin="1" draggable="true">
+    $html = '<div class="ra-fb-field' . $hidden . '" data-key="' . $fk . '" data-builtin="1" draggable="true">
         <i class="ri-draggable ra-fb-drag"></i>
         <div class="ra-fb-controls">
             <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>
-            <label class="ra-fb-toggle"><input type="checkbox" data-field="' . $fk . '" ' . ($enabled ? 'checked' : '') . '><span></span></label>
+            <button type="button" class="ra-fb-ctrl-btn danger ra-fb-field-remove" title="Entfernen"><i class="ri-close-line"></i></button>
         </div>
-        <div class="ra-fb-field-body">';
-    if ($meta['input'] === 'canvas') {
-        echo '<label data-label-for="' . $fk . '">' . esc_html($label) . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-              <div class="ra-fb-muster-preview"><i class="ri-grid-line"></i></div>';
+        <div class="ra-fb-field-body">
+            <label data-label-for="' . $fk . '">' . esc_html($label) . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>';
+
+    $input = $meta['input'];
+    if ($input === 'muster') {
+        $html .= '<div class="ra-fb-muster-preview"><i class="ri-grid-line"></i></div>';
+    } elseif ($input === 'accessories') {
+        $html .= '<div><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_charger')) . '</span><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_case')) . '</span><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_other')) . '</span></div>';
+    } elseif ($input === 'photo') {
+        $html .= '<div class="ra-fb-photo-preview"><div class="ra-fb-photo-box"><i class="ri-camera-line"></i><span>Foto 1</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 2</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 3</span></div></div>';
+    } elseif ($input === 'condition') {
+        $html .= '<div class="ra-fb-condition-grid"><div class="ra-fb-condition-item"><span>Display</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Tasten</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Kamera</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Lautsprecher</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div></div>';
+    } elseif ($input === 'priority') {
+        $html .= '<div class="ra-fb-priority-cards"><div class="ra-fb-priority-card"><i class="ri-flashlight-line"></i><strong>Express</strong>24h</div><div class="ra-fb-priority-card active"><i class="ri-time-line"></i><strong>Normal</strong>3-5 Tage</div><div class="ra-fb-priority-card"><i class="ri-leaf-line"></i><strong>Sparsam</strong>7-10 Tage</div></div>';
+    } elseif ($input === 'color') {
+        $html .= '<div class="ra-fb-color-swatches"><div class="ra-fb-color-dot active" style="background:#000" title="Schwarz"></div><div class="ra-fb-color-dot" style="background:#fff" title="Weiß"></div><div class="ra-fb-color-dot" style="background:#c0c0c0" title="Silber"></div><div class="ra-fb-color-dot" style="background:#d4a437" title="Gold"></div><div class="ra-fb-color-dot" style="background:#3b82f6" title="Blau"></div><div class="ra-fb-color-dot" style="background:#ef4444" title="Rot"></div></div>';
+    } elseif ($input === 'cost') {
+        $html .= '<div class="ra-fb-cost-options"><span class="ra-fb-cost-opt">max. 50&euro;</span><span class="ra-fb-cost-opt active">max. 100&euro;</span><span class="ra-fb-cost-opt">max. 200&euro;</span><span class="ra-fb-cost-opt">Kein Limit</span></div>';
+    } elseif ($input === 'date') {
+        $html .= '<input type="date" placeholder="' . esc_attr($label) . '">';
     } else {
-        echo '<label data-label-for="' . $fk . '">' . esc_html($label) . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-              <input type="text" placeholder="' . esc_attr($meta['placeholder']) . '">';
+        $html .= '<input type="' . esc_attr($input) . '" placeholder="' . esc_attr($meta['ph']) . '">';
     }
-    echo '</div>
+
+    $html .= '</div>
         <div class="ra-fb-settings">
             <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . ':</label><input type="text" data-field-label="' . $fk . '" value="' . $label . '" class="ra-fb-label-input" style="flex:1"></div>
             <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="' . $fk . '" ' . ($required ? 'checked' : '') . ' style="accent-color:#667eea"> ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '</label></div>
         </div>
     </div>';
+    return $html;
 }
 
-echo '                  </div></div>';
+// Collect fields per section, sorted by order
+$sections = [1 => [], 2 => [], 3 => []];
+foreach ($fb_all_builtins as $fk => $meta) {
+    $fc = $field_config[$fk] ?? $fc_defaults[$fk];
+    $order = $fc['order'] ?? 99;
+    $sections[$meta['section']][] = ['key' => $fk, 'order' => $order];
+}
+foreach ($sections as &$sec) { usort($sec, function($a, $b) { return $a['order'] - $b['order']; }); }
+unset($sec);
 
-// === Section 3: Problem + Accessories + Custom Fields ===
-echo '              <div class="ra-fb-section">
-                        <div class="ra-fb-section-title"><span class="ra-fb-step-num">3</span><h3>' . esc_html(PPV_Lang::t('repair_step3_title')) . '</h3></div>
-                        <div class="ra-fb-field locked">
-                            <div class="ra-fb-field-body">
-                                <label>' . esc_html(PPV_Lang::t('repair_problem_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
-                                <textarea rows="3" placeholder="' . esc_attr(PPV_Lang::t('repair_problem_placeholder')) . '"></textarea>
-                            </div>
-                        </div>';
+// === Section 1: Customer Info ===
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">1</span><h3>' . esc_html(PPV_Lang::t('repair_step1_title')) . '</h3></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_name_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_name_placeholder')) . '">
+    </div></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_email_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <input type="email" placeholder="ihre@email.de">
+    </div></div>
+    <div id="ra-fb-sec1">';
+foreach ($sections[1] as $item) {
+    echo ppv_fb_render_field($item['key'], $fb_all_builtins[$item['key']], $field_config[$item['key']] ?? $fc_defaults[$item['key']], $fc_defaults);
+}
+echo '</div></div>';
 
-// Accessories (configurable)
-$fc_acc = $field_config['accessories'] ?? $fc_defaults['accessories'];
-$acc_enabled = !empty($fc_acc['enabled']);
-$acc_label = esc_attr($fc_acc['label'] ?? $fc_defaults['accessories']['label']);
-$acc_req = !empty($fc_acc['required']);
-echo '                  <div class="ra-fb-field' . (!$acc_enabled ? ' disabled' : '') . '" data-key="accessories" data-builtin="1" draggable="true">
-                            <i class="ri-draggable ra-fb-drag"></i>
-                            <div class="ra-fb-controls">
-                                <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>
-                                <label class="ra-fb-toggle"><input type="checkbox" data-field="accessories" ' . ($acc_enabled ? 'checked' : '') . '><span></span></label>
-                            </div>
-                            <div class="ra-fb-field-body">
-                                <label data-label-for="accessories">' . esc_html($acc_label) . ($acc_req ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-                                <div>
-                                    <span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_charger')) . '</span>
-                                    <span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_case')) . '</span>
-                                    <span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_other')) . '</span>
-                                </div>
-                            </div>
-                            <div class="ra-fb-settings">
-                                <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . ':</label><input type="text" data-field-label="accessories" value="' . $acc_label . '" class="ra-fb-label-input" style="flex:1"></div>
-                                <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="accessories" ' . ($acc_req ? 'checked' : '') . ' style="accent-color:#667eea"> ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '</label></div>
-                            </div>
-                        </div>';
+// === Section 2: Device Info ===
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">2</span><h3>' . esc_html(PPV_Lang::t('repair_step2_title')) . '</h3></div>
+    <div id="ra-fb-sec2">';
+foreach ($sections[2] as $item) {
+    echo ppv_fb_render_field($item['key'], $fb_all_builtins[$item['key']], $field_config[$item['key']] ?? $fc_defaults[$item['key']], $fc_defaults);
+}
+echo '</div></div>';
+
+// === Section 3: Problem + Extras + Custom Fields ===
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">3</span><h3>' . esc_html(PPV_Lang::t('repair_step3_title')) . '</h3></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_problem_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <textarea rows="3" placeholder="' . esc_attr(PPV_Lang::t('repair_problem_placeholder')) . '"></textarea>
+    </div></div>
+    <div id="ra-fb-sec3">';
+foreach ($sections[3] as $item) {
+    echo ppv_fb_render_field($item['key'], $fb_all_builtins[$item['key']], $field_config[$item['key']] ?? $fc_defaults[$item['key']], $fc_defaults);
+}
 
 // Custom fields
-echo '                  <div id="ra-fb-custom-fields">';
+echo '<div id="ra-fb-custom-fields">';
 foreach ($field_config as $fk => $fc) {
     if (strpos($fk, 'custom_') !== 0) continue;
     $enabled = !empty($fc['enabled']);
@@ -1444,66 +1441,90 @@ foreach ($field_config as $fk => $fc) {
     $type = esc_attr($fc['type'] ?? 'text');
     $required = !empty($fc['required']);
     $options_raw = $fc['options'] ?? '';
+    $hidden = !$enabled ? ' ra-fb-hidden' : '';
 
-    echo '<div class="ra-fb-field' . (!$enabled ? ' disabled' : '') . '" data-key="' . $fk . '" data-builtin="0" draggable="true">
+    echo '<div class="ra-fb-field' . $hidden . '" data-key="' . $fk . '" data-builtin="0" draggable="true">
         <i class="ri-draggable ra-fb-drag"></i>
         <div class="ra-fb-controls">
             <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>
             <button type="button" class="ra-fb-ctrl-btn danger ra-fb-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_delete')) . '"><i class="ri-delete-bin-line"></i></button>
-            <label class="ra-fb-toggle"><input type="checkbox" data-field="' . $fk . '" ' . ($enabled ? 'checked' : '') . '><span></span></label>
         </div>
         <div class="ra-fb-field-body">';
     if ($type === 'textarea') {
-        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-              <textarea rows="2" placeholder="' . esc_attr($label) . '"></textarea>';
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><textarea rows="2" placeholder="' . esc_attr($label) . '"></textarea>';
     } elseif ($type === 'select') {
-        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-              <select style="pointer-events:none"><option>' . esc_html($label ?: '-- Auswahl --') . '</option></select>';
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><select style="pointer-events:none"><option>' . esc_html($label ?: '-- Auswahl --') . '</option></select>';
     } elseif ($type === 'checkbox') {
         echo '<label data-label-for="' . $fk . '"><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . ($label ?: 'Checkbox') . '</span>' . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>';
     } elseif ($type === 'number') {
-        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-              <input type="number" placeholder="' . esc_attr($label) . '">';
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><input type="number" placeholder="' . esc_attr($label) . '">';
     } else {
-        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>
-              <input type="text" placeholder="' . esc_attr($label) . '">';
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><input type="text" placeholder="' . esc_attr($label) . '">';
     }
     echo '</div>
         <div class="ra-fb-settings">
             <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . ':</label><input type="text" data-field-label="' . $fk . '" value="' . $label . '" class="ra-fb-label-input" style="flex:1"></div>
             <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_fieldtype')) . ':</label>
-                <select data-field-type="' . $fk . '">
-                    <option value="text"' . ($type === 'text' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_text')) . '</option>
-                    <option value="textarea"' . ($type === 'textarea' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_textarea')) . '</option>
-                    <option value="number"' . ($type === 'number' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_number')) . '</option>
-                    <option value="select"' . ($type === 'select' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_select')) . '</option>
-                    <option value="checkbox"' . ($type === 'checkbox' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_checkbox')) . '</option>
-                </select>
+                <select data-field-type="' . $fk . '"><option value="text"' . ($type === 'text' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_text')) . '</option><option value="textarea"' . ($type === 'textarea' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_textarea')) . '</option><option value="number"' . ($type === 'number' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_number')) . '</option><option value="select"' . ($type === 'select' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_select')) . '</option><option value="checkbox"' . ($type === 'checkbox' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_checkbox')) . '</option></select>
             </div>
-            <div class="ra-fb-settings-row ra-fb-options-row"' . ($type !== 'select' ? ' style="display:none"' : '') . '>
-                <textarea data-field-options="' . $fk . '" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" style="width:100%">' . esc_textarea($options_raw) . '</textarea>
-            </div>
+            <div class="ra-fb-settings-row ra-fb-options-row"' . ($type !== 'select' ? ' style="display:none"' : '') . '><textarea data-field-options="' . $fk . '" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" style="width:100%">' . esc_textarea($options_raw) . '</textarea></div>
             <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="' . $fk . '" ' . ($required ? 'checked' : '') . ' style="accent-color:#667eea"> ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '</label></div>
         </div>
     </div>';
 }
-echo '                  </div>
-                        <button type="button" class="ra-fb-add" id="ra-fb-add-custom"><i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_add_custom')) . '</button>
-                    </div>';
+echo '</div></div></div>';
 
 // === Section 4: Signature (locked) ===
-echo '              <div class="ra-fb-section">
-                        <div class="ra-fb-section-title"><span class="ra-fb-step-num">4</span><h3>' . esc_html(PPV_Lang::t('repair_step4_title')) . '</h3></div>
-                        <div class="ra-fb-field locked">
-                            <div class="ra-fb-field-body">
-                                <label>' . esc_html(PPV_Lang::t('repair_signature_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
-                                <div class="ra-fb-sig-preview"><i class="ri-edit-line"></i> Unterschrift</div>
-                            </div>
-                        </div>
-                    </div>';
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">4</span><h3>' . esc_html(PPV_Lang::t('repair_step4_title')) . '</h3></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_signature_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <div class="ra-fb-sig-preview"><i class="ri-edit-line"></i> Unterschrift</div>
+    </div></div>
+</div>';
 
-echo '              </div>
-                </div>
+echo '</div></div>';
+
+// === PALETTE SIDEBAR ===
+echo '<div class="ra-fb-palette">
+    <div class="ra-fb-pal-title"><i class="ri-apps-line"></i> Felder</div>';
+
+// Palette groups
+$pal_groups = [
+    'Grundfelder' => [
+        'customer_phone'   => ['icon' => 'ri-phone-line',    'name' => $fc_defaults['customer_phone']['label']],
+        'customer_address' => ['icon' => 'ri-map-pin-line',  'name' => $fc_defaults['customer_address']['label']],
+    ],
+    'Gerätefelder' => [
+        'device_brand'    => ['icon' => 'ri-smartphone-line',    'name' => $fc_defaults['device_brand']['label']],
+        'device_model'    => ['icon' => 'ri-device-line',        'name' => $fc_defaults['device_model']['label']],
+        'device_imei'     => ['icon' => 'ri-barcode-line',       'name' => $fc_defaults['device_imei']['label']],
+        'device_pattern'  => ['icon' => 'ri-lock-password-line', 'name' => $fc_defaults['device_pattern']['label']],
+        'muster_image'    => ['icon' => 'ri-grid-line',          'name' => $fc_defaults['muster_image']['label']],
+        'device_color'    => ['icon' => 'ri-palette-line',       'name' => $fc_defaults['device_color']['label']],
+        'purchase_date'   => ['icon' => 'ri-calendar-line',      'name' => $fc_defaults['purchase_date']['label']],
+        'condition_check' => ['icon' => 'ri-shield-check-line',  'name' => $fc_defaults['condition_check']['label']],
+    ],
+    'Zusatzfelder' => [
+        'accessories'   => ['icon' => 'ri-checkbox-multiple-line',   'name' => $fc_defaults['accessories']['label']],
+        'photo_upload'  => ['icon' => 'ri-camera-line',              'name' => $fc_defaults['photo_upload']['label']],
+        'priority'      => ['icon' => 'ri-flashlight-line',          'name' => $fc_defaults['priority']['label']],
+        'cost_limit'    => ['icon' => 'ri-money-euro-circle-line',   'name' => $fc_defaults['cost_limit']['label']],
+    ],
+];
+
+foreach ($pal_groups as $group_name => $items) {
+    echo '<div class="ra-fb-pal-group">' . esc_html($group_name) . '</div>';
+    foreach ($items as $pk => $pi) {
+        $is_enabled = !empty(($field_config[$pk] ?? $fc_defaults[$pk])['enabled']);
+        echo '<div class="ra-fb-pal-item' . ($is_enabled ? ' used' : '') . '" data-target="' . $pk . '"><i class="' . $pi['icon'] . '"></i> ' . esc_html($pi['name']) . '<i class="ri-check-line ra-fb-pal-check"></i></div>';
+    }
+}
+echo '<div class="ra-fb-pal-group">' . esc_html(PPV_Lang::t('repair_admin_fc_custom')) . '</div>
+    <button type="button" class="ra-fb-pal-add" id="ra-fb-add-custom"><i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_add_custom')) . '</button>
+</div>';
+
+echo '</div></div>
             </div>
 
 
@@ -4228,34 +4249,45 @@ echo '              </div>
         });
     });
 
-    /* ===== WYSIWYG Form Builder ===== */
+    /* ===== WYSIWYG Form Builder with Palette ===== */
+    function fbSyncPalette(key,active){
+        var pi=document.querySelector(\'.ra-fb-pal-item[data-target="\'+key+\'"]\');
+        if(pi){if(active){pi.classList.add("used")}else{pi.classList.remove("used")}}
+    }
     function fbWireField(field){
-        // Toggle enable/disable
-        var toggleCb=field.querySelector(".ra-fb-toggle input");
-        if(toggleCb) toggleCb.addEventListener("change",function(){
-            field.classList.toggle("disabled",!this.checked);
-        });
+        var key=field.getAttribute("data-key");
         // Settings panel toggle
         var settingsBtn=field.querySelector(".ra-fb-btn-settings");
         if(settingsBtn) settingsBtn.addEventListener("click",function(){
             var panel=field.querySelector(".ra-fb-settings");
             if(panel) panel.classList.toggle("open");
         });
-        // Inline label editing (click label to edit)
+        // Remove/hide field (X button) - goes back to palette
+        var removeBuiltin=field.querySelector(".ra-fb-field-remove");
+        if(removeBuiltin) removeBuiltin.addEventListener("click",function(){
+            field.classList.add("ra-fb-hidden");
+            fbSyncPalette(key,false);
+        });
+        // Remove custom field permanently
+        var removeBtn=field.querySelector(".ra-fb-remove");
+        if(removeBtn) removeBtn.addEventListener("click",function(){
+            if(confirm("Feld wirklich entfernen?")) field.remove();
+        });
+        // Inline label editing (double-click)
         var lbl=field.querySelector("[data-label-for]");
         if(lbl) lbl.addEventListener("dblclick",function(){
-            var key=this.getAttribute("data-label-for");
             var labelInput=field.querySelector("input[data-field-label]");
             if(!labelInput) return;
             var inp=document.createElement("input");
             inp.type="text";inp.className="ra-fb-label-input";inp.value=labelInput.value;
             var origHTML=this.innerHTML;
             this.innerHTML="";this.appendChild(inp);inp.focus();inp.select();
+            var self=this;
             function finish(){
                 labelInput.value=inp.value;
                 var req=field.querySelector("input[data-field-required]");
-                lbl.innerHTML=inp.value||origHTML;
-                if(req&&req.checked) lbl.innerHTML+="<span class=\\"ra-fb-req\\">*</span>";
+                self.innerHTML=inp.value||origHTML;
+                if(req&&req.checked) self.innerHTML+="<span class=\\"ra-fb-req\\">*</span>";
             }
             inp.addEventListener("blur",finish);
             inp.addEventListener("keydown",function(ev){if(ev.key==="Enter"){ev.preventDefault();inp.blur()}});
@@ -4266,12 +4298,7 @@ echo '              </div>
             var optRow=field.querySelector(".ra-fb-options-row");
             if(optRow) optRow.style.display=this.value==="select"?"flex":"none";
         });
-        // Remove custom field
-        var removeBtn=field.querySelector(".ra-fb-remove");
-        if(removeBtn) removeBtn.addEventListener("click",function(){
-            if(confirm("Feld wirklich entfernen?")) field.remove();
-        });
-        // Label input sync to displayed label
+        // Label input sync
         var labelInput=field.querySelector("input[data-field-label]");
         if(labelInput){
             labelInput.addEventListener("input",function(){
@@ -4293,11 +4320,11 @@ echo '              </div>
             if(!labelEl.innerHTML) labelEl.innerHTML="<em style=\\"color:#94a3b8\\">Neues Feld</em>";
             if(this.checked) labelEl.innerHTML+="<span class=\\"ra-fb-req\\">*</span>";
         });
-        // Drag and drop
+        // Drag and drop reorder
         field.addEventListener("dragstart",function(e){
             field.classList.add("dragging");
             e.dataTransfer.effectAllowed="move";
-            e.dataTransfer.setData("text/plain",field.getAttribute("data-key"));
+            e.dataTransfer.setData("text/plain",key);
         });
         field.addEventListener("dragend",function(){
             field.classList.remove("dragging");
@@ -4324,6 +4351,28 @@ echo '              </div>
     }
     // Wire all existing fields
     document.querySelectorAll(".ra-fb-field:not(.locked)").forEach(fbWireField);
+
+    // Palette click → show/hide field in form
+    document.querySelectorAll(".ra-fb-pal-item").forEach(function(pi){
+        pi.addEventListener("click",function(){
+            var target=this.getAttribute("data-target");
+            var field=document.querySelector(\'.ra-fb-field[data-key="\'+target+\'"]\');
+            if(!field) return;
+            if(this.classList.contains("used")){
+                // Remove from form
+                field.classList.add("ra-fb-hidden");
+                this.classList.remove("used");
+            }else{
+                // Add to form
+                field.classList.remove("ra-fb-hidden");
+                this.classList.add("used");
+                field.classList.add("ra-fb-flash");
+                setTimeout(function(){field.classList.remove("ra-fb-flash")},600);
+                field.scrollIntoView({behavior:"smooth",block:"center"});
+            }
+        });
+    });
+
     // Add custom field
     var fbAddBtn=document.getElementById("ra-fb-add-custom");
     if(fbAddBtn){
@@ -4339,7 +4388,6 @@ echo '              </div>
                 <div class="ra-fb-controls">\
                     <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>\
                     <button type="button" class="ra-fb-ctrl-btn danger ra-fb-remove" title="Entfernen"><i class="ri-delete-bin-line"></i></button>\
-                    <label class="ra-fb-toggle"><input type="checkbox" data-field="\'+key+\'" checked><span></span></label>\
                 </div>\
                 <div class="ra-fb-field-body">\
                     <label data-label-for="\'+key+\'"><em style="color:#94a3b8">Neues Feld</em></label>\
@@ -4373,17 +4421,17 @@ echo '              </div>
         settingsFormEl.addEventListener("submit",function(e){
             e.preventDefault();
             var fd=new FormData(this);
-            // Collect field config from all builder fields
+            // Collect field config from all builder fields (visible = enabled)
             var fc={};
             var order=0;
             document.querySelectorAll(".ra-fb-field:not(.locked)").forEach(function(field){
                 order++;
                 var key=field.getAttribute("data-key");
                 if(!key) return;
-                var cb=field.querySelector("input[data-field]");
+                var isVisible=!field.classList.contains("ra-fb-hidden");
                 var labelInp=field.querySelector("input[data-field-label]");
                 var reqCb=field.querySelector("input[data-field-required]");
-                var entry={enabled:cb?cb.checked:false, label:labelInp?labelInp.value:"", required:reqCb?reqCb.checked:false, order:order};
+                var entry={enabled:isVisible, label:labelInp?labelInp.value:"", required:reqCb?reqCb.checked:false, order:order};
                 if(field.getAttribute("data-builtin")==="0"){
                     var typeSel=field.querySelector("select[data-field-type]");
                     var optsTa=field.querySelector("textarea[data-field-options]");

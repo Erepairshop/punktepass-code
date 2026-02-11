@@ -945,11 +945,40 @@ class PPV_Repair_Core {
             }
         }
 
-        // Collect custom fields (cf_custom_*)
+        // Collect custom fields (cf_custom_*) + new built-in extras
         $custom_fields = [];
         foreach ($_POST as $pk => $pv) {
             if (strpos($pk, 'cf_custom_') === 0) {
-                $custom_fields[substr($pk, 3)] = sanitize_text_field($pv); // key = custom_TIMESTAMP
+                $custom_fields[substr($pk, 3)] = sanitize_text_field($pv);
+            }
+        }
+        // New built-in field types → stored in custom_fields JSON
+        $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit'];
+        foreach ($extra_keys as $ek) {
+            if (!empty($_POST[$ek])) {
+                $custom_fields[$ek] = sanitize_text_field($_POST[$ek]);
+            }
+        }
+        // Photo uploads
+        if (!empty($_FILES['repair_photos']['name'][0])) {
+            $photo_urls = [];
+            $upload_dir = wp_upload_dir();
+            $repair_dir = $upload_dir['basedir'] . '/ppv-repairs';
+            if (!is_dir($repair_dir)) { wp_mkdir_p($repair_dir); }
+            $max_photos = min(count($_FILES['repair_photos']['name']), 5);
+            for ($pi = 0; $pi < $max_photos; $pi++) {
+                if ($_FILES['repair_photos']['error'][$pi] !== UPLOAD_ERR_OK) continue;
+                if ($_FILES['repair_photos']['size'][$pi] > 5 * 1024 * 1024) continue; // max 5MB
+                $ext = strtolower(pathinfo($_FILES['repair_photos']['name'][$pi], PATHINFO_EXTENSION));
+                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) continue;
+                $fname = 'repair_' . time() . '_' . $pi . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                $dest = $repair_dir . '/' . $fname;
+                if (move_uploaded_file($_FILES['repair_photos']['tmp_name'][$pi], $dest)) {
+                    $photo_urls[] = $upload_dir['baseurl'] . '/ppv-repairs/' . $fname;
+                }
+            }
+            if (!empty($photo_urls)) {
+                $custom_fields['photos'] = $photo_urls;
             }
         }
         $custom_fields_json = !empty($custom_fields) ? wp_json_encode($custom_fields) : '';
