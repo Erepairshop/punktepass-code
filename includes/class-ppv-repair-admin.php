@@ -396,7 +396,7 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         // Filialen: get parent ID and all repair-enabled filialen
         $parent_store_id = $store->parent_store_id ? intval($store->parent_store_id) : $store->id;
         $filialen = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, name, city, store_slug, parent_store_id
+            "SELECT id, name, city, plz, store_slug, parent_store_id
              FROM {$prefix}ppv_stores
              WHERE (parent_store_id = %d OR id = %d)
                AND repair_enabled = 1
@@ -760,13 +760,44 @@ a:hover{color:#5a67d8}
 .ra-section-divider{border:none;border-top:1px solid #f0f0f0;margin:24px 0}
 .ra-section-title{font-size:15px;font-weight:700;color:#111827;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 /* ========== Field Config ========== */
-.ra-field-config{display:flex;flex-direction:column;gap:10px}
-.ra-field-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0}
-.ra-field-row label.ra-fc-toggle{display:flex;align-items:center;gap:8px;flex-shrink:0;cursor:pointer}
-.ra-field-row input[type="checkbox"]{width:18px;height:18px;accent-color:#667eea;cursor:pointer}
-.ra-field-row input[type="text"]{flex:1;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none;min-width:0}
-.ra-field-row input[type="text"]:focus{border-color:#667eea}
-.ra-fc-name{font-size:12px;font-weight:600;color:#6b7280;min-width:60px}
+.ra-field-config{display:flex;flex-direction:column;gap:8px}
+.ra-fc-card{background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px 16px;transition:all .2s;position:relative}
+.ra-fc-card:hover{border-color:#c7d2fe;box-shadow:0 2px 8px rgba(102,126,234,0.08)}
+.ra-fc-card.disabled{opacity:0.5}
+.ra-fc-card .ra-fc-head{display:flex;align-items:center;gap:10px}
+.ra-fc-card .ra-fc-drag{cursor:grab;color:#c4c4c4;font-size:16px;padding:2px;transition:color .2s;flex-shrink:0}
+.ra-fc-card .ra-fc-drag:hover{color:#667eea}
+.ra-fc-card .ra-fc-drag:active{cursor:grabbing}
+.ra-fc-card .ra-fc-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ra-fc-icon.blue{background:#eff6ff;color:#3b82f6}
+.ra-fc-icon.green{background:#f0fdf4;color:#22c55e}
+.ra-fc-icon.purple{background:#f5f3ff;color:#8b5cf6}
+.ra-fc-icon.amber{background:#fffbeb;color:#f59e0b}
+.ra-fc-icon.rose{background:#fff1f2;color:#f43f5e}
+.ra-fc-icon.teal{background:#f0fdfa;color:#14b8a6}
+.ra-fc-icon.slate{background:#f1f5f9;color:#64748b}
+.ra-fc-card .ra-fc-info{flex:1;min-width:0}
+.ra-fc-card .ra-fc-title{font-size:13px;font-weight:600;color:#1f2937}
+.ra-fc-card .ra-fc-type{font-size:11px;color:#9ca3af;margin-top:1px}
+.ra-fc-card .ra-fc-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ra-fc-card .ra-fc-toggle-sw{position:relative;width:36px;height:20px;flex-shrink:0}
+.ra-fc-card .ra-fc-toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.ra-fc-card .ra-fc-toggle-sw .ra-fc-slider{position:absolute;inset:0;background:#d1d5db;border-radius:10px;cursor:pointer;transition:all .2s}
+.ra-fc-card .ra-fc-toggle-sw .ra-fc-slider:before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;background:#fff;border-radius:50%;transition:all .2s}
+.ra-fc-card .ra-fc-toggle-sw input:checked+.ra-fc-slider{background:#667eea}
+.ra-fc-card .ra-fc-toggle-sw input:checked+.ra-fc-slider:before{transform:translateX(16px)}
+.ra-fc-expand{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6}
+.ra-fc-expand.open{display:block}
+.ra-fc-expand .ra-fc-field{margin-bottom:10px}
+.ra-fc-expand .ra-fc-field label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px}
+.ra-fc-expand .ra-fc-field input,.ra-fc-expand .ra-fc-field select,.ra-fc-expand .ra-fc-field textarea{width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none;font-family:inherit}
+.ra-fc-expand .ra-fc-field input:focus,.ra-fc-expand .ra-fc-field select:focus,.ra-fc-expand .ra-fc-field textarea:focus{border-color:#667eea}
+.ra-fc-btn-icon{border:none;background:none;cursor:pointer;padding:4px;border-radius:6px;color:#9ca3af;font-size:16px;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.ra-fc-btn-icon:hover{background:#f3f4f6;color:#374151}
+.ra-fc-btn-icon.danger:hover{background:#fef2f2;color:#dc2626}
+.ra-fc-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border:2px dashed #e5e7eb;border-radius:12px;background:none;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;margin-top:8px}
+.ra-fc-add-btn:hover{border-color:#667eea;color:#667eea;background:#f8f7ff}
+.ra-fc-required{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#f59e0b;background:#fffbeb;padding:2px 6px;border-radius:4px;margin-left:6px}
 /* ========== Tabs - Modern Pill Style ========== */
 .ra-tabs{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f1f5f9;padding:6px;border-radius:14px}
 .ra-tab{padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
