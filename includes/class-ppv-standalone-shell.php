@@ -53,11 +53,6 @@ class PPV_Standalone_Shell {
 
     /** Check if current URL matches a known route and render standalone */
     public static function maybe_render_standalone() {
-        // DISABLED: Needs more work before production use.
-        // The shortcodes depend on wp_enqueue_script/style + wp_head/wp_footer
-        // which don't work properly in standalone mode.
-        return;
-
         $path = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
         if (empty($path)) $path = '/';
 
@@ -159,6 +154,8 @@ class PPV_Standalone_Shell {
     <link rel="manifest" href="<?php echo $site_url; ?>/manifest.json">
     <link rel="icon" href="<?php echo $plugin_url; ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo $plugin_url; ?>assets/img/icon-192.png">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-esm.js"></script>
+    <meta name="turbo-cache-control" content="no-cache">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-theme-light.css?v=<?php echo $version; ?>">
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/handler-light.css?v=<?php echo $version; ?>">
@@ -172,12 +169,15 @@ class PPV_Standalone_Shell {
     // But only print styles, not all of wp_head (which would include theme stuff)
     wp_print_styles();
     ?>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <style>
     /* Standalone shell base */
     html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7)}
     .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
     /* Ensure safe area on iOS */
     .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    /* Turbo loading indicator */
+    .turbo-progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#667eea,#00bfff);z-index:99999;transition:width 0.3s}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
