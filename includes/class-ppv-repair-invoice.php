@@ -145,6 +145,7 @@ class PPV_Repair_Invoice {
             'customer_name'             => $repair->customer_name,
             'customer_email'            => $repair->customer_email,
             'customer_phone'            => $repair->customer_phone ?: '',
+            'customer_address'          => $repair->customer_address ?: '',
             'device_info'               => $device,
             'description'               => $repair->problem_description,
             'line_items'                => !empty($line_items) ? wp_json_encode($line_items) : null,
