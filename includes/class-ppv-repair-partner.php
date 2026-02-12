@@ -3,6 +3,7 @@
  * PunktePass - Partner Pitch Page
  * Professional presentation page for potential wholesale partners
  * Route: /formular/partner
+ * Supports: DE / EN language switcher
  *
  * Author: Erik Borota / PunktePass
  */
@@ -11,14 +12,293 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_Repair_Partner {
 
+    private static function get_translations() {
+        return [
+            'de' => [
+                'html_lang'        => 'de',
+                'page_title'       => 'Reparaturpass Partner-Programm | PunktePass',
+                'badge'            => 'Partner-Programm',
+                'hero_h1'          => 'Mehrwert f&uuml;r Ihre Kunden.<br><span>Kostenlos.</span>',
+                'hero_sub'         => 'Bieten Sie Ihren Werkstatt-Kunden eine professionelle digitale Reparaturverwaltung &ndash; v&ouml;llig kostenlos. Kein Risiko, kein Aufwand, maximaler Mehrwert.',
+
+                // Problem
+                'problem_title'    => 'Das Problem Ihrer Kunden',
+                'problem_sub'      => 'Die meisten Reparaturwerkst&auml;tten arbeiten noch analog &ndash; das kostet Zeit, Geld und Kunden.',
+                'prob1_title'      => 'Papier-Chaos',
+                'prob1_text'       => 'Handschriftliche Reparaturzettel gehen verloren, sind unleserlich und nicht durchsuchbar.',
+                'prob2_title'      => 'Zeitverlust',
+                'prob2_text'       => 'Jeder Auftrag wird manuell erfasst. Das kostet 5-10 Minuten pro Kunde &ndash; jeden Tag.',
+                'prob3_title'      => 'Kundenanfragen',
+                'prob3_text'       => '&ldquo;Wie ist der Status meiner Reparatur?&rdquo; &ndash; st&auml;ndige Anrufe, die den Betrieb st&ouml;ren.',
+                'prob4_title'      => 'Teure Software',
+                'prob4_text'       => 'Professionelle L&ouml;sungen kosten oft &euro;50-100+/Monat &ndash; f&uuml;r kleine Werkst&auml;tten zu teuer.',
+
+                // Solution
+                'solution_title'   => 'Unsere L&ouml;sung: Reparaturpass',
+                'solution_sub'     => 'Eine vollst&auml;ndige digitale Reparaturverwaltung &ndash; kostenlos nutzbar, sofort einsatzbereit.',
+                'sol_hero_title'   => 'Digitaler Reparaturbon',
+                'sol_hero_text'    => 'Kunden f&uuml;llen das Formular online aus. Die Werkstatt erh&auml;lt alle Daten digital &ndash; kein Papier, keine Fehler.',
+                'feat1_title'      => 'Online-Formular',
+                'feat1_text'       => 'Eigene URL pro Werkstatt mit individuellem Branding',
+                'feat2_title'      => 'Rechnungen & Bons',
+                'feat2_text'       => 'Automatische PDF-Erstellung mit Firmenlogo',
+                'feat3_title'      => 'Statistiken',
+                'feat3_text'       => 'Dashboard mit CSV/PDF-Export aller Reparaturen',
+                'feat4_title'      => 'Status-Tracking',
+                'feat4_text'       => 'Kunden verfolgen ihren Auftrag per QR-Code',
+                'feat5_title'      => 'Kundenverwaltung',
+                'feat5_text'       => 'Automatische Kundenhistorie und CRM-Funktionen',
+                'feat6_title'      => 'Multi-Filiale',
+                'feat6_text'       => 'Mehrere Standorte unter einem Account verwalten',
+                'feat7_title'      => 'Treuepunkte-System',
+                'feat7_text'       => 'Integriertes Punktesystem zur Kundenbindung &ndash; automatisch bei jeder Reparatur',
+
+                // Stats
+                'stat1_val'        => '50',
+                'stat1_label'      => 'Formulare / Monat gratis',
+                'stat2_val'        => '0&euro;',
+                'stat2_label'      => 'Einrichtungsgeb&uuml;hr',
+                'stat3_val'        => '2 min',
+                'stat3_label'      => 'Registrierung',
+                'stat4_val'        => '&infin;',
+                'stat4_label'      => 'Kein Vertrag, kein Limit',
+
+                // Win-Win
+                'winwin_title'     => 'Win-Win Partnerschaft',
+                'winwin_sub'       => 'Eine Partnerschaft, die beiden Seiten Mehrwert bringt &ndash; ohne Kosten.',
+                'win_partner_tag'  => 'F&uuml;r Sie als Gro&szlig;h&auml;ndler',
+                'win_partner_h3'   => 'Kundenbindung st&auml;rken',
+                'win_p1'           => 'Ihre Kunden werden professioneller &ndash; und bestellen mehr bei Ihnen',
+                'win_p2'           => 'Sie positionieren sich als &ldquo;More Than Spareparts&rdquo;-Partner',
+                'win_p3'           => 'Kostenloser Mehrwert f&uuml;r Ihr Portfolio &ndash; kein Investment n&ouml;tig',
+                'win_p4'           => 'Co-Branded Pr&auml;senz: &ldquo;Empfohlen von [Ihr Name]&rdquo;',
+                'win_p5'           => 'Optionale Verg&uuml;tung bei Premium-Upgrades Ihrer Kunden',
+                'win_customer_tag' => 'F&uuml;r Ihre Werkstatt-Kunden',
+                'win_customer_h3'  => 'Sofort professioneller',
+                'win_c1'           => 'Kostenlose digitale Reparaturverwaltung &ndash; sofort nutzbar',
+                'win_c2'           => 'Kein Papier-Chaos mehr &ndash; alles digital und durchsuchbar',
+                'win_c3'           => 'Professioneller Auftritt gegen&uuml;ber Endkunden',
+                'win_c4'           => 'Status-Tracking reduziert &ldquo;Wo ist mein Ger&auml;t?&rdquo;-Anrufe um 80%',
+                'win_c5'           => 'Spart 30+ Minuten t&auml;glich durch automatisierte Prozesse',
+
+                // Partnership Models
+                'models_title'     => 'Partnerschafts-Modelle',
+                'models_sub'       => 'Flexibel und unverbindlich &ndash; w&auml;hlen Sie, was am besten passt.',
+                'model1_title'     => 'Newsletter & Webshop',
+                'model1_text'      => 'Erw&auml;hnung in Ihrem Newsletter oder Banner in Ihrem Webshop. Minimaler Aufwand, sofortige Reichweite.',
+                'model1_d1'        => '30 Min. Aufwand einmalig',
+                'model1_d2'        => 'Kostenfrei',
+                'model2_badge'     => 'Empfohlen',
+                'model2_title'     => 'Paketbeileger',
+                'model2_text'      => 'Ein kleiner Flyer in jeder Lieferung. Ihre Kunden entdecken den Reparaturpass beim Auspacken.',
+                'model2_d1'        => 'H&ouml;chste Sichtbarkeit',
+                'model2_d2'        => 'Wir liefern die Flyer kostenlos',
+                'model3_title'     => 'Co-Branded',
+                'model3_text'      => 'Eigene Partner-Landingpage mit Ihrem Logo. &ldquo;Empfohlen von [Ihr Unternehmen]&rdquo; im Reparaturpass.',
+                'model3_d1'        => 'Exklusiv f&uuml;r Hauptpartner',
+                'model3_d2'        => 'Revenue-Share m&ouml;glich',
+
+                // How it works
+                'steps_title'      => 'So einfach geht&rsquo;s',
+                'steps_sub'        => 'In 4 Schritten zur Partnerschaft &ndash; ohne Vertr&auml;ge, ohne Verpflichtungen.',
+                'step1_title'      => 'Testen',
+                'step1_text'       => 'Registrieren Sie sich selbst und erleben Sie den Reparaturpass aus Werkstatt-Sicht.',
+                'step2_title'      => 'Vereinbaren',
+                'step2_text'       => 'Wir besprechen, welches Modell am besten zu Ihnen passt.',
+                'step3_title'      => 'Starten',
+                'step3_text'       => 'Wir liefern Banner, Flyer oder Co-Branding &ndash; Sie teilen es mit Ihren Kunden.',
+                'step4_title'      => 'Profitieren',
+                'step4_text'       => 'Zufriedenere Kunden, st&auml;rkere Bindung &ndash; und optional Revenue-Share.',
+
+                // Pricing
+                'pricing_title'    => 'Preismodell f&uuml;r Werkst&auml;tten',
+                'pricing_sub'      => 'Ihre Kunden starten kostenlos. Premium nur bei Bedarf.',
+                'price_free_tag'   => 'Kostenlos',
+                'price_free_val'   => '0&euro;',
+                'price_per_month'  => '/ Monat',
+                'price_free_desc'  => 'F&uuml;r kleine Werkst&auml;tten',
+                'price_f1'         => '50 Formulare pro Monat',
+                'price_f2'         => 'Eigenes Reparaturformular',
+                'price_f3'         => 'Kunden-Tracking per QR',
+                'price_f4'         => 'Dashboard & &Uuml;bersicht',
+                'price_f5'         => 'Unbegrenzt nutzbar',
+                'price_f6'         => 'Treuepunkte-System inklusive',
+                'price_prem_tag'   => 'Premium',
+                'price_prem_val'   => '39&euro;',
+                'price_prem_desc'  => 'F&uuml;r professionelle Betriebe',
+                'price_p1'         => 'Unbegrenzte Formulare',
+                'price_p2'         => 'Rechnungserstellung',
+                'price_p3'         => 'CSV/PDF Export',
+                'price_p4'         => 'Multi-Filiale Support',
+                'price_p5'         => 'Ankauf-Modul',
+                'price_p6'         => 'Priorit&auml;ts-Support',
+
+                // CTA
+                'cta_title'        => 'Bereit f&uuml;r eine Partnerschaft?',
+                'cta_text'         => 'Lassen Sie uns gemeinsam die Reparaturbranche digitalisieren. Kein Risiko, kein Aufwand &ndash; nur Mehrwert.',
+                'cta_demo'         => 'Live-Demo ansehen',
+                'cta_contact'      => 'Kontakt aufnehmen',
+                'cta_mail_subject' => 'Partnerschaft%20Reparaturpass',
+
+                // Footer
+                'footer_conf'      => 'Dieses Dokument ist vertraulich.',
+                'print_title'      => 'Als PDF drucken',
+            ],
+            'en' => [
+                'html_lang'        => 'en',
+                'page_title'       => 'Repair Pass Partner Program | PunktePass',
+                'badge'            => 'Partner Program',
+                'hero_h1'          => 'Added value for your customers.<br><span>Free of charge.</span>',
+                'hero_sub'         => 'Offer your repair shop customers a professional digital repair management system &ndash; completely free. No risk, no effort, maximum value.',
+
+                // Problem
+                'problem_title'    => 'Your Customers\' Problem',
+                'problem_sub'      => 'Most repair shops still work with pen and paper &ndash; costing time, money, and customers.',
+                'prob1_title'      => 'Paper Chaos',
+                'prob1_text'       => 'Handwritten repair slips get lost, are illegible, and impossible to search through.',
+                'prob2_title'      => 'Time Wasted',
+                'prob2_text'       => 'Every order is recorded manually. That costs 5-10 minutes per customer &ndash; every day.',
+                'prob3_title'      => 'Customer Inquiries',
+                'prob3_text'       => '&ldquo;What\'s the status of my repair?&rdquo; &ndash; constant calls that disrupt daily business.',
+                'prob4_title'      => 'Expensive Software',
+                'prob4_text'       => 'Professional solutions often cost &euro;50-100+/month &ndash; too expensive for small workshops.',
+
+                // Solution
+                'solution_title'   => 'Our Solution: Repair Pass',
+                'solution_sub'     => 'A complete digital repair management system &ndash; free to use, ready to go.',
+                'sol_hero_title'   => 'Digital Repair Receipt',
+                'sol_hero_text'    => 'Customers fill out the form online. The workshop receives all data digitally &ndash; no paper, no errors.',
+                'feat1_title'      => 'Online Form',
+                'feat1_text'       => 'Custom URL per workshop with individual branding',
+                'feat2_title'      => 'Invoices & Receipts',
+                'feat2_text'       => 'Automatic PDF generation with company logo',
+                'feat3_title'      => 'Statistics',
+                'feat3_text'       => 'Dashboard with CSV/PDF export of all repairs',
+                'feat4_title'      => 'Status Tracking',
+                'feat4_text'       => 'Customers track their order via QR code',
+                'feat5_title'      => 'Customer Management',
+                'feat5_text'       => 'Automatic customer history and CRM features',
+                'feat6_title'      => 'Multi-Location',
+                'feat6_text'       => 'Manage multiple locations under one account',
+                'feat7_title'      => 'Loyalty Points System',
+                'feat7_text'       => 'Integrated points system for customer retention &ndash; automatic with every repair',
+
+                // Stats
+                'stat1_val'        => '50',
+                'stat1_label'      => 'Forms / month free',
+                'stat2_val'        => '&euro;0',
+                'stat2_label'      => 'Setup fee',
+                'stat3_val'        => '2 min',
+                'stat3_label'      => 'Registration',
+                'stat4_val'        => '&infin;',
+                'stat4_label'      => 'No contract, no limits',
+
+                // Win-Win
+                'winwin_title'     => 'Win-Win Partnership',
+                'winwin_sub'       => 'A partnership that delivers value to both sides &ndash; at no cost.',
+                'win_partner_tag'  => 'For You as Wholesaler',
+                'win_partner_h3'   => 'Strengthen Customer Loyalty',
+                'win_p1'           => 'Your customers become more professional &ndash; and order more from you',
+                'win_p2'           => 'Position yourself as a &ldquo;More Than Spareparts&rdquo; partner',
+                'win_p3'           => 'Free added value for your portfolio &ndash; no investment needed',
+                'win_p4'           => 'Co-branded presence: &ldquo;Recommended by [Your Name]&rdquo;',
+                'win_p5'           => 'Optional commission on Premium upgrades from your customers',
+                'win_customer_tag' => 'For Your Repair Shop Customers',
+                'win_customer_h3'  => 'Instantly More Professional',
+                'win_c1'           => 'Free digital repair management &ndash; ready to use immediately',
+                'win_c2'           => 'No more paper chaos &ndash; everything digital and searchable',
+                'win_c3'           => 'Professional appearance towards end customers',
+                'win_c4'           => 'Status tracking reduces &ldquo;Where is my device?&rdquo; calls by 80%',
+                'win_c5'           => 'Saves 30+ minutes daily through automated processes',
+
+                // Partnership Models
+                'models_title'     => 'Partnership Models',
+                'models_sub'       => 'Flexible and non-binding &ndash; choose what fits best.',
+                'model1_title'     => 'Newsletter & Webshop',
+                'model1_text'      => 'Mention in your newsletter or banner in your webshop. Minimal effort, immediate reach.',
+                'model1_d1'        => '30 min. one-time effort',
+                'model1_d2'        => 'Free of charge',
+                'model2_badge'     => 'Recommended',
+                'model2_title'     => 'Package Insert',
+                'model2_text'      => 'A small flyer in every delivery. Your customers discover the Repair Pass when unboxing.',
+                'model2_d1'        => 'Highest visibility',
+                'model2_d2'        => 'We supply the flyers for free',
+                'model3_title'     => 'Co-Branded',
+                'model3_text'      => 'Custom partner landing page with your logo. &ldquo;Recommended by [Your Company]&rdquo; in the Repair Pass.',
+                'model3_d1'        => 'Exclusive for main partners',
+                'model3_d2'        => 'Revenue share possible',
+
+                // How it works
+                'steps_title'      => 'How It Works',
+                'steps_sub'        => '4 simple steps to partnership &ndash; no contracts, no obligations.',
+                'step1_title'      => 'Try It',
+                'step1_text'       => 'Register yourself and experience the Repair Pass from a workshop perspective.',
+                'step2_title'      => 'Discuss',
+                'step2_text'       => 'We\'ll talk about which model fits you best.',
+                'step3_title'      => 'Launch',
+                'step3_text'       => 'We deliver banners, flyers, or co-branding &ndash; you share it with your customers.',
+                'step4_title'      => 'Profit',
+                'step4_text'       => 'Happier customers, stronger loyalty &ndash; and optional revenue share.',
+
+                // Pricing
+                'pricing_title'    => 'Pricing for Workshops',
+                'pricing_sub'      => 'Your customers start for free. Premium only when needed.',
+                'price_free_tag'   => 'Free',
+                'price_free_val'   => '&euro;0',
+                'price_per_month'  => '/ month',
+                'price_free_desc'  => 'For small workshops',
+                'price_f1'         => '50 forms per month',
+                'price_f2'         => 'Custom repair form',
+                'price_f3'         => 'Customer tracking via QR',
+                'price_f4'         => 'Dashboard & overview',
+                'price_f5'         => 'Unlimited usage',
+                'price_f6'         => 'Loyalty points system included',
+                'price_prem_tag'   => 'Premium',
+                'price_prem_val'   => '&euro;39',
+                'price_prem_desc'  => 'For professional businesses',
+                'price_p1'         => 'Unlimited forms',
+                'price_p2'         => 'Invoice generation',
+                'price_p3'         => 'CSV/PDF export',
+                'price_p4'         => 'Multi-location support',
+                'price_p5'         => 'Buy-back module',
+                'price_p6'         => 'Priority support',
+
+                // CTA
+                'cta_title'        => 'Ready for a Partnership?',
+                'cta_text'         => 'Let\'s digitalize the repair industry together. No risk, no effort &ndash; just value.',
+                'cta_demo'         => 'View Live Demo',
+                'cta_contact'      => 'Get in Touch',
+                'cta_mail_subject' => 'Partnership%20Repair%20Pass',
+
+                // Footer
+                'footer_conf'      => 'This document is confidential.',
+                'print_title'      => 'Print as PDF',
+            ],
+        ];
+    }
+
     public static function render() {
         $logo_url = PPV_PLUGIN_URL . 'assets/img/punktepass-repair-logo.svg';
+
+        // Detect language: GET > Cookie > default DE
+        $lang = 'de';
+        $get_lang = $_GET['lang'] ?? $_GET['ppv_lang'] ?? null;
+        if ($get_lang && in_array(strtolower($get_lang), ['de', 'en'], true)) {
+            $lang = strtolower($get_lang);
+        } elseif (!empty($_COOKIE['ppv_lang']) && in_array(strtolower($_COOKIE['ppv_lang']), ['de', 'en'], true)) {
+            $lang = strtolower($_COOKIE['ppv_lang']);
+        }
+
+        $all = self::get_translations();
+        $t = $all[$lang];
+        $other = ($lang === 'de') ? 'en' : 'de';
+
         ?><!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo $t['html_lang']; ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reparaturpass Partner-Programm | PunktePass</title>
+    <title><?php echo $t['page_title']; ?></title>
     <meta name="robots" content="noindex, nofollow">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
@@ -65,6 +345,7 @@ class PPV_Repair_Partner {
         .pp-anim-d4 { animation-delay: 0.4s; }
         .pp-anim-d5 { animation-delay: 0.5s; }
         .pp-anim-d6 { animation-delay: 0.6s; }
+        .pp-anim-d7 { animation-delay: 0.7s; }
 
         /* ── Container ── */
         .pp-partner-container {
@@ -72,6 +353,34 @@ class PPV_Repair_Partner {
             margin: 0 auto;
             padding: 0 24px;
         }
+
+        /* ── Language Switcher ── */
+        .pp-partner-lang {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            z-index: 50;
+        }
+        .pp-partner-lang-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: inherit;
+        }
+        .pp-partner-lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .pp-partner-lang-btn i { font-size: 15px; }
 
         /* ── Hero ── */
         .pp-hero-partner {
@@ -255,6 +564,7 @@ class PPV_Repair_Partner {
         .pp-sol-feat-icon.amber { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #f59e0b; }
         .pp-sol-feat-icon.rose { background: linear-gradient(135deg, #fff1f2, #fce7f3); color: #f43f5e; }
         .pp-sol-feat-icon.teal { background: linear-gradient(135deg, #f0fdfa, #ccfbf1); color: #14b8a6; }
+        .pp-sol-feat-icon.yellow { background: linear-gradient(135deg, #fefce8, #fef9c3); color: #eab308; }
         .pp-sol-feat h4 {
             font-size: 14px;
             font-weight: 700;
@@ -645,6 +955,7 @@ class PPV_Repair_Partner {
             .pp-steps-partner { grid-template-columns: 1fr 1fr; }
             .pp-pricing-partner { grid-template-columns: 1fr; }
             .pp-cta-section h2 { font-size: 24px; }
+            .pp-partner-lang { top: 12px; right: 16px; }
         }
         @media (max-width: 480px) {
             .pp-hero-partner h1 { font-size: 24px; }
@@ -659,53 +970,58 @@ class PPV_Repair_Partner {
 
 <!-- ============ HERO ============ -->
 <div class="pp-hero-partner">
+    <!-- Language Switcher -->
+    <a href="?lang=<?php echo $other; ?>" class="pp-partner-lang pp-no-print">
+        <span class="pp-partner-lang-btn">
+            <i class="ri-global-line"></i>
+            <?php echo strtoupper($other); ?>
+        </span>
+    </a>
+
     <div class="pp-hero-partner-inner">
         <img src="<?php echo esc_url($logo_url); ?>" alt="Reparaturpass" class="pp-hero-partner-logo">
         <div class="pp-hero-partner-badge">
             <i class="ri-handshake-line"></i>
-            Partner-Programm
+            <?php echo $t['badge']; ?>
         </div>
-        <h1>Mehrwert f&uuml;r Ihre Kunden.<br><span>Kostenlos.</span></h1>
-        <p class="pp-hero-partner-sub">
-            Bieten Sie Ihren Werkstatt-Kunden eine professionelle digitale Reparaturverwaltung &ndash;
-            v&ouml;llig kostenlos. Kein Risiko, kein Aufwand, maximaler Mehrwert.
-        </p>
+        <h1><?php echo $t['hero_h1']; ?></h1>
+        <p class="pp-hero-partner-sub"><?php echo $t['hero_sub']; ?></p>
     </div>
 </div>
 
 <!-- ============ PROBLEM ============ -->
 <div class="pp-section pp-section-alt">
     <div class="pp-partner-container">
-        <h2 class="pp-section-title pp-anim">Das Problem Ihrer Kunden</h2>
-        <p class="pp-section-sub pp-anim pp-anim-d1">Die meisten Reparaturwerkst&auml;tten arbeiten noch analog &ndash; das kostet Zeit, Geld und Kunden.</p>
+        <h2 class="pp-section-title pp-anim"><?php echo $t['problem_title']; ?></h2>
+        <p class="pp-section-sub pp-anim pp-anim-d1"><?php echo $t['problem_sub']; ?></p>
 
         <div class="pp-problem-grid">
             <div class="pp-problem-card pp-anim pp-anim-d1">
                 <div class="pp-problem-icon red"><i class="ri-file-paper-line"></i></div>
                 <div>
-                    <h4>Papier-Chaos</h4>
-                    <p>Handschriftliche Reparaturzettel gehen verloren, sind unleserlich und nicht durchsuchbar.</p>
+                    <h4><?php echo $t['prob1_title']; ?></h4>
+                    <p><?php echo $t['prob1_text']; ?></p>
                 </div>
             </div>
             <div class="pp-problem-card pp-anim pp-anim-d2">
                 <div class="pp-problem-icon amber"><i class="ri-time-line"></i></div>
                 <div>
-                    <h4>Zeitverlust</h4>
-                    <p>Jeder Auftrag wird manuell erfasst. Das kostet 5-10 Minuten pro Kunde &ndash; jeden Tag.</p>
+                    <h4><?php echo $t['prob2_title']; ?></h4>
+                    <p><?php echo $t['prob2_text']; ?></p>
                 </div>
             </div>
             <div class="pp-problem-card pp-anim pp-anim-d3">
                 <div class="pp-problem-icon red"><i class="ri-customer-service-line"></i></div>
                 <div>
-                    <h4>Kundenanfragen</h4>
-                    <p>&ldquo;Wie ist der Status meiner Reparatur?&rdquo; &ndash; st&auml;ndige Anrufe, die den Betrieb st&ouml;ren.</p>
+                    <h4><?php echo $t['prob3_title']; ?></h4>
+                    <p><?php echo $t['prob3_text']; ?></p>
                 </div>
             </div>
             <div class="pp-problem-card pp-anim pp-anim-d4">
                 <div class="pp-problem-icon amber"><i class="ri-money-euro-circle-line"></i></div>
                 <div>
-                    <h4>Teure Software</h4>
-                    <p>Professionelle L&ouml;sungen kosten oft &euro;50-100+/Monat &ndash; f&uuml;r kleine Werkst&auml;tten zu teuer.</p>
+                    <h4><?php echo $t['prob4_title']; ?></h4>
+                    <p><?php echo $t['prob4_text']; ?></p>
                 </div>
             </div>
         </div>
@@ -715,64 +1031,69 @@ class PPV_Repair_Partner {
 <!-- ============ SOLUTION ============ -->
 <div class="pp-section">
     <div class="pp-partner-container">
-        <h2 class="pp-section-title pp-anim">Unsere L&ouml;sung: Reparaturpass</h2>
-        <p class="pp-section-sub pp-anim pp-anim-d1">Eine vollst&auml;ndige digitale Reparaturverwaltung &ndash; kostenlos nutzbar, sofort einsatzbereit.</p>
+        <h2 class="pp-section-title pp-anim"><?php echo $t['solution_title']; ?></h2>
+        <p class="pp-section-sub pp-anim pp-anim-d1"><?php echo $t['solution_sub']; ?></p>
 
         <div class="pp-solution-hero pp-anim pp-anim-d2">
-            <h3><i class="ri-smartphone-line"></i> Digitaler Reparaturbon</h3>
-            <p>Kunden f&uuml;llen das Formular online aus. Die Werkstatt erh&auml;lt alle Daten digital &ndash; kein Papier, keine Fehler.</p>
+            <h3><i class="ri-smartphone-line"></i> <?php echo $t['sol_hero_title']; ?></h3>
+            <p><?php echo $t['sol_hero_text']; ?></p>
         </div>
 
         <div class="pp-solution-features">
             <div class="pp-sol-feat pp-anim pp-anim-d1">
                 <div class="pp-sol-feat-icon blue"><i class="ri-smartphone-line"></i></div>
-                <h4>Online-Formular</h4>
-                <p>Eigene URL pro Werkstatt mit individuellem Branding</p>
+                <h4><?php echo $t['feat1_title']; ?></h4>
+                <p><?php echo $t['feat1_text']; ?></p>
             </div>
             <div class="pp-sol-feat pp-anim pp-anim-d2">
                 <div class="pp-sol-feat-icon green"><i class="ri-file-text-line"></i></div>
-                <h4>Rechnungen & Bons</h4>
-                <p>Automatische PDF-Erstellung mit Firmenlogo</p>
+                <h4><?php echo $t['feat2_title']; ?></h4>
+                <p><?php echo $t['feat2_text']; ?></p>
             </div>
             <div class="pp-sol-feat pp-anim pp-anim-d3">
                 <div class="pp-sol-feat-icon purple"><i class="ri-bar-chart-2-line"></i></div>
-                <h4>Statistiken</h4>
-                <p>Dashboard mit CSV/PDF-Export aller Reparaturen</p>
+                <h4><?php echo $t['feat3_title']; ?></h4>
+                <p><?php echo $t['feat3_text']; ?></p>
             </div>
             <div class="pp-sol-feat pp-anim pp-anim-d4">
                 <div class="pp-sol-feat-icon amber"><i class="ri-qr-code-line"></i></div>
-                <h4>Status-Tracking</h4>
-                <p>Kunden verfolgen ihren Auftrag per QR-Code</p>
+                <h4><?php echo $t['feat4_title']; ?></h4>
+                <p><?php echo $t['feat4_text']; ?></p>
             </div>
             <div class="pp-sol-feat pp-anim pp-anim-d5">
                 <div class="pp-sol-feat-icon rose"><i class="ri-team-line"></i></div>
-                <h4>Kundenverwaltung</h4>
-                <p>Automatische Kundenhistorie und CRM-Funktionen</p>
+                <h4><?php echo $t['feat5_title']; ?></h4>
+                <p><?php echo $t['feat5_text']; ?></p>
             </div>
             <div class="pp-sol-feat pp-anim pp-anim-d6">
                 <div class="pp-sol-feat-icon teal"><i class="ri-building-2-line"></i></div>
-                <h4>Multi-Filiale</h4>
-                <p>Mehrere Standorte unter einem Account verwalten</p>
+                <h4><?php echo $t['feat6_title']; ?></h4>
+                <p><?php echo $t['feat6_text']; ?></p>
+            </div>
+            <div class="pp-sol-feat pp-anim pp-anim-d7">
+                <div class="pp-sol-feat-icon yellow"><i class="ri-star-smile-line"></i></div>
+                <h4><?php echo $t['feat7_title']; ?></h4>
+                <p><?php echo $t['feat7_text']; ?></p>
             </div>
         </div>
 
         <!-- Stats -->
         <div class="pp-stats-bar">
             <div class="pp-stat-card pp-anim pp-anim-d1">
-                <div class="pp-stat-val">50</div>
-                <div class="pp-stat-label">Formulare / Monat gratis</div>
+                <div class="pp-stat-val"><?php echo $t['stat1_val']; ?></div>
+                <div class="pp-stat-label"><?php echo $t['stat1_label']; ?></div>
             </div>
             <div class="pp-stat-card pp-anim pp-anim-d2">
-                <div class="pp-stat-val">0&euro;</div>
-                <div class="pp-stat-label">Einrichtungsgeb&uuml;hr</div>
+                <div class="pp-stat-val"><?php echo $t['stat2_val']; ?></div>
+                <div class="pp-stat-label"><?php echo $t['stat2_label']; ?></div>
             </div>
             <div class="pp-stat-card pp-anim pp-anim-d3">
-                <div class="pp-stat-val">2 min</div>
-                <div class="pp-stat-label">Registrierung</div>
+                <div class="pp-stat-val"><?php echo $t['stat3_val']; ?></div>
+                <div class="pp-stat-label"><?php echo $t['stat3_label']; ?></div>
             </div>
             <div class="pp-stat-card pp-anim pp-anim-d4">
-                <div class="pp-stat-val">&infin;</div>
-                <div class="pp-stat-label">Kein Vertrag, kein Limit</div>
+                <div class="pp-stat-val"><?php echo $t['stat4_val']; ?></div>
+                <div class="pp-stat-label"><?php echo $t['stat4_label']; ?></div>
             </div>
         </div>
     </div>
@@ -781,30 +1102,30 @@ class PPV_Repair_Partner {
 <!-- ============ WIN-WIN ============ -->
 <div class="pp-section pp-section-alt">
     <div class="pp-partner-container">
-        <h2 class="pp-section-title pp-anim">Win-Win Partnerschaft</h2>
-        <p class="pp-section-sub pp-anim pp-anim-d1">Eine Partnerschaft, die beiden Seiten Mehrwert bringt &ndash; ohne Kosten.</p>
+        <h2 class="pp-section-title pp-anim"><?php echo $t['winwin_title']; ?></h2>
+        <p class="pp-section-sub pp-anim pp-anim-d1"><?php echo $t['winwin_sub']; ?></p>
 
         <div class="pp-win-grid">
             <div class="pp-win-card partner pp-anim pp-anim-d2">
-                <div class="pp-win-tag"><i class="ri-building-line"></i> F&uuml;r Sie als Gro&szlig;h&auml;ndler</div>
-                <h3>Kundenbindung st&auml;rken</h3>
+                <div class="pp-win-tag"><i class="ri-building-line"></i> <?php echo $t['win_partner_tag']; ?></div>
+                <h3><?php echo $t['win_partner_h3']; ?></h3>
                 <ul class="pp-win-list">
-                    <li><i class="ri-check-line"></i> Ihre Kunden werden professioneller &ndash; und bestellen mehr bei Ihnen</li>
-                    <li><i class="ri-check-line"></i> Sie positionieren sich als &ldquo;More Than Spareparts&rdquo;-Partner</li>
-                    <li><i class="ri-check-line"></i> Kostenloser Mehrwert f&uuml;r Ihr Portfolio &ndash; kein Investment n&ouml;tig</li>
-                    <li><i class="ri-check-line"></i> Co-Branded Pr&auml;senz: &ldquo;Empfohlen von [Ihr Name]&rdquo;</li>
-                    <li><i class="ri-check-line"></i> Optionale Verg&uuml;tung bei Premium-Upgrades Ihrer Kunden</li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_p1']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_p2']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_p3']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_p4']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_p5']; ?></li>
                 </ul>
             </div>
             <div class="pp-win-card customer pp-anim pp-anim-d3">
-                <div class="pp-win-tag"><i class="ri-store-2-line"></i> F&uuml;r Ihre Werkstatt-Kunden</div>
-                <h3>Sofort professioneller</h3>
+                <div class="pp-win-tag"><i class="ri-store-2-line"></i> <?php echo $t['win_customer_tag']; ?></div>
+                <h3><?php echo $t['win_customer_h3']; ?></h3>
                 <ul class="pp-win-list">
-                    <li><i class="ri-check-line"></i> Kostenlose digitale Reparaturverwaltung &ndash; sofort nutzbar</li>
-                    <li><i class="ri-check-line"></i> Kein Papier-Chaos mehr &ndash; alles digital und durchsuchbar</li>
-                    <li><i class="ri-check-line"></i> Professioneller Auftritt gegen&uuml;ber Endkunden</li>
-                    <li><i class="ri-check-line"></i> Status-Tracking reduziert &ldquo;Wo ist mein Ger&auml;t?&rdquo;-Anrufe um 80%</li>
-                    <li><i class="ri-check-line"></i> Spart 30+ Minuten t&auml;glich durch automatisierte Prozesse</li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_c1']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_c2']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_c3']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_c4']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['win_c5']; ?></li>
                 </ul>
             </div>
         </div>
@@ -814,36 +1135,36 @@ class PPV_Repair_Partner {
 <!-- ============ PARTNERSHIP MODELS ============ -->
 <div class="pp-section">
     <div class="pp-partner-container">
-        <h2 class="pp-section-title pp-anim">Partnerschafts-Modelle</h2>
-        <p class="pp-section-sub pp-anim pp-anim-d1">Flexibel und unverbindlich &ndash; w&auml;hlen Sie, was am besten passt.</p>
+        <h2 class="pp-section-title pp-anim"><?php echo $t['models_title']; ?></h2>
+        <p class="pp-section-sub pp-anim pp-anim-d1"><?php echo $t['models_sub']; ?></p>
 
         <div class="pp-model-grid">
             <div class="pp-model-card pp-anim pp-anim-d1">
                 <div class="pp-model-icon"><i class="ri-mail-send-line"></i></div>
-                <h4>Newsletter & Webshop</h4>
-                <p>Erw&auml;hnung in Ihrem Newsletter oder Banner in Ihrem Webshop. Minimaler Aufwand, sofortige Reichweite.</p>
+                <h4><?php echo $t['model1_title']; ?></h4>
+                <p><?php echo $t['model1_text']; ?></p>
                 <div class="pp-model-detail">
-                    <i class="ri-time-line"></i> 30 Min. Aufwand einmalig<br>
-                    <i class="ri-money-euro-circle-line"></i> Kostenfrei
+                    <i class="ri-time-line"></i> <?php echo $t['model1_d1']; ?><br>
+                    <i class="ri-money-euro-circle-line"></i> <?php echo $t['model1_d2']; ?>
                 </div>
             </div>
             <div class="pp-model-card recommended pp-anim pp-anim-d2">
-                <div class="pp-model-badge">Empfohlen</div>
+                <div class="pp-model-badge"><?php echo $t['model2_badge']; ?></div>
                 <div class="pp-model-icon"><i class="ri-gift-line"></i></div>
-                <h4>Paketbeileger</h4>
-                <p>Ein kleiner Flyer in jeder Lieferung. Ihre Kunden entdecken den Reparaturpass beim Auspacken.</p>
+                <h4><?php echo $t['model2_title']; ?></h4>
+                <p><?php echo $t['model2_text']; ?></p>
                 <div class="pp-model-detail">
-                    <i class="ri-eye-line"></i> H&ouml;chste Sichtbarkeit<br>
-                    <i class="ri-money-euro-circle-line"></i> Wir liefern die Flyer kostenlos
+                    <i class="ri-eye-line"></i> <?php echo $t['model2_d1']; ?><br>
+                    <i class="ri-money-euro-circle-line"></i> <?php echo $t['model2_d2']; ?>
                 </div>
             </div>
             <div class="pp-model-card pp-anim pp-anim-d3">
                 <div class="pp-model-icon"><i class="ri-vip-crown-line"></i></div>
-                <h4>Co-Branded</h4>
-                <p>Eigene Partner-Landingpage mit Ihrem Logo. &ldquo;Empfohlen von [Ihr Unternehmen]&rdquo; im Reparaturpass.</p>
+                <h4><?php echo $t['model3_title']; ?></h4>
+                <p><?php echo $t['model3_text']; ?></p>
                 <div class="pp-model-detail">
-                    <i class="ri-star-line"></i> Exklusiv f&uuml;r Hauptpartner<br>
-                    <i class="ri-money-euro-circle-line"></i> Revenue-Share m&ouml;glich
+                    <i class="ri-star-line"></i> <?php echo $t['model3_d1']; ?><br>
+                    <i class="ri-money-euro-circle-line"></i> <?php echo $t['model3_d2']; ?>
                 </div>
             </div>
         </div>
@@ -853,29 +1174,29 @@ class PPV_Repair_Partner {
 <!-- ============ HOW IT WORKS ============ -->
 <div class="pp-section pp-section-alt">
     <div class="pp-partner-container">
-        <h2 class="pp-section-title pp-anim">So einfach geht&rsquo;s</h2>
-        <p class="pp-section-sub pp-anim pp-anim-d1">In 4 Schritten zur Partnerschaft &ndash; ohne Vertr&auml;ge, ohne Verpflichtungen.</p>
+        <h2 class="pp-section-title pp-anim"><?php echo $t['steps_title']; ?></h2>
+        <p class="pp-section-sub pp-anim pp-anim-d1"><?php echo $t['steps_sub']; ?></p>
 
         <div class="pp-steps-partner">
             <div class="pp-step-card pp-anim pp-anim-d1">
                 <div class="pp-step-num">1</div>
-                <h4>Testen</h4>
-                <p>Registrieren Sie sich selbst und erleben Sie den Reparaturpass aus Werkstatt-Sicht.</p>
+                <h4><?php echo $t['step1_title']; ?></h4>
+                <p><?php echo $t['step1_text']; ?></p>
             </div>
             <div class="pp-step-card pp-anim pp-anim-d2">
                 <div class="pp-step-num">2</div>
-                <h4>Vereinbaren</h4>
-                <p>Wir besprechen, welches Modell am besten zu Ihnen passt.</p>
+                <h4><?php echo $t['step2_title']; ?></h4>
+                <p><?php echo $t['step2_text']; ?></p>
             </div>
             <div class="pp-step-card pp-anim pp-anim-d3">
                 <div class="pp-step-num">3</div>
-                <h4>Starten</h4>
-                <p>Wir liefern Banner, Flyer oder Co-Branding &ndash; Sie teilen es mit Ihren Kunden.</p>
+                <h4><?php echo $t['step3_title']; ?></h4>
+                <p><?php echo $t['step3_text']; ?></p>
             </div>
             <div class="pp-step-card pp-anim pp-anim-d4">
                 <div class="pp-step-num">4</div>
-                <h4>Profitieren</h4>
-                <p>Zufriedenere Kunden, st&auml;rkere Bindung &ndash; und optional Revenue-Share.</p>
+                <h4><?php echo $t['step4_title']; ?></h4>
+                <p><?php echo $t['step4_text']; ?></p>
             </div>
         </div>
     </div>
@@ -884,33 +1205,34 @@ class PPV_Repair_Partner {
 <!-- ============ PRICING PREVIEW ============ -->
 <div class="pp-section">
     <div class="pp-partner-container">
-        <h2 class="pp-section-title pp-anim">Preismodell f&uuml;r Werkst&auml;tten</h2>
-        <p class="pp-section-sub pp-anim pp-anim-d1">Ihre Kunden starten kostenlos. Premium nur bei Bedarf.</p>
+        <h2 class="pp-section-title pp-anim"><?php echo $t['pricing_title']; ?></h2>
+        <p class="pp-section-sub pp-anim pp-anim-d1"><?php echo $t['pricing_sub']; ?></p>
 
         <div class="pp-pricing-partner">
             <div class="pp-price-box pp-anim pp-anim-d1">
-                <div class="pp-price-tag">Kostenlos</div>
-                <div class="pp-price-val">0&euro; <span>/ Monat</span></div>
-                <div class="pp-price-desc">F&uuml;r kleine Werkst&auml;tten</div>
+                <div class="pp-price-tag"><?php echo $t['price_free_tag']; ?></div>
+                <div class="pp-price-val"><?php echo $t['price_free_val']; ?> <span><?php echo $t['price_per_month']; ?></span></div>
+                <div class="pp-price-desc"><?php echo $t['price_free_desc']; ?></div>
                 <ul class="pp-price-list">
-                    <li><i class="ri-check-line"></i> 50 Formulare pro Monat</li>
-                    <li><i class="ri-check-line"></i> Eigenes Reparaturformular</li>
-                    <li><i class="ri-check-line"></i> Kunden-Tracking per QR</li>
-                    <li><i class="ri-check-line"></i> Dashboard & &Uuml;bersicht</li>
-                    <li><i class="ri-check-line"></i> Unbegrenzt nutzbar</li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_f1']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_f2']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_f3']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_f4']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_f5']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_f6']; ?></li>
                 </ul>
             </div>
             <div class="pp-price-box premium pp-anim pp-anim-d2">
-                <div class="pp-price-tag">Premium</div>
-                <div class="pp-price-val">39&euro; <span>/ Monat</span></div>
-                <div class="pp-price-desc">F&uuml;r professionelle Betriebe</div>
+                <div class="pp-price-tag"><?php echo $t['price_prem_tag']; ?></div>
+                <div class="pp-price-val"><?php echo $t['price_prem_val']; ?> <span><?php echo $t['price_per_month']; ?></span></div>
+                <div class="pp-price-desc"><?php echo $t['price_prem_desc']; ?></div>
                 <ul class="pp-price-list">
-                    <li><i class="ri-check-line"></i> Unbegrenzte Formulare</li>
-                    <li><i class="ri-check-line"></i> Rechnungserstellung</li>
-                    <li><i class="ri-check-line"></i> CSV/PDF Export</li>
-                    <li><i class="ri-check-line"></i> Multi-Filiale Support</li>
-                    <li><i class="ri-check-line"></i> Ankauf-Modul</li>
-                    <li><i class="ri-check-line"></i> Priorit&auml;ts-Support</li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_p1']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_p2']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_p3']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_p4']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_p5']; ?></li>
+                    <li><i class="ri-check-line"></i> <?php echo $t['price_p6']; ?></li>
                 </ul>
             </div>
         </div>
@@ -919,14 +1241,14 @@ class PPV_Repair_Partner {
 
 <!-- ============ CTA ============ -->
 <div class="pp-cta-section pp-no-print">
-    <h2>Bereit f&uuml;r eine Partnerschaft?</h2>
-    <p>Lassen Sie uns gemeinsam die Reparaturbranche digitalisieren. Kein Risiko, kein Aufwand &ndash; nur Mehrwert.</p>
+    <h2><?php echo $t['cta_title']; ?></h2>
+    <p><?php echo $t['cta_text']; ?></p>
     <div class="pp-cta-buttons">
         <a href="/formular" class="pp-cta-btn primary">
-            <i class="ri-play-circle-line"></i> Live-Demo ansehen
+            <i class="ri-play-circle-line"></i> <?php echo $t['cta_demo']; ?>
         </a>
-        <a href="mailto:info@punktepass.com?subject=Partnerschaft%20Reparaturpass" class="pp-cta-btn secondary">
-            <i class="ri-mail-line"></i> Kontakt aufnehmen
+        <a href="mailto:info@punktepass.com?subject=<?php echo $t['cta_mail_subject']; ?>" class="pp-cta-btn secondary">
+            <i class="ri-mail-line"></i> <?php echo $t['cta_contact']; ?>
         </a>
     </div>
 </div>
@@ -934,11 +1256,11 @@ class PPV_Repair_Partner {
 <!-- ============ FOOTER ============ -->
 <div class="pp-partner-footer">
     &copy; <?php echo date('Y'); ?> PunktePass &middot; <a href="/formular">punktepass.de/formular</a>
-    &middot; Dieses Dokument ist vertraulich.
+    &middot; <?php echo $t['footer_conf']; ?>
 </div>
 
 <!-- Print Button -->
-<button class="pp-print-btn pp-no-print" onclick="window.print()" title="Als PDF drucken">
+<button class="pp-print-btn pp-no-print" onclick="window.print()" title="<?php echo $t['print_title']; ?>">
     <i class="ri-printer-line"></i>
 </button>
 
