@@ -174,9 +174,10 @@ class PPV_Lang {
         $path = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
         $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php"; // German fallback
 
+        $used_fallback = false;
         if (!file_exists($path)) {
             $path = $fallback;
-            $lang = 'de';
+            $used_fallback = true;
         }
 
         $data = include $path;
@@ -194,6 +195,8 @@ class PPV_Lang {
             }
         }
 
+        // Keep original $lang as active even when base file fell back to DE
+        // This allows load_extra() to find module-specific translations (e.g. ppv-repair-lang-en.php)
         self::$active = $lang;
     }
 
