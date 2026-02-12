@@ -12,6 +12,18 @@ if (!defined('ABSPATH')) exit;
 class PPV_Repair_Partner_Admin {
 
     /**
+     * Check session-based auth (same as repair admin)
+     */
+    private static function check_auth() {
+        // Check nonce
+        if (!wp_verify_nonce($_POST['nonce'] ?? $_GET['nonce'] ?? '', 'ppv_partner_admin')) {
+            return false;
+        }
+        // Must be logged in via repair admin session
+        return PPV_Repair_Core::is_repair_admin_logged_in();
+    }
+
+    /**
      * Get partner by ID
      */
     public static function get_partner($partner_id) {
@@ -76,7 +88,7 @@ class PPV_Repair_Partner_Admin {
      * AJAX: List all partners (admin only)
      */
     public static function ajax_list_partners() {
-        if (!current_user_can('manage_options')) {
+        if (!self::check_auth()) {
             wp_send_json_error(['message' => 'Nicht autorisiert']);
         }
 
@@ -96,7 +108,7 @@ class PPV_Repair_Partner_Admin {
      * AJAX: Create new partner
      */
     public static function ajax_create_partner() {
-        if (!current_user_can('manage_options')) {
+        if (!self::check_auth()) {
             wp_send_json_error(['message' => 'Nicht autorisiert']);
         }
 
@@ -164,7 +176,7 @@ class PPV_Repair_Partner_Admin {
      * AJAX: Update partner
      */
     public static function ajax_update_partner() {
-        if (!current_user_can('manage_options')) {
+        if (!self::check_auth()) {
             wp_send_json_error(['message' => 'Nicht autorisiert']);
         }
 
@@ -198,7 +210,7 @@ class PPV_Repair_Partner_Admin {
      * AJAX: Delete partner
      */
     public static function ajax_delete_partner() {
-        if (!current_user_can('manage_options')) {
+        if (!self::check_auth()) {
             wp_send_json_error(['message' => 'Nicht autorisiert']);
         }
 
@@ -218,7 +230,7 @@ class PPV_Repair_Partner_Admin {
      * AJAX: Get partner details with referred stores
      */
     public static function ajax_get_partner() {
-        if (!current_user_can('manage_options')) {
+        if (!self::check_auth()) {
             wp_send_json_error(['message' => 'Nicht autorisiert']);
         }
 
@@ -261,10 +273,7 @@ class PPV_Repair_Partner_Admin {
      * Render standalone admin page for partner management
      */
     public static function render_standalone() {
-        if (!current_user_can('manage_options')) {
-            wp_die('Nicht autorisiert');
-        }
-
+        // Auth is checked in route handler (PPV_Repair_Core::is_repair_admin_logged_in())
         $nonce = wp_create_nonce('ppv_partner_admin');
         $ajax_url = admin_url('admin-ajax.php');
 

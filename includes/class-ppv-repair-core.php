@@ -137,7 +137,7 @@ class PPV_Repair_Core {
             add_action("wp_ajax_nopriv_{$action}", $callback);
         }
 
-        // AJAX: Partner management (WP admin only)
+        // AJAX: Partner management (session-based auth like other repair admin)
         require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-partner-admin.php';
         $partner_actions = [
             'ppv_partner_list'    => ['PPV_Repair_Partner_Admin', 'ajax_list_partners'],
@@ -148,6 +148,7 @@ class PPV_Repair_Core {
         ];
         foreach ($partner_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
+            add_action("wp_ajax_nopriv_{$action}", $callback);
         }
     }
 
@@ -212,8 +213,12 @@ class PPV_Repair_Core {
             exit;
         }
 
-        // /formular/admin/partners → Partner management (WP admin only)
+        // /formular/admin/partners → Partner management (requires session auth)
         if ($path === '/formular/admin/partners') {
+            if (!self::is_repair_admin_logged_in()) {
+                header('Location: /formular/admin/login');
+                exit;
+            }
             require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-partner-admin.php';
             PPV_Repair_Partner_Admin::render_standalone();
             exit;
