@@ -52,7 +52,7 @@ class PPV_Lang {
         // 1️⃣ REST header (API calls)
         if (!empty($_SERVER['HTTP_X_PPV_LANG'])) {
             $rest_lang = strtolower(sanitize_text_field($_SERVER['HTTP_X_PPV_LANG']));
-            if (in_array($rest_lang, ['de','hu','ro'], true)) {
+            if (in_array($rest_lang, ['de','en','hu','ro'], true)) {
                 self::$active = $rest_lang;
                 $_COOKIE['ppv_lang'] = $rest_lang;
                 $_SESSION['ppv_lang'] = $rest_lang;
@@ -67,7 +67,7 @@ class PPV_Lang {
         $get_lang = $_GET['lang'] ?? $_GET['ppv_lang'] ?? $_GET['ppv_js_lang'] ?? null;
         if ($get_lang) {
             $get_lang = strtolower(sanitize_text_field($get_lang));
-            if (in_array($get_lang, ['de', 'hu', 'ro'], true)) {
+            if (in_array($get_lang, ['de', 'en', 'hu', 'ro'], true)) {
                 $lang = $get_lang;
                 $_SESSION['ppv_lang'] = $lang;
                 self::set_cookie_all($lang, $domain, $secure);
@@ -78,7 +78,7 @@ class PPV_Lang {
         // 3️⃣ Cookie
         if (!$lang && !empty($_COOKIE['ppv_lang'])) {
             $cookie_lang = strtolower($_COOKIE['ppv_lang']);
-            if (in_array($cookie_lang, ['de', 'hu', 'ro'], true)) {
+            if (in_array($cookie_lang, ['de', 'en', 'hu', 'ro'], true)) {
                 $lang = $cookie_lang;
                 ppv_log("🌍 [PPV_Lang] Cookie → {$lang}");
             }
@@ -87,7 +87,7 @@ class PPV_Lang {
         // 4️⃣ Session
         if (!$lang && !empty($_SESSION['ppv_lang'])) {
             $session_lang = strtolower($_SESSION['ppv_lang']);
-            if (in_array($session_lang, ['de', 'hu', 'ro'], true)) {
+            if (in_array($session_lang, ['de', 'en', 'hu', 'ro'], true)) {
                 $lang = $session_lang;
                 ppv_log("🌍 [PPV_Lang] Session → {$lang}");
             }
