@@ -136,6 +136,19 @@ class PPV_Repair_Core {
             add_action("wp_ajax_{$action}", $callback);
             add_action("wp_ajax_nopriv_{$action}", $callback);
         }
+
+        // AJAX: Partner management (WP admin only)
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-partner-admin.php';
+        $partner_actions = [
+            'ppv_partner_list'    => ['PPV_Repair_Partner_Admin', 'ajax_list_partners'],
+            'ppv_partner_create'  => ['PPV_Repair_Partner_Admin', 'ajax_create_partner'],
+            'ppv_partner_update'  => ['PPV_Repair_Partner_Admin', 'ajax_update_partner'],
+            'ppv_partner_delete'  => ['PPV_Repair_Partner_Admin', 'ajax_delete_partner'],
+            'ppv_partner_get'     => ['PPV_Repair_Partner_Admin', 'ajax_get_partner'],
+        ];
+        foreach ($partner_actions as $action => $callback) {
+            add_action("wp_ajax_{$action}", $callback);
+        }
     }
 
     /** ============================================================
@@ -196,6 +209,13 @@ class PPV_Repair_Core {
             }
             require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-ankauf.php';
             PPV_Repair_Ankauf::render_standalone();
+            exit;
+        }
+
+        // /formular/admin/partners → Partner management (WP admin only)
+        if ($path === '/formular/admin/partners') {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-partner-admin.php';
+            PPV_Repair_Partner_Admin::render_standalone();
             exit;
         }
 
@@ -841,6 +861,48 @@ class PPV_Repair_Core {
                 $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN custom_fields TEXT NULL AFTER signature_image");
             }
             update_option('ppv_repair_migration_version', '2.5');
+        }
+
+        // v2.6: Partner system - partners table + partner_id on stores
+        if (version_compare($version, '2.6', '<')) {
+            $charset = $wpdb->get_charset_collate();
+
+            // Create partners table
+            $partners_table = $wpdb->prefix . 'ppv_partners';
+            $wpdb->query("CREATE TABLE IF NOT EXISTS {$partners_table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                partner_code VARCHAR(20) NOT NULL,
+                company_name VARCHAR(255) NOT NULL,
+                contact_name VARCHAR(255) NULL,
+                email VARCHAR(255) NOT NULL,
+                phone VARCHAR(50) NULL,
+                website VARCHAR(255) NULL,
+                logo_url VARCHAR(500) NULL,
+                address VARCHAR(255) NULL,
+                plz VARCHAR(20) NULL,
+                city VARCHAR(100) NULL,
+                country VARCHAR(5) DEFAULT 'DE',
+                partnership_model ENUM('newsletter','package_insert','co_branded') DEFAULT 'package_insert',
+                commission_rate DECIMAL(5,2) DEFAULT 0,
+                status ENUM('active','inactive','pending') DEFAULT 'pending',
+                notes TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY partner_code (partner_code),
+                KEY email (email),
+                KEY status (status)
+            ) {$charset}");
+
+            // Add partner_id column to stores table
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$stores_table} LIKE 'partner_id'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN partner_id BIGINT(20) UNSIGNED NULL AFTER parent_store_id");
+                $wpdb->query("ALTER TABLE {$stores_table} ADD INDEX idx_partner (partner_id)");
+            }
+
+            update_option('ppv_repair_migration_version', '2.6');
         }
     }
 
@@ -1555,6 +1617,7 @@ class PPV_Repair_Core {
         $city       = sanitize_text_field($_POST['city'] ?? '');
         $password   = $_POST['password'] ?? '';
         $tax_id     = sanitize_text_field($_POST['tax_id'] ?? '');
+        $partner_ref = sanitize_text_field($_POST['partner_ref'] ?? '');
 
         if (empty($shop_name) || empty($owner_name) || empty($email) || empty($password)) {
             wp_send_json_error(['message' => 'Bitte alle Pflichtfelder ausfüllen']);
@@ -1591,7 +1654,18 @@ class PPV_Repair_Core {
         if (!$user_id) wp_send_json_error(['message' => 'Registrierung fehlgeschlagen']);
 
         $api_key = bin2hex(random_bytes(16));
-        $wpdb->insert("{$prefix}ppv_stores", [
+
+        // Resolve partner referral code to partner_id
+        $partner_id = null;
+        if ($partner_ref) {
+            $partner = $wpdb->get_row($wpdb->prepare(
+                "SELECT id FROM {$prefix}ppv_partners WHERE partner_code = %s AND status = 'active'",
+                $partner_ref
+            ));
+            if ($partner) $partner_id = (int) $partner->id;
+        }
+
+        $store_data = [
             'user_id' => $user_id, 'store_key' => wp_generate_password(16, false, false),
             'name' => $shop_name, 'store_slug' => $slug, 'address' => $address, 'plz' => $plz,
             'city' => $city, 'phone' => $phone, 'email' => $email,
@@ -1604,7 +1678,10 @@ class PPV_Repair_Core {
             'subscription_status' => 'trial',
             'trial_ends_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
             'created_at' => current_time('mysql'),
-        ]);
+        ];
+        if ($partner_id) $store_data['partner_id'] = $partner_id;
+
+        $wpdb->insert("{$prefix}ppv_stores", $store_data);
         $store_id = $wpdb->insert_id;
         if (!$store_id) {
             $wpdb->delete("{$prefix}ppv_users", ['id' => $user_id]);
