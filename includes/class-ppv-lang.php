@@ -97,7 +97,7 @@ class PPV_Lang {
         if (!$lang) {
             $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
             if ($accept) {
-                $supported = ['de', 'hu', 'ro'];
+                $supported = ['de', 'hu', 'ro', 'en'];
                 $detected = self::parse_accept_language($accept, $supported);
                 if ($detected) {
                     $lang = $detected;
