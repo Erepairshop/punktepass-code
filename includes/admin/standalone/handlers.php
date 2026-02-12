@@ -287,7 +287,8 @@ unset($store);
 $handlers_overview = $wpdb->get_results(
     "SELECT s.*,
             (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE store_id = s.id AND status = 'active') as device_count,
-            (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = s.id) as filiale_count
+            (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = s.id) as filiale_count,
+            (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_users WHERE vendor_store_id = s.id) as access_user_count
      FROM {$wpdb->prefix}ppv_stores s
      WHERE s.parent_store_id IS NULL OR s.parent_store_id = 0
      ORDER BY s.name ASC"
@@ -1055,6 +1056,7 @@ function ppv_format_device_info_json($device_info_json) {
                                 <th>Abo hátra</th>
                                 <th>Scanner</th>
                                 <th>Készülékek</th>
+                                <th>Munkatársak</th>
                                 <th>Fiókok</th>
                                 <th>Aktivitás</th>
                             </tr>
@@ -1108,7 +1110,8 @@ function ppv_format_device_info_json($device_info_json) {
                                     'filiale_count' => intval($handler->filiale_count),
                                     'device_count' => count($handler_devices),
                                     'devices' => $devices_json,
-                                    'last_active_at' => $handler->last_active_at ?? null
+                                    'last_active_at' => $handler->last_active_at ?? null,
+                                    'access_user_count' => intval($handler->access_user_count ?? 0)
                                 ], JSON_HEX_APOS | JSON_HEX_QUOT);
                             ?>
                                 <tr class="clickable-row handler-row"
@@ -1147,6 +1150,17 @@ function ppv_format_device_info_json($device_info_json) {
                                             <span style="color: #666;">0</span>
                                         <?php else: ?>
                                             <strong style="color: #4caf50;"><?php echo count($handler_devices); ?></strong>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $user_count = intval($handler->access_user_count ?? 0);
+                                        if ($user_count > 1): ?>
+                                            <strong style="color: #00d4ff;"><?php echo $user_count; ?></strong>
+                                        <?php elseif ($user_count === 1): ?>
+                                            <span style="color: #888;">1</span>
+                                        <?php else: ?>
+                                            <span style="color: #666;">0</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
