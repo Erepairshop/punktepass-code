@@ -607,9 +607,15 @@ a:hover{color:#5a67d8}
 .ra-settings .field label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:6px}
 .ra-settings .field input[type="text"],
 .ra-settings .field input[type="number"],
-.ra-settings .field input[type="color"]{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;transition:all .2s}
-.ra-settings .field input:hover{border-color:#cbd5e1}
-.ra-settings .field input:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-settings .field input[type="email"],
+.ra-settings .field input[type="url"],
+.ra-settings .field input[type="color"],
+.ra-settings .field select{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;transition:all .2s;font-family:inherit}
+.ra-settings .field input:hover,
+.ra-settings .field select:hover{border-color:#cbd5e1}
+.ra-settings .field input:focus,
+.ra-settings .field select:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-settings .field select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
 .ra-settings .field input[type="color"]{height:48px;padding:6px;cursor:pointer}
 .ra-logo-section{margin-top:20px;margin-bottom:20px}
 .ra-logo-section>label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:10px}
@@ -1178,13 +1184,27 @@ a:hover{color:#5a67d8}
                 </div>
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_country')) . '</label>
-                    <select name="country">
-                        <option value="DE"' . (($store->country ?? '') === 'DE' ? ' selected' : '') . '>Deutschland</option>
-                        <option value="AT"' . (($store->country ?? '') === 'AT' ? ' selected' : '') . '>Österreich</option>
-                        <option value="CH"' . (($store->country ?? '') === 'CH' ? ' selected' : '') . '>Schweiz</option>
-                        <option value="HU"' . (($store->country ?? '') === 'HU' ? ' selected' : '') . '>Magyarország</option>
-                        <option value="RO"' . (($store->country ?? '') === 'RO' ? ' selected' : '') . '>România</option>
-                    </select>
+                    <select name="country">';
+
+        $eu_countries = [
+            'DE' => 'Deutschland', 'AT' => 'Österreich', 'CH' => 'Schweiz',
+            'HU' => 'Magyarország', 'RO' => 'România',
+            'BE' => 'Belgien', 'BG' => 'Bulgarien', 'HR' => 'Kroatien',
+            'CY' => 'Zypern', 'CZ' => 'Tschechien', 'DK' => 'Dänemark',
+            'EE' => 'Estland', 'FI' => 'Finnland', 'FR' => 'Frankreich',
+            'GR' => 'Griechenland', 'IE' => 'Irland', 'IT' => 'Italien',
+            'LV' => 'Lettland', 'LT' => 'Litauen', 'LU' => 'Luxemburg',
+            'MT' => 'Malta', 'NL' => 'Niederlande', 'PL' => 'Polen',
+            'PT' => 'Portugal', 'SK' => 'Slowakei', 'SI' => 'Slowenien',
+            'ES' => 'Spanien', 'SE' => 'Schweden',
+            'GB' => 'United Kingdom', 'NO' => 'Norwegen',
+        ];
+        $current_country = $store->country ?? '';
+        foreach ($eu_countries as $code => $name) {
+            echo '<option value="' . $code . '"' . ($current_country === $code ? ' selected' : '') . '>' . esc_html($name) . '</option>';
+        }
+
+        echo '</select>
                 </div>
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_phone')) . '</label>

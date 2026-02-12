@@ -455,23 +455,7 @@ public static function render_landing_page($atts) {
 
                     <!-- Language Switcher -->
                     <?php if (class_exists('PPV_Lang_Switcher')): ?>
-                    <div class="ppv-lang-switcher">
-                        <?php 
-                        $current_lang = self::get_current_lang();
-                        $langs = ['de' => 'DE', 'hu' => 'HU', 'ro' => 'RO'];
-                            foreach ($langs as $code => $label):
-                                $active = $current_lang === $code ? 'active' : '';
-                            ?>
-                                <button 
-                                    type="button" 
-                                    class="ppv-lang-btn <?php echo $active; ?>" 
-                                    data-lang="<?php echo $code; ?>"
-                                    <?php if ($active) echo 'aria-current="true"'; ?>
-                                >
-                                    <?php echo $label; ?>
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
+                        <?php echo PPV_Lang_Switcher::render(); ?>
                     <?php endif; ?>
                 </div>
             </header>

@@ -265,13 +265,7 @@ class PPV_Signup {
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('signup_slogan'); ?></p>
 
                     <!-- Language Switcher -->
-                    <div class="ppv-lang-switcher">
-                        <select id="ppv-lang-select" class="ppv-lang-select">
-                            <option value="de" <?php echo $lang === 'de' ? 'selected' : ''; ?>>🇩🇪 DE</option>
-                            <option value="hu" <?php echo $lang === 'hu' ? 'selected' : ''; ?>>🇭🇺 HU</option>
-                            <option value="ro" <?php echo $lang === 'ro' ? 'selected' : ''; ?>>🇷🇴 RO</option>
-                        </select>
-                    </div>
+                    <?php if (class_exists('PPV_Lang_Switcher')) echo PPV_Lang_Switcher::render(); ?>
                 </div>
             </header>
 
