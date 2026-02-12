@@ -933,7 +933,7 @@ class PPV_Repair_Partner {
 
 <!-- ============ FOOTER ============ -->
 <div class="pp-partner-footer">
-    &copy; <?php echo date('Y'); ?> PunktePass &middot; <a href="/formular">reparaturpass.com</a>
+    &copy; <?php echo date('Y'); ?> PunktePass &middot; <a href="/formular">punktepass.de/formular</a>
     &middot; Dieses Dokument ist vertraulich.
 </div>
 
