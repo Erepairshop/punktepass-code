@@ -1099,4 +1099,28 @@ return [
     'checkout_error_paypal'       => 'PayPal error: Please try again.',
     'checkout_copied'             => 'Copied!',
     'checkout_and'                => 'and',
+
+    // ===== Feedback Email / Google Review Settings =====
+    'repair_admin_feedback_title'      => 'Customer feedback after repair',
+    'repair_admin_feedback_hint'       => 'Automatically send customers an email 24 hours after the repair is completed ("Done" status), asking for feedback.',
+    'repair_admin_feedback_enable'     => 'Enable feedback email',
+    'repair_admin_feedback_desc'       => '24 hours after "Done" status, the customer receives a feedback email',
+    'repair_admin_google_review_url'   => 'Google Review Link',
+    'repair_admin_review_help_title'   => 'Where do I find my Google Review link?',
+    'repair_admin_review_help_1'       => 'Open Google Maps and search for your business',
+    'repair_admin_review_help_2'       => 'Click on your business profile',
+    'repair_admin_review_help_3'       => 'Click on "Write a review"',
+    'repair_admin_review_help_4'       => 'Copy the URL from the address bar and paste it here',
+    'repair_admin_feedback_how_title'  => 'How does it work?',
+    'repair_admin_feedback_how_desc'   => 'When a repair is set to "Done", the customer automatically receives a friendly email after 24 hours asking for a review. If a Google link is provided, it will be linked directly in the email.',
+
+    // ===== Feedback Email Templates =====
+    'repair_feedback_email_subject'    => 'How was your repair? - {company}',
+    'repair_feedback_email_greeting'   => 'Dear {customer_name},',
+    'repair_feedback_email_body'       => 'Your repair at {company} has been completed. We hope everything was done to your satisfaction!',
+    'repair_feedback_email_review_ask' => 'If you were satisfied with our service, we would greatly appreciate a short Google review:',
+    'repair_feedback_email_review_btn' => 'Write a review',
+    'repair_feedback_email_general_ask'=> 'If you were satisfied with our service, please tell your friends and family about us!',
+    'repair_feedback_email_thanks'     => 'Thank you for your trust!',
+    'repair_feedback_email_regards'    => 'Best regards,',
 ];

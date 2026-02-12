@@ -1099,4 +1099,28 @@ return [
     'checkout_error_paypal'       => 'PayPal Fehler: Bitte versuchen Sie es erneut.',
     'checkout_copied'             => 'Kopiert!',
     'checkout_and'                => 'und',
+
+    // ===== Feedback Email / Google Review Settings =====
+    'repair_admin_feedback_title'      => 'Kundenfeedback nach Reparatur',
+    'repair_admin_feedback_hint'       => 'Kunden automatisch 24 Stunden nach Abschluss der Reparatur (Status "Fertig") per E-Mail um Feedback bitten.',
+    'repair_admin_feedback_enable'     => 'Feedback-E-Mail aktivieren',
+    'repair_admin_feedback_desc'       => '24 Stunden nach Status "Fertig" erhält der Kunde eine Feedback-E-Mail',
+    'repair_admin_google_review_url'   => 'Google Bewertungs-Link',
+    'repair_admin_review_help_title'   => 'Wo finde ich meinen Google Bewertungs-Link?',
+    'repair_admin_review_help_1'       => 'Öffnen Sie Google Maps und suchen Sie Ihr Geschäft',
+    'repair_admin_review_help_2'       => 'Klicken Sie auf Ihr Geschäftsprofil',
+    'repair_admin_review_help_3'       => 'Klicken Sie auf "Bewertung schreiben" oder "Rezension schreiben"',
+    'repair_admin_review_help_4'       => 'Kopieren Sie die URL aus der Adressleiste und fügen Sie sie hier ein',
+    'repair_admin_feedback_how_title'  => 'Wie funktioniert es?',
+    'repair_admin_feedback_how_desc'   => 'Wenn eine Reparatur auf "Fertig" gesetzt wird, erhält der Kunde nach 24 Stunden automatisch eine freundliche E-Mail mit der Bitte um eine Bewertung. Falls ein Google-Link hinterlegt ist, wird dieser direkt in der E-Mail verlinkt.',
+
+    // ===== Feedback Email Templates =====
+    'repair_feedback_email_subject'    => 'Wie war Ihre Reparatur? - {company}',
+    'repair_feedback_email_greeting'   => 'Sehr geehrte/r {customer_name},',
+    'repair_feedback_email_body'       => 'Ihre Reparatur bei {company} wurde abgeschlossen. Wir hoffen, dass alles zu Ihrer Zufriedenheit erledigt wurde!',
+    'repair_feedback_email_review_ask' => 'Wenn Sie mit unserem Service zufrieden waren, würden wir uns sehr über eine kurze Google-Bewertung freuen:',
+    'repair_feedback_email_review_btn' => 'Jetzt bewerten',
+    'repair_feedback_email_general_ask'=> 'Wenn Sie mit unserem Service zufrieden waren, erzählen Sie gerne Freunden und Familie von uns!',
+    'repair_feedback_email_thanks'     => 'Vielen Dank für Ihr Vertrauen!',
+    'repair_feedback_email_regards'    => 'Mit freundlichen Grüßen,',
 ];

@@ -35,6 +35,12 @@ class PPV_Repair_Core {
             wp_schedule_event($next_month, 'monthly', 'ppv_repair_monthly_reset');
         }
 
+        // Feedback email cron (hourly) - sends feedback emails 24h after "done" status
+        add_action('ppv_repair_feedback_emails', [__CLASS__, 'cron_send_feedback_emails']);
+        if (!wp_next_scheduled('ppv_repair_feedback_emails')) {
+            wp_schedule_event(time() + 300, 'hourly', 'ppv_repair_feedback_emails');
+        }
+
         // AJAX: submit repair form (public, no login required)
         add_action('wp_ajax_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
         add_action('wp_ajax_nopriv_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
@@ -908,6 +914,16 @@ class PPV_Repair_Core {
             }
 
             update_option('ppv_repair_migration_version', '2.6');
+        }
+
+        // v2.7: Add feedback_email_sent column to repairs table
+        if (version_compare($version, '2.7', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'feedback_email_sent'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN feedback_email_sent TINYINT(1) DEFAULT 0 AFTER delivered_at");
+            }
+            update_option('ppv_repair_migration_version', '2.7');
         }
     }
 
@@ -2017,6 +2033,119 @@ class PPV_Repair_Core {
     }
 
     /** ============================================================
+     * CRON: Send feedback emails 24h after "done" status
+     * Runs hourly, picks up repairs completed 23-25 hours ago
+     * ============================================================ */
+    public static function cron_send_feedback_emails() {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Find repairs: status=done, completed 23-25h ago, feedback not yet sent, customer has email
+        $repairs = $wpdb->get_results("
+            SELECT r.*, s.repair_google_review_url, s.repair_company_name, s.name as store_name,
+                   s.repair_company_phone, s.repair_company_email, s.country
+            FROM {$prefix}ppv_repairs r
+            INNER JOIN {$prefix}ppv_stores s ON r.store_id = s.id
+            WHERE r.status = 'done'
+              AND r.completed_at IS NOT NULL
+              AND r.completed_at BETWEEN DATE_SUB(NOW(), INTERVAL 25 HOUR) AND DATE_SUB(NOW(), INTERVAL 23 HOUR)
+              AND (r.feedback_email_sent = 0 OR r.feedback_email_sent IS NULL)
+              AND r.customer_email IS NOT NULL AND r.customer_email != ''
+              AND s.repair_feedback_email_enabled = 1
+            LIMIT 50
+        ");
+
+        if (empty($repairs)) return;
+
+        $sent_count = 0;
+        foreach ($repairs as $repair) {
+            $sent = self::send_feedback_email($repair);
+            if ($sent) {
+                $wpdb->update($prefix . 'ppv_repairs', ['feedback_email_sent' => 1], ['id' => $repair->id]);
+                $sent_count++;
+            }
+        }
+
+        if (function_exists('ppv_log') && $sent_count > 0) {
+            ppv_log("📧 [PPV_Repair] Feedback emails sent: {$sent_count}");
+        }
+    }
+
+    /**
+     * Send feedback email to customer after repair completion
+     */
+    private static function send_feedback_email($repair) {
+        // Determine language from store country
+        $country_lang = ['DE' => 'de', 'AT' => 'de', 'CH' => 'de', 'HU' => 'hu', 'RO' => 'ro'];
+        $lang = $country_lang[$repair->country ?? 'DE'] ?? 'de';
+
+        // Temporarily set language for translations
+        $original_lang = PPV_Lang::$active;
+        PPV_Lang::$active = $lang;
+        PPV_Lang::load_extra('ppv-repair-lang');
+
+        $company_name = $repair->repair_company_name ?: $repair->store_name;
+        $review_url = $repair->repair_google_review_url ?? '';
+
+        $subject = str_replace('{company}', $company_name, PPV_Lang::t('repair_feedback_email_subject'));
+
+        // Build HTML email
+        $greeting = str_replace('{customer_name}', esc_html($repair->customer_name), PPV_Lang::t('repair_feedback_email_greeting'));
+        $body_text = str_replace('{company}', esc_html($company_name), PPV_Lang::t('repair_feedback_email_body'));
+
+        $review_section = '';
+        if (!empty($review_url)) {
+            $review_section = '
+            <p style="font-size:15px;color:#374151;margin:0 0 20px">' . esc_html(PPV_Lang::t('repair_feedback_email_review_ask')) . '</p>
+            <div style="text-align:center;margin:25px 0">
+                <a href="' . esc_url($review_url) . '" style="display:inline-block;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1f2937;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 14px rgba(245,158,11,0.4)">⭐ ' . esc_html(PPV_Lang::t('repair_feedback_email_review_btn')) . '</a>
+            </div>';
+        } else {
+            $review_section = '<p style="font-size:15px;color:#374151;margin:0 0 20px">' . esc_html(PPV_Lang::t('repair_feedback_email_general_ask')) . '</p>';
+        }
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#f3f4f6;margin:0;padding:20px">
+<div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
+    <div style="background:linear-gradient(135deg,#667eea,#4338ca);color:#fff;padding:30px;text-align:center">
+        <div style="font-size:48px;margin-bottom:10px">🔧</div>
+        <h1 style="margin:0;font-size:22px">' . esc_html($company_name) . '</h1>
+    </div>
+    <div style="padding:30px">
+        <p style="font-size:16px;color:#374151;margin:0 0 15px">' . $greeting . '</p>
+        <p style="font-size:15px;color:#374151;margin:0 0 20px">' . $body_text . '</p>
+        ' . $review_section . '
+        <p style="font-size:15px;color:#374151;margin:20px 0 0">' . esc_html(PPV_Lang::t('repair_feedback_email_thanks')) . '</p>
+    </div>
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e5e7eb">
+        <p style="margin:0;font-size:14px;color:#6b7280">' . esc_html(PPV_Lang::t('repair_feedback_email_regards')) . '</p>
+        <p style="margin:8px 0 0;font-size:13px;color:#9ca3af;font-weight:600">' . esc_html($company_name) . '</p>
+    </div>
+</div></body></html>';
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            "From: {$company_name} <noreply@punktepass.de>"
+        ];
+        $reply_to = $repair->repair_company_email ?? '';
+        if ($reply_to) {
+            $headers[] = "Reply-To: {$reply_to}";
+        }
+
+        $sent = wp_mail($repair->customer_email, $subject, $html, $headers);
+
+        // Restore original language
+        PPV_Lang::$active = $original_lang;
+        PPV_Lang::load_extra('ppv-repair-lang');
+
+        if (function_exists('ppv_log')) {
+            ppv_log("📧 [PPV_Repair] Feedback email " . ($sent ? 'SENT' : 'FAILED') . " to {$repair->customer_email} (repair #{$repair->id}, lang: {$lang})");
+        }
+
+        return $sent;
+    }
+
+    /** ============================================================
      * Verify Google JWT Token (shared helper)
      * ============================================================ */
     private static function verify_google_token($credential) {
@@ -2794,6 +2923,8 @@ class PPV_Repair_Core {
             'repair_paypal_email' => "VARCHAR(255) NULL",
             'repair_steuernummer' => "VARCHAR(100) NULL",
             'repair_website_url' => "VARCHAR(500) NULL",
+            'repair_google_review_url' => "VARCHAR(500) NULL",
+            'repair_feedback_email_enabled' => "TINYINT(1) DEFAULT 0",
         ];
 
         foreach ($required_columns as $col => $definition) {
@@ -2809,7 +2940,8 @@ class PPV_Repair_Core {
                         'repair_reward_name', 'repair_reward_description', 'repair_form_title', 'repair_form_subtitle', 'repair_service_type',
                         'repair_invoice_prefix', 'repair_reward_type', 'repair_reward_product', 'repair_invoice_email_subject', 'repair_status_notify_statuses',
                         'repair_opening_hours', 'repair_terms_url',
-                        'repair_bank_name', 'repair_bank_iban', 'repair_bank_bic', 'repair_paypal_email', 'repair_steuernummer', 'repair_website_url'];
+                        'repair_bank_name', 'repair_bank_iban', 'repair_bank_bic', 'repair_paypal_email', 'repair_steuernummer', 'repair_website_url',
+                        'repair_google_review_url'];
         // Textarea fields (allow newlines)
         $textarea_fields = ['repair_invoice_email_body', 'repair_custom_brands', 'repair_custom_problems', 'repair_custom_accessories', 'repair_success_message'];
         // Integer fields
@@ -2817,7 +2949,7 @@ class PPV_Repair_Core {
         // Decimal fields
         $decimal_fields = ['repair_reward_value', 'repair_vat_rate'];
         // Toggle fields (0/1)
-        $toggle_fields = ['repair_punktepass_enabled', 'repair_vat_enabled', 'repair_status_notify_enabled'];
+        $toggle_fields = ['repair_punktepass_enabled', 'repair_vat_enabled', 'repair_status_notify_enabled', 'repair_feedback_email_enabled'];
 
         $update = [];
         foreach ($text_fields as $f) {

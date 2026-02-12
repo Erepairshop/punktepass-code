@@ -488,6 +488,10 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $status_notify_statuses = $store->repair_status_notify_statuses ?? 'in_progress,done,delivered';
         $notify_statuses_arr = explode(',', $status_notify_statuses);
 
+        // Feedback email settings
+        $feedback_email_enabled = isset($store->repair_feedback_email_enabled) ? intval($store->repair_feedback_email_enabled) : 0;
+        $google_review_url = esc_attr($store->repair_google_review_url ?? '');
+
         // Custom form options (for different branches)
         $custom_brands = esc_textarea($store->repair_custom_brands ?? '');
         $custom_problems = esc_textarea($store->repair_custom_problems ?? '');
@@ -1729,6 +1733,42 @@ echo '</div></div>
                         <span style="color:#6b7280"><i class="ri-truck-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '
                     </label>
                 </div>
+            </div>
+
+                <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+
+                <h4><i class="ri-star-smile-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_feedback_title')) . '</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_feedback_hint')) . '</p>
+
+            <div class="ra-toggle" style="margin-bottom:16px">
+                <label class="ra-toggle-switch">
+                    <input type="checkbox" name="repair_feedback_email_enabled" value="1" ' . ($feedback_email_enabled ? 'checked' : '') . '>
+                    <span class="ra-toggle-slider"></span>
+                </label>
+                <div>
+                    <strong>' . esc_html(PPV_Lang::t('repair_admin_feedback_enable')) . '</strong>
+                    <div style="font-size:12px;color:#6b7280">' . esc_html(PPV_Lang::t('repair_admin_feedback_desc')) . '</div>
+                </div>
+            </div>
+
+            <div class="field" style="margin-bottom:12px">
+                <label>' . esc_html(PPV_Lang::t('repair_admin_google_review_url')) . '</label>
+                <input type="url" name="repair_google_review_url" value="' . $google_review_url . '" placeholder="https://g.page/r/...">
+            </div>
+
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px;margin-bottom:8px">
+                <div style="font-size:13px;font-weight:600;color:#0369a1;margin-bottom:8px"><i class="ri-question-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_review_help_title')) . '</div>
+                <ol style="font-size:12px;color:#475569;margin:0;padding-left:18px;line-height:1.8">
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_1')) . '</li>
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_2')) . '</li>
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_3')) . '</li>
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_4')) . '</li>
+                </ol>
+            </div>
+
+            <div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:14px;font-size:12px;color:#854d0e">
+                <strong><i class="ri-lightbulb-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_feedback_how_title')) . '</strong><br>
+                ' . esc_html(PPV_Lang::t('repair_admin_feedback_how_desc')) . '
             </div>
 
             </div><!-- END PANEL: email -->

@@ -1099,4 +1099,28 @@ return [
     'checkout_error_paypal'       => 'Eroare PayPal: Vă rugăm încercați din nou.',
     'checkout_copied'             => 'Copiat!',
     'checkout_and'                => 'și',
+
+    // ===== Feedback Email / Google Review Settings =====
+    'repair_admin_feedback_title'      => 'Feedback client după reparație',
+    'repair_admin_feedback_hint'       => 'Clientul primește automat un e-mail la 24 de ore după finalizarea reparației (status "Gata"), solicitând feedback.',
+    'repair_admin_feedback_enable'     => 'Activează e-mail de feedback',
+    'repair_admin_feedback_desc'       => 'La 24 de ore după statusul "Gata", clientul primește un e-mail de feedback',
+    'repair_admin_google_review_url'   => 'Link recenzie Google',
+    'repair_admin_review_help_title'   => 'Unde găsesc link-ul de recenzie Google?',
+    'repair_admin_review_help_1'       => 'Deschideți Google Maps și căutați magazinul dvs.',
+    'repair_admin_review_help_2'       => 'Faceți clic pe profilul magazinului',
+    'repair_admin_review_help_3'       => 'Faceți clic pe "Scrieți o recenzie"',
+    'repair_admin_review_help_4'       => 'Copiați URL-ul din bara de adrese și lipiți-l aici',
+    'repair_admin_feedback_how_title'  => 'Cum funcționează?',
+    'repair_admin_feedback_how_desc'   => 'Când o reparație este setată la "Gata", clientul primește automat un e-mail prietenos după 24 de ore, solicitând o recenzie. Dacă este setat un link Google, acesta va fi inclus direct în e-mail.',
+
+    // ===== Feedback Email Templates =====
+    'repair_feedback_email_subject'    => 'Cum a fost reparația? - {company}',
+    'repair_feedback_email_greeting'   => 'Stimate/Stimată {customer_name},',
+    'repair_feedback_email_body'       => 'Reparația dvs. la {company} a fost finalizată. Sperăm că totul a fost pe placul dvs.!',
+    'repair_feedback_email_review_ask' => 'Dacă ați fost mulțumit/ă de serviciul nostru, v-am fi recunoscători pentru o scurtă recenzie pe Google:',
+    'repair_feedback_email_review_btn' => 'Lăsați o recenzie',
+    'repair_feedback_email_general_ask'=> 'Dacă ați fost mulțumit/ă de serviciul nostru, recomandați-ne prietenilor și familiei!',
+    'repair_feedback_email_thanks'     => 'Vă mulțumim pentru încredere!',
+    'repair_feedback_email_regards'    => 'Cu stimă,',
 ];
