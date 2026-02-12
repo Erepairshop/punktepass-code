@@ -374,7 +374,7 @@ class PPV_Google_Review_Request {
         $lang = $user->language ?? 'de';
 
         // Validate language
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = 'de';
         }
 

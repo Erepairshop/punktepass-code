@@ -77,6 +77,16 @@ function initUserSettings() {
       logout_all_confirm: "Sigur vrei să te deconectezi de pe toate dispozitivele?",
       password_required: "⚠️ Te rog introdu parola",
       delete_final_warning: "⚠️ ULTIMĂ ATENȚIONARE: Sigur ștergi definitiv contul?",
+    },
+    en: {
+      avatar_updated: "✅ Avatar updated",
+      upload_failed: "⚠️ Upload failed",
+      network_error: "❌ Network error",
+      settings_saved: "✅ Settings saved",
+      save_error: "Error saving",
+      logout_all_confirm: "Are you sure you want to log out on all devices?",
+      password_required: "⚠️ Please enter your password",
+      delete_final_warning: "⚠️ LAST WARNING: Are you sure you want to permanently delete your account?",
     }
   }[LANG] || {
     avatar_updated: "✅ Avatar aktualisiert",

@@ -24,7 +24,7 @@ class PPV_My_Points {
      * ============================================================ */
     private static function load_lang_file($lang = 'de') {
         // Validate
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = 'de';
         }
 
@@ -65,15 +65,15 @@ class PPV_My_Points {
         $lang = sanitize_text_field($_GET['lang'] ?? '');
         ppv_log("🔍 [PPV_My_Points] Lang from GET: " . ($lang ?: 'EMPTY'));
 
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
             ppv_log("🔍 [PPV_My_Points] Lang from COOKIE: " . ($lang ?: 'EMPTY'));
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
             ppv_log("🔍 [PPV_My_Points] Lang from SESSION: " . ($lang ?: 'de'));
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = 'de';
         }
 
@@ -187,10 +187,10 @@ class PPV_My_Points {
 
         // ─── Language ───
         $lang = sanitize_text_field($_GET['lang'] ?? '');
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? ($_SESSION['ppv_lang'] ?? 'de'));
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = 'de';
         }
         $_SESSION['ppv_lang'] = $lang;
@@ -261,7 +261,7 @@ class PPV_My_Points {
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="turbo-cache-control" content="no-cache">
-    <title>Meine Punkte - PunktePass</title>
+    <title><?php echo esc_html(PPV_Lang::t('title') ?: 'My Points'); ?> - PunktePass</title>
     <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
     <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
@@ -312,10 +312,10 @@ class PPV_My_Points {
     public static function render_shell() {
         // Get active lang
         $lang = sanitize_text_field($_GET['lang'] ?? '');
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? ($_SESSION['ppv_lang'] ?? 'de'));
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = 'de';
         }
 

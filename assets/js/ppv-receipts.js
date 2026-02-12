@@ -33,7 +33,8 @@
   const T = {
     de: { points: 'Punkte', receipt_id_missing: 'Beleg-ID fehlt' },
     hu: { points: 'pont', receipt_id_missing: 'Bizonylat ID hiányzik' },
-    ro: { points: 'puncte', receipt_id_missing: 'ID-ul chitanței lipsește' }
+    ro: { points: 'puncte', receipt_id_missing: 'ID-ul chitanței lipsește' },
+    en: { points: 'Points', receipt_id_missing: 'Receipt ID missing' }
   }[LANG] || { points: 'Punkte', receipt_id_missing: 'Beleg-ID fehlt' };
 
   /* ============================================================

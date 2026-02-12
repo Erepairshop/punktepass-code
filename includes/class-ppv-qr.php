@@ -595,7 +595,7 @@ class PPV_QR {
             // 🌐 Use PPV_Lang (already detected at init) - don't do separate detection!
             // This ensures consistency across all pages
             $lang = class_exists('PPV_Lang') ? PPV_Lang::$active : 'de';
-            if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
+            if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro', 'en'])) {
                 $lang = 'de';
             }
 
@@ -764,16 +764,16 @@ class PPV_QR {
         if (empty($lang) && isset($_GET['lang'])) {
             $lang = sanitize_text_field($_GET['lang']);
         }
-        if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) && !empty($_SESSION['ppv_user_id'])) {
+        if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro', 'en'])) && !empty($_SESSION['ppv_user_id'])) {
             $user_lang = $wpdb->get_var($wpdb->prepare(
                 "SELECT language FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
                 intval($_SESSION['ppv_user_id'])
             ));
-            if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro'])) {
+            if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro', 'en'])) {
                 $lang = $user_lang;
             }
         }
-        if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
+        if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
         }
 
@@ -1095,17 +1095,17 @@ class PPV_QR {
         if (empty($lang) && isset($_GET['lang'])) {
             $lang = sanitize_text_field($_GET['lang']);
         }
-        if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) && !empty($_SESSION['ppv_user_id'])) {
+        if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro', 'en'])) && !empty($_SESSION['ppv_user_id'])) {
             global $wpdb;
             $user_lang = $wpdb->get_var($wpdb->prepare(
                 "SELECT language FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
                 intval($_SESSION['ppv_user_id'])
             ));
-            if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro'])) {
+            if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro', 'en'])) {
                 $lang = $user_lang;
             }
         }
-        if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
+        if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
         }
 

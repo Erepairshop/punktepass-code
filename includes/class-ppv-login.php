@@ -199,7 +199,7 @@ class PPV_Login {
         }
 
         // Validate (only allow de, hu, ro) - default to Romanian
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = 'ro';
         }
 
@@ -233,7 +233,7 @@ class PPV_Login {
         $detected_lang = 'ro'; // Default Romanian
 
         if ($accept) {
-            $supported = ['de', 'hu', 'ro'];
+            $supported = ['de', 'hu', 'ro', 'en'];
             $langs = [];
 
             // Parse Accept-Language with q-values

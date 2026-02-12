@@ -18,7 +18,7 @@ if (window.PPV_REDEEM_ADMIN_LOADED) {
 // 🌐 Language detection
 const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'ro';
 const LANG = detectLang();
-const T = { de: { points: 'Punkte' }, hu: { points: 'pont' }, ro: { points: 'puncte' } }[LANG] || { points: 'Punkte' };
+const T = { de: { points: 'Punkte' }, hu: { points: 'pont' }, ro: { points: 'puncte' }, en: { points: 'Points' } }[LANG] || { points: 'Punkte' };
 
 // Use centralized API manager
 const ppvFetch = window.ppvFetch || window.apiFetch || fetch;

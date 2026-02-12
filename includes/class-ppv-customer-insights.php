@@ -31,7 +31,7 @@ class PPV_Customer_Insights {
     public static function get_insights($user_id, $store_id, $lang = 'de') {
         global $wpdb;
 
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = 'de';
         }
 

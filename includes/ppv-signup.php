@@ -58,7 +58,7 @@ class PPV_Signup {
             $lang = self::detect_browser_lang();
         }
 
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = 'ro'; // Default Romanian
         }
 
@@ -72,7 +72,7 @@ class PPV_Signup {
         $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
         if (!$accept) return 'ro';
 
-        $supported = ['de', 'hu', 'ro'];
+        $supported = ['de', 'hu', 'ro', 'en'];
         $langs = [];
 
         foreach (explode(',', $accept) as $part) {
@@ -1442,7 +1442,7 @@ class PPV_Signup {
 
         // Get user language from cookie
         $language = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'ro';
-        if (!in_array($language, ['de', 'hu', 'ro', 'en'])) $language = 'ro';
+        if (!in_array($language, ['de', 'hu', 'ro', 'en', 'en'])) $language = 'ro';
 
         // Validate category
         $valid_categories = ['bug', 'feature', 'question', 'rating'];

@@ -109,6 +109,25 @@ class PPV_Account_Delete {
                 ],
                 'footer' => 'Ștergerea va avea loc în termen de <strong>30 de zile</strong> conform GDPR.',
                 'back_button' => 'Înapoi la pagina principală'
+            ],
+            'en' => [
+                'title' => 'Delete Account',
+                'intro' => 'If you want to delete your PunktePass account and all associated data, you can request this at any time.',
+                'how_to_title' => 'How to delete your account:',
+                'step_1' => 'Send an email to <strong>info@punktepass.de</strong>',
+                'step_2' => 'Provide the email address you used to create your PunktePass account',
+                'step_3' => 'Write "Delete account" in the message',
+                'data_title' => 'What data will be deleted:',
+                'data_items' => [
+                    'User account',
+                    'Points history',
+                    'Rewards',
+                    'QR token',
+                    'Device tokens',
+                    'Login data'
+                ],
+                'footer' => 'Deletion will take place within <strong>30 days</strong> in accordance with GDPR.',
+                'back_button' => 'Back to home page'
             ]
         ];
 
@@ -336,7 +355,7 @@ class PPV_Account_Delete {
         }
 
         // Validate (only allow de, hu, ro) - default Romanian
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = 'ro';
         }
 

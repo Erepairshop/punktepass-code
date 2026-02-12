@@ -192,7 +192,8 @@
         const texts = {
             de: { title: '🔔 Push-Benachrichtigungen', desc: 'Erhalten Sie Benachrichtigungen über neue Angebote und Punkte', btn: 'Aktivieren', dismiss: 'Später' },
             hu: { title: '🔔 Push értesítések', desc: 'Kapjon értesítéseket új ajánlatokról és pontokról', btn: 'Engedélyezés', dismiss: 'Később' },
-            ro: { title: '🔔 Notificări Push', desc: 'Primiți notificări despre oferte și puncte noi', btn: 'Activare', dismiss: 'Mai târziu' }
+            ro: { title: '🔔 Notificări Push', desc: 'Primiți notificări despre oferte și puncte noi', btn: 'Activare', dismiss: 'Mai târziu' },
+            en: { title: '🔔 Push Notifications', desc: 'Receive notifications about new offers and points', btn: 'Enable', dismiss: 'Later' }
         };
         const t = texts[lang] || texts.de;
 

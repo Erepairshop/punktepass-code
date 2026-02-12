@@ -20,6 +20,11 @@ jQuery(document).ready(function($){
             saved: "Salvat ✅",
             error: "Eroare:",
             status_changed: "Starea abonamentului s-a schimbat:",
+        },
+        en: {
+            saved: "Saved ✅",
+            error: "Error:",
+            status_changed: "Subscription status changed:",
         }
     }[LANG] || T.de;
 

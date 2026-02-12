@@ -72,7 +72,8 @@
       const messages = {
         de: 'Sitzung abgelaufen. Bitte erneut anmelden.',
         hu: 'A munkamenet lejárt. Kérlek jelentkezz be újra.',
-        ro: 'Sesiune expirată. Vă rugăm să vă autentificați din nou.'
+        ro: 'Sesiune expirată. Vă rugăm să vă autentificați din nou.',
+        en: 'Session expired. Please log in again.'
       };
       window.ppvShowPointToast('error', 0, 'PunktePass', messages[lang] || messages.de);
     }
@@ -267,7 +268,7 @@ window.ppvErrorMsg = (function() {
   // Get current language from HTML or fallback
   const getLang = () => {
     const htmlLang = document.documentElement.lang || 'de';
-    return ['de', 'hu', 'ro'].includes(htmlLang) ? htmlLang : 'de';
+    return ['de', 'hu', 'ro', 'en'].includes(htmlLang) ? htmlLang : 'de';
   };
 
   // User-friendly error messages
@@ -319,6 +320,22 @@ window.ppvErrorMsg = (function() {
       insufficient_points: 'Nu ai suficiente puncte pentru această acțiune.',
       unknown: 'A apărut o eroare neașteptată.',
       try_again: 'Te rugăm să încerci din nou.',
+    },
+    en: {
+      network: 'Connection problem. Please check your internet connection.',
+      offline: 'You are offline. Please connect to the internet.',
+      auth: 'Session expired. Please log in again.',
+      forbidden: 'You don\'t have permission for this action.',
+      not_found: 'The requested resource was not found.',
+      server: 'A server error occurred. Please try again later.',
+      timeout: 'The request took too long. Please try again.',
+      invalid_data: 'Invalid data. Please check your input.',
+      rate_limit: 'Too many requests. Please wait a moment.',
+      scan_duplicate: 'This QR code has already been scanned.',
+      scan_expired: 'The QR code has expired. Please generate a new one.',
+      insufficient_points: 'Not enough points for this action.',
+      unknown: 'An unexpected error occurred.',
+      try_again: 'Please try again.',
     }
   };
 

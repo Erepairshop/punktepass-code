@@ -206,7 +206,7 @@ class PPV_Repair_Email_Sender {
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
         $email_lang = sanitize_text_field($_POST['email_lang'] ?? 'de');
-        if (!in_array($email_lang, ['de', 'hu', 'ro'])) $email_lang = 'de';
+        if (!in_array($email_lang, ['de', 'hu', 'ro', 'en'])) $email_lang = 'de';
 
         if (empty($subject) || empty($message)) {
             wp_redirect("/formular/email-sender?error=empty_fields");
@@ -505,7 +505,7 @@ class PPV_Repair_Email_Sender {
 
         // Selected language (persisted via URL param)
         $selected_lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'de';
-        if (!in_array($selected_lang, ['de', 'hu', 'ro'])) $selected_lang = 'de';
+        if (!in_array($selected_lang, ['de', 'hu', 'ro', 'en'])) $selected_lang = 'de';
 
         // Default template for Repair Form promotion
         $default_template = 'Guten Tag!
