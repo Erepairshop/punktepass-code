@@ -469,6 +469,45 @@ class PPV_VIP_Settings {
                 'toggle_on' => 'ACTIV',
                 'toggle_off' => 'INACTIV',
             ],
+            'en' => [
+                'title' => 'VIP Bonus Points',
+                'subtitle' => 'Give your loyal customers extra points based on their level!',
+                'all_branches' => 'All Branches',
+
+                // How it works
+                'how_it_works' => 'How it works',
+                'how_step1' => 'Each customer builds their VIP level separately at YOUR store – through repeated QR code scans in YOUR shop',
+                'how_step2' => 'The VIP level is based on the number of scans AT YOUR STORE (Bronze from 25, Silver from 50, Gold from 75, Platinum from 100 scans)',
+                'how_step3' => 'The bonuses set here apply ONLY in your store – the higher the level at your store, the more bonus points!',
+                'how_step4' => 'You can combine different bonus types: fixed points per scan and streak bonus (e.g. every 10th scan)',
+                'bronze_label' => 'Bronze',
+                'silver_label' => 'Silver',
+                'gold_label' => 'Gold',
+                'platinum_label' => 'Platinum',
+                'save_btn' => 'Save Settings',
+                'saved' => 'Saved!',
+                'error' => 'Error saving',
+
+                // Bonus type cards
+                'fix_title' => 'Fixed Points Bonus',
+                'fix_desc' => 'Each scan earns X extra points',
+                'fix_suffix' => ' Points',
+
+                'streak_title' => 'Xth Scan Bonus',
+                'streak_desc' => 'Every Xth scan earns extra reward',
+                'streak_every' => 'Every',
+                'streak_scan' => 'scan',
+                'streak_type_fixed' => 'Fixed Points',
+                'streak_type_double' => 'Double',
+                'streak_type_triple' => 'Triple',
+
+                // Validation
+                'validation_error' => 'Values must be in ascending order: Bronze ≤ Silver ≤ Gold ≤ Platinum',
+
+                // Toggle
+                'toggle_on' => 'ON',
+                'toggle_off' => 'OFF',
+            ],
         ][$lang] ?? [
             'title' => 'VIP Bonus-Punkte',
             'subtitle' => 'Gib deinen treuen Kunden extra Punkte basierend auf ihrem Level!',

@@ -688,6 +688,16 @@
         all_shops_info: 'Bonusurile VIP sunt valabile doar în magazinul unde le-ai obținut',
         vip_not_everywhere: 'Nu toate magazinele oferă bonusuri VIP',
         how_vip_works: 'Cu cât scanezi mai mult la un magazin, cu atât nivelul VIP e mai mare acolo',
+      },
+      en: {
+        your_level: 'Your best VIP level',
+        next_level: 'Next level',
+        points_needed: 'scans still needed',
+        max_level: 'Maximum level reached!',
+        lifetime_points: 'Scans at',
+        all_shops_info: 'VIP bonuses only apply at the store where you earned them',
+        vip_not_everywhere: 'Not all stores offer VIP bonuses',
+        how_vip_works: 'The more you scan at a store, the higher your VIP level there',
       }
     };
 
