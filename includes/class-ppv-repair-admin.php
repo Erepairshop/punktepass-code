@@ -84,9 +84,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
     <div class="login-box">
         <!-- Language Switcher -->
         <div class="login-lang-switch">
-            <button class="login-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
-            <button class="login-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
-            <button class="login-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
+            <?php foreach (['de','en','hu','ro'] as $lc): ?>
+            <button class="login-lang-btn <?php echo $lang === $lc ? 'active' : ''; ?>" data-lang="<?php echo $lc; ?>"><?php echo strtoupper($lc); ?></button>
+            <?php endforeach; ?>
         </div>
         <div class="login-logo"><i class="ri-tools-line"></i></div>
         <h2><?php echo esc_html(PPV_Lang::t('repair_login_heading')); ?></h2>
@@ -1028,11 +1028,11 @@ a:hover{color:#5a67d8}
 
         echo '</div>
         <div class="ra-header-right">
-            <div class="ra-lang-switch">
-                <button class="ra-lang-btn ' . ($lang === 'de' ? 'active' : '') . '" data-lang="de">DE</button>
-                <button class="ra-lang-btn ' . ($lang === 'hu' ? 'active' : '') . '" data-lang="hu">HU</button>
-                <button class="ra-lang-btn ' . ($lang === 'ro' ? 'active' : '') . '" data-lang="ro">RO</button>
-            </div>
+            <div class="ra-lang-switch">';
+        foreach (['de','en','hu','ro'] as $lc) {
+            echo '<button class="ra-lang-btn ' . ($lang === $lc ? 'active' : '') . '" data-lang="' . $lc . '">' . strtoupper($lc) . '</button>';
+        }
+        echo '</div>
             <a href="' . esc_url($form_url) . '" target="_blank" class="ra-btn ra-btn-outline">
                 <i class="ri-external-link-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_view_form')) . '
             </a>

@@ -1771,9 +1771,9 @@ class PPV_Repair_Registration {
     </div>
     <!-- Language Switcher (footer) -->
     <div style="display:flex;justify-content:center;gap:6px;margin:12px 0 8px">
-        <button class="pp-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de" style="background:<?php echo $lang === 'de' ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === 'de' ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">DE</button>
-        <button class="pp-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu" style="background:<?php echo $lang === 'hu' ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === 'hu' ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">HU</button>
-        <button class="pp-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro" style="background:<?php echo $lang === 'ro' ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === 'ro' ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">RO</button>
+        <?php foreach (['de','en','hu','ro'] as $lc): ?>
+        <button class="pp-lang-btn" data-lang="<?php echo $lc; ?>" style="background:<?php echo $lang === $lc ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === $lc ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer"><?php echo strtoupper($lc); ?></button>
+        <?php endforeach; ?>
     </div>
     <div class="pp-reg-footer-powered">
         <?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?> <a href="https://punktepass.de">PunktePass</a>
