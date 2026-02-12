@@ -594,6 +594,22 @@ ppv_log("📄 [PDF URL] {$pdf_url}");
                 'item_description' => 'Pontbeváltás PunktePass rendszeren keresztül',
                 'collective_customer' => 'Összesítő számla',
                 'footer_text' => 'Köszönjük a bizalmát!'
+            ],
+            'en' => [
+                'invoice' => 'Invoice',
+                'invoice_number' => 'Invoice Number',
+                'date' => 'Date',
+                'from' => 'From',
+                'to' => 'To',
+                'description' => 'Description',
+                'amount' => 'Amount',
+                'subtotal' => 'Subtotal',
+                'vat' => 'VAT',
+                'total' => 'Total',
+                'tax_id' => 'Tax ID',
+                'item_description' => 'Points redemption via PunktePass',
+                'collective_customer' => 'Collective invoice',
+                'footer_text' => 'Thank you for your trust!'
             ]
         ];
 

@@ -437,6 +437,8 @@ class PPV_Expense_Receipt {
             return self::html_receipt_ro($redeem, $customer_name, $receipt_num, $amount);
         } elseif ($lang === 'HU') {
             return self::html_receipt_hu($redeem, $customer_name, $receipt_num, $amount);
+        } elseif ($lang === 'EN') {
+            return self::html_receipt_en($redeem, $customer_name, $receipt_num, $amount);
         } else {
             return self::html_receipt_de($redeem, $customer_name, $receipt_num, $amount);
         }
@@ -1255,6 +1257,332 @@ HTML;
     }
 
     /**
+     * 🎨 HTML - English version (EN) - Professional Design
+     */
+    private static function html_receipt_en($redeem, $customer_name, $receipt_num, $amount) {
+        $company = htmlspecialchars($redeem['company_name'] ?? 'Company', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($redeem['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($redeem['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($redeem['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($redeem['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        $customer = htmlspecialchars($customer_name, ENT_QUOTES, 'UTF-8');
+        $email = htmlspecialchars($redeem['user_email'] ?? '', ENT_QUOTES, 'UTF-8');
+        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Reward', ENT_QUOTES, 'UTF-8');
+        $points = intval($redeem['points_spent'] ?? 0);
+        $date = date('d/m/Y', strtotime($redeem['redeemed_at']));
+        $time = date('H:i', strtotime($redeem['redeemed_at']));
+        $amount_formatted = number_format($amount, 2, '.', ',');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Expense Receipt No. {$receipt_num}</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 22pt;
+            font-weight: 700;
+            color: #1a5276;
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
+        }
+        .doc-subtitle {
+            font-size: 10pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 11pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .doc-date {
+            font-size: 10pt;
+            color: #7f8c8d;
+        }
+
+        /* Info Sections */
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .info-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 15px;
+        }
+        .info-box:last-child {
+            padding-right: 0;
+            padding-left: 15px;
+        }
+        .info-label {
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #95a5a6;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-content {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+        }
+        .info-content p {
+            margin: 3px 0;
+            font-size: 10pt;
+        }
+        .info-content .name {
+            font-weight: 600;
+            font-size: 11pt;
+            color: #2c3e50;
+        }
+
+        /* Details Table */
+        .details-section {
+            margin: 25px 0;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .details-table th {
+            background: #1a5276;
+            color: #fff;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .details-table th:last-child {
+            text-align: right;
+        }
+        .details-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 10pt;
+        }
+        .details-table td:last-child {
+            text-align: right;
+        }
+        .details-table .item-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .details-table .item-desc {
+            font-size: 9pt;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+
+        /* Amount Box */
+        .amount-box {
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 20px 25px;
+            margin: 25px 0;
+            display: table;
+            width: 100%;
+        }
+        .amount-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+        .amount-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 28pt;
+            font-weight: 700;
+        }
+        .amount-currency {
+            font-size: 14pt;
+            opacity: 0.8;
+            margin-left: 5px;
+        }
+
+        /* Notes Section */
+        .notes-grid {
+            display: table;
+            width: 100%;
+            margin: 20px 0;
+        }
+        .note-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 10px;
+        }
+        .note-box:last-child {
+            padding-right: 0;
+            padding-left: 10px;
+        }
+        .note-card {
+            padding: 12px 15px;
+            font-size: 9pt;
+        }
+        .note-card.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-card.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-card.booking .note-title { color: #d68910; }
+        .note-card.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 8pt;
+            color: #95a5a6;
+        }
+        .footer p { margin: 3px 0; }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Expense Receipt</div>
+                <div class="doc-subtitle">Customer Reward · Loyalty Program</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">No. {$receipt_num}</div>
+                <div class="doc-date">{$date} at {$time}</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-label">Issuer</div>
+                <div class="info-content">
+                    <p class="name">{$company}</p>
+                    <p>{$address}</p>
+                    <p>{$plz} {$city}</p>
+                    {$tax_id}
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">Recipient</div>
+                <div class="info-content">
+                    <p class="name">{$customer}</p>
+                    <p>{$email}</p>
+                    <p>Redeemed points: {$points}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-section">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="item-name">{$reward}</div>
+                            <div class="item-desc">Points redemption within the loyalty program</div>
+                        </td>
+                        <td>{$amount_formatted} EUR</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="amount-box">
+            <div class="amount-label">Total Amount</div>
+            <div class="amount-value">{$amount_formatted}<span class="amount-currency">EUR</span></div>
+        </div>
+
+        <div class="notes-grid">
+            <div class="note-box">
+                <div class="note-card booking">
+                    <div class="note-title">Booking Note</div>
+                    <p>Debit: 4930 (Advertising costs)</p>
+                    <p>Credit: 1000 (Cash)</p>
+                </div>
+            </div>
+            <div class="note-box">
+                <div class="note-card legal">
+                    <div class="note-title">Tax Note</div>
+                    <p>Exempt from VAT per § 1 UStG</p>
+                    <p>Internal compensation – not taxable</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This document was generated automatically and is valid without signature.</p>
+            <p>PunktePass Loyalty Program · www.punktepass.de</p>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    /**
      * 🎨 HTML generálás HAVI bizonylathoz
      */
     private static function generate_html_for_monthly($store, $redeems, $year, $month, $lang, $group_by_filiale = false) {
@@ -1294,6 +1622,8 @@ HTML;
             return self::html_monthly_receipt_ro($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems);
         } elseif ($lang === 'HU') {
             return self::html_monthly_receipt_hu($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems);
+        } elseif ($lang === 'EN') {
+            return self::html_monthly_receipt_en($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems);
         } else {
             return self::html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems);
         }
@@ -3196,6 +3526,351 @@ HTML;
 
         <div class="footer">
             Készült: {$generated_date} · PunktePass Loyalty System
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * 🎨 HTML - Monthly receipt ENGLISH version - Professional Design
+     */
+    private static function html_monthly_receipt_en($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems = null) {
+        $company = htmlspecialchars($store['company_name'] ?? 'Company', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($store['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        // English month names
+        $english_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        $month_str = $english_months[$month - 1] . ' ' . $year;
+        $count = count($redeems);
+        $total_formatted = number_format($total_amount, 2, '.', ',');
+        $receipt_num = sprintf('%d-%02d-M', $year, $month);
+
+        $rows = '';
+
+        // Grouped by filiale
+        if ($grouped_redeems && count($grouped_redeems) > 1) {
+            foreach ($grouped_redeems as $filiale_id => $filiale_data) {
+                $filiale_name = htmlspecialchars($filiale_data['name'], ENT_QUOTES, 'UTF-8');
+                $filiale_total = number_format($filiale_data['total_amount'], 2, '.', ',');
+                $filiale_points = $filiale_data['total_points'];
+
+                $rows .= "<tr class=\"filiale-header\">
+                    <td colspan=\"5\" style=\"background: #e8f4f8; font-weight: 600; padding: 8px; border-top: 2px solid #1a5276;\">
+                        📍 {$filiale_name}
+                    </td>
+                </tr>";
+
+                foreach ($filiale_data['items'] as $r) {
+                    $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
+                    if (!$customer) {
+                        $customer = htmlspecialchars($r->user_email ?? 'Unknown', ENT_QUOTES, 'UTF-8');
+                    }
+                    $reward = htmlspecialchars($r->reward_title ?? 'Reward', ENT_QUOTES, 'UTF-8');
+                    $points = intval($r->points_spent ?? 0);
+                    $amount = self::calculate_item_amount($r);
+                    $amount_fmt = number_format($amount, 2, '.', ',');
+                    $date = date('d/m/Y', strtotime($r->redeemed_at));
+
+                    $rows .= "<tr>
+                        <td>{$date}</td>
+                        <td>{$customer}</td>
+                        <td>{$reward}</td>
+                        <td class=\"num\">{$points}</td>
+                        <td class=\"num\">{$amount_fmt}</td>
+                    </tr>";
+                }
+
+                $rows .= "<tr class=\"filiale-subtotal\">
+                    <td colspan=\"3\" style=\"text-align: right; font-weight: 500; background: #f5f5f5;\">Subtotal {$filiale_name}:</td>
+                    <td class=\"num\" style=\"font-weight: 500; background: #f5f5f5;\">{$filiale_points}</td>
+                    <td class=\"num\" style=\"font-weight: 500; background: #f5f5f5;\">{$filiale_total} €</td>
+                </tr>";
+            }
+        } else {
+            // Normal single-store layout
+            foreach ($redeems as $r) {
+                $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
+                if (!$customer) {
+                    $customer = htmlspecialchars($r->user_email ?? 'Unknown', ENT_QUOTES, 'UTF-8');
+                }
+                $reward = htmlspecialchars($r->reward_title ?? 'Reward', ENT_QUOTES, 'UTF-8');
+                $points = intval($r->points_spent ?? 0);
+                $amount = self::calculate_item_amount($r);
+                $amount_fmt = number_format($amount, 2, '.', ',');
+                $date = date('d/m/Y', strtotime($r->redeemed_at));
+
+                $rows .= "<tr>
+                    <td>{$date}</td>
+                    <td>{$customer}</td>
+                    <td>{$reward}</td>
+                    <td class=\"num\">{$points}</td>
+                    <td class=\"num\">{$amount_fmt}</td>
+                </tr>";
+            }
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Statement {$month_str}</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Company Info */
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Summary Row */
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 18pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+
+        /* Notes */
+        .notes-row {
+            display: table;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .note-cell {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 8px;
+        }
+        .note-cell:last-child {
+            padding-right: 0;
+            padding-left: 8px;
+        }
+        .note-box {
+            padding: 10px 12px;
+            font-size: 8pt;
+        }
+        .note-box.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-box.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-box.booking .note-title { color: #d68910; }
+        .note-box.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Monthly Statement</div>
+                <div class="doc-subtitle">Collective Receipt Customer Rewards</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">No. {$receipt_num}</div>
+                <div class="doc-period">{$month_str}</div>
+            </div>
+        </div>
+
+        <div class="company-box">
+            <p class="name">{$company}</p>
+            <p>{$address}, {$plz} {$city}</p>
+            {$tax_id}
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Reward</th>
+                    <th class="num">Points</th>
+                    <th class="num">Amount (EUR)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {$rows}
+            </tbody>
+        </table>
+
+        <div class="summary-row">
+            <div class="summary-label">
+                Total Amount
+                <div class="summary-details">{$count} redemptions · {$total_points} points</div>
+            </div>
+            <div class="summary-value">{$total_formatted}<span class="summary-currency">EUR</span></div>
+        </div>
+
+        <div class="notes-row">
+            <div class="note-cell">
+                <div class="note-box booking">
+                    <div class="note-title">Booking Note</div>
+                    <p>Debit: 4930 (Advertising costs)</p>
+                    <p>Credit: 1000 (Cash)</p>
+                </div>
+            </div>
+            <div class="note-cell">
+                <div class="note-box legal">
+                    <div class="note-title">Tax Note</div>
+                    <p>Exempt from VAT per § 1 UStG</p>
+                    <p>Internal compensation – not taxable</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Automatically generated · PunktePass Loyalty Program · www.punktepass.de</p>
         </div>
     </div>
 </body>

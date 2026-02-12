@@ -2480,6 +2480,22 @@ class PPV_Device_Fingerprint {
                     'mobile_scanner' => 'Scanner mobil activat',
                 ],
             ],
+            'en' => [
+                'subject' => "[PunktePass] Your device request has been approved",
+                'title' => 'Device request approved',
+                'intro' => 'Your device request has been successfully approved.',
+                'store_label' => 'Store',
+                'device_label' => 'Device',
+                'action_label' => 'Action',
+                'time_label' => 'Time',
+                'footer' => 'You can now use your device. If you have any questions, contact us at info@punktepass.de.',
+                'types' => [
+                    'add' => 'New device added',
+                    'remove' => 'Device removed',
+                    'new_slot' => 'Additional device slot approved',
+                    'mobile_scanner' => 'Mobile scanner activated',
+                ],
+            ],
         ];
 
         $t = $texts[$lang];

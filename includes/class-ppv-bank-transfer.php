@@ -151,9 +151,28 @@ class PPV_Bank_Transfer {
         // Get country-based pricing
         $pricing = self::get_pricing($store_id);
         $amount = $pricing['price_gross'];
-        $vat_text = $pricing['is_domestic']
-            ? number_format($amount, 2, ',', '.') . " € (inkl. 19% MwSt)"
-            : number_format($amount, 2, ',', '.') . " € (netto, ohne MwSt)";
+
+        // Detect language from store country
+        $lang = strtolower($store->country ?? 'de');
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
+            $lang = 'de';
+        }
+
+        $vat_texts = [
+            'de' => $pricing['is_domestic']
+                ? number_format($amount, 2, ',', '.') . " € (inkl. 19% MwSt)"
+                : number_format($amount, 2, ',', '.') . " € (netto, ohne MwSt)",
+            'en' => $pricing['is_domestic']
+                ? number_format($amount, 2, '.', ',') . " € (incl. 19% VAT)"
+                : number_format($amount, 2, '.', ',') . " € (net, excl. VAT)",
+            'hu' => $pricing['is_domestic']
+                ? number_format($amount, 2, ',', '.') . " € (bruttó, 19% ÁFA-val)"
+                : number_format($amount, 2, ',', '.') . " € (nettó, ÁFA nélkül)",
+            'ro' => $pricing['is_domestic']
+                ? number_format($amount, 2, ',', '.') . " € (cu 19% TVA)"
+                : number_format($amount, 2, ',', '.') . " € (net, fără TVA)",
+        ];
+        $vat_text = $vat_texts[$lang] ?? $vat_texts['de'];
 
         // Update store with pending bank transfer
         $wpdb->update(
@@ -167,10 +186,10 @@ class PPV_Bank_Transfer {
             ['id' => $store_id]
         );
 
-        // Send email notification to admin
+        // Send email notification to admin (always German)
         $admin_email = get_option('admin_email', 'info@punktepass.de');
-        $subject = "Neue Banküberweisung angefordert: {$store->store_name}";
-        $message = "
+        $admin_subject = "Neue Banküberweisung angefordert: {$store->store_name}";
+        $admin_message = "
 Hallo,
 
 {$store->store_name} hat eine Banküberweisung für das PunktePass Händler-Abo angefordert.
@@ -178,7 +197,7 @@ Hallo,
 Store ID: {$store_id}
 E-Mail: {$store->email}
 Referenz: {$reference}
-Betrag: {$vat_text}
+Betrag: {$vat_texts['de']}
 Land: " . ($pricing['is_domestic'] ? 'Deutschland' : strtoupper($store->country ?? '?')) . "
 
 Bitte überprüfen Sie den Zahlungseingang und bestätigen Sie die Zahlung im Admin-Bereich.
@@ -187,11 +206,18 @@ Mit freundlichen Grüßen,
 PunktePass System
 ";
 
-        wp_mail($admin_email, $subject, $message);
+        wp_mail($admin_email, $admin_subject, $admin_message);
 
-        // Send confirmation email to handler
-        $handler_subject = "Ihre Banküberweisung für PunktePass";
-        $handler_message = "
+        // Send confirmation email to handler (localized)
+        $bank_account_holder = get_option('ppv_bank_account_holder', self::ACCOUNT_HOLDER);
+        $bank_iban = get_option('ppv_bank_iban', self::IBAN);
+        $bank_bic = get_option('ppv_bank_bic', self::BIC);
+        $bank_name = get_option('ppv_bank_name', self::BANK_NAME);
+
+        $handler_emails = [
+            'de' => [
+                'subject' => "Ihre Banküberweisung für PunktePass",
+                'body' => "
 Hallo {$store->store_name},
 
 vielen Dank für Ihre Bestellung des PunktePass Händler-Abos.
@@ -202,18 +228,93 @@ Betrag: {$vat_text}
 Verwendungszweck: {$reference}
 
 Bankverbindung:
-Kontoinhaber: " . get_option('ppv_bank_account_holder', self::ACCOUNT_HOLDER) . "
-IBAN: " . get_option('ppv_bank_iban', self::IBAN) . "
-BIC: " . get_option('ppv_bank_bic', self::BIC) . "
-Bank: " . get_option('ppv_bank_name', self::BANK_NAME) . "
+Kontoinhaber: {$bank_account_holder}
+IBAN: {$bank_iban}
+BIC: {$bank_bic}
+Bank: {$bank_name}
 
 Nach Zahlungseingang wird Ihr Abo innerhalb von 1-2 Werktagen aktiviert.
 
 Mit freundlichen Grüßen,
 Ihr PunktePass Team
-";
+",
+            ],
+            'en' => [
+                'subject' => "Your bank transfer for PunktePass",
+                'body' => "
+Hello {$store->store_name},
 
-        wp_mail($store->email, $handler_subject, $handler_message);
+Thank you for ordering the PunktePass Retailer Subscription.
+
+Please transfer the following amount to our account:
+
+Amount: {$vat_text}
+Reference: {$reference}
+
+Bank details:
+Account holder: {$bank_account_holder}
+IBAN: {$bank_iban}
+BIC: {$bank_bic}
+Bank: {$bank_name}
+
+Your subscription will be activated within 1-2 business days after payment is received.
+
+Best regards,
+Your PunktePass Team
+",
+            ],
+            'hu' => [
+                'subject' => "Banki átutalás a PunktePass számára",
+                'body' => "
+Kedves {$store->store_name},
+
+Köszönjük a PunktePass Kereskedői Előfizetés megrendelését.
+
+Kérjük, utalja át az alábbi összeget bankszámlánkra:
+
+Összeg: {$vat_text}
+Közlemény: {$reference}
+
+Bankadatok:
+Számlatulajdonos: {$bank_account_holder}
+IBAN: {$bank_iban}
+BIC: {$bank_bic}
+Bank: {$bank_name}
+
+A fizetés beérkezése után az előfizetés 1-2 munkanapon belül aktiválódik.
+
+Üdvözlettel,
+A PunktePass Csapat
+",
+            ],
+            'ro' => [
+                'subject' => "Transfer bancar pentru PunktePass",
+                'body' => "
+Bună ziua {$store->store_name},
+
+Vă mulțumim pentru comanda abonamentului PunktePass Comerciant.
+
+Vă rugăm să transferați următoarea sumă în contul nostru:
+
+Sumă: {$vat_text}
+Referință: {$reference}
+
+Date bancare:
+Titular cont: {$bank_account_holder}
+IBAN: {$bank_iban}
+BIC: {$bank_bic}
+Banca: {$bank_name}
+
+Abonamentul va fi activat în 1-2 zile lucrătoare după primirea plății.
+
+Cu stimă,
+Echipa PunktePass
+",
+            ],
+        ];
+
+        $handler_email = $handler_emails[$lang] ?? $handler_emails['de'];
+        wp_mail($store->email, $handler_email['subject'], $handler_email['body']);
 
         ppv_log("💳 Bank transfer requested for store {$store_id}, reference: {$reference}, amount: {$amount}");
 
@@ -244,7 +345,7 @@ Ihr PunktePass Team
         global $wpdb;
 
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, store_name, email, subscription_expires_at FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            "SELECT id, store_name, email, country, subscription_expires_at FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
 
@@ -276,22 +377,78 @@ Ihr PunktePass Team
             ['id' => $store_id]
         );
 
-        // Send confirmation email to handler
-        $subject = "PunktePass Abo aktiviert";
-        $message = "
+        // Send confirmation email to handler (localized)
+        $lang = strtolower($store->country ?? 'de');
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
+            $lang = 'de';
+        }
+        $expires_fmt = date('d.m.Y', strtotime($new_expires));
+
+        $confirm_emails = [
+            'de' => [
+                'subject' => "PunktePass Abo aktiviert",
+                'body' => "
 Hallo {$store->store_name},
 
 Ihre Zahlung wurde bestätigt. Ihr PunktePass Händler-Abo ist jetzt aktiv.
 
-Abo gültig bis: " . date('d.m.Y', strtotime($new_expires)) . "
+Abo gültig bis: {$expires_fmt}
 
 Vielen Dank für Ihr Vertrauen!
 
 Mit freundlichen Grüßen,
 Ihr PunktePass Team
-";
+",
+            ],
+            'en' => [
+                'subject' => "PunktePass subscription activated",
+                'body' => "
+Hello {$store->store_name},
 
-        wp_mail($store->email, $subject, $message);
+Your payment has been confirmed. Your PunktePass Retailer Subscription is now active.
+
+Subscription valid until: {$expires_fmt}
+
+Thank you for your trust!
+
+Best regards,
+Your PunktePass Team
+",
+            ],
+            'hu' => [
+                'subject' => "PunktePass előfizetés aktiválva",
+                'body' => "
+Kedves {$store->store_name},
+
+Fizetését megerősítettük. PunktePass Kereskedői Előfizetése most aktív.
+
+Előfizetés érvényes: {$expires_fmt}
+
+Köszönjük a bizalmát!
+
+Üdvözlettel,
+A PunktePass Csapat
+",
+            ],
+            'ro' => [
+                'subject' => "Abonament PunktePass activat",
+                'body' => "
+Bună ziua {$store->store_name},
+
+Plata dvs. a fost confirmată. Abonamentul PunktePass Comerciant este acum activ.
+
+Abonament valabil până la: {$expires_fmt}
+
+Vă mulțumim pentru încredere!
+
+Cu stimă,
+Echipa PunktePass
+",
+            ],
+        ];
+
+        $confirm_email = $confirm_emails[$lang] ?? $confirm_emails['de'];
+        wp_mail($store->email, $confirm_email['subject'], $confirm_email['body']);
 
         ppv_log("✅ Bank transfer confirmed for store {$store_id}, expires: {$new_expires}");
 
