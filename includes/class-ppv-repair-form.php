@@ -116,12 +116,6 @@ class PPV_Repair_Form {
     .repair-select:focus{border-color:var(--repair-accent);background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
     .repair-problem-tag{transition:all .2s cubic-bezier(.4,0,.2,1)}
     .repair-problem-tag.active{background:var(--repair-accent)!important;border-color:var(--repair-accent)!important;color:#fff!important;box-shadow:0 4px 12px rgba(102,126,234,0.25)}
-    /* Language switcher */
-    .repair-lang-switch{position:absolute;top:16px;right:16px;z-index:10;display:flex;gap:4px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:4px}
-    .repair-lang-btn{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
-    .repair-lang-btn:hover{color:#fff;background:rgba(255,255,255,0.15)}
-    .repair-lang-btn.active{color:#1f2937;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-    .repair-auto-redirect{text-align:center;margin-top:12px;font-size:13px;color:#94a3b8;font-weight:500}
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -133,12 +127,6 @@ class PPV_Repair_Form {
             <div class="repair-hero-blob repair-hero-blob--1"></div>
             <div class="repair-hero-blob repair-hero-blob--2"></div>
             <div class="repair-hero-blob repair-hero-blob--3"></div>
-        </div>
-        <!-- Language Switcher -->
-        <div class="repair-lang-switch">
-            <button class="repair-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
-            <button class="repair-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
-            <button class="repair-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
         </div>
         <div class="repair-header-inner">
             <?php if ($store->logo): ?>
@@ -293,8 +281,51 @@ class PPV_Repair_Form {
                 <?php endif; ?>
             </div>
             <?php endif; ?>
-        </div>
-        <?php endif; ?>
+
+            <?php if (!empty($field_config['device_color']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['device_color']['label'] ?? PPV_Lang::t('repair_fb_color')); ?></label>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <?php
+                    $colors = ['Schwarz' => '#000', 'Weiß' => '#fff', 'Silber' => '#c0c0c0', 'Gold' => '#d4a437', 'Blau' => '#3b82f6', 'Rot' => '#ef4444', 'Grün' => '#22c55e', 'Rosa' => '#ec4899'];
+                    foreach ($colors as $cname => $chex): ?>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:13px;transition:all .2s" class="repair-color-label">
+                        <input type="radio" name="device_color" value="<?php echo esc_attr($cname); ?>" style="display:none">
+                        <span style="width:16px;height:16px;border-radius:50%;background:<?php echo $chex; ?>;border:1.5px solid #d1d5db;display:inline-block"></span>
+                        <?php echo esc_html($cname); ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['purchase_date']['enabled'])): ?>
+            <div class="repair-field">
+                <label for="rf-purchase-date"><?php echo esc_html($field_config['purchase_date']['label'] ?? PPV_Lang::t('repair_fb_purchase_date')); ?></label>
+                <input type="date" id="rf-purchase-date" name="purchase_date" style="width:100%;padding:14px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:16px;background:#f8fafc;color:#0f172a;outline:none">
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['condition_check']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['condition_check']['label'] ?? PPV_Lang::t('repair_fb_condition')); ?></label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rf-condition-grid">
+                    <?php
+                    $cond_parts = ['Display', 'Tasten', 'Kamera', 'Lautsprecher', 'Mikrofon', 'Ladebuchse', 'Akku', 'Gehäuse'];
+                    foreach ($cond_parts as $part): ?>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc">
+                        <span><?php echo esc_html($part); ?></span>
+                        <div style="display:flex;gap:4px">
+                            <button type="button" class="repair-cond-btn" data-part="<?php echo esc_attr($part); ?>" data-val="ok" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#d1fae5;color:#059669" onclick="ppvCondToggle(this,'ok')">OK</button>
+                            <button type="button" class="repair-cond-btn" data-part="<?php echo esc_attr($part); ?>" data-val="defekt" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#f1f5f9;color:#94a3b8" onclick="ppvCondToggle(this,'defekt')">Defekt</button>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <input type="hidden" name="condition_check" id="rf-condition-data">
+            </div>
+            <?php endif; ?>
+            <?php endif; ?>
 
         <!-- Step: Problem -->
         <div class="repair-section" id="step-problem">
@@ -337,6 +368,87 @@ class PPV_Repair_Form {
                 </div>
             </div>
             <?php endif; ?>
+
+            <?php if (!empty($field_config['photo_upload']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['photo_upload']['label'] ?? PPV_Lang::t('repair_fb_photo')); ?></label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap" id="rf-photo-previews"></div>
+                <label style="display:flex;align-items:center;gap:8px;padding:14px;border:2px dashed #e2e8f0;border-radius:10px;cursor:pointer;color:#64748b;font-size:13px;font-weight:600;transition:all .2s;text-align:center;justify-content:center;margin-top:8px" id="rf-photo-label">
+                    <i class="ri-camera-line" style="font-size:20px;color:var(--repair-accent)"></i>
+                    <?php echo esc_html(PPV_Lang::t('repair_fb_photo_btn')); ?>
+                    <input type="file" name="repair_photos[]" accept="image/*" multiple capture="environment" style="display:none" id="rf-photo-input" onchange="ppvPhotoPreview(this)">
+                </label>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['priority']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['priority']['label'] ?? PPV_Lang::t('repair_fb_priority')); ?></label>
+                <div style="display:flex;gap:8px" id="rf-priority-cards">
+                    <label style="flex:1;padding:12px 8px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc" class="repair-priority-opt" onclick="ppvPrioritySelect(this)">
+                        <input type="radio" name="priority" value="express" style="display:none">
+                        <i class="ri-flashlight-line" style="font-size:20px;display:block;margin-bottom:4px;color:#f59e0b"></i>
+                        <strong style="font-size:12px">Express</strong><br><span style="font-size:11px;color:#64748b">24h</span>
+                    </label>
+                    <label style="flex:1;padding:12px 8px;border:2px solid var(--repair-accent);border-radius:10px;text-align:center;cursor:pointer;transition:all .2s;background:#eff6ff" class="repair-priority-opt active" onclick="ppvPrioritySelect(this)">
+                        <input type="radio" name="priority" value="normal" checked style="display:none">
+                        <i class="ri-time-line" style="font-size:20px;display:block;margin-bottom:4px;color:var(--repair-accent)"></i>
+                        <strong style="font-size:12px">Normal</strong><br><span style="font-size:11px;color:#64748b">3-5 <?php echo esc_html(PPV_Lang::t('repair_fb_days')); ?></span>
+                    </label>
+                    <label style="flex:1;padding:12px 8px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc" class="repair-priority-opt" onclick="ppvPrioritySelect(this)">
+                        <input type="radio" name="priority" value="economy" style="display:none">
+                        <i class="ri-leaf-line" style="font-size:20px;display:block;margin-bottom:4px;color:#22c55e"></i>
+                        <strong style="font-size:12px"><?php echo esc_html(PPV_Lang::t('repair_fb_economy')); ?></strong><br><span style="font-size:11px;color:#64748b">7-10 <?php echo esc_html(PPV_Lang::t('repair_fb_days')); ?></span>
+                    </label>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['cost_limit']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['cost_limit']['label'] ?? PPV_Lang::t('repair_fb_cost_limit')); ?></label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <?php foreach (['50' => 'max. 50€', '100' => 'max. 100€', '200' => 'max. 200€', 'unlimited' => PPV_Lang::t('repair_fb_no_limit')] as $cv => $cl): ?>
+                    <label style="padding:8px 16px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:all .2s" class="repair-cost-opt" onclick="ppvCostSelect(this)">
+                        <input type="radio" name="cost_limit" value="<?php echo esc_attr($cv); ?>" style="display:none">
+                        <?php echo esc_html($cl); ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php
+            // Custom fields from field_config
+            foreach ($field_config as $cf_key => $cf) {
+                if (strpos($cf_key, 'custom_') !== 0) continue;
+                if (empty($cf['enabled'])) continue;
+                $cf_label = esc_html($cf['label'] ?? '');
+                $cf_type  = $cf['type'] ?? 'text';
+                $cf_req   = !empty($cf['required']) ? 'required' : '';
+                $cf_name  = 'cf_' . esc_attr($cf_key);
+                if (!$cf_label) continue;
+            ?>
+            <div class="repair-field">
+                <label for="<?php echo $cf_name; ?>"><?php echo $cf_label; ?><?php if ($cf_req): ?> <span style="color:#f59e0b">*</span><?php endif; ?></label>
+                <?php if ($cf_type === 'textarea'): ?>
+                    <textarea id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" rows="3" <?php echo $cf_req; ?> placeholder="<?php echo $cf_label; ?>"></textarea>
+                <?php elseif ($cf_type === 'select' && !empty($cf['options'])): ?>
+                    <select id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" class="repair-select" <?php echo $cf_req; ?>>
+                        <option value=""><?php echo esc_html(PPV_Lang::t('repair_select_placeholder')); ?></option>
+                        <?php foreach (explode("\n", $cf['options']) as $opt): $opt = trim($opt); if ($opt === '') continue; ?>
+                        <option value="<?php echo esc_attr($opt); ?>"><?php echo esc_html($opt); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php elseif ($cf_type === 'checkbox'): ?>
+                    <label class="repair-checkbox" style="margin-top:4px"><input type="checkbox" name="<?php echo $cf_name; ?>" value="1"> <?php echo $cf_label; ?></label>
+                <?php elseif ($cf_type === 'number'): ?>
+                    <input type="number" id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" <?php echo $cf_req; ?> placeholder="<?php echo $cf_label; ?>">
+                <?php else: ?>
+                    <input type="text" id="<?php echo $cf_name; ?>" name="<?php echo $cf_name; ?>" <?php echo $cf_req; ?> placeholder="<?php echo $cf_label; ?>">
+                <?php endif; ?>
+            </div>
+            <?php } ?>
         </div>
 
         <!-- Signature Section -->
@@ -458,19 +570,62 @@ class PPV_Repair_Form {
 // Translation strings for JS
 var ppvLang = <?php echo $js_strings; ?>;
 
-// Language switcher
-(function(){
-    var btns = document.querySelectorAll('.repair-lang-btn');
-    btns.forEach(function(btn){
-        btn.addEventListener('click', function(){
-            var lang = btn.getAttribute('data-lang');
-            var url = new URL(window.location.href);
-            url.searchParams.set('lang', lang);
-            document.cookie = 'ppv_lang=' + lang + ';path=/;max-age=31536000';
-            window.location.href = url.toString();
-        });
+
+// ===== New field type handlers =====
+// Color selection
+document.querySelectorAll('.repair-color-label').forEach(function(lbl){
+    lbl.addEventListener('click',function(){
+        document.querySelectorAll('.repair-color-label').forEach(function(l){l.style.borderColor='#e2e8f0';l.style.background=''});
+        this.style.borderColor='var(--repair-accent)';this.style.background='#eff6ff';
     });
-})();
+});
+// Condition check toggle
+function ppvCondToggle(btn,val){
+    var row=btn.parentNode;
+    row.querySelectorAll('.repair-cond-btn').forEach(function(b){b.style.opacity='0.4';b.style.background='#f1f5f9';b.style.color='#94a3b8'});
+    if(val==='ok'){btn.style.opacity='1';btn.style.background='#d1fae5';btn.style.color='#059669'}
+    else{btn.style.opacity='1';btn.style.background='#fee2e2';btn.style.color='#dc2626'}
+    // Update hidden input
+    var result={};
+    document.querySelectorAll('#rf-condition-grid .repair-cond-btn').forEach(function(b){
+        if(parseFloat(b.style.opacity)===1){result[b.getAttribute('data-part')]=b.getAttribute('data-val')}
+    });
+    var inp=document.getElementById('rf-condition-data');
+    if(inp) inp.value=JSON.stringify(result);
+}
+// Photo preview
+function ppvPhotoPreview(input){
+    var container=document.getElementById('rf-photo-previews');
+    if(!container||!input.files) return;
+    container.innerHTML='';
+    var max=Math.min(input.files.length,5);
+    for(var i=0;i<max;i++){
+        var reader=new FileReader();
+        reader.onload=function(e){
+            var img=document.createElement('img');
+            img.src=e.target.result;
+            img.style.cssText='width:70px;height:70px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0';
+            container.appendChild(img);
+        };
+        reader.readAsDataURL(input.files[i]);
+    }
+}
+// Priority selection
+function ppvPrioritySelect(lbl){
+    document.querySelectorAll('.repair-priority-opt').forEach(function(l){
+        l.style.borderColor='#e2e8f0';l.style.background='#f8fafc';l.classList.remove('active');
+    });
+    lbl.style.borderColor='var(--repair-accent)';lbl.style.background='#eff6ff';lbl.classList.add('active');
+    lbl.querySelector('input').checked=true;
+}
+// Cost limit selection
+function ppvCostSelect(lbl){
+    document.querySelectorAll('.repair-cost-opt').forEach(function(l){
+        l.style.borderColor='#e2e8f0';l.style.color='#64748b';l.style.background='';
+    });
+    lbl.style.borderColor='var(--repair-accent)';lbl.style.color='var(--repair-accent)';lbl.style.background='#eff6ff';
+    lbl.querySelector('input').checked=true;
+}
 
 // Problem tag toggle for quick selection
 function toggleProblemTag(btn, text) {

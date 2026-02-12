@@ -637,6 +637,7 @@ class PPV_SEO {
         $page_url = home_url("/formular/{$slug}");
         $logo = $store->logo ?: '';
         $service_type = $store->repair_service_type ?? 'Allgemein';
+        $form_title = $store->repair_form_title ?: 'Reparaturauftrag';
 
         // Map service type to Schema.org type
         $business_types = [

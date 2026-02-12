@@ -27,6 +27,14 @@ class PPV_Repair_Core {
         // DB migration
         add_action('admin_init', [__CLASS__, 'run_migrations'], 6);
 
+        // Monthly form counter reset (cron)
+        add_action('ppv_repair_monthly_reset', [__CLASS__, 'cron_monthly_form_reset']);
+        if (!wp_next_scheduled('ppv_repair_monthly_reset')) {
+            // Schedule for 1st of next month at 00:05
+            $next_month = strtotime('first day of next month 00:05:00');
+            wp_schedule_event($next_month, 'monthly', 'ppv_repair_monthly_reset');
+        }
+
         // AJAX: submit repair form (public, no login required)
         add_action('wp_ajax_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
         add_action('wp_ajax_nopriv_ppv_repair_submit', [__CLASS__, 'ajax_submit_repair']);
@@ -54,6 +62,22 @@ class PPV_Repair_Core {
         // AJAX: repair admin login
         add_action('wp_ajax_nopriv_ppv_repair_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_ppv_repair_login', [__CLASS__, 'ajax_login']);
+
+        // AJAX: repair filialen management
+        add_action('wp_ajax_nopriv_ppv_repair_create_filiale', [__CLASS__, 'ajax_create_filiale']);
+        add_action('wp_ajax_ppv_repair_create_filiale', [__CLASS__, 'ajax_create_filiale']);
+        add_action('wp_ajax_nopriv_ppv_repair_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
+        add_action('wp_ajax_ppv_repair_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
+        add_action('wp_ajax_nopriv_ppv_repair_edit_filiale', [__CLASS__, 'ajax_edit_filiale']);
+        add_action('wp_ajax_ppv_repair_edit_filiale', [__CLASS__, 'ajax_edit_filiale']);
+        add_action('wp_ajax_nopriv_ppv_repair_delete_filiale', [__CLASS__, 'ajax_delete_filiale']);
+        add_action('wp_ajax_ppv_repair_delete_filiale', [__CLASS__, 'ajax_delete_filiale']);
+
+        // AJAX: repair Google/Apple OAuth
+        add_action('wp_ajax_nopriv_ppv_repair_google_login', [__CLASS__, 'ajax_google_login']);
+        add_action('wp_ajax_ppv_repair_google_login', [__CLASS__, 'ajax_google_login']);
+        add_action('wp_ajax_nopriv_ppv_repair_apple_login', [__CLASS__, 'ajax_apple_login']);
+        add_action('wp_ajax_ppv_repair_apple_login', [__CLASS__, 'ajax_apple_login']);
 
         // AJAX: repair admin actions (need nopriv because repair admin uses session auth, not WP login)
         $admin_actions = [
@@ -186,6 +210,13 @@ class PPV_Repair_Core {
         if ($path === '/formular/lead-finder') {
             require_once PPV_PLUGIN_DIR . 'includes/class-ppv-lead-finder.php';
             PPV_Lead_Finder::render();
+            exit;
+        }
+
+        // /formular/partner → Partner pitch page for wholesalers
+        if ($path === '/formular/partner') {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-partner.php';
+            PPV_Repair_Partner::render();
             exit;
         }
 
@@ -801,6 +832,16 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '2.4');
         }
+
+        // v2.5: Add custom_fields JSON column to repairs table
+        if (version_compare($version, '2.5', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'custom_fields'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN custom_fields TEXT NULL AFTER signature_image");
+            }
+            update_option('ppv_repair_migration_version', '2.5');
+        }
     }
 
     /** ============================================================
@@ -911,6 +952,44 @@ class PPV_Repair_Core {
             }
         }
 
+        // Collect custom fields (cf_custom_*) + new built-in extras
+        $custom_fields = [];
+        foreach ($_POST as $pk => $pv) {
+            if (strpos($pk, 'cf_custom_') === 0) {
+                $custom_fields[substr($pk, 3)] = sanitize_text_field($pv);
+            }
+        }
+        // New built-in field types → stored in custom_fields JSON
+        $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit'];
+        foreach ($extra_keys as $ek) {
+            if (!empty($_POST[$ek])) {
+                $custom_fields[$ek] = sanitize_text_field($_POST[$ek]);
+            }
+        }
+        // Photo uploads
+        if (!empty($_FILES['repair_photos']['name'][0])) {
+            $photo_urls = [];
+            $upload_dir = wp_upload_dir();
+            $repair_dir = $upload_dir['basedir'] . '/ppv-repairs';
+            if (!is_dir($repair_dir)) { wp_mkdir_p($repair_dir); }
+            $max_photos = min(count($_FILES['repair_photos']['name']), 5);
+            for ($pi = 0; $pi < $max_photos; $pi++) {
+                if ($_FILES['repair_photos']['error'][$pi] !== UPLOAD_ERR_OK) continue;
+                if ($_FILES['repair_photos']['size'][$pi] > 5 * 1024 * 1024) continue; // max 5MB
+                $ext = strtolower(pathinfo($_FILES['repair_photos']['name'][$pi], PATHINFO_EXTENSION));
+                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) continue;
+                $fname = 'repair_' . time() . '_' . $pi . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                $dest = $repair_dir . '/' . $fname;
+                if (move_uploaded_file($_FILES['repair_photos']['tmp_name'][$pi], $dest)) {
+                    $photo_urls[] = $upload_dir['baseurl'] . '/ppv-repairs/' . $fname;
+                }
+            }
+            if (!empty($photo_urls)) {
+                $custom_fields['photos'] = $photo_urls;
+            }
+        }
+        $custom_fields_json = !empty($custom_fields) ? wp_json_encode($custom_fields) : '';
+
         // Generate unique tracking token
         $tracking_token = bin2hex(random_bytes(16));
 
@@ -929,6 +1008,7 @@ class PPV_Repair_Core {
             'accessories'         => $accessories,
             'muster_image'        => $muster_image,
             'signature_image'     => $signature_image,
+            'custom_fields'       => $custom_fields_json,
             'status'              => 'new',
             'created_at'          => current_time('mysql'),
             'updated_at'          => current_time('mysql'),
@@ -1554,6 +1634,552 @@ class PPV_Repair_Core {
         $subject = "Willkommen bei PunktePass Reparatur - {$shop_name}";
         $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,sans-serif;"><div style="max-width:560px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 16px 0 0;padding:32px 28px;text-align:center;"><h1 style="color:#fff;font-size:22px;margin:0 0 8px;">Willkommen bei PunktePass!</h1><p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0;">Ihr Reparaturformular ist bereit</p></div><div style="background:#fff;padding:32px 28px;border-radius:0 0 16px 16px;"><p style="font-size:16px;color:#1f2937;margin:0 0 20px;">Hallo <strong>' . esc_html($first) . '</strong>,</p><div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;"><div style="font-size:12px;font-weight:600;color:#0369a1;margin-bottom:8px;">IHR FORMULAR-LINK</div><a href="' . esc_url($form_url) . '" style="font-size:16px;color:#1d4ed8;font-weight:600;">' . esc_html($form_url) . '</a></div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:0 0 24px;"><div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;">ZUGANGSDATEN</div><p style="margin:4px 0;font-size:14px;"><strong>E-Mail:</strong> ' . esc_html($email) . '</p><p style="margin:4px 0;font-size:14px;"><strong>Passwort:</strong> <code>' . esc_html($password) . '</code></p><p style="margin:4px 0;font-size:14px;"><strong>Admin:</strong> <a href="' . esc_url($admin_url) . '">' . esc_html($admin_url) . '</a></p></div><div style="text-align:center;"><a href="' . esc_url($admin_url) . '" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Zum Admin-Bereich</a></div></div></div></body></html>';
         wp_mail($email, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+    }
+
+    /** ============================================================
+     * AJAX: Create repair filiale (branch)
+     * Creates child store with repair_enabled=1, linked to parent
+     * Also visible in main PunktePass system
+     * ============================================================ */
+    public static function ajax_create_filiale() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+
+        $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
+        if (!$current_store_id) {
+            wp_send_json_error(['message' => 'Nicht angemeldet']);
+        }
+
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Determine parent store ID
+        $current = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id, user_id, repair_premium FROM {$prefix}ppv_stores WHERE id = %d", $current_store_id
+        ));
+        if (!$current) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        $parent_store_id = $current->parent_store_id ? intval($current->parent_store_id) : intval($current->id);
+
+        // Get parent store data
+        $parent = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $parent_store_id
+        ), ARRAY_A);
+        if (!$parent) wp_send_json_error(['message' => 'Hauptfiliale nicht gefunden']);
+
+        // Check premium (repair_premium OR active subscription)
+        $is_premium = !empty($parent['repair_premium'])
+            || (($parent['subscription_status'] ?? '') === 'active'
+                && (!$parent['subscription_expires_at'] || strtotime($parent['subscription_expires_at']) > time()));
+        if (!$is_premium) {
+            wp_send_json_error(['message' => 'Filialen sind nur im Premium-Plan verfügbar']);
+        }
+
+        // Check limit using PPV_Filiale if available
+        if (class_exists('PPV_Filiale')) {
+            $limit_info = PPV_Filiale::can_add_filiale($parent_store_id);
+        } else {
+            $count = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$prefix}ppv_stores WHERE parent_store_id = %d OR id = %d",
+                $parent_store_id, $parent_store_id
+            ));
+            $max = intval($parent['max_filialen'] ?? 1);
+            $limit_info = ['can_add' => $count < $max, 'current' => $count, 'max' => $max];
+        }
+
+        if (!$limit_info['can_add']) {
+            wp_send_json_error(['message' => 'Filiale-Limit erreicht (' . $limit_info['current'] . '/' . $limit_info['max'] . ')']);
+        }
+
+        $name = sanitize_text_field($_POST['filiale_name'] ?? '');
+        $city = sanitize_text_field($_POST['city'] ?? '');
+        $plz  = sanitize_text_field($_POST['plz'] ?? '');
+
+        if (empty($name) || empty($city)) {
+            wp_send_json_error(['message' => 'Name und Stadt sind Pflichtfelder']);
+        }
+
+        // Generate unique slug
+        $slug = sanitize_title($name . '-' . $city);
+        $base_slug = $slug;
+        $counter = 1;
+        while ($wpdb->get_var($wpdb->prepare("SELECT id FROM {$prefix}ppv_stores WHERE store_slug=%s", $slug))) {
+            $slug = $base_slug . '-' . $counter++;
+        }
+
+        // Create filiale - copies parent config, gets its own location + keys
+        $filiale_data = [
+            'parent_store_id'       => $parent_store_id,
+            'user_id'               => $parent['user_id'],
+            'name'                  => $name,
+            'company_name'          => $parent['company_name'] ?: $parent['name'],
+            'store_slug'            => $slug,
+            'store_key'             => wp_generate_password(16, false, false),
+            'email'                 => $parent['email'],
+            'phone'                 => $parent['phone'],
+            'address'               => '',
+            'plz'                   => $plz,
+            'city'                  => $city,
+            'qr_secret'             => wp_generate_password(32, false, false),
+            'pos_api_key'           => bin2hex(random_bytes(16)),
+            'active'                => 1,
+            'visible'               => 1,
+            // Repair config from parent
+            'repair_enabled'        => 1,
+            'repair_points_per_form' => $parent['repair_points_per_form'] ?? 2,
+            'repair_form_count'     => 0,
+            'repair_form_limit'     => $parent['repair_form_limit'] ?? 50,
+            'repair_premium'        => 1,
+            'repair_company_name'   => $name,
+            'repair_owner_name'     => $parent['repair_owner_name'],
+            'repair_tax_id'         => $parent['repair_tax_id'],
+            'repair_color'          => $parent['repair_color'] ?: '#667eea',
+            'subscription_status'   => $parent['subscription_status'],
+            'trial_ends_at'         => $parent['trial_ends_at'],
+            'subscription_expires_at' => $parent['subscription_expires_at'],
+            'created_at'            => current_time('mysql'),
+        ];
+
+        $result = $wpdb->insert("{$prefix}ppv_stores", $filiale_data);
+        if (!$result) {
+            wp_send_json_error(['message' => 'Filiale konnte nicht erstellt werden']);
+        }
+
+        $new_id = $wpdb->insert_id;
+
+        // Create default reward for filiale
+        $wpdb->insert("{$prefix}ppv_rewards", [
+            'store_id' => $new_id, 'name' => '10 Euro Rabatt',
+            'description' => '10 Euro Rabatt auf Ihre nächste Reparatur',
+            'required_points' => 4, 'points_given' => 0, 'active' => 1,
+            'created_at' => current_time('mysql'),
+        ]);
+
+        // Fire action so main PunktePass system can react
+        do_action('ppv_filiale_created', $new_id);
+
+        if (function_exists('ppv_log')) {
+            ppv_log("🏪 [PPV_Repair] New filiale created: #{$new_id} '{$name}' ({$city}) under parent #{$parent_store_id}");
+        }
+
+        wp_send_json_success([
+            'filiale_id' => $new_id,
+            'name' => $name,
+            'slug' => $slug,
+            'city' => $city,
+            'message' => 'Filiale erfolgreich erstellt!',
+        ]);
+    }
+
+    /** ============================================================
+     * AJAX: Switch active repair filiale
+     * Updates session to point to different store
+     * ============================================================ */
+    public static function ajax_switch_filiale() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+
+        $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
+        if (!$current_store_id) {
+            wp_send_json_error(['message' => 'Nicht angemeldet']);
+        }
+
+        $target_id = intval($_POST['filiale_id'] ?? 0);
+        if (!$target_id) {
+            wp_send_json_error(['message' => 'Ungültige Filiale']);
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Get current parent
+        $current = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d", $current_store_id
+        ));
+        $parent_id = $current->parent_store_id ? intval($current->parent_store_id) : intval($current->id);
+
+        // Verify target belongs to same parent and is repair-enabled
+        $target = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, name, repair_enabled FROM {$prefix}ppv_stores
+             WHERE id = %d AND (parent_store_id = %d OR id = %d) AND repair_enabled = 1",
+            $target_id, $parent_id, $parent_id
+        ));
+
+        if (!$target) {
+            wp_send_json_error(['message' => 'Filiale nicht gefunden oder nicht berechtigt']);
+        }
+
+        // Switch session
+        $_SESSION['ppv_repair_store_id'] = $target->id;
+
+        // Also update main PunktePass filiale session if available
+        if (class_exists('PPV_Filiale')) {
+            PPV_Filiale::set_current_filiale($target->id);
+        }
+
+        wp_send_json_success([
+            'store_id' => $target->id,
+            'name' => $target->name,
+            'message' => 'Filiale gewechselt',
+        ]);
+    }
+
+    /** ============================================================
+     * AJAX: Edit filiale (name, city, plz)
+     * ============================================================ */
+    public static function ajax_edit_filiale() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+
+        $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
+        if (!$current_store_id) wp_send_json_error(['message' => 'Nicht angemeldet']);
+
+        $filiale_id = intval($_POST['filiale_id'] ?? 0);
+        if (!$filiale_id) wp_send_json_error(['message' => 'Ungültige Filiale']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Get current user's parent
+        $current = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d", $current_store_id
+        ));
+        $parent_id = $current->parent_store_id ? intval($current->parent_store_id) : intval($current->id);
+
+        // Verify filiale belongs to same parent
+        $filiale = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d AND (parent_store_id = %d OR id = %d)",
+            $filiale_id, $parent_id, $parent_id
+        ));
+        if (!$filiale) wp_send_json_error(['message' => 'Filiale nicht gefunden']);
+
+        $name = sanitize_text_field($_POST['filiale_name'] ?? '');
+        $city = sanitize_text_field($_POST['city'] ?? '');
+        $plz  = sanitize_text_field($_POST['plz'] ?? '');
+
+        if (empty($name)) wp_send_json_error(['message' => 'Name ist ein Pflichtfeld']);
+
+        $update = ['name' => $name, 'repair_company_name' => $name];
+        if ($city !== '') $update['city'] = $city;
+        if ($plz !== '')  $update['plz'] = $plz;
+
+        $wpdb->update("{$prefix}ppv_stores", $update, ['id' => $filiale_id]);
+
+        wp_send_json_success(['message' => 'Filiale aktualisiert']);
+    }
+
+    /** ============================================================
+     * AJAX: Delete filiale (child only, not parent)
+     * ============================================================ */
+    public static function ajax_delete_filiale() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+
+        $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
+        if (!$current_store_id) wp_send_json_error(['message' => 'Nicht angemeldet']);
+
+        $filiale_id = intval($_POST['filiale_id'] ?? 0);
+        if (!$filiale_id) wp_send_json_error(['message' => 'Ungültige Filiale']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        // Get current user's parent
+        $current = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d", $current_store_id
+        ));
+        $parent_id = $current->parent_store_id ? intval($current->parent_store_id) : intval($current->id);
+
+        // Verify filiale is a CHILD of parent (cannot delete parent)
+        $filiale = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, name, parent_store_id FROM {$prefix}ppv_stores WHERE id = %d AND parent_store_id = %d",
+            $filiale_id, $parent_id
+        ));
+        if (!$filiale) wp_send_json_error(['message' => 'Hauptfiliale kann nicht gelöscht werden']);
+
+        // Delete related data
+        $wpdb->delete("{$prefix}ppv_rewards", ['store_id' => $filiale_id]);
+        $wpdb->delete("{$prefix}ppv_stores", ['id' => $filiale_id]);
+
+        // If current session was on deleted filiale, switch to parent
+        if ($current_store_id == $filiale_id) {
+            $_SESSION['ppv_repair_store_id'] = $parent_id;
+        }
+
+        if (function_exists('ppv_log')) {
+            ppv_log("🗑️ [PPV_Repair] Filiale deleted: #{$filiale_id} '{$filiale->name}' under parent #{$parent_id}");
+        }
+
+        wp_send_json_success(['message' => 'Filiale gelöscht']);
+    }
+
+    /** ============================================================
+     * CRON: Monthly form counter reset for free (non-premium) stores
+     * Resets repair_form_count to 0 on 1st of each month
+     * ============================================================ */
+    public static function cron_monthly_form_reset() {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $affected = $wpdb->query(
+            "UPDATE {$prefix}ppv_stores
+             SET repair_form_count = 0
+             WHERE repair_enabled = 1
+               AND repair_premium = 0
+               AND repair_form_count > 0"
+        );
+
+        if (function_exists('ppv_log')) {
+            ppv_log("🔄 [PPV_Repair] Monthly form counter reset: {$affected} stores reset to 0");
+        }
+    }
+
+    /** ============================================================
+     * Verify Google JWT Token (shared helper)
+     * ============================================================ */
+    private static function verify_google_token($credential) {
+        $web_client_id = defined('PPV_GOOGLE_CLIENT_ID')
+            ? PPV_GOOGLE_CLIENT_ID
+            : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
+        $ios_client_id = '645942978357-1bdviltt810gutpve9vjj2kab340man6.apps.googleusercontent.com';
+
+        $parts = explode('.', $credential);
+        if (count($parts) !== 3) return false;
+
+        $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
+        if (!$payload) return false;
+
+        $valid_audiences = [$web_client_id, $ios_client_id];
+        if (!isset($payload['aud']) || !in_array($payload['aud'], $valid_audiences)) return false;
+        if (!isset($payload['exp']) || $payload['exp'] < time()) return false;
+
+        return $payload;
+    }
+
+    /** ============================================================
+     * Verify Apple JWT Token (shared helper)
+     * ============================================================ */
+    private static function verify_apple_token($id_token) {
+        $parts = explode('.', $id_token);
+        if (count($parts) !== 3) return false;
+
+        $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
+        if (!$payload) return false;
+
+        if (!isset($payload['iss']) || $payload['iss'] !== 'https://appleid.apple.com') return false;
+
+        $client_id = defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', '');
+        if (!empty($client_id) && isset($payload['aud']) && $payload['aud'] !== $client_id) return false;
+
+        if (isset($payload['exp']) && $payload['exp'] < time()) return false;
+
+        return $payload;
+    }
+
+    /** ============================================================
+     * Helper: Find or create repair user + store, set session
+     * Used by Google and Apple OAuth flows
+     * ============================================================ */
+    private static function oauth_find_or_create($email, $first_name, $last_name, $provider_id_field, $provider_id, $mode) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $display_name = trim("{$first_name} {$last_name}") ?: $email;
+
+        // Check if user exists
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_users WHERE email=%s LIMIT 1", $email
+        ));
+
+        if (!$user) {
+            if ($mode === 'login') {
+                // Login mode: user must exist
+                wp_send_json_error(['message' => 'Kein Konto mit dieser E-Mail gefunden. Bitte zuerst registrieren.']);
+            }
+
+            // Registration mode: create user + store
+            $wpdb->insert("{$prefix}ppv_users", [
+                'email'        => $email,
+                'password'     => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
+                'first_name'   => $first_name,
+                'last_name'    => $last_name,
+                'display_name' => $display_name,
+                'qr_token'     => wp_generate_password(10, false, false),
+                'login_token'  => bin2hex(random_bytes(32)),
+                'user_type'    => 'handler',
+                $provider_id_field => $provider_id,
+                'active'       => 1,
+                'created_at'   => current_time('mysql'),
+                'updated_at'   => current_time('mysql'),
+            ]);
+            $user_id = $wpdb->insert_id;
+            if (!$user_id) {
+                wp_send_json_error(['message' => 'Registrierung fehlgeschlagen']);
+            }
+
+            // Create store
+            $shop_name = $display_name;
+            $slug = sanitize_title($shop_name);
+            $base_slug = $slug;
+            $counter = 1;
+            while ($wpdb->get_var($wpdb->prepare("SELECT id FROM {$prefix}ppv_stores WHERE store_slug=%s", $slug))) {
+                $slug = $base_slug . '-' . $counter++;
+            }
+
+            $wpdb->insert("{$prefix}ppv_stores", [
+                'user_id'              => $user_id,
+                'store_key'            => wp_generate_password(16, false, false),
+                'name'                 => $shop_name,
+                'store_slug'           => $slug,
+                'email'                => $email,
+                'qr_secret'            => wp_generate_password(32, false, false),
+                'pos_api_key'          => bin2hex(random_bytes(16)),
+                'active'               => 1,
+                'visible'              => 1,
+                'repair_enabled'       => 1,
+                'repair_points_per_form' => 2,
+                'repair_form_count'    => 0,
+                'repair_form_limit'    => 50,
+                'repair_premium'       => 0,
+                'repair_company_name'  => $shop_name,
+                'repair_owner_name'    => $display_name,
+                'repair_color'         => '#667eea',
+                'subscription_status'  => 'trial',
+                'trial_ends_at'        => date('Y-m-d H:i:s', strtotime('+30 days')),
+                'created_at'           => current_time('mysql'),
+            ]);
+            $store_id = $wpdb->insert_id;
+            if (!$store_id) {
+                $wpdb->delete("{$prefix}ppv_users", ['id' => $user_id]);
+                wp_send_json_error(['message' => 'Shop-Erstellung fehlgeschlagen']);
+            }
+
+            // Create default reward
+            $wpdb->insert("{$prefix}ppv_rewards", [
+                'store_id'        => $store_id,
+                'name'            => '10 Euro Rabatt',
+                'description'     => '10 Euro Rabatt auf Ihre nächste Reparatur',
+                'required_points' => 4,
+                'points_given'    => 0,
+                'active'          => 1,
+                'created_at'      => current_time('mysql'),
+            ]);
+
+            // Set session and redirect to admin
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+            $_SESSION['ppv_repair_store_id'] = $store_id;
+
+            $form_url  = home_url("/formular/{$slug}");
+            $admin_url = home_url('/formular/admin');
+            self::send_welcome_email($email, $display_name, $shop_name, $form_url, $admin_url, '(Google/Apple Login)');
+
+            wp_send_json_success([
+                'store_id' => $store_id,
+                'slug'     => $slug,
+                'redirect' => $admin_url,
+                'mode'     => 'register',
+                'message'  => 'Registrierung erfolgreich!',
+            ]);
+        }
+
+        // User exists - update provider ID if missing
+        if (empty($user->{$provider_id_field})) {
+            $wpdb->update("{$prefix}ppv_users", [$provider_id_field => $provider_id], ['id' => $user->id]);
+        }
+
+        // Find associated repair store
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE user_id=%d AND repair_enabled=1 LIMIT 1",
+            $user->id
+        ));
+
+        if (!$store) {
+            wp_send_json_error(['message' => 'Kein Reparatur-Shop für dieses Konto gefunden.']);
+        }
+
+        // Set session
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        $_SESSION['ppv_repair_store_id'] = $store->id;
+
+        wp_send_json_success([
+            'store_id' => $store->id,
+            'slug'     => $store->store_slug,
+            'redirect' => home_url('/formular/admin'),
+            'mode'     => 'login',
+            'message'  => 'Erfolgreich angemeldet!',
+        ]);
+    }
+
+    /** ============================================================
+     * AJAX: Repair Google Login/Register
+     * ============================================================ */
+    public static function ajax_google_login() {
+        $credential = sanitize_text_field($_POST['credential'] ?? '');
+        $mode       = sanitize_text_field($_POST['mode'] ?? 'register');
+
+        if (empty($credential)) {
+            wp_send_json_error(['message' => 'Google Login fehlgeschlagen']);
+        }
+
+        $payload = self::verify_google_token($credential);
+        if (!$payload) {
+            wp_send_json_error(['message' => 'Google Token ungültig']);
+        }
+
+        $email      = sanitize_email($payload['email'] ?? '');
+        $google_id  = sanitize_text_field($payload['sub'] ?? '');
+        $first_name = sanitize_text_field($payload['given_name'] ?? '');
+        $last_name  = sanitize_text_field($payload['family_name'] ?? '');
+
+        if (empty($email) || empty($google_id)) {
+            wp_send_json_error(['message' => 'Google Login fehlgeschlagen']);
+        }
+
+        self::oauth_find_or_create($email, $first_name, $last_name, 'google_id', $google_id, $mode);
+    }
+
+    /** ============================================================
+     * AJAX: Repair Apple Login/Register
+     * ============================================================ */
+    public static function ajax_apple_login() {
+        $id_token  = sanitize_text_field($_POST['id_token'] ?? '');
+        $user_data = isset($_POST['user']) ? json_decode(stripslashes($_POST['user']), true) : null;
+        $mode      = sanitize_text_field($_POST['mode'] ?? 'register');
+
+        if (empty($id_token)) {
+            wp_send_json_error(['message' => 'Apple Login fehlgeschlagen']);
+        }
+
+        $payload = self::verify_apple_token($id_token);
+        if (!$payload) {
+            wp_send_json_error(['message' => 'Apple Token ungültig']);
+        }
+
+        $apple_id   = sanitize_text_field($payload['sub'] ?? '');
+        $email      = sanitize_email($payload['email'] ?? '');
+        $first_name = '';
+        $last_name  = '';
+
+        // Apple only provides user data on first authorization
+        if ($user_data && isset($user_data['name'])) {
+            $first_name = sanitize_text_field($user_data['name']['firstName'] ?? '');
+            $last_name  = sanitize_text_field($user_data['name']['lastName'] ?? '');
+        }
+
+        if (empty($apple_id)) {
+            wp_send_json_error(['message' => 'Apple Login fehlgeschlagen']);
+        }
+
+        // If no email from Apple, try to find by apple_id
+        if (empty($email)) {
+            global $wpdb;
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT email FROM {$wpdb->prefix}ppv_users WHERE apple_id=%s LIMIT 1", $apple_id
+            ));
+            $email = $user ? $user->email : ($apple_id . '@privaterelay.appleid.com');
+        }
+
+        self::oauth_find_or_create($email, $first_name, $last_name, 'apple_id', $apple_id, $mode);
     }
 
     /** ============================================================

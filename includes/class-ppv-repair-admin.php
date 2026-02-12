@@ -37,6 +37,8 @@ class PPV_Repair_Admin {
 <title><?php echo esc_html(PPV_Lang::t('repair_login_title')); ?></title>
 <meta name="theme-color" content="#667eea">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+<link rel="preconnect" href="https://accounts.google.com" crossorigin>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f5f7;color:#1f2937;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -63,24 +65,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .register-link a:hover{text-decoration:underline}
 .footer-text{text-align:center;margin-top:24px;font-size:12px;color:#9ca3af}
 .footer-text a{color:#667eea;text-decoration:none}
-.login-lang-switch{display:flex;justify-content:center;gap:4px;margin-bottom:20px}
-.login-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
-.login-lang-btn:hover{background:#e5e7eb;color:#374151}
-.login-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
+.login-lang-wrap{position:absolute;top:16px;right:16px;z-index:10}
+.login-lang-toggle{display:flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .2s}
+.login-lang-toggle:hover{background:#e5e7eb;color:#374151}
+.login-lang-toggle i{font-size:14px}
+.login-lang-opts{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;min-width:52px}
+.login-lang-wrap.open .login-lang-opts{display:block}
+.login-lang-opt{display:block;padding:6px 12px;font-size:12px;font-weight:700;color:#6b7280;text-decoration:none;cursor:pointer;border:none;background:none;width:100%;text-align:center;font-family:inherit;letter-spacing:.5px;transition:all .15s}
+.login-lang-opt:hover{background:#f0f2ff;color:#4338ca}
+.login-lang-opt.active{color:#667eea}
+.oauth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 14px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit;margin-bottom:8px}
+.oauth-google{background:#fff;border:1.5px solid #e5e7eb;color:#374151}
+.oauth-google:hover{border-color:#d1d5db;background:#f9fafb}
+.oauth-apple{background:#000;border:1.5px solid #000;color:#fff}
+.oauth-apple:hover{background:#1a1a1a}
+.oauth-divider{display:flex;align-items:center;margin:16px 0;gap:10px}
+.oauth-divider::before,.oauth-divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.oauth-divider span{font-size:12px;font-weight:500;color:#9ca3af;white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="login-wrap">
     <div class="login-box">
         <!-- Language Switcher -->
-        <div class="login-lang-switch">
-            <button class="login-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
-            <button class="login-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
-            <button class="login-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
+        <div class="login-lang-wrap" id="login-lang-wrap">
+            <button class="login-lang-toggle" onclick="this.parentElement.classList.toggle('open')">
+                <i class="ri-global-line"></i> <?php echo strtoupper($lang); ?>
+            </button>
+            <div class="login-lang-opts">
+                <?php foreach (['de','en','hu','ro'] as $lc): ?>
+                <button class="login-lang-opt <?php echo $lang === $lc ? 'active' : ''; ?>" data-lang="<?php echo $lc; ?>"><?php echo strtoupper($lc); ?></button>
+                <?php endforeach; ?>
+            </div>
         </div>
         <div class="login-logo"><i class="ri-tools-line"></i></div>
         <h2><?php echo esc_html(PPV_Lang::t('repair_login_heading')); ?></h2>
         <p class="subtitle"><?php echo esc_html(PPV_Lang::t('repair_login_subtitle')); ?></p>
+        <!-- OAuth Login -->
+        <button type="button" class="oauth-btn oauth-google" onclick="ppvOAuthLogin('google')">
+            <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+            <?php echo esc_html(PPV_Lang::t('repair_login_google')); ?>
+        </button>
+        <button type="button" class="oauth-btn oauth-apple" onclick="ppvOAuthLogin('apple')">
+            <svg width="16" height="16" viewBox="0 0 18 18"><path fill="currentColor" d="M14.94 9.88c-.02-2.07 1.69-3.06 1.77-3.11-.96-1.41-2.46-1.6-3-1.63-1.27-.13-2.49.75-3.14.75-.65 0-1.65-.73-2.72-.71-1.4.02-2.69.81-3.41 2.07-1.46 2.53-.37 6.27 1.05 8.32.69 1 1.52 2.13 2.61 2.09 1.05-.04 1.44-.68 2.71-.68 1.27 0 1.62.68 2.72.66 1.13-.02 1.84-1.02 2.53-2.03.8-1.16 1.12-2.28 1.14-2.34-.02-.01-2.19-.84-2.21-3.34zM12.87 3.53c.58-.7.97-1.67.86-2.64-.83.03-1.84.55-2.44 1.25-.53.62-1 1.61-.87 2.56.93.07 1.87-.47 2.45-1.17z"/></svg>
+            <?php echo esc_html(PPV_Lang::t('repair_login_apple')); ?>
+        </button>
+        <div class="oauth-divider"><span><?php echo esc_html(PPV_Lang::t('repair_login_or')); ?></span></div>
         <form id="login-form" autocomplete="off">
             <div class="field">
                 <label for="login-email"><?php echo esc_html(PPV_Lang::t('repair_email_label')); ?></label>
@@ -106,8 +136,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
     var ppvLang = <?php echo $js_strings; ?>;
 
     // Language switcher
-    var langBtns = document.querySelectorAll('.login-lang-btn');
-    langBtns.forEach(function(btn){
+    document.querySelectorAll('.login-lang-opt').forEach(function(btn){
         btn.addEventListener('click', function(){
             var lang = btn.getAttribute('data-lang');
             var url = new URL(window.location.href);
@@ -116,6 +145,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             window.location.href = url.toString();
         });
     });
+    document.addEventListener('click', function(e){ var w=document.getElementById('login-lang-wrap'); if(w && !w.contains(e.target)) w.classList.remove('open'); });
 
     var form=document.getElementById("login-form"),
         btn=document.getElementById("login-btn"),
@@ -154,6 +184,140 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         });
     });
 })();
+
+// ── Google OAuth (GSI) for Login ──
+var ppvGoogleClientId = '<?php echo defined("PPV_GOOGLE_CLIENT_ID") ? PPV_GOOGLE_CLIENT_ID : get_option("ppv_google_client_id", "645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com"); ?>';
+var ppvAppleClientId  = '<?php echo defined("PPV_APPLE_CLIENT_ID") ? PPV_APPLE_CLIENT_ID : get_option("ppv_apple_client_id", ""); ?>';
+var AJAX_URL = <?php echo json_encode(esc_url($ajax_url)); ?>;
+var ppvGoogleInit = false;
+
+function ppvInitGoogle() {
+    if (ppvGoogleInit || typeof google === 'undefined' || !google.accounts) return false;
+    try {
+        google.accounts.id.initialize({
+            client_id: ppvGoogleClientId,
+            callback: ppvGoogleCallback,
+            auto_select: false
+        });
+        ppvGoogleInit = true;
+    } catch(e) {}
+    return ppvGoogleInit;
+}
+
+function ppvGoogleCallback(response) {
+    if (!response.credential) return;
+    var errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+
+    var fd = new FormData();
+    fd.append('action', 'ppv_repair_google_login');
+    fd.append('credential', response.credential);
+    fd.append('mode', 'login');
+
+    fetch(AJAX_URL, {method: 'POST', body: fd, credentials: 'same-origin'})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            window.location.href = data.data.redirect || '/formular/admin';
+        } else {
+            errEl.textContent = data.data && data.data.message ? data.data.message : 'Google Login fehlgeschlagen';
+            errEl.style.display = 'block';
+        }
+    })
+    .catch(function() {
+        errEl.textContent = 'Netzwerkfehler';
+        errEl.style.display = 'block';
+    });
+}
+
+function ppvOAuthLogin(provider) {
+    if (provider === 'google') {
+        ppvInitGoogle();
+        if (ppvGoogleInit && typeof google !== 'undefined' && google.accounts) {
+            try { google.accounts.id.cancel(); } catch(e) {}
+            google.accounts.id.prompt(function(notification) {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    var container = document.createElement('div');
+                    container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#fff;padding:24px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2)';
+                    document.body.appendChild(container);
+                    google.accounts.id.renderButton(container, { theme:'outline', size:'large', width:280 });
+                    setTimeout(function() { var b = container.querySelector('[role="button"]'); if(b) b.click(); }, 200);
+                    setTimeout(function() { if(container.parentNode) container.parentNode.removeChild(container); }, 30000);
+                }
+            });
+        }
+    } else if (provider === 'apple') {
+        ppvAppleLogin();
+    }
+}
+
+function ppvAppleLogin() {
+    if (!ppvAppleClientId) {
+        var errEl = document.getElementById('login-error');
+        errEl.textContent = 'Apple Sign-In ist derzeit nicht verfügbar';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (typeof AppleID === 'undefined') {
+        var s = document.createElement('script');
+        s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+        s.onload = function() { doAppleLogin(); };
+        document.head.appendChild(s);
+    } else {
+        doAppleLogin();
+    }
+}
+
+function doAppleLogin() {
+    try {
+        AppleID.auth.init({
+            clientId: ppvAppleClientId,
+            scope: 'name email',
+            redirectURI: window.location.origin + '/formular/admin/login',
+            usePopup: true
+        });
+        AppleID.auth.signIn().then(function(response) {
+            if (!response.authorization || !response.authorization.id_token) return;
+
+            var fd = new FormData();
+            fd.append('action', 'ppv_repair_apple_login');
+            fd.append('id_token', response.authorization.id_token);
+            fd.append('mode', 'login');
+            if (response.user) fd.append('user', JSON.stringify(response.user));
+
+            fetch(AJAX_URL, {method: 'POST', body: fd, credentials: 'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.location.href = data.data.redirect || '/formular/admin';
+                } else {
+                    var errEl = document.getElementById('login-error');
+                    errEl.textContent = data.data && data.data.message ? data.data.message : 'Apple Login fehlgeschlagen';
+                    errEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                var errEl = document.getElementById('login-error');
+                errEl.textContent = 'Netzwerkfehler';
+                errEl.style.display = 'block';
+            });
+        }).catch(function(err) {
+            if (err.error !== 'popup_closed_by_user') {
+                var errEl = document.getElementById('login-error');
+                errEl.textContent = 'Apple Sign-In fehlgeschlagen';
+                errEl.style.display = 'block';
+            }
+        });
+    } catch(e) {
+        var errEl = document.getElementById('login-error');
+        errEl.textContent = 'Apple Sign-In fehlgeschlagen';
+        errEl.style.display = 'block';
+    }
+}
+
+// Init Google on page load
+if (typeof google !== 'undefined' && google.accounts) { ppvInitGoogle(); }
+else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 500); }); }
 </script>
 </body>
 </html><?php
@@ -239,6 +403,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $store_slug  = esc_attr($store->store_slug);
         $store_color = esc_attr($store->repair_color ?: '#667eea');
 
+        // Filialen: get parent ID and all repair-enabled filialen
+        $parent_store_id = $store->parent_store_id ? intval($store->parent_store_id) : $store->id;
+        $filialen = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, name, city, plz, store_slug, parent_store_id
+             FROM {$prefix}ppv_stores
+             WHERE (parent_store_id = %d OR id = %d)
+               AND repair_enabled = 1
+             ORDER BY CASE WHEN parent_store_id IS NULL THEN 0 ELSE 1 END, id ASC",
+            $parent_store_id, $parent_store_id
+        ));
+        $has_filialen = count($filialen) > 1;
+        $parent_store = $wpdb->get_row($wpdb->prepare(
+            "SELECT max_filialen, repair_premium, subscription_status, subscription_expires_at FROM {$prefix}ppv_stores WHERE id = %d",
+            $parent_store_id
+        ));
+        $max_filialen = max(intval($parent_store->max_filialen ?? 1), 5);
+        $p_sub_active = ($parent_store->subscription_status ?? '') === 'active'
+            && (!$parent_store->subscription_expires_at || strtotime($parent_store->subscription_expires_at) > time());
+        $parent_is_premium = !empty($parent_store->repair_premium) || $p_sub_active;
+
         $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
         $reward_name = esc_attr($store->repair_reward_name ?? '10 Euro Rabatt');
         $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
@@ -283,7 +467,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate = floatval($store->repair_vat_rate ?? 19);
         $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
-        $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster']];
+        $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster'], 'photo_upload' => ['enabled' => false, 'label' => 'Fotos'], 'condition_check' => ['enabled' => false, 'label' => 'Gerätezustand'], 'priority' => ['enabled' => false, 'label' => 'Priorität'], 'purchase_date' => ['enabled' => false, 'label' => 'Kaufdatum'], 'device_color' => ['enabled' => false, 'label' => 'Gerätefarbe'], 'cost_limit' => ['enabled' => false, 'label' => 'Kostenrahmen']];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
         // Email template settings
@@ -585,14 +769,91 @@ a:hover{color:#5a67d8}
 /* ========== Section Divider ========== */
 .ra-section-divider{border:none;border-top:1px solid #f0f0f0;margin:24px 0}
 .ra-section-title{font-size:15px;font-weight:700;color:#111827;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-/* ========== Field Config ========== */
-.ra-field-config{display:flex;flex-direction:column;gap:10px}
-.ra-field-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0}
-.ra-field-row label.ra-fc-toggle{display:flex;align-items:center;gap:8px;flex-shrink:0;cursor:pointer}
-.ra-field-row input[type="checkbox"]{width:18px;height:18px;accent-color:#667eea;cursor:pointer}
-.ra-field-row input[type="text"]{flex:1;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#1f2937;background:#fff;outline:none;min-width:0}
-.ra-field-row input[type="text"]:focus{border-color:#667eea}
-.ra-fc-name{font-size:12px;font-weight:600;color:#6b7280;min-width:60px}
+/* ========== WYSIWYG Form Builder ========== */
+.ra-fb{background:#f0f2f5;border:2px solid #e2e8f0;border-radius:16px;overflow:hidden;margin-top:12px}
+.ra-fb-toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+.ra-fb-toolbar-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.ra-fb-toolbar-hint{font-size:11px;opacity:0.8;font-weight:500}
+.ra-fb-body{display:flex;min-height:500px}
+.ra-fb-main{flex:1;min-width:0;padding:20px;overflow-y:auto}
+.ra-fb-preview{max-width:520px;margin:0 auto}
+.ra-fb-section{background:#fff;border-radius:14px;padding:20px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.03)}
+.ra-fb-section-title{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ra-fb-step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.ra-fb-section-title h3{font-size:15px;font-weight:700;color:#0f172a;margin:0}
+.ra-fb-field{position:relative;border:2px dashed transparent;border-radius:10px;padding:10px 12px;margin-bottom:6px;transition:all .25s;cursor:default}
+.ra-fb-field:hover{border-color:#c7d2fe;background:rgba(102,126,234,0.02)}
+.ra-fb-field.ra-fb-hidden{display:none}
+.ra-fb-field.dragging{opacity:0.4;border-color:#667eea;background:rgba(102,126,234,0.06)}
+.ra-fb-field.drag-over{border-color:#667eea;background:rgba(102,126,234,0.08);box-shadow:inset 0 0 0 2px rgba(102,126,234,0.15)}
+.ra-fb-field.locked{cursor:default}
+.ra-fb-field.locked:hover{border-color:transparent;background:transparent}
+.ra-fb-field.ra-fb-flash{animation:fbFlash .6s ease}
+@keyframes fbFlash{0%{background:rgba(102,126,234,0.15);border-color:#667eea}100%{background:transparent;border-color:transparent}}
+.ra-fb-controls{position:absolute;top:6px;right:6px;display:flex;align-items:center;gap:3px;opacity:0;transition:opacity .15s;z-index:5}
+.ra-fb-field:hover .ra-fb-controls{opacity:1}
+.ra-fb-field.locked .ra-fb-controls{display:none}
+.ra-fb-ctrl-btn{width:24px;height:24px;border-radius:6px;border:none;background:rgba(255,255,255,0.95);color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.ra-fb-ctrl-btn:hover{background:#fff;color:#667eea;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.ra-fb-ctrl-btn.danger:hover{color:#dc2626}
+.ra-fb-drag{position:absolute;top:50%;left:-2px;transform:translateY(-50%);color:#c4c4c4;font-size:14px;opacity:0;transition:opacity .15s;cursor:grab}
+.ra-fb-drag:active{cursor:grabbing}
+.ra-fb-field:hover .ra-fb-drag{opacity:0.7}
+.ra-fb-field:hover .ra-fb-drag:hover{opacity:1;color:#667eea}
+.ra-fb-field-body label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;cursor:pointer;user-select:none}
+.ra-fb-field-body label:hover{color:#667eea}
+.ra-fb-field-body input[type=text],.ra-fb-field-body input[type=tel],.ra-fb-field-body input[type=email],.ra-fb-field-body input[type=number],.ra-fb-field-body input[type=date],.ra-fb-field-body textarea,.ra-fb-field-body select{width:100%;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;color:#94a3b8;background:#f8fafc;pointer-events:none;font-family:inherit;box-sizing:border-box}
+.ra-fb-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ra-fb-label-input{border:none;border-bottom:2px solid #667eea;background:transparent;font-size:13px;font-weight:600;color:#667eea;padding:0 0 2px 0;outline:none;width:100%;font-family:inherit}
+.ra-fb-req{color:#f59e0b;font-weight:700;margin-left:2px}
+.ra-fb-lock-icon{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:#94a3b8;margin-left:6px}
+.ra-fb-settings{display:none;margin-top:10px;padding:12px;background:#f8fafc;border-radius:10px;border:1.5px solid #e2e8f0}
+.ra-fb-settings.open{display:block}
+.ra-fb-settings-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;color:#374151}
+.ra-fb-settings-row:last-child{margin-bottom:0}
+.ra-fb-settings-row label{display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500}
+.ra-fb-settings-row select,.ra-fb-settings-row textarea{padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;background:#fff;font-family:inherit;outline:none}
+.ra-fb-settings-row select:focus,.ra-fb-settings-row textarea:focus{border-color:#667eea}
+.ra-fb-settings-row textarea{width:100%;resize:vertical}
+.ra-fb-checkbox-preview{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:100px;border:1.5px solid #e2e8f0;font-size:13px;color:#64748b;margin-right:6px;margin-bottom:4px}
+.ra-fb-muster-preview{display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border:2px dashed #e2e8f0;border-radius:10px;background:#f8fafc;color:#94a3b8;font-size:24px}
+.ra-fb-sig-preview{width:100%;height:60px;border:2px dashed #e2e8f0;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;gap:6px}
+.ra-fb-photo-preview{display:flex;gap:8px;flex-wrap:wrap}
+.ra-fb-photo-box{width:70px;height:70px;border:2px dashed #e2e8f0;border-radius:10px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-size:18px;gap:2px}
+.ra-fb-photo-box span{font-size:9px;font-weight:600}
+.ra-fb-condition-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ra-fb-condition-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#64748b;background:#f8fafc}
+.ra-fb-condition-item .ra-fb-cond-btns{display:flex;gap:4px}
+.ra-fb-condition-item .ra-fb-cond-btn{padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;border:none}
+.ra-fb-cond-btn.ok{background:#d1fae5;color:#059669}
+.ra-fb-cond-btn.nok{background:#fef2f2;color:#dc2626;opacity:0.4}
+.ra-fb-priority-cards{display:flex;gap:8px}
+.ra-fb-priority-card{flex:1;padding:10px 8px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;font-size:11px;color:#64748b;background:#f8fafc}
+.ra-fb-priority-card.active{border-color:#667eea;background:#eff6ff;color:#667eea}
+.ra-fb-priority-card i{font-size:18px;display:block;margin-bottom:4px}
+.ra-fb-priority-card strong{display:block;font-size:12px;color:#0f172a}
+.ra-fb-color-swatches{display:flex;gap:8px;flex-wrap:wrap}
+.ra-fb-color-dot{width:28px;height:28px;border-radius:50%;border:2px solid #e2e8f0;cursor:default}
+.ra-fb-color-dot.active{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.2)}
+.ra-fb-cost-options{display:flex;gap:6px;flex-wrap:wrap}
+.ra-fb-cost-opt{padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:12px;font-weight:600;color:#64748b;background:#f8fafc}
+.ra-fb-cost-opt.active{border-color:#667eea;background:#eff6ff;color:#667eea}
+/* ===== Palette Sidebar ===== */
+.ra-fb-palette{width:230px;flex-shrink:0;background:#fff;border-left:2px solid #e2e8f0;padding:16px 14px;overflow-y:auto}
+.ra-fb-pal-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.ra-fb-pal-title i{color:#667eea;font-size:16px}
+.ra-fb-pal-group{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;margin:14px 0 6px;padding-top:10px;border-top:1px solid #f1f5f9}
+.ra-fb-pal-group:first-of-type{margin-top:0;border-top:none;padding-top:0}
+.ra-fb-pal-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;transition:all .2s;border:1.5px solid transparent;margin-bottom:3px;user-select:none}
+.ra-fb-pal-item:hover{background:#f0f2ff;border-color:#c7d2fe;color:#667eea}
+.ra-fb-pal-item i{font-size:15px;width:20px;text-align:center;color:#667eea;flex-shrink:0}
+.ra-fb-pal-item .ra-fb-pal-check{margin-left:auto;font-size:14px;color:#10b981;display:none}
+.ra-fb-pal-item.used{opacity:0.4;background:#f8fafc}
+.ra-fb-pal-item.used .ra-fb-pal-check{display:inline}
+.ra-fb-pal-item.used:hover{opacity:0.6}
+.ra-fb-pal-add{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;border:1.5px dashed #d1d5db;border-radius:9px;background:none;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;margin-top:6px}
+.ra-fb-pal-add:hover{border-color:#667eea;color:#667eea;background:rgba(102,126,234,0.04)}
+@media(max-width:768px){.ra-fb-body{flex-direction:column-reverse}.ra-fb-palette{width:100%;border-left:none;border-top:2px solid #e2e8f0;max-height:200px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:12px}.ra-fb-pal-group{width:100%;margin:6px 0 2px}.ra-fb-pal-title{display:none}.ra-fb-pal-item{flex:0 0 auto}.ra-fb-main{padding:14px}.ra-fb-row{grid-template-columns:1fr}.ra-fb-toolbar{flex-direction:column;gap:6px;text-align:center}.ra-fb-condition-grid{grid-template-columns:1fr}.ra-fb-priority-cards{flex-direction:column}}
 /* ========== Tabs - Modern Pill Style ========== */
 .ra-tabs{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f1f5f9;padding:6px;border-radius:14px}
 .ra-tab{padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
@@ -720,10 +981,15 @@ a:hover{color:#5a67d8}
     .ra-inv-line-amount{width:100%}
 }
 /* Language Switcher */
-.ra-lang-switch{display:flex;gap:4px;align-items:center}
-.ra-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:.5px}
-.ra-lang-btn:hover{background:#e5e7eb;color:#374151}
-.ra-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,.3)}
+.ra-lang-wrap{position:relative}
+.ra-lang-toggle{display:flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .2s}
+.ra-lang-toggle:hover{background:#e5e7eb;color:#374151}
+.ra-lang-toggle i{font-size:14px}
+.ra-lang-opts{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;min-width:52px;z-index:100}
+.ra-lang-wrap.open .ra-lang-opts{display:block}
+.ra-lang-opt{display:block;padding:6px 12px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;border:none;background:none;width:100%;text-align:center;font-family:inherit;letter-spacing:.5px;transition:all .15s}
+.ra-lang-opt:hover{background:#f0f2ff;color:#4338ca}
+.ra-lang-opt.active{color:#667eea}
 </style>
 </head>
 <body>
@@ -740,14 +1006,52 @@ a:hover{color:#5a67d8}
         echo '<div>
                 <div class="ra-title">' . $store_name . '</div>
                 <div class="ra-subtitle">' . esc_html(PPV_Lang::t('repair_admin_title')) . '</div>
-            </div>
-        </div>
+            </div>';
+
+        // Filiale switcher (only if multiple filialen exist OR premium)
+        if ($has_filialen || $parent_is_premium) {
+            echo '<div class="ra-filiale-switch" style="position:relative;margin-left:8px">
+                <button type="button" id="ra-filiale-btn" class="ra-btn ra-btn-outline" style="font-size:12px;padding:6px 12px;gap:6px">
+                    <i class="ri-building-2-line"></i>
+                    <span id="ra-filiale-current">' . esc_html($store->city ?: $store->name) . '</span>
+                    <i class="ri-arrow-down-s-line" style="font-size:14px"></i>
+                </button>
+                <div id="ra-filiale-dropdown" class="ra-hidden" style="position:absolute;top:100%;left:0;z-index:50;min-width:220px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid #e5e7eb;margin-top:4px;overflow:hidden">';
+
+            foreach ($filialen as $f) {
+                $is_current = ($f->id == $store->id);
+                $f_label = esc_html($f->name . ($f->city ? " ({$f->city})" : ''));
+                $f_is_parent = empty($f->parent_store_id);
+                echo '<button type="button" class="ra-filiale-item' . ($is_current ? ' active' : '') . '" data-id="' . intval($f->id) . '" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:' . ($is_current ? '#f0f4ff' : '#fff') . ';cursor:pointer;font-size:13px;color:#374151;text-align:left;transition:background .15s;font-family:inherit">
+                    <i class="' . ($f_is_parent ? 'ri-home-4-line' : 'ri-building-2-line') . '" style="color:#667eea;font-size:15px"></i>
+                    <span style="flex:1;' . ($is_current ? 'font-weight:600;color:#4338ca' : '') . '">' . $f_label . '</span>
+                    ' . ($is_current ? '<i class="ri-check-line" style="color:#667eea"></i>' : '') . '
+                </button>';
+            }
+
+            // Add new filiale button (premium only)
+            if ($parent_is_premium && count($filialen) < $max_filialen) {
+                echo '<div style="border-top:1px solid #e5e7eb;padding:8px">
+                    <button type="button" id="ra-filiale-add-btn" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:none;cursor:pointer;font-size:13px;color:#667eea;font-weight:600;border-radius:8px;transition:background .15s;font-family:inherit" onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'none\'">
+                        <i class="ri-add-circle-line" style="font-size:16px"></i> ' . esc_html(PPV_Lang::t('repair_admin_filiale_add')) . '
+                    </button>
+                </div>';
+            }
+
+            echo '</div></div>';
+        }
+
+        echo '</div>
         <div class="ra-header-right">
-            <div class="ra-lang-switch">
-                <button class="ra-lang-btn ' . ($lang === 'de' ? 'active' : '') . '" data-lang="de">DE</button>
-                <button class="ra-lang-btn ' . ($lang === 'hu' ? 'active' : '') . '" data-lang="hu">HU</button>
-                <button class="ra-lang-btn ' . ($lang === 'ro' ? 'active' : '') . '" data-lang="ro">RO</button>
-            </div>
+            <div class="ra-lang-wrap" id="ra-lang-wrap">
+                <button class="ra-lang-toggle" onclick="this.parentElement.classList.toggle(\'open\')">
+                    <i class="ri-global-line"></i> ' . strtoupper($lang) . '
+                </button>
+                <div class="ra-lang-opts">';
+        foreach (['de','en','hu','ro'] as $lc) {
+            echo '<button class="ra-lang-opt ' . ($lang === $lc ? 'active' : '') . '" data-lang="' . $lc . '">' . strtoupper($lc) . '</button>';
+        }
+        echo '</div></div>
             <a href="' . esc_url($form_url) . '" target="_blank" class="ra-btn ra-btn-outline">
                 <i class="ri-external-link-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_view_form')) . '
             </a>
@@ -840,6 +1144,7 @@ a:hover{color:#5a67d8}
             <button type="button" class="ra-settings-tab" data-panel="email"><i class="ri-mail-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_emails')) . '</button>
             <button type="button" class="ra-settings-tab" data-panel="punktepass"><i class="ri-star-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_pp')) . '</button>
             <button type="button" class="ra-settings-tab" data-panel="abo"><i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_abo')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="filialen"><i class="ri-building-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_filialen')) . '</button>
         </div>
 
         <form id="ra-settings-form">
@@ -1024,33 +1329,221 @@ a:hover{color:#5a67d8}
                 </div>
             </div>
 
-            <div style="margin-top:16px">
-                <label style="display:block;font-size:12px;font-weight:600;color:#6b7280;margin-bottom:10px">' . esc_html(PPV_Lang::t('repair_admin_form_fields')) . '</label>
-                <div class="ra-field-config" id="ra-field-config">';
+            <div style="margin-top:20px">
+                <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_form_fields')) . '</label>
+                <div class="ra-fb" id="ra-form-builder">
+                    <div class="ra-fb-toolbar">
+                        <span class="ra-fb-toolbar-title"><i class="ri-eye-line"></i> Live-Vorschau</span>
+                        <span class="ra-fb-toolbar-hint"><i class="ri-drag-move-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_drag_hint')) . '</span>
+                    </div>
+                    <div class="ra-fb-body">
+                    <div class="ra-fb-main"><div class="ra-fb-preview">';
 
-// Field config rows
-$fc_field_names = [
-    'device_brand' => PPV_Lang::t('repair_brand_label'),
-    'device_model' => PPV_Lang::t('repair_model_label'),
-    'device_imei' => PPV_Lang::t('repair_imei_label'),
-    'device_pattern' => PPV_Lang::t('repair_pin_label'),
-    'muster_image' => PPV_Lang::t('repair_pattern_label'),
-    'accessories' => PPV_Lang::t('repair_accessories_label'),
-    'customer_phone' => PPV_Lang::t('repair_phone_label'),
-    'customer_address' => PPV_Lang::t('repair_address_label'),
+// Helper to render a built-in field block
+$fb_all_builtins = [
+    'customer_phone'  => ['section' => 1, 'icon' => 'ri-phone-line',    'ph' => PPV_Lang::t('repair_phone_placeholder'),   'input' => 'tel'],
+    'customer_address'=> ['section' => 1, 'icon' => 'ri-map-pin-line',  'ph' => PPV_Lang::t('repair_address_placeholder'), 'input' => 'text'],
+    'device_brand'    => ['section' => 2, 'icon' => 'ri-smartphone-line','ph' => PPV_Lang::t('repair_brand_label'),  'input' => 'text'],
+    'device_model'    => ['section' => 2, 'icon' => 'ri-device-line',   'ph' => PPV_Lang::t('repair_model_label'),  'input' => 'text'],
+    'device_imei'     => ['section' => 2, 'icon' => 'ri-barcode-line',  'ph' => PPV_Lang::t('repair_imei_label'),   'input' => 'text'],
+    'device_pattern'  => ['section' => 2, 'icon' => 'ri-lock-password-line','ph' => PPV_Lang::t('repair_pin_label'),'input' => 'text'],
+    'muster_image'    => ['section' => 2, 'icon' => 'ri-grid-line',     'ph' => PPV_Lang::t('repair_pattern_label'),'input' => 'muster'],
+    'device_color'    => ['section' => 2, 'icon' => 'ri-palette-line',  'ph' => '',    'input' => 'color'],
+    'purchase_date'   => ['section' => 2, 'icon' => 'ri-calendar-line', 'ph' => '',    'input' => 'date'],
+    'condition_check' => ['section' => 2, 'icon' => 'ri-shield-check-line','ph' => '', 'input' => 'condition'],
+    'accessories'     => ['section' => 3, 'icon' => 'ri-checkbox-multiple-line','ph' => '', 'input' => 'accessories'],
+    'photo_upload'    => ['section' => 3, 'icon' => 'ri-camera-line',   'ph' => '',    'input' => 'photo'],
+    'priority'        => ['section' => 3, 'icon' => 'ri-flashlight-line','ph' => '',   'input' => 'priority'],
+    'cost_limit'      => ['section' => 3, 'icon' => 'ri-money-euro-circle-line','ph'=>'','input' => 'cost'],
 ];
-foreach ($fc_field_names as $fk => $fn) {
-    $fc = $field_config[$fk] ?? $fc_defaults[$fk];
-    $checked = !empty($fc['enabled']) ? 'checked' : '';
+
+// Render a single built-in field block
+function ppv_fb_render_field($fk, $meta, $fc, $fc_defaults) {
+    $enabled = !empty($fc['enabled']);
     $label = esc_attr($fc['label'] ?? $fc_defaults[$fk]['label']);
-    echo '<div class="ra-field-row">
-        <label class="ra-fc-toggle"><input type="checkbox" data-field="' . $fk . '" ' . $checked . '></label>
-        <span class="ra-fc-name">' . $fn . '</span>
-        <input type="text" data-field-label="' . $fk . '" value="' . $label . '" placeholder="Feldbezeichnung">
+    $required = !empty($fc['required']);
+    $hidden = !$enabled ? ' ra-fb-hidden' : '';
+
+    $html = '<div class="ra-fb-field' . $hidden . '" data-key="' . $fk . '" data-builtin="1" draggable="true">
+        <i class="ri-draggable ra-fb-drag"></i>
+        <div class="ra-fb-controls">
+            <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>
+            <button type="button" class="ra-fb-ctrl-btn danger ra-fb-field-remove" title="Entfernen"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="ra-fb-field-body">
+            <label data-label-for="' . $fk . '">' . esc_html($label) . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>';
+
+    $input = $meta['input'];
+    if ($input === 'muster') {
+        $html .= '<div class="ra-fb-muster-preview"><i class="ri-grid-line"></i></div>';
+    } elseif ($input === 'accessories') {
+        $html .= '<div><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_charger')) . '</span><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_case')) . '</span><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . esc_html(PPV_Lang::t('repair_acc_other')) . '</span></div>';
+    } elseif ($input === 'photo') {
+        $html .= '<div class="ra-fb-photo-preview"><div class="ra-fb-photo-box"><i class="ri-camera-line"></i><span>Foto 1</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 2</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 3</span></div></div>';
+    } elseif ($input === 'condition') {
+        $html .= '<div class="ra-fb-condition-grid"><div class="ra-fb-condition-item"><span>Display</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Tasten</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Kamera</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Lautsprecher</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div></div>';
+    } elseif ($input === 'priority') {
+        $html .= '<div class="ra-fb-priority-cards"><div class="ra-fb-priority-card"><i class="ri-flashlight-line"></i><strong>Express</strong>24h</div><div class="ra-fb-priority-card active"><i class="ri-time-line"></i><strong>Normal</strong>3-5 Tage</div><div class="ra-fb-priority-card"><i class="ri-leaf-line"></i><strong>Sparsam</strong>7-10 Tage</div></div>';
+    } elseif ($input === 'color') {
+        $html .= '<div class="ra-fb-color-swatches"><div class="ra-fb-color-dot active" style="background:#000" title="Schwarz"></div><div class="ra-fb-color-dot" style="background:#fff" title="Weiß"></div><div class="ra-fb-color-dot" style="background:#c0c0c0" title="Silber"></div><div class="ra-fb-color-dot" style="background:#d4a437" title="Gold"></div><div class="ra-fb-color-dot" style="background:#3b82f6" title="Blau"></div><div class="ra-fb-color-dot" style="background:#ef4444" title="Rot"></div></div>';
+    } elseif ($input === 'cost') {
+        $html .= '<div class="ra-fb-cost-options"><span class="ra-fb-cost-opt">max. 50&euro;</span><span class="ra-fb-cost-opt active">max. 100&euro;</span><span class="ra-fb-cost-opt">max. 200&euro;</span><span class="ra-fb-cost-opt">Kein Limit</span></div>';
+    } elseif ($input === 'date') {
+        $html .= '<input type="date" placeholder="' . esc_attr($label) . '">';
+    } else {
+        $html .= '<input type="' . esc_attr($input) . '" placeholder="' . esc_attr($meta['ph']) . '">';
+    }
+
+    $html .= '</div>
+        <div class="ra-fb-settings">
+            <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . ':</label><input type="text" data-field-label="' . $fk . '" value="' . $label . '" class="ra-fb-label-input" style="flex:1"></div>
+            <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="' . $fk . '" ' . ($required ? 'checked' : '') . ' style="accent-color:#667eea"> ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '</label></div>
+        </div>
     </div>';
+    return $html;
 }
 
-echo '          </div>
+// Collect fields per section, sorted by order
+$sections = [1 => [], 2 => [], 3 => []];
+foreach ($fb_all_builtins as $fk => $meta) {
+    $fc = $field_config[$fk] ?? $fc_defaults[$fk];
+    $order = $fc['order'] ?? 99;
+    $sections[$meta['section']][] = ['key' => $fk, 'order' => $order];
+}
+foreach ($sections as &$sec) { usort($sec, function($a, $b) { return $a['order'] - $b['order']; }); }
+unset($sec);
+
+// === Section 1: Customer Info ===
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">1</span><h3>' . esc_html(PPV_Lang::t('repair_step1_title')) . '</h3></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_name_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_name_placeholder')) . '">
+    </div></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_email_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <input type="email" placeholder="ihre@email.de">
+    </div></div>
+    <div id="ra-fb-sec1">';
+foreach ($sections[1] as $item) {
+    echo ppv_fb_render_field($item['key'], $fb_all_builtins[$item['key']], $field_config[$item['key']] ?? $fc_defaults[$item['key']], $fc_defaults);
+}
+echo '</div></div>';
+
+// === Section 2: Device Info ===
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">2</span><h3>' . esc_html(PPV_Lang::t('repair_step2_title')) . '</h3></div>
+    <div id="ra-fb-sec2">';
+foreach ($sections[2] as $item) {
+    echo ppv_fb_render_field($item['key'], $fb_all_builtins[$item['key']], $field_config[$item['key']] ?? $fc_defaults[$item['key']], $fc_defaults);
+}
+echo '</div></div>';
+
+// === Section 3: Problem + Extras + Custom Fields ===
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">3</span><h3>' . esc_html(PPV_Lang::t('repair_step3_title')) . '</h3></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_problem_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <textarea rows="3" placeholder="' . esc_attr(PPV_Lang::t('repair_problem_placeholder')) . '"></textarea>
+    </div></div>
+    <div id="ra-fb-sec3">';
+foreach ($sections[3] as $item) {
+    echo ppv_fb_render_field($item['key'], $fb_all_builtins[$item['key']], $field_config[$item['key']] ?? $fc_defaults[$item['key']], $fc_defaults);
+}
+
+// Custom fields
+echo '<div id="ra-fb-custom-fields">';
+foreach ($field_config as $fk => $fc) {
+    if (strpos($fk, 'custom_') !== 0) continue;
+    $enabled = !empty($fc['enabled']);
+    $label = esc_attr($fc['label'] ?? '');
+    $type = esc_attr($fc['type'] ?? 'text');
+    $required = !empty($fc['required']);
+    $options_raw = $fc['options'] ?? '';
+    $hidden = !$enabled ? ' ra-fb-hidden' : '';
+
+    echo '<div class="ra-fb-field' . $hidden . '" data-key="' . $fk . '" data-builtin="0" draggable="true">
+        <i class="ri-draggable ra-fb-drag"></i>
+        <div class="ra-fb-controls">
+            <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>
+            <button type="button" class="ra-fb-ctrl-btn danger ra-fb-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_delete')) . '"><i class="ri-delete-bin-line"></i></button>
+        </div>
+        <div class="ra-fb-field-body">';
+    if ($type === 'textarea') {
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><textarea rows="2" placeholder="' . esc_attr($label) . '"></textarea>';
+    } elseif ($type === 'select') {
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><select style="pointer-events:none"><option>' . esc_html($label ?: '-- Auswahl --') . '</option></select>';
+    } elseif ($type === 'checkbox') {
+        echo '<label data-label-for="' . $fk . '"><span class="ra-fb-checkbox-preview"><i class="ri-checkbox-blank-line"></i> ' . ($label ?: 'Checkbox') . '</span>' . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label>';
+    } elseif ($type === 'number') {
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><input type="number" placeholder="' . esc_attr($label) . '">';
+    } else {
+        echo '<label data-label-for="' . $fk . '">' . ($label ?: '<em style="color:#94a3b8">Neues Feld</em>') . ($required ? '<span class="ra-fb-req">*</span>' : '') . '</label><input type="text" placeholder="' . esc_attr($label) . '">';
+    }
+    echo '</div>
+        <div class="ra-fb-settings">
+            <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_label')) . ':</label><input type="text" data-field-label="' . $fk . '" value="' . $label . '" class="ra-fb-label-input" style="flex:1"></div>
+            <div class="ra-fb-settings-row"><label>' . esc_html(PPV_Lang::t('repair_admin_fc_fieldtype')) . ':</label>
+                <select data-field-type="' . $fk . '"><option value="text"' . ($type === 'text' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_text')) . '</option><option value="textarea"' . ($type === 'textarea' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_textarea')) . '</option><option value="number"' . ($type === 'number' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_number')) . '</option><option value="select"' . ($type === 'select' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_select')) . '</option><option value="checkbox"' . ($type === 'checkbox' ? ' selected' : '') . '>' . esc_html(PPV_Lang::t('repair_admin_fc_type_checkbox')) . '</option></select>
+            </div>
+            <div class="ra-fb-settings-row ra-fb-options-row"' . ($type !== 'select' ? ' style="display:none"' : '') . '><textarea data-field-options="' . $fk . '" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" style="width:100%">' . esc_textarea($options_raw) . '</textarea></div>
+            <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="' . $fk . '" ' . ($required ? 'checked' : '') . ' style="accent-color:#667eea"> ' . esc_html(PPV_Lang::t('repair_admin_fc_required')) . '</label></div>
+        </div>
+    </div>';
+}
+echo '</div></div></div>';
+
+// === Section 4: Signature (locked) ===
+echo '<div class="ra-fb-section">
+    <div class="ra-fb-section-title"><span class="ra-fb-step-num">4</span><h3>' . esc_html(PPV_Lang::t('repair_step4_title')) . '</h3></div>
+    <div class="ra-fb-field locked"><div class="ra-fb-field-body">
+        <label>' . esc_html(PPV_Lang::t('repair_signature_label')) . ' <span class="ra-fb-lock-icon"><i class="ri-lock-line"></i></span></label>
+        <div class="ra-fb-sig-preview"><i class="ri-edit-line"></i> Unterschrift</div>
+    </div></div>
+</div>';
+
+echo '</div></div>';
+
+// === PALETTE SIDEBAR ===
+echo '<div class="ra-fb-palette">
+    <div class="ra-fb-pal-title"><i class="ri-apps-line"></i> Felder</div>';
+
+// Palette groups
+$pal_groups = [
+    'Grundfelder' => [
+        'customer_phone'   => ['icon' => 'ri-phone-line',    'name' => $fc_defaults['customer_phone']['label']],
+        'customer_address' => ['icon' => 'ri-map-pin-line',  'name' => $fc_defaults['customer_address']['label']],
+    ],
+    'Gerätefelder' => [
+        'device_brand'    => ['icon' => 'ri-smartphone-line',    'name' => $fc_defaults['device_brand']['label']],
+        'device_model'    => ['icon' => 'ri-device-line',        'name' => $fc_defaults['device_model']['label']],
+        'device_imei'     => ['icon' => 'ri-barcode-line',       'name' => $fc_defaults['device_imei']['label']],
+        'device_pattern'  => ['icon' => 'ri-lock-password-line', 'name' => $fc_defaults['device_pattern']['label']],
+        'muster_image'    => ['icon' => 'ri-grid-line',          'name' => $fc_defaults['muster_image']['label']],
+        'device_color'    => ['icon' => 'ri-palette-line',       'name' => $fc_defaults['device_color']['label']],
+        'purchase_date'   => ['icon' => 'ri-calendar-line',      'name' => $fc_defaults['purchase_date']['label']],
+        'condition_check' => ['icon' => 'ri-shield-check-line',  'name' => $fc_defaults['condition_check']['label']],
+    ],
+    'Zusatzfelder' => [
+        'accessories'   => ['icon' => 'ri-checkbox-multiple-line',   'name' => $fc_defaults['accessories']['label']],
+        'photo_upload'  => ['icon' => 'ri-camera-line',              'name' => $fc_defaults['photo_upload']['label']],
+        'priority'      => ['icon' => 'ri-flashlight-line',          'name' => $fc_defaults['priority']['label']],
+        'cost_limit'    => ['icon' => 'ri-money-euro-circle-line',   'name' => $fc_defaults['cost_limit']['label']],
+    ],
+];
+
+foreach ($pal_groups as $group_name => $items) {
+    echo '<div class="ra-fb-pal-group">' . esc_html($group_name) . '</div>';
+    foreach ($items as $pk => $pi) {
+        $is_enabled = !empty(($field_config[$pk] ?? $fc_defaults[$pk])['enabled']);
+        echo '<div class="ra-fb-pal-item' . ($is_enabled ? ' used' : '') . '" data-target="' . $pk . '"><i class="' . $pi['icon'] . '"></i> ' . esc_html($pi['name']) . '<i class="ri-check-line ra-fb-pal-check"></i></div>';
+    }
+}
+echo '<div class="ra-fb-pal-group">' . esc_html(PPV_Lang::t('repair_admin_fc_custom')) . '</div>
+    <button type="button" class="ra-fb-pal-add" id="ra-fb-add-custom"><i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_add_custom')) . '</button>
+</div>';
+
+echo '</div></div>
             </div>
 
 
@@ -1331,6 +1824,90 @@ echo '          </div>
 
         echo '
             </div><!-- END PANEL: abo -->
+
+            <!-- ==================== PANEL: Filialen ==================== -->
+            <div class="ra-settings-panel" data-panel="filialen">
+                <h4><i class="ri-building-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filialen_title')) . '</h4>';
+
+        if (!$parent_is_premium) {
+            // Free tier - show upgrade prompt
+            echo '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px">
+                <i class="ri-vip-crown-line" style="font-size:28px;color:#d97706;margin-bottom:8px;display:block"></i>
+                <div style="font-size:15px;font-weight:600;color:#92400e;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_filialen_premium_only')) . '</div>
+                <div style="font-size:13px;color:#a16207">' . esc_html(PPV_Lang::t('repair_admin_filialen_premium_desc')) . '</div>
+            </div>';
+        } else {
+            // Premium - show filiale list and add button
+            echo '<div style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <span style="font-size:13px;color:#6b7280">' . count($filialen) . ' / ' . $max_filialen . ' ' . esc_html(PPV_Lang::t('repair_admin_filialen_count')) . '</span>
+                </div>';
+
+            // List existing filialen
+            $site_url = home_url();
+            foreach ($filialen as $f) {
+                $f_is_parent = empty($f->parent_store_id);
+                $f_slug = esc_attr($f->store_slug);
+                $f_url  = $site_url . '/formular/' . $f_slug;
+                $f_id   = intval($f->id);
+                echo '<div class="ra-filiale-card" data-fid="' . $f_id . '" style="padding:12px 14px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <i class="' . ($f_is_parent ? 'ri-home-4-line' : 'ri-building-2-line') . '" style="color:#667eea;font-size:18px;flex-shrink:0"></i>
+                        <div style="flex:1;min-width:0">
+                            <div class="ra-filiale-name" style="font-size:14px;font-weight:600;color:#1f2937">' . esc_html($f->name) . '</div>
+                            <div style="font-size:12px;color:#6b7280">' . esc_html($f->city ?: '') . ($f->plz ? ' ' . esc_html($f->plz) : '') . '</div>
+                        </div>
+                        ' . ($f_is_parent ? '<span style="font-size:11px;background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:6px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_filialen_main')) . '</span>' : '') . '
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb">
+                        <button type="button" class="ra-filiale-copy" data-url="' . esc_attr($f_url) . '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;font-size:11px;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .15s" title="Link kopieren">
+                            <i class="ri-link"></i> <span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">/formular/' . $f_slug . '</span>
+                        </button>
+                        <div style="flex:1"></div>
+                        <button type="button" class="ra-filiale-edit" data-fid="' . $f_id . '" data-name="' . esc_attr($f->name) . '" data-city="' . esc_attr($f->city ?: '') . '" data-plz="' . esc_attr($f->plz ?: '') . '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;font-size:11px;color:#374151;cursor:pointer;font-family:inherit;transition:all .15s" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_edit')) . '">
+                            <i class="ri-pencil-line"></i>
+                        </button>
+                        ' . (!$f_is_parent ? '<button type="button" class="ra-filiale-delete" data-fid="' . $f_id . '" data-name="' . esc_attr($f->name) . '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fecaca;background:#fff;border-radius:6px;font-size:11px;color:#dc2626;cursor:pointer;font-family:inherit;transition:all .15s" title="' . esc_attr(PPV_Lang::t('repair_admin_filiale_delete')) . '">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>' : '') . '
+                    </div>
+                </div>';
+            }
+
+            echo '</div>';
+
+            // Add filiale form
+            if (count($filialen) < $max_filialen) {
+                echo '<div style="border-top:1px solid #e5e7eb;padding-top:16px">
+                    <h5 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:12px"><i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filiale_add')) . '</h5>
+                    <div class="ra-settings-grid">
+                        <div class="field">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_filiale_name')) . ' *</label>
+                            <input type="text" id="ra-new-filiale-name" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_filiale_name_ph')) . '">
+                        </div>
+                        <div class="field">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_city')) . ' *</label>
+                            <input type="text" id="ra-new-filiale-city" placeholder="Berlin">
+                        </div>
+                        <div class="field">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
+                            <input type="text" id="ra-new-filiale-plz" placeholder="10115">
+                        </div>
+                    </div>
+                    <button type="button" id="ra-create-filiale-btn" class="ra-btn ra-btn-primary" style="margin-top:12px">
+                        <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filiale_create')) . '
+                    </button>
+                    <div id="ra-filiale-msg" class="ra-hidden" style="margin-top:8px;padding:8px 12px;border-radius:8px;font-size:13px"></div>
+                </div>';
+            } else {
+                echo '<div style="text-align:center;padding:16px;color:#6b7280;font-size:13px">
+                    <i class="ri-information-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filialen_limit_reached')) . '
+                </div>';
+            }
+        }
+
+        echo '
+            </div><!-- END PANEL: filialen -->
 
             <!-- Save button visible on all panels -->
             <div class="ra-settings-save" style="padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0">
@@ -2369,7 +2946,7 @@ echo '          </div>
     ], JSON_UNESCAPED_UNICODE) . ';
 
     // Language switcher
-    document.querySelectorAll(".ra-lang-btn").forEach(function(btn){
+    document.querySelectorAll(".ra-lang-opt").forEach(function(btn){
         btn.addEventListener("click",function(){
             var lang=this.getAttribute("data-lang");
             document.cookie="ppv_lang="+lang+";path=/;max-age=31536000";
@@ -2378,6 +2955,7 @@ echo '          </div>
             window.location.href=url.toString();
         });
     });
+    document.addEventListener("click",function(e){var w=document.getElementById("ra-lang-wrap");if(w&&!w.contains(e.target))w.classList.remove("open");});
 
     /* ===== Toast ===== */
     function toast(msg){
@@ -2541,18 +3119,47 @@ echo '          </div>
             brand: card.dataset.brand||"",
             model: card.dataset.model||"",
             pin: card.dataset.pin||"",
+            imei: card.dataset.imei||"",
+            accessories: card.dataset.accessories||"",
             problem: card.dataset.problem||"",
             date: card.dataset.date||"",
             muster: card.dataset.muster||"",
-            signature: card.dataset.signature||""
+            signature: card.dataset.signature||"",
+            customfields: card.dataset.customfields||""
         };
         var w=window.open("","_blank","width=800,height=900");
         if(!w){alert(L.popup_blocked);return;}
         var device=((data.brand||"")+" "+(data.model||"")).trim();
         var musterHtml=data.muster&&data.muster.indexOf("data:image/")===0?\'<div class="field"><span class="label">\'+L.print_muster+\':</span><img src="\'+data.muster+\'" style="max-width:80px;border:1px solid #ddd;border-radius:4px"></div>\':"";
         var pinHtml=data.pin?\'<div class="field"><span class="label">\'+L.print_pin+\':</span><span class="value highlight">\'+esc(data.pin)+\'</span></div>\':"";
+        var imeiHtml=data.imei?\'<div class="field"><span class="label">IMEI:</span><span class="value">\'+esc(data.imei)+\'</span></div>\':"";
         var addressHtml=data.address?\'<div class="field"><span class="label">\'+L.print_address+\':</span><span class="value">\'+esc(data.address)+\'</span></div>\':"";
+        var accHtml=data.accessories?\'<div class="field"><span class="label">Zubehör:</span><span class="value">\'+esc(data.accessories)+\'</span></div>\':"";
         var signatureHtml=data.signature&&data.signature.indexOf("data:image/")===0?\'<div class="sig-img"><img src="\'+data.signature+\'" style="max-height:40px"></div>\':\'<div class="signature-line"></div>\';
+        // Parse custom fields for print
+        var cfHtml="";
+        if(data.customfields){
+            try{
+                var cf=JSON.parse(data.customfields);
+                var cfLabels={device_color:"Farbe",purchase_date:"Kaufdatum",priority:"Priorität",cost_limit:"Kostenrahmen"};
+                for(var ck in cf){
+                    if(ck==="photos"||ck==="condition_check") continue;
+                    var lbl=cfLabels[ck]||ck;
+                    if(typeof cf[ck]==="string"&&cf[ck]) cfHtml+=\'<div class="field"><span class="label">\'+esc(lbl)+\':</span><span class="value">\'+esc(cf[ck])+\'</span></div>\';
+                }
+                if(cf.condition_check){
+                    var cond=typeof cf.condition_check==="string"?JSON.parse(cf.condition_check):cf.condition_check;
+                    var cParts=[];
+                    for(var cp in cond) cParts.push(cp+": "+cond[cp].toUpperCase());
+                    if(cParts.length) cfHtml+=\'<div class="field"><span class="label">Zustand:</span><span class="value">\'+esc(cParts.join(", "))+\'</span></div>\';
+                }
+                if(cf.photos&&cf.photos.length){
+                    cfHtml+=\'<div class="field"><span class="label">Fotos:</span><span class="value">\';
+                    cf.photos.forEach(function(u){cfHtml+=\'<img src="\'+u+\'" style="width:50px;height:50px;object-fit:cover;border-radius:4px;border:1px solid #ddd;margin-right:4px">\'});
+                    cfHtml+=\'</span></div>\';
+                }
+            }catch(e){}
+        }
         var html=\'<!DOCTYPE html><html><head><meta charset="UTF-8"><title>\'+L.print_title+\' #\'+data.id+\'</title><style>\'+
             \'*{margin:0;padding:0;box-sizing:border-box}\'+
             \'body{font-family:Arial,sans-serif;padding:15px 20px;color:#1f2937;line-height:1.3;font-size:11px}\'+
@@ -2602,12 +3209,15 @@ echo '          </div>
                 \'</div>\'+
                 \'<div class="section"><div class="section-title">\'+L.print_device+\'</div>\'+
                     \'<div class="field"><span class="label">\'+L.print_device+\':</span><span class="value">\'+esc(device)+\'</span></div>\'+
+                    imeiHtml+
                     pinHtml+
                     musterHtml+
+                    cfHtml+
                 \'</div>\'+
             \'</div>\'+
             \'<div class="problem-section"><div class="section-title">\'+L.print_problem+\'</div>\'+
                 \'<div style="font-size:11px">\'+esc(data.problem)+\'</div>\'+
+                accHtml+
             \'</div>\'+
             \'<div class="datenschutz">\'+
                 \'<div class="datenschutz-title">\'+L.print_privacy+\'</div>\'+
@@ -3691,36 +4301,205 @@ echo '          </div>
         });
     });
 
+    /* ===== WYSIWYG Form Builder with Palette ===== */
+    function fbSyncPalette(key,active){
+        var pi=document.querySelector(\'.ra-fb-pal-item[data-target="\'+key+\'"]\');
+        if(pi){if(active){pi.classList.add("used")}else{pi.classList.remove("used")}}
+    }
+    function fbWireField(field){
+        var key=field.getAttribute("data-key");
+        // Settings panel toggle
+        var settingsBtn=field.querySelector(".ra-fb-btn-settings");
+        if(settingsBtn) settingsBtn.addEventListener("click",function(){
+            var panel=field.querySelector(".ra-fb-settings");
+            if(panel) panel.classList.toggle("open");
+        });
+        // Remove/hide field (X button) - goes back to palette
+        var removeBuiltin=field.querySelector(".ra-fb-field-remove");
+        if(removeBuiltin) removeBuiltin.addEventListener("click",function(){
+            field.classList.add("ra-fb-hidden");
+            fbSyncPalette(key,false);
+        });
+        // Remove custom field permanently
+        var removeBtn=field.querySelector(".ra-fb-remove");
+        if(removeBtn) removeBtn.addEventListener("click",function(){
+            if(confirm("Feld wirklich entfernen?")) field.remove();
+        });
+        // Inline label editing (double-click)
+        var lbl=field.querySelector("[data-label-for]");
+        if(lbl) lbl.addEventListener("dblclick",function(){
+            var labelInput=field.querySelector("input[data-field-label]");
+            if(!labelInput) return;
+            var inp=document.createElement("input");
+            inp.type="text";inp.className="ra-fb-label-input";inp.value=labelInput.value;
+            var origHTML=this.innerHTML;
+            this.innerHTML="";this.appendChild(inp);inp.focus();inp.select();
+            var self=this;
+            function finish(){
+                labelInput.value=inp.value;
+                var req=field.querySelector("input[data-field-required]");
+                self.innerHTML=inp.value||origHTML;
+                if(req&&req.checked) self.innerHTML+="<span class=\\"ra-fb-req\\">*</span>";
+            }
+            inp.addEventListener("blur",finish);
+            inp.addEventListener("keydown",function(ev){if(ev.key==="Enter"){ev.preventDefault();inp.blur()}});
+        });
+        // Type change (custom fields)
+        var typeSel=field.querySelector("select[data-field-type]");
+        if(typeSel) typeSel.addEventListener("change",function(){
+            var optRow=field.querySelector(".ra-fb-options-row");
+            if(optRow) optRow.style.display=this.value==="select"?"flex":"none";
+        });
+        // Label input sync
+        var labelInput=field.querySelector("input[data-field-label]");
+        if(labelInput){
+            labelInput.addEventListener("input",function(){
+                var labelEl=field.querySelector("[data-label-for]");
+                if(labelEl){
+                    var req=field.querySelector("input[data-field-required]");
+                    labelEl.innerHTML=this.value||"<em style=\\"color:#94a3b8\\">Neues Feld</em>";
+                    if(req&&req.checked) labelEl.innerHTML+="<span class=\\"ra-fb-req\\">*</span>";
+                }
+            });
+        }
+        // Required toggle sync
+        var reqCb=field.querySelector("input[data-field-required]");
+        if(reqCb) reqCb.addEventListener("change",function(){
+            var labelEl=field.querySelector("[data-label-for]");
+            if(!labelEl) return;
+            var li=field.querySelector("input[data-field-label]");
+            labelEl.innerHTML=li?li.value:"";
+            if(!labelEl.innerHTML) labelEl.innerHTML="<em style=\\"color:#94a3b8\\">Neues Feld</em>";
+            if(this.checked) labelEl.innerHTML+="<span class=\\"ra-fb-req\\">*</span>";
+        });
+        // Drag and drop reorder
+        field.addEventListener("dragstart",function(e){
+            field.classList.add("dragging");
+            e.dataTransfer.effectAllowed="move";
+            e.dataTransfer.setData("text/plain",key);
+        });
+        field.addEventListener("dragend",function(){
+            field.classList.remove("dragging");
+            document.querySelectorAll(".ra-fb-field.drag-over").forEach(function(f){f.classList.remove("drag-over")});
+        });
+        field.addEventListener("dragover",function(e){
+            e.preventDefault();e.dataTransfer.dropEffect="move";
+            var dragging=document.querySelector(".ra-fb-field.dragging");
+            if(dragging&&dragging!==field&&!field.classList.contains("locked")){
+                field.classList.add("drag-over");
+            }
+        });
+        field.addEventListener("dragleave",function(){field.classList.remove("drag-over")});
+        field.addEventListener("drop",function(e){
+            e.preventDefault();field.classList.remove("drag-over");
+            var dragging=document.querySelector(".ra-fb-field.dragging");
+            if(!dragging||dragging===field) return;
+            var parent=field.parentNode;
+            var rect=field.getBoundingClientRect();
+            var midY=rect.top+rect.height/2;
+            if(e.clientY<midY){parent.insertBefore(dragging,field)}
+            else{parent.insertBefore(dragging,field.nextSibling)}
+        });
+    }
+    // Wire all existing fields
+    document.querySelectorAll(".ra-fb-field:not(.locked)").forEach(fbWireField);
+
+    // Palette click → show/hide field in form
+    document.querySelectorAll(".ra-fb-pal-item").forEach(function(pi){
+        pi.addEventListener("click",function(){
+            var target=this.getAttribute("data-target");
+            var field=document.querySelector(\'.ra-fb-field[data-key="\'+target+\'"]\');
+            if(!field) return;
+            if(this.classList.contains("used")){
+                // Remove from form
+                field.classList.add("ra-fb-hidden");
+                this.classList.remove("used");
+            }else{
+                // Add to form
+                field.classList.remove("ra-fb-hidden");
+                this.classList.add("used");
+                field.classList.add("ra-fb-flash");
+                setTimeout(function(){field.classList.remove("ra-fb-flash")},600);
+                field.scrollIntoView({behavior:"smooth",block:"center"});
+            }
+        });
+    });
+
+    // Add custom field
+    var fbAddBtn=document.getElementById("ra-fb-add-custom");
+    if(fbAddBtn){
+        fbAddBtn.addEventListener("click",function(){
+            var key="custom_"+Date.now();
+            var container=document.getElementById("ra-fb-custom-fields");
+            var field=document.createElement("div");
+            field.className="ra-fb-field";
+            field.setAttribute("data-key",key);
+            field.setAttribute("data-builtin","0");
+            field.setAttribute("draggable","true");
+            field.innerHTML=\'<i class="ri-draggable ra-fb-drag"></i>\
+                <div class="ra-fb-controls">\
+                    <button type="button" class="ra-fb-ctrl-btn ra-fb-btn-settings" title="Einstellungen"><i class="ri-settings-3-line"></i></button>\
+                    <button type="button" class="ra-fb-ctrl-btn danger ra-fb-remove" title="Entfernen"><i class="ri-delete-bin-line"></i></button>\
+                </div>\
+                <div class="ra-fb-field-body">\
+                    <label data-label-for="\'+key+\'"><em style="color:#94a3b8">Neues Feld</em></label>\
+                    <input type="text" placeholder="...">\
+                </div>\
+                <div class="ra-fb-settings open">\
+                    <div class="ra-fb-settings-row"><label>Feldname:</label><input type="text" data-field-label="\'+key+\'" value="" class="ra-fb-label-input" style="flex:1" placeholder="z.B. Garantie, Farbe, Zustand..."></div>\
+                    <div class="ra-fb-settings-row"><label>Feldtyp:</label>\
+                        <select data-field-type="\'+key+\'">\
+                            <option value="text">Textfeld</option>\
+                            <option value="textarea">Textbereich</option>\
+                            <option value="number">Zahl</option>\
+                            <option value="select">Auswahl (Dropdown)</option>\
+                            <option value="checkbox">Checkbox</option>\
+                        </select>\
+                    </div>\
+                    <div class="ra-fb-settings-row ra-fb-options-row" style="display:none">\
+                        <textarea data-field-options="\'+key+\'" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" style="width:100%"></textarea>\
+                    </div>\
+                    <div class="ra-fb-settings-row"><label style="cursor:pointer"><input type="checkbox" data-field-required="\'+key+\'" style="accent-color:#667eea"> Pflichtfeld</label></div>\
+                </div>\';
+            container.appendChild(field);
+            fbWireField(field);
+            field.querySelector("input[data-field-label]").focus();
+            field.scrollIntoView({behavior:"smooth",block:"center"});
+        });
+    }
     /* ===== Settings Form ===== */
-    console.log("DEBUG: Looking for settings form...");
     var settingsFormEl = document.getElementById("ra-settings-form");
-    console.log("DEBUG: Settings form element:", settingsFormEl);
     if(settingsFormEl){
         settingsFormEl.addEventListener("submit",function(e){
-            console.log("DEBUG: Form submit triggered!");
             e.preventDefault();
             var fd=new FormData(this);
-            console.log("DEBUG: FormData created, AJAX URL:", AJAX);
-            // Collect field config
+            // Collect field config from all builder fields (visible = enabled)
             var fc={};
-            document.querySelectorAll("#ra-field-config .ra-field-row").forEach(function(row){
-                var cb=row.querySelector("input[type=checkbox]");
-                var inp=row.querySelector("input[type=text]");
-                if(cb&&inp){
-                    fc[cb.getAttribute("data-field")]={enabled:cb.checked,label:inp.value};
+            var order=0;
+            document.querySelectorAll(".ra-fb-field:not(.locked)").forEach(function(field){
+                order++;
+                var key=field.getAttribute("data-key");
+                if(!key) return;
+                var isVisible=!field.classList.contains("ra-fb-hidden");
+                var labelInp=field.querySelector("input[data-field-label]");
+                var reqCb=field.querySelector("input[data-field-required]");
+                var entry={enabled:isVisible, label:labelInp?labelInp.value:"", required:reqCb?reqCb.checked:false, order:order};
+                if(field.getAttribute("data-builtin")==="0"){
+                    var typeSel=field.querySelector("select[data-field-type]");
+                    var optsTa=field.querySelector("textarea[data-field-options]");
+                    entry.type=typeSel?typeSel.value:"text";
+                    entry.options=optsTa?optsTa.value:"";
                 }
+                fc[key]=entry;
             });
             fd.append("repair_field_config",JSON.stringify(fc));
             fd.append("action","ppv_repair_save_settings");
             fd.append("nonce",NONCE);
-            console.log("DEBUG: Sending fetch request...");
             fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-            .then(function(r){console.log("DEBUG: Response received:", r.status);return r.json()})
+            .then(function(r){return r.json()})
             .then(function(data){
-                console.log("DEBUG: JSON data:", data);
                 if(data.success){
                     toast(L.settings_saved);
-                    // Visual feedback on button
                     var btn=settingsFormEl.querySelector("button[type=submit]");
                     if(btn){
                         var orig=btn.innerHTML;
@@ -3732,10 +4511,8 @@ echo '          </div>
                     toast(L.save_error);
                 }
             })
-            .catch(function(err){console.log("DEBUG: Error:", err);toast(L.connection_error)});
+            .catch(function(err){toast(L.connection_error)});
         });
-    }else{
-        console.log("DEBUG: Settings form NOT FOUND!");
     }
 
     /* ===== Logo Upload ===== */
@@ -4894,6 +5671,175 @@ echo '          </div>
     window.copyKioskUrl=function(){var url=document.getElementById("kiosk-form-url").textContent;navigator.clipboard.writeText(url).then(function(){var btn=document.querySelector(".kiosk-copy-btn");btn.innerHTML=\'<i class="ri-check-line"></i>\';setTimeout(function(){btn.innerHTML=\'<i class="ri-file-copy-line"></i>\'},2000)})};
     document.addEventListener("keydown",function(e){if(e.key==="Escape")closeKioskTips()});
 
+    /* ===== Filiale Switcher ===== */
+    var filialeBtn = document.getElementById("ra-filiale-btn");
+    var filialeDropdown = document.getElementById("ra-filiale-dropdown");
+
+    if (filialeBtn && filialeDropdown) {
+        filialeBtn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            filialeDropdown.classList.toggle("ra-hidden");
+        });
+        document.addEventListener("click", function() {
+            if (filialeDropdown) filialeDropdown.classList.add("ra-hidden");
+        });
+        filialeDropdown.addEventListener("click", function(e) { e.stopPropagation(); });
+
+        // Switch filiale
+        var filialeItems = document.querySelectorAll(".ra-filiale-item");
+        filialeItems.forEach(function(item) {
+            item.addEventListener("click", function() {
+                var id = this.getAttribute("data-id");
+                var fd = new FormData();
+                fd.append("action", "ppv_repair_switch_filiale");
+                fd.append("nonce", NONCE);
+                fd.append("filiale_id", id);
+                fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
+                .then(function(r){return r.json()})
+                .then(function(data){
+                    if(data.success) window.location.reload();
+                    else alert(data.data && data.data.message ? data.data.message : "Fehler");
+                });
+            });
+        });
+
+        // Add filiale button (in dropdown)
+        var addBtnDropdown = document.getElementById("ra-filiale-add-btn");
+        if (addBtnDropdown) {
+            addBtnDropdown.addEventListener("click", function() {
+                filialeDropdown.classList.add("ra-hidden");
+                // Open settings panel on filialen tab
+                toggleSettings(true);
+                var filialenTab = document.querySelector(\'[data-panel="filialen"]\');
+                if (filialenTab) filialenTab.click();
+            });
+        }
+    }
+
+    /* ===== Create Filiale (Settings Panel) ===== */
+    var createFilialeBtn = document.getElementById("ra-create-filiale-btn");
+    if (createFilialeBtn) {
+        createFilialeBtn.addEventListener("click", function() {
+            var name = document.getElementById("ra-new-filiale-name").value.trim();
+            var city = document.getElementById("ra-new-filiale-city").value.trim();
+            var plz  = document.getElementById("ra-new-filiale-plz").value.trim();
+            var msgEl = document.getElementById("ra-filiale-msg");
+
+            if (!name || !city) {
+                msgEl.textContent = "Name und Stadt sind Pflichtfelder";
+                msgEl.style.background = "#fef2f2";
+                msgEl.style.color = "#991b1b";
+                msgEl.classList.remove("ra-hidden");
+                return;
+            }
+
+            createFilialeBtn.disabled = true;
+            createFilialeBtn.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i> Erstelle...\';
+
+            var fd = new FormData();
+            fd.append("action", "ppv_repair_create_filiale");
+            fd.append("nonce", NONCE);
+            fd.append("filiale_name", name);
+            fd.append("city", city);
+            fd.append("plz", plz);
+
+            fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if (data.success) {
+                    msgEl.textContent = data.data.message || "Filiale erstellt!";
+                    msgEl.style.background = "#f0fdf4";
+                    msgEl.style.color = "#166534";
+                    msgEl.classList.remove("ra-hidden");
+                    setTimeout(function(){ window.location.reload(); }, 1500);
+                } else {
+                    msgEl.textContent = data.data && data.data.message ? data.data.message : "Fehler";
+                    msgEl.style.background = "#fef2f2";
+                    msgEl.style.color = "#991b1b";
+                    msgEl.classList.remove("ra-hidden");
+                    createFilialeBtn.disabled = false;
+                    createFilialeBtn.innerHTML = \'<i class="ri-add-line"></i> Filiale erstellen\';
+                }
+            })
+            .catch(function(){
+                msgEl.textContent = "Netzwerkfehler";
+                msgEl.style.background = "#fef2f2";
+                msgEl.style.color = "#991b1b";
+                msgEl.classList.remove("ra-hidden");
+                createFilialeBtn.disabled = false;
+                createFilialeBtn.innerHTML = \'<i class="ri-add-line"></i> Filiale erstellen\';
+            });
+        });
+    }
+
+    /* ===== Copy Filiale Link ===== */
+    document.querySelectorAll(".ra-filiale-copy").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var url = this.getAttribute("data-url");
+            var el = this;
+            navigator.clipboard.writeText(url).then(function() {
+                var orig = el.innerHTML;
+                el.innerHTML = \'<i class="ri-check-line" style="color:#22c55e"></i> Kopiert!\';
+                setTimeout(function(){ el.innerHTML = orig; }, 2000);
+            });
+        });
+    });
+
+    /* ===== Edit Filiale ===== */
+    document.querySelectorAll(".ra-filiale-edit").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var fid = this.getAttribute("data-fid");
+            var card = this.closest(".ra-filiale-card");
+            var curName = this.getAttribute("data-name");
+            var curCity = this.getAttribute("data-city");
+            var curPlz  = this.getAttribute("data-plz");
+
+            var newName = prompt("Name:", curName);
+            if (newName === null) return;
+            var newCity = prompt("Stadt:", curCity);
+            if (newCity === null) return;
+            var newPlz  = prompt("PLZ:", curPlz);
+            if (newPlz === null) return;
+
+            var fd = new FormData();
+            fd.append("action", "ppv_repair_edit_filiale");
+            fd.append("nonce", NONCE);
+            fd.append("filiale_id", fid);
+            fd.append("filiale_name", newName);
+            fd.append("city", newCity);
+            fd.append("plz", newPlz);
+
+            fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success) window.location.reload();
+                else alert(data.data && data.data.message ? data.data.message : "Fehler");
+            });
+        });
+    });
+
+    /* ===== Delete Filiale ===== */
+    document.querySelectorAll(".ra-filiale-delete").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var fid = this.getAttribute("data-fid");
+            var fname = this.getAttribute("data-name");
+
+            if (!confirm("Filiale \\"" + fname + "\\" wirklich löschen? Alle Daten gehen verloren.")) return;
+
+            var fd = new FormData();
+            fd.append("action", "ppv_repair_delete_filiale");
+            fd.append("nonce", NONCE);
+            fd.append("filiale_id", fid);
+
+            fetch(AJAX, {method:"POST", body:fd, credentials:"same-origin"})
+            .then(function(r){return r.json()})
+            .then(function(data){
+                if(data.success) window.location.reload();
+                else alert(data.data && data.data.message ? data.data.message : "Fehler");
+            });
+        });
+    });
+
 })();
 </script>
 
@@ -5037,6 +5983,70 @@ echo '          </div>
             $address_html = '<div class="ra-repair-address"><i class="ri-map-pin-line"></i> ' . esc_html($r->customer_address) . '</div>';
         }
 
+        // IMEI display
+        $imei_html = '';
+        if (!empty($r->device_imei)) {
+            $imei_html = '<div class="ra-repair-imei" style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-barcode-line"></i> IMEI: ' . esc_html($r->device_imei) . '</div>';
+        }
+
+        // Accessories display
+        $acc_html = '';
+        if (!empty($r->accessories)) {
+            $acc_html = '<div class="ra-repair-acc" style="font-size:12px;color:#6b7280;margin-top:4px"><i class="ri-checkbox-multiple-line"></i> ' . esc_html($r->accessories) . '</div>';
+        }
+
+        // Custom fields (includes new built-in extras: color, date, condition, priority, cost, photos)
+        $cf_html = '';
+        $cf_data_json = '';
+        if (!empty($r->custom_fields)) {
+            $cf = json_decode($r->custom_fields, true);
+            if (is_array($cf) && !empty($cf)) {
+                $cf_data_json = esc_attr($r->custom_fields);
+                $cf_parts = [];
+                $cf_labels = [
+                    'device_color' => ['icon' => 'ri-palette-line', 'label' => PPV_Lang::t('repair_fb_color')],
+                    'purchase_date' => ['icon' => 'ri-calendar-line', 'label' => PPV_Lang::t('repair_fb_purchase_date')],
+                    'priority' => ['icon' => 'ri-flashlight-line', 'label' => PPV_Lang::t('repair_fb_priority')],
+                    'cost_limit' => ['icon' => 'ri-money-euro-circle-line', 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+                ];
+                foreach ($cf as $ck => $cv) {
+                    if ($ck === 'photos' || $ck === 'condition_check') continue; // handled separately
+                    $icon = 'ri-file-text-line';
+                    $lbl = $ck;
+                    if (isset($cf_labels[$ck])) { $icon = $cf_labels[$ck]['icon']; $lbl = $cf_labels[$ck]['label']; }
+                    elseif (strpos($ck, 'custom_') === 0) {
+                        // Get label from field_config
+                        $fc_entry = $field_config[$ck] ?? null;
+                        if ($fc_entry && !empty($fc_entry['label'])) $lbl = $fc_entry['label'];
+                    }
+                    if (is_string($cv) && $cv !== '') {
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="' . $icon . '"></i> ' . esc_html($lbl) . ': <strong style="color:#374151">' . esc_html($cv) . '</strong></div>';
+                    }
+                }
+                // Condition check
+                if (!empty($cf['condition_check'])) {
+                    $cond = is_string($cf['condition_check']) ? json_decode($cf['condition_check'], true) : $cf['condition_check'];
+                    if (is_array($cond)) {
+                        $cond_items = [];
+                        foreach ($cond as $part => $status) {
+                            $color = $status === 'ok' ? '#059669' : '#dc2626';
+                            $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
+                        }
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition')) . ': ' . implode(', ', $cond_items) . '</div>';
+                    }
+                }
+                // Photos
+                if (!empty($cf['photos']) && is_array($cf['photos'])) {
+                    $photo_imgs = '';
+                    foreach ($cf['photos'] as $purl) {
+                        $photo_imgs .= '<img src="' . esc_url($purl) . '" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;margin-right:4px">';
+                    }
+                    $cf_parts[] = '<div style="margin-top:4px"><i class="ri-camera-line" style="font-size:12px;color:#6b7280"></i> ' . $photo_imgs . '</div>';
+                }
+                $cf_html = implode('', $cf_parts);
+            }
+        }
+
         // Check if invoice already exists for this repair
         $invoice_numbers = '';
         if (!empty($r->invoice_numbers)) {
@@ -5162,10 +6172,13 @@ echo '          </div>
             . ' data-brand="' . esc_attr($r->device_brand) . '"'
             . ' data-model="' . esc_attr($r->device_model) . '"'
             . ' data-pin="' . esc_attr($r->device_pattern) . '"'
+            . ' data-imei="' . esc_attr($r->device_imei) . '"'
             . ' data-problem="' . esc_attr($r->problem_description) . '"'
             . ' data-date="' . esc_attr($date) . '"'
             . ' data-muster="' . esc_attr($r->muster_image) . '"'
             . ' data-signature="' . esc_attr($r->signature_image) . '"'
+            . ' data-accessories="' . esc_attr($r->accessories) . '"'
+            . ' data-customfields="' . $cf_data_json . '"'
             . ' data-invoice="' . esc_attr($invoice_numbers) . '">'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
@@ -5178,8 +6191,11 @@ echo '          </div>
                     . $address_html
                 . '</div>'
                 . $device_html
+                . $imei_html
                 . $pin_html
                 . $muster_html
+                . $acc_html
+                . $cf_html
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="' . esc_attr(PPV_Lang::t('repair_admin_last_modified')) . '">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
                 . $invoice_badge_html
