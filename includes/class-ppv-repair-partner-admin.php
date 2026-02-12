@@ -277,7 +277,9 @@ class PPV_Repair_Partner_Admin {
         $nonce = wp_create_nonce('ppv_partner_admin');
         $ajax_url = admin_url('admin-ajax.php');
 
-        echo '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        ob_start();
+        ?>
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Partner-Verwaltung - PunktePass</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
@@ -371,7 +373,7 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
             <div class="pp-form-row"><label>PLZ / Stadt</label><div style="display:flex;gap:8px"><input type="text" id="pf-plz" style="width:80px" placeholder="PLZ"><input type="text" id="pf-city" placeholder="Stadt"></div></div>
             <div class="pp-form-row"><label>Partnerschaft-Modell</label>
                 <select id="pf-model">
-                    <option value="newsletter">Newsletter & Webshop</option>
+                    <option value="newsletter">Newsletter &amp; Webshop</option>
                     <option value="package_insert" selected>Paketbeilage</option>
                     <option value="co_branded">Co-Branded (Exklusiv)</option>
                 </select>
@@ -418,24 +420,23 @@ function loadPartners() {
         document.getElementById("stat-forms").textContent = totalForms;
 
         if (!partners.length) {
-            document.getElementById("pp-partners-list").innerHTML = "<div class=\"pp-empty\"><i class=\"ri-handshake-line\"></i><p>Noch keine Partner vorhanden</p><p style=\"font-size:13px;margin-top:8px\">Erstellen Sie Ihren ersten Partner mit dem Button oben</p></div>";
+            document.getElementById("pp-partners-list").innerHTML = '<div class="pp-empty"><i class="ri-handshake-line"></i><p>Noch keine Partner vorhanden</p><p style="font-size:13px;margin-top:8px">Erstellen Sie Ihren ersten Partner mit dem Button oben</p></div>';
             return;
         }
-        var html = "<table class=\"pp-table\"><thead><tr><th></th><th>Partner</th><th>Code</th><th>Modell</th><th>Shops</th><th>Formulare</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>";
+        var html = '<table class="pp-table"><thead><tr><th></th><th>Partner</th><th>Code</th><th>Modell</th><th>Shops</th><th>Formulare</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>';
         partners.forEach(function(p) {
-            var logo = p.logo_url ? "<img src=\""+p.logo_url+"\" class=\"pp-partner-logo\">" : "<div class=\"pp-partner-logo\" style=\"display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#667eea\">"+p.company_name.charAt(0)+"</div>";
+            var logo = p.logo_url ? '<img src="'+p.logo_url+'" class="pp-partner-logo">' : '<div class="pp-partner-logo" style="display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#667eea">'+p.company_name.charAt(0)+'</div>';
             var badge = p.status === "active" ? "pp-badge-active" : (p.status === "pending" ? "pp-badge-pending" : "pp-badge-inactive");
             var model = {newsletter:"Newsletter",package_insert:"Paketbeilage",co_branded:"Co-Branded"};
-            var refUrl = "https://punktepass.de/formular?ref=" + p.partner_code;
             html += "<tr><td>"+logo+"</td>";
-            html += "<td><strong>"+p.company_name+"</strong><br><span style=\"font-size:12px;color:#64748b\">"+( p.contact_name || "")+"</span></td>";
-            html += "<td><span class=\"pp-code\" onclick=\"copyCode(this,\'"+p.partner_code+"\')\" title=\"Klicken zum Kopieren\">"+p.partner_code+" <i class=\"ri-file-copy-line\" style=\"font-size:12px\"></i></span></td>";
+            html += '<td><strong>'+p.company_name+'</strong><br><span style="font-size:12px;color:#64748b">'+(p.contact_name || "")+'</span></td>';
+            html += '<td><span class="pp-code" onclick="copyCode(this,\''+p.partner_code+'\')" title="Klicken zum Kopieren">'+p.partner_code+' <i class="ri-file-copy-line" style="font-size:12px"></i></span></td>';
             html += "<td>"+(model[p.partnership_model] || p.partnership_model)+"</td>";
-            html += "<td style=\"font-weight:600\">"+(p.referred_stores || 0)+"</td>";
+            html += '<td style="font-weight:600">'+(p.referred_stores || 0)+"</td>";
             html += "<td>"+(p.total_forms || 0)+"</td>";
-            html += "<td><span class=\"pp-badge "+badge+"\">"+p.status+"</span></td>";
-            html += "<td><button class=\"pp-btn pp-btn-sm pp-btn-ghost\" onclick=\"viewPartner("+p.id+")\"><i class=\"ri-eye-line\"></i></button> ";
-            html += "<button class=\"pp-btn pp-btn-sm pp-btn-ghost\" onclick=\"editPartner("+p.id+")\"><i class=\"ri-pencil-line\"></i></button></td></tr>";
+            html += '<td><span class="pp-badge '+badge+'">'+p.status+"</span></td>";
+            html += '<td><button class="pp-btn pp-btn-sm pp-btn-ghost" onclick="viewPartner('+p.id+')"><i class="ri-eye-line"></i></button> ';
+            html += '<button class="pp-btn pp-btn-sm pp-btn-ghost" onclick="editPartner('+p.id+')"><i class="ri-pencil-line"></i></button></td></tr>';
         });
         html += "</tbody></table>";
         document.getElementById("pp-partners-list").innerHTML = html;
@@ -444,9 +445,9 @@ function loadPartners() {
 
 function copyCode(el, code) {
     navigator.clipboard.writeText(code);
-    el.innerHTML = code + " <i class=\"ri-check-line\" style=\"font-size:12px;color:#22c55e\"></i>";
+    el.innerHTML = code + ' <i class="ri-check-line" style="font-size:12px;color:#22c55e"></i>';
     setTimeout(function() {
-        el.innerHTML = code + " <i class=\"ri-file-copy-line\" style=\"font-size:12px\"></i>";
+        el.innerHTML = code + ' <i class="ri-file-copy-line" style="font-size:12px"></i>';
     }, 1500);
 }
 
@@ -502,14 +503,14 @@ function viewPartner(id) {
         var refUrl = "https://punktepass.de/formular?ref=" + p.partner_code;
         var model = {newsletter:"Newsletter & Webshop",package_insert:"Paketbeilage (Empfohlen)",co_branded:"Co-Branded (Exklusiv)"};
 
-        var html = "<div style=\"display:flex;gap:16px;align-items:center;margin-bottom:20px\">";
-        if (p.logo_url) html += "<img src=\""+p.logo_url+"\" style=\"height:48px;border-radius:8px\">";
-        html += "<div><h3 style=\"margin:0\">"+p.company_name+"</h3>";
-        html += "<span class=\"pp-code\" onclick=\"copyCode(this,\'"+p.partner_code+"\')\">"+p.partner_code+" <i class=\"ri-file-copy-line\" style=\"font-size:12px\"></i></span></div></div>";
+        var html = '<div style="display:flex;gap:16px;align-items:center;margin-bottom:20px">';
+        if (p.logo_url) html += '<img src="'+p.logo_url+'" style="height:48px;border-radius:8px">';
+        html += '<div><h3 style="margin:0">'+p.company_name+'</h3>';
+        html += '<span class="pp-code" onclick="copyCode(this,\''+p.partner_code+'\')">'+p.partner_code+' <i class="ri-file-copy-line" style="font-size:12px"></i></span></div></div>';
 
-        html += "<div class=\"pp-ref-url\"><strong>Referral-Link:</strong><br>"+refUrl+"</div>";
+        html += '<div class="pp-ref-url"><strong>Referral-Link:</strong><br>'+refUrl+'</div>';
 
-        html += "<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;font-size:14px\">";
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;font-size:14px">';
         html += "<div><strong>Kontakt:</strong> "+(p.contact_name || "-")+"</div>";
         html += "<div><strong>E-Mail:</strong> "+(p.email || "-")+"</div>";
         html += "<div><strong>Telefon:</strong> "+(p.phone || "-")+"</div>";
@@ -519,18 +520,18 @@ function viewPartner(id) {
         html += "</div>";
 
         if (stores.length) {
-            html += "<h4 style=\"margin-top:20px;margin-bottom:8px\"><i class=\"ri-store-2-line\"></i> Verwiesene Shops ("+stores.length+")</h4>";
-            html += "<table class=\"pp-table\"><thead><tr><th>Shop</th><th>Stadt</th><th>Formulare</th><th>Premium</th><th>Registriert</th></tr></thead><tbody>";
+            html += '<h4 style="margin-top:20px;margin-bottom:8px"><i class="ri-store-2-line"></i> Verwiesene Shops ('+stores.length+')</h4>';
+            html += '<table class="pp-table"><thead><tr><th>Shop</th><th>Stadt</th><th>Formulare</th><th>Premium</th><th>Registriert</th></tr></thead><tbody>';
             stores.forEach(function(s) {
-                html += "<tr><td><strong>"+(s.repair_company_name || s.name)+"</strong><br><span style=\"font-size:12px;color:#64748b\">"+s.email+"</span></td>";
+                html += '<tr><td><strong>'+(s.repair_company_name || s.name)+'</strong><br><span style="font-size:12px;color:#64748b">'+s.email+'</span></td>';
                 html += "<td>"+(s.city || "-")+"</td>";
                 html += "<td>"+(s.repair_form_count || 0)+"</td>";
-                html += "<td>"+(parseInt(s.repair_premium) ? "<span class=\"pp-badge pp-badge-active\">Premium</span>" : "Free")+"</td>";
+                html += "<td>"+(parseInt(s.repair_premium) ? '<span class="pp-badge pp-badge-active">Premium</span>' : "Free")+"</td>";
                 html += "<td>"+new Date(s.created_at).toLocaleDateString("de-DE")+"</td></tr>";
             });
             html += "</tbody></table>";
         } else {
-            html += "<div style=\"margin-top:16px;padding:20px;text-align:center;color:#94a3b8;background:#f8fafc;border-radius:8px\"><i class=\"ri-store-2-line\" style=\"font-size:24px\"></i><br>Noch keine verwiesenen Shops</div>";
+            html += '<div style="margin-top:16px;padding:20px;text-align:center;color:#94a3b8;background:#f8fafc;border-radius:8px"><i class="ri-store-2-line" style="font-size:24px"></i><br>Noch keine verwiesenen Shops</div>';
         }
 
         document.getElementById("pp-detail-content").innerHTML = html;
@@ -573,7 +574,9 @@ document.getElementById("pp-partner-form").addEventListener("submit", function(e
 // Init
 loadPartners();
 </script>
-</body></html>';
+</body></html>
+        <?php
+        echo ob_get_clean();
         exit;
     }
 }
