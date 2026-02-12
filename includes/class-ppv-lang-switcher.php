@@ -46,7 +46,8 @@ class PPV_Lang_Switcher {
                     try{localStorage.setItem('ppv_lang',lang)}catch(e){}
                     var url=new URL(window.location.href);
                     url.searchParams.set('lang',lang);
-                    window.location.href=url.toString();
+                    if(window.Turbo){window.Turbo.visit(url.toString(),{action:'replace'})}
+                    else{window.location.href=url.toString()}
                 });
             });
             document.addEventListener('click',function(e){

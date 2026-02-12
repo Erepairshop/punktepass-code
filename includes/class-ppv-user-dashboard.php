@@ -726,11 +726,7 @@ private static function get_today_hours($opening_hours) {
             
             <!-- Settings (Language + Theme) -->
             <div class="ppv-header-settings">
-                <select id="ppv-lang-select-global" class="ppv-lang-mini" title="Sprache / Nyelv / Limbă">
-                    <option value="de" <?php selected($lang, 'de'); ?>>🇩🇪</option>
-                    <option value="hu" <?php selected($lang, 'hu'); ?>>🇭🇺</option>
-                    <option value="ro" <?php selected($lang, 'ro'); ?>>🇷🇴</option>
-                </select>
+                <?php echo PPV_Lang_Switcher::render(); ?>
            <button id="ppv-theme-toggle-global" class="ppv-theme-btn-mini" type="button">
     <i id="ppv-theme-icon" class="ri-moon-line"></i>
 </button>
@@ -832,33 +828,7 @@ private static function get_today_hours($opening_hours) {
             // REMOVED: Duplicate listener was conflicting with theme-loader.js
             // The theme-loader.js now handles all theme switching logic
 
-            // ============================================================
-            // LANGUAGE SWITCH - Fixed for Turbo compatibility
-            // ============================================================
-            const langSel = document.getElementById('ppv-lang-select-global');
-            if (langSel && !langSel.dataset.listenerAttached) {
-                langSel.dataset.listenerAttached = 'true';
-
-                langSel.addEventListener('change', (e) => {
-                    const v = e.target.value;
-                    console.log('🌐 [Lang] Switching to:', v);
-
-                    document.cookie = `ppv_lang=${v};path=/;max-age=${60*60*24*365}`;
-                    localStorage.setItem('ppv_lang', v);
-
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('lang', v);
-
-                    // Use Turbo visit if available, otherwise standard redirect
-                    if (window.Turbo) {
-                        window.Turbo.visit(url.toString(), { action: 'replace' });
-                    } else {
-                        window.location.href = url.toString();
-                    }
-                });
-
-                console.log('✅ [Lang] Select listener attached');
-            }
+            // Language switch is now handled by PPV_Lang_Switcher component
 
             <?php if (!$is_handler): ?>
             // ============================================================
