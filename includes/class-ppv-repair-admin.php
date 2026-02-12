@@ -615,7 +615,7 @@ a:hover{color:#5a67d8}
 .ra-settings .field select:hover{border-color:#cbd5e1}
 .ra-settings .field input:focus,
 .ra-settings .field select:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
-.ra-settings .field select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
+.ra-settings .field select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
 .ra-settings .field input[type="color"]{height:48px;padding:6px;cursor:pointer}
 .ra-logo-section{margin-top:20px;margin-bottom:20px}
 .ra-logo-section>label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:10px}
@@ -1209,7 +1209,9 @@ a:hover{color:#5a67d8}
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_phone')) . '</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
-                </div>
+                </div>';
+
+        echo '
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
                     <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
