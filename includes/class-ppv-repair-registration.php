@@ -777,8 +777,15 @@ class PPV_Repair_Registration {
         }
 
         /* ── Language Switcher (footer) ── */
-        .pp-lang-btn{font-family:inherit;letter-spacing:0.5px;transition:all .2s}
-        .pp-lang-btn:hover{opacity:0.8}
+        .pp-lang-wrap{position:relative;display:inline-flex}
+        .pp-lang-toggle{display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .2s}
+        .pp-lang-toggle:hover{background:#e5e7eb;color:#374151}
+        .pp-lang-toggle i{font-size:14px}
+        .pp-lang-opts{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;min-width:52px;z-index:100}
+        .pp-lang-wrap.open .pp-lang-opts{display:block}
+        .pp-lang-opt{display:block;padding:6px 12px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;border:none;background:none;width:100%;text-align:center;font-family:inherit;letter-spacing:.5px;transition:all .15s}
+        .pp-lang-opt:hover{background:#f0f2ff;color:#4338ca}
+        .pp-lang-opt.active{color:#667eea}
 
         /* ── FEATURE MODAL ── */
         .pp-feat-overlay {
@@ -1770,10 +1777,17 @@ class PPV_Repair_Registration {
         <a href="/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
     </div>
     <!-- Language Switcher (footer) -->
-    <div style="display:flex;justify-content:center;gap:6px;margin:12px 0 8px">
-        <?php foreach (['de','en','hu','ro'] as $lc): ?>
-        <button class="pp-lang-btn" data-lang="<?php echo $lc; ?>" style="background:<?php echo $lang === $lc ? '#667eea' : '#e5e7eb'; ?>;color:<?php echo $lang === $lc ? '#fff' : '#6b7280'; ?>;border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer"><?php echo strtoupper($lc); ?></button>
-        <?php endforeach; ?>
+    <div style="display:flex;justify-content:center;margin:12px 0 8px">
+        <div class="pp-lang-wrap" id="pp-lang-wrap">
+            <button class="pp-lang-toggle" onclick="this.parentElement.classList.toggle('open')">
+                <i class="ri-global-line"></i> <?php echo strtoupper($lang); ?>
+            </button>
+            <div class="pp-lang-opts">
+                <?php foreach (['de','en','hu','ro'] as $lc): ?>
+                <button class="pp-lang-opt <?php echo $lang === $lc ? 'active' : ''; ?>" data-lang="<?php echo $lc; ?>"><?php echo strtoupper($lc); ?></button>
+                <?php endforeach; ?>
+            </div>
+        </div>
     </div>
     <div class="pp-reg-footer-powered">
         <?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?> <a href="https://punktepass.de">PunktePass</a>
@@ -1789,8 +1803,7 @@ class PPV_Repair_Registration {
     var ppvLang  = <?php echo $js_strings; ?>;
 
     // Language switcher
-    var langBtns = document.querySelectorAll('.pp-lang-btn');
-    langBtns.forEach(function(btn){
+    document.querySelectorAll('.pp-lang-opt').forEach(function(btn){
         btn.addEventListener('click', function(){
             var lang = btn.getAttribute('data-lang');
             var url = new URL(window.location.href);
@@ -1799,6 +1812,7 @@ class PPV_Repair_Registration {
             window.location.href = url.toString();
         });
     });
+    document.addEventListener('click', function(e){ var w=document.getElementById('pp-lang-wrap'); if(w && !w.contains(e.target)) w.classList.remove('open'); });
 
     var form       = document.getElementById('pp-reg-form');
     var submitBtn  = document.getElementById('rr-submit');

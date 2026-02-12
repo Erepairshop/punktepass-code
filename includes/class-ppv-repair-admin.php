@@ -65,10 +65,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .register-link a:hover{text-decoration:underline}
 .footer-text{text-align:center;margin-top:24px;font-size:12px;color:#9ca3af}
 .footer-text a{color:#667eea;text-decoration:none}
-.login-lang-switch{display:flex;justify-content:center;gap:4px;margin-bottom:20px}
-.login-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:0.5px}
-.login-lang-btn:hover{background:#e5e7eb;color:#374151}
-.login-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
+.login-lang-wrap{position:absolute;top:16px;right:16px;z-index:10}
+.login-lang-toggle{display:flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .2s}
+.login-lang-toggle:hover{background:#e5e7eb;color:#374151}
+.login-lang-toggle i{font-size:14px}
+.login-lang-opts{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;min-width:52px}
+.login-lang-wrap.open .login-lang-opts{display:block}
+.login-lang-opt{display:block;padding:6px 12px;font-size:12px;font-weight:700;color:#6b7280;text-decoration:none;cursor:pointer;border:none;background:none;width:100%;text-align:center;font-family:inherit;letter-spacing:.5px;transition:all .15s}
+.login-lang-opt:hover{background:#f0f2ff;color:#4338ca}
+.login-lang-opt.active{color:#667eea}
 .oauth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 14px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit;margin-bottom:8px}
 .oauth-google{background:#fff;border:1.5px solid #e5e7eb;color:#374151}
 .oauth-google:hover{border-color:#d1d5db;background:#f9fafb}
@@ -83,10 +88,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 <div class="login-wrap">
     <div class="login-box">
         <!-- Language Switcher -->
-        <div class="login-lang-switch">
-            <?php foreach (['de','en','hu','ro'] as $lc): ?>
-            <button class="login-lang-btn <?php echo $lang === $lc ? 'active' : ''; ?>" data-lang="<?php echo $lc; ?>"><?php echo strtoupper($lc); ?></button>
-            <?php endforeach; ?>
+        <div class="login-lang-wrap" id="login-lang-wrap">
+            <button class="login-lang-toggle" onclick="this.parentElement.classList.toggle('open')">
+                <i class="ri-global-line"></i> <?php echo strtoupper($lang); ?>
+            </button>
+            <div class="login-lang-opts">
+                <?php foreach (['de','en','hu','ro'] as $lc): ?>
+                <button class="login-lang-opt <?php echo $lang === $lc ? 'active' : ''; ?>" data-lang="<?php echo $lc; ?>"><?php echo strtoupper($lc); ?></button>
+                <?php endforeach; ?>
+            </div>
         </div>
         <div class="login-logo"><i class="ri-tools-line"></i></div>
         <h2><?php echo esc_html(PPV_Lang::t('repair_login_heading')); ?></h2>
@@ -126,8 +136,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
     var ppvLang = <?php echo $js_strings; ?>;
 
     // Language switcher
-    var langBtns = document.querySelectorAll('.login-lang-btn');
-    langBtns.forEach(function(btn){
+    document.querySelectorAll('.login-lang-opt').forEach(function(btn){
         btn.addEventListener('click', function(){
             var lang = btn.getAttribute('data-lang');
             var url = new URL(window.location.href);
@@ -136,6 +145,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
             window.location.href = url.toString();
         });
     });
+    document.addEventListener('click', function(e){ var w=document.getElementById('login-lang-wrap'); if(w && !w.contains(e.target)) w.classList.remove('open'); });
 
     var form=document.getElementById("login-form"),
         btn=document.getElementById("login-btn"),
@@ -971,10 +981,15 @@ a:hover{color:#5a67d8}
     .ra-inv-line-amount{width:100%}
 }
 /* Language Switcher */
-.ra-lang-switch{display:flex;gap:4px;align-items:center}
-.ra-lang-btn{border:none;background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:.5px}
-.ra-lang-btn:hover{background:#e5e7eb;color:#374151}
-.ra-lang-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,.3)}
+.ra-lang-wrap{position:relative}
+.ra-lang-toggle{display:flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .2s}
+.ra-lang-toggle:hover{background:#e5e7eb;color:#374151}
+.ra-lang-toggle i{font-size:14px}
+.ra-lang-opts{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;min-width:52px;z-index:100}
+.ra-lang-wrap.open .ra-lang-opts{display:block}
+.ra-lang-opt{display:block;padding:6px 12px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;border:none;background:none;width:100%;text-align:center;font-family:inherit;letter-spacing:.5px;transition:all .15s}
+.ra-lang-opt:hover{background:#f0f2ff;color:#4338ca}
+.ra-lang-opt.active{color:#667eea}
 </style>
 </head>
 <body>
@@ -1028,11 +1043,15 @@ a:hover{color:#5a67d8}
 
         echo '</div>
         <div class="ra-header-right">
-            <div class="ra-lang-switch">';
+            <div class="ra-lang-wrap" id="ra-lang-wrap">
+                <button class="ra-lang-toggle" onclick="this.parentElement.classList.toggle(\'open\')">
+                    <i class="ri-global-line"></i> ' . strtoupper($lang) . '
+                </button>
+                <div class="ra-lang-opts">';
         foreach (['de','en','hu','ro'] as $lc) {
-            echo '<button class="ra-lang-btn ' . ($lang === $lc ? 'active' : '') . '" data-lang="' . $lc . '">' . strtoupper($lc) . '</button>';
+            echo '<button class="ra-lang-opt ' . ($lang === $lc ? 'active' : '') . '" data-lang="' . $lc . '">' . strtoupper($lc) . '</button>';
         }
-        echo '</div>
+        echo '</div></div>
             <a href="' . esc_url($form_url) . '" target="_blank" class="ra-btn ra-btn-outline">
                 <i class="ri-external-link-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_view_form')) . '
             </a>
@@ -2927,7 +2946,7 @@ echo '</div></div>
     ], JSON_UNESCAPED_UNICODE) . ';
 
     // Language switcher
-    document.querySelectorAll(".ra-lang-btn").forEach(function(btn){
+    document.querySelectorAll(".ra-lang-opt").forEach(function(btn){
         btn.addEventListener("click",function(){
             var lang=this.getAttribute("data-lang");
             document.cookie="ppv_lang="+lang+";path=/;max-age=31536000";
@@ -2936,6 +2955,7 @@ echo '</div></div>
             window.location.href=url.toString();
         });
     });
+    document.addEventListener("click",function(e){var w=document.getElementById("ra-lang-wrap");if(w&&!w.contains(e.target))w.classList.remove("open");});
 
     /* ===== Toast ===== */
     function toast(msg){
