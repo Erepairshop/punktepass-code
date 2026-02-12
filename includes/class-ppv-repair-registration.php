@@ -314,10 +314,13 @@ class PPV_Repair_Registration {
             box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02);
             transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
             cursor: pointer;
+            border-bottom: 3px solid #667eea;
+            position: relative;
         }
         .pp-feature:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 36px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.02);
+            box-shadow: 0 12px 36px rgba(102,126,234,0.18), 0 0 0 1px rgba(102,126,234,0.08);
+            border-bottom-color: #4338ca;
         }
         .pp-feature:active {
             transform: translateY(-2px);
@@ -358,13 +361,15 @@ class PPV_Repair_Registration {
             font-weight: 600;
             color: #667eea;
             margin-top: 12px;
-            opacity: 0;
-            transform: translateY(4px);
+            opacity: 1;
             transition: all 0.3s;
+            background: linear-gradient(135deg, #f0f2ff, #e8ecff);
+            padding: 5px 12px;
+            border-radius: 20px;
         }
         .pp-feature-more i { font-size: 14px; transition: transform 0.2s; }
-        .pp-feature:hover .pp-feature-more { opacity: 1; transform: translateY(0); }
-        .pp-feature:hover .pp-feature-more i { transform: translateX(2px); }
+        .pp-feature:hover .pp-feature-more { background: linear-gradient(135deg, #667eea, #4338ca); color: #fff; }
+        .pp-feature:hover .pp-feature-more i { transform: translateX(3px); }
 
         /* ── FORM SECTION ── */
         .pp-form-section {
@@ -1437,7 +1442,7 @@ class PPV_Repair_Registration {
                 margin: 0;
                 flex-shrink: 0;
             }
-            .pp-feature-more { opacity: 1; transform: none; }
+            .pp-feature-more { padding: 4px 10px; font-size: 11px; }
             .pp-pain-grid {
                 grid-template-columns: 1fr;
             }
