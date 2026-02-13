@@ -289,6 +289,11 @@ return [
     'repair_admin_stat_customers' => 'Customers',
     'repair_admin_premium_active' => 'Premium active',
 
+    // Partner / Supplier directory
+    'repair_admin_suppliers_title' => 'Recommended Suppliers',
+    'repair_admin_partner_tag'     => 'Your Partner',
+    'repair_admin_partner_shop'    => 'Visit Webshop',
+
     // Usage / Upgrade
     'repair_admin_limit_reached'  => 'Form limit reached!',
     'repair_admin_limit_text'     => 'Your form is no longer available to customers. Upgrade to Premium now for unlimited forms.',

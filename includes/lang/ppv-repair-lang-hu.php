@@ -289,6 +289,11 @@ return [
     'repair_admin_stat_customers' => 'Ügyfelek',
     'repair_admin_premium_active' => 'Prémium aktív',
 
+    // Partner / Supplier directory
+    'repair_admin_suppliers_title' => 'Ajánlott beszállítók',
+    'repair_admin_partner_tag'     => 'Az Ön partnere',
+    'repair_admin_partner_shop'    => 'Webshop megtekintése',
+
     // Usage / Upgrade
     'repair_admin_limit_reached'  => 'Űrlap limit elérve!',
     'repair_admin_limit_text'     => 'Az Ön űrlapja már nem elérhető az ügyfelek számára. Frissítsen most Prémiumra korlátlan űrlapokért.',

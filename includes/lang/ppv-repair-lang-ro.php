@@ -289,6 +289,11 @@ return [
     'repair_admin_stat_customers' => 'Clienți',
     'repair_admin_premium_active' => 'Premium activ',
 
+    // Partner / Supplier directory
+    'repair_admin_suppliers_title' => 'Furnizori recomandați',
+    'repair_admin_partner_tag'     => 'Partenerul dvs.',
+    'repair_admin_partner_shop'    => 'Vizitați magazinul',
+
     // Usage / Upgrade
     'repair_admin_limit_reached'  => 'Limita formularelor atinsă!',
     'repair_admin_limit_text'     => 'Formularul dvs. nu mai este disponibil pentru clienți. Faceți upgrade la Premium pentru formulare nelimitate.',
