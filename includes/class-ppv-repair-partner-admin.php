@@ -242,8 +242,12 @@ class PPV_Repair_Partner_Admin {
 
         $stores = self::get_referred_stores($partner_id);
 
+        // Generate dashboard token for this partner
+        $partner_data = (array) $partner;
+        $partner_data['_dashboard_token'] = hash_hmac('sha256', $partner->partner_code, wp_salt('auth'));
+
         wp_send_json_success([
-            'partner' => $partner,
+            'partner' => $partner_data,
             'stores' => $stores,
         ]);
     }
@@ -782,6 +786,17 @@ function viewPartner(id) {
         html += '<span class="pp-code" onclick="copyCode(this,\''+p.partner_code+'\')">'+p.partner_code+' <i class="ri-file-copy-line" style="font-size:12px"></i></span></div></div>';
 
         html += '<div class="pp-ref-url"><strong>Referral-Link:</strong><br>'+refUrl+'</div>';
+
+        // Dashboard link
+        var dashToken = p._dashboard_token || '';
+        if (dashToken) {
+            var dashUrl = 'https://punktepass.de/formular/partner/dashboard?code=' + p.partner_code + '&token=' + dashToken;
+            html += '<div style="margin-top:8px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:12px;font-size:13px;word-break:break-all">';
+            html += '<strong style="color:#7c3aed"><i class="ri-dashboard-line"></i> Dashboard-Link (f\u00fcr Partner):</strong><br>';
+            html += '<span style="color:#6d28d9">' + dashUrl + '</span>';
+            html += ' <span class="pp-code" onclick="copyCode(this,\'' + dashUrl + '\')" style="font-size:11px;margin-left:4px">Kopieren <i class="ri-file-copy-line" style="font-size:11px"></i></span>';
+            html += '</div>';
+        }
 
         // Embed Widget code section
         var widgetCode = '&lt;script src=&quot;https://punktepass.de/formular/widget.js&quot; data-partner=&quot;'+p.partner_code+'&quot;&gt;&lt;/script&gt;';

@@ -256,6 +256,20 @@ class PPV_Repair_Core {
             exit;
         }
 
+        // /formular/widget-demo → Widget test/demo page
+        if ($path === '/formular/widget-demo') {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-widget-demo.php';
+            PPV_Widget_Demo::render();
+            exit;
+        }
+
+        // /formular/partner/dashboard → Partner public dashboard (token auth)
+        if ($path === '/formular/partner/dashboard') {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-partner-dashboard.php';
+            PPV_Partner_Dashboard::render();
+            exit;
+        }
+
         // /formular/partner → Partner pitch page for wholesalers
         if ($path === '/formular/partner') {
             require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-partner.php';
