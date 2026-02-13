@@ -97,6 +97,11 @@ class PPV_Repair_Partner {
                 'model3_text'      => 'Eigene Partner-Landingpage mit Ihrem Logo. &ldquo;Empfohlen von [Ihr Unternehmen]&rdquo; im Reparaturpass.',
                 'model3_d1'        => 'Exklusiv f&uuml;r Hauptpartner',
                 'model3_d2'        => 'Revenue-Share m&ouml;glich',
+                'model4_badge'     => 'Neu',
+                'model4_title'     => 'Embed Widget',
+                'model4_text'      => 'Fertiges JavaScript-Widget f&uuml;r Ihren Webshop. Ein Klick-Button, der Ihren Kunden den Reparaturpass direkt pr&auml;sentiert &ndash; in Ihrem Design.',
+                'model4_d1'        => '1 Zeile Code &ndash; sofort live',
+                'model4_d2'        => 'Eigenes Dashboard mit Statistiken',
 
                 // How it works
                 'steps_title'      => 'So einfach geht&rsquo;s',
@@ -227,6 +232,11 @@ class PPV_Repair_Partner {
                 'model3_text'      => 'Custom partner landing page with your logo. &ldquo;Recommended by [Your Company]&rdquo; in the Repair Pass.',
                 'model3_d1'        => 'Exclusive for main partners',
                 'model3_d2'        => 'Revenue share possible',
+                'model4_badge'     => 'New',
+                'model4_title'     => 'Embed Widget',
+                'model4_text'      => 'Ready-made JavaScript widget for your webshop. A click button that presents the Repair Pass directly to your customers &ndash; in your branding.',
+                'model4_d1'        => '1 line of code &ndash; instantly live',
+                'model4_d2'        => 'Own dashboard with statistics',
 
                 // How it works
                 'steps_title'      => 'How It Works',
@@ -684,7 +694,7 @@ class PPV_Repair_Partner {
         /* ── Partnership Models ── */
         .pp-model-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
         }
         .pp-model-card {
@@ -951,7 +961,7 @@ class PPV_Repair_Partner {
             .pp-solution-features { grid-template-columns: 1fr 1fr; }
             .pp-stats-bar { grid-template-columns: 1fr 1fr; }
             .pp-win-grid { grid-template-columns: 1fr; }
-            .pp-model-grid { grid-template-columns: 1fr; gap: 16px; }
+            .pp-model-grid { grid-template-columns: 1fr; }
             .pp-steps-partner { grid-template-columns: 1fr 1fr; }
             .pp-pricing-partner { grid-template-columns: 1fr; }
             .pp-cta-section h2 { font-size: 24px; }
@@ -1165,6 +1175,16 @@ class PPV_Repair_Partner {
                 <div class="pp-model-detail">
                     <i class="ri-star-line"></i> <?php echo $t['model3_d1']; ?><br>
                     <i class="ri-money-euro-circle-line"></i> <?php echo $t['model3_d2']; ?>
+                </div>
+            </div>
+            <div class="pp-model-card recommended pp-anim pp-anim-d4">
+                <div class="pp-model-badge"><?php echo $t['model4_badge']; ?></div>
+                <div class="pp-model-icon"><i class="ri-code-s-slash-line"></i></div>
+                <h4><?php echo $t['model4_title']; ?></h4>
+                <p><?php echo $t['model4_text']; ?></p>
+                <div class="pp-model-detail">
+                    <i class="ri-flashlight-line"></i> <?php echo $t['model4_d1']; ?><br>
+                    <i class="ri-bar-chart-box-line"></i> <?php echo $t['model4_d2']; ?>
                 </div>
             </div>
         </div>

@@ -242,8 +242,12 @@ class PPV_Repair_Partner_Admin {
 
         $stores = self::get_referred_stores($partner_id);
 
+        // Generate dashboard token for this partner
+        $partner_data = (array) $partner;
+        $partner_data['_dashboard_token'] = hash_hmac('sha256', $partner->partner_code, wp_salt('auth'));
+
         wp_send_json_success([
-            'partner' => $partner,
+            'partner' => $partner_data,
             'stores' => $stores,
         ]);
     }
@@ -329,7 +333,54 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
 .pp-ref-url strong{color:#0369a1}
 .pp-empty{text-align:center;padding:40px;color:#94a3b8}
 .pp-empty i{font-size:48px;margin-bottom:12px;display:block}
-@media(max-width:768px){.pp-stats-row{grid-template-columns:1fr 1fr}.pp-form-grid{grid-template-columns:1fr}.pp-body{padding:16px}}
+.pp-btn-widget{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.pp-btn-widget:hover{opacity:0.9;transform:translateY(-1px)}
+/* Widget Configurator */
+.pp-wc-layout{display:grid;grid-template-columns:280px 1fr;gap:24px;margin-bottom:20px}
+.pp-wc-controls{display:flex;flex-direction:column;gap:14px}
+.pp-wc-ctrl label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.pp-wc-ctrl select,.pp-wc-ctrl input[type="color"],.pp-wc-ctrl input[type="text"]{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;background:#fff}
+.pp-wc-ctrl select:focus,.pp-wc-ctrl input:focus{border-color:#667eea}
+.pp-wc-ctrl input[type="color"]{height:44px;padding:4px;cursor:pointer}
+.pp-wc-color-row{display:flex;gap:8px;align-items:center}
+.pp-wc-color-row input[type="color"]{width:44px;height:44px;flex-shrink:0;border-radius:8px;border:2px solid #e2e8f0;padding:2px;cursor:pointer}
+.pp-wc-color-row input[type="text"]{flex:1}
+.pp-wc-preview-wrap{background:#f8fafc;border:2px dashed #e2e8f0;border-radius:12px;min-height:340px;position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:flex-end;padding:16px}
+.pp-wc-preview-wrap.pos-left{justify-content:flex-start}
+.pp-wc-preview-label{position:absolute;top:12px;left:12px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+/* Preview float FAB */
+.pp-wc-fab{display:flex;align-items:center;gap:8px;color:#fff;border:none;padding:12px 20px;border-radius:50px;cursor:default;font-size:14px;font-weight:600;font-family:Inter,sans-serif;box-shadow:0 4px 24px rgba(0,0,0,0.18);line-height:1}
+.pp-wc-fab svg{width:20px;height:20px;flex-shrink:0}
+/* Preview panel */
+.pp-wc-panel{position:absolute;bottom:56px;width:320px;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.15);overflow:hidden;font-family:Inter,sans-serif}
+.pp-wc-panel.pos-right{right:16px}
+.pp-wc-panel.pos-left{left:16px}
+.pp-wc-panel-header{padding:20px;color:#fff;position:relative;overflow:hidden}
+.pp-wc-panel-header::after{content:"";position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,0.08);border-radius:50%}
+.pp-wc-panel-title{font-size:16px;font-weight:700;margin-bottom:4px;position:relative;z-index:1}
+.pp-wc-panel-sub{font-size:12px;opacity:0.85;line-height:1.4;position:relative;z-index:1}
+.pp-wc-panel-free{display:inline-block;background:rgba(255,255,255,0.2);color:#fff;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;margin-top:6px;text-transform:uppercase;position:relative;z-index:1}
+.pp-wc-panel-body{padding:16px 20px}
+.pp-wc-panel-feats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.pp-wc-panel-feat{display:flex;align-items:center;gap:6px;font-size:11px;color:#374151;font-weight:500}
+.pp-wc-panel-feat span{font-size:14px}
+.pp-wc-panel-cta{display:block;width:100%;padding:10px;border:none;border-radius:10px;cursor:default;font-size:13px;font-weight:700;font-family:inherit;text-align:center;color:#fff}
+.pp-wc-panel-footer{padding:8px 20px;border-top:1px solid #f1f5f9;text-align:center;font-size:10px;color:#94a3b8}
+/* Preview inline banner */
+.pp-wc-inline{width:100%;max-width:400px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow:hidden;font-family:Inter,sans-serif}
+.pp-wc-inline-header{padding:16px 20px;color:#fff;position:relative;overflow:hidden}
+.pp-wc-inline-header::after{content:"";position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,0.08);border-radius:50%}
+.pp-wc-inline .pp-wc-panel-body{padding:14px 20px}
+.pp-wc-inline .pp-wc-panel-footer{padding:8px 20px;border-top:1px solid #f1f5f9;text-align:center;font-size:10px;color:#94a3b8}
+/* Code output */
+.pp-wc-code-wrap{background:#1e293b;border-radius:10px;padding:16px;position:relative}
+.pp-wc-code{color:#e2e8f0;font-size:13px;font-family:'Courier New',monospace;word-break:break-all;line-height:1.6;white-space:pre-wrap}
+.pp-wc-code .attr{color:#7dd3fc}
+.pp-wc-code .val{color:#86efac}
+.pp-wc-code .tag{color:#fbbf24}
+.pp-wc-copy-btn{position:absolute;top:10px;right:10px;background:#334155;border:none;color:#94a3b8;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:4px}
+.pp-wc-copy-btn:hover{background:#475569;color:#fff}
+@media(max-width:768px){.pp-stats-row{grid-template-columns:1fr 1fr}.pp-form-grid{grid-template-columns:1fr}.pp-body{padding:16px}.pp-wc-layout{grid-template-columns:1fr}.pp-wc-preview-wrap{min-height:280px}}
 </style></head><body>
 
 <div class="pp-header">
@@ -397,6 +448,95 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
 </div>
 </div>
 
+<!-- Widget Configurator Modal -->
+<div class="pp-modal-overlay" id="pp-widget-modal">
+<div class="pp-modal" style="max-width:860px;padding:0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#10b981,#059669);padding:20px 28px;color:#fff;display:flex;align-items:center;gap:12px">
+        <i class="ri-code-s-slash-line" style="font-size:22px"></i>
+        <div>
+            <h3 style="margin:0;font-size:18px;font-weight:700">Widget-Konfigurator</h3>
+            <div id="wc-partner-label" style="font-size:13px;opacity:0.85;margin-top:2px"></div>
+        </div>
+        <div style="flex:1"></div>
+        <button onclick="closeWidgetModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <div style="padding:24px 28px">
+        <input type="hidden" id="wc-partner-code" value="">
+
+        <div class="pp-wc-layout">
+            <!-- Controls -->
+            <div class="pp-wc-controls">
+                <div class="pp-wc-ctrl">
+                    <label><i class="ri-layout-4-line"></i> Modus</label>
+                    <select id="wc-mode" onchange="updateWidgetPreview()">
+                        <option value="float">Float (Schwebender Button)</option>
+                        <option value="inline">Inline (Banner)</option>
+                    </select>
+                </div>
+                <div class="pp-wc-ctrl">
+                    <label><i class="ri-translate-2"></i> Sprache</label>
+                    <select id="wc-lang" onchange="updateWidgetPreview()">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="pp-wc-ctrl" id="wc-position-ctrl">
+                    <label><i class="ri-layout-bottom-line"></i> Position</label>
+                    <select id="wc-position" onchange="updateWidgetPreview()">
+                        <option value="bottom-right">Unten rechts</option>
+                        <option value="bottom-left">Unten links</option>
+                    </select>
+                </div>
+                <div class="pp-wc-ctrl">
+                    <label><i class="ri-palette-line"></i> Farbe</label>
+                    <div class="pp-wc-color-row">
+                        <input type="color" id="wc-color" value="#667eea" onchange="document.getElementById('wc-color-hex').value=this.value;updateWidgetPreview()">
+                        <input type="text" id="wc-color-hex" value="#667eea" maxlength="7" placeholder="#667eea" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){document.getElementById('wc-color').value=this.value;updateWidgetPreview()}">
+                    </div>
+                </div>
+                <div style="margin-top:auto;padding-top:10px;border-top:1px solid #e2e8f0">
+                    <div style="font-size:11px;color:#64748b;display:flex;flex-direction:column;gap:4px">
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> Keine Dependencies</div>
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> DSGVO-konform</div>
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> &lt; 5 KB</div>
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> Cross-Domain CORS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Preview -->
+            <div class="pp-wc-preview-wrap" id="wc-preview-area">
+                <span class="pp-wc-preview-label"><i class="ri-eye-line"></i> Vorschau</span>
+                <div id="wc-preview-content"></div>
+            </div>
+        </div>
+
+        <!-- Generated Code -->
+        <div style="margin-top:4px">
+            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px"><i class="ri-code-s-slash-line"></i> Embed-Code</label>
+            <div class="pp-wc-code-wrap">
+                <button class="pp-wc-copy-btn" onclick="copyGeneratedCode(this)"><i class="ri-file-copy-line"></i> Kopieren</button>
+                <div class="pp-wc-code" id="wc-generated-code"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;padding-top:16px;border-top:2px solid #f1f5f9">
+            <button class="pp-btn pp-btn-primary" onclick="copyGeneratedCodeBig()" style="flex:1;min-width:160px;padding:14px 20px;font-size:15px">
+                <i class="ri-file-copy-line"></i> Code kopieren
+            </button>
+            <button class="pp-btn pp-btn-widget" onclick="openWidgetDemo()" style="flex:1;min-width:160px;padding:14px 20px;font-size:15px">
+                <i class="ri-eye-line"></i> Live Demo testen
+            </button>
+            <button class="pp-btn" onclick="sendWidgetEmail()" style="flex:1;min-width:160px;padding:14px 20px;font-size:15px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">
+                <i class="ri-mail-send-line"></i> An Partner senden
+            </button>
+        </div>
+        <div id="wc-action-feedback" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;text-align:center"></div>
+    </div>
+</div>
+</div>
+
 <script>
 var AJAX = <?php echo json_encode($ajax_url); ?>;
 var NONCE = <?php echo json_encode($nonce); ?>;
@@ -436,6 +576,7 @@ function loadPartners() {
             html += "<td>"+(p.total_forms || 0)+"</td>";
             html += '<td><span class="pp-badge '+badge+'">'+p.status+"</span></td>";
             html += '<td><button class="pp-btn pp-btn-sm pp-btn-ghost" onclick="viewPartner('+p.id+')"><i class="ri-eye-line"></i></button> ';
+            html += '<button class="pp-btn pp-btn-sm pp-btn-widget" onclick="openWidgetConfigurator(\''+p.partner_code+'\',\''+p.company_name.replace(/'/g, "\\'")+'\')"><i class="ri-code-s-slash-line"></i></button> ';
             html += '<button class="pp-btn pp-btn-sm pp-btn-ghost" onclick="editPartner('+p.id+')"><i class="ri-pencil-line"></i></button></td></tr>';
         });
         html += "</tbody></table>";
@@ -449,6 +590,314 @@ function copyCode(el, code) {
     setTimeout(function() {
         el.innerHTML = code + ' <i class="ri-file-copy-line" style="font-size:12px"></i>';
     }, 1500);
+}
+
+function copyWidgetCode(btn) {
+    var code = btn.getAttribute('data-code');
+    navigator.clipboard.writeText(code);
+    btn.innerHTML = '<i class="ri-check-line"></i> Copied!';
+    btn.style.background = '#22c55e';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+        btn.innerHTML = '<i class="ri-file-copy-line"></i> Copy';
+        btn.style.background = '#334155';
+        btn.style.color = '#94a3b8';
+    }, 2000);
+}
+
+// ─── Widget Configurator ─────────────────────────────────
+var wcTranslations = {
+    de: { badge:'Reparatur-Service', title:'Digitale Reparaturverwaltung', sub:'Reparaturen digital erfassen, Rechnungen erstellen, Kunden informieren.', feat1:'Online-Formular', feat2:'Rechnungen', feat3:'Kundenverwaltung', feat4:'DATEV-Export', cta:'Kostenlos starten', free:'Kostenlos', powered:'Powered by' },
+    en: { badge:'Repair Service', title:'Digital Repair Management', sub:'Record repairs digitally, create invoices, keep customers informed.', feat1:'Online Form', feat2:'Invoices', feat3:'Customer Mgmt', feat4:'DATEV Export', cta:'Start for free', free:'Free', powered:'Powered by' }
+};
+
+function openWidgetConfigurator(partnerCode, companyName) {
+    document.getElementById('wc-partner-code').value = partnerCode;
+    document.getElementById('wc-partner-label').textContent = companyName + ' (' + partnerCode + ')';
+    // Reset to defaults
+    document.getElementById('wc-mode').value = 'float';
+    document.getElementById('wc-lang').value = 'de';
+    document.getElementById('wc-position').value = 'bottom-right';
+    document.getElementById('wc-color').value = '#667eea';
+    document.getElementById('wc-color-hex').value = '#667eea';
+    document.getElementById('wc-position-ctrl').style.display = '';
+    updateWidgetPreview();
+    document.getElementById('pp-widget-modal').classList.add('active');
+}
+
+function closeWidgetModal() {
+    document.getElementById('pp-widget-modal').classList.remove('active');
+}
+
+function updateWidgetPreview() {
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = document.getElementById('wc-color').value;
+    var t = wcTranslations[lang] || wcTranslations.de;
+
+    // Show/hide position control for inline mode
+    document.getElementById('wc-position-ctrl').style.display = mode === 'inline' ? 'none' : '';
+
+    var previewArea = document.getElementById('wc-preview-area');
+    var previewContent = document.getElementById('wc-preview-content');
+    var isLeft = pos === 'bottom-left';
+
+    // Preview area alignment
+    previewArea.className = 'pp-wc-preview-wrap' + (isLeft && mode === 'float' ? ' pos-left' : '');
+
+    var gradient = 'linear-gradient(135deg,' + color + ',#4338ca)';
+    var html = '';
+
+    if (mode === 'float') {
+        // Panel
+        html += '<div class="pp-wc-panel ' + (isLeft ? 'pos-left' : 'pos-right') + '">';
+        html += '<div class="pp-wc-panel-header" style="background:' + gradient + '">';
+        html += '<div class="pp-wc-panel-title">' + t.title + '</div>';
+        html += '<div class="pp-wc-panel-sub">' + t.sub + '</div>';
+        html += '<span class="pp-wc-panel-free">\u2713 ' + t.free + '</span>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-body">';
+        html += '<div class="pp-wc-panel-feats">';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCF1</span> ' + t.feat1 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCE</span> ' + t.feat2 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDC65</span> ' + t.feat3 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCA</span> ' + t.feat4 + '</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-cta" style="background:' + gradient + '">' + t.cta + ' \u2192</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-footer">' + t.powered + ' <strong>PunktePass</strong></div>';
+        html += '</div>';
+        // FAB
+        html += '<div class="pp-wc-fab" style="background:' + gradient + '">';
+        html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>';
+        html += '<span>' + t.badge + '</span></div>';
+    } else {
+        // Inline banner
+        html += '<div class="pp-wc-inline">';
+        html += '<div class="pp-wc-inline-header" style="background:' + gradient + '">';
+        html += '<div class="pp-wc-panel-title" style="position:relative;z-index:1">' + t.title + '</div>';
+        html += '<div class="pp-wc-panel-sub" style="position:relative;z-index:1">' + t.sub + '</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-body">';
+        html += '<div class="pp-wc-panel-feats">';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCF1</span> ' + t.feat1 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCE</span> ' + t.feat2 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDC65</span> ' + t.feat3 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCA</span> ' + t.feat4 + '</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-cta" style="background:' + gradient + '">' + t.cta + ' \u2192</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-footer">' + t.powered + ' <strong>PunktePass</strong></div>';
+        html += '</div>';
+    }
+
+    previewContent.innerHTML = html;
+
+    // Generate embed code (syntax highlighted)
+    var attrs = ' <span class="attr">data-partner</span>=<span class="val">"' + code + '"</span>';
+    if (lang !== 'de') attrs += '\n  <span class="attr">data-lang</span>=<span class="val">"' + lang + '"</span>';
+    if (mode !== 'float') attrs += '\n  <span class="attr">data-mode</span>=<span class="val">"' + mode + '"</span>\n  <span class="attr">data-target</span>=<span class="val">"#punktepass-widget"</span>';
+    if (pos !== 'bottom-right' && mode === 'float') attrs += '\n  <span class="attr">data-position</span>=<span class="val">"' + pos + '"</span>';
+    if (color !== '#667eea') attrs += '\n  <span class="attr">data-color</span>=<span class="val">"' + color + '"</span>';
+
+    var codeHtml = '';
+    if (mode === 'inline') {
+        codeHtml += '<span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="val">"punktepass-widget"</span><span class="tag">&gt;&lt;/div&gt;</span>\n';
+    }
+    codeHtml += '<span class="tag">&lt;script</span>\n  <span class="attr">src</span>=<span class="val">"https://punktepass.de/formular/widget.js"</span>\n  ' + attrs.trim() + '<span class="tag">&gt;&lt;/script&gt;</span>';
+
+    document.getElementById('wc-generated-code').innerHTML = codeHtml;
+}
+
+function copyGeneratedCode(btn) {
+    // Build raw code from current config
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = document.getElementById('wc-color').value;
+
+    var raw = '';
+    if (mode === 'inline') {
+        raw += '<div id="punktepass-widget"></div>\n';
+    }
+    raw += '<script src="https://punktepass.de/formular/widget.js"';
+    raw += ' data-partner="' + code + '"';
+    if (lang !== 'de') raw += ' data-lang="' + lang + '"';
+    if (mode !== 'float') raw += ' data-mode="' + mode + '" data-target="#punktepass-widget"';
+    if (pos !== 'bottom-right' && mode === 'float') raw += ' data-position="' + pos + '"';
+    if (color !== '#667eea') raw += ' data-color="' + color + '"';
+    raw += '><\/script>';
+
+    navigator.clipboard.writeText(raw);
+    btn.innerHTML = '<i class="ri-check-line"></i> Kopiert!';
+    btn.style.background = '#22c55e';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+        btn.innerHTML = '<i class="ri-file-copy-line"></i> Kopieren';
+        btn.style.background = '#334155';
+        btn.style.color = '#94a3b8';
+    }, 2000);
+}
+
+function buildRawCode() {
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = document.getElementById('wc-color').value;
+    var raw = '';
+    if (mode === 'inline') raw += '<div id="punktepass-widget"></div>\n';
+    raw += '<script src="https://punktepass.de/formular/widget.js"';
+    raw += ' data-partner="' + code + '"';
+    if (lang !== 'de') raw += ' data-lang="' + lang + '"';
+    if (mode !== 'float') raw += ' data-mode="' + mode + '" data-target="#punktepass-widget"';
+    if (pos !== 'bottom-right' && mode === 'float') raw += ' data-position="' + pos + '"';
+    if (color !== '#667eea') raw += ' data-color="' + color + '"';
+    raw += '><\/script>';
+    return raw;
+}
+
+function showActionFeedback(msg, color) {
+    var el = document.getElementById('wc-action-feedback');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = color === 'green' ? '#dcfce7' : '#dbeafe';
+    el.style.color = color === 'green' ? '#166534' : '#1e40af';
+    setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+
+function copyGeneratedCodeBig() {
+    var raw = buildRawCode();
+    navigator.clipboard.writeText(raw);
+    showActionFeedback('\u2713 Embed-Code in die Zwischenablage kopiert!', 'green');
+}
+
+function openWidgetDemo() {
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = encodeURIComponent(document.getElementById('wc-color').value);
+    var url = '/formular/widget-demo?code=' + code + '&mode=' + mode + '&lang=' + lang + '&position=' + pos + '&color=' + color;
+    window.open(url, '_blank');
+}
+
+function sendWidgetEmail() {
+    var code = document.getElementById('wc-partner-code').value;
+    var partnerName = document.getElementById('wc-partner-label').textContent;
+    var embedCode = buildRawCode();
+    var subject = encodeURIComponent('PunktePass Widget - Embed-Code f\u00fcr ' + partnerName);
+    var body = encodeURIComponent(
+        'Hallo,\n\n' +
+        'hier ist der Embed-Code f\u00fcr das PunktePass Reparatur-Widget.\n' +
+        'F\u00fcgen Sie diesen Code in Ihre Website ein (z.B. vor </body>):\n\n' +
+        '--- EMBED CODE ---\n' +
+        embedCode + '\n' +
+        '--- ENDE ---\n\n' +
+        'Referral-Link: https://punktepass.de/formular?ref=' + code + '\n\n' +
+        'Bei Fragen stehen wir gerne zur Verf\u00fcgung.\n\n' +
+        'Mit freundlichen Gr\u00fc\u00dfen,\nPunktePass Team'
+    );
+    window.open('mailto:?subject=' + subject + '&body=' + body, '_self');
+    showActionFeedback('\u2709 E-Mail-Client wird ge\u00f6ffnet...', 'blue');
+}
+
+// ─── Commission Management ──────────────────────────────
+function loadPartnerCommissions(partnerId) {
+    var data = new FormData();
+    data.append("action", "ppv_commission_get");
+    data.append("nonce", NONCE);
+    data.append("partner_id", partnerId);
+    fetch(AJAX, {method:"POST", body:data}).then(function(r){return r.json()}).then(function(res) {
+        var area = document.getElementById("pp-commission-area-" + partnerId);
+        if (!area) return;
+        if (!res.success) { area.innerHTML = '<div style="color:#ef4444;padding:10px">Fehler beim Laden</div>'; return; }
+
+        var summary = res.data.summary || [];
+        var totals = res.data.totals || {};
+
+        var html = '';
+
+        // Totals row
+        html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">';
+        html += '<div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:#16a34a">\u20ac' + parseFloat(totals.total_earned || 0).toFixed(2) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Gesamt verdient</div></div>';
+        html += '<div style="background:#fef3c7;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:#d97706">\u20ac' + parseFloat(totals.total_pending || 0).toFixed(2) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Ausstehend</div></div>';
+        html += '<div style="background:#dbeafe;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:#2563eb">\u20ac' + parseFloat(totals.total_paid || 0).toFixed(2) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Ausgezahlt</div></div>';
+        html += '</div>';
+
+        if (!summary.length) {
+            html += '<div style="text-align:center;padding:20px;color:#94a3b8;background:#f8fafc;border-radius:8px"><i class="ri-money-euro-circle-line" style="font-size:24px;display:block;margin-bottom:6px"></i>Noch keine Provisionen<br><span style="font-size:12px">Klicken Sie &quot;Berechnen&quot; um Provisionen f\u00fcr den aktuellen Monat zu erstellen</span></div>';
+        } else {
+            html += '<table class="pp-table"><thead><tr><th>Monat</th><th>Shops</th><th>Satz</th><th>Betrag</th><th>Status</th><th>Aktion</th></tr></thead><tbody>';
+            summary.forEach(function(m) {
+                var monthLabel = m.period_month;
+                var parts = m.period_month.split('-');
+                if (parts.length === 2) {
+                    var months = ['','Jan','Feb','M\u00e4r','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+                    monthLabel = months[parseInt(parts[1])] + ' ' + parts[0];
+                }
+                var statusBadge = '';
+                var allPaid = parseFloat(m.pending_amount || 0) === 0 && parseFloat(m.paid_amount || 0) > 0;
+                if (allPaid) {
+                    statusBadge = '<span class="pp-badge pp-badge-active">Bezahlt</span>';
+                } else if (parseFloat(m.paid_amount || 0) > 0) {
+                    statusBadge = '<span class="pp-badge pp-badge-pending">Teilweise</span>';
+                } else {
+                    statusBadge = '<span class="pp-badge pp-badge-pending">Ausstehend</span>';
+                }
+                var actionBtn = '';
+                if (!allPaid) {
+                    actionBtn = '<button class="pp-btn pp-btn-sm" style="background:#16a34a;color:#fff" onclick="markCommissionPaid(' + partnerId + ',\'' + m.period_month + '\')"><i class="ri-check-line"></i> Bezahlt</button>';
+                } else {
+                    actionBtn = '<span style="color:#22c55e;font-size:12px"><i class="ri-check-double-line"></i></span>';
+                }
+                html += '<tr>';
+                html += '<td style="font-weight:600">' + monthLabel + '</td>';
+                html += '<td>' + m.store_count + '</td>';
+                html += '<td>' + parseFloat(m.rate || 0).toFixed(1) + '%</td>';
+                html += '<td style="font-weight:700;color:#16a34a">\u20ac' + parseFloat(m.total_amount || 0).toFixed(2) + '</td>';
+                html += '<td>' + statusBadge + '</td>';
+                html += '<td>' + actionBtn + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        area.innerHTML = html;
+    });
+}
+
+function calculateCommissions(partnerId) {
+    var data = new FormData();
+    data.append("action", "ppv_commission_calculate");
+    data.append("nonce", NONCE);
+    data.append("period", new Date().toISOString().slice(0,7));
+    fetch(AJAX, {method:"POST", body:data}).then(function(r){return r.json()}).then(function(res) {
+        if (res.success) {
+            loadPartnerCommissions(partnerId);
+        } else {
+            alert(res.data.message || "Fehler");
+        }
+    });
+}
+
+function markCommissionPaid(partnerId, period) {
+    if (!confirm('Provisionen f\u00fcr ' + period + ' als bezahlt markieren?')) return;
+    var data = new FormData();
+    data.append("action", "ppv_commission_mark_paid");
+    data.append("nonce", NONCE);
+    data.append("partner_id", partnerId);
+    data.append("period", period);
+    fetch(AJAX, {method:"POST", body:data}).then(function(r){return r.json()}).then(function(res) {
+        if (res.success) {
+            loadPartnerCommissions(partnerId);
+        } else {
+            alert(res.data.message || "Fehler");
+        }
+    });
 }
 
 function openCreateModal() {
@@ -510,6 +959,35 @@ function viewPartner(id) {
 
         html += '<div class="pp-ref-url"><strong>Referral-Link:</strong><br>'+refUrl+'</div>';
 
+        // Dashboard link
+        var dashToken = p._dashboard_token || '';
+        if (dashToken) {
+            var dashUrl = 'https://punktepass.de/formular/partner/dashboard?code=' + p.partner_code + '&token=' + dashToken;
+            html += '<div style="margin-top:8px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:12px;font-size:13px;word-break:break-all">';
+            html += '<strong style="color:#7c3aed"><i class="ri-dashboard-line"></i> Dashboard-Link (f\u00fcr Partner):</strong><br>';
+            html += '<span style="color:#6d28d9">' + dashUrl + '</span>';
+            html += ' <span class="pp-code" onclick="copyCode(this,\'' + dashUrl + '\')" style="font-size:11px;margin-left:4px">Kopieren <i class="ri-file-copy-line" style="font-size:11px"></i></span>';
+            html += '</div>';
+        }
+
+        // Embed Widget code section
+        var widgetCode = '&lt;script src=&quot;https://punktepass.de/formular/widget.js&quot; data-partner=&quot;'+p.partner_code+'&quot;&gt;&lt;/script&gt;';
+        var widgetCodeRaw = '<script src="https://punktepass.de/formular/widget.js" data-partner="'+p.partner_code+'"><\/script>';
+        html += '<div style="margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px">';
+        html += '<strong style="font-size:13px;color:#166534"><i class="ri-code-s-slash-line"></i> Embed Widget</strong>';
+        html += '<p style="font-size:12px;color:#4b5563;margin:6px 0 8px">Partner kann diesen Code in seine Website einf&uuml;gen:</p>';
+        html += '<div style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;word-break:break-all;position:relative">';
+        html += '<code>'+widgetCode+'</code>';
+        html += '<button onclick="copyWidgetCode(this)" data-code="'+widgetCodeRaw.replace(/"/g, '&quot;')+'" style="position:absolute;top:8px;right:8px;background:#334155;border:none;color:#94a3b8;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:inherit"><i class="ri-file-copy-line"></i> Copy</button>';
+        html += '</div>';
+        html += '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">';
+        html += '<span style="font-size:11px;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px">Float (Standard)</span>';
+        html += '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px">+ data-lang=&quot;en&quot;</span>';
+        html += '<span style="font-size:11px;background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:4px">+ data-position=&quot;bottom-left&quot;</span>';
+        html += '<span style="font-size:11px;background:#e0f2fe;color:#0c4a6e;padding:2px 8px;border-radius:4px">+ data-mode=&quot;inline&quot; data-target=&quot;#id&quot;</span>';
+        html += '</div>';
+        html += '</div>';
+
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;font-size:14px">';
         html += "<div><strong>Kontakt:</strong> "+(p.contact_name || "-")+"</div>";
         html += "<div><strong>E-Mail:</strong> "+(p.email || "-")+"</div>";
@@ -534,8 +1012,20 @@ function viewPartner(id) {
             html += '<div style="margin-top:16px;padding:20px;text-align:center;color:#94a3b8;background:#f8fafc;border-radius:8px"><i class="ri-store-2-line" style="font-size:24px"></i><br>Noch keine verwiesenen Shops</div>';
         }
 
+        // Commission section
+        html += '<div style="margin-top:20px;padding-top:16px;border-top:2px solid #f1f5f9">';
+        html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
+        html += '<h4 style="margin:0;flex:1"><i class="ri-money-euro-circle-line"></i> Provisionen</h4>';
+        html += '<button class="pp-btn pp-btn-sm pp-btn-primary" onclick="calculateCommissions('+p.id+')"><i class="ri-calculator-line"></i> Berechnen</button>';
+        html += '</div>';
+        html += '<div id="pp-commission-area-'+p.id+'"><div style="text-align:center;color:#94a3b8;padding:16px"><i class="ri-loader-4-line"></i> Lade Provisionen...</div></div>';
+        html += '</div>';
+
         document.getElementById("pp-detail-content").innerHTML = html;
         document.getElementById("pp-detail-modal").classList.add("active");
+
+        // Load commissions
+        loadPartnerCommissions(p.id);
     });
 }
 

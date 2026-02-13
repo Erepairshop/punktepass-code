@@ -196,8 +196,26 @@ class PPV_User_Dashboard {
             return sanitize_email($_SESSION['ppv_user_email']);
         }
 
+        // Try WordPress user first
         $user = get_userdata($uid);
-        return $user ? $user->user_email : '';
+        if ($user && $user->user_email) {
+            return $user->user_email;
+        }
+
+        // Fallback: lookup in ppv_users table (repair login stores ppv_users.id, not WP user ID)
+        if ($uid > 0) {
+            global $wpdb;
+            $email = $wpdb->get_var($wpdb->prepare(
+                "SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                $uid
+            ));
+            if ($email) {
+                $_SESSION['ppv_user_email'] = $email;
+                return sanitize_email($email);
+            }
+        }
+
+        return '';
     }
 
     private static function generate_qr_code($uid, $token) {

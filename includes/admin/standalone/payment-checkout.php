@@ -5,7 +5,7 @@
  * Route: /checkout or /zahlung
  *
  * Price: 39€ net + 19% VAT = 46.41€ gross/month
- * Payment options: PayPal, Banküberweisung
+ * Payment option: PayPal
  */
 
 if (!defined('ABSPATH')) {
@@ -42,15 +42,6 @@ if ($store->subscription_status === 'active' && $store->repair_premium && strtot
     wp_redirect($redirect_back . '?notice=already_active');
     exit;
 }
-
-// Bank details
-$bank_name = get_option('ppv_bank_name', 'Kreis- und Stadtsparkasse Dillingen a.d. Donau');
-$bank_iban = get_option('ppv_bank_iban', 'DE57 7225 1520 0010 3435 55');
-$bank_bic = get_option('ppv_bank_bic', 'BYLADEM1DLG');
-$bank_holder = get_option('ppv_bank_account_holder', 'Erik Borota');
-
-// Reference number
-$reference = 'PP-' . str_pad($store_id, 5, '0', STR_PAD_LEFT) . '-' . date('Ym');
 
 // Price - VAT only for German stores
 $price_net = 39.00;
@@ -179,46 +170,6 @@ $price_gross = round($price_net + $vat, 2);
         }
         .payment-option input[type="radio"] {
             display: none;
-        }
-        .bank-details {
-            display: none;
-            margin-top: 16px;
-            padding: 16px;
-            background: #f9fafb;
-            border-radius: 8px;
-            margin-left: 40px;
-        }
-        .bank-details.show {
-            display: block;
-        }
-        .bank-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 14px;
-        }
-        .bank-row:last-child {
-            border-bottom: none;
-        }
-        .bank-row label {
-            color: #6b7280;
-        }
-        .bank-row span {
-            font-weight: 500;
-            color: #1f2937;
-            font-family: monospace;
-        }
-        .copy-btn {
-            background: none;
-            border: none;
-            color: #667eea;
-            cursor: pointer;
-            margin-left: 8px;
-            font-size: 14px;
-        }
-        .copy-btn:hover {
-            color: #5a67d8;
         }
         .checkout-btn {
             width: 100%;
@@ -369,7 +320,7 @@ $price_gross = round($price_net + $vat, 2);
                 <span>Monatlich kündbar - Sie können Ihr Abo jederzeit zum Monatsende kündigen.</span>
             </div>
 
-            <h3 style="margin: 24px 0 16px; font-size: 16px; color: #374151;">Zahlungsmethode wählen</h3>
+            <h3 style="margin: 24px 0 16px; font-size: 16px; color: #374151;">Zahlung über PayPal</h3>
 
             <div class="payment-methods">
                 <div class="payment-option selected" data-method="paypal">
@@ -377,52 +328,8 @@ $price_gross = round($price_net + $vat, 2);
                         <i class="ri-paypal-fill"></i>
                         <h3>PayPal</h3>
                     </div>
-                    <p>Automatische monatliche Abbuchung über PayPal</p>
+                    <p>Automatische monatliche Abbuchung über PayPal (auch per Kreditkarte möglich)</p>
                     <div id="paypal-button-container" style="margin-top: 16px;"></div>
-                </div>
-
-                <div class="payment-option" data-method="bank_transfer" onclick="selectBankTransfer()">
-                    <div class="payment-option-header">
-                        <i class="ri-bank-line"></i>
-                        <h3>Banküberweisung</h3>
-                    </div>
-                    <p>Manuelle Überweisung - Aktivierung nach Zahlungseingang (1-2 Werktage)</p>
-                    <div class="bank-details" id="bank-details">
-                        <div class="bank-row">
-                            <label>Empfänger</label>
-                            <span><?php echo esc_html($bank_holder); ?></span>
-                        </div>
-                        <div class="bank-row">
-                            <label>IBAN</label>
-                            <span id="iban-value"><?php echo esc_html($bank_iban); ?></span>
-                            <button type="button" class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('<?php echo esc_js(str_replace(' ', '', $bank_iban)); ?>')">
-                                <i class="ri-file-copy-line"></i>
-                            </button>
-                        </div>
-                        <div class="bank-row">
-                            <label>BIC</label>
-                            <span><?php echo esc_html($bank_bic); ?></span>
-                        </div>
-                        <div class="bank-row">
-                            <label>Bank</label>
-                            <span><?php echo esc_html($bank_name); ?></span>
-                        </div>
-                        <div class="bank-row">
-                            <label>Verwendungszweck</label>
-                            <span id="reference-value"><?php echo esc_html($reference); ?></span>
-                            <button type="button" class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('<?php echo esc_js($reference); ?>')">
-                                <i class="ri-file-copy-line"></i>
-                            </button>
-                        </div>
-                        <div class="bank-row">
-                            <label>Betrag</label>
-                            <span><?php echo number_format($price_gross, 2, ',', '.'); ?> €</span>
-                        </div>
-                        <button type="button" class="checkout-btn" id="bank-transfer-btn" style="margin-top: 16px;" onclick="event.stopPropagation(); requestBankTransfer()">
-                            <span class="spinner" id="bank-spinner"></span>
-                            <span class="btn-text" id="bank-btn-text"><i class="ri-mail-send-line"></i> Bankdaten per E-Mail senden</span>
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -442,7 +349,6 @@ $price_gross = round($price_net + $vat, 2);
     <script src="https://www.paypal.com/sdk/js?client-id=<?php echo defined('PAYPAL_CLIENT_ID') ? PAYPAL_CLIENT_ID : 'ATvIpJv2JtjokY3p4OBWc8ZfcJE5wUXn9Lt65IDYUewAoCAg0wMb3thS1bTYTETjeVl41BAX2djkO8FA'; ?>&vault=true&intent=subscription&locale=de_DE" data-sdk-integration-source="button-factory"></script>
 
     <script>
-        const bankDetails = document.getElementById('bank-details');
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
         const storeId = <?php echo $store_id; ?>;
@@ -504,60 +410,6 @@ $price_gross = round($price_net + $vat, 2);
             }
         }).render('#paypal-button-container');
 
-        // Bank Transfer selection
-        function selectBankTransfer() {
-            document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
-            document.querySelector('[data-method="bank_transfer"]').classList.add('selected');
-            bankDetails.classList.add('show');
-        }
-
-        // Request Bank Transfer
-        async function requestBankTransfer() {
-            const btn = document.getElementById('bank-transfer-btn');
-            const spinner = document.getElementById('bank-spinner');
-            const btnText = document.getElementById('bank-btn-text');
-
-            spinner.style.display = 'block';
-            btnText.style.display = 'none';
-            btn.disabled = true;
-            errorMessage.style.display = 'none';
-
-            try {
-                const response = await fetch('/wp-json/punktepass/v1/bank-transfer/request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin'
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    successMessage.innerHTML = `
-                        <strong>Vielen Dank!</strong><br>
-                        Bitte überweisen Sie <strong>${data.amount.toFixed(2).replace('.', ',')} €</strong>
-                        mit dem Verwendungszweck <strong>${data.reference}</strong>.<br><br>
-                        Eine E-Mail mit den Bankdaten wurde an Sie gesendet.<br>
-                        Nach Zahlungseingang wird Ihr Abo innerhalb von 1-2 Werktagen aktiviert.
-                    `;
-                    successMessage.style.display = 'block';
-                    btn.style.display = 'none';
-                } else {
-                    throw new Error(data.error || 'Request failed');
-                }
-            } catch (error) {
-                errorMessage.textContent = error.message || 'Ein Fehler ist aufgetreten.';
-                errorMessage.style.display = 'block';
-                spinner.style.display = 'none';
-                btnText.style.display = 'inline-flex';
-                btn.disabled = false;
-            }
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Kopiert!');
-            });
-        }
     </script>
 </body>
 </html>
