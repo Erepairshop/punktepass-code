@@ -404,11 +404,13 @@ class PPV_Repair_Email_Sender {
             'de' => ['title' => 'Reparaturverwaltung', 'subtitle' => 'Digitale L&ouml;sung f&uuml;r Ihren Reparatur-Service'],
             'hu' => ['title' => 'Javításkezelő', 'subtitle' => 'Digitális megoldás az Ön javítási szolgáltatásához'],
             'ro' => ['title' => 'Gestionare Reparații', 'subtitle' => 'Soluție digitală pentru serviciul dvs. de reparații'],
+            'en' => ['title' => 'Repair Management', 'subtitle' => 'Digital Solution for Your Repair Service'],
         ];
         $footer_titles = [
             'de' => 'Reparaturverwaltung &middot; PunktePass',
             'hu' => 'Javításkezelő &middot; PunktePass',
             'ro' => 'Gestionare Reparații &middot; PunktePass',
+            'en' => 'Repair Management &middot; PunktePass',
         ];
         $ht = $header_titles[$lang] ?? $header_titles['de'];
         $ft = $footer_titles[$lang] ?? $footer_titles['de'];
