@@ -500,6 +500,15 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $opening_hours = esc_attr($store->repair_opening_hours ?? '');
         $terms_url = esc_attr($store->repair_terms_url ?? '');
 
+        // Partner promo data (if store was referred by a partner)
+        $partner_promo = null;
+        if (!empty($store->partner_id)) {
+            $partner_promo = $wpdb->get_row($wpdb->prepare(
+                "SELECT company_name, logo_url, website, city, country FROM {$prefix}ppv_partners WHERE id = %d AND status = 'active' LIMIT 1",
+                $store->partner_id
+            ));
+        }
+
         // Build repairs HTML
         $repairs_html = '';
         if (empty($recent)) {
@@ -578,6 +587,21 @@ a:hover{color:#5a67d8}
 .ra-link-input:focus{border-color:#667eea}
 .ra-btn-copy{background:#f0f0f0;color:#374151;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:16px;transition:all .2s;display:inline-flex;align-items:center}
 .ra-btn-copy:hover{background:#667eea;color:#fff}
+
+/* ========== Partner Promo Banner ========== */
+.ra-partner-promo{background:linear-gradient(135deg,#f0f4ff 0%,#e8ecff 50%,#f5f3ff 100%);border-radius:14px;padding:2px;margin-bottom:16px;border:1px solid #c7d2fe}
+.ra-partner-promo-inner{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:12px}
+.ra-partner-promo-logo{width:52px;height:52px;border-radius:12px;object-fit:contain;background:#fff;padding:4px;border:1px solid #e2e8f0;flex-shrink:0}
+.ra-partner-promo-icon{width:52px;height:52px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#667eea;border:1px solid #e2e8f0;flex-shrink:0}
+.ra-partner-promo-info{flex:1;min-width:0}
+.ra-partner-promo-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#667eea;display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.ra-partner-promo-tag i{font-size:12px}
+.ra-partner-promo-name{font-size:15px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ra-partner-promo-city{font-size:12px;color:#64748b;display:flex;align-items:center;gap:3px;margin-top:1px}
+.ra-partner-promo-city i{font-size:12px}
+.ra-partner-promo-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;flex-shrink:0;white-space:nowrap}
+.ra-partner-promo-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(102,126,234,.35);color:#fff}
+@media(max-width:600px){.ra-partner-promo-inner{flex-wrap:wrap}.ra-partner-promo-btn{width:100%;justify-content:center}}
 
 /* ========== Settings Panel - Modern Accordion ========== */
 .ra-hidden{display:none !important}
@@ -1141,6 +1165,33 @@ a:hover{color:#5a67d8}
             </button>
         </div>
     </div>';
+
+        // Partner promo banner
+        if ($partner_promo) {
+            $p_name = esc_html($partner_promo->company_name);
+            $p_logo = esc_url($partner_promo->logo_url ?? '');
+            $p_web  = esc_url($partner_promo->website ?? '');
+            $p_city = esc_html($partner_promo->city ?? '');
+
+            echo '<div class="ra-partner-promo">
+        <div class="ra-partner-promo-inner">';
+            if ($p_logo) {
+                echo '<img src="' . $p_logo . '" alt="' . $p_name . '" class="ra-partner-promo-logo">';
+            } else {
+                echo '<div class="ra-partner-promo-icon"><i class="ri-building-2-line"></i></div>';
+            }
+            echo '<div class="ra-partner-promo-info">
+                <div class="ra-partner-promo-tag"><i class="ri-handshake-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_partner_tag', 'Ihr Partner')) . '</div>
+                <div class="ra-partner-promo-name">' . $p_name . '</div>'
+                . ($p_city ? '<div class="ra-partner-promo-city"><i class="ri-map-pin-line"></i> ' . $p_city . '</div>' : '') .
+            '</div>';
+            if ($p_web) {
+                echo '<a href="' . $p_web . '" target="_blank" rel="noopener" class="ra-partner-promo-btn">
+                    <i class="ri-store-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_partner_shop', 'Zum Webshop')) . '
+                </a>';
+            }
+            echo '</div></div>';
+        }
 
         // Settings panel
         echo '<div id="ra-settings" class="ra-settings ra-hidden">
