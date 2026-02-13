@@ -519,6 +519,20 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
                 <div class="pp-wc-code" id="wc-generated-code"></div>
             </div>
         </div>
+
+        <!-- Action Buttons -->
+        <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;padding-top:16px;border-top:2px solid #f1f5f9">
+            <button class="pp-btn pp-btn-primary" onclick="copyGeneratedCodeBig()" style="flex:1;min-width:160px;padding:14px 20px;font-size:15px">
+                <i class="ri-file-copy-line"></i> Code kopieren
+            </button>
+            <button class="pp-btn pp-btn-widget" onclick="openWidgetDemo()" style="flex:1;min-width:160px;padding:14px 20px;font-size:15px">
+                <i class="ri-eye-line"></i> Live Demo testen
+            </button>
+            <button class="pp-btn" onclick="sendWidgetEmail()" style="flex:1;min-width:160px;padding:14px 20px;font-size:15px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">
+                <i class="ri-mail-send-line"></i> An Partner senden
+            </button>
+        </div>
+        <div id="wc-action-feedback" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;text-align:center"></div>
     </div>
 </div>
 </div>
@@ -726,6 +740,69 @@ function copyGeneratedCode(btn) {
         btn.style.background = '#334155';
         btn.style.color = '#94a3b8';
     }, 2000);
+}
+
+function buildRawCode() {
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = document.getElementById('wc-color').value;
+    var raw = '';
+    if (mode === 'inline') raw += '<div id="punktepass-widget"></div>\n';
+    raw += '<script src="https://punktepass.de/formular/widget.js"';
+    raw += ' data-partner="' + code + '"';
+    if (lang !== 'de') raw += ' data-lang="' + lang + '"';
+    if (mode !== 'float') raw += ' data-mode="' + mode + '" data-target="#punktepass-widget"';
+    if (pos !== 'bottom-right' && mode === 'float') raw += ' data-position="' + pos + '"';
+    if (color !== '#667eea') raw += ' data-color="' + color + '"';
+    raw += '><\/script>';
+    return raw;
+}
+
+function showActionFeedback(msg, color) {
+    var el = document.getElementById('wc-action-feedback');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = color === 'green' ? '#dcfce7' : '#dbeafe';
+    el.style.color = color === 'green' ? '#166534' : '#1e40af';
+    setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+
+function copyGeneratedCodeBig() {
+    var raw = buildRawCode();
+    navigator.clipboard.writeText(raw);
+    showActionFeedback('\u2713 Embed-Code in die Zwischenablage kopiert!', 'green');
+}
+
+function openWidgetDemo() {
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = encodeURIComponent(document.getElementById('wc-color').value);
+    var url = '/formular/widget-demo?code=' + code + '&mode=' + mode + '&lang=' + lang + '&position=' + pos + '&color=' + color;
+    window.open(url, '_blank');
+}
+
+function sendWidgetEmail() {
+    var code = document.getElementById('wc-partner-code').value;
+    var partnerName = document.getElementById('wc-partner-label').textContent;
+    var embedCode = buildRawCode();
+    var subject = encodeURIComponent('PunktePass Widget - Embed-Code f\u00fcr ' + partnerName);
+    var body = encodeURIComponent(
+        'Hallo,\n\n' +
+        'hier ist der Embed-Code f\u00fcr das PunktePass Reparatur-Widget.\n' +
+        'F\u00fcgen Sie diesen Code in Ihre Website ein (z.B. vor </body>):\n\n' +
+        '--- EMBED CODE ---\n' +
+        embedCode + '\n' +
+        '--- ENDE ---\n\n' +
+        'Referral-Link: https://punktepass.de/formular?ref=' + code + '\n\n' +
+        'Bei Fragen stehen wir gerne zur Verf\u00fcgung.\n\n' +
+        'Mit freundlichen Gr\u00fc\u00dfen,\nPunktePass Team'
+    );
+    window.open('mailto:?subject=' + subject + '&body=' + body, '_self');
+    showActionFeedback('\u2709 E-Mail-Client wird ge\u00f6ffnet...', 'blue');
 }
 
 function openCreateModal() {
