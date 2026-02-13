@@ -3352,13 +3352,30 @@ echo '</div></div>
             var list=document.getElementById("ra-repairs-list"),
                 d=data.data,
                 repairs=d.repairs||[];
-            if(page===1)list.innerHTML="";
+            /* Preserve reward sections before clearing (polling would lose them) */
+            var savedRewards={};
+            if(page===1){
+                list.querySelectorAll(".ra-repair-card").forEach(function(card){
+                    var rid=card.dataset.id;
+                    var el=card.querySelector(".ra-reward-toggle-section")||card.querySelector(".ra-reward-approved-badge");
+                    if(el){savedRewards[rid]=card.removeChild(el)}
+                });
+                list.innerHTML="";
+            }
             if(repairs.length===0&&page===1){
                 list.innerHTML=\'<div class="ra-empty"><i class="ri-search-line"></i><p>\'+L.no_results+\'</p></div>\';
             }else{
                 repairs.forEach(function(r){
                     list.insertAdjacentHTML("beforeend",buildCardHTML(r));
                 });
+                /* Re-attach saved reward sections into rebuilt cards */
+                for(var rid in savedRewards){
+                    var card=list.querySelector(\'.ra-repair-card[data-id="\'+rid+\'"]\');
+                    if(card){
+                        var actions=card.querySelector(".ra-repair-actions");
+                        if(actions){card.insertBefore(savedRewards[rid],actions)}
+                    }
+                }
                 bindStatusSelects(list);
             }
             // Update load more
