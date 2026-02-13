@@ -451,6 +451,19 @@ function copyCode(el, code) {
     }, 1500);
 }
 
+function copyWidgetCode(btn) {
+    var code = btn.getAttribute('data-code');
+    navigator.clipboard.writeText(code);
+    btn.innerHTML = '<i class="ri-check-line"></i> Copied!';
+    btn.style.background = '#22c55e';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+        btn.innerHTML = '<i class="ri-file-copy-line"></i> Copy';
+        btn.style.background = '#334155';
+        btn.style.color = '#94a3b8';
+    }, 2000);
+}
+
 function openCreateModal() {
     document.getElementById("modal-title").textContent = "Neuer Partner";
     document.getElementById("pf-id").value = "";
@@ -509,6 +522,24 @@ function viewPartner(id) {
         html += '<span class="pp-code" onclick="copyCode(this,\''+p.partner_code+'\')">'+p.partner_code+' <i class="ri-file-copy-line" style="font-size:12px"></i></span></div></div>';
 
         html += '<div class="pp-ref-url"><strong>Referral-Link:</strong><br>'+refUrl+'</div>';
+
+        // Embed Widget code section
+        var widgetCode = '&lt;script src=&quot;https://punktepass.de/formular/widget.js&quot; data-partner=&quot;'+p.partner_code+'&quot;&gt;&lt;/script&gt;';
+        var widgetCodeRaw = '<script src="https://punktepass.de/formular/widget.js" data-partner="'+p.partner_code+'"><\/script>';
+        html += '<div style="margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px">';
+        html += '<strong style="font-size:13px;color:#166534"><i class="ri-code-s-slash-line"></i> Embed Widget</strong>';
+        html += '<p style="font-size:12px;color:#4b5563;margin:6px 0 8px">Partner kann diesen Code in seine Website einf&uuml;gen:</p>';
+        html += '<div style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;word-break:break-all;position:relative">';
+        html += '<code>'+widgetCode+'</code>';
+        html += '<button onclick="copyWidgetCode(this)" data-code="'+widgetCodeRaw.replace(/"/g, '&quot;')+'" style="position:absolute;top:8px;right:8px;background:#334155;border:none;color:#94a3b8;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:inherit"><i class="ri-file-copy-line"></i> Copy</button>';
+        html += '</div>';
+        html += '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">';
+        html += '<span style="font-size:11px;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px">Float (Standard)</span>';
+        html += '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px">+ data-lang=&quot;en&quot;</span>';
+        html += '<span style="font-size:11px;background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:4px">+ data-position=&quot;bottom-left&quot;</span>';
+        html += '<span style="font-size:11px;background:#e0f2fe;color:#0c4a6e;padding:2px 8px;border-radius:4px">+ data-mode=&quot;inline&quot; data-target=&quot;#id&quot;</span>';
+        html += '</div>';
+        html += '</div>';
 
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;font-size:14px">';
         html += "<div><strong>Kontakt:</strong> "+(p.contact_name || "-")+"</div>";

@@ -244,6 +244,18 @@ class PPV_Repair_Core {
             exit;
         }
 
+        // /formular/widget.js → Partner embed widget (public, CORS enabled)
+        if ($path === '/formular/widget.js') {
+            $widget_file = PPV_PLUGIN_DIR . 'assets/js/pp-partner-widget.js';
+            if (file_exists($widget_file)) {
+                header('Content-Type: application/javascript; charset=UTF-8');
+                header('Access-Control-Allow-Origin: *');
+                header('Cache-Control: public, max-age=3600');
+                readfile($widget_file);
+            }
+            exit;
+        }
+
         // /formular/partner → Partner pitch page for wholesalers
         if ($path === '/formular/partner') {
             require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-partner.php';
