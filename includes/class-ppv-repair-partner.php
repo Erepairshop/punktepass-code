@@ -81,6 +81,16 @@ class PPV_Repair_Partner {
                 'win_c4'           => 'Status-Tracking reduziert &ldquo;Wo ist mein Ger&auml;t?&rdquo;-Anrufe um 80%',
                 'win_c5'           => 'Spart 30+ Minuten t&auml;glich durch automatisierte Prozesse',
 
+                // Visibility Boost
+                'visibility_title' => 'Ihre Sichtbarkeit in jeder Werkstatt',
+                'visibility_sub'   => 'Als Partner werden Sie direkt im Dashboard aller Werkst&auml;tten als empfohlener Lieferant angezeigt &ndash; mit Logo, Name und Link zu Ihrem Webshop.',
+                'vis1_title'       => 'Sichtbar im Dashboard',
+                'vis1_text'        => 'Jede Werkstatt sieht Ihren Webshop-Link im t&auml;glichen Arbeitsbereich &ndash; dort, wo sie ihre Reparaturen verwalten.',
+                'vis2_title'       => 'Direkte Bestellungen',
+                'vis2_text'        => 'Werkst&auml;tten k&ouml;nnen mit einem Klick Ihren Webshop &ouml;ffnen &ndash; wenn sie Ersatzteile oder Zubeh&ouml;r brauchen, sind Sie sofort da.',
+                'vis3_title'       => 'Wachsende Reichweite',
+                'vis3_text'        => 'Je mehr Werkst&auml;tten den Reparaturpass nutzen, desto mehr potenzielle K&auml;ufer sehen Ihr Angebot &ndash; automatisch.',
+
                 // Partnership Models
                 'models_title'     => 'Partnerschafts-Modelle',
                 'models_sub'       => 'Flexibel und unverbindlich &ndash; w&auml;hlen Sie, was am besten passt.',
@@ -215,6 +225,16 @@ class PPV_Repair_Partner {
                 'win_c3'           => 'Professional appearance towards end customers',
                 'win_c4'           => 'Status tracking reduces &ldquo;Where is my device?&rdquo; calls by 80%',
                 'win_c5'           => 'Saves 30+ minutes daily through automated processes',
+
+                // Visibility Boost
+                'visibility_title' => 'Your Visibility in Every Workshop',
+                'visibility_sub'   => 'As a partner, you are featured directly in every workshop&rsquo;s dashboard as a recommended supplier &ndash; with your logo, name, and a link to your webshop.',
+                'vis1_title'       => 'Visible in the Dashboard',
+                'vis1_text'        => 'Every workshop sees your webshop link in their daily workspace &ndash; right where they manage their repairs.',
+                'vis2_title'       => 'Direct Orders',
+                'vis2_text'        => 'Workshops can open your webshop with one click &ndash; when they need spare parts or accessories, you&rsquo;re right there.',
+                'vis3_title'       => 'Growing Reach',
+                'vis3_text'        => 'The more workshops use the Repair Pass, the more potential buyers see your offer &ndash; automatically.',
 
                 // Partnership Models
                 'models_title'     => 'Partnership Models',
@@ -691,6 +711,91 @@ class PPV_Repair_Partner {
         .pp-win-card.partner .pp-win-list li i { color: #a5b4fc; }
         .pp-win-card.customer .pp-win-list li i { color: #6ee7b7; }
 
+        /* ── Visibility Boost Section ── */
+        .pp-section-visibility {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+            padding: 72px 0;
+        }
+        .pp-vis-banner {
+            text-align: center;
+        }
+        .pp-vis-icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 28px;
+            color: #fde047;
+        }
+        .pp-vis-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        .pp-vis-sub {
+            font-size: 15px;
+            color: rgba(255,255,255,0.75);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+        .pp-vis-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .pp-vis-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 28px 22px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pp-vis-card:hover {
+            background: rgba(255,255,255,0.14);
+            border-color: rgba(255,255,255,0.25);
+            transform: translateY(-4px);
+        }
+        .pp-vis-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: rgba(253,224,71,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fde047;
+            margin: 0 auto 14px;
+        }
+        .pp-vis-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .pp-vis-card p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.5;
+            margin: 0;
+        }
+        @media (max-width: 768px) {
+            .pp-vis-grid { grid-template-columns: 1fr; }
+            .pp-section-visibility { padding: 48px 0; }
+            .pp-vis-title { font-size: 22px; }
+        }
+
         /* ── Partnership Models ── */
         .pp-model-grid {
             display: grid;
@@ -1137,6 +1242,37 @@ class PPV_Repair_Partner {
                     <li><i class="ri-check-line"></i> <?php echo $t['win_c4']; ?></li>
                     <li><i class="ri-check-line"></i> <?php echo $t['win_c5']; ?></li>
                 </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ VISIBILITY BOOST ============ -->
+<div class="pp-section pp-section-visibility">
+    <div class="pp-partner-container">
+        <div class="pp-vis-banner pp-anim">
+            <div class="pp-vis-icon-wrap">
+                <i class="ri-eye-line"></i>
+            </div>
+            <h2 class="pp-vis-title"><?php echo $t['visibility_title']; ?></h2>
+            <p class="pp-vis-sub"><?php echo $t['visibility_sub']; ?></p>
+
+            <div class="pp-vis-grid">
+                <div class="pp-vis-card pp-anim pp-anim-d1">
+                    <div class="pp-vis-card-icon"><i class="ri-layout-4-line"></i></div>
+                    <h4><?php echo $t['vis1_title']; ?></h4>
+                    <p><?php echo $t['vis1_text']; ?></p>
+                </div>
+                <div class="pp-vis-card pp-anim pp-anim-d2">
+                    <div class="pp-vis-card-icon"><i class="ri-shopping-cart-2-line"></i></div>
+                    <h4><?php echo $t['vis2_title']; ?></h4>
+                    <p><?php echo $t['vis2_text']; ?></p>
+                </div>
+                <div class="pp-vis-card pp-anim pp-anim-d3">
+                    <div class="pp-vis-card-icon"><i class="ri-line-chart-line"></i></div>
+                    <h4><?php echo $t['vis3_title']; ?></h4>
+                    <p><?php echo $t['vis3_text']; ?></p>
+                </div>
             </div>
         </div>
     </div>
