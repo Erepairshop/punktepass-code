@@ -606,6 +606,30 @@ Erik Borota';
 
         $default_subject_ro = 'Sistem digital de gestionare a reparațiilor pentru magazinul dvs.';
 
+        // Partnership / Kooperation template (DE)
+        $partner_template_de = 'Sehr geehrte Damen und Herren,
+
+mein Name ist Erik Borota.
+
+Mit dem &bdquo;Reparaturpass&ldquo; haben wir eine <strong>digitale Reparaturverwaltung f&uuml;r Handy-Werkst&auml;tten</strong> entwickelt. Das System erm&ouml;glicht es Werkst&auml;tten, Reparaturauftr&auml;ge digital zu erfassen, Rechnungen zu erstellen und den Reparaturstatus per QR-Code bereitzustellen.
+
+<strong>Das vollst&auml;ndige Konzept finden Sie hier:</strong>
+{{CTA:https://punktepass.de/formular/partner|&#128073; Konzept ansehen}}
+
+Gerne w&uuml;rde ich mit Ihnen pr&uuml;fen, ob eine Partnerschaft sinnvoll sein k&ouml;nnte &ndash; beispielsweise als zus&auml;tzlicher Mehrwert f&uuml;r Ihre Werkstattkunden oder im Rahmen einer strategischen Kooperation.
+
+Falls diese Anfrage nicht an die richtige Stelle gerichtet ist, w&auml;re ich Ihnen sehr dankbar, wenn Sie diese an den zust&auml;ndigen Ansprechpartner weiterleiten k&ouml;nnten.
+
+Ich freue mich &uuml;ber eine kurze R&uuml;ckmeldung.
+
+Mit freundlichen Gr&uuml;&szlig;en
+Erik Borota
+<strong>PunktePass / Reparaturpass</strong>
+info@punktepass.com
+www.punktepass.de/formular';
+
+        $partner_subject_de = 'Partnerschaft: Digitale Reparaturverwaltung für Werkstätten';
+
         ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -902,6 +926,40 @@ Erik Borota';
             color: #fff;
             border-color: transparent;
         }
+        /* Template type cards */
+        .tpl-type-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 12px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .tpl-type-card:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        .tpl-type-card.active {
+            background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+        }
+        .tpl-type-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .tpl-type-desc {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 400;
+        }
     </style>
 </head>
 <body>
@@ -1091,9 +1149,28 @@ Erik Borota';
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     <input type="hidden" name="email_lang" id="email-lang" value="<?php echo esc_attr($selected_lang); ?>">
-                    <!-- Language Template Selector -->
+                    <input type="hidden" id="email-tpl-type" value="promo">
+
+                    <!-- Template Type Selector -->
                     <div class="form-group">
-                        <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limbă</label>
+                        <label style="margin-bottom:10px"><i class="ri-layout-4-line"></i> Vorlage</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                            <button type="button" class="tpl-type-card active" data-type="promo" onclick="switchTemplateType('promo')">
+                                <i class="ri-tools-line" style="font-size:22px;color:#667eea"></i>
+                                <span class="tpl-type-title">Reparaturverwaltung</span>
+                                <span class="tpl-type-desc">Werkstatt-Promotion</span>
+                            </button>
+                            <button type="button" class="tpl-type-card" data-type="partner" onclick="switchTemplateType('partner')">
+                                <i class="ri-handshake-line" style="font-size:22px;color:#f59e0b"></i>
+                                <span class="tpl-type-title">Partnerschaft</span>
+                                <span class="tpl-type-desc">Kooperation &amp; B2B</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Language Template Selector -->
+                    <div class="form-group" id="lang-selector-group">
+                        <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limb&#259;</label>
                         <div style="display:flex;gap:8px;margin-bottom:8px;">
                             <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'de' ? 'active' : ''; ?>" data-lang="de" onclick="loadLangTemplate('de')">
                                 DE Deutsch
@@ -1102,7 +1179,7 @@ Erik Borota';
                                 HU Magyar
                             </button>
                             <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'ro' ? 'active' : ''; ?>" data-lang="ro" onclick="loadLangTemplate('ro')">
-                                RO Română
+                                RO Rom&#226;n&#259;
                             </button>
                         </div>
                     </div>
@@ -1255,22 +1332,56 @@ Erik Borota';
 
 <script>
 var langTemplates = {
-    de: {
-        subject: <?php echo json_encode($default_subject_de); ?>,
-        message: <?php echo json_encode($default_template); ?>
+    promo: {
+        de: {
+            subject: <?php echo json_encode($default_subject_de); ?>,
+            message: <?php echo json_encode($default_template); ?>
+        },
+        hu: {
+            subject: <?php echo json_encode($default_subject_hu); ?>,
+            message: <?php echo json_encode($default_template_hu); ?>
+        },
+        ro: {
+            subject: <?php echo json_encode($default_subject_ro); ?>,
+            message: <?php echo json_encode($default_template_ro); ?>
+        }
     },
-    hu: {
-        subject: <?php echo json_encode($default_subject_hu); ?>,
-        message: <?php echo json_encode($default_template_hu); ?>
-    },
-    ro: {
-        subject: <?php echo json_encode($default_subject_ro); ?>,
-        message: <?php echo json_encode($default_template_ro); ?>
+    partner: {
+        de: {
+            subject: <?php echo json_encode($partner_subject_de); ?>,
+            message: <?php echo json_encode($partner_template_de); ?>
+        }
     }
 };
 
+function switchTemplateType(type) {
+    document.getElementById('email-tpl-type').value = type;
+    // Update cards
+    document.querySelectorAll('.tpl-type-card').forEach(function(c) {
+        c.classList.toggle('active', c.getAttribute('data-type') === type);
+    });
+    var langGroup = document.getElementById('lang-selector-group');
+    if (type === 'partner') {
+        // Partner template: DE only, hide language selector
+        langGroup.style.display = 'none';
+        var tpl = langTemplates.partner.de;
+        document.getElementById('email-subject').value = tpl.subject;
+        document.getElementById('email-message').value = tpl.message;
+        document.getElementById('email-lang').value = 'de';
+    } else {
+        // Promo template: show language selector, load current lang
+        langGroup.style.display = '';
+        var activeLang = document.getElementById('email-lang').value || 'de';
+        loadLangTemplate(activeLang);
+    }
+    // Reset saved template selector
+    var sel = document.getElementById('template-select');
+    if (sel) sel.value = '';
+}
+
 function loadLangTemplate(lang) {
-    var tpl = langTemplates[lang];
+    var type = document.getElementById('email-tpl-type').value || 'promo';
+    var tpl = (langTemplates[type] && langTemplates[type][lang]) || langTemplates.promo[lang];
     if (!tpl) return;
     document.getElementById('email-subject').value = tpl.subject;
     document.getElementById('email-message').value = tpl.message;
@@ -1290,9 +1401,12 @@ function loadTemplate(id) {
     var option = select.options[select.selectedIndex];
     document.getElementById('email-subject').value = option.getAttribute('data-subject') || '';
     document.getElementById('email-message').value = option.getAttribute('data-message') || '';
-    // Deactivate lang buttons
+    // Deactivate lang buttons & type cards
     document.querySelectorAll('.lang-btn').forEach(function(btn) {
         btn.classList.remove('active');
+    });
+    document.querySelectorAll('.tpl-type-card').forEach(function(c) {
+        c.classList.remove('active');
     });
 }
 </script>
