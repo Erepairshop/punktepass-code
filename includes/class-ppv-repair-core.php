@@ -409,6 +409,7 @@ class PPV_Repair_Core {
 
         $_SESSION['ppv_user_id'] = $user_id;
         $_SESSION['ppv_user_type'] = $user_type;
+        $_SESSION['ppv_user_email'] = $email;
         $_SESSION['ppv_repair_store_id'] = $store_id;
         $_SESSION['ppv_repair_store_name'] = $store_name;
         $_SESSION['ppv_repair_store_slug'] = $store_slug;
