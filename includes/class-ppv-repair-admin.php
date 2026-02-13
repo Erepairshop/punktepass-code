@@ -500,14 +500,11 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $opening_hours = esc_attr($store->repair_opening_hours ?? '');
         $terms_url = esc_attr($store->repair_terms_url ?? '');
 
-        // Partner promo data (if store was referred by a partner)
-        $partner_promo = null;
-        if (!empty($store->partner_id)) {
-            $partner_promo = $wpdb->get_row($wpdb->prepare(
-                "SELECT company_name, logo_url, website, city, country FROM {$prefix}ppv_partners WHERE id = %d AND status = 'active' LIMIT 1",
-                $store->partner_id
-            ));
-        }
+        // Partner directory: all active partners for the Lieferanten section
+        $all_partners = $wpdb->get_results(
+            "SELECT id, company_name, logo_url, website, city, country FROM {$prefix}ppv_partners WHERE status = 'active' ORDER BY company_name ASC"
+        );
+        $my_partner_id = intval($store->partner_id ?? 0);
 
         // Build repairs HTML
         $repairs_html = '';
@@ -588,20 +585,34 @@ a:hover{color:#5a67d8}
 .ra-btn-copy{background:#f0f0f0;color:#374151;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:16px;transition:all .2s;display:inline-flex;align-items:center}
 .ra-btn-copy:hover{background:#667eea;color:#fff}
 
-/* ========== Partner Promo Banner ========== */
-.ra-partner-promo{background:linear-gradient(135deg,#f0f4ff 0%,#e8ecff 50%,#f5f3ff 100%);border-radius:14px;padding:2px;margin-bottom:16px;border:1px solid #c7d2fe}
-.ra-partner-promo-inner{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:12px}
-.ra-partner-promo-logo{width:52px;height:52px;border-radius:12px;object-fit:contain;background:#fff;padding:4px;border:1px solid #e2e8f0;flex-shrink:0}
-.ra-partner-promo-icon{width:52px;height:52px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#667eea;border:1px solid #e2e8f0;flex-shrink:0}
-.ra-partner-promo-info{flex:1;min-width:0}
-.ra-partner-promo-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#667eea;display:flex;align-items:center;gap:4px;margin-bottom:2px}
-.ra-partner-promo-tag i{font-size:12px}
-.ra-partner-promo-name{font-size:15px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ra-partner-promo-city{font-size:12px;color:#64748b;display:flex;align-items:center;gap:3px;margin-top:1px}
-.ra-partner-promo-city i{font-size:12px}
-.ra-partner-promo-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;flex-shrink:0;white-space:nowrap}
-.ra-partner-promo-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(102,126,234,.35);color:#fff}
-@media(max-width:600px){.ra-partner-promo-inner{flex-wrap:wrap}.ra-partner-promo-btn{width:100%;justify-content:center}}
+/* ========== Partner / Supplier Directory ========== */
+.ra-suppliers{background:#fff;border-radius:14px;margin-bottom:16px;border:1px solid #e2e8f0;overflow:hidden}
+.ra-suppliers-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;transition:background .2s}
+.ra-suppliers-header:hover{background:#f8fafc}
+.ra-suppliers-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#1e293b}
+.ra-suppliers-title i{font-size:20px;color:#667eea}
+.ra-suppliers-count{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;min-width:22px;text-align:center}
+.ra-suppliers-toggle{background:none;border:none;cursor:pointer;padding:4px;color:#94a3b8;font-size:20px;transition:transform .3s}
+.ra-suppliers-toggle.open{transform:rotate(180deg)}
+.ra-suppliers-body{padding:0 18px 18px;display:none}
+.ra-suppliers-body.open{display:block}
+.ra-suppliers-scroll{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#e2e8f0 transparent}
+.ra-suppliers-scroll::-webkit-scrollbar{height:4px}
+.ra-suppliers-scroll::-webkit-scrollbar-track{background:transparent}
+.ra-suppliers-scroll::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+.ra-supplier-card{min-width:180px;max-width:200px;background:#f8fafc;border-radius:14px;padding:20px 16px;text-align:center;border:1.5px solid #e2e8f0;flex-shrink:0;scroll-snap-align:start;transition:all .25s;position:relative}
+.ra-supplier-card:hover{border-color:#c7d2fe;box-shadow:0 4px 16px rgba(99,102,241,.1);transform:translateY(-2px)}
+.ra-supplier-mine{border-color:#818cf8;background:linear-gradient(180deg,#f5f3ff,#f0f4ff)}
+.ra-supplier-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;display:flex;align-items:center;gap:3px;text-transform:uppercase;letter-spacing:.5px}
+.ra-supplier-badge i{font-size:10px}
+.ra-supplier-logo-wrap{width:64px;height:64px;margin:0 auto 12px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center}
+.ra-supplier-logo{width:100%;height:100%;object-fit:contain;padding:6px}
+.ra-supplier-logo-ph{font-size:28px;color:#94a3b8}
+.ra-supplier-name{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ra-supplier-city{font-size:11px;color:#64748b;display:flex;align-items:center;justify-content:center;gap:3px;margin-bottom:12px}
+.ra-supplier-city i{font-size:11px}
+.ra-supplier-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s}
+.ra-supplier-btn:hover{box-shadow:0 3px 10px rgba(102,126,234,.35);color:#fff;transform:translateY(-1px)}
 
 /* ========== Settings Panel - Modern Accordion ========== */
 .ra-hidden{display:none !important}
@@ -1166,31 +1177,52 @@ a:hover{color:#5a67d8}
         </div>
     </div>';
 
-        // Partner promo banner
-        if ($partner_promo) {
-            $p_name = esc_html($partner_promo->company_name);
-            $p_logo = esc_url($partner_promo->logo_url ?? '');
-            $p_web  = esc_url($partner_promo->website ?? '');
-            $p_city = esc_html($partner_promo->city ?? '');
+        // Partner directory section (all active partners)
+        if (!empty($all_partners)) {
+            $partner_count = count($all_partners);
+            echo '<div class="ra-suppliers">
+        <div class="ra-suppliers-header">
+            <div class="ra-suppliers-title">
+                <i class="ri-store-3-line"></i>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_suppliers_title', 'Empfohlene Lieferanten')) . '</span>
+                <span class="ra-suppliers-count">' . $partner_count . '</span>
+            </div>
+            <button class="ra-suppliers-toggle" id="ra-suppliers-toggle" onclick="toggleSuppliers()">
+                <i class="ri-arrow-down-s-line" id="ra-suppliers-arrow"></i>
+            </button>
+        </div>
+        <div class="ra-suppliers-body" id="ra-suppliers-body">
+            <div class="ra-suppliers-scroll">';
 
-            echo '<div class="ra-partner-promo">
-        <div class="ra-partner-promo-inner">';
-            if ($p_logo) {
-                echo '<img src="' . $p_logo . '" alt="' . $p_name . '" class="ra-partner-promo-logo">';
-            } else {
-                echo '<div class="ra-partner-promo-icon"><i class="ri-building-2-line"></i></div>';
+            foreach ($all_partners as $p) {
+                $p_name = esc_html($p->company_name);
+                $p_logo = esc_url($p->logo_url ?? '');
+                $p_web  = esc_url($p->website ?? '');
+                $p_city = esc_html($p->city ?? '');
+                $is_my  = ($p->id == $my_partner_id);
+
+                echo '<div class="ra-supplier-card' . ($is_my ? ' ra-supplier-mine' : '') . '">';
+                if ($is_my) {
+                    echo '<div class="ra-supplier-badge"><i class="ri-handshake-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_partner_tag', 'Ihr Partner')) . '</div>';
+                }
+                if ($p_logo) {
+                    echo '<div class="ra-supplier-logo-wrap"><img src="' . $p_logo . '" alt="' . $p_name . '" class="ra-supplier-logo"></div>';
+                } else {
+                    echo '<div class="ra-supplier-logo-wrap"><div class="ra-supplier-logo-ph"><i class="ri-building-2-line"></i></div></div>';
+                }
+                echo '<div class="ra-supplier-name">' . $p_name . '</div>';
+                if ($p_city) {
+                    echo '<div class="ra-supplier-city"><i class="ri-map-pin-2-line"></i> ' . $p_city . '</div>';
+                }
+                if ($p_web) {
+                    echo '<a href="' . $p_web . '" target="_blank" rel="noopener" class="ra-supplier-btn">
+                        <i class="ri-external-link-line"></i> Webshop
+                    </a>';
+                }
+                echo '</div>';
             }
-            echo '<div class="ra-partner-promo-info">
-                <div class="ra-partner-promo-tag"><i class="ri-handshake-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_partner_tag', 'Ihr Partner')) . '</div>
-                <div class="ra-partner-promo-name">' . $p_name . '</div>'
-                . ($p_city ? '<div class="ra-partner-promo-city"><i class="ri-map-pin-line"></i> ' . $p_city . '</div>' : '') .
-            '</div>';
-            if ($p_web) {
-                echo '<a href="' . $p_web . '" target="_blank" rel="noopener" class="ra-partner-promo-btn">
-                    <i class="ri-store-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_partner_shop', 'Zum Webshop')) . '
-                </a>';
-            }
-            echo '</div></div>';
+
+            echo '</div></div></div>';
         }
 
         // Settings panel
@@ -5800,6 +5832,29 @@ echo '</div></div>
     window.closeKioskTips=function(){document.getElementById("kiosk-tips-modal").classList.remove("active");document.body.style.overflow=""};
     window.copyKioskUrl=function(){var url=document.getElementById("kiosk-form-url").textContent;navigator.clipboard.writeText(url).then(function(){var btn=document.querySelector(".kiosk-copy-btn");btn.innerHTML=\'<i class="ri-check-line"></i>\';setTimeout(function(){btn.innerHTML=\'<i class="ri-file-copy-line"></i>\'},2000)})};
     document.addEventListener("keydown",function(e){if(e.key==="Escape")closeKioskTips()});
+
+    // Supplier directory toggle
+    window.toggleSuppliers=function(){
+        var body=document.getElementById("ra-suppliers-body");
+        var arrow=document.getElementById("ra-suppliers-arrow");
+        var toggle=document.getElementById("ra-suppliers-toggle");
+        if(!body)return;
+        var isOpen=body.classList.contains("open");
+        body.classList.toggle("open");
+        if(toggle)toggle.classList.toggle("open");
+        try{localStorage.setItem("ra_suppliers_open",isOpen?"0":"1")}catch(e){}
+    };
+    // Auto-open if was open before
+    (function(){
+        var body=document.getElementById("ra-suppliers-body");
+        var toggle=document.getElementById("ra-suppliers-toggle");
+        if(!body)return;
+        var saved=null;try{saved=localStorage.getItem("ra_suppliers_open")}catch(e){}
+        if(saved==="1"||saved===null){body.classList.add("open");if(toggle)toggle.classList.add("open")}
+    })();
+    // Make header clickable too
+    var suppH=document.querySelector(".ra-suppliers-header");
+    if(suppH)suppH.addEventListener("click",function(){toggleSuppliers()});
 
     /* ===== Filiale Switcher ===== */
     var filialeBtn = document.getElementById("ra-filiale-btn");
