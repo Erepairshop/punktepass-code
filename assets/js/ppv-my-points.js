@@ -153,6 +153,49 @@
       // Load more
       load_more: "Mai multe",
       more_stores: "în plus",
+    },
+    en: {
+      title: "My Points",
+      total: "Total Points",
+      motivation: "Keep collecting points and earn great rewards!",
+      avg: "Average",
+      best_day: "Best Day",
+      top_store: "Top Store",
+      next_reward: "Next Reward",
+      remaining: "remaining",
+      reward_reached: "🎉 Reward reached!",
+      top3: "Top 3 Stores",
+      recent: "Recent Activity",
+      offline_mode: "Offline Mode",
+      no_data: "No data available",
+      no_entries: "No entries",
+      error: "Error",
+      error_offline: "Offline - Please connect to the internet",
+      error_unauthorized: "Not authorized",
+      error_forbidden: "Access denied",
+      error_api_not_found: "API not found",
+      error_loading: "Error loading data",
+      error_try_again: "Please try again later",
+      points_label: "Points",
+      date_label: "Date",
+      store_label: "Store",
+      time_label: "Time",
+      score_label: "Score",
+      // Rewards by store
+      rewards_by_store_title: "Rewards by Store",
+      no_rewards: "No rewards available",
+      reward_achieved: "Redeemable!",
+      claim_reward: "Redeem",
+      points_missing: "missing",
+      // Statistics
+      stats_this_week: "This Week",
+      stats_this_month: "This Month",
+      stats_this_year: "This Year",
+      stats_streak: "Current Streak",
+      stats_days: "days",
+      // Load more
+      load_more: "Load more",
+      more_stores: "more",
     }
   };
 
@@ -645,6 +688,16 @@
         all_shops_info: 'Bonusurile VIP sunt valabile doar în magazinul unde le-ai obținut',
         vip_not_everywhere: 'Nu toate magazinele oferă bonusuri VIP',
         how_vip_works: 'Cu cât scanezi mai mult la un magazin, cu atât nivelul VIP e mai mare acolo',
+      },
+      en: {
+        your_level: 'Your best VIP level',
+        next_level: 'Next level',
+        points_needed: 'scans still needed',
+        max_level: 'Maximum level reached!',
+        lifetime_points: 'Scans at',
+        all_shops_info: 'VIP bonuses only apply at the store where you earned them',
+        vip_not_everywhere: 'Not all stores offer VIP bonuses',
+        how_vip_works: 'The more you scan at a store, the higher your VIP level there',
       }
     };
 

@@ -133,10 +133,10 @@ class PPV_User_Settings {
 
         // Language
         $lang = sanitize_text_field($_GET['lang'] ?? '');
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? ($_SESSION['ppv_lang'] ?? 'de'));
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = 'de';
         }
         $_SESSION['ppv_lang'] = $lang;
@@ -242,13 +242,13 @@ class PPV_User_Settings {
         }
 
         $lang = sanitize_text_field($_GET['lang'] ?? '');
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = 'de';
         }
 

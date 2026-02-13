@@ -659,7 +659,7 @@ class PPV_User_Tips {
 
             // Get language
             $lang = sanitize_text_field($request->get_param('lang') ?? 'de');
-            if (!in_array($lang, ['de', 'hu', 'ro'])) {
+            if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
                 $lang = 'de';
             }
 

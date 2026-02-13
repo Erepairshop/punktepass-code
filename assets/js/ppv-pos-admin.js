@@ -38,6 +38,15 @@ jQuery(document).ready(function ($) {
       login_error: 'Eroare server la autentificare.',
       load_error: 'Eroare la încărcarea datelor.',
       load_stores_error: 'Eroare la încărcare'
+    },
+    en: {
+      daily_points: 'Daily Points',
+      enter_pin: 'Please enter your PIN.',
+      checking_login: 'Checking login...',
+      login_success: 'Successfully logged in!',
+      login_error: 'Server error during login.',
+      load_error: 'Error loading data.',
+      load_stores_error: 'Error loading'
     }
   }[LANG] || {
     daily_points: 'Tägliche Punkte',

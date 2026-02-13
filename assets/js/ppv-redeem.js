@@ -21,7 +21,8 @@ jQuery(document).ready(function ($) {
   const T = {
     de: { new_balance: 'Neuer Punktestand' },
     hu: { new_balance: 'Új egyenleg' },
-    ro: { new_balance: 'Sold nou' }
+    ro: { new_balance: 'Sold nou' },
+    en: { new_balance: 'New balance' }
   }[LANG] || { new_balance: 'Neuer Punktestand' };
 
   /* ============================================================

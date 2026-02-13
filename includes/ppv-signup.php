@@ -58,7 +58,7 @@ class PPV_Signup {
             $lang = self::detect_browser_lang();
         }
 
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = 'ro'; // Default Romanian
         }
 
@@ -72,7 +72,7 @@ class PPV_Signup {
         $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
         if (!$accept) return 'ro';
 
-        $supported = ['de', 'hu', 'ro'];
+        $supported = ['de', 'hu', 'ro', 'en'];
         $langs = [];
 
         foreach (explode(',', $accept) as $part) {
@@ -265,13 +265,7 @@ class PPV_Signup {
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('signup_slogan'); ?></p>
 
                     <!-- Language Switcher -->
-                    <div class="ppv-lang-switcher">
-                        <select id="ppv-lang-select" class="ppv-lang-select">
-                            <option value="de" <?php echo $lang === 'de' ? 'selected' : ''; ?>>🇩🇪 DE</option>
-                            <option value="hu" <?php echo $lang === 'hu' ? 'selected' : ''; ?>>🇭🇺 HU</option>
-                            <option value="ro" <?php echo $lang === 'ro' ? 'selected' : ''; ?>>🇷🇴 RO</option>
-                        </select>
-                    </div>
+                    <?php if (class_exists('PPV_Lang_Switcher')) echo PPV_Lang_Switcher::render(); ?>
                 </div>
             </header>
 
@@ -1448,7 +1442,7 @@ class PPV_Signup {
 
         // Get user language from cookie
         $language = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'ro';
-        if (!in_array($language, ['de', 'hu', 'ro', 'en'])) $language = 'ro';
+        if (!in_array($language, ['de', 'hu', 'ro', 'en', 'en'])) $language = 'ro';
 
         // Validate category
         $valid_categories = ['bug', 'feature', 'question', 'rating'];

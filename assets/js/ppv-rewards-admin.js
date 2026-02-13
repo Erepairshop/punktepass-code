@@ -86,6 +86,31 @@ document.addEventListener("DOMContentLoaded", function () {
       created: 'creat',
       reward_updated: 'actualizat',
       reward_deleted: 'șters'
+    },
+    en: {
+      points: 'Points',
+      loading_rewards: 'Loading rewards...',
+      delete_btn: 'Delete',
+      no_rewards: 'No rewards available.',
+      load_error: 'Error loading.',
+      saved: 'Saved',
+      save_error: 'Error saving',
+      confirm_delete: 'Delete this reward?',
+      deleted: 'Reward deleted',
+      loading_redeems: 'Loading redemptions...',
+      unknown: 'Unknown',
+      confirmed: 'Confirmed',
+      no_redeems: 'No redemptions.',
+      updated: 'Updated',
+      update_error: 'Error updating',
+      no_log: 'No log entries.',
+      log_error: 'Error loading log.',
+      new_redemption: 'New redemption!',
+      new_redemption_detected: 'New redemption detected!',
+      reward: 'Reward',
+      created: 'created',
+      reward_updated: 'updated',
+      reward_deleted: 'deleted'
     }
   }[LANG] || {
     points: 'Punkte', loading_rewards: 'Lade Prämien...', delete_btn: 'Löschen', no_rewards: 'Keine Prämien vorhanden.',

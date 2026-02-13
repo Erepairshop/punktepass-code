@@ -488,6 +488,10 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $status_notify_statuses = $store->repair_status_notify_statuses ?? 'in_progress,done,delivered';
         $notify_statuses_arr = explode(',', $status_notify_statuses);
 
+        // Feedback email settings
+        $feedback_email_enabled = isset($store->repair_feedback_email_enabled) ? intval($store->repair_feedback_email_enabled) : 0;
+        $google_review_url = esc_attr($store->repair_google_review_url ?? '');
+
         // Custom form options (for different branches)
         $custom_brands = esc_textarea($store->repair_custom_brands ?? '');
         $custom_problems = esc_textarea($store->repair_custom_problems ?? '');
@@ -603,9 +607,15 @@ a:hover{color:#5a67d8}
 .ra-settings .field label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:6px}
 .ra-settings .field input[type="text"],
 .ra-settings .field input[type="number"],
-.ra-settings .field input[type="color"]{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;transition:all .2s}
-.ra-settings .field input:hover{border-color:#cbd5e1}
-.ra-settings .field input:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-settings .field input[type="email"],
+.ra-settings .field input[type="url"],
+.ra-settings .field input[type="color"],
+.ra-settings .field select{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;transition:all .2s;font-family:inherit}
+.ra-settings .field input:hover,
+.ra-settings .field select:hover{border-color:#cbd5e1}
+.ra-settings .field input:focus,
+.ra-settings .field select:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-settings .field select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
 .ra-settings .field input[type="color"]{height:48px;padding:6px;cursor:pointer}
 .ra-logo-section{margin-top:20px;margin-bottom:20px}
 .ra-logo-section>label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:10px}
@@ -1174,18 +1184,34 @@ a:hover{color:#5a67d8}
                 </div>
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_country')) . '</label>
-                    <select name="country">
-                        <option value="DE"' . (($store->country ?? '') === 'DE' ? ' selected' : '') . '>Deutschland</option>
-                        <option value="AT"' . (($store->country ?? '') === 'AT' ? ' selected' : '') . '>Österreich</option>
-                        <option value="CH"' . (($store->country ?? '') === 'CH' ? ' selected' : '') . '>Schweiz</option>
-                        <option value="HU"' . (($store->country ?? '') === 'HU' ? ' selected' : '') . '>Magyarország</option>
-                        <option value="RO"' . (($store->country ?? '') === 'RO' ? ' selected' : '') . '>România</option>
-                    </select>
+                    <select name="country">';
+
+        $eu_countries = [
+            'DE' => 'Deutschland', 'AT' => 'Österreich', 'CH' => 'Schweiz',
+            'HU' => 'Magyarország', 'RO' => 'România',
+            'BE' => 'Belgien', 'BG' => 'Bulgarien', 'HR' => 'Kroatien',
+            'CY' => 'Zypern', 'CZ' => 'Tschechien', 'DK' => 'Dänemark',
+            'EE' => 'Estland', 'FI' => 'Finnland', 'FR' => 'Frankreich',
+            'GR' => 'Griechenland', 'IE' => 'Irland', 'IT' => 'Italien',
+            'LV' => 'Lettland', 'LT' => 'Litauen', 'LU' => 'Luxemburg',
+            'MT' => 'Malta', 'NL' => 'Niederlande', 'PL' => 'Polen',
+            'PT' => 'Portugal', 'SK' => 'Slowakei', 'SI' => 'Slowenien',
+            'ES' => 'Spanien', 'SE' => 'Schweden',
+            'GB' => 'United Kingdom', 'NO' => 'Norwegen',
+        ];
+        $current_country = $store->country ?? '';
+        foreach ($eu_countries as $code => $name) {
+            echo '<option value="' . $code . '"' . ($current_country === $code ? ' selected' : '') . '>' . esc_html($name) . '</option>';
+        }
+
+        echo '</select>
                 </div>
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_phone')) . '</label>
                     <input type="text" name="phone" value="' . esc_attr($store->phone) . '">
-                </div>
+                </div>';
+
+        echo '
                 <div class="field">
                     <label>' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
                     <input type="text" name="repair_tax_id" value="' . esc_attr($store->repair_tax_id) . '">
@@ -1729,6 +1755,42 @@ echo '</div></div>
                         <span style="color:#6b7280"><i class="ri-truck-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '
                     </label>
                 </div>
+            </div>
+
+                <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+
+                <h4><i class="ri-star-smile-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_feedback_title')) . '</h4>
+            <p style="font-size:12px;color:#6b7280;margin-bottom:12px">' . esc_html(PPV_Lang::t('repair_admin_feedback_hint')) . '</p>
+
+            <div class="ra-toggle" style="margin-bottom:16px">
+                <label class="ra-toggle-switch">
+                    <input type="checkbox" name="repair_feedback_email_enabled" value="1" ' . ($feedback_email_enabled ? 'checked' : '') . '>
+                    <span class="ra-toggle-slider"></span>
+                </label>
+                <div>
+                    <strong>' . esc_html(PPV_Lang::t('repair_admin_feedback_enable')) . '</strong>
+                    <div style="font-size:12px;color:#6b7280">' . esc_html(PPV_Lang::t('repair_admin_feedback_desc')) . '</div>
+                </div>
+            </div>
+
+            <div class="field" style="margin-bottom:12px">
+                <label>' . esc_html(PPV_Lang::t('repair_admin_google_review_url')) . '</label>
+                <input type="url" name="repair_google_review_url" value="' . $google_review_url . '" placeholder="https://g.page/r/...">
+            </div>
+
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px;margin-bottom:8px">
+                <div style="font-size:13px;font-weight:600;color:#0369a1;margin-bottom:8px"><i class="ri-question-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_review_help_title')) . '</div>
+                <ol style="font-size:12px;color:#475569;margin:0;padding-left:18px;line-height:1.8">
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_1')) . '</li>
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_2')) . '</li>
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_3')) . '</li>
+                    <li>' . esc_html(PPV_Lang::t('repair_admin_review_help_4')) . '</li>
+                </ol>
+            </div>
+
+            <div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:14px;font-size:12px;color:#854d0e">
+                <strong><i class="ri-lightbulb-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_feedback_how_title')) . '</strong><br>
+                ' . esc_html(PPV_Lang::t('repair_admin_feedback_how_desc')) . '
             </div>
 
             </div><!-- END PANEL: email -->

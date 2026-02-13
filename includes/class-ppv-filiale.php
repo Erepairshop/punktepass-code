@@ -517,13 +517,13 @@ class PPV_Filiale {
         }
 
         if (empty($contact_email) && empty($contact_phone)) {
-            wp_send_json_error(['msg' => 'Bitte geben Sie eine E-Mail oder Telefonnummer an']);
+            wp_send_json_error(['msg' => 'Please provide an email or phone number']);
             return;
         }
 
         // Get store info
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, name, company_name, email, phone, city, max_filialen FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            "SELECT id, name, company_name, email, phone, city, country, max_filialen FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $parent_store_id
         ));
 
@@ -539,7 +539,15 @@ class PPV_Filiale {
         ));
 
         if ($existing) {
-            wp_send_json_error(['msg' => 'Sie haben bereits eine offene Anfrage. Bitte warten Sie auf die Bearbeitung.']);
+            $pending_msgs = [
+                'de' => 'Sie haben bereits eine offene Anfrage. Bitte warten Sie auf die Bearbeitung.',
+                'en' => 'You already have a pending request. Please wait for it to be processed.',
+                'hu' => 'Már van egy nyitott kérelme. Kérjük, várja meg a feldolgozást.',
+                'ro' => 'Aveți deja o cerere în așteptare. Vă rugăm să așteptați procesarea.',
+            ];
+            $store_lang = strtolower($store->country ?? 'de');
+            if (!in_array($store_lang, ['de', 'hu', 'ro', 'en'])) $store_lang = 'de';
+            wp_send_json_error(['msg' => $pending_msgs[$store_lang] ?? $pending_msgs['de']]);
             return;
         }
 
@@ -563,7 +571,15 @@ class PPV_Filiale {
         );
 
         if (!$insert_result) {
-            wp_send_json_error(['msg' => 'Fehler beim Speichern der Anfrage']);
+            $save_errors = [
+                'de' => 'Fehler beim Speichern der Anfrage',
+                'en' => 'Error saving the request',
+                'hu' => 'Hiba a kérelem mentésekor',
+                'ro' => 'Eroare la salvarea cererii',
+            ];
+            $store_lang = strtolower($store->country ?? 'de');
+            if (!in_array($store_lang, ['de', 'hu', 'ro', 'en'])) $store_lang = 'de';
+            wp_send_json_error(['msg' => $save_errors[$store_lang] ?? $save_errors['de']]);
             return;
         }
 
@@ -614,8 +630,17 @@ class PPV_Filiale {
 
         ppv_log("🏪 [PPV_Filiale] Request #{$request_id} created for store #{$parent_store_id} (+{$requested_amount} filialen)");
 
+        $success_msgs = [
+            'de' => 'Ihre Anfrage wurde erfolgreich gesendet. Wir melden uns bald bei Ihnen!',
+            'en' => 'Your request has been sent successfully. We will get back to you soon!',
+            'hu' => 'Kérelme sikeresen elküldve. Hamarosan jelentkezünk!',
+            'ro' => 'Cererea dvs. a fost trimisă cu succes. Vă vom contacta în curând!',
+        ];
+        $store_lang = strtolower($store->country ?? 'de');
+        if (!in_array($store_lang, ['de', 'hu', 'ro', 'en'])) $store_lang = 'de';
+
         wp_send_json_success([
-            'msg' => 'Ihre Anfrage wurde erfolgreich gesendet. Wir melden uns bald bei Ihnen!',
+            'msg' => $success_msgs[$store_lang] ?? $success_msgs['de'],
             'request_id' => $request_id
         ]);
     }

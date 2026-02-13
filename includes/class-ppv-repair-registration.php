@@ -1869,6 +1869,9 @@ class PPV_Repair_Registration {
         data.append('owner_name', ownerName);
         data.append('email', email);
         data.append('password', password);
+        // Partner referral tracking
+        var refCode = (new URLSearchParams(window.location.search)).get('ref') || '';
+        if (refCode) data.append('partner_ref', refCode);
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', AJAX_URL, true);

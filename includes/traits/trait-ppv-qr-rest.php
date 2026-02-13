@@ -183,7 +183,7 @@ trait PPV_QR_REST_Trait {
     public static function rest_get_strings(WP_REST_Request $r) {
         $lang = sanitize_text_field($r->get_header('X-Lang') ?? $_GET['lang'] ?? 'de');
 
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
             $lang = 'de';
         }
 
@@ -1269,7 +1269,7 @@ trait PPV_QR_REST_Trait {
         $customer_insights = null;
         if (class_exists('PPV_Customer_Insights')) {
             $lang = sanitize_text_field($r->get_header('X-Lang') ?? 'de');
-            if (!in_array($lang, ['de', 'hu', 'ro'])) {
+            if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
                 $lang = 'de';
             }
             $customer_insights = PPV_Customer_Insights::get_insights($user_id, $store_id, $lang);

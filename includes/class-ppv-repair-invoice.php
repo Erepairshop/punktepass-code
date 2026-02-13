@@ -1178,6 +1178,19 @@ class PPV_Repair_Invoice {
 
         $logo_html = $logo_url ? '<img src="' . $logo_url . '" style="height:50px;border-radius:6px;">' : '';
 
+        // Load partner data for co-branding on PDF
+        $partner_logo_html = '';
+        if (!empty($store->partner_id)) {
+            global $wpdb;
+            $partner = $wpdb->get_row($wpdb->prepare(
+                "SELECT company_name, logo_url, partnership_model FROM {$wpdb->prefix}ppv_partners WHERE id = %d AND status = 'active'",
+                intval($store->partner_id)
+            ));
+            if ($partner && $partner->logo_url) {
+                $partner_logo_html = '<img src="' . esc_url($partner->logo_url) . '" style="height:32px;border-radius:4px;opacity:0.8;margin-left:12px" alt="' . esc_attr($partner->company_name) . '">';
+            }
+        }
+
         // Customer address formatting
         $cust_plz_city = trim($cust_plz . ' ' . $cust_city);
 
@@ -1370,7 +1383,10 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 
 <div class="header">
 <div class="header-left">
+<div style="display:flex;align-items:center;gap:8px">
 ' . ($logo_url ? '<img src="' . $logo_url . '" class="logo" alt="">' : '') . '
+' . $partner_logo_html . '
+</div>
 <div class="company-name">' . $company . '</div>
 ' . ($owner ? '<div class="company-owner">' . $owner . '</div>' : '') . '
 </div>

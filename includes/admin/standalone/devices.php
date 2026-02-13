@@ -26,15 +26,23 @@ class PPV_Standalone_Devices {
             $where = $wpdb->prepare("WHERE d.store_id = %d", $store_filter);
         }
 
-        // Get devices with store info
+        // Get devices with store info + last logged-in user
         $devices = $wpdb->get_results("
             SELECT
                 d.*,
                 s.name as store_name,
                 s.company_name,
-                s.city as store_city
+                s.city as store_city,
+                login_user.email as last_user_email,
+                login_user.username as last_user_name
             FROM {$wpdb->prefix}ppv_user_devices d
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON d.store_id = s.id
+            LEFT JOIN (
+                SELECT dl.fingerprint_hash, dl.user_id,
+                       ROW_NUMBER() OVER (PARTITION BY dl.fingerprint_hash ORDER BY dl.created_at DESC) as rn
+                FROM {$wpdb->prefix}ppv_device_logins dl
+            ) latest_login ON latest_login.fingerprint_hash = d.fingerprint_hash AND latest_login.rn = 1
+            LEFT JOIN {$wpdb->prefix}ppv_users login_user ON login_user.id = latest_login.user_id
             {$where}
             ORDER BY d.last_used_at DESC
             LIMIT 500
@@ -208,6 +216,7 @@ class PPV_Standalone_Devices {
                             <tr>
                                 <th>ID</th>
                                 <th>Bolt</th>
+                                <th>Felhasználó</th>
                                 <th>Eszköz</th>
                                 <th>Fingerprint</th>
                                 <th>Státusz</th>
@@ -227,6 +236,14 @@ class PPV_Standalone_Devices {
                                         <strong><?php echo esc_html($store_name); ?></strong>
                                         <?php if (!empty($device->store_city)): ?>
                                             <br><small style="color: #888;"><?php echo esc_html($device->store_city); ?></small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($device->last_user_email)): ?>
+                                            <strong style="color: #00d9ff;"><?php echo esc_html($device->last_user_name ?: ''); ?></strong>
+                                            <br><small style="color: #888;"><?php echo esc_html($device->last_user_email); ?></small>
+                                        <?php else: ?>
+                                            <span style="color: #666;">-</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>

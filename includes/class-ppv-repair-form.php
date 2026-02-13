@@ -30,6 +30,16 @@ class PPV_Repair_Form {
         $store_id   = intval($store->id);
         $address    = esc_html(trim(($store->address ?: '') . ' ' . ($store->plz ?: '') . ' ' . ($store->city ?: '')));
 
+        // Load partner data for co-branding
+        $partner = null;
+        if (!empty($store->partner_id)) {
+            global $wpdb;
+            $partner = $wpdb->get_row($wpdb->prepare(
+                "SELECT company_name, logo_url, partnership_model FROM {$wpdb->prefix}ppv_partners WHERE id = %d AND status = 'active'",
+                intval($store->partner_id)
+            ));
+        }
+
         $pp_enabled   = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
         $raw_title    = $store->repair_form_title ?? '';
         $form_title   = esc_html(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
@@ -129,7 +139,24 @@ class PPV_Repair_Form {
             <div class="repair-hero-blob repair-hero-blob--3"></div>
         </div>
         <div class="repair-header-inner">
-            <?php if ($store->logo): ?>
+            <?php if ($partner && $partner->logo_url && $partner->partnership_model === 'co_branded'): ?>
+                <!-- Co-branded: Partner logo + Store logo side by side -->
+                <div class="repair-logo-wrap" style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap">
+                    <img src="<?php echo esc_url($partner->logo_url); ?>" alt="<?php echo esc_html($partner->company_name); ?>" class="repair-logo" style="max-height:40px">
+                    <span style="color:rgba(255,255,255,0.4);font-size:20px;font-weight:300">&times;</span>
+                    <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>" class="repair-logo" style="max-height:40px">
+                </div>
+            <?php elseif ($partner && $partner->logo_url): ?>
+                <!-- Partner logo shown small above store logo -->
+                <div style="text-align:center;margin-bottom:6px;opacity:0.7">
+                    <img src="<?php echo esc_url($partner->logo_url); ?>" alt="<?php echo esc_html($partner->company_name); ?>" style="max-height:24px;border-radius:4px">
+                </div>
+                <?php if ($store->logo): ?>
+                <div class="repair-logo-wrap">
+                    <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>" class="repair-logo">
+                </div>
+                <?php endif; ?>
+            <?php elseif ($store->logo): ?>
                 <div class="repair-logo-wrap">
                     <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>" class="repair-logo">
                 </div>
@@ -552,6 +579,12 @@ class PPV_Repair_Form {
             <a href="/formular/<?php echo $slug; ?>/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
         </div>
         <div class="repair-footer-powered">
+            <?php if ($partner && $partner->logo_url): ?>
+                <span style="display:inline-flex;align-items:center;gap:8px">
+                    <img src="<?php echo esc_url($partner->logo_url); ?>" alt="<?php echo esc_html($partner->company_name); ?>" style="height:16px;border-radius:3px;opacity:0.7">
+                    <span style="opacity:0.4">&amp;</span>
+                </span>
+            <?php endif; ?>
             <span><?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?></span>
             <a href="https://punktepass.de" target="_blank" class="repair-footer-brand">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

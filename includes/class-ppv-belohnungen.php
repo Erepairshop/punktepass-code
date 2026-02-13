@@ -36,13 +36,13 @@ class PPV_Belohnungen {
     private static function get_lang() {
         self::ensure_session();
         $lang = sanitize_text_field($_GET['lang'] ?? '');
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         }
-        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
             $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
         }
-        return in_array($lang, ['de', 'hu', 'ro'], true) ? $lang : 'de';
+        return in_array($lang, ['de', 'hu', 'ro', 'en'], true) ? $lang : 'de';
     }
 
     private static function get_labels($lang = 'de') {
@@ -187,6 +187,51 @@ class PPV_Belohnungen {
                 'rate_store_already' => 'Ai evaluat deja anul acesta.',
                 'rate_store_select' => 'Te rog selectează o evaluare.',
                 'rate_store_error' => 'Eroare la salvare.',
+            ],
+            'en' => [
+                'page_title' => 'My Rewards',
+                'page_subtitle' => 'Your rewards at your favourite stores',
+                'total_points' => 'Total Points',
+                'how_it_works' => 'How it works',
+                'how_step_1' => 'Collect points by scanning QR codes',
+                'how_step_2' => 'When you have enough points, you\'ll see "READY"',
+                'how_step_3' => 'Show your QR code in the store',
+                'how_step_4' => 'The vendor confirms the redemption',
+                'store_points' => 'Points',
+                'reward_ready' => 'READY',
+                'reward_locked' => 'missing',
+                'show_qr' => 'Show QR Code',
+                'no_stores' => 'No points collected yet',
+                'no_stores_hint' => 'Scan your first QR code at a store!',
+                'history_title' => 'Redeemed Rewards',
+                'no_history' => 'No rewards redeemed yet',
+                'points' => 'Points',
+                'on_date' => 'on',
+                'progress_title' => 'Your Progress',
+                'rewards_ready' => 'Ready',
+                'rewards_almost' => 'Almost',
+                'rewards_progress' => 'In Progress',
+                'filter_all' => 'All Stores',
+                'filter_label' => 'Select Store',
+                'available_rewards' => 'Available Rewards',
+                'collapse' => 'Collapse',
+                'expand' => 'Expand',
+                'no_rewards_yet' => 'This store hasn\'t set up rewards yet',
+                'qr_loading' => 'Loading QR code...',
+                'qr_error' => 'Error loading QR code',
+                'points_collected' => 'You have points! Show your QR code in the store.',
+                'points_per_scan' => 'Points per scan',
+                'scans_needed' => 'visits needed',
+                'scan_singular' => 'visit needed',
+                'free_product' => 'Free',
+                'rate_store' => 'Rate store',
+                'rate_store_title' => 'Rating',
+                'rate_store_question' => 'How satisfied are you with this store?',
+                'rate_store_submit' => 'Submit rating',
+                'rate_store_thanks' => 'Thank you for your rating!',
+                'rate_store_already' => 'You have already rated this year.',
+                'rate_store_select' => 'Please select a rating.',
+                'rate_store_error' => 'Error saving.',
             ],
         ];
         return $labels[$lang] ?? $labels['de'];

@@ -1099,4 +1099,28 @@ return [
     'checkout_error_paypal'       => 'PayPal hiba: Kérjük, próbálja újra.',
     'checkout_copied'             => 'Másolva!',
     'checkout_and'                => 'és a',
+
+    // ===== Feedback Email / Google Review Settings =====
+    'repair_admin_feedback_title'      => 'Ügyfél visszajelzés javítás után',
+    'repair_admin_feedback_hint'       => 'Az ügyfél automatikusan kap egy e-mailt 24 órával a javítás befejezése ("Kész" státusz) után, visszajelzést kérve.',
+    'repair_admin_feedback_enable'     => 'Visszajelzés e-mail bekapcsolása',
+    'repair_admin_feedback_desc'       => '24 órával a "Kész" státusz után az ügyfél kap egy visszajelzés kérő e-mailt',
+    'repair_admin_google_review_url'   => 'Google Értékelés link',
+    'repair_admin_review_help_title'   => 'Hol találom a Google Értékelés linkemet?',
+    'repair_admin_review_help_1'       => 'Nyissa meg a Google Maps-et és keresse meg az üzletét',
+    'repair_admin_review_help_2'       => 'Kattintson az üzleti profiljára',
+    'repair_admin_review_help_3'       => 'Kattintson az "Értékelés írása" gombra',
+    'repair_admin_review_help_4'       => 'Másolja ki az URL-t a címsorból és illessze be ide',
+    'repair_admin_feedback_how_title'  => 'Hogyan működik?',
+    'repair_admin_feedback_how_desc'   => 'Ha egy javítás "Kész" státuszra kerül, az ügyfél 24 óra múlva automatikusan kap egy barátságos e-mailt értékelés kéréssel. Ha meg van adva Google link, az közvetlenül az e-mailben lesz linkelve.',
+
+    // ===== Feedback Email Templates =====
+    'repair_feedback_email_subject'    => 'Hogy sikerült a javítás? - {company}',
+    'repair_feedback_email_greeting'   => 'Kedves {customer_name}!',
+    'repair_feedback_email_body'       => 'A javítása a {company}-nál elkészült. Reméljük, hogy minden a megelégedésére történt!',
+    'repair_feedback_email_review_ask' => 'Ha elégedett volt szolgáltatásunkkal, nagyon örülnénk egy rövid Google értékelésnek:',
+    'repair_feedback_email_review_btn' => 'Értékelés írása',
+    'repair_feedback_email_general_ask'=> 'Ha elégedett volt szolgáltatásunkkal, ajánljon minket ismerőseinek!',
+    'repair_feedback_email_thanks'     => 'Köszönjük a bizalmát!',
+    'repair_feedback_email_regards'    => 'Üdvözlettel,',
 ];

@@ -92,6 +92,28 @@ window.PPV_Analytics = class PPV_Analytics {
         analytics_percentage: '% cotă',
         analytics_no_data: 'Fără date',
         analytics_error_title: 'Eroare la încărcarea analizei:',
+      },
+      en: {
+        analytics_title: 'Points Analytics',
+        analytics_range_label: 'Period:',
+        analytics_range_7: '7 Days',
+        analytics_range_30: '30 Days',
+        analytics_range_90: '90 Days',
+        analytics_range_365: '1 Year',
+        analytics_this_week: 'This Week',
+        analytics_this_month: 'This Month',
+        analytics_this_year: 'This Year',
+        analytics_current_streak: 'Current Streak',
+        analytics_points_unit: 'Points',
+        analytics_days_unit: 'Days',
+        analytics_trend_title: 'Points Trend',
+        analytics_stores_title: 'Breakdown by Store',
+        analytics_best_day_title: 'Best Day',
+        analytics_visits: 'visits',
+        analytics_avg_points: 'avg points',
+        analytics_percentage: '% share',
+        analytics_no_data: 'No data',
+        analytics_error_title: 'Error loading analytics:',
       }
     };
   }
