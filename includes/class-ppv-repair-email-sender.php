@@ -630,6 +630,30 @@ www.punktepass.de/formular';
 
         $partner_subject_de = 'Partnerschaft: Digitale Reparaturverwaltung für Werkstätten';
 
+        // Partnership / Cooperation template (EN)
+        $partner_template_en = 'Dear Sir or Madam,
+
+my name is Erik Borota.
+
+With <strong>&ldquo;Reparaturpass&rdquo;</strong>, we have developed a <strong>digital repair management system for mobile phone workshops</strong>. The system enables workshops to digitally record repair orders, create invoices, and provide repair status updates via QR code.
+
+<strong>You can find the full concept here:</strong>
+{{CTA:https://punktepass.de/formular/partner|&#128073; View concept}}
+
+I would be happy to explore with you whether a partnership could be beneficial &ndash; for example, as an added value for your workshop customers or as part of a strategic cooperation.
+
+If this inquiry has not reached the right contact, I would be very grateful if you could forward it to the appropriate person.
+
+I look forward to hearing from you.
+
+Kind regards,
+Erik Borota
+<strong>PunktePass / Reparaturpass</strong>
+info@punktepass.com
+www.punktepass.de/formular';
+
+        $partner_subject_en = 'Partnership: Digital Repair Management for Workshops';
+
         ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -1181,6 +1205,9 @@ www.punktepass.de/formular';
                             <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'ro' ? 'active' : ''; ?>" data-lang="ro" onclick="loadLangTemplate('ro')">
                                 RO Rom&#226;n&#259;
                             </button>
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'en' ? 'active' : ''; ?>" data-lang="en" onclick="loadLangTemplate('en')" style="display:none">
+                                EN English
+                            </button>
                         </div>
                     </div>
 
@@ -1350,8 +1377,18 @@ var langTemplates = {
         de: {
             subject: <?php echo json_encode($partner_subject_de); ?>,
             message: <?php echo json_encode($partner_template_de); ?>
+        },
+        en: {
+            subject: <?php echo json_encode($partner_subject_en); ?>,
+            message: <?php echo json_encode($partner_template_en); ?>
         }
     }
+};
+
+// Which languages each template type supports
+var tplLangs = {
+    promo: ['de', 'hu', 'ro'],
+    partner: ['de', 'en']
 };
 
 function switchTemplateType(type) {
@@ -1360,20 +1397,18 @@ function switchTemplateType(type) {
     document.querySelectorAll('.tpl-type-card').forEach(function(c) {
         c.classList.toggle('active', c.getAttribute('data-type') === type);
     });
+    // Show lang selector, but update available buttons
     var langGroup = document.getElementById('lang-selector-group');
-    if (type === 'partner') {
-        // Partner template: DE only, hide language selector
-        langGroup.style.display = 'none';
-        var tpl = langTemplates.partner.de;
-        document.getElementById('email-subject').value = tpl.subject;
-        document.getElementById('email-message').value = tpl.message;
-        document.getElementById('email-lang').value = 'de';
-    } else {
-        // Promo template: show language selector, load current lang
-        langGroup.style.display = '';
-        var activeLang = document.getElementById('email-lang').value || 'de';
-        loadLangTemplate(activeLang);
-    }
+    langGroup.style.display = '';
+    var langs = tplLangs[type] || ['de'];
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        var lang = btn.getAttribute('data-lang');
+        btn.style.display = langs.indexOf(lang) !== -1 ? '' : 'none';
+    });
+    // Pick first available language or keep current if valid
+    var currentLang = document.getElementById('email-lang').value;
+    var targetLang = langs.indexOf(currentLang) !== -1 ? currentLang : langs[0];
+    loadLangTemplate(targetLang);
     // Reset saved template selector
     var sel = document.getElementById('template-select');
     if (sel) sel.value = '';
