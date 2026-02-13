@@ -329,7 +329,54 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
 .pp-ref-url strong{color:#0369a1}
 .pp-empty{text-align:center;padding:40px;color:#94a3b8}
 .pp-empty i{font-size:48px;margin-bottom:12px;display:block}
-@media(max-width:768px){.pp-stats-row{grid-template-columns:1fr 1fr}.pp-form-grid{grid-template-columns:1fr}.pp-body{padding:16px}}
+.pp-btn-widget{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.pp-btn-widget:hover{opacity:0.9;transform:translateY(-1px)}
+/* Widget Configurator */
+.pp-wc-layout{display:grid;grid-template-columns:280px 1fr;gap:24px;margin-bottom:20px}
+.pp-wc-controls{display:flex;flex-direction:column;gap:14px}
+.pp-wc-ctrl label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.pp-wc-ctrl select,.pp-wc-ctrl input[type="color"],.pp-wc-ctrl input[type="text"]{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;background:#fff}
+.pp-wc-ctrl select:focus,.pp-wc-ctrl input:focus{border-color:#667eea}
+.pp-wc-ctrl input[type="color"]{height:44px;padding:4px;cursor:pointer}
+.pp-wc-color-row{display:flex;gap:8px;align-items:center}
+.pp-wc-color-row input[type="color"]{width:44px;height:44px;flex-shrink:0;border-radius:8px;border:2px solid #e2e8f0;padding:2px;cursor:pointer}
+.pp-wc-color-row input[type="text"]{flex:1}
+.pp-wc-preview-wrap{background:#f8fafc;border:2px dashed #e2e8f0;border-radius:12px;min-height:340px;position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:flex-end;padding:16px}
+.pp-wc-preview-wrap.pos-left{justify-content:flex-start}
+.pp-wc-preview-label{position:absolute;top:12px;left:12px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+/* Preview float FAB */
+.pp-wc-fab{display:flex;align-items:center;gap:8px;color:#fff;border:none;padding:12px 20px;border-radius:50px;cursor:default;font-size:14px;font-weight:600;font-family:Inter,sans-serif;box-shadow:0 4px 24px rgba(0,0,0,0.18);line-height:1}
+.pp-wc-fab svg{width:20px;height:20px;flex-shrink:0}
+/* Preview panel */
+.pp-wc-panel{position:absolute;bottom:56px;width:320px;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.15);overflow:hidden;font-family:Inter,sans-serif}
+.pp-wc-panel.pos-right{right:16px}
+.pp-wc-panel.pos-left{left:16px}
+.pp-wc-panel-header{padding:20px;color:#fff;position:relative;overflow:hidden}
+.pp-wc-panel-header::after{content:"";position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,0.08);border-radius:50%}
+.pp-wc-panel-title{font-size:16px;font-weight:700;margin-bottom:4px;position:relative;z-index:1}
+.pp-wc-panel-sub{font-size:12px;opacity:0.85;line-height:1.4;position:relative;z-index:1}
+.pp-wc-panel-free{display:inline-block;background:rgba(255,255,255,0.2);color:#fff;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;margin-top:6px;text-transform:uppercase;position:relative;z-index:1}
+.pp-wc-panel-body{padding:16px 20px}
+.pp-wc-panel-feats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.pp-wc-panel-feat{display:flex;align-items:center;gap:6px;font-size:11px;color:#374151;font-weight:500}
+.pp-wc-panel-feat span{font-size:14px}
+.pp-wc-panel-cta{display:block;width:100%;padding:10px;border:none;border-radius:10px;cursor:default;font-size:13px;font-weight:700;font-family:inherit;text-align:center;color:#fff}
+.pp-wc-panel-footer{padding:8px 20px;border-top:1px solid #f1f5f9;text-align:center;font-size:10px;color:#94a3b8}
+/* Preview inline banner */
+.pp-wc-inline{width:100%;max-width:400px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow:hidden;font-family:Inter,sans-serif}
+.pp-wc-inline-header{padding:16px 20px;color:#fff;position:relative;overflow:hidden}
+.pp-wc-inline-header::after{content:"";position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,0.08);border-radius:50%}
+.pp-wc-inline .pp-wc-panel-body{padding:14px 20px}
+.pp-wc-inline .pp-wc-panel-footer{padding:8px 20px;border-top:1px solid #f1f5f9;text-align:center;font-size:10px;color:#94a3b8}
+/* Code output */
+.pp-wc-code-wrap{background:#1e293b;border-radius:10px;padding:16px;position:relative}
+.pp-wc-code{color:#e2e8f0;font-size:13px;font-family:'Courier New',monospace;word-break:break-all;line-height:1.6;white-space:pre-wrap}
+.pp-wc-code .attr{color:#7dd3fc}
+.pp-wc-code .val{color:#86efac}
+.pp-wc-code .tag{color:#fbbf24}
+.pp-wc-copy-btn{position:absolute;top:10px;right:10px;background:#334155;border:none;color:#94a3b8;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:4px}
+.pp-wc-copy-btn:hover{background:#475569;color:#fff}
+@media(max-width:768px){.pp-stats-row{grid-template-columns:1fr 1fr}.pp-form-grid{grid-template-columns:1fr}.pp-body{padding:16px}.pp-wc-layout{grid-template-columns:1fr}.pp-wc-preview-wrap{min-height:280px}}
 </style></head><body>
 
 <div class="pp-header">
@@ -397,6 +444,81 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
 </div>
 </div>
 
+<!-- Widget Configurator Modal -->
+<div class="pp-modal-overlay" id="pp-widget-modal">
+<div class="pp-modal" style="max-width:860px;padding:0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#10b981,#059669);padding:20px 28px;color:#fff;display:flex;align-items:center;gap:12px">
+        <i class="ri-code-s-slash-line" style="font-size:22px"></i>
+        <div>
+            <h3 style="margin:0;font-size:18px;font-weight:700">Widget-Konfigurator</h3>
+            <div id="wc-partner-label" style="font-size:13px;opacity:0.85;margin-top:2px"></div>
+        </div>
+        <div style="flex:1"></div>
+        <button onclick="closeWidgetModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <div style="padding:24px 28px">
+        <input type="hidden" id="wc-partner-code" value="">
+
+        <div class="pp-wc-layout">
+            <!-- Controls -->
+            <div class="pp-wc-controls">
+                <div class="pp-wc-ctrl">
+                    <label><i class="ri-layout-4-line"></i> Modus</label>
+                    <select id="wc-mode" onchange="updateWidgetPreview()">
+                        <option value="float">Float (Schwebender Button)</option>
+                        <option value="inline">Inline (Banner)</option>
+                    </select>
+                </div>
+                <div class="pp-wc-ctrl">
+                    <label><i class="ri-translate-2"></i> Sprache</label>
+                    <select id="wc-lang" onchange="updateWidgetPreview()">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="pp-wc-ctrl" id="wc-position-ctrl">
+                    <label><i class="ri-layout-bottom-line"></i> Position</label>
+                    <select id="wc-position" onchange="updateWidgetPreview()">
+                        <option value="bottom-right">Unten rechts</option>
+                        <option value="bottom-left">Unten links</option>
+                    </select>
+                </div>
+                <div class="pp-wc-ctrl">
+                    <label><i class="ri-palette-line"></i> Farbe</label>
+                    <div class="pp-wc-color-row">
+                        <input type="color" id="wc-color" value="#667eea" onchange="document.getElementById('wc-color-hex').value=this.value;updateWidgetPreview()">
+                        <input type="text" id="wc-color-hex" value="#667eea" maxlength="7" placeholder="#667eea" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){document.getElementById('wc-color').value=this.value;updateWidgetPreview()}">
+                    </div>
+                </div>
+                <div style="margin-top:auto;padding-top:10px;border-top:1px solid #e2e8f0">
+                    <div style="font-size:11px;color:#64748b;display:flex;flex-direction:column;gap:4px">
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> Keine Dependencies</div>
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> DSGVO-konform</div>
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> &lt; 5 KB</div>
+                        <div><i class="ri-checkbox-circle-line" style="color:#22c55e"></i> Cross-Domain CORS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Preview -->
+            <div class="pp-wc-preview-wrap" id="wc-preview-area">
+                <span class="pp-wc-preview-label"><i class="ri-eye-line"></i> Vorschau</span>
+                <div id="wc-preview-content"></div>
+            </div>
+        </div>
+
+        <!-- Generated Code -->
+        <div style="margin-top:4px">
+            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px"><i class="ri-code-s-slash-line"></i> Embed-Code</label>
+            <div class="pp-wc-code-wrap">
+                <button class="pp-wc-copy-btn" onclick="copyGeneratedCode(this)"><i class="ri-file-copy-line"></i> Kopieren</button>
+                <div class="pp-wc-code" id="wc-generated-code"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
 <script>
 var AJAX = <?php echo json_encode($ajax_url); ?>;
 var NONCE = <?php echo json_encode($nonce); ?>;
@@ -436,6 +558,7 @@ function loadPartners() {
             html += "<td>"+(p.total_forms || 0)+"</td>";
             html += '<td><span class="pp-badge '+badge+'">'+p.status+"</span></td>";
             html += '<td><button class="pp-btn pp-btn-sm pp-btn-ghost" onclick="viewPartner('+p.id+')"><i class="ri-eye-line"></i></button> ';
+            html += '<button class="pp-btn pp-btn-sm pp-btn-widget" onclick="openWidgetConfigurator(\''+p.partner_code+'\',\''+p.company_name.replace(/'/g, "\\'")+'\')"><i class="ri-code-s-slash-line"></i></button> ';
             html += '<button class="pp-btn pp-btn-sm pp-btn-ghost" onclick="editPartner('+p.id+')"><i class="ri-pencil-line"></i></button></td></tr>';
         });
         html += "</tbody></table>";
@@ -459,6 +582,143 @@ function copyWidgetCode(btn) {
     btn.style.color = '#fff';
     setTimeout(function() {
         btn.innerHTML = '<i class="ri-file-copy-line"></i> Copy';
+        btn.style.background = '#334155';
+        btn.style.color = '#94a3b8';
+    }, 2000);
+}
+
+// ─── Widget Configurator ─────────────────────────────────
+var wcTranslations = {
+    de: { badge:'Reparatur-Service', title:'Digitale Reparaturverwaltung', sub:'Reparaturen digital erfassen, Rechnungen erstellen, Kunden informieren.', feat1:'Online-Formular', feat2:'Rechnungen', feat3:'Kundenverwaltung', feat4:'DATEV-Export', cta:'Kostenlos starten', free:'Kostenlos', powered:'Powered by' },
+    en: { badge:'Repair Service', title:'Digital Repair Management', sub:'Record repairs digitally, create invoices, keep customers informed.', feat1:'Online Form', feat2:'Invoices', feat3:'Customer Mgmt', feat4:'DATEV Export', cta:'Start for free', free:'Free', powered:'Powered by' }
+};
+
+function openWidgetConfigurator(partnerCode, companyName) {
+    document.getElementById('wc-partner-code').value = partnerCode;
+    document.getElementById('wc-partner-label').textContent = companyName + ' (' + partnerCode + ')';
+    // Reset to defaults
+    document.getElementById('wc-mode').value = 'float';
+    document.getElementById('wc-lang').value = 'de';
+    document.getElementById('wc-position').value = 'bottom-right';
+    document.getElementById('wc-color').value = '#667eea';
+    document.getElementById('wc-color-hex').value = '#667eea';
+    document.getElementById('wc-position-ctrl').style.display = '';
+    updateWidgetPreview();
+    document.getElementById('pp-widget-modal').classList.add('active');
+}
+
+function closeWidgetModal() {
+    document.getElementById('pp-widget-modal').classList.remove('active');
+}
+
+function updateWidgetPreview() {
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = document.getElementById('wc-color').value;
+    var t = wcTranslations[lang] || wcTranslations.de;
+
+    // Show/hide position control for inline mode
+    document.getElementById('wc-position-ctrl').style.display = mode === 'inline' ? 'none' : '';
+
+    var previewArea = document.getElementById('wc-preview-area');
+    var previewContent = document.getElementById('wc-preview-content');
+    var isLeft = pos === 'bottom-left';
+
+    // Preview area alignment
+    previewArea.className = 'pp-wc-preview-wrap' + (isLeft && mode === 'float' ? ' pos-left' : '');
+
+    var gradient = 'linear-gradient(135deg,' + color + ',#4338ca)';
+    var html = '';
+
+    if (mode === 'float') {
+        // Panel
+        html += '<div class="pp-wc-panel ' + (isLeft ? 'pos-left' : 'pos-right') + '">';
+        html += '<div class="pp-wc-panel-header" style="background:' + gradient + '">';
+        html += '<div class="pp-wc-panel-title">' + t.title + '</div>';
+        html += '<div class="pp-wc-panel-sub">' + t.sub + '</div>';
+        html += '<span class="pp-wc-panel-free">\u2713 ' + t.free + '</span>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-body">';
+        html += '<div class="pp-wc-panel-feats">';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCF1</span> ' + t.feat1 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCE</span> ' + t.feat2 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDC65</span> ' + t.feat3 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCA</span> ' + t.feat4 + '</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-cta" style="background:' + gradient + '">' + t.cta + ' \u2192</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-footer">' + t.powered + ' <strong>PunktePass</strong></div>';
+        html += '</div>';
+        // FAB
+        html += '<div class="pp-wc-fab" style="background:' + gradient + '">';
+        html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>';
+        html += '<span>' + t.badge + '</span></div>';
+    } else {
+        // Inline banner
+        html += '<div class="pp-wc-inline">';
+        html += '<div class="pp-wc-inline-header" style="background:' + gradient + '">';
+        html += '<div class="pp-wc-panel-title" style="position:relative;z-index:1">' + t.title + '</div>';
+        html += '<div class="pp-wc-panel-sub" style="position:relative;z-index:1">' + t.sub + '</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-body">';
+        html += '<div class="pp-wc-panel-feats">';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCF1</span> ' + t.feat1 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCE</span> ' + t.feat2 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDC65</span> ' + t.feat3 + '</div>';
+        html += '<div class="pp-wc-panel-feat"><span>\uD83D\uDCCA</span> ' + t.feat4 + '</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-cta" style="background:' + gradient + '">' + t.cta + ' \u2192</div>';
+        html += '</div>';
+        html += '<div class="pp-wc-panel-footer">' + t.powered + ' <strong>PunktePass</strong></div>';
+        html += '</div>';
+    }
+
+    previewContent.innerHTML = html;
+
+    // Generate embed code (syntax highlighted)
+    var attrs = ' <span class="attr">data-partner</span>=<span class="val">"' + code + '"</span>';
+    if (lang !== 'de') attrs += '\n  <span class="attr">data-lang</span>=<span class="val">"' + lang + '"</span>';
+    if (mode !== 'float') attrs += '\n  <span class="attr">data-mode</span>=<span class="val">"' + mode + '"</span>\n  <span class="attr">data-target</span>=<span class="val">"#punktepass-widget"</span>';
+    if (pos !== 'bottom-right' && mode === 'float') attrs += '\n  <span class="attr">data-position</span>=<span class="val">"' + pos + '"</span>';
+    if (color !== '#667eea') attrs += '\n  <span class="attr">data-color</span>=<span class="val">"' + color + '"</span>';
+
+    var codeHtml = '';
+    if (mode === 'inline') {
+        codeHtml += '<span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="val">"punktepass-widget"</span><span class="tag">&gt;&lt;/div&gt;</span>\n';
+    }
+    codeHtml += '<span class="tag">&lt;script</span>\n  <span class="attr">src</span>=<span class="val">"https://punktepass.de/formular/widget.js"</span>\n  ' + attrs.trim() + '<span class="tag">&gt;&lt;/script&gt;</span>';
+
+    document.getElementById('wc-generated-code').innerHTML = codeHtml;
+}
+
+function copyGeneratedCode(btn) {
+    // Build raw code from current config
+    var code = document.getElementById('wc-partner-code').value;
+    var mode = document.getElementById('wc-mode').value;
+    var lang = document.getElementById('wc-lang').value;
+    var pos = document.getElementById('wc-position').value;
+    var color = document.getElementById('wc-color').value;
+
+    var raw = '';
+    if (mode === 'inline') {
+        raw += '<div id="punktepass-widget"></div>\n';
+    }
+    raw += '<script src="https://punktepass.de/formular/widget.js"';
+    raw += ' data-partner="' + code + '"';
+    if (lang !== 'de') raw += ' data-lang="' + lang + '"';
+    if (mode !== 'float') raw += ' data-mode="' + mode + '" data-target="#punktepass-widget"';
+    if (pos !== 'bottom-right' && mode === 'float') raw += ' data-position="' + pos + '"';
+    if (color !== '#667eea') raw += ' data-color="' + color + '"';
+    raw += '><\/script>';
+
+    navigator.clipboard.writeText(raw);
+    btn.innerHTML = '<i class="ri-check-line"></i> Kopiert!';
+    btn.style.background = '#22c55e';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+        btn.innerHTML = '<i class="ri-file-copy-line"></i> Kopieren';
         btn.style.background = '#334155';
         btn.style.color = '#94a3b8';
     }, 2000);
