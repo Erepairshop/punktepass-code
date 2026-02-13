@@ -156,6 +156,18 @@ class PPV_Repair_Core {
             add_action("wp_ajax_{$action}", $callback);
             add_action("wp_ajax_nopriv_{$action}", $callback);
         }
+
+        // AJAX: Partner commission tracking
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-partner-commission.php';
+        $commission_actions = [
+            'ppv_commission_calculate' => ['PPV_Partner_Commission', 'ajax_calculate'],
+            'ppv_commission_get'       => ['PPV_Partner_Commission', 'ajax_get_partner_commissions'],
+            'ppv_commission_mark_paid' => ['PPV_Partner_Commission', 'ajax_mark_paid'],
+        ];
+        foreach ($commission_actions as $action => $callback) {
+            add_action("wp_ajax_{$action}", $callback);
+            add_action("wp_ajax_nopriv_{$action}", $callback);
+        }
     }
 
     /** ============================================================
@@ -951,6 +963,33 @@ class PPV_Repair_Core {
                 $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN feedback_email_sent TINYINT(1) DEFAULT 0 AFTER delivered_at");
             }
             update_option('ppv_repair_migration_version', '2.7');
+        }
+
+        // v2.8: Partner commission tracking table
+        if (version_compare($version, '2.8', '<')) {
+            $charset = $wpdb->get_charset_collate();
+            $commission_table = $wpdb->prefix . 'ppv_partner_commissions';
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$commission_table}'");
+            if (!$table_exists) {
+                $wpdb->query("CREATE TABLE {$commission_table} (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    partner_id BIGINT UNSIGNED NOT NULL,
+                    store_id BIGINT UNSIGNED NOT NULL,
+                    period_month VARCHAR(7) NOT NULL COMMENT 'YYYY-MM',
+                    premium_price DECIMAL(10,2) NOT NULL DEFAULT 39.00,
+                    commission_rate DECIMAL(5,2) NOT NULL DEFAULT 0,
+                    amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+                    status ENUM('pending','paid','cancelled') NOT NULL DEFAULT 'pending',
+                    paid_at DATETIME NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_partner (partner_id),
+                    INDEX idx_store (store_id),
+                    INDEX idx_period (period_month),
+                    INDEX idx_status (status),
+                    UNIQUE KEY unique_commission (partner_id, store_id, period_month)
+                ) {$charset}");
+            }
+            update_option('ppv_repair_migration_version', '2.8');
         }
     }
 

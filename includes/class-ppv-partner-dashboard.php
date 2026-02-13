@@ -84,6 +84,17 @@ class PPV_Partner_Dashboard {
         $premium_price = 39.0; // EUR/month
         $estimated_commission = $premium_count * $premium_price * ($commission_rate / 100);
 
+        // Load real commission data if table exists
+        $commission_table = $wpdb->prefix . 'ppv_partner_commissions';
+        $commission_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$commission_table}'");
+        $commission_summary = [];
+        $commission_totals = null;
+        if ($commission_table_exists) {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-partner-commission.php';
+            $commission_summary = PPV_Partner_Commission::get_monthly_summary($partner->id);
+            $commission_totals = PPV_Partner_Commission::get_partner_totals($partner->id);
+        }
+
         // Translations
         $t = self::get_translations($lang);
 
@@ -177,8 +188,17 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
         </div>
         <div class="pd-stat-card">
             <div class="pd-stat-icon" style="background:#fef3c7;color:#d97706"><i class="ri-money-euro-circle-line"></i></div>
-            <div class="pd-stat-num" style="color:#d97706">&euro;<?php echo number_format($estimated_commission, 2, ',', '.'); ?></div>
-            <div class="pd-stat-label"><?php echo $t['stat_commission']; ?> (<?php echo $commission_rate; ?>%)</div>
+            <div class="pd-stat-num" style="color:#d97706">&euro;<?php
+                $display_commission = ($commission_totals && (float)$commission_totals->total_earned > 0)
+                    ? (float)$commission_totals->total_pending
+                    : $estimated_commission;
+                echo number_format($display_commission, 2, ',', '.');
+            ?></div>
+            <div class="pd-stat-label"><?php
+                echo ($commission_totals && (float)$commission_totals->total_earned > 0)
+                    ? ($lang === 'de' ? 'Ausstehend' : 'Pending')
+                    : $t['stat_commission'];
+            ?> (<?php echo $commission_rate; ?>%)</div>
         </div>
     </div>
 
@@ -232,6 +252,68 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
     <!-- Commission Info -->
     <div class="pd-card">
         <h2><i class="ri-money-euro-circle-line"></i> <?php echo $t['commission_title']; ?></h2>
+
+        <?php if ($commission_totals && (float)$commission_totals->total_earned > 0): ?>
+        <!-- Real commission data from tracking -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+            <div style="background:#f0fdf4;border-radius:10px;padding:16px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:#16a34a">&euro;<?php echo number_format((float)$commission_totals->total_earned, 2, ',', '.'); ?></div>
+                <div style="font-size:11px;color:#64748b;margin-top:4px"><?php echo $lang === 'de' ? 'Gesamt verdient' : 'Total earned'; ?></div>
+            </div>
+            <div style="background:#fef3c7;border-radius:10px;padding:16px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:#d97706">&euro;<?php echo number_format((float)$commission_totals->total_pending, 2, ',', '.'); ?></div>
+                <div style="font-size:11px;color:#64748b;margin-top:4px"><?php echo $lang === 'de' ? 'Ausstehend' : 'Pending'; ?></div>
+            </div>
+            <div style="background:#dbeafe;border-radius:10px;padding:16px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:#2563eb">&euro;<?php echo number_format((float)$commission_totals->total_paid, 2, ',', '.'); ?></div>
+                <div style="font-size:11px;color:#64748b;margin-top:4px"><?php echo $lang === 'de' ? 'Ausgezahlt' : 'Paid out'; ?></div>
+            </div>
+        </div>
+
+        <?php if (!empty($commission_summary)): ?>
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:10px">
+            <i class="ri-calendar-line"></i> <?php echo $lang === 'de' ? 'Monatliche Aufstellung' : 'Monthly Breakdown'; ?>
+        </h3>
+        <table class="pd-table">
+            <thead>
+                <tr>
+                    <th><?php echo $lang === 'de' ? 'Monat' : 'Month'; ?></th>
+                    <th><?php echo $lang === 'de' ? 'Shops' : 'Shops'; ?></th>
+                    <th><?php echo $lang === 'de' ? 'Satz' : 'Rate'; ?></th>
+                    <th><?php echo $lang === 'de' ? 'Betrag' : 'Amount'; ?></th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $months_de = ['','Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+                $months_en = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                foreach ($commission_summary as $m):
+                    $parts = explode('-', $m->period_month);
+                    $month_names = $lang === 'de' ? $months_de : $months_en;
+                    $month_label = ($month_names[(int)$parts[1]] ?? $parts[1]) . ' ' . $parts[0];
+                    $is_paid = (float)$m->pending_amount == 0 && (float)$m->paid_amount > 0;
+                ?>
+                <tr>
+                    <td style="font-weight:600"><?php echo $month_label; ?></td>
+                    <td><?php echo (int)$m->store_count; ?></td>
+                    <td><?php echo number_format((float)$m->rate, 1); ?>%</td>
+                    <td style="font-weight:700;color:#16a34a">&euro;<?php echo number_format((float)$m->total_amount, 2, ',', '.'); ?></td>
+                    <td>
+                        <?php if ($is_paid): ?>
+                            <span class="pd-badge pd-badge-premium"><i class="ri-check-line"></i> <?php echo $lang === 'de' ? 'Bezahlt' : 'Paid'; ?></span>
+                        <?php else: ?>
+                            <span class="pd-badge pd-badge-free"><?php echo $lang === 'de' ? 'Ausstehend' : 'Pending'; ?></span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+
+        <?php else: ?>
+        <!-- Fallback: estimated commission -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:14px">
             <div>
                 <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:4px"><?php echo $t['your_rate']; ?></div>
@@ -242,6 +324,8 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f1f5f9;color:#0f172a
                 <div style="font-size:24px;font-weight:800;color:#d97706">&euro;<?php echo number_format($estimated_commission, 2, ',', '.'); ?></div>
             </div>
         </div>
+        <?php endif; ?>
+
         <div style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;font-size:13px;color:#64748b">
             <i class="ri-information-line"></i> <?php echo $t['commission_note']; ?>
         </div>

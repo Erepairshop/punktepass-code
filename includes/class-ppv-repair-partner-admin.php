@@ -805,6 +805,101 @@ function sendWidgetEmail() {
     showActionFeedback('\u2709 E-Mail-Client wird ge\u00f6ffnet...', 'blue');
 }
 
+// ─── Commission Management ──────────────────────────────
+function loadPartnerCommissions(partnerId) {
+    var data = new FormData();
+    data.append("action", "ppv_commission_get");
+    data.append("nonce", NONCE);
+    data.append("partner_id", partnerId);
+    fetch(AJAX, {method:"POST", body:data}).then(function(r){return r.json()}).then(function(res) {
+        var area = document.getElementById("pp-commission-area-" + partnerId);
+        if (!area) return;
+        if (!res.success) { area.innerHTML = '<div style="color:#ef4444;padding:10px">Fehler beim Laden</div>'; return; }
+
+        var summary = res.data.summary || [];
+        var totals = res.data.totals || {};
+
+        var html = '';
+
+        // Totals row
+        html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">';
+        html += '<div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:#16a34a">\u20ac' + parseFloat(totals.total_earned || 0).toFixed(2) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Gesamt verdient</div></div>';
+        html += '<div style="background:#fef3c7;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:#d97706">\u20ac' + parseFloat(totals.total_pending || 0).toFixed(2) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Ausstehend</div></div>';
+        html += '<div style="background:#dbeafe;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:#2563eb">\u20ac' + parseFloat(totals.total_paid || 0).toFixed(2) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Ausgezahlt</div></div>';
+        html += '</div>';
+
+        if (!summary.length) {
+            html += '<div style="text-align:center;padding:20px;color:#94a3b8;background:#f8fafc;border-radius:8px"><i class="ri-money-euro-circle-line" style="font-size:24px;display:block;margin-bottom:6px"></i>Noch keine Provisionen<br><span style="font-size:12px">Klicken Sie &quot;Berechnen&quot; um Provisionen f\u00fcr den aktuellen Monat zu erstellen</span></div>';
+        } else {
+            html += '<table class="pp-table"><thead><tr><th>Monat</th><th>Shops</th><th>Satz</th><th>Betrag</th><th>Status</th><th>Aktion</th></tr></thead><tbody>';
+            summary.forEach(function(m) {
+                var monthLabel = m.period_month;
+                var parts = m.period_month.split('-');
+                if (parts.length === 2) {
+                    var months = ['','Jan','Feb','M\u00e4r','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+                    monthLabel = months[parseInt(parts[1])] + ' ' + parts[0];
+                }
+                var statusBadge = '';
+                var allPaid = parseFloat(m.pending_amount || 0) === 0 && parseFloat(m.paid_amount || 0) > 0;
+                if (allPaid) {
+                    statusBadge = '<span class="pp-badge pp-badge-active">Bezahlt</span>';
+                } else if (parseFloat(m.paid_amount || 0) > 0) {
+                    statusBadge = '<span class="pp-badge pp-badge-pending">Teilweise</span>';
+                } else {
+                    statusBadge = '<span class="pp-badge pp-badge-pending">Ausstehend</span>';
+                }
+                var actionBtn = '';
+                if (!allPaid) {
+                    actionBtn = '<button class="pp-btn pp-btn-sm" style="background:#16a34a;color:#fff" onclick="markCommissionPaid(' + partnerId + ',\'' + m.period_month + '\')"><i class="ri-check-line"></i> Bezahlt</button>';
+                } else {
+                    actionBtn = '<span style="color:#22c55e;font-size:12px"><i class="ri-check-double-line"></i></span>';
+                }
+                html += '<tr>';
+                html += '<td style="font-weight:600">' + monthLabel + '</td>';
+                html += '<td>' + m.store_count + '</td>';
+                html += '<td>' + parseFloat(m.rate || 0).toFixed(1) + '%</td>';
+                html += '<td style="font-weight:700;color:#16a34a">\u20ac' + parseFloat(m.total_amount || 0).toFixed(2) + '</td>';
+                html += '<td>' + statusBadge + '</td>';
+                html += '<td>' + actionBtn + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        area.innerHTML = html;
+    });
+}
+
+function calculateCommissions(partnerId) {
+    var data = new FormData();
+    data.append("action", "ppv_commission_calculate");
+    data.append("nonce", NONCE);
+    data.append("period", new Date().toISOString().slice(0,7));
+    fetch(AJAX, {method:"POST", body:data}).then(function(r){return r.json()}).then(function(res) {
+        if (res.success) {
+            loadPartnerCommissions(partnerId);
+        } else {
+            alert(res.data.message || "Fehler");
+        }
+    });
+}
+
+function markCommissionPaid(partnerId, period) {
+    if (!confirm('Provisionen f\u00fcr ' + period + ' als bezahlt markieren?')) return;
+    var data = new FormData();
+    data.append("action", "ppv_commission_mark_paid");
+    data.append("nonce", NONCE);
+    data.append("partner_id", partnerId);
+    data.append("period", period);
+    fetch(AJAX, {method:"POST", body:data}).then(function(r){return r.json()}).then(function(res) {
+        if (res.success) {
+            loadPartnerCommissions(partnerId);
+        } else {
+            alert(res.data.message || "Fehler");
+        }
+    });
+}
+
 function openCreateModal() {
     document.getElementById("modal-title").textContent = "Neuer Partner";
     document.getElementById("pf-id").value = "";
@@ -917,8 +1012,20 @@ function viewPartner(id) {
             html += '<div style="margin-top:16px;padding:20px;text-align:center;color:#94a3b8;background:#f8fafc;border-radius:8px"><i class="ri-store-2-line" style="font-size:24px"></i><br>Noch keine verwiesenen Shops</div>';
         }
 
+        // Commission section
+        html += '<div style="margin-top:20px;padding-top:16px;border-top:2px solid #f1f5f9">';
+        html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
+        html += '<h4 style="margin:0;flex:1"><i class="ri-money-euro-circle-line"></i> Provisionen</h4>';
+        html += '<button class="pp-btn pp-btn-sm pp-btn-primary" onclick="calculateCommissions('+p.id+')"><i class="ri-calculator-line"></i> Berechnen</button>';
+        html += '</div>';
+        html += '<div id="pp-commission-area-'+p.id+'"><div style="text-align:center;color:#94a3b8;padding:16px"><i class="ri-loader-4-line"></i> Lade Provisionen...</div></div>';
+        html += '</div>';
+
         document.getElementById("pp-detail-content").innerHTML = html;
         document.getElementById("pp-detail-modal").classList.add("active");
+
+        // Load commissions
+        loadPartnerCommissions(p.id);
     });
 }
 
