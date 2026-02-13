@@ -706,8 +706,12 @@ function toggleProblemTag(btn, text) {
     var lastSubmit = sessionStorage.getItem(dupKey);
     if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
         form.style.display = 'none';
+        var bonusBadge = document.querySelector('.repair-bonus-badge');
+        if (bonusBadge) bonusBadge.style.display = 'none';
         successDiv.style.display = 'block';
+        createConfetti();
         startAutoRedirect();
+        successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // Email lookup for returning customers with debounce
@@ -1177,8 +1181,8 @@ function toggleProblemTag(btn, text) {
                 // Start auto-redirect countdown (2 min)
                 startAutoRedirect();
 
-                // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Scroll to success content (past the header)
+                successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else {
                 errorDiv.textContent = data.data?.message || ppvLang.error_generic;
                 errorDiv.style.display = 'block';
