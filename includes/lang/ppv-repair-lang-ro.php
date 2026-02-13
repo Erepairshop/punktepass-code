@@ -28,6 +28,14 @@ return [
     'repair_cookie_accept'      => 'Accept',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Autentificare cu codul QR PunktePass',
+    'repair_qr_scan_title'      => 'Scanați codul QR',
+    'repair_qr_scan_hint'       => 'Țineți codul QR PunktePass în fața camerei',
+    'repair_qr_scan_success'    => 'Bine ai revenit, %s!',
+    'repair_qr_scan_error'      => 'Codul QR nu a fost recunoscut',
+    'repair_qr_scan_no_camera'  => 'Acces la cameră indisponibil',
+
     'repair_step1_title'        => 'Datele dvs.',
     'repair_email_hint'         => 'Cu e-mail primiți puncte bonus și urmărire live a comenzii',
     'repair_step2_title'        => 'Informații suplimentare',

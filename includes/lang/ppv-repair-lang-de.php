@@ -28,6 +28,14 @@ return [
     'repair_cookie_accept'      => 'Akzeptieren',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Mit PunktePass QR-Code anmelden',
+    'repair_qr_scan_title'      => 'QR-Code scannen',
+    'repair_qr_scan_hint'       => 'Halten Sie den PunktePass QR-Code vor die Kamera',
+    'repair_qr_scan_success'    => 'Willkommen zurück, %s!',
+    'repair_qr_scan_error'      => 'QR-Code nicht erkannt',
+    'repair_qr_scan_no_camera'  => 'Kein Kamerazugriff möglich',
+
     'repair_step1_title'        => 'Ihre Daten',
     'repair_email_hint'         => 'Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung',
     'repair_step2_title'        => 'Weitere Angaben',

@@ -97,6 +97,11 @@ class PPV_Repair_Form {
             'points_remaining' => PPV_Lang::t('repair_points_remaining'),
             'points_redeemable'=> PPV_Lang::t('repair_points_redeemable'),
             'auto_redirect'    => PPV_Lang::t('repair_auto_redirect'),
+            'qr_scan_title'    => PPV_Lang::t('repair_qr_scan_title'),
+            'qr_scan_hint'     => PPV_Lang::t('repair_qr_scan_hint'),
+            'qr_scan_success'  => PPV_Lang::t('repair_qr_scan_success'),
+            'qr_scan_error'    => PPV_Lang::t('repair_qr_scan_error'),
+            'qr_scan_no_camera'=> PPV_Lang::t('repair_qr_scan_no_camera'),
         ], JSON_UNESCAPED_UNICODE);
 
         ob_start();
@@ -191,11 +196,40 @@ class PPV_Repair_Form {
 
     <?php else: ?>
 
+    <!-- QR Scan Button (PunktePass login) -->
+    <?php if ($pp_enabled): ?>
+    <div class="repair-qr-login" id="repair-qr-login">
+        <button type="button" id="repair-qr-scan-btn" class="repair-qr-scan-btn" onclick="ppvQrScan.open()">
+            <i class="ri-qr-scan-2-line"></i>
+            <?php echo esc_html(PPV_Lang::t('repair_qr_scan_btn')); ?>
+        </button>
+    </div>
+
+    <!-- QR Camera Modal -->
+    <div id="repair-qr-modal" class="repair-qr-modal" style="display:none">
+        <div class="repair-qr-modal-inner">
+            <div class="repair-qr-modal-header">
+                <h3><i class="ri-qr-scan-2-line"></i> <?php echo esc_html(PPV_Lang::t('repair_qr_scan_title')); ?></h3>
+                <button type="button" class="repair-qr-modal-close" onclick="ppvQrScan.close()">&times;</button>
+            </div>
+            <div class="repair-qr-video-wrap">
+                <video id="repair-qr-video" playsinline></video>
+                <div class="repair-qr-overlay">
+                    <div class="repair-qr-frame"></div>
+                </div>
+            </div>
+            <p class="repair-qr-modal-hint"><?php echo esc_html(PPV_Lang::t('repair_qr_scan_hint')); ?></p>
+            <div id="repair-qr-status" class="repair-qr-status"></div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Form -->
     <form id="repair-form" class="repair-form" autocomplete="off" enctype="multipart/form-data">
         <input type="hidden" name="action" value="ppv_repair_submit">
         <input type="hidden" name="nonce" value="<?php echo $nonce; ?>">
         <input type="hidden" name="store_id" value="<?php echo $store_id; ?>">
+        <input type="hidden" name="qr_user_id" id="rf-qr-user-id" value="">
 
         <!-- Step 1: Customer info -->
         <div class="repair-section" id="step-customer">
@@ -599,9 +633,177 @@ class PPV_Repair_Form {
 
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<?php if ($pp_enabled): ?>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<?php endif; ?>
 <script>
 // Translation strings for JS
 var ppvLang = <?php echo $js_strings; ?>;
+
+<?php if ($pp_enabled): ?>
+// ===== QR SCAN FOR PUNKTEPASS LOGIN =====
+var ppvQrScan = (function() {
+    var modal = document.getElementById('repair-qr-modal');
+    var video = document.getElementById('repair-qr-video');
+    var statusDiv = document.getElementById('repair-qr-status');
+    var scanBtn = document.getElementById('repair-qr-scan-btn');
+    var stream = null;
+    var scanning = false;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
+    var storeId = <?php echo $store_id; ?>;
+
+    function open() {
+        if (!modal || !video) return;
+        modal.style.display = 'flex';
+        statusDiv.textContent = '';
+        statusDiv.className = 'repair-qr-status';
+        startCamera();
+    }
+
+    function close() {
+        if (!modal) return;
+        modal.style.display = 'none';
+        stopCamera();
+    }
+
+    function startCamera() {
+        if (scanning) return;
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
+        })
+        .then(function(s) {
+            stream = s;
+            video.srcObject = s;
+            video.play();
+            scanning = true;
+            requestAnimationFrame(scanFrame);
+        })
+        .catch(function() {
+            statusDiv.textContent = ppvLang.qr_scan_no_camera;
+            statusDiv.className = 'repair-qr-status error';
+        });
+    }
+
+    function stopCamera() {
+        scanning = false;
+        if (stream) {
+            stream.getTracks().forEach(function(t) { t.stop(); });
+            stream = null;
+        }
+        video.srcObject = null;
+    }
+
+    function scanFrame() {
+        if (!scanning || !video.videoWidth) {
+            if (scanning) requestAnimationFrame(scanFrame);
+            return;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        if (typeof jsQR !== 'undefined') {
+            var code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+            if (code && code.data && (code.data.indexOf('PPU') === 0 || code.data.indexOf('PPUSER-') === 0 || code.data.indexOf('PPQR-') === 0)) {
+                onQrDetected(code.data);
+                return;
+            }
+        }
+        requestAnimationFrame(scanFrame);
+    }
+
+    function onQrDetected(qrCode) {
+        scanning = false;
+        statusDiv.textContent = '⏳';
+        statusDiv.className = 'repair-qr-status';
+
+        var fd = new FormData();
+        fd.append('action', 'ppv_repair_qr_lookup');
+        fd.append('qr_code', qrCode);
+        fd.append('store_id', storeId);
+
+        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.data.found) {
+                    var d = data.data;
+                    // Fill form fields
+                    var fields = [
+                        ['rf-name', d.name],
+                        ['rf-email', d.email],
+                        ['rf-phone', d.phone],
+                        ['rf-address', d.address]
+                    ];
+                    fields.forEach(function(f) {
+                        var el = document.getElementById(f[0]);
+                        if (el && f[1]) {
+                            el.value = f[1];
+                            // Green highlight animation
+                            el.style.transition = 'background 0.3s, border-color 0.3s';
+                            el.style.background = '#d1fae5';
+                            el.style.borderColor = '#10b981';
+                            setTimeout(function() {
+                                el.style.background = '';
+                                el.style.borderColor = '';
+                            }, 2000);
+                        }
+                    });
+
+                    // Set hidden user_id
+                    var uidEl = document.getElementById('rf-qr-user-id');
+                    if (uidEl) uidEl.value = d.user_id;
+
+                    // Update scan button to show success
+                    var firstName = (d.name || '').split(' ')[0];
+                    var successMsg = ppvLang.qr_scan_success.replace('%s', firstName);
+                    statusDiv.textContent = '✅ ' + successMsg;
+                    statusDiv.className = 'repair-qr-status success';
+
+                    // Close modal after short delay
+                    setTimeout(function() {
+                        close();
+                        // Update button to "signed in" state
+                        scanBtn.innerHTML = '<i class="ri-checkbox-circle-fill"></i> ' + successMsg;
+                        scanBtn.classList.add('scanned');
+                        // Scroll to first empty field
+                        var firstEmpty = document.querySelector('#repair-form input:not([type=hidden]):not([value=""])');
+                        if (!firstEmpty) {
+                            firstEmpty = document.querySelector('#repair-form input[value=""]');
+                        }
+                    }, 800);
+                } else {
+                    statusDiv.textContent = ppvLang.qr_scan_error;
+                    statusDiv.className = 'repair-qr-status error';
+                    // Resume scanning after 2s
+                    setTimeout(function() {
+                        scanning = true;
+                        requestAnimationFrame(scanFrame);
+                    }, 2000);
+                }
+            })
+            .catch(function() {
+                statusDiv.textContent = ppvLang.qr_scan_error;
+                statusDiv.className = 'repair-qr-status error';
+                setTimeout(function() {
+                    scanning = true;
+                    requestAnimationFrame(scanFrame);
+                }, 2000);
+            });
+    }
+
+    // Close on backdrop click
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) close();
+        });
+    }
+
+    return { open: open, close: close };
+})();
+<?php endif; ?>
 
 
 // ===== New field type handlers =====

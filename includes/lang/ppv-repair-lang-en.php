@@ -28,6 +28,14 @@ return [
     'repair_cookie_accept'      => 'Accept',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Sign in with PunktePass QR code',
+    'repair_qr_scan_title'      => 'Scan QR code',
+    'repair_qr_scan_hint'       => 'Hold the PunktePass QR code in front of the camera',
+    'repair_qr_scan_success'    => 'Welcome back, %s!',
+    'repair_qr_scan_error'      => 'QR code not recognized',
+    'repair_qr_scan_no_camera'  => 'Camera access not available',
+
     'repair_step1_title'        => 'Your Details',
     'repair_email_hint'         => 'With email you receive bonus points and live order tracking',
     'repair_step2_title'        => 'Additional Information',

@@ -28,6 +28,14 @@ return [
     'repair_cookie_accept'      => 'Elfogadás',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Bejelentkezés PunktePass QR-kóddal',
+    'repair_qr_scan_title'      => 'QR-kód beolvasása',
+    'repair_qr_scan_hint'       => 'Tartsa a PunktePass QR-kódot a kamera elé',
+    'repair_qr_scan_success'    => 'Üdv újra, %s!',
+    'repair_qr_scan_error'      => 'QR-kód nem felismerhető',
+    'repair_qr_scan_no_camera'  => 'Nincs kamera hozzáférés',
+
     'repair_step1_title'        => 'Az Ön adatai',
     'repair_email_hint'         => 'E-maillel bónuszpontokat és élő rendeléskövetést kap',
     'repair_step2_title'        => 'További adatok',

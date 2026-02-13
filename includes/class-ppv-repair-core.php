@@ -49,6 +49,10 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
         add_action('wp_ajax_nopriv_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
 
+        // AJAX: QR code user lookup for form prefill (public)
+        add_action('wp_ajax_ppv_repair_qr_lookup', [__CLASS__, 'ajax_qr_lookup']);
+        add_action('wp_ajax_nopriv_ppv_repair_qr_lookup', [__CLASS__, 'ajax_qr_lookup']);
+
         // AJAX: customer email search (autocomplete, public)
         add_action('wp_ajax_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
         add_action('wp_ajax_nopriv_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
@@ -1404,6 +1408,95 @@ class PPV_Repair_Core {
         }
 
         wp_send_json_success(['found' => false]);
+    }
+
+    /** ============================================================
+     * AJAX: QR Code User Lookup (for form prefill)
+     * Scans PunktePass QR → returns user data to prefill form
+     * ============================================================ */
+    public static function ajax_qr_lookup() {
+        $qr_code = sanitize_text_field($_POST['qr_code'] ?? '');
+        $store_id = intval($_POST['store_id'] ?? 0);
+
+        if (empty($qr_code) || !$store_id) {
+            wp_send_json_error(['message' => 'Missing data']);
+        }
+
+        // Use existing QR decode logic from PPV_QR
+        if (!method_exists('PPV_QR', 'decode_user_from_qr')) {
+            wp_send_json_error(['message' => 'QR system not available']);
+        }
+
+        // decode_user_from_qr is private, so we replicate the lookup here
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $user_id = 0;
+
+        // PPUSER-{id}-{qr_token} format
+        if (strpos($qr_code, 'PPUSER-') === 0) {
+            $parts = explode('-', $qr_code);
+            $token = $parts[2] ?? '';
+            if (!empty($token)) {
+                $user_id = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_users WHERE qr_token = %s AND active = 1 LIMIT 1",
+                    $token
+                ));
+            }
+        }
+        // PPQR-{id}-{timed_token} format (30 min)
+        elseif (strpos($qr_code, 'PPQR-') === 0) {
+            $parts = explode('-', $qr_code);
+            $token = $parts[2] ?? '';
+            if (!empty($token) && strlen($token) === 32) {
+                $user_id = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_users WHERE timed_qr_token = %s AND timed_qr_expires > NOW() AND active = 1 LIMIT 1",
+                    $token
+                ));
+            }
+        }
+        // PPU{id}{16-char-token} format
+        elseif (strpos($qr_code, 'PPU') === 0) {
+            $body = substr($qr_code, 3);
+            if (strlen($body) >= 16) {
+                $token = substr($body, -16);
+                $entity_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT entity_id FROM {$prefix}ppv_tokens WHERE token = %s AND entity_type = 'user' AND expires_at > NOW() LIMIT 1",
+                    $token
+                ));
+                if ($entity_id) $user_id = (int)$entity_id;
+            }
+        }
+
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'QR code not recognized']);
+        }
+
+        // Fetch user data for form prefill
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT first_name, last_name, display_name, email, phone_number, address, city
+             FROM {$prefix}ppv_users WHERE id = %d LIMIT 1",
+            $user_id
+        ));
+
+        if (!$user) {
+            wp_send_json_error(['message' => 'User not found']);
+        }
+
+        // Build full name
+        $name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+        if (empty($name)) $name = $user->display_name ?? '';
+
+        // Build address string
+        $address = trim(($user->address ?? '') . (($user->address && $user->city) ? ', ' : '') . ($user->city ?? ''));
+
+        wp_send_json_success([
+            'found'   => true,
+            'user_id' => $user_id,
+            'name'    => $name,
+            'email'   => $user->email ?? '',
+            'phone'   => $user->phone_number ?? '',
+            'address' => $address,
+        ]);
     }
 
     /** ============================================================
