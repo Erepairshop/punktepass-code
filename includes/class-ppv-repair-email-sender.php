@@ -507,7 +507,7 @@ class PPV_Repair_Email_Sender {
 
         // Selected language (persisted via URL param)
         $selected_lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'de';
-        if (!in_array($selected_lang, ['de', 'hu', 'ro', 'en'])) $selected_lang = 'de';
+        if (!in_array($selected_lang, ['de', 'hu', 'ro', 'en', 'it'])) $selected_lang = 'de';
 
         // Default template for Repair Form promotion
         $default_template = 'Guten Tag!
@@ -608,6 +608,39 @@ Erik Borota';
 
         $default_subject_ro = 'Sistem digital de gestionare a reparațiilor pentru magazinul dvs.';
 
+        // Italian promo template
+        $default_template_it = 'Gentile Signora/Signore,
+
+mi chiamo Erik Borota, sono il gestore del sistema digitale di gestione delle riparazioni PunktePass.
+
+Con la nostra <strong>Gestione Riparazioni</strong> può digitalizzare completamente il Suo servizio di riparazione &ndash; dall&rsquo;accettazione dell&rsquo;ordine alla fatturazione.
+
+<strong>I Suoi vantaggi:</strong>
+
+&#128241; <strong>Utilizzabile online e in sede</strong> &ndash; I clienti compilano il modulo online, oppure Lei utilizza un tablet in negozio
+
+&#128206; <strong>Fatture e preventivi</strong> &ndash; Creazione PDF e invio diretto via e-mail
+
+&#128176; <strong>Acquisto digitale</strong> &ndash; Contratti di compravendita per cellulari, veicoli e altro con firma digitale
+
+&#128202; <strong>Esportazione dati</strong> &ndash; CSV, Excel per il Suo commercialista
+
+&#128101; <strong>Gestione clienti</strong> &ndash; Tutti i clienti e la loro cronologia riparazioni in un unico posto
+
+&#11088; <strong>Punti bonus (opzionale)</strong> &ndash; I clienti raccolgono punti e diventano clienti abituali
+
+&#9989; <strong>Ogni settore</strong> &ndash; Telefonia, computer, automotive, biciclette, gioielleria e altro
+
+La configurazione richiede solo pochi minuti ed è <strong>gratuita</strong>.
+
+<strong>Provi ora senza impegno:</strong>
+{{CTA:https://punktepass.de/formular|&#128073; Inizia gratis}}
+
+Cordiali saluti,
+Erik Borota';
+
+        $default_subject_it = 'Sistema digitale di gestione delle riparazioni per il Suo negozio';
+
         // Partnership / Kooperation template (DE)
         $partner_template_de = 'Sehr geehrte Damen und Herren,
 
@@ -655,6 +688,78 @@ info@punktepass.com
 www.punktepass.de/formular';
 
         $partner_subject_en = 'Partnership: Digital Repair Management for Workshops';
+
+        // Partnership / Partnerschaft template (HU)
+        $partner_template_hu = 'Tisztelt Hölgyem/Uram!
+
+Nevem Erik Borota.
+
+A <strong>&bdquo;Reparaturpass&rdquo;</strong> rendszerrel egy <strong>digitális javításkezelő rendszert fejlesztettünk mobiltelefon-szervizek számára</strong>. A rendszer lehetővé teszi a szervizek számára, hogy digitálisan rögzítsék a javítási megrendeléseket, számlákat készítsenek, és QR-kódon keresztül biztosítsák a javítás állapotának nyomon követését.
+
+<strong>A teljes koncepciót itt tekintheti meg:</strong>
+{{CTA:https://punktepass.de/formular/partner|&#128073; Koncepció megtekintése}}
+
+Szívesen egyeztetnék Önnel, hogy egy partnerség kölcsönösen előnyös lehetne-e &ndash; például az Ön szervizügyfeleinek nyújtott többletszolgáltatásként, vagy egy stratégiai együttműködés keretében.
+
+Amennyiben ez a megkeresés nem a megfelelő személyhez érkezett, nagyon hálás lennék, ha továbbítaná az illetékes kollégának.
+
+Várom szíves visszajelzését!
+
+Tisztelettel,
+Erik Borota
+<strong>PunktePass / Reparaturpass</strong>
+info@punktepass.com
+www.punktepass.de/formular';
+
+        $partner_subject_hu = 'Partnerség: Digitális javításkezelés szervizek számára';
+
+        // Partnership / Parteneriat template (RO)
+        $partner_template_ro = 'Stimate Doamne/Domn,
+
+Numele meu este Erik Borota.
+
+Cu <strong>&bdquo;Reparaturpass&rdquo;</strong>, am dezvoltat un <strong>sistem digital de gestionare a reparațiilor pentru ateliere de telefoane mobile</strong>. Sistemul permite atelierelor să înregistreze digital comenzile de reparații, să creeze facturi și să ofere urmărirea stării reparației prin cod QR.
+
+<strong>Puteți vedea conceptul complet aici:</strong>
+{{CTA:https://punktepass.de/formular/partner|&#128073; Vezi conceptul}}
+
+Aș fi bucuros să explorez împreună cu dvs. dacă un parteneriat ar putea fi benefic &ndash; de exemplu, ca un serviciu cu valoare adăugată pentru clienții atelierului dvs. sau ca parte a unei cooperări strategice.
+
+Dacă această solicitare nu a ajuns la persoana potrivită, v-aș fi foarte recunoscător dacă ați putea-o redirecționa către colegul responsabil.
+
+Aștept cu interes răspunsul dvs.
+
+Cu stimă,
+Erik Borota
+<strong>PunktePass / Reparaturpass</strong>
+info@punktepass.com
+www.punktepass.de/formular';
+
+        $partner_subject_ro = 'Parteneriat: Gestionare digitală a reparațiilor pentru ateliere';
+
+        // Partnership / Partnership template (IT)
+        $partner_template_it = 'Gentile Signora/Signore,
+
+mi chiamo Erik Borota.
+
+Con <strong>&ldquo;Reparaturpass&rdquo;</strong>, abbiamo sviluppato un <strong>sistema digitale di gestione delle riparazioni per laboratori di telefonia mobile</strong>. Il sistema consente ai laboratori di registrare digitalmente gli ordini di riparazione, creare fatture e fornire il monitoraggio dello stato della riparazione tramite codice QR.
+
+<strong>Può consultare il concetto completo qui:</strong>
+{{CTA:https://punktepass.de/formular/partner|&#128073; Visualizza il concetto}}
+
+Sarei lieto di esplorare con Lei se una partnership potesse essere vantaggiosa &ndash; ad esempio, come valore aggiunto per i clienti del Suo laboratorio o nell&rsquo;ambito di una cooperazione strategica.
+
+Se questa richiesta non è giunta alla persona competente, Le sarei molto grato se potesse inoltrarla al collega responsabile.
+
+Attendo con piacere un Suo gentile riscontro.
+
+Cordiali saluti,
+Erik Borota
+<strong>PunktePass / Reparaturpass</strong>
+info@punktepass.com
+www.punktepass.de/formular';
+
+        $partner_subject_it = 'Partnership: Gestione digitale delle riparazioni per laboratori';
 
         ?>
 <!DOCTYPE html>
@@ -1196,7 +1301,7 @@ www.punktepass.de/formular';
 
                     <!-- Language Template Selector -->
                     <div class="form-group" id="lang-selector-group">
-                        <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limb&#259;</label>
+                        <label><i class="ri-translate-2"></i> Sprache / Nyelv / Limb&#259; / Lingua</label>
                         <div style="display:flex;gap:8px;margin-bottom:8px;">
                             <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'de' ? 'active' : ''; ?>" data-lang="de" onclick="loadLangTemplate('de')">
                                 DE Deutsch
@@ -1206,6 +1311,9 @@ www.punktepass.de/formular';
                             </button>
                             <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'ro' ? 'active' : ''; ?>" data-lang="ro" onclick="loadLangTemplate('ro')">
                                 RO Rom&#226;n&#259;
+                            </button>
+                            <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'it' ? 'active' : ''; ?>" data-lang="it" onclick="loadLangTemplate('it')">
+                                IT Italiano
                             </button>
                             <button type="button" class="btn btn-sm lang-btn <?php echo $selected_lang === 'en' ? 'active' : ''; ?>" data-lang="en" onclick="loadLangTemplate('en')" style="display:none">
                                 EN English
@@ -1246,8 +1354,8 @@ www.punktepass.de/formular';
                     <div class="form-group">
                         <label>Betreff *</label>
                         <?php
-                        $lang_subjects = ['de' => $default_subject_de, 'hu' => $default_subject_hu, 'ro' => $default_subject_ro];
-                        $lang_templates = ['de' => $default_template, 'hu' => $default_template_hu, 'ro' => $default_template_ro];
+                        $lang_subjects = ['de' => $default_subject_de, 'hu' => $default_subject_hu, 'ro' => $default_subject_ro, 'it' => $default_subject_it, 'en' => $default_subject_de];
+                        $lang_templates = ['de' => $default_template, 'hu' => $default_template_hu, 'ro' => $default_template_ro, 'it' => $default_template_it, 'en' => $default_template];
                         $current_subject = $saved_form_data['subject'] ?? $lang_subjects[$selected_lang];
                         $current_template = $saved_form_data['message'] ?? $lang_templates[$selected_lang];
                         ?>
@@ -1373,6 +1481,10 @@ var langTemplates = {
         ro: {
             subject: <?php echo json_encode($default_subject_ro); ?>,
             message: <?php echo json_encode($default_template_ro); ?>
+        },
+        it: {
+            subject: <?php echo json_encode($default_subject_it); ?>,
+            message: <?php echo json_encode($default_template_it); ?>
         }
     },
     partner: {
@@ -1383,14 +1495,26 @@ var langTemplates = {
         en: {
             subject: <?php echo json_encode($partner_subject_en); ?>,
             message: <?php echo json_encode($partner_template_en); ?>
+        },
+        hu: {
+            subject: <?php echo json_encode($partner_subject_hu); ?>,
+            message: <?php echo json_encode($partner_template_hu); ?>
+        },
+        ro: {
+            subject: <?php echo json_encode($partner_subject_ro); ?>,
+            message: <?php echo json_encode($partner_template_ro); ?>
+        },
+        it: {
+            subject: <?php echo json_encode($partner_subject_it); ?>,
+            message: <?php echo json_encode($partner_template_it); ?>
         }
     }
 };
 
 // Which languages each template type supports
 var tplLangs = {
-    promo: ['de', 'hu', 'ro'],
-    partner: ['de', 'en']
+    promo: ['de', 'hu', 'ro', 'it'],
+    partner: ['de', 'en', 'hu', 'ro', 'it']
 };
 
 function switchTemplateType(type) {
