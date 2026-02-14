@@ -721,6 +721,9 @@ class PPV_Repair_Partner {
         $get_lang = $_GET['lang'] ?? $_GET['ppv_lang'] ?? null;
         if ($get_lang && in_array(strtolower($get_lang), $supported_langs, true)) {
             $lang = strtolower($get_lang);
+            // Persist language choice in cookie
+            @setcookie('ppv_lang', $lang, time() + 31536000, '/', '', is_ssl(), false);
+            $_COOKIE['ppv_lang'] = $lang;
         } elseif (!empty($_COOKIE['ppv_lang']) && in_array(strtolower($_COOKIE['ppv_lang']), $supported_langs, true)) {
             $lang = strtolower($_COOKIE['ppv_lang']);
         }
