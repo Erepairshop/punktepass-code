@@ -43,3 +43,30 @@
         padding: 12px 16px;
     }
 }
+
+/* ========================================
+   🖥️ SCROLL FIX – Desktop + All Pages
+   Both handler-light.css (line 1) and
+   ppv-theme-light.css set overflow:hidden
+   on html/body for the mobile app-shell.
+   This breaks scrolling on ALL pages.
+   Fix: override with !important so it wins
+   regardless of CSS load order.
+   Dashboard app-shell still works via
+   #ppv-dashboard-root (position:fixed) +
+   .ppv-dashboard-netto (overflow-y:auto).
+   ======================================== */
+html {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.ppv-dashboard-netto {
+    min-height: 0;
+    overscroll-behavior: contain;
+}
