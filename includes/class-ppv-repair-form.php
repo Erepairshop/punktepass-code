@@ -131,6 +131,14 @@ class PPV_Repair_Form {
     .repair-select:focus{border-color:var(--repair-accent);background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
     .repair-problem-tag{transition:all .2s cubic-bezier(.4,0,.2,1)}
     .repair-problem-tag.active{background:var(--repair-accent)!important;border-color:var(--repair-accent)!important;color:#fff!important;box-shadow:0 4px 12px rgba(102,126,234,0.25)}
+    .repair-lang{position:absolute;top:12px;right:16px;z-index:50}
+    .repair-lang-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.9);cursor:pointer;transition:all .2s;font-family:inherit}
+    .repair-lang-btn:hover{background:rgba(255,255,255,.25)}
+    .repair-lang-btn i{font-size:14px}
+    .repair-lang-dd{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:rgba(30,30,50,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);border-radius:8px;overflow:hidden;min-width:110px}
+    .repair-lang.open .repair-lang-dd{display:block}
+    .repair-lang-dd a{display:block;padding:7px 14px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;font-weight:500;transition:background .15s}
+    .repair-lang-dd a:hover{background:rgba(255,255,255,.1);color:#fff}
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -138,6 +146,23 @@ class PPV_Repair_Form {
 <div class="repair-page">
     <!-- Hero Header -->
     <div class="repair-header" style="position:relative">
+        <?php
+        $supported_langs = ['de', 'en', 'hu', 'ro', 'it'];
+        $other_langs = array_diff($supported_langs, [$lang]);
+        $lang_names = ['de'=>'Deutsch','en'=>'English','hu'=>'Magyar','ro'=>'Română','it'=>'Italiano'];
+        ?>
+        <div class="repair-lang" onclick="event.stopPropagation();this.classList.toggle('open')" id="repair-lang-switcher">
+            <span class="repair-lang-btn">
+                <i class="ri-global-line"></i>
+                <?php echo strtoupper($lang); ?>
+                <i class="ri-arrow-down-s-line" style="font-size:13px;margin-left:-2px"></i>
+            </span>
+            <div class="repair-lang-dd">
+                <?php foreach ($other_langs as $ol): ?>
+                <a href="?lang=<?php echo $ol; ?>" onclick="document.cookie='ppv_lang=<?php echo $ol; ?>;path=/;max-age=31536000'"><?php echo $lang_names[$ol]; ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
         <div class="repair-hero-bg">
             <div class="repair-hero-blob repair-hero-blob--1"></div>
             <div class="repair-hero-blob repair-hero-blob--2"></div>
@@ -611,6 +636,8 @@ class PPV_Repair_Form {
             <a href="/formular/<?php echo $slug; ?>/agb"><?php echo esc_html(PPV_Lang::t('repair_agb')); ?></a>
             <span class="repair-footer-dot"></span>
             <a href="/formular/<?php echo $slug; ?>/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
+            <span class="repair-footer-dot"></span>
+            <a href="/formular/partner<?php echo $lang !== 'de' ? '?lang=' . $lang : ''; ?>"><i class="ri-handshake-line" style="font-size:12px;vertical-align:-1px"></i> Partner</a>
         </div>
         <div class="repair-footer-powered">
             <?php if ($partner && $partner->logo_url): ?>
@@ -637,6 +664,12 @@ class PPV_Repair_Form {
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <?php endif; ?>
 <script>
+// Close language dropdown when clicking outside
+document.addEventListener('click', function() {
+    var ls = document.getElementById('repair-lang-switcher');
+    if (ls) ls.classList.remove('open');
+});
+
 // Translation strings for JS
 var ppvLang = <?php echo $js_strings; ?>;
 
