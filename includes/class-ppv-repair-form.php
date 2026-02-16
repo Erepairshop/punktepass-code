@@ -589,7 +589,7 @@ class PPV_Repair_Form {
 
         <p class="repair-success-info"><?php echo esc_html(PPV_Lang::t('repair_email_confirmation')); ?></p>
 
-        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back" id="repair-new-form-btn" onclick="sessionStorage.removeItem('ppv_repair_submitted_<?php echo $store_id; ?>')">
+        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back" id="repair-new-form-btn" onclick="sessionStorage.removeItem('ppv_repair_submitted_<?php echo $store_id; ?>');sessionStorage.removeItem('ppv_repair_submitted_<?php echo $store_id; ?>_data')">
             <i class="ri-restart-line"></i> <?php echo esc_html(PPV_Lang::t('repair_new_form')); ?>
         </a>
         <div id="repair-auto-redirect" class="repair-auto-redirect"></div>
@@ -903,17 +903,75 @@ function toggleProblemTag(btn, text) {
     var storeId = <?php echo $store_id; ?>;
     var formSubmitted = false;
 
-    // Check if form was already submitted in this session
-    var dupKey = 'ppv_repair_submitted_' + storeId;
-    var lastSubmit = sessionStorage.getItem(dupKey);
-    if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
+    // Shared function to display the success page with data
+    function showSuccessPage(d) {
+        // Hide form, show success
         form.style.display = 'none';
         var bonusBadge = document.querySelector('.repair-bonus-badge');
         if (bonusBadge) bonusBadge.style.display = 'none';
         successDiv.style.display = 'block';
+
+        // Collapse hero header to give more room for success content
+        var header = document.querySelector('.repair-header');
+        if (header) {
+            header.style.padding = '20px 24px 16px';
+            var heroSubtitle = header.querySelector('.repair-hero-subtitle');
+            if (heroSubtitle) heroSubtitle.style.display = 'none';
+            var heroAddresses = header.querySelectorAll('.repair-shop-address');
+            for (var ai = 0; ai < heroAddresses.length; ai++) heroAddresses[ai].style.display = 'none';
+        }
+
+        // Show tracking card with QR code
+        if (d && d.tracking_url && d.repair_id) {
+            document.getElementById('repair-tracking-card').style.display = 'flex';
+            document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
+            document.getElementById('repair-tracking-link').href = d.tracking_url;
+
+            // Generate QR code
+            if (typeof qrcode !== 'undefined') {
+                var qr = qrcode(0, 'M');
+                qr.addData(d.tracking_url);
+                qr.make();
+                document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
+            }
+        }
+
+        // Show points card
+        <?php if ($pp_enabled): ?>
+        if (d && d.points_added > 0) {
+            document.getElementById('repair-points-card').style.display = 'block';
+            document.getElementById('repair-points-count').textContent = d.points_added;
+            if (d.total_points) {
+                var reqPts = <?php echo $required_pts; ?>;
+                var rwName = <?php echo json_encode($reward_name); ?>;
+                var remaining = Math.max(0, reqPts - d.total_points);
+                var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
+                var suffixStr = remaining > 0
+                    ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
+                    : ppvLang.points_redeemable.replace('%s', rwName);
+                document.getElementById('repair-points-total').textContent = totalStr + ' — ' + suffixStr;
+            }
+        }
+        <?php endif; ?>
+
+        // Confetti effect
         createConfetti();
+
+        // Start auto-redirect countdown (2 min)
         startAutoRedirect();
+
+        // Scroll to success content (past the header)
         successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Check if form was already submitted in this session
+    var dupKey = 'ppv_repair_submitted_' + storeId;
+    var lastSubmit = sessionStorage.getItem(dupKey);
+    if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
+        // Restore saved success data (tracking card, points, QR code)
+        var savedData = null;
+        try { savedData = JSON.parse(sessionStorage.getItem(dupKey + '_data')); } catch(e) {}
+        showSuccessPage(savedData);
     }
 
     // Email lookup for returning customers with debounce
@@ -1333,58 +1391,14 @@ function toggleProblemTag(btn, text) {
                 formSubmitted = true;
                 sessionStorage.setItem(dupKey, Date.now().toString());
 
+                // Save success data for page refresh restore
+                try { sessionStorage.setItem(dupKey + '_data', JSON.stringify(data.data)); } catch(e) {}
+
                 // Clear saved draft
                 localStorage.removeItem(offlineStorageKey);
 
-                // Hide form, show success
-                form.style.display = 'none';
-                var bonusBadge = document.querySelector('.repair-bonus-badge');
-                if (bonusBadge) bonusBadge.style.display = 'none';
-                successDiv.style.display = 'block';
-
-                // Show tracking card with QR code
-                var d = data.data;
-                if (d.tracking_url && d.repair_id) {
-                    document.getElementById('repair-tracking-card').style.display = 'flex';
-                    document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
-                    document.getElementById('repair-tracking-link').href = d.tracking_url;
-
-                    // Generate QR code
-                    if (typeof qrcode !== 'undefined') {
-                        var qr = qrcode(0, 'M');
-                        qr.addData(d.tracking_url);
-                        qr.make();
-                        document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
-                    }
-                }
-
-                // Show points card
-                <?php if ($pp_enabled): ?>
-                if (d.points_added > 0) {
-                    document.getElementById('repair-points-card').style.display = 'block';
-                    document.getElementById('repair-points-count').textContent = d.points_added;
-                    if (d.total_points) {
-                        var reqPts = <?php echo $required_pts; ?>;
-                        var rwName = <?php echo json_encode($reward_name); ?>;
-                        var remaining = Math.max(0, reqPts - d.total_points);
-                        // Use sprintf-style replacement from ppvLang
-                        var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
-                        var suffixStr = remaining > 0
-                            ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
-                            : ppvLang.points_redeemable.replace('%s', rwName);
-                        document.getElementById('repair-points-total').textContent = totalStr + ' — ' + suffixStr;
-                    }
-                }
-                <?php endif; ?>
-
-                // Confetti effect
-                createConfetti();
-
-                // Start auto-redirect countdown (2 min)
-                startAutoRedirect();
-
-                // Scroll to success content (past the header)
-                successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Show success with full data
+                showSuccessPage(data.data);
             } else {
                 errorDiv.textContent = data.data?.message || ppvLang.error_generic;
                 errorDiv.style.display = 'block';
@@ -1436,6 +1450,7 @@ function toggleProblemTag(btn, text) {
             redirectDiv.textContent = ppvLang.auto_redirect.replace('%d', seconds);
             if (seconds <= 0) {
                 sessionStorage.removeItem(dupKey);
+                sessionStorage.removeItem(dupKey + '_data');
                 window.location.href = formUrl;
                 return;
             }
