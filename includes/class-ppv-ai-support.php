@@ -245,6 +245,7 @@ PROMPT;
 
         // Build messages array from history + new message
         $messages = [];
+        $user_msg_count = 0;
         if (is_array($history)) {
             foreach (array_slice($history, -10) as $h) {
                 if (!empty($h['role']) && !empty($h['content'])) {
@@ -252,9 +253,19 @@ PROMPT;
                         'role'    => $h['role'] === 'assistant' ? 'assistant' : 'user',
                         'content' => $h['content'],
                     ];
+                    if ($h['role'] === 'user') $user_msg_count++;
                 }
             }
         }
+
+        // Conversation limit: max 10 user messages, then suggest email
+        if ($user_msg_count >= 10) {
+            wp_send_json_success([
+                'reply'         => self::get_limit_message($lang),
+                'limit_reached' => true,
+            ]);
+        }
+
         $messages[] = ['role' => 'user', 'content' => $message];
 
         $result = PPV_AI_Engine::chat_with_history(
@@ -288,10 +299,7 @@ PROMPT;
         ?>
 
 <style>
-#ppv-ai-chat-fab{position:fixed;bottom:84px;right:16px;z-index:9990;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(102,126,234,0.4);display:flex;align-items:center;justify-content:center;transition:all .3s cubic-bezier(.4,0,.2,1);font-size:22px}
-#ppv-ai-chat-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(102,126,234,0.5)}
-#ppv-ai-chat-fab.open{transform:rotate(0)}
-#ppv-ai-chat-panel{position:fixed;bottom:146px;right:16px;z-index:9991;width:360px;max-width:calc(100vw - 32px);height:460px;max-height:calc(100vh - 200px);background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden;animation:ppvChatSlideUp .25s ease}
+#ppv-ai-chat-panel{position:fixed;bottom:84px;right:16px;z-index:9991;width:360px;max-width:calc(100vw - 32px);height:460px;max-height:calc(100vh - 120px);background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden;animation:ppvChatSlideUp .25s ease}
 @keyframes ppvChatSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 #ppv-ai-chat-panel.visible{display:flex}
 .ppv-chat-header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;flex-shrink:0}
@@ -320,10 +328,6 @@ PROMPT;
 @media(max-width:480px){#ppv-ai-chat-panel{right:8px;left:8px;width:auto;bottom:140px;height:calc(100vh - 180px);max-height:none}}
 </style>
 
-<button type="button" id="ppv-ai-chat-fab" title="<?php echo esc_attr($labels['title']); ?>">
-    <i class="ri-sparkling-2-fill" id="ppv-ai-fab-icon"></i>
-</button>
-
 <div id="ppv-ai-chat-panel">
     <div class="ppv-chat-header">
         <div class="ppv-chat-header-icon"><i class="ri-sparkling-2-fill"></i></div>
@@ -344,18 +348,19 @@ PROMPT;
 
 <script>
 (function(){
-    var fab = document.getElementById('ppv-ai-chat-fab');
+    var navBtn = document.getElementById('ppv-ai-support-nav-btn');
     var panel = document.getElementById('ppv-ai-chat-panel');
     var closeBtn = document.getElementById('ppv-ai-chat-close');
     var input = document.getElementById('ppv-ai-chat-input');
     var sendBtn = document.getElementById('ppv-ai-chat-send');
     var msgContainer = document.getElementById('ppv-ai-chat-messages');
-    var fabIcon = document.getElementById('ppv-ai-fab-icon');
     var ajaxUrl = '<?php echo esc_js(admin_url("admin-ajax.php")); ?>';
     var lang = '<?php echo esc_js($lang); ?>';
     var isOpen = false;
     var isSending = false;
     var history = [];
+
+    if (!navBtn || !panel) return;
 
     // Restore history from sessionStorage
     try {
@@ -375,7 +380,7 @@ PROMPT;
     function toggle() {
         isOpen = !isOpen;
         panel.classList.toggle('visible', isOpen);
-        fabIcon.className = isOpen ? 'ri-close-line' : 'ri-sparkling-2-fill';
+        if (navBtn) navBtn.classList.toggle('active', isOpen);
         if (isOpen) {
             scrollToBottom();
             setTimeout(function() { input.focus(); }, 100);
@@ -440,6 +445,12 @@ PROMPT;
                 if (data.success) {
                     history.push({ role: 'assistant', content: reply });
                     saveHistory();
+                    // Disable input if conversation limit reached
+                    if (data.data.limit_reached) {
+                        input.disabled = true;
+                        sendBtn.disabled = true;
+                        input.placeholder = <?php echo wp_json_encode($labels['limit_placeholder'] ?? 'Limit reached'); ?>;
+                    }
                 }
             })
             .catch(function() {
@@ -454,7 +465,7 @@ PROMPT;
     }
 
     // Events
-    fab.addEventListener('click', toggle);
+    navBtn.addEventListener('click', function(e) { e.preventDefault(); toggle(); });
     closeBtn.addEventListener('click', toggle);
     sendBtn.addEventListener('click', sendMessage);
 
@@ -481,42 +492,61 @@ PROMPT;
     private static function get_labels($lang) {
         $labels = [
             'de' => [
-                'title'       => 'PunktePass Assistent',
-                'status'      => 'KI-Hilfe für Ihr Geschäft',
-                'welcome'     => 'Hallo! Ich bin Ihr PunktePass-Assistent. Wie kann ich Ihnen helfen? Fragen Sie mich zu QR-Center, Statistiken, Belohnungen, Reparaturformularen oder anderen Funktionen.',
-                'placeholder' => 'Nachricht eingeben...',
-                'error'       => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
+                'title'             => 'PunktePass Assistent',
+                'status'            => 'KI-Hilfe für Ihr Geschäft',
+                'welcome'           => 'Hallo! Ich bin Ihr PunktePass-Assistent. Wie kann ich Ihnen helfen? Fragen Sie mich zu QR-Center, Statistiken, Belohnungen, Reparaturformularen oder anderen Funktionen.',
+                'placeholder'       => 'Nachricht eingeben...',
+                'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
+                'limit_placeholder' => 'Chat-Limit erreicht',
             ],
             'hu' => [
-                'title'       => 'PunktePass Asszisztens',
-                'status'      => 'AI segítség az üzletéhez',
-                'welcome'     => 'Helló! Én vagyok a PunktePass asszisztens. Hogyan segíthetek? Kérdezzen a QR Centerről, statisztikákról, jutalmakról, javítási űrlapokról vagy bármilyen funkcióról.',
-                'placeholder' => 'Írjon üzenetet...',
-                'error'       => 'Sajnos hiba történt. Kérjük, próbálja újra.',
+                'title'             => 'PunktePass Asszisztens',
+                'status'            => 'AI segítség az üzletéhez',
+                'welcome'           => 'Helló! Én vagyok a PunktePass asszisztens. Hogyan segíthetek? Kérdezzen a QR Centerről, statisztikákról, jutalmakról, javítási űrlapokról vagy bármilyen funkcióról.',
+                'placeholder'       => 'Írjon üzenetet...',
+                'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
+                'limit_placeholder' => 'Chat limit elérve',
             ],
             'ro' => [
-                'title'       => 'Asistent PunktePass',
-                'status'      => 'Ajutor AI pentru afacerea dvs.',
-                'welcome'     => 'Bună! Sunt asistentul PunktePass. Cum vă pot ajuta? Întrebați-mă despre QR Center, statistici, recompense, formulare de reparații sau alte funcții.',
-                'placeholder' => 'Scrieți un mesaj...',
-                'error'       => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
+                'title'             => 'Asistent PunktePass',
+                'status'            => 'Ajutor AI pentru afacerea dvs.',
+                'welcome'           => 'Bună! Sunt asistentul PunktePass. Cum vă pot ajuta? Întrebați-mă despre QR Center, statistici, recompense, formulare de reparații sau alte funcții.',
+                'placeholder'       => 'Scrieți un mesaj...',
+                'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
+                'limit_placeholder' => 'Limită chat atinsă',
             ],
             'en' => [
-                'title'       => 'PunktePass Assistant',
-                'status'      => 'AI help for your business',
-                'welcome'     => 'Hello! I\'m your PunktePass assistant. How can I help? Ask me about QR Center, statistics, rewards, repair forms, or any other feature.',
-                'placeholder' => 'Type a message...',
-                'error'       => 'Sorry, something went wrong. Please try again.',
+                'title'             => 'PunktePass Assistant',
+                'status'            => 'AI help for your business',
+                'welcome'           => 'Hello! I\'m your PunktePass assistant. How can I help? Ask me about QR Center, statistics, rewards, repair forms, or any other feature.',
+                'placeholder'       => 'Type a message...',
+                'error'             => 'Sorry, something went wrong. Please try again.',
+                'limit_placeholder' => 'Chat limit reached',
             ],
             'it' => [
-                'title'       => 'Assistente PunktePass',
-                'status'      => 'Aiuto AI per la tua attività',
-                'welcome'     => 'Ciao! Sono il tuo assistente PunktePass. Come posso aiutarti? Chiedimi del QR Center, statistiche, premi, moduli di riparazione o altre funzionalità.',
-                'placeholder' => 'Scrivi un messaggio...',
-                'error'       => 'Spiacente, si è verificato un errore. Riprova.',
+                'title'             => 'Assistente PunktePass',
+                'status'            => 'Aiuto AI per la tua attività',
+                'welcome'           => 'Ciao! Sono il tuo assistente PunktePass. Come posso aiutarti? Chiedimi del QR Center, statistiche, premi, moduli di riparazione o altre funzionalità.',
+                'placeholder'       => 'Scrivi un messaggio...',
+                'error'             => 'Spiacente, si è verificato un errore. Riprova.',
+                'limit_placeholder' => 'Limite chat raggiunto',
             ],
         ];
 
         return $labels[$lang] ?? $labels['de'];
+    }
+
+    /**
+     * Get the conversation limit message (suggests email contact)
+     */
+    private static function get_limit_message($lang) {
+        $msgs = [
+            'de' => "Sie haben das Chat-Limit für diese Sitzung erreicht (max. 10 Nachrichten).\n\nFür weitere Hilfe kontaktieren Sie uns:\nsupport@punktepass.de",
+            'hu' => "Elérte a chat limitet ebben a munkamenetben (max. 10 üzenet).\n\nTovábbi segítségért írjon nekünk:\nsupport@punktepass.de",
+            'ro' => "Ați atins limita de chat pentru această sesiune (max. 10 mesaje).\n\nPentru ajutor suplimentar contactați-ne:\nsupport@punktepass.de",
+            'en' => "You've reached the chat limit for this session (max 10 messages).\n\nFor further help, contact us:\nsupport@punktepass.de",
+            'it' => "Hai raggiunto il limite di chat per questa sessione (max 10 messaggi).\n\nPer ulteriore aiuto, contattaci:\nsupport@punktepass.de",
+        ];
+        return $msgs[$lang] ?? $msgs['de'];
     }
 }

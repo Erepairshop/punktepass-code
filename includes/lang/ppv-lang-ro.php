@@ -679,6 +679,7 @@ return [
     'nav_rewards' => 'Recompense',
     'nav_settings' => 'Setări',
     'nav_feedback' => 'Feedback',
+    'nav_support' => 'Ajutor',
     'nav_scanner' => 'Scanner',
     'nav_profile' => 'Profil',
     'nav_start' => 'Start',

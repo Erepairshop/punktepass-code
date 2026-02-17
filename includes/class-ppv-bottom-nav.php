@@ -156,9 +156,8 @@ class PPV_Bottom_Nav {
                 <a href="/rewards" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_rewards')); ?>"><i class="ri-coupon-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_rewards')); ?></span></a>
                 <a href="/mein-profil" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_profile')); ?>"><i class="ri-user-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_profile')); ?></span></a>
                 <a href="/statistik" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_statistics')); ?>"><i class="ri-bar-chart-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_statistics')); ?></span></a>
-                <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_feedback')); ?>"><i class="ri-feedback-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_feedback')); ?></span></a>
+                <a href="#" class="nav-item" id="ppv-ai-support-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_support') ?: 'Support'); ?>"><i class="ri-sparkling-2-fill"></i><span><?php echo esc_html(PPV_Lang::t('nav_support') ?: 'Support'); ?></span></a>
             </nav>
-            <?php self::render_feedback_modal('handler'); ?>
         <?php
         // --- Alap user nav (basic users) ---
         else: ?>

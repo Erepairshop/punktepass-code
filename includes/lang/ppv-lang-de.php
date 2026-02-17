@@ -650,6 +650,7 @@ return [
     'nav_rewards' => 'Belohnungen',
     'nav_settings' => 'Einstellungen',
     'nav_feedback' => 'Feedback',
+    'nav_support' => 'Support',
     'nav_scanner' => 'Scanner',
     'nav_profile' => 'Profil',
     'nav_start' => 'Start',

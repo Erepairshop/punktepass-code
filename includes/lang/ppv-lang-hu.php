@@ -670,6 +670,7 @@ return [
     'nav_rewards' => 'Jutalmak',
     'nav_settings' => 'Beállítások',
     'nav_feedback' => 'Visszajelzés',
+    'nav_support' => 'Segítség',
     'nav_scanner' => 'Szkenner',
     'nav_profile' => 'Profil',
     'nav_start' => 'Kezdés',

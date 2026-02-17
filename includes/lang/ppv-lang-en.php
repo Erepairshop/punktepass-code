@@ -635,6 +635,7 @@ return [
 'nav_rewards' => 'Rewards',
 'nav_settings' => 'Settings',
 'nav_feedback' => 'Feedback',
+'nav_support' => 'Support',
 'nav_scanner' => 'Scanner',
 'nav_profile' => 'Profile',
 'nav_start' => 'Home',
