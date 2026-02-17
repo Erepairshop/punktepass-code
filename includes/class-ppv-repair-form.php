@@ -56,7 +56,20 @@ class PPV_Repair_Form {
             'accessories'     => ['enabled' => true, 'label' => PPV_Lang::t('repair_accessories_label')],
             'customer_phone'  => ['enabled' => true, 'label' => PPV_Lang::t('repair_phone_label')],
             'customer_address'=> ['enabled' => true, 'label' => PPV_Lang::t('repair_address_label')],
-            'muster_image'    => ['enabled' => true, 'label' => PPV_Lang::t('repair_pattern_label')]
+            'muster_image'    => ['enabled' => true, 'label' => PPV_Lang::t('repair_pattern_label')],
+            'photo_upload'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_photo')],
+            'condition_check' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition')],
+            'priority'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_priority')],
+            'purchase_date'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_purchase_date')],
+            'device_color'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_color')],
+            'cost_limit'      => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+            // KFZ / Vehicle fields
+            'vehicle_plate'       => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_plate_label')],
+            'vehicle_vin'         => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_vin_label')],
+            'vehicle_mileage'     => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_mileage_label')],
+            'vehicle_first_reg'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
+            'vehicle_tuev'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
+            'condition_check_kfz' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_kfz')],
         ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
@@ -97,6 +110,16 @@ class PPV_Repair_Form {
             'points_remaining' => PPV_Lang::t('repair_points_remaining'),
             'points_redeemable'=> PPV_Lang::t('repair_points_redeemable'),
             'auto_redirect'    => PPV_Lang::t('repair_auto_redirect'),
+            'qr_scan_title'    => PPV_Lang::t('repair_qr_scan_title'),
+            'qr_scan_hint'     => PPV_Lang::t('repair_qr_scan_hint'),
+            'qr_scan_success'  => PPV_Lang::t('repair_qr_scan_success'),
+            'qr_scan_error'    => PPV_Lang::t('repair_qr_scan_error'),
+            'qr_scan_no_camera'=> PPV_Lang::t('repair_qr_scan_no_camera'),
+            'ai_btn'           => PPV_Lang::t('repair_ai_btn'),
+            'ai_analyzing'     => PPV_Lang::t('repair_ai_analyzing'),
+            'ai_title'         => PPV_Lang::t('repair_ai_title'),
+            'ai_error'         => PPV_Lang::t('repair_ai_error'),
+            'ai_hint'          => PPV_Lang::t('repair_ai_hint'),
         ], JSON_UNESCAPED_UNICODE);
 
         ob_start();
@@ -126,6 +149,14 @@ class PPV_Repair_Form {
     .repair-select:focus{border-color:var(--repair-accent);background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
     .repair-problem-tag{transition:all .2s cubic-bezier(.4,0,.2,1)}
     .repair-problem-tag.active{background:var(--repair-accent)!important;border-color:var(--repair-accent)!important;color:#fff!important;box-shadow:0 4px 12px rgba(102,126,234,0.25)}
+    .repair-lang{position:absolute;top:12px;right:16px;z-index:50}
+    .repair-lang-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.9);cursor:pointer;transition:all .2s;font-family:inherit}
+    .repair-lang-btn:hover{background:rgba(255,255,255,.25)}
+    .repair-lang-btn i{font-size:14px}
+    .repair-lang-dd{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:rgba(30,30,50,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);border-radius:8px;overflow:hidden;min-width:110px}
+    .repair-lang.open .repair-lang-dd{display:block}
+    .repair-lang-dd a{display:block;padding:7px 14px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;font-weight:500;transition:background .15s}
+    .repair-lang-dd a:hover{background:rgba(255,255,255,.1);color:#fff}
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -133,6 +164,23 @@ class PPV_Repair_Form {
 <div class="repair-page">
     <!-- Hero Header -->
     <div class="repair-header" style="position:relative">
+        <?php
+        $supported_langs = ['de', 'en', 'hu', 'ro', 'it'];
+        $other_langs = array_diff($supported_langs, [$lang]);
+        $lang_names = ['de'=>'Deutsch','en'=>'English','hu'=>'Magyar','ro'=>'Română','it'=>'Italiano'];
+        ?>
+        <div class="repair-lang" onclick="event.stopPropagation();this.classList.toggle('open')" id="repair-lang-switcher">
+            <span class="repair-lang-btn">
+                <i class="ri-global-line"></i>
+                <?php echo strtoupper($lang); ?>
+                <i class="ri-arrow-down-s-line" style="font-size:13px;margin-left:-2px"></i>
+            </span>
+            <div class="repair-lang-dd">
+                <?php foreach ($other_langs as $ol): ?>
+                <a href="?lang=<?php echo $ol; ?>" onclick="document.cookie='ppv_lang=<?php echo $ol; ?>;path=/;max-age=31536000'"><?php echo $lang_names[$ol]; ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
         <div class="repair-hero-bg">
             <div class="repair-hero-blob repair-hero-blob--1"></div>
             <div class="repair-hero-blob repair-hero-blob--2"></div>
@@ -191,11 +239,40 @@ class PPV_Repair_Form {
 
     <?php else: ?>
 
+    <!-- QR Scan Button (PunktePass login) -->
+    <?php if ($pp_enabled): ?>
+    <div class="repair-qr-login" id="repair-qr-login">
+        <button type="button" id="repair-qr-scan-btn" class="repair-qr-scan-btn" onclick="ppvQrScan.open()">
+            <i class="ri-qr-scan-2-line"></i>
+            <?php echo esc_html(PPV_Lang::t('repair_qr_scan_btn')); ?>
+        </button>
+    </div>
+
+    <!-- QR Camera Modal -->
+    <div id="repair-qr-modal" class="repair-qr-modal" style="display:none">
+        <div class="repair-qr-modal-inner">
+            <div class="repair-qr-modal-header">
+                <h3><i class="ri-qr-scan-2-line"></i> <?php echo esc_html(PPV_Lang::t('repair_qr_scan_title')); ?></h3>
+                <button type="button" class="repair-qr-modal-close" onclick="ppvQrScan.close()">&times;</button>
+            </div>
+            <div class="repair-qr-video-wrap">
+                <video id="repair-qr-video" playsinline></video>
+                <div class="repair-qr-overlay">
+                    <div class="repair-qr-frame"></div>
+                </div>
+            </div>
+            <p class="repair-qr-modal-hint"><?php echo esc_html(PPV_Lang::t('repair_qr_scan_hint')); ?></p>
+            <div id="repair-qr-status" class="repair-qr-status"></div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Form -->
     <form id="repair-form" class="repair-form" autocomplete="off" enctype="multipart/form-data">
         <input type="hidden" name="action" value="ppv_repair_submit">
         <input type="hidden" name="nonce" value="<?php echo $nonce; ?>">
         <input type="hidden" name="store_id" value="<?php echo $store_id; ?>">
+        <input type="hidden" name="qr_user_id" id="rf-qr-user-id" value="">
 
         <!-- Step 1: Customer info -->
         <div class="repair-section" id="step-customer">
@@ -234,7 +311,7 @@ class PPV_Repair_Form {
 
         <!-- Step 2: Informationen -->
         <?php
-        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']) || !empty($field_config['muster_image']['enabled']);
+        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']) || !empty($field_config['muster_image']['enabled']) || !empty($field_config['vehicle_plate']['enabled']) || !empty($field_config['vehicle_vin']['enabled']) || !empty($field_config['vehicle_mileage']['enabled']) || !empty($field_config['vehicle_first_reg']['enabled']) || !empty($field_config['vehicle_tuev']['enabled']) || !empty($field_config['condition_check_kfz']['enabled']);
         if ($has_device_fields):
         ?>
         <div class="repair-section" id="step-device">
@@ -352,6 +429,80 @@ class PPV_Repair_Form {
                 <input type="hidden" name="condition_check" id="rf-condition-data">
             </div>
             <?php endif; ?>
+
+            <?php // === KFZ / Vehicle fields === ?>
+            <?php if (!empty($field_config['vehicle_plate']['enabled']) || !empty($field_config['vehicle_vin']['enabled'])): ?>
+            <div class="repair-row">
+                <?php if (!empty($field_config['vehicle_plate']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-plate"><?php echo esc_html($field_config['vehicle_plate']['label'] ?? PPV_Lang::t('repair_vehicle_plate_label')); ?></label>
+                    <input type="text" id="rf-vehicle-plate" name="vehicle_plate" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_plate_placeholder')); ?>" style="text-transform:uppercase">
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($field_config['vehicle_vin']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-vin"><?php echo esc_html($field_config['vehicle_vin']['label'] ?? PPV_Lang::t('repair_vehicle_vin_label')); ?></label>
+                    <input type="text" id="rf-vehicle-vin" name="vehicle_vin" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_vin_placeholder')); ?>" maxlength="17" style="text-transform:uppercase">
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['vehicle_mileage']['enabled'])): ?>
+            <div class="repair-field">
+                <label for="rf-vehicle-mileage"><?php echo esc_html($field_config['vehicle_mileage']['label'] ?? PPV_Lang::t('repair_vehicle_mileage_label')); ?></label>
+                <input type="number" id="rf-vehicle-mileage" name="vehicle_mileage" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_mileage_placeholder')); ?>" min="0" step="1">
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['vehicle_first_reg']['enabled']) || !empty($field_config['vehicle_tuev']['enabled'])): ?>
+            <div class="repair-row">
+                <?php if (!empty($field_config['vehicle_first_reg']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-first-reg"><?php echo esc_html($field_config['vehicle_first_reg']['label'] ?? PPV_Lang::t('repair_vehicle_first_reg_label')); ?></label>
+                    <input type="text" id="rf-vehicle-first-reg" name="vehicle_first_reg" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_first_reg_placeholder')); ?>">
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($field_config['vehicle_tuev']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-tuev"><?php echo esc_html($field_config['vehicle_tuev']['label'] ?? PPV_Lang::t('repair_vehicle_tuev_label')); ?></label>
+                    <input type="text" id="rf-vehicle-tuev" name="vehicle_tuev" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_tuev_placeholder')); ?>">
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['condition_check_kfz']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['condition_check_kfz']['label'] ?? PPV_Lang::t('repair_fb_condition_kfz')); ?></label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rf-condition-kfz-grid">
+                    <?php
+                    $kfz_parts = [
+                        PPV_Lang::t('repair_cond_kfz_motor'),
+                        PPV_Lang::t('repair_cond_kfz_getriebe'),
+                        PPV_Lang::t('repair_cond_kfz_bremsen'),
+                        PPV_Lang::t('repair_cond_kfz_reifen'),
+                        PPV_Lang::t('repair_cond_kfz_karosserie'),
+                        PPV_Lang::t('repair_cond_kfz_elektronik'),
+                        PPV_Lang::t('repair_cond_kfz_klima'),
+                        PPV_Lang::t('repair_cond_kfz_beleuchtung'),
+                        PPV_Lang::t('repair_cond_kfz_lenkung'),
+                        PPV_Lang::t('repair_cond_kfz_fahrwerk'),
+                    ];
+                    foreach ($kfz_parts as $part): ?>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc">
+                        <span><?php echo esc_html($part); ?></span>
+                        <div style="display:flex;gap:4px">
+                            <button type="button" class="repair-cond-kfz-btn" data-part="<?php echo esc_attr($part); ?>" data-val="ok" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#d1fae5;color:#059669" onclick="ppvCondKfzToggle(this,'ok')">OK</button>
+                            <button type="button" class="repair-cond-kfz-btn" data-part="<?php echo esc_attr($part); ?>" data-val="defekt" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#f1f5f9;color:#94a3b8" onclick="ppvCondKfzToggle(this,'defekt')">Defekt</button>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <input type="hidden" name="condition_check_kfz" id="rf-condition-kfz-data">
+            </div>
+            <?php endif; ?>
+
             <?php endif; ?>
 
         <!-- Step: Problem -->
@@ -375,6 +526,24 @@ class PPV_Repair_Form {
             <div class="repair-field">
                 <label for="rf-problem"><?php echo esc_html(PPV_Lang::t('repair_problem_label')); ?></label>
                 <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo esc_attr(!empty($custom_problems) ? PPV_Lang::t('repair_problem_detail_placeholder') : PPV_Lang::t('repair_problem_placeholder')); ?>"></textarea>
+                <?php
+                require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
+                if (PPV_AI_Engine::is_available()):
+                ?>
+                <button type="button" id="rf-ai-btn" class="repair-ai-btn" style="display:none">
+                    <i class="ri-sparkling-2-fill"></i>
+                    <span id="rf-ai-btn-text"><?php echo esc_html(PPV_Lang::t('repair_ai_btn')); ?></span>
+                </button>
+                <div id="rf-ai-result" class="repair-ai-result" style="display:none">
+                    <div class="repair-ai-header">
+                        <i class="ri-sparkling-2-fill"></i>
+                        <span><?php echo esc_html(PPV_Lang::t('repair_ai_title')); ?></span>
+                        <button type="button" id="rf-ai-close" class="repair-ai-close">&times;</button>
+                    </div>
+                    <div id="rf-ai-content" class="repair-ai-content"></div>
+                    <div class="repair-ai-hint"><?php echo esc_html(PPV_Lang::t('repair_ai_hint')); ?></div>
+                </div>
+                <?php endif; ?>
             </div>
 
 
@@ -555,7 +724,7 @@ class PPV_Repair_Form {
 
         <p class="repair-success-info"><?php echo esc_html(PPV_Lang::t('repair_email_confirmation')); ?></p>
 
-        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back" id="repair-new-form-btn" onclick="sessionStorage.removeItem('ppv_repair_submitted_<?php echo $store_id; ?>')">
+        <a href="/formular/<?php echo $slug; ?>" class="repair-btn-back" id="repair-new-form-btn" onclick="sessionStorage.removeItem('ppv_repair_submitted_<?php echo $store_id; ?>');sessionStorage.removeItem('ppv_repair_submitted_<?php echo $store_id; ?>_data')">
             <i class="ri-restart-line"></i> <?php echo esc_html(PPV_Lang::t('repair_new_form')); ?>
         </a>
         <div id="repair-auto-redirect" class="repair-auto-redirect"></div>
@@ -577,6 +746,8 @@ class PPV_Repair_Form {
             <a href="/formular/<?php echo $slug; ?>/agb"><?php echo esc_html(PPV_Lang::t('repair_agb')); ?></a>
             <span class="repair-footer-dot"></span>
             <a href="/formular/<?php echo $slug; ?>/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
+            <span class="repair-footer-dot"></span>
+            <a href="/formular/partner<?php echo $lang !== 'de' ? '?lang=' . $lang : ''; ?>"><i class="ri-handshake-line" style="font-size:12px;vertical-align:-1px"></i> Partner</a>
         </div>
         <div class="repair-footer-powered">
             <?php if ($partner && $partner->logo_url): ?>
@@ -599,9 +770,183 @@ class PPV_Repair_Form {
 
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<?php if ($pp_enabled): ?>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<?php endif; ?>
 <script>
+// Close language dropdown when clicking outside
+document.addEventListener('click', function() {
+    var ls = document.getElementById('repair-lang-switcher');
+    if (ls) ls.classList.remove('open');
+});
+
 // Translation strings for JS
 var ppvLang = <?php echo $js_strings; ?>;
+
+<?php if ($pp_enabled): ?>
+// ===== QR SCAN FOR PUNKTEPASS LOGIN =====
+var ppvQrScan = (function() {
+    var modal = document.getElementById('repair-qr-modal');
+    var video = document.getElementById('repair-qr-video');
+    var statusDiv = document.getElementById('repair-qr-status');
+    var scanBtn = document.getElementById('repair-qr-scan-btn');
+    var stream = null;
+    var scanning = false;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
+    var storeId = <?php echo $store_id; ?>;
+
+    function open() {
+        if (!modal || !video) return;
+        modal.style.display = 'flex';
+        statusDiv.textContent = '';
+        statusDiv.className = 'repair-qr-status';
+        startCamera();
+    }
+
+    function close() {
+        if (!modal) return;
+        modal.style.display = 'none';
+        stopCamera();
+    }
+
+    function startCamera() {
+        if (scanning) return;
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
+        })
+        .then(function(s) {
+            stream = s;
+            video.srcObject = s;
+            video.play();
+            scanning = true;
+            requestAnimationFrame(scanFrame);
+        })
+        .catch(function() {
+            statusDiv.textContent = ppvLang.qr_scan_no_camera;
+            statusDiv.className = 'repair-qr-status error';
+        });
+    }
+
+    function stopCamera() {
+        scanning = false;
+        if (stream) {
+            stream.getTracks().forEach(function(t) { t.stop(); });
+            stream = null;
+        }
+        video.srcObject = null;
+    }
+
+    function scanFrame() {
+        if (!scanning || !video.videoWidth) {
+            if (scanning) requestAnimationFrame(scanFrame);
+            return;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        if (typeof jsQR !== 'undefined') {
+            var code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+            if (code && code.data && (code.data.indexOf('PPU') === 0 || code.data.indexOf('PPUSER-') === 0 || code.data.indexOf('PPQR-') === 0)) {
+                onQrDetected(code.data);
+                return;
+            }
+        }
+        requestAnimationFrame(scanFrame);
+    }
+
+    function onQrDetected(qrCode) {
+        scanning = false;
+        statusDiv.textContent = '⏳';
+        statusDiv.className = 'repair-qr-status';
+
+        var fd = new FormData();
+        fd.append('action', 'ppv_repair_qr_lookup');
+        fd.append('qr_code', qrCode);
+        fd.append('store_id', storeId);
+
+        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.data.found) {
+                    var d = data.data;
+                    // Fill form fields
+                    var fields = [
+                        ['rf-name', d.name],
+                        ['rf-email', d.email],
+                        ['rf-phone', d.phone],
+                        ['rf-address', d.address]
+                    ];
+                    fields.forEach(function(f) {
+                        var el = document.getElementById(f[0]);
+                        if (el && f[1]) {
+                            el.value = f[1];
+                            // Green highlight animation
+                            el.style.transition = 'background 0.3s, border-color 0.3s';
+                            el.style.background = '#d1fae5';
+                            el.style.borderColor = '#10b981';
+                            setTimeout(function() {
+                                el.style.background = '';
+                                el.style.borderColor = '';
+                            }, 2000);
+                        }
+                    });
+
+                    // Set hidden user_id
+                    var uidEl = document.getElementById('rf-qr-user-id');
+                    if (uidEl) uidEl.value = d.user_id;
+
+                    // Update scan button to show success
+                    var firstName = (d.name || '').split(' ')[0];
+                    var successMsg = ppvLang.qr_scan_success.replace('%s', firstName);
+                    statusDiv.textContent = '✅ ' + successMsg;
+                    statusDiv.className = 'repair-qr-status success';
+
+                    // Close modal after short delay
+                    setTimeout(function() {
+                        close();
+                        // Update button to "signed in" state
+                        scanBtn.innerHTML = '<i class="ri-checkbox-circle-fill"></i> ' + successMsg;
+                        scanBtn.classList.add('scanned');
+                        // Scroll to first empty field
+                        var firstEmpty = document.querySelector('#repair-form input:not([type=hidden]):not([value=""])');
+                        if (!firstEmpty) {
+                            firstEmpty = document.querySelector('#repair-form input[value=""]');
+                        }
+                    }, 800);
+                } else {
+                    statusDiv.textContent = ppvLang.qr_scan_error;
+                    statusDiv.className = 'repair-qr-status error';
+                    // Resume scanning after 2s
+                    setTimeout(function() {
+                        scanning = true;
+                        requestAnimationFrame(scanFrame);
+                    }, 2000);
+                }
+            })
+            .catch(function() {
+                statusDiv.textContent = ppvLang.qr_scan_error;
+                statusDiv.className = 'repair-qr-status error';
+                setTimeout(function() {
+                    scanning = true;
+                    requestAnimationFrame(scanFrame);
+                }, 2000);
+            });
+    }
+
+    // Close on backdrop click
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) close();
+        });
+    }
+
+    return { open: open, close: close };
+})();
+<?php endif; ?>
 
 
 // ===== New field type handlers =====
@@ -624,6 +969,19 @@ function ppvCondToggle(btn,val){
         if(parseFloat(b.style.opacity)===1){result[b.getAttribute('data-part')]=b.getAttribute('data-val')}
     });
     var inp=document.getElementById('rf-condition-data');
+    if(inp) inp.value=JSON.stringify(result);
+}
+// KFZ Condition check toggle
+function ppvCondKfzToggle(btn,val){
+    var row=btn.parentNode;
+    row.querySelectorAll('.repair-cond-kfz-btn').forEach(function(b){b.style.opacity='0.4';b.style.background='#f1f5f9';b.style.color='#94a3b8'});
+    if(val==='ok'){btn.style.opacity='1';btn.style.background='#d1fae5';btn.style.color='#059669'}
+    else{btn.style.opacity='1';btn.style.background='#fee2e2';btn.style.color='#dc2626'}
+    var result={};
+    document.querySelectorAll('#rf-condition-kfz-grid .repair-cond-kfz-btn').forEach(function(b){
+        if(parseFloat(b.style.opacity)===1){result[b.getAttribute('data-part')]=b.getAttribute('data-val')}
+    });
+    var inp=document.getElementById('rf-condition-kfz-data');
     if(inp) inp.value=JSON.stringify(result);
 }
 // Photo preview
@@ -701,13 +1059,75 @@ function toggleProblemTag(btn, text) {
     var storeId = <?php echo $store_id; ?>;
     var formSubmitted = false;
 
+    // Shared function to display the success page with data
+    function showSuccessPage(d) {
+        // Hide form, show success
+        form.style.display = 'none';
+        var bonusBadge = document.querySelector('.repair-bonus-badge');
+        if (bonusBadge) bonusBadge.style.display = 'none';
+        successDiv.style.display = 'block';
+
+        // Collapse hero header to give more room for success content
+        var header = document.querySelector('.repair-header');
+        if (header) {
+            header.style.padding = '20px 24px 16px';
+            var heroSubtitle = header.querySelector('.repair-hero-subtitle');
+            if (heroSubtitle) heroSubtitle.style.display = 'none';
+            var heroAddresses = header.querySelectorAll('.repair-shop-address');
+            for (var ai = 0; ai < heroAddresses.length; ai++) heroAddresses[ai].style.display = 'none';
+        }
+
+        // Show tracking card with QR code
+        if (d && d.tracking_url && d.repair_id) {
+            document.getElementById('repair-tracking-card').style.display = 'flex';
+            document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
+            document.getElementById('repair-tracking-link').href = d.tracking_url;
+
+            // Generate QR code
+            if (typeof qrcode !== 'undefined') {
+                var qr = qrcode(0, 'M');
+                qr.addData(d.tracking_url);
+                qr.make();
+                document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
+            }
+        }
+
+        // Show points card
+        <?php if ($pp_enabled): ?>
+        if (d && d.points_added > 0) {
+            document.getElementById('repair-points-card').style.display = 'block';
+            document.getElementById('repair-points-count').textContent = d.points_added;
+            if (d.total_points) {
+                var reqPts = <?php echo $required_pts; ?>;
+                var rwName = <?php echo json_encode($reward_name); ?>;
+                var remaining = Math.max(0, reqPts - d.total_points);
+                var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
+                var suffixStr = remaining > 0
+                    ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
+                    : ppvLang.points_redeemable.replace('%s', rwName);
+                document.getElementById('repair-points-total').textContent = totalStr + ' — ' + suffixStr;
+            }
+        }
+        <?php endif; ?>
+
+        // Confetti effect
+        createConfetti();
+
+        // Start auto-redirect countdown (2 min)
+        startAutoRedirect();
+
+        // Scroll to success content (past the header)
+        successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     // Check if form was already submitted in this session
     var dupKey = 'ppv_repair_submitted_' + storeId;
     var lastSubmit = sessionStorage.getItem(dupKey);
     if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
-        form.style.display = 'none';
-        successDiv.style.display = 'block';
-        startAutoRedirect();
+        // Restore saved success data (tracking card, points, QR code)
+        var savedData = null;
+        try { savedData = JSON.parse(sessionStorage.getItem(dupKey + '_data')); } catch(e) {}
+        showSuccessPage(savedData);
     }
 
     // Email lookup for returning customers with debounce
@@ -1127,58 +1547,14 @@ function toggleProblemTag(btn, text) {
                 formSubmitted = true;
                 sessionStorage.setItem(dupKey, Date.now().toString());
 
+                // Save success data for page refresh restore
+                try { sessionStorage.setItem(dupKey + '_data', JSON.stringify(data.data)); } catch(e) {}
+
                 // Clear saved draft
                 localStorage.removeItem(offlineStorageKey);
 
-                // Hide form, show success
-                form.style.display = 'none';
-                var bonusBadge = document.querySelector('.repair-bonus-badge');
-                if (bonusBadge) bonusBadge.style.display = 'none';
-                successDiv.style.display = 'block';
-
-                // Show tracking card with QR code
-                var d = data.data;
-                if (d.tracking_url && d.repair_id) {
-                    document.getElementById('repair-tracking-card').style.display = 'flex';
-                    document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
-                    document.getElementById('repair-tracking-link').href = d.tracking_url;
-
-                    // Generate QR code
-                    if (typeof qrcode !== 'undefined') {
-                        var qr = qrcode(0, 'M');
-                        qr.addData(d.tracking_url);
-                        qr.make();
-                        document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
-                    }
-                }
-
-                // Show points card
-                <?php if ($pp_enabled): ?>
-                if (d.points_added > 0) {
-                    document.getElementById('repair-points-card').style.display = 'block';
-                    document.getElementById('repair-points-count').textContent = d.points_added;
-                    if (d.total_points) {
-                        var reqPts = <?php echo $required_pts; ?>;
-                        var rwName = <?php echo json_encode($reward_name); ?>;
-                        var remaining = Math.max(0, reqPts - d.total_points);
-                        // Use sprintf-style replacement from ppvLang
-                        var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
-                        var suffixStr = remaining > 0
-                            ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
-                            : ppvLang.points_redeemable.replace('%s', rwName);
-                        document.getElementById('repair-points-total').textContent = totalStr + ' — ' + suffixStr;
-                    }
-                }
-                <?php endif; ?>
-
-                // Confetti effect
-                createConfetti();
-
-                // Start auto-redirect countdown (2 min)
-                startAutoRedirect();
-
-                // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Show success with full data
+                showSuccessPage(data.data);
             } else {
                 errorDiv.textContent = data.data?.message || ppvLang.error_generic;
                 errorDiv.style.display = 'block';
@@ -1230,6 +1606,7 @@ function toggleProblemTag(btn, text) {
             redirectDiv.textContent = ppvLang.auto_redirect.replace('%d', seconds);
             if (seconds <= 0) {
                 sessionStorage.removeItem(dupKey);
+                sessionStorage.removeItem(dupKey + '_data');
                 window.location.href = formUrl;
                 return;
             }
@@ -1411,6 +1788,113 @@ function toggleProblemTag(btn, text) {
     }
 })();
 </script>
+
+<?php if (PPV_AI_Engine::is_available()): ?>
+<style>
+.repair-ai-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:8px 16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit;box-shadow:0 2px 8px rgba(102,126,234,0.25)}
+.repair-ai-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(102,126,234,0.35)}
+.repair-ai-btn:active{transform:translateY(0)}
+.repair-ai-btn:disabled{opacity:.6;cursor:wait;transform:none}
+.repair-ai-btn i{font-size:16px}
+@keyframes ppvAiPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.repair-ai-btn:disabled i{animation:ppvAiPulse 1.2s ease-in-out infinite}
+.repair-ai-result{margin-top:10px;border:1.5px solid #e0e7ff;border-radius:12px;background:linear-gradient(135deg,#f5f3ff 0%,#eff6ff 100%);overflow:hidden;animation:ppvAiFadeIn .3s ease}
+@keyframes ppvAiFadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.repair-ai-header{display:flex;align-items:center;gap:6px;padding:10px 14px;background:rgba(102,126,234,0.08);font-size:13px;font-weight:600;color:#4f46e5}
+.repair-ai-header i{font-size:16px}
+.repair-ai-close{margin-left:auto;background:none;border:none;font-size:18px;color:#94a3b8;cursor:pointer;padding:0 4px;line-height:1}
+.repair-ai-close:hover{color:#64748b}
+.repair-ai-content{padding:12px 14px;font-size:13px;line-height:1.6;color:#334155;white-space:pre-line}
+.repair-ai-hint{padding:6px 14px 10px;font-size:11px;color:#94a3b8;font-style:italic}
+</style>
+<script>
+(function(){
+    var aiBtn = document.getElementById('rf-ai-btn');
+    var aiBtnText = document.getElementById('rf-ai-btn-text');
+    var aiResult = document.getElementById('rf-ai-result');
+    var aiContent = document.getElementById('rf-ai-content');
+    var aiClose = document.getElementById('rf-ai-close');
+    var problemField = document.getElementById('rf-problem');
+    var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
+    var lang = '<?php echo esc_js($lang); ?>';
+    var serviceType = <?php echo json_encode($service_type); ?>;
+
+    if (!aiBtn || !problemField) return;
+
+    // Show AI button when user types enough text
+    var showTimer = null;
+    problemField.addEventListener('input', function() {
+        clearTimeout(showTimer);
+        var len = problemField.value.trim().length;
+        if (len >= 10) {
+            showTimer = setTimeout(function() {
+                aiBtn.style.display = 'inline-flex';
+            }, 500);
+        } else {
+            aiBtn.style.display = 'none';
+            aiResult.style.display = 'none';
+        }
+    });
+
+    // Check on load (for restored drafts)
+    if (problemField.value.trim().length >= 10) {
+        aiBtn.style.display = 'inline-flex';
+    }
+
+    aiBtn.addEventListener('click', function() {
+        var problem = problemField.value.trim();
+        if (problem.length < 5) return;
+
+        // Get device info if available
+        var brandEl = document.getElementById('rf-brand');
+        var modelEl = document.getElementById('rf-model');
+        var brand = brandEl ? brandEl.value : '';
+        var model = modelEl ? modelEl.value : '';
+
+        // Loading state
+        aiBtn.disabled = true;
+        aiBtnText.textContent = ppvLang.ai_analyzing;
+        aiResult.style.display = 'none';
+
+        var fd = new FormData();
+        fd.append('action', 'ppv_repair_ai_analyze');
+        fd.append('problem', problem);
+        fd.append('brand', brand);
+        fd.append('model', model);
+        fd.append('service_type', serviceType);
+        fd.append('lang', lang);
+
+        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.data.analysis) {
+                    aiContent.textContent = data.data.analysis;
+                    aiResult.style.display = 'block';
+                    aiResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    aiContent.textContent = data.data?.message || ppvLang.ai_error;
+                    aiResult.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                aiContent.textContent = ppvLang.ai_error;
+                aiResult.style.display = 'block';
+            })
+            .finally(function() {
+                aiBtn.disabled = false;
+                aiBtnText.textContent = ppvLang.ai_btn;
+            });
+    });
+
+    // Close AI result
+    if (aiClose) {
+        aiClose.addEventListener('click', function() {
+            aiResult.style.display = 'none';
+        });
+    }
+})();
+</script>
+<?php endif; ?>
 
 </body>
 </html>

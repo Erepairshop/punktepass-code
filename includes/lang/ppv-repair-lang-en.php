@@ -8,6 +8,7 @@ return [
     'repair_datenschutz'        => 'Privacy Policy',
     'repair_agb'                => 'Terms & Conditions',
     'repair_impressum'          => 'Legal Notice',
+    'repair_partner'            => 'Partner',
     'repair_ssl_encrypted'      => 'SSL encrypted',
     'repair_dsgvo_conform'      => 'GDPR compliant',
     'repair_powered_by'         => 'Powered by',
@@ -28,6 +29,14 @@ return [
     'repair_cookie_accept'      => 'Accept',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Sign in with PunktePass QR code',
+    'repair_qr_scan_title'      => 'Scan QR code',
+    'repair_qr_scan_hint'       => 'Hold the PunktePass QR code in front of the camera',
+    'repair_qr_scan_success'    => 'Welcome back, %s!',
+    'repair_qr_scan_error'      => 'QR code not recognized',
+    'repair_qr_scan_no_camera'  => 'Camera access not available',
+
     'repair_step1_title'        => 'Your Details',
     'repair_email_hint'         => 'With email you receive bonus points and live order tracking',
     'repair_step2_title'        => 'Additional Information',
@@ -289,6 +298,11 @@ return [
     'repair_admin_stat_customers' => 'Customers',
     'repair_admin_premium_active' => 'Premium active',
 
+    // Partner / Supplier directory
+    'repair_admin_suppliers_title' => 'Recommended Suppliers',
+    'repair_admin_partner_tag'     => 'Your Partner',
+    'repair_admin_partner_shop'    => 'Visit Webshop',
+
     // Usage / Upgrade
     'repair_admin_limit_reached'  => 'Form limit reached!',
     'repair_admin_limit_text'     => 'Your form is no longer available to customers. Upgrade to Premium now for unlimited forms.',
@@ -396,6 +410,11 @@ return [
     'repair_admin_fc_options_hint'=> 'One option per line',
     'repair_admin_fc_add_custom'  => 'Add custom field',
     'repair_admin_fc_custom'      => 'Custom Field',
+    'repair_admin_fc_live_preview' => 'Live Preview',
+    'repair_admin_fc_palette'     => 'Fields',
+    'repair_admin_fc_basic'       => 'Basic Fields',
+    'repair_admin_fc_device'      => 'Device Fields',
+    'repair_admin_fc_extra'       => 'Additional Fields',
     'repair_admin_fc_type_text'   => 'Text field',
     'repair_admin_fc_type_textarea'=> 'Text area',
     'repair_admin_fc_type_number' => 'Number',
@@ -1123,4 +1142,35 @@ return [
     'repair_feedback_email_general_ask'=> 'If you were satisfied with our service, please tell your friends and family about us!',
     'repair_feedback_email_thanks'     => 'Thank you for your trust!',
     'repair_feedback_email_regards'    => 'Best regards,',
+
+    // KFZ / Vehicle fields
+    'repair_admin_fc_vehicle'          => 'Vehicle fields',
+    'repair_vehicle_plate_label'       => 'License plate',
+    'repair_vehicle_plate_placeholder' => 'e.g. M-AB 1234',
+    'repair_vehicle_vin_label'         => 'VIN',
+    'repair_vehicle_vin_placeholder'   => '17-digit Vehicle Identification Nr.',
+    'repair_vehicle_mileage_label'     => 'Mileage',
+    'repair_vehicle_mileage_placeholder'=> 'e.g. 85000',
+    'repair_vehicle_first_reg_label'   => 'First registration',
+    'repair_vehicle_first_reg_placeholder'=> 'MM/YYYY',
+    'repair_vehicle_tuev_label'        => 'Inspection due',
+    'repair_vehicle_tuev_placeholder'  => 'MM/YYYY',
+    'repair_fb_condition_kfz'          => 'Vehicle condition',
+    'repair_cond_kfz_motor'            => 'Engine',
+    'repair_cond_kfz_getriebe'         => 'Transmission',
+    'repair_cond_kfz_bremsen'          => 'Brakes',
+    'repair_cond_kfz_reifen'           => 'Tires',
+    'repair_cond_kfz_karosserie'       => 'Body',
+    'repair_cond_kfz_elektronik'       => 'Electronics',
+    'repair_cond_kfz_klima'            => 'A/C',
+    'repair_cond_kfz_beleuchtung'      => 'Lighting',
+    'repair_cond_kfz_lenkung'          => 'Steering',
+    'repair_cond_kfz_fahrwerk'         => 'Suspension',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'Start AI analysis',
+    'repair_ai_analyzing'              => 'Analyzing...',
+    'repair_ai_title'                  => 'AI Assessment',
+    'repair_ai_error'                  => 'Analysis not available. Please try again later.',
+    'repair_ai_hint'                   => 'Automatic assessment – not a binding diagnosis.',
 ];

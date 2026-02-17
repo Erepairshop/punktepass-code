@@ -781,7 +781,7 @@ class PPV_Repair_Registration {
         .pp-lang-toggle{display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .2s}
         .pp-lang-toggle:hover{background:#e5e7eb;color:#374151}
         .pp-lang-toggle i{font-size:14px}
-        .pp-lang-opts{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;min-width:52px;z-index:100}
+        .pp-lang-opts{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;min-width:52px;z-index:100}
         .pp-lang-wrap.open .pp-lang-opts{display:block}
         .pp-lang-opt{display:block;padding:6px 12px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;border:none;background:none;width:100%;text-align:center;font-family:inherit;letter-spacing:.5px;transition:all .15s}
         .pp-lang-opt:hover{background:#f0f2ff;color:#4338ca}
@@ -1486,6 +1486,20 @@ class PPV_Repair_Registration {
 </head>
 <body>
 
+<!-- ============ TOP BAR (Language Switcher) ============ -->
+<div style="display:flex;justify-content:flex-end;padding:12px 20px 0;position:relative;z-index:100">
+    <div class="pp-lang-wrap" id="pp-lang-wrap">
+        <button class="pp-lang-toggle" onclick="this.parentElement.classList.toggle('open')">
+            <i class="ri-global-line"></i> <?php echo strtoupper($lang); ?>
+        </button>
+        <div class="pp-lang-opts">
+            <?php foreach (['de','en','hu','ro'] as $lc): ?>
+            <button class="pp-lang-opt <?php echo $lang === $lc ? 'active' : ''; ?>" data-lang="<?php echo $lc; ?>"><?php echo strtoupper($lc); ?></button>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+
 <!-- ============ HERO ============ -->
 <div class="pp-hero" style="position:relative">
     <div class="pp-hero-bg">
@@ -1775,19 +1789,8 @@ class PPV_Repair_Registration {
         <a href="/agb"><?php echo esc_html(PPV_Lang::t('repair_agb')); ?></a>
         <span class="pp-reg-footer-dot"></span>
         <a href="/impressum"><?php echo esc_html(PPV_Lang::t('repair_impressum')); ?></a>
-    </div>
-    <!-- Language Switcher (footer) -->
-    <div style="display:flex;justify-content:center;margin:12px 0 8px">
-        <div class="pp-lang-wrap" id="pp-lang-wrap">
-            <button class="pp-lang-toggle" onclick="this.parentElement.classList.toggle('open')">
-                <i class="ri-global-line"></i> <?php echo strtoupper($lang); ?>
-            </button>
-            <div class="pp-lang-opts">
-                <?php foreach (['de','en','hu','ro'] as $lc): ?>
-                <button class="pp-lang-opt <?php echo $lang === $lc ? 'active' : ''; ?>" data-lang="<?php echo $lc; ?>"><?php echo strtoupper($lc); ?></button>
-                <?php endforeach; ?>
-            </div>
-        </div>
+        <span class="pp-reg-footer-dot"></span>
+        <a href="/formular/partner"><?php echo esc_html(PPV_Lang::t('repair_partner') ?: 'Partner'); ?></a>
     </div>
     <div class="pp-reg-footer-powered">
         <?php echo esc_html(PPV_Lang::t('repair_powered_by')); ?> <a href="https://punktepass.de">PunktePass</a>

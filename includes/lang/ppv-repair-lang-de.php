@@ -8,6 +8,7 @@ return [
     'repair_datenschutz'        => 'Datenschutz',
     'repair_agb'                => 'AGB',
     'repair_impressum'          => 'Impressum',
+    'repair_partner'            => 'Partner',
     'repair_ssl_encrypted'      => 'SSL-verschlüsselt',
     'repair_dsgvo_conform'      => 'DSGVO-konform',
     'repair_powered_by'         => 'Powered by',
@@ -28,6 +29,14 @@ return [
     'repair_cookie_accept'      => 'Akzeptieren',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Mit PunktePass QR-Code anmelden',
+    'repair_qr_scan_title'      => 'QR-Code scannen',
+    'repair_qr_scan_hint'       => 'Halten Sie den PunktePass QR-Code vor die Kamera',
+    'repair_qr_scan_success'    => 'Willkommen zurück, %s!',
+    'repair_qr_scan_error'      => 'QR-Code nicht erkannt',
+    'repair_qr_scan_no_camera'  => 'Kein Kamerazugriff möglich',
+
     'repair_step1_title'        => 'Ihre Daten',
     'repair_email_hint'         => 'Mit E-Mail erhalten Sie Bonuspunkte und Live-Auftragsverfolgung',
     'repair_step2_title'        => 'Weitere Angaben',
@@ -289,6 +298,11 @@ return [
     'repair_admin_stat_customers' => 'Kunden',
     'repair_admin_premium_active' => 'Premium aktiv',
 
+    // Partner / Supplier directory
+    'repair_admin_suppliers_title' => 'Empfohlene Lieferanten',
+    'repair_admin_partner_tag'     => 'Ihr Partner',
+    'repair_admin_partner_shop'    => 'Zum Webshop',
+
     // Usage / Upgrade
     'repair_admin_limit_reached'  => 'Formularlimit erreicht!',
     'repair_admin_limit_text'     => 'Ihr Formular ist für Kunden nicht mehr verfügbar. Upgraden Sie jetzt auf Premium für unbegrenzte Formulare.',
@@ -396,6 +410,11 @@ return [
     'repair_admin_fc_options_hint'=> 'Eine Option pro Zeile',
     'repair_admin_fc_add_custom'  => 'Eigenes Feld hinzufügen',
     'repair_admin_fc_custom'      => 'Eigenes Feld',
+    'repair_admin_fc_live_preview' => 'Live-Vorschau',
+    'repair_admin_fc_palette'     => 'Felder',
+    'repair_admin_fc_basic'       => 'Grundfelder',
+    'repair_admin_fc_device'      => 'Gerätefelder',
+    'repair_admin_fc_extra'       => 'Zusatzfelder',
     'repair_admin_fc_type_text'   => 'Textfeld',
     'repair_admin_fc_type_textarea'=> 'Textbereich',
     'repair_admin_fc_type_number' => 'Zahl',
@@ -1123,4 +1142,35 @@ return [
     'repair_feedback_email_general_ask'=> 'Wenn Sie mit unserem Service zufrieden waren, erzählen Sie gerne Freunden und Familie von uns!',
     'repair_feedback_email_thanks'     => 'Vielen Dank für Ihr Vertrauen!',
     'repair_feedback_email_regards'    => 'Mit freundlichen Grüßen,',
+
+    // KFZ / Vehicle fields
+    'repair_admin_fc_vehicle'          => 'Fahrzeugfelder',
+    'repair_vehicle_plate_label'       => 'Kennzeichen',
+    'repair_vehicle_plate_placeholder' => 'z.B. M-AB 1234',
+    'repair_vehicle_vin_label'         => 'FIN / VIN',
+    'repair_vehicle_vin_placeholder'   => '17-stellige Fahrzeug-Identnr.',
+    'repair_vehicle_mileage_label'     => 'Kilometerstand',
+    'repair_vehicle_mileage_placeholder'=> 'z.B. 85000',
+    'repair_vehicle_first_reg_label'   => 'Erstzulassung',
+    'repair_vehicle_first_reg_placeholder'=> 'MM/JJJJ',
+    'repair_vehicle_tuev_label'        => 'TÜV / HU bis',
+    'repair_vehicle_tuev_placeholder'  => 'MM/JJJJ',
+    'repair_fb_condition_kfz'          => 'Fahrzeugzustand',
+    'repair_cond_kfz_motor'            => 'Motor',
+    'repair_cond_kfz_getriebe'         => 'Getriebe',
+    'repair_cond_kfz_bremsen'          => 'Bremsen',
+    'repair_cond_kfz_reifen'           => 'Reifen',
+    'repair_cond_kfz_karosserie'       => 'Karosserie',
+    'repair_cond_kfz_elektronik'       => 'Elektronik',
+    'repair_cond_kfz_klima'            => 'Klimaanlage',
+    'repair_cond_kfz_beleuchtung'      => 'Beleuchtung',
+    'repair_cond_kfz_lenkung'          => 'Lenkung',
+    'repair_cond_kfz_fahrwerk'         => 'Fahrwerk',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'KI-Analyse starten',
+    'repair_ai_analyzing'              => 'Wird analysiert...',
+    'repair_ai_title'                  => 'KI-Einschätzung',
+    'repair_ai_error'                  => 'Analyse nicht verfügbar. Bitte versuchen Sie es später.',
+    'repair_ai_hint'                   => 'Automatische Einschätzung – keine verbindliche Diagnose.',
 ];

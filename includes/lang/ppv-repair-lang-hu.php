@@ -8,6 +8,7 @@ return [
     'repair_datenschutz'        => 'Adatvédelem',
     'repair_agb'                => 'ÁSZF',
     'repair_impressum'          => 'Impresszum',
+    'repair_partner'            => 'Partner',
     'repair_ssl_encrypted'      => 'SSL-titkosított',
     'repair_dsgvo_conform'      => 'GDPR-kompatibilis',
     'repair_powered_by'         => 'Üzemeltető:',
@@ -28,6 +29,14 @@ return [
     'repair_cookie_accept'      => 'Elfogadás',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Bejelentkezés PunktePass QR-kóddal',
+    'repair_qr_scan_title'      => 'QR-kód beolvasása',
+    'repair_qr_scan_hint'       => 'Tartsa a PunktePass QR-kódot a kamera elé',
+    'repair_qr_scan_success'    => 'Üdv újra, %s!',
+    'repair_qr_scan_error'      => 'QR-kód nem felismerhető',
+    'repair_qr_scan_no_camera'  => 'Nincs kamera hozzáférés',
+
     'repair_step1_title'        => 'Az Ön adatai',
     'repair_email_hint'         => 'E-maillel bónuszpontokat és élő rendeléskövetést kap',
     'repair_step2_title'        => 'További adatok',
@@ -289,6 +298,11 @@ return [
     'repair_admin_stat_customers' => 'Ügyfelek',
     'repair_admin_premium_active' => 'Prémium aktív',
 
+    // Partner / Supplier directory
+    'repair_admin_suppliers_title' => 'Ajánlott beszállítók',
+    'repair_admin_partner_tag'     => 'Az Ön partnere',
+    'repair_admin_partner_shop'    => 'Webshop megtekintése',
+
     // Usage / Upgrade
     'repair_admin_limit_reached'  => 'Űrlap limit elérve!',
     'repair_admin_limit_text'     => 'Az Ön űrlapja már nem elérhető az ügyfelek számára. Frissítsen most Prémiumra korlátlan űrlapokért.',
@@ -396,6 +410,11 @@ return [
     'repair_admin_fc_options_hint'=> 'Soronként egy opció',
     'repair_admin_fc_add_custom'  => 'Saját mező hozzáadása',
     'repair_admin_fc_custom'      => 'Saját mező',
+    'repair_admin_fc_live_preview' => 'Élő előnézet',
+    'repair_admin_fc_palette'     => 'Mezők',
+    'repair_admin_fc_basic'       => 'Alapmezők',
+    'repair_admin_fc_device'      => 'Eszközmezők',
+    'repair_admin_fc_extra'       => 'Kiegészítő mezők',
     'repair_admin_fc_type_text'   => 'Szövegmező',
     'repair_admin_fc_type_textarea'=> 'Szövegterület',
     'repair_admin_fc_type_number' => 'Szám',
@@ -1123,4 +1142,35 @@ return [
     'repair_feedback_email_general_ask'=> 'Ha elégedett volt szolgáltatásunkkal, ajánljon minket ismerőseinek!',
     'repair_feedback_email_thanks'     => 'Köszönjük a bizalmát!',
     'repair_feedback_email_regards'    => 'Üdvözlettel,',
+
+    // KFZ / Vehicle fields
+    'repair_admin_fc_vehicle'          => 'Járműmezők',
+    'repair_vehicle_plate_label'       => 'Rendszám',
+    'repair_vehicle_plate_placeholder' => 'pl. ABC-123',
+    'repair_vehicle_vin_label'         => 'Alvázszám / VIN',
+    'repair_vehicle_vin_placeholder'   => '17 jegyű azonosító',
+    'repair_vehicle_mileage_label'     => 'Kilométeróra állás',
+    'repair_vehicle_mileage_placeholder'=> 'pl. 85000',
+    'repair_vehicle_first_reg_label'   => 'Első forgalomba helyezés',
+    'repair_vehicle_first_reg_placeholder'=> 'HH/ÉÉÉÉ',
+    'repair_vehicle_tuev_label'        => 'Műszaki vizsga érvényes',
+    'repair_vehicle_tuev_placeholder'  => 'HH/ÉÉÉÉ',
+    'repair_fb_condition_kfz'          => 'Jármű állapota',
+    'repair_cond_kfz_motor'            => 'Motor',
+    'repair_cond_kfz_getriebe'         => 'Váltó',
+    'repair_cond_kfz_bremsen'          => 'Fékek',
+    'repair_cond_kfz_reifen'           => 'Gumiabroncsok',
+    'repair_cond_kfz_karosserie'       => 'Karosszéria',
+    'repair_cond_kfz_elektronik'       => 'Elektronika',
+    'repair_cond_kfz_klima'            => 'Klíma',
+    'repair_cond_kfz_beleuchtung'      => 'Világítás',
+    'repair_cond_kfz_lenkung'          => 'Kormányzás',
+    'repair_cond_kfz_fahrwerk'         => 'Futómű',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'AI elemzés indítása',
+    'repair_ai_analyzing'              => 'Elemzés folyamatban...',
+    'repair_ai_title'                  => 'AI becslés',
+    'repair_ai_error'                  => 'Az elemzés nem elérhető. Próbálja újra később.',
+    'repair_ai_hint'                   => 'Automatikus becslés – nem kötelező érvényű diagnózis.',
 ];

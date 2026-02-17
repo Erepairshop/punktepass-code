@@ -467,7 +467,29 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate = floatval($store->repair_vat_rate ?? 19);
         $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
-        $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster'], 'photo_upload' => ['enabled' => false, 'label' => 'Fotos'], 'condition_check' => ['enabled' => false, 'label' => 'Gerätezustand'], 'priority' => ['enabled' => false, 'label' => 'Priorität'], 'purchase_date' => ['enabled' => false, 'label' => 'Kaufdatum'], 'device_color' => ['enabled' => false, 'label' => 'Gerätefarbe'], 'cost_limit' => ['enabled' => false, 'label' => 'Kostenrahmen']];
+        $fc_defaults = [
+            'device_brand'    => ['enabled' => true,  'label' => PPV_Lang::t('repair_brand_label')],
+            'device_model'    => ['enabled' => true,  'label' => PPV_Lang::t('repair_model_label')],
+            'device_imei'     => ['enabled' => true,  'label' => PPV_Lang::t('repair_imei_label')],
+            'device_pattern'  => ['enabled' => true,  'label' => PPV_Lang::t('repair_pin_label')],
+            'accessories'     => ['enabled' => true,  'label' => PPV_Lang::t('repair_accessories_label')],
+            'customer_phone'  => ['enabled' => true,  'label' => PPV_Lang::t('repair_phone_label')],
+            'customer_address'=> ['enabled' => true,  'label' => PPV_Lang::t('repair_address_label')],
+            'muster_image'    => ['enabled' => true,  'label' => PPV_Lang::t('repair_pattern_label')],
+            'photo_upload'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_photo')],
+            'condition_check' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition')],
+            'priority'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_priority')],
+            'purchase_date'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_purchase_date')],
+            'device_color'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_color')],
+            'cost_limit'      => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+            // KFZ / Vehicle fields
+            'vehicle_plate'       => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_plate_label')],
+            'vehicle_vin'         => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_vin_label')],
+            'vehicle_mileage'     => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_mileage_label')],
+            'vehicle_first_reg'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
+            'vehicle_tuev'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
+            'condition_check_kfz' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_kfz')],
+        ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
         // Email template settings
@@ -499,6 +521,12 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $success_message = esc_textarea($store->repair_success_message ?? '');
         $opening_hours = esc_attr($store->repair_opening_hours ?? '');
         $terms_url = esc_attr($store->repair_terms_url ?? '');
+
+        // Partner directory: all active partners for the Lieferanten section
+        $all_partners = $wpdb->get_results(
+            "SELECT id, company_name, logo_url, website, city, country FROM {$prefix}ppv_partners WHERE status = 'active' ORDER BY company_name ASC"
+        );
+        $my_partner_id = intval($store->partner_id ?? 0);
 
         // Build repairs HTML
         $repairs_html = '';
@@ -579,6 +607,35 @@ a:hover{color:#5a67d8}
 .ra-btn-copy{background:#f0f0f0;color:#374151;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:16px;transition:all .2s;display:inline-flex;align-items:center}
 .ra-btn-copy:hover{background:#667eea;color:#fff}
 
+/* ========== Partner / Supplier Directory ========== */
+.ra-suppliers{background:#fff;border-radius:14px;margin-bottom:16px;border:1px solid #e2e8f0;overflow:hidden}
+.ra-suppliers-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;transition:background .2s}
+.ra-suppliers-header:hover{background:#f8fafc}
+.ra-suppliers-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#1e293b}
+.ra-suppliers-title i{font-size:20px;color:#667eea}
+.ra-suppliers-count{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;min-width:22px;text-align:center}
+.ra-suppliers-toggle{background:none;border:none;cursor:pointer;padding:4px;color:#94a3b8;font-size:20px;transition:transform .3s}
+.ra-suppliers-toggle.open{transform:rotate(180deg)}
+.ra-suppliers-body{padding:0 18px 18px;display:none}
+.ra-suppliers-body.open{display:block}
+.ra-suppliers-scroll{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#e2e8f0 transparent}
+.ra-suppliers-scroll::-webkit-scrollbar{height:4px}
+.ra-suppliers-scroll::-webkit-scrollbar-track{background:transparent}
+.ra-suppliers-scroll::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+.ra-supplier-card{min-width:180px;max-width:200px;background:#f8fafc;border-radius:14px;padding:20px 16px;text-align:center;border:1.5px solid #e2e8f0;flex-shrink:0;scroll-snap-align:start;transition:all .25s;position:relative}
+.ra-supplier-card:hover{border-color:#c7d2fe;box-shadow:0 4px 16px rgba(99,102,241,.1);transform:translateY(-2px)}
+.ra-supplier-mine{border-color:#818cf8;background:linear-gradient(180deg,#f5f3ff,#f0f4ff)}
+.ra-supplier-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;display:flex;align-items:center;gap:3px;text-transform:uppercase;letter-spacing:.5px}
+.ra-supplier-badge i{font-size:10px}
+.ra-supplier-logo-wrap{width:64px;height:64px;margin:0 auto 12px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center}
+.ra-supplier-logo{width:100%;height:100%;object-fit:contain;padding:6px}
+.ra-supplier-logo-ph{font-size:28px;color:#94a3b8}
+.ra-supplier-name{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ra-supplier-city{font-size:11px;color:#64748b;display:flex;align-items:center;justify-content:center;gap:3px;margin-bottom:12px}
+.ra-supplier-city i{font-size:11px}
+.ra-supplier-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s}
+.ra-supplier-btn:hover{box-shadow:0 3px 10px rgba(102,126,234,.35);color:#fff;transform:translateY(-1px)}
+
 /* ========== Settings Panel - Modern Accordion ========== */
 .ra-hidden{display:none !important}
 .ra-settings{background:#fff;border-radius:20px;padding:0;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04);overflow:visible}
@@ -642,6 +699,18 @@ a:hover{color:#5a67d8}
 .ra-settings-panel h4:not(:first-child){margin-top:28px}
 .ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
 .ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+
+/* ========== Chip/Tag Editor ========== */
+.ra-chip-editor{border:2px solid #e2e8f0;border-radius:12px;background:#f8fafc;padding:8px 10px;min-height:48px;transition:all .2s;cursor:text}
+.ra-chip-editor:focus-within{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-chip-wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ra-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 8px 5px 10px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-radius:20px;font-size:12.5px;font-weight:500;animation:ra-chip-in .2s ease}
+@keyframes ra-chip-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.ra-chip-x{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:14px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:background .15s}
+.ra-chip-x:hover{background:rgba(255,255,255,0.45)}
+.ra-chip-input{border:none;outline:none;background:transparent;font-size:13px;font-family:inherit;color:#0f172a;min-width:120px;flex:1;padding:4px 2px}
+.ra-chip-input::placeholder{color:#94a3b8}
+.ra-chip-count{font-size:11px;color:#94a3b8;margin-top:4px}
 
 /* ========== Toolbar ========== */
 .ra-toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
@@ -1142,6 +1211,56 @@ a:hover{color:#5a67d8}
         </div>
     </div>';
 
+        // Partner directory section (all active partners) — temporarily disabled, will return later
+        /* COMMENTED OUT - Recommended Suppliers section
+        if (!empty($all_partners)) {
+            $partner_count = count($all_partners);
+            echo '<div class="ra-suppliers">
+        <div class="ra-suppliers-header">
+            <div class="ra-suppliers-title">
+                <i class="ri-store-3-line"></i>
+                <span>' . esc_html(PPV_Lang::t('repair_admin_suppliers_title', 'Empfohlene Lieferanten')) . '</span>
+                <span class="ra-suppliers-count">' . $partner_count . '</span>
+            </div>
+            <button class="ra-suppliers-toggle" id="ra-suppliers-toggle" onclick="toggleSuppliers()">
+                <i class="ri-arrow-down-s-line" id="ra-suppliers-arrow"></i>
+            </button>
+        </div>
+        <div class="ra-suppliers-body" id="ra-suppliers-body">
+            <div class="ra-suppliers-scroll">';
+
+            foreach ($all_partners as $p) {
+                $p_name = esc_html($p->company_name);
+                $p_logo = esc_url($p->logo_url ?? '');
+                $p_web  = esc_url($p->website ?? '');
+                $p_city = esc_html($p->city ?? '');
+                $is_my  = ($p->id == $my_partner_id);
+
+                echo '<div class="ra-supplier-card' . ($is_my ? ' ra-supplier-mine' : '') . '">';
+                if ($is_my) {
+                    echo '<div class="ra-supplier-badge"><i class="ri-handshake-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_partner_tag', 'Ihr Partner')) . '</div>';
+                }
+                if ($p_logo) {
+                    echo '<div class="ra-supplier-logo-wrap"><img src="' . $p_logo . '" alt="' . $p_name . '" class="ra-supplier-logo"></div>';
+                } else {
+                    echo '<div class="ra-supplier-logo-wrap"><div class="ra-supplier-logo-ph"><i class="ri-building-2-line"></i></div></div>';
+                }
+                echo '<div class="ra-supplier-name">' . $p_name . '</div>';
+                if ($p_city) {
+                    echo '<div class="ra-supplier-city"><i class="ri-map-pin-2-line"></i> ' . $p_city . '</div>';
+                }
+                if ($p_web) {
+                    echo '<a href="' . $p_web . '" target="_blank" rel="noopener" class="ra-supplier-btn">
+                        <i class="ri-external-link-line"></i> Webshop
+                    </a>';
+                }
+                echo '</div>';
+            }
+
+            echo '</div></div></div>';
+        }
+        END COMMENTED OUT */
+
         // Settings panel
         echo '<div id="ra-settings" class="ra-settings ra-hidden">
         <h3><i class="ri-settings-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_settings')) . '</h3>
@@ -1359,7 +1478,7 @@ a:hover{color:#5a67d8}
                 <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_form_fields')) . '</label>
                 <div class="ra-fb" id="ra-form-builder">
                     <div class="ra-fb-toolbar">
-                        <span class="ra-fb-toolbar-title"><i class="ri-eye-line"></i> Live-Vorschau</span>
+                        <span class="ra-fb-toolbar-title"><i class="ri-eye-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_live_preview')) . '</span>
                         <span class="ra-fb-toolbar-hint"><i class="ri-drag-move-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_drag_hint')) . '</span>
                     </div>
                     <div class="ra-fb-body">
@@ -1377,6 +1496,13 @@ $fb_all_builtins = [
     'device_color'    => ['section' => 2, 'icon' => 'ri-palette-line',  'ph' => '',    'input' => 'color'],
     'purchase_date'   => ['section' => 2, 'icon' => 'ri-calendar-line', 'ph' => '',    'input' => 'date'],
     'condition_check' => ['section' => 2, 'icon' => 'ri-shield-check-line','ph' => '', 'input' => 'condition'],
+    // KFZ / Vehicle fields
+    'vehicle_plate'       => ['section' => 2, 'icon' => 'ri-car-line',       'ph' => PPV_Lang::t('repair_vehicle_plate_placeholder'), 'input' => 'text'],
+    'vehicle_vin'         => ['section' => 2, 'icon' => 'ri-fingerprint-line','ph' => PPV_Lang::t('repair_vehicle_vin_placeholder'),   'input' => 'text'],
+    'vehicle_mileage'     => ['section' => 2, 'icon' => 'ri-dashboard-3-line','ph' => PPV_Lang::t('repair_vehicle_mileage_placeholder'),'input' => 'number'],
+    'vehicle_first_reg'   => ['section' => 2, 'icon' => 'ri-calendar-check-line','ph' => PPV_Lang::t('repair_vehicle_first_reg_placeholder'),'input' => 'text'],
+    'vehicle_tuev'        => ['section' => 2, 'icon' => 'ri-shield-star-line','ph' => PPV_Lang::t('repair_vehicle_tuev_placeholder'), 'input' => 'text'],
+    'condition_check_kfz' => ['section' => 2, 'icon' => 'ri-car-washing-line','ph' => '', 'input' => 'condition_kfz'],
     'accessories'     => ['section' => 3, 'icon' => 'ri-checkbox-multiple-line','ph' => '', 'input' => 'accessories'],
     'photo_upload'    => ['section' => 3, 'icon' => 'ri-camera-line',   'ph' => '',    'input' => 'photo'],
     'priority'        => ['section' => 3, 'icon' => 'ri-flashlight-line','ph' => '',   'input' => 'priority'],
@@ -1408,6 +1534,8 @@ function ppv_fb_render_field($fk, $meta, $fc, $fc_defaults) {
         $html .= '<div class="ra-fb-photo-preview"><div class="ra-fb-photo-box"><i class="ri-camera-line"></i><span>Foto 1</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 2</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 3</span></div></div>';
     } elseif ($input === 'condition') {
         $html .= '<div class="ra-fb-condition-grid"><div class="ra-fb-condition-item"><span>Display</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Tasten</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Kamera</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Lautsprecher</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div></div>';
+    } elseif ($input === 'condition_kfz') {
+        $html .= '<div class="ra-fb-condition-grid"><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_motor')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_bremsen')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_reifen')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_karosserie')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div></div>';
     } elseif ($input === 'priority') {
         $html .= '<div class="ra-fb-priority-cards"><div class="ra-fb-priority-card"><i class="ri-flashlight-line"></i><strong>Express</strong>24h</div><div class="ra-fb-priority-card active"><i class="ri-time-line"></i><strong>Normal</strong>3-5 Tage</div><div class="ra-fb-priority-card"><i class="ri-leaf-line"></i><strong>Sparsam</strong>7-10 Tage</div></div>';
     } elseif ($input === 'color') {
@@ -1532,15 +1660,15 @@ echo '</div></div>';
 
 // === PALETTE SIDEBAR ===
 echo '<div class="ra-fb-palette">
-    <div class="ra-fb-pal-title"><i class="ri-apps-line"></i> Felder</div>';
+    <div class="ra-fb-pal-title"><i class="ri-apps-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_palette')) . '</div>';
 
 // Palette groups
 $pal_groups = [
-    'Grundfelder' => [
+    PPV_Lang::t('repair_admin_fc_basic') => [
         'customer_phone'   => ['icon' => 'ri-phone-line',    'name' => $fc_defaults['customer_phone']['label']],
         'customer_address' => ['icon' => 'ri-map-pin-line',  'name' => $fc_defaults['customer_address']['label']],
     ],
-    'Gerätefelder' => [
+    PPV_Lang::t('repair_admin_fc_device') => [
         'device_brand'    => ['icon' => 'ri-smartphone-line',    'name' => $fc_defaults['device_brand']['label']],
         'device_model'    => ['icon' => 'ri-device-line',        'name' => $fc_defaults['device_model']['label']],
         'device_imei'     => ['icon' => 'ri-barcode-line',       'name' => $fc_defaults['device_imei']['label']],
@@ -1550,7 +1678,15 @@ $pal_groups = [
         'purchase_date'   => ['icon' => 'ri-calendar-line',      'name' => $fc_defaults['purchase_date']['label']],
         'condition_check' => ['icon' => 'ri-shield-check-line',  'name' => $fc_defaults['condition_check']['label']],
     ],
-    'Zusatzfelder' => [
+    PPV_Lang::t('repair_admin_fc_vehicle') => [
+        'vehicle_plate'       => ['icon' => 'ri-car-line',            'name' => $fc_defaults['vehicle_plate']['label']],
+        'vehicle_vin'         => ['icon' => 'ri-fingerprint-line',    'name' => $fc_defaults['vehicle_vin']['label']],
+        'vehicle_mileage'     => ['icon' => 'ri-dashboard-3-line',    'name' => $fc_defaults['vehicle_mileage']['label']],
+        'vehicle_first_reg'   => ['icon' => 'ri-calendar-check-line', 'name' => $fc_defaults['vehicle_first_reg']['label']],
+        'vehicle_tuev'        => ['icon' => 'ri-shield-star-line',    'name' => $fc_defaults['vehicle_tuev']['label']],
+        'condition_check_kfz' => ['icon' => 'ri-car-washing-line',    'name' => $fc_defaults['condition_check_kfz']['label']],
+    ],
+    PPV_Lang::t('repair_admin_fc_extra') => [
         'accessories'   => ['icon' => 'ri-checkbox-multiple-line',   'name' => $fc_defaults['accessories']['label']],
         'photo_upload'  => ['icon' => 'ri-camera-line',              'name' => $fc_defaults['photo_upload']['label']],
         'priority'      => ['icon' => 'ri-flashlight-line',          'name' => $fc_defaults['priority']['label']],
@@ -1578,20 +1714,38 @@ echo '</div></div>
 
             <div class="field" style="margin-bottom:16px">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_brands_label')) . '</label>
-                <textarea name="repair_custom_brands" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Apple&#10;Samsung&#10;Huawei&#10;Xiaomi&#10;...">' . $custom_brands . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_brands_hint')) . '</p>
+                <div class="ra-chip-editor" data-chip-for="repair_custom_brands">
+                    <div class="ra-chip-wrap">
+                        <input type="text" class="ra-chip-input" placeholder="+ Apple, Samsung, Huawei…">
+                    </div>
+                </div>
+                <textarea name="repair_custom_brands" style="display:none">' . $custom_brands . '</textarea>
+                <div class="ra-chip-count"></div>
+                <p style="font-size:11px;color:#9ca3af;margin-top:2px">' . esc_html(PPV_Lang::t('repair_admin_brands_hint')) . '</p>
             </div>
 
             <div class="field" style="margin-bottom:16px">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_problems_label')) . '</label>
-                <textarea name="repair_custom_problems" rows="5" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Display gebrochen&#10;Akku tauschen&#10;Wasserschaden&#10;Ladebuchse defekt&#10;...">' . $custom_problems . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_problems_hint')) . '</p>
+                <div class="ra-chip-editor" data-chip-for="repair_custom_problems">
+                    <div class="ra-chip-wrap">
+                        <input type="text" class="ra-chip-input" placeholder="+ Display gebrochen, Akku tauschen…">
+                    </div>
+                </div>
+                <textarea name="repair_custom_problems" style="display:none">' . $custom_problems . '</textarea>
+                <div class="ra-chip-count"></div>
+                <p style="font-size:11px;color:#9ca3af;margin-top:2px">' . esc_html(PPV_Lang::t('repair_admin_problems_hint')) . '</p>
             </div>
 
             <div class="field" style="margin-bottom:16px">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_accessories_label')) . '</label>
-                <textarea name="repair_custom_accessories" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical">' . $custom_accessories . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_accessories_hint')) . '</p>
+                <div class="ra-chip-editor" data-chip-for="repair_custom_accessories">
+                    <div class="ra-chip-wrap">
+                        <input type="text" class="ra-chip-input" placeholder="+ Hülle, Panzerglas, Ladekabel…">
+                    </div>
+                </div>
+                <textarea name="repair_custom_accessories" style="display:none">' . $custom_accessories . '</textarea>
+                <div class="ra-chip-count"></div>
+                <p style="font-size:11px;color:#9ca3af;margin-top:2px">' . esc_html(PPV_Lang::t('repair_admin_accessories_hint')) . '</p>
             </div>
 
             <div class="ra-settings-grid" style="margin-bottom:16px">
@@ -3005,6 +3159,18 @@ echo '</div></div>
         'status_done' => PPV_Lang::t('repair_admin_status_done'),
         'status_delivered' => PPV_Lang::t('repair_admin_status_delivered'),
         'status_cancelled' => PPV_Lang::t('repair_admin_status_cancelled'),
+        // Custom field labels for print
+        'cf_color' => PPV_Lang::t('repair_fb_color'),
+        'cf_purchase_date' => PPV_Lang::t('repair_fb_purchase_date'),
+        'cf_priority' => PPV_Lang::t('repair_fb_priority'),
+        'cf_cost_limit' => PPV_Lang::t('repair_fb_cost_limit'),
+        // KFZ field labels for print
+        'cf_vehicle_plate' => PPV_Lang::t('repair_vehicle_plate_label'),
+        'cf_vehicle_vin' => PPV_Lang::t('repair_vehicle_vin_label'),
+        'cf_vehicle_mileage' => PPV_Lang::t('repair_vehicle_mileage_label'),
+        'cf_vehicle_first_reg' => PPV_Lang::t('repair_vehicle_first_reg_label'),
+        'cf_vehicle_tuev' => PPV_Lang::t('repair_vehicle_tuev_label'),
+        'cf_condition_kfz' => PPV_Lang::t('repair_fb_condition_kfz'),
     ], JSON_UNESCAPED_UNICODE) . ';
 
     // Language switcher
@@ -3203,9 +3369,9 @@ echo '</div></div>
         if(data.customfields){
             try{
                 var cf=JSON.parse(data.customfields);
-                var cfLabels={device_color:"Farbe",purchase_date:"Kaufdatum",priority:"Priorität",cost_limit:"Kostenrahmen"};
+                var cfLabels={device_color:L.cf_color||"Farbe",purchase_date:L.cf_purchase_date||"Kaufdatum",priority:L.cf_priority||"Priorität",cost_limit:L.cf_cost_limit||"Kostenrahmen",vehicle_plate:L.cf_vehicle_plate||"Kennzeichen",vehicle_vin:L.cf_vehicle_vin||"FIN/VIN",vehicle_mileage:L.cf_vehicle_mileage||"Kilometerstand",vehicle_first_reg:L.cf_vehicle_first_reg||"Erstzulassung",vehicle_tuev:L.cf_vehicle_tuev||"TÜV/HU"};
                 for(var ck in cf){
-                    if(ck==="photos"||ck==="condition_check") continue;
+                    if(ck==="photos"||ck==="condition_check"||ck==="condition_check_kfz") continue;
                     var lbl=cfLabels[ck]||ck;
                     if(typeof cf[ck]==="string"&&cf[ck]) cfHtml+=\'<div class="field"><span class="label">\'+esc(lbl)+\':</span><span class="value">\'+esc(cf[ck])+\'</span></div>\';
                 }
@@ -3214,6 +3380,12 @@ echo '</div></div>
                     var cParts=[];
                     for(var cp in cond) cParts.push(cp+": "+cond[cp].toUpperCase());
                     if(cParts.length) cfHtml+=\'<div class="field"><span class="label">Zustand:</span><span class="value">\'+esc(cParts.join(", "))+\'</span></div>\';
+                }
+                if(cf.condition_check_kfz){
+                    var ckfz=typeof cf.condition_check_kfz==="string"?JSON.parse(cf.condition_check_kfz):cf.condition_check_kfz;
+                    var kParts=[];
+                    for(var kp in ckfz) kParts.push(kp+": "+ckfz[kp].toUpperCase());
+                    if(kParts.length) cfHtml+=\'<div class="field"><span class="label">\'+(L.cf_condition_kfz||"KFZ-Zustand")+\':</span><span class="value">\'+esc(kParts.join(", "))+\'</span></div>\';
                 }
                 if(cf.photos&&cf.photos.length){
                     cfHtml+=\'<div class="field"><span class="label">Fotos:</span><span class="value">\';
@@ -4546,6 +4718,65 @@ echo '</div></div>
             field.scrollIntoView({behavior:"smooth",block:"center"});
         });
     }
+    /* ===== Chip/Tag Editors ===== */
+    document.querySelectorAll(".ra-chip-editor").forEach(function(editor){
+        var taName=editor.getAttribute("data-chip-for");
+        var ta=document.querySelector("textarea[name=\""+taName+"\"]");
+        if(!ta)return;
+        var wrap=editor.querySelector(".ra-chip-wrap");
+        var inp=editor.querySelector(".ra-chip-input");
+        var countEl=editor.parentNode.querySelector(".ra-chip-count");
+
+        function syncTA(){
+            var chips=wrap.querySelectorAll(".ra-chip");
+            var vals=[];
+            chips.forEach(function(c){vals.push(c.getAttribute("data-val"))});
+            ta.value=vals.join("\\n");
+            if(countEl)countEl.textContent=vals.length>0?vals.length+" Einträge":"";
+        }
+
+        function addChip(text){
+            text=text.trim();
+            if(!text)return;
+            var exists=false;
+            wrap.querySelectorAll(".ra-chip").forEach(function(c){if(c.getAttribute("data-val").toLowerCase()===text.toLowerCase())exists=true});
+            if(exists)return;
+            var chip=document.createElement("span");
+            chip.className="ra-chip";
+            chip.setAttribute("data-val",text);
+            chip.innerHTML=text+" <button type=\\"button\\" class=\\"ra-chip-x\\" title=\\"Entfernen\\">&times;</button>";
+            chip.querySelector(".ra-chip-x").addEventListener("click",function(){chip.remove();syncTA()});
+            wrap.insertBefore(chip,inp);
+            syncTA();
+        }
+
+        // Init from textarea
+        var initVal=ta.value.trim();
+        if(initVal){initVal.split("\\n").forEach(function(line){addChip(line)})}
+
+        // Enter / comma to add
+        inp.addEventListener("keydown",function(e){
+            if(e.key==="Enter"||e.key===","){
+                e.preventDefault();
+                addChip(inp.value.replace(/,$/,""));
+                inp.value="";
+            }
+            // Backspace on empty input removes last chip
+            if(e.key==="Backspace"&&!inp.value){
+                var chips=wrap.querySelectorAll(".ra-chip");
+                if(chips.length){chips[chips.length-1].remove();syncTA()}
+            }
+        });
+
+        // Also add on blur
+        inp.addEventListener("blur",function(){
+            if(inp.value.trim()){addChip(inp.value);inp.value=""}
+        });
+
+        // Click on editor focuses input
+        editor.addEventListener("click",function(){inp.focus()});
+    });
+
     /* ===== Settings Form ===== */
     var settingsFormEl = document.getElementById("ra-settings-form");
     if(settingsFormEl){
@@ -5750,6 +5981,28 @@ echo '</div></div>
     window.copyKioskUrl=function(){var url=document.getElementById("kiosk-form-url").textContent;navigator.clipboard.writeText(url).then(function(){var btn=document.querySelector(".kiosk-copy-btn");btn.innerHTML=\'<i class="ri-check-line"></i>\';setTimeout(function(){btn.innerHTML=\'<i class="ri-file-copy-line"></i>\'},2000)})};
     document.addEventListener("keydown",function(e){if(e.key==="Escape")closeKioskTips()});
 
+    /* COMMENTED OUT - Supplier directory toggle (temporarily disabled)
+    window.toggleSuppliers=function(){
+        var body=document.getElementById("ra-suppliers-body");
+        var arrow=document.getElementById("ra-suppliers-arrow");
+        var toggle=document.getElementById("ra-suppliers-toggle");
+        if(!body)return;
+        var isOpen=body.classList.contains("open");
+        body.classList.toggle("open");
+        if(toggle)toggle.classList.toggle("open");
+        try{localStorage.setItem("ra_suppliers_open",isOpen?"0":"1")}catch(e){}
+    };
+    (function(){
+        var body=document.getElementById("ra-suppliers-body");
+        var toggle=document.getElementById("ra-suppliers-toggle");
+        if(!body)return;
+        var saved=null;try{saved=localStorage.getItem("ra_suppliers_open")}catch(e){}
+        if(saved==="1"||saved===null){body.classList.add("open");if(toggle)toggle.classList.add("open")}
+    })();
+    var suppH=document.querySelector(".ra-suppliers-header");
+    if(suppH)suppH.addEventListener("click",function(){toggleSuppliers()});
+    END COMMENTED OUT */
+
     /* ===== Filiale Switcher ===== */
     var filialeBtn = document.getElementById("ra-filiale-btn");
     var filialeDropdown = document.getElementById("ra-filiale-dropdown");
@@ -6011,7 +6264,12 @@ echo '</div></div>
 .kiosk-tip-external{font-size:13px;color:#667eea;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:500}
 .kiosk-tip-external:hover{text-decoration:underline}
 </style>
-
+';
+        // Render floating AI chat widget for repair admin
+        if (class_exists('PPV_AI_Support')) {
+            PPV_AI_Support::render_repair_widget($lang);
+        }
+        echo '
 </body>
 </html>';
     }
@@ -6087,9 +6345,14 @@ echo '</div></div>
                     'purchase_date' => ['icon' => 'ri-calendar-line', 'label' => PPV_Lang::t('repair_fb_purchase_date')],
                     'priority' => ['icon' => 'ri-flashlight-line', 'label' => PPV_Lang::t('repair_fb_priority')],
                     'cost_limit' => ['icon' => 'ri-money-euro-circle-line', 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+                    'vehicle_plate' => ['icon' => 'ri-car-line', 'label' => PPV_Lang::t('repair_vehicle_plate_label')],
+                    'vehicle_vin' => ['icon' => 'ri-fingerprint-line', 'label' => PPV_Lang::t('repair_vehicle_vin_label')],
+                    'vehicle_mileage' => ['icon' => 'ri-dashboard-3-line', 'label' => PPV_Lang::t('repair_vehicle_mileage_label')],
+                    'vehicle_first_reg' => ['icon' => 'ri-calendar-check-line', 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
+                    'vehicle_tuev' => ['icon' => 'ri-shield-star-line', 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
                 ];
                 foreach ($cf as $ck => $cv) {
-                    if ($ck === 'photos' || $ck === 'condition_check') continue; // handled separately
+                    if ($ck === 'photos' || $ck === 'condition_check' || $ck === 'condition_check_kfz') continue; // handled separately
                     $icon = 'ri-file-text-line';
                     $lbl = $ck;
                     if (isset($cf_labels[$ck])) { $icon = $cf_labels[$ck]['icon']; $lbl = $cf_labels[$ck]['label']; }
@@ -6112,6 +6375,18 @@ echo '</div></div>
                             $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
                         }
                         $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition')) . ': ' . implode(', ', $cond_items) . '</div>';
+                    }
+                }
+                // KFZ Condition check
+                if (!empty($cf['condition_check_kfz'])) {
+                    $cond = is_string($cf['condition_check_kfz']) ? json_decode($cf['condition_check_kfz'], true) : $cf['condition_check_kfz'];
+                    if (is_array($cond)) {
+                        $cond_items = [];
+                        foreach ($cond as $part => $status) {
+                            $color = $status === 'ok' ? '#059669' : '#dc2626';
+                            $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
+                        }
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-car-washing-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition_kfz')) . ': ' . implode(', ', $cond_items) . '</div>';
                     }
                 }
                 // Photos

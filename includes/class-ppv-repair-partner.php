@@ -81,6 +81,16 @@ class PPV_Repair_Partner {
                 'win_c4'           => 'Status-Tracking reduziert &ldquo;Wo ist mein Ger&auml;t?&rdquo;-Anrufe um 80%',
                 'win_c5'           => 'Spart 30+ Minuten t&auml;glich durch automatisierte Prozesse',
 
+                // Visibility Boost
+                'visibility_title' => 'Ihre Sichtbarkeit in jeder Werkstatt',
+                'visibility_sub'   => 'Als Partner werden Sie direkt im Dashboard aller Werkst&auml;tten als empfohlener Lieferant angezeigt &ndash; mit Logo, Name und Link zu Ihrem Webshop.',
+                'vis1_title'       => 'Sichtbar im Dashboard',
+                'vis1_text'        => 'Jede Werkstatt sieht Ihren Webshop-Link im t&auml;glichen Arbeitsbereich &ndash; dort, wo sie ihre Reparaturen verwalten.',
+                'vis2_title'       => 'Direkte Bestellungen',
+                'vis2_text'        => 'Werkst&auml;tten k&ouml;nnen mit einem Klick Ihren Webshop &ouml;ffnen &ndash; wenn sie Ersatzteile oder Zubeh&ouml;r brauchen, sind Sie sofort da.',
+                'vis3_title'       => 'Wachsende Reichweite',
+                'vis3_text'        => 'Je mehr Werkst&auml;tten den Reparaturpass nutzen, desto mehr potenzielle K&auml;ufer sehen Ihr Angebot &ndash; automatisch.',
+
                 // Partnership Models
                 'models_title'     => 'Partnerschafts-Modelle',
                 'models_sub'       => 'Flexibel und unverbindlich &ndash; w&auml;hlen Sie, was am besten passt.',
@@ -216,6 +226,16 @@ class PPV_Repair_Partner {
                 'win_c4'           => 'Status tracking reduces &ldquo;Where is my device?&rdquo; calls by 80%',
                 'win_c5'           => 'Saves 30+ minutes daily through automated processes',
 
+                // Visibility Boost
+                'visibility_title' => 'Your Visibility in Every Workshop',
+                'visibility_sub'   => 'As a partner, you are featured directly in every workshop&rsquo;s dashboard as a recommended supplier &ndash; with your logo, name, and a link to your webshop.',
+                'vis1_title'       => 'Visible in the Dashboard',
+                'vis1_text'        => 'Every workshop sees your webshop link in their daily workspace &ndash; right where they manage their repairs.',
+                'vis2_title'       => 'Direct Orders',
+                'vis2_text'        => 'Workshops can open your webshop with one click &ndash; when they need spare parts or accessories, you&rsquo;re right there.',
+                'vis3_title'       => 'Growing Reach',
+                'vis3_text'        => 'The more workshops use the Repair Pass, the more potential buyers see your offer &ndash; automatically.',
+
                 // Partnership Models
                 'models_title'     => 'Partnership Models',
                 'models_sub'       => 'Flexible and non-binding &ndash; choose what fits best.',
@@ -284,24 +304,451 @@ class PPV_Repair_Partner {
                 'footer_conf'      => 'This document is confidential.',
                 'print_title'      => 'Print as PDF',
             ],
+            'hu' => [
+                'html_lang'        => 'hu',
+                'page_title'       => 'Reparaturpass Partner-Program | PunktePass',
+                'badge'            => 'Partner-Program',
+                'hero_h1'          => 'Többletérték az ügyfelei számára.<br><span>Ingyenesen.</span>',
+                'hero_sub'         => 'Kínáljon ügyfeleinek professzionális digitális javításkezelést &ndash; teljesen ingyen. Nincs kockázat, nincs ráfordítás, maximális többletérték.',
+
+                'problem_title'    => 'Az ügyfelei problémája',
+                'problem_sub'      => 'A legtöbb javítóműhely még mindig papír alapon dolgozik &ndash; ez időt, pénzt és ügyfeleket jelent.',
+                'prob1_title'      => 'Papír káosz',
+                'prob1_text'       => 'A kézzel írt javítási cédulák elvesznek, olvashatatlanok és nem kereshetők.',
+                'prob2_title'      => 'Időveszteség',
+                'prob2_text'       => 'Minden megrendelést kézzel rögzítenek. Ez napi 5-10 percet jelent ügyelenként.',
+                'prob3_title'      => 'Ügyfél-megkeresések',
+                'prob3_text'       => '&bdquo;Mi a javításom állapota?&rdquo; &ndash; állandó hívások, amelyek zavarják a munkát.',
+                'prob4_title'      => 'Drága szoftver',
+                'prob4_text'       => 'A professzionális megoldások gyakran &euro;50-100+/hó &ndash; kis műhelyek számára túl drága.',
+
+                'solution_title'   => 'A mi megoldásunk: Reparaturpass',
+                'solution_sub'     => 'Teljes körű digitális javításkezelés &ndash; ingyenesen használható, azonnal bevethető.',
+                'sol_hero_title'   => 'Digitális javítási bizonylat',
+                'sol_hero_text'    => 'Az ügyfelek online töltik ki az űrlapot. A műhely minden adatot digitálisan kap &ndash; nincs papír, nincs hiba.',
+                'feat1_title'      => 'Online űrlap',
+                'feat1_text'       => 'Saját URL minden műhelyhez egyedi arculattal',
+                'feat2_title'      => 'Számlák és bizonylatok',
+                'feat2_text'       => 'Automatikus PDF-készítés céges logóval',
+                'feat3_title'      => 'Statisztikák',
+                'feat3_text'       => 'Dashboard CSV/PDF exporttal minden javításról',
+                'feat4_title'      => 'Állapotkövetés',
+                'feat4_text'       => 'Az ügyfelek QR-kódon keresztül követhetik megrendelésüket',
+                'feat5_title'      => 'Ügyfélkezelés',
+                'feat5_text'       => 'Automatikus ügyféltörténet és CRM funkciók',
+                'feat6_title'      => 'Több telephely',
+                'feat6_text'       => 'Több helyszín kezelése egy fiók alatt',
+                'feat7_title'      => 'Hűségpont rendszer',
+                'feat7_text'       => 'Integrált pontrendszer az ügyfélmegtartáshoz &ndash; automatikus minden javításnál',
+
+                'stat1_val'        => '50',
+                'stat1_label'      => 'Űrlap / hó ingyen',
+                'stat2_val'        => '0&euro;',
+                'stat2_label'      => 'Beállítási díj',
+                'stat3_val'        => '2 perc',
+                'stat3_label'      => 'Regisztráció',
+                'stat4_val'        => '&infin;',
+                'stat4_label'      => 'Nincs szerződés, nincs limit',
+
+                'winwin_title'     => 'Win-Win partnerség',
+                'winwin_sub'       => 'Olyan partnerség, amely mindkét fél számára értéket teremt &ndash; költségek nélkül.',
+                'win_partner_tag'  => 'Az Ön számára mint nagykereskedő',
+                'win_partner_h3'   => 'Ügyfélhűség erősítése',
+                'win_p1'           => 'Ügyfelei professzionálisabbak lesznek &ndash; és többet rendelnek Öntől',
+                'win_p2'           => 'Pozícionálja magát &bdquo;Több mint alkatrész&rdquo; partnerként',
+                'win_p3'           => 'Ingyenes többletérték a portfóliójához &ndash; befektetés nem szükséges',
+                'win_p4'           => 'Co-branded jelenlét: &bdquo;Ajánlja: [Az Ön neve]&rdquo;',
+                'win_p5'           => 'Opcionális jutalék az ügyfelei Premium frissítéseinél',
+                'win_customer_tag' => 'A műhely-ügyfelei számára',
+                'win_customer_h3'  => 'Azonnal professzionálisabb',
+                'win_c1'           => 'Ingyenes digitális javításkezelés &ndash; azonnal használható',
+                'win_c2'           => 'Nincs több papír káosz &ndash; minden digitális és kereshető',
+                'win_c3'           => 'Professzionális megjelenés a végfelhasználók felé',
+                'win_c4'           => 'Az állapotkövetés 80%-kal csökkenti a &bdquo;Hol van a készülékem?&rdquo; hívásokat',
+                'win_c5'           => 'Naponta 30+ percet takarít meg automatizált folyamatokkal',
+
+                'visibility_title' => 'Az Ön láthatósága minden műhelyben',
+                'visibility_sub'   => 'Partnerként közvetlenül megjelenik minden műhely dashboardjában ajánlott beszállítóként &ndash; logóval, névvel és webshop-linkkel.',
+                'vis1_title'       => 'Látható a dashboardban',
+                'vis1_text'        => 'Minden műhely látja a webshop-linkjét a napi munkaterületén &ndash; ott, ahol a javításokat kezelik.',
+                'vis2_title'       => 'Közvetlen rendelések',
+                'vis2_text'        => 'A műhelyek egy kattintással megnyithatják webshopját &ndash; ha alkatrészekre vagy kiegészítőkre van szükségük, Ön azonnal ott van.',
+                'vis3_title'       => 'Növekvő elérés',
+                'vis3_text'        => 'Minél több műhely használja a Reparaturpass-t, annál több potenciális vevő látja ajánlatát &ndash; automatikusan.',
+
+                'models_title'     => 'Partneri modellek',
+                'models_sub'       => 'Rugalmas és kötelezettségmentes &ndash; válassza ki, ami a legjobban illik.',
+                'model1_title'     => 'Hírlevél és Webshop',
+                'model1_text'      => 'Említés a hírlevelében vagy banner a webshopjában. Minimális ráfordítás, azonnali elérés.',
+                'model1_d1'        => '30 perc egyszeri ráfordítás',
+                'model1_d2'        => 'Ingyenes',
+                'model2_badge'     => 'Ajánlott',
+                'model2_title'     => 'Csomagmelléklet',
+                'model2_text'      => 'Kis szórólap minden szállítmányban. Ügyfelei a kicsomagolásnál fedezik fel a Reparaturpass-t.',
+                'model2_d1'        => 'Legnagyobb láthatóság',
+                'model2_d2'        => 'A szórólapokat ingyenesen szállítjuk',
+                'model3_title'     => 'Co-Branded',
+                'model3_text'      => 'Egyedi partner landing oldal az Ön logójával. &bdquo;Ajánlja: [Az Ön cége]&rdquo; a Reparaturpass-ban.',
+                'model3_d1'        => 'Kizárólag fő partnereknek',
+                'model3_d2'        => 'Revenue-share lehetséges',
+                'model4_badge'     => 'Új',
+                'model4_title'     => 'Embed Widget',
+                'model4_text'      => 'Kész JavaScript widget a webshopjához. Egy kattintás gomb, amely közvetlenül bemutatja a Reparaturpass-t ügyfeleinek &ndash; az Ön dizájnjában.',
+                'model4_d1'        => '1 sor kód &ndash; azonnal éles',
+                'model4_d2'        => 'Saját dashboard statisztikákkal',
+
+                'steps_title'      => 'Ilyen egyszerű',
+                'steps_sub'        => '4 lépésben a partnerségig &ndash; szerződések és kötelezettségek nélkül.',
+                'step1_title'      => 'Tesztelés',
+                'step1_text'       => 'Regisztráljon és tapasztalja meg a Reparaturpass-t műhely szemszögéből.',
+                'step2_title'      => 'Megbeszélés',
+                'step2_text'       => 'Megbeszéljük, melyik modell illik a legjobban Önhöz.',
+                'step3_title'      => 'Indítás',
+                'step3_text'       => 'Szállítjuk a bannert, szórólapot vagy co-brandinget &ndash; Ön megosztja ügyfeleivel.',
+                'step4_title'      => 'Profitálás',
+                'step4_text'       => 'Elégedettebb ügyfelek, erősebb kötődés &ndash; és opcionális revenue-share.',
+
+                'pricing_title'    => 'Árazás műhelyek számára',
+                'pricing_sub'      => 'Ügyfelei ingyenesen indulnak. Premium csak szükség esetén.',
+                'price_free_tag'   => 'Ingyenes',
+                'price_free_val'   => '0&euro;',
+                'price_per_month'  => '/ hó',
+                'price_free_desc'  => 'Kis műhelyek számára',
+                'price_f1'         => '50 űrlap havonta',
+                'price_f2'         => 'Saját javítási űrlap',
+                'price_f3'         => 'Ügyfélkövetés QR-kóddal',
+                'price_f4'         => 'Dashboard és áttekintés',
+                'price_f5'         => 'Korlátlanul használható',
+                'price_f6'         => 'Hűségpont rendszer benne',
+                'price_prem_tag'   => 'Premium',
+                'price_prem_val'   => '39&euro;',
+                'price_prem_desc'  => 'Professzionális üzemek számára',
+                'price_p1'         => 'Korlátlan űrlapok',
+                'price_p2'         => 'Számla készítés',
+                'price_p3'         => 'CSV/PDF export',
+                'price_p4'         => 'Több telephely támogatás',
+                'price_p5'         => 'Felvásárlás modul',
+                'price_p6'         => 'Kiemelt támogatás',
+
+                'cta_title'        => 'Készen áll a partnerségre?',
+                'cta_text'         => 'Digitalizáljuk együtt a javítási iparágat. Nincs kockázat, nincs ráfordítás &ndash; csak érték.',
+                'cta_demo'         => 'Élő demó megtekintése',
+                'cta_contact'      => 'Kapcsolatfelvétel',
+                'cta_mail_subject' => 'Partners%C3%A9g%20Reparaturpass',
+
+                'footer_conf'      => 'Ez a dokumentum bizalmas.',
+                'print_title'      => 'Nyomtatás PDF-ként',
+            ],
+            'ro' => [
+                'html_lang'        => 'ro',
+                'page_title'       => 'Programul de Parteneriat Reparaturpass | PunktePass',
+                'badge'            => 'Program de Parteneriat',
+                'hero_h1'          => 'Valoare adăugată pentru clienții dvs.<br><span>Gratuit.</span>',
+                'hero_sub'         => 'Oferiți clienților dvs. din ateliere un sistem profesional de gestionare digitală a reparațiilor &ndash; complet gratuit. Fără riscuri, fără efort, valoare maximă.',
+
+                'problem_title'    => 'Problema clienților dvs.',
+                'problem_sub'      => 'Majoritatea atelierelor lucrează încă pe hârtie &ndash; asta costă timp, bani și clienți.',
+                'prob1_title'      => 'Haos pe hârtie',
+                'prob1_text'       => 'Bonurile scrise de mână se pierd, sunt ilizibile și imposibil de căutat.',
+                'prob2_title'      => 'Timp pierdut',
+                'prob2_text'       => 'Fiecare comandă este înregistrată manual. Asta costă 5-10 minute per client &ndash; zilnic.',
+                'prob3_title'      => 'Întrebări clienți',
+                'prob3_text'       => '&bdquo;Care este starea reparației mele?&rdquo; &ndash; apeluri constante care perturbă activitatea.',
+                'prob4_title'      => 'Software scump',
+                'prob4_text'       => 'Soluțiile profesionale costă adesea &euro;50-100+/lună &ndash; prea scump pentru atelierele mici.',
+
+                'solution_title'   => 'Soluția noastră: Reparaturpass',
+                'solution_sub'     => 'Un sistem complet de gestionare digitală a reparațiilor &ndash; gratuit, gata de utilizare.',
+                'sol_hero_title'   => 'Bon digital de reparație',
+                'sol_hero_text'    => 'Clienții completează formularul online. Atelierul primește toate datele digital &ndash; fără hârtie, fără erori.',
+                'feat1_title'      => 'Formular online',
+                'feat1_text'       => 'URL propriu per atelier cu branding individual',
+                'feat2_title'      => 'Facturi și bonuri',
+                'feat2_text'       => 'Generare automată PDF cu logo-ul companiei',
+                'feat3_title'      => 'Statistici',
+                'feat3_text'       => 'Dashboard cu export CSV/PDF al tuturor reparațiilor',
+                'feat4_title'      => 'Urmărire status',
+                'feat4_text'       => 'Clienții urmăresc comanda prin cod QR',
+                'feat5_title'      => 'Gestionare clienți',
+                'feat5_text'       => 'Istoric automat al clienților și funcții CRM',
+                'feat6_title'      => 'Multi-locație',
+                'feat6_text'       => 'Gestionați mai multe locații sub un singur cont',
+                'feat7_title'      => 'Sistem de puncte de fidelitate',
+                'feat7_text'       => 'Sistem integrat de puncte pentru fidelizarea clienților &ndash; automat la fiecare reparație',
+
+                'stat1_val'        => '50',
+                'stat1_label'      => 'Formulare / lună gratuit',
+                'stat2_val'        => '0&euro;',
+                'stat2_label'      => 'Taxă de configurare',
+                'stat3_val'        => '2 min',
+                'stat3_label'      => 'Înregistrare',
+                'stat4_val'        => '&infin;',
+                'stat4_label'      => 'Fără contract, fără limite',
+
+                'winwin_title'     => 'Parteneriat Win-Win',
+                'winwin_sub'       => 'Un parteneriat care aduce valoare ambelor părți &ndash; fără costuri.',
+                'win_partner_tag'  => 'Pentru dvs. ca angrosist',
+                'win_partner_h3'   => 'Întăriți fidelitatea clienților',
+                'win_p1'           => 'Clienții dvs. devin mai profesioniști &ndash; și comandă mai mult de la dvs.',
+                'win_p2'           => 'Poziționați-vă ca partener &bdquo;Mai mult decât piese de schimb&rdquo;',
+                'win_p3'           => 'Valoare adăugată gratuită pentru portofoliul dvs. &ndash; fără investiție necesară',
+                'win_p4'           => 'Prezență co-branded: &bdquo;Recomandat de [Numele dvs.]&rdquo;',
+                'win_p5'           => 'Comision opțional la upgrade-urile Premium ale clienților dvs.',
+                'win_customer_tag' => 'Pentru clienții dvs. din ateliere',
+                'win_customer_h3'  => 'Instant mai profesioniști',
+                'win_c1'           => 'Gestionare digitală gratuită a reparațiilor &ndash; gata de utilizare imediat',
+                'win_c2'           => 'Fără haos pe hârtie &ndash; totul digital și căutabil',
+                'win_c3'           => 'Aspect profesional față de clienții finali',
+                'win_c4'           => 'Urmărirea statusului reduce apelurile &bdquo;Unde este dispozitivul meu?&rdquo; cu 80%',
+                'win_c5'           => 'Economisește 30+ minute zilnic prin procese automatizate',
+
+                'visibility_title' => 'Vizibilitatea dvs. în fiecare atelier',
+                'visibility_sub'   => 'Ca partener, sunteți afișat direct în dashboard-ul fiecărui atelier ca furnizor recomandat &ndash; cu logo, nume și link către webshop-ul dvs.',
+                'vis1_title'       => 'Vizibil în dashboard',
+                'vis1_text'        => 'Fiecare atelier vede link-ul webshop-ului dvs. în spațiul de lucru zilnic &ndash; acolo unde își gestionează reparațiile.',
+                'vis2_title'       => 'Comenzi directe',
+                'vis2_text'        => 'Atelierele pot deschide webshop-ul dvs. cu un clic &ndash; când au nevoie de piese de schimb, sunteți acolo.',
+                'vis3_title'       => 'Acoperire în creștere',
+                'vis3_text'        => 'Cu cât mai multe ateliere folosesc Reparaturpass, cu atât mai mulți cumpărători potențiali văd oferta dvs. &ndash; automat.',
+
+                'models_title'     => 'Modele de parteneriat',
+                'models_sub'       => 'Flexibil și fără obligații &ndash; alegeți ce se potrivește cel mai bine.',
+                'model1_title'     => 'Newsletter și Webshop',
+                'model1_text'      => 'Mențiune în newsletter-ul dvs. sau banner în webshop. Efort minim, acoperire imediată.',
+                'model1_d1'        => '30 min. efort o singură dată',
+                'model1_d2'        => 'Gratuit',
+                'model2_badge'     => 'Recomandat',
+                'model2_title'     => 'Insert în pachet',
+                'model2_text'      => 'Un mic flyer în fiecare livrare. Clienții dvs. descoperă Reparaturpass la despachetare.',
+                'model2_d1'        => 'Cea mai mare vizibilitate',
+                'model2_d2'        => 'Furnizăm flyerele gratuit',
+                'model3_title'     => 'Co-Branded',
+                'model3_text'      => 'Pagină partener personalizată cu logo-ul dvs. &bdquo;Recomandat de [Compania dvs.]&rdquo; în Reparaturpass.',
+                'model3_d1'        => 'Exclusiv pentru parteneri principali',
+                'model3_d2'        => 'Revenue-share posibil',
+                'model4_badge'     => 'Nou',
+                'model4_title'     => 'Widget Embed',
+                'model4_text'      => 'Widget JavaScript gata pentru webshop-ul dvs. Un buton care prezintă Reparaturpass direct clienților dvs. &ndash; în designul dvs.',
+                'model4_d1'        => '1 linie de cod &ndash; instant live',
+                'model4_d2'        => 'Dashboard propriu cu statistici',
+
+                'steps_title'      => 'Cum funcționează',
+                'steps_sub'        => '4 pași simpli către parteneriat &ndash; fără contracte, fără obligații.',
+                'step1_title'      => 'Testați',
+                'step1_text'       => 'Înregistrați-vă și experimentați Reparaturpass din perspectiva atelierului.',
+                'step2_title'      => 'Discutați',
+                'step2_text'       => 'Discutăm ce model vi se potrivește cel mai bine.',
+                'step3_title'      => 'Lansați',
+                'step3_text'       => 'Furnizăm bannere, flyere sau co-branding &ndash; dvs. le distribuiți clienților.',
+                'step4_title'      => 'Profitați',
+                'step4_text'       => 'Clienți mai fericiți, loialitate mai puternică &ndash; și revenue-share opțional.',
+
+                'pricing_title'    => 'Prețuri pentru ateliere',
+                'pricing_sub'      => 'Clienții dvs. încep gratuit. Premium doar la nevoie.',
+                'price_free_tag'   => 'Gratuit',
+                'price_free_val'   => '0&euro;',
+                'price_per_month'  => '/ lună',
+                'price_free_desc'  => 'Pentru ateliere mici',
+                'price_f1'         => '50 formulare pe lună',
+                'price_f2'         => 'Formular propriu de reparație',
+                'price_f3'         => 'Urmărire clienți prin QR',
+                'price_f4'         => 'Dashboard și prezentare generală',
+                'price_f5'         => 'Utilizare nelimitată',
+                'price_f6'         => 'Sistem de puncte de fidelitate inclus',
+                'price_prem_tag'   => 'Premium',
+                'price_prem_val'   => '39&euro;',
+                'price_prem_desc'  => 'Pentru afaceri profesionale',
+                'price_p1'         => 'Formulare nelimitate',
+                'price_p2'         => 'Generare facturi',
+                'price_p3'         => 'Export CSV/PDF',
+                'price_p4'         => 'Suport multi-locație',
+                'price_p5'         => 'Modul de achiziție',
+                'price_p6'         => 'Suport prioritar',
+
+                'cta_title'        => 'Pregătiți pentru un parteneriat?',
+                'cta_text'         => 'Haideți să digitalizăm industria reparațiilor împreună. Fără riscuri, fără efort &ndash; doar valoare.',
+                'cta_demo'         => 'Vedeți demo live',
+                'cta_contact'      => 'Contactați-ne',
+                'cta_mail_subject' => 'Parteneriat%20Reparaturpass',
+
+                'footer_conf'      => 'Acest document este confidențial.',
+                'print_title'      => 'Imprimă ca PDF',
+            ],
+            'it' => [
+                'html_lang'        => 'it',
+                'page_title'       => 'Programma Partner Reparaturpass | PunktePass',
+                'badge'            => 'Programma Partner',
+                'hero_h1'          => 'Valore aggiunto per i tuoi clienti.<br><span>Gratuito.</span>',
+                'hero_sub'         => 'Offri ai clienti del tuo laboratorio un sistema professionale di gestione digitale delle riparazioni &ndash; completamente gratuito. Nessun rischio, nessuno sforzo, massimo valore.',
+
+                'problem_title'    => 'Il problema dei tuoi clienti',
+                'problem_sub'      => 'La maggior parte dei laboratori lavora ancora con carta e penna &ndash; costando tempo, denaro e clienti.',
+                'prob1_title'      => 'Caos cartaceo',
+                'prob1_text'       => 'Le ricevute scritte a mano si perdono, sono illeggibili e impossibili da cercare.',
+                'prob2_title'      => 'Tempo perso',
+                'prob2_text'       => 'Ogni ordine viene registrato manualmente. Costa 5-10 minuti per cliente &ndash; ogni giorno.',
+                'prob3_title'      => 'Richieste clienti',
+                'prob3_text'       => '&ldquo;Qual è lo stato della mia riparazione?&rdquo; &ndash; chiamate costanti che disturbano l&rsquo;attivit&agrave;.',
+                'prob4_title'      => 'Software costoso',
+                'prob4_text'       => 'Le soluzioni professionali costano spesso &euro;50-100+/mese &ndash; troppo caro per piccoli laboratori.',
+
+                'solution_title'   => 'La nostra soluzione: Reparaturpass',
+                'solution_sub'     => 'Un sistema completo di gestione digitale delle riparazioni &ndash; gratuito, pronto all&rsquo;uso.',
+                'sol_hero_title'   => 'Ricevuta digitale di riparazione',
+                'sol_hero_text'    => 'I clienti compilano il modulo online. Il laboratorio riceve tutti i dati in digitale &ndash; niente carta, niente errori.',
+                'feat1_title'      => 'Modulo online',
+                'feat1_text'       => 'URL personalizzato per laboratorio con branding individuale',
+                'feat2_title'      => 'Fatture e ricevute',
+                'feat2_text'       => 'Generazione automatica PDF con logo aziendale',
+                'feat3_title'      => 'Statistiche',
+                'feat3_text'       => 'Dashboard con esportazione CSV/PDF di tutte le riparazioni',
+                'feat4_title'      => 'Tracciamento stato',
+                'feat4_text'       => 'I clienti tracciano il loro ordine tramite codice QR',
+                'feat5_title'      => 'Gestione clienti',
+                'feat5_text'       => 'Storico clienti automatico e funzioni CRM',
+                'feat6_title'      => 'Multi-sede',
+                'feat6_text'       => 'Gestisci più sedi sotto un unico account',
+                'feat7_title'      => 'Sistema punti fedeltà',
+                'feat7_text'       => 'Sistema di punti integrato per la fidelizzazione &ndash; automatico ad ogni riparazione',
+
+                'stat1_val'        => '50',
+                'stat1_label'      => 'Moduli / mese gratis',
+                'stat2_val'        => '0&euro;',
+                'stat2_label'      => 'Costo di configurazione',
+                'stat3_val'        => '2 min',
+                'stat3_label'      => 'Registrazione',
+                'stat4_val'        => '&infin;',
+                'stat4_label'      => 'Nessun contratto, nessun limite',
+
+                'winwin_title'     => 'Partnership Win-Win',
+                'winwin_sub'       => 'Una partnership che crea valore per entrambe le parti &ndash; senza costi.',
+                'win_partner_tag'  => 'Per te come grossista',
+                'win_partner_h3'   => 'Rafforza la fedeltà dei clienti',
+                'win_p1'           => 'I tuoi clienti diventano più professionali &ndash; e ordinano di più da te',
+                'win_p2'           => 'Posizionati come partner &ldquo;Più che ricambi&rdquo;',
+                'win_p3'           => 'Valore aggiunto gratuito per il tuo portfolio &ndash; nessun investimento necessario',
+                'win_p4'           => 'Presenza co-branded: &ldquo;Raccomandato da [Il tuo nome]&rdquo;',
+                'win_p5'           => 'Commissione opzionale sugli upgrade Premium dei tuoi clienti',
+                'win_customer_tag' => 'Per i clienti del tuo laboratorio',
+                'win_customer_h3'  => 'Subito più professionali',
+                'win_c1'           => 'Gestione digitale gratuita delle riparazioni &ndash; pronta all&rsquo;uso',
+                'win_c2'           => 'Basta caos cartaceo &ndash; tutto digitale e ricercabile',
+                'win_c3'           => 'Aspetto professionale verso i clienti finali',
+                'win_c4'           => 'Il tracciamento riduce le chiamate &ldquo;Dov&rsquo;&egrave; il mio dispositivo?&rdquo; dell&rsquo;80%',
+                'win_c5'           => 'Risparmia 30+ minuti al giorno con processi automatizzati',
+
+                'visibility_title' => 'La tua visibilità in ogni laboratorio',
+                'visibility_sub'   => 'Come partner, sei presente direttamente nella dashboard di ogni laboratorio come fornitore raccomandato &ndash; con logo, nome e link al tuo webshop.',
+                'vis1_title'       => 'Visibile nella dashboard',
+                'vis1_text'        => 'Ogni laboratorio vede il link del tuo webshop nel suo spazio di lavoro quotidiano &ndash; dove gestisce le riparazioni.',
+                'vis2_title'       => 'Ordini diretti',
+                'vis2_text'        => 'I laboratori possono aprire il tuo webshop con un clic &ndash; quando hanno bisogno di ricambi, sei subito lì.',
+                'vis3_title'       => 'Copertura in crescita',
+                'vis3_text'        => 'Più laboratori usano il Reparaturpass, più potenziali acquirenti vedono la tua offerta &ndash; automaticamente.',
+
+                'models_title'     => 'Modelli di partnership',
+                'models_sub'       => 'Flessibile e senza impegno &ndash; scegli quello che si adatta meglio.',
+                'model1_title'     => 'Newsletter e Webshop',
+                'model1_text'      => 'Menzione nella tua newsletter o banner nel tuo webshop. Sforzo minimo, copertura immediata.',
+                'model1_d1'        => '30 min. di impegno una tantum',
+                'model1_d2'        => 'Gratuito',
+                'model2_badge'     => 'Raccomandato',
+                'model2_title'     => 'Inserto nel pacco',
+                'model2_text'      => 'Un piccolo volantino in ogni consegna. I tuoi clienti scoprono il Reparaturpass aprendo il pacco.',
+                'model2_d1'        => 'Massima visibilità',
+                'model2_d2'        => 'Forniamo i volantini gratuitamente',
+                'model3_title'     => 'Co-Branded',
+                'model3_text'      => 'Pagina partner personalizzata con il tuo logo. &ldquo;Raccomandato da [La tua azienda]&rdquo; nel Reparaturpass.',
+                'model3_d1'        => 'Esclusivo per partner principali',
+                'model3_d2'        => 'Revenue share possibile',
+                'model4_badge'     => 'Nuovo',
+                'model4_title'     => 'Widget Embed',
+                'model4_text'      => 'Widget JavaScript pronto per il tuo webshop. Un pulsante che presenta il Reparaturpass ai tuoi clienti &ndash; nel tuo design.',
+                'model4_d1'        => '1 riga di codice &ndash; subito live',
+                'model4_d2'        => 'Dashboard propria con statistiche',
+
+                'steps_title'      => 'Come funziona',
+                'steps_sub'        => '4 semplici passi verso la partnership &ndash; senza contratti, senza obblighi.',
+                'step1_title'      => 'Prova',
+                'step1_text'       => 'Registrati e prova il Reparaturpass dal punto di vista del laboratorio.',
+                'step2_title'      => 'Discuti',
+                'step2_text'       => 'Parliamo di quale modello si adatta meglio a te.',
+                'step3_title'      => 'Lancia',
+                'step3_text'       => 'Forniamo banner, volantini o co-branding &ndash; tu li condividi con i tuoi clienti.',
+                'step4_title'      => 'Profitto',
+                'step4_text'       => 'Clienti più felici, fedeltà più forte &ndash; e revenue share opzionale.',
+
+                'pricing_title'    => 'Prezzi per i laboratori',
+                'pricing_sub'      => 'I tuoi clienti iniziano gratis. Premium solo quando necessario.',
+                'price_free_tag'   => 'Gratuito',
+                'price_free_val'   => '0&euro;',
+                'price_per_month'  => '/ mese',
+                'price_free_desc'  => 'Per piccoli laboratori',
+                'price_f1'         => '50 moduli al mese',
+                'price_f2'         => 'Modulo di riparazione personalizzato',
+                'price_f3'         => 'Tracciamento clienti via QR',
+                'price_f4'         => 'Dashboard e panoramica',
+                'price_f5'         => 'Utilizzo illimitato',
+                'price_f6'         => 'Sistema punti fedeltà incluso',
+                'price_prem_tag'   => 'Premium',
+                'price_prem_val'   => '39&euro;',
+                'price_prem_desc'  => 'Per attività professionali',
+                'price_p1'         => 'Moduli illimitati',
+                'price_p2'         => 'Generazione fatture',
+                'price_p3'         => 'Esportazione CSV/PDF',
+                'price_p4'         => 'Supporto multi-sede',
+                'price_p5'         => 'Modulo acquisti',
+                'price_p6'         => 'Supporto prioritario',
+
+                'cta_title'        => 'Pronti per una partnership?',
+                'cta_text'         => 'Digitalizziamo insieme il settore delle riparazioni. Nessun rischio, nessuno sforzo &ndash; solo valore.',
+                'cta_demo'         => 'Guarda la demo live',
+                'cta_contact'      => 'Contattaci',
+                'cta_mail_subject' => 'Partnership%20Reparaturpass',
+
+                'footer_conf'      => 'Questo documento è riservato.',
+                'print_title'      => 'Stampa come PDF',
+            ],
         ];
     }
 
     public static function render() {
         $logo_url = PPV_PLUGIN_URL . 'assets/img/punktepass-repair-logo.svg';
 
-        // Detect language: GET > Cookie > default DE
-        $lang = 'de';
+        // Detect language: GET > Cookie > Browser Accept-Language > default DE
+        $supported_langs = ['de', 'en', 'hu', 'ro', 'it'];
+        $lang = null;
         $get_lang = $_GET['lang'] ?? $_GET['ppv_lang'] ?? null;
-        if ($get_lang && in_array(strtolower($get_lang), ['de', 'en'], true)) {
+        if ($get_lang && in_array(strtolower($get_lang), $supported_langs, true)) {
             $lang = strtolower($get_lang);
-        } elseif (!empty($_COOKIE['ppv_lang']) && in_array(strtolower($_COOKIE['ppv_lang']), ['de', 'en'], true)) {
+            // Persist language choice in cookie
+            @setcookie('ppv_lang', $lang, time() + 31536000, '/', '', is_ssl(), false);
+            $_COOKIE['ppv_lang'] = $lang;
+        } elseif (!empty($_COOKIE['ppv_lang']) && in_array(strtolower($_COOKIE['ppv_lang']), $supported_langs, true)) {
             $lang = strtolower($_COOKIE['ppv_lang']);
         }
+        // Browser Accept-Language detection
+        if (!$lang && !empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+            preg_match_all('/([a-z]{2})(?:-[a-zA-Z]+)?(?:\s*;\s*q\s*=\s*([\d.]+))?/', strtolower($_SERVER['HTTP_ACCEPT_LANGUAGE']), $m, PREG_SET_ORDER);
+            $candidates = [];
+            foreach ($m as $match) {
+                $code = $match[1];
+                $q = isset($match[2]) ? (float)$match[2] : 1.0;
+                if (in_array($code, $supported_langs, true) && (!isset($candidates[$code]) || $q > $candidates[$code])) {
+                    $candidates[$code] = $q;
+                }
+            }
+            if ($candidates) {
+                arsort($candidates);
+                $lang = key($candidates);
+            }
+        }
+        if (!$lang) $lang = 'de';
 
         $all = self::get_translations();
         $t = $all[$lang];
-        $other = ($lang === 'de') ? 'en' : 'de';
+        // Build list of other languages for the switcher
+        $other_langs = array_diff($supported_langs, [$lang]);
 
         ?><!DOCTYPE html>
 <html lang="<?php echo $t['html_lang']; ?>">
@@ -386,6 +833,33 @@ class PPV_Repair_Partner {
             cursor: pointer;
             transition: all 0.25s;
             font-family: inherit;
+        }
+        .pp-partner-lang-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 6px;
+            background: rgba(30,30,50,0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            overflow: hidden;
+            min-width: 120px;
+        }
+        .pp-partner-lang.open .pp-partner-lang-dropdown { display: block; }
+        .pp-partner-lang-item {
+            display: block;
+            padding: 8px 16px;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.15s;
+        }
+        .pp-partner-lang-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
         }
         .pp-partner-lang-btn:hover {
             background: rgba(255,255,255,0.2);
@@ -691,6 +1165,91 @@ class PPV_Repair_Partner {
         .pp-win-card.partner .pp-win-list li i { color: #a5b4fc; }
         .pp-win-card.customer .pp-win-list li i { color: #6ee7b7; }
 
+        /* ── Visibility Boost Section ── */
+        .pp-section-visibility {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+            padding: 72px 0;
+        }
+        .pp-vis-banner {
+            text-align: center;
+        }
+        .pp-vis-icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 28px;
+            color: #fde047;
+        }
+        .pp-vis-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        .pp-vis-sub {
+            font-size: 15px;
+            color: rgba(255,255,255,0.75);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+        .pp-vis-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .pp-vis-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 28px 22px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pp-vis-card:hover {
+            background: rgba(255,255,255,0.14);
+            border-color: rgba(255,255,255,0.25);
+            transform: translateY(-4px);
+        }
+        .pp-vis-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: rgba(253,224,71,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fde047;
+            margin: 0 auto 14px;
+        }
+        .pp-vis-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .pp-vis-card p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.5;
+            margin: 0;
+        }
+        @media (max-width: 768px) {
+            .pp-vis-grid { grid-template-columns: 1fr; }
+            .pp-section-visibility { padding: 48px 0; }
+            .pp-vis-title { font-size: 22px; }
+        }
+
         /* ── Partnership Models ── */
         .pp-model-grid {
             display: grid;
@@ -981,12 +1540,20 @@ class PPV_Repair_Partner {
 <!-- ============ HERO ============ -->
 <div class="pp-hero-partner">
     <!-- Language Switcher -->
-    <a href="?lang=<?php echo $other; ?>" class="pp-partner-lang pp-no-print">
-        <span class="pp-partner-lang-btn">
+    <div class="pp-partner-lang pp-no-print">
+        <span class="pp-partner-lang-btn" onclick="this.parentNode.classList.toggle('open')">
             <i class="ri-global-line"></i>
-            <?php echo strtoupper($other); ?>
+            <?php echo strtoupper($lang); ?>
+            <i class="ri-arrow-down-s-line" style="font-size:14px;margin-left:-2px"></i>
         </span>
-    </a>
+        <div class="pp-partner-lang-dropdown">
+            <?php
+            $lang_names = ['de'=>'Deutsch','en'=>'English','hu'=>'Magyar','ro'=>'Română','it'=>'Italiano'];
+            foreach ($other_langs as $ol): ?>
+            <a href="?lang=<?php echo $ol; ?>" class="pp-partner-lang-item"><?php echo ($lang_names[$ol] ?? strtoupper($ol)); ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
 
     <div class="pp-hero-partner-inner">
         <img src="<?php echo esc_url($logo_url); ?>" alt="Reparaturpass" class="pp-hero-partner-logo">
@@ -1137,6 +1704,37 @@ class PPV_Repair_Partner {
                     <li><i class="ri-check-line"></i> <?php echo $t['win_c4']; ?></li>
                     <li><i class="ri-check-line"></i> <?php echo $t['win_c5']; ?></li>
                 </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ VISIBILITY BOOST ============ -->
+<div class="pp-section pp-section-visibility">
+    <div class="pp-partner-container">
+        <div class="pp-vis-banner pp-anim">
+            <div class="pp-vis-icon-wrap">
+                <i class="ri-eye-line"></i>
+            </div>
+            <h2 class="pp-vis-title"><?php echo $t['visibility_title']; ?></h2>
+            <p class="pp-vis-sub"><?php echo $t['visibility_sub']; ?></p>
+
+            <div class="pp-vis-grid">
+                <div class="pp-vis-card pp-anim pp-anim-d1">
+                    <div class="pp-vis-card-icon"><i class="ri-layout-4-line"></i></div>
+                    <h4><?php echo $t['vis1_title']; ?></h4>
+                    <p><?php echo $t['vis1_text']; ?></p>
+                </div>
+                <div class="pp-vis-card pp-anim pp-anim-d2">
+                    <div class="pp-vis-card-icon"><i class="ri-shopping-cart-2-line"></i></div>
+                    <h4><?php echo $t['vis2_title']; ?></h4>
+                    <p><?php echo $t['vis2_text']; ?></p>
+                </div>
+                <div class="pp-vis-card pp-anim pp-anim-d3">
+                    <div class="pp-vis-card-icon"><i class="ri-line-chart-line"></i></div>
+                    <h4><?php echo $t['vis3_title']; ?></h4>
+                    <p><?php echo $t['vis3_text']; ?></p>
+                </div>
             </div>
         </div>
     </div>

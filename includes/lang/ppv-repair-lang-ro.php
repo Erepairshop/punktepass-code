@@ -8,6 +8,7 @@ return [
     'repair_datenschutz'        => 'Confidențialitate',
     'repair_agb'                => 'Termeni și condiții',
     'repair_impressum'          => 'Impresum',
+    'repair_partner'            => 'Partner',
     'repair_ssl_encrypted'      => 'Criptat SSL',
     'repair_dsgvo_conform'      => 'Conform GDPR',
     'repair_powered_by'         => 'Operat de',
@@ -28,6 +29,14 @@ return [
     'repair_cookie_accept'      => 'Accept',
 
     // ========== REPAIR FORM (public) ==========
+    // QR scan prefill
+    'repair_qr_scan_btn'        => 'Autentificare cu codul QR PunktePass',
+    'repair_qr_scan_title'      => 'Scanați codul QR',
+    'repair_qr_scan_hint'       => 'Țineți codul QR PunktePass în fața camerei',
+    'repair_qr_scan_success'    => 'Bine ai revenit, %s!',
+    'repair_qr_scan_error'      => 'Codul QR nu a fost recunoscut',
+    'repair_qr_scan_no_camera'  => 'Acces la cameră indisponibil',
+
     'repair_step1_title'        => 'Datele dvs.',
     'repair_email_hint'         => 'Cu e-mail primiți puncte bonus și urmărire live a comenzii',
     'repair_step2_title'        => 'Informații suplimentare',
@@ -289,6 +298,11 @@ return [
     'repair_admin_stat_customers' => 'Clienți',
     'repair_admin_premium_active' => 'Premium activ',
 
+    // Partner / Supplier directory
+    'repair_admin_suppliers_title' => 'Furnizori recomandați',
+    'repair_admin_partner_tag'     => 'Partenerul dvs.',
+    'repair_admin_partner_shop'    => 'Vizitați magazinul',
+
     // Usage / Upgrade
     'repair_admin_limit_reached'  => 'Limita formularelor atinsă!',
     'repair_admin_limit_text'     => 'Formularul dvs. nu mai este disponibil pentru clienți. Faceți upgrade la Premium pentru formulare nelimitate.',
@@ -396,6 +410,11 @@ return [
     'repair_admin_fc_options_hint'=> 'O opțiune pe linie',
     'repair_admin_fc_add_custom'  => 'Adaugă câmp personalizat',
     'repair_admin_fc_custom'      => 'Câmp personalizat',
+    'repair_admin_fc_live_preview' => 'Previzualizare live',
+    'repair_admin_fc_palette'     => 'Câmpuri',
+    'repair_admin_fc_basic'       => 'Câmpuri de bază',
+    'repair_admin_fc_device'      => 'Câmpuri dispozitiv',
+    'repair_admin_fc_extra'       => 'Câmpuri suplimentare',
     'repair_admin_fc_type_text'   => 'Text',
     'repair_admin_fc_type_textarea'=> 'Text multilinie',
     'repair_admin_fc_type_number' => 'Număr',
@@ -1123,4 +1142,35 @@ return [
     'repair_feedback_email_general_ask'=> 'Dacă ați fost mulțumit/ă de serviciul nostru, recomandați-ne prietenilor și familiei!',
     'repair_feedback_email_thanks'     => 'Vă mulțumim pentru încredere!',
     'repair_feedback_email_regards'    => 'Cu stimă,',
+
+    // KFZ / Vehicle fields
+    'repair_admin_fc_vehicle'          => 'Câmpuri vehicul',
+    'repair_vehicle_plate_label'       => 'Număr de înmatriculare',
+    'repair_vehicle_plate_placeholder' => 'ex. B-123-ABC',
+    'repair_vehicle_vin_label'         => 'Serie șasiu / VIN',
+    'repair_vehicle_vin_placeholder'   => 'Nr. identificare 17 cifre',
+    'repair_vehicle_mileage_label'     => 'Kilometraj',
+    'repair_vehicle_mileage_placeholder'=> 'ex. 85000',
+    'repair_vehicle_first_reg_label'   => 'Prima înmatriculare',
+    'repair_vehicle_first_reg_placeholder'=> 'LL/AAAA',
+    'repair_vehicle_tuev_label'        => 'ITP valabil până la',
+    'repair_vehicle_tuev_placeholder'  => 'LL/AAAA',
+    'repair_fb_condition_kfz'          => 'Stare vehicul',
+    'repair_cond_kfz_motor'            => 'Motor',
+    'repair_cond_kfz_getriebe'         => 'Transmisie',
+    'repair_cond_kfz_bremsen'          => 'Frâne',
+    'repair_cond_kfz_reifen'           => 'Anvelope',
+    'repair_cond_kfz_karosserie'       => 'Caroserie',
+    'repair_cond_kfz_elektronik'       => 'Electronică',
+    'repair_cond_kfz_klima'            => 'Climatizare',
+    'repair_cond_kfz_beleuchtung'      => 'Iluminare',
+    'repair_cond_kfz_lenkung'          => 'Direcție',
+    'repair_cond_kfz_fahrwerk'         => 'Suspensie',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'Pornește analiza AI',
+    'repair_ai_analyzing'              => 'Se analizează...',
+    'repair_ai_title'                  => 'Estimare AI',
+    'repair_ai_error'                  => 'Analiza nu este disponibilă. Încercați mai târziu.',
+    'repair_ai_hint'                   => 'Estimare automată – nu este un diagnostic obligatoriu.',
 ];

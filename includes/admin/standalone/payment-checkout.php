@@ -51,13 +51,22 @@ $vat_rate = $is_domestic ? 0.19 : 0.00;
 $vat = round($price_net * $vat_rate, 2);
 $price_gross = round($price_net + $vat, 2);
 
+// Language - PPV_Lang is already detected at init priority 1
+$lang = PPV_Lang::$active ?: 'en';
+$paypal_locales = ['de' => 'de_DE', 'en' => 'en_US', 'hu' => 'hu_HU', 'ro' => 'ro_RO', 'it' => 'it_IT'];
+$paypal_locale = $paypal_locales[$lang] ?? 'en_US';
+
+// Number format per locale
+$dec_sep = ($lang === 'en') ? '.' : ',';
+$thou_sep = ($lang === 'en') ? ',' : '.';
+
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo esc_attr($lang); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abo abschließen - PunktePass</title>
+    <title><?php echo esc_html(PPV_Lang::t('checkout_page_title')); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -270,6 +279,109 @@ $price_gross = round($price_net + $vat, 2);
         .cancellation-note i {
             font-size: 18px;
         }
+        /* Promo code section */
+        .promo-section {
+            margin-top: 24px;
+            padding: 20px;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+        .promo-section h4 {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .promo-input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .promo-input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .promo-input-row input:focus {
+            border-color: #667eea;
+        }
+        .promo-input-row input.valid {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+        .promo-input-row input.invalid {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .promo-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .promo-btn:hover { background: #5a6fd6; }
+        .promo-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .promo-result {
+            margin-top: 10px;
+            font-size: 13px;
+            display: none;
+        }
+        .promo-result.success {
+            color: #065f46;
+            background: #d1fae5;
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: block;
+        }
+        .promo-result.error {
+            color: #991b1b;
+            display: block;
+        }
+        .promo-activate-btn {
+            width: 100%;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .promo-activate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        .promo-activate-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         @media (max-width: 600px) {
             .features-list {
                 grid-template-columns: 1fr;
@@ -286,8 +398,8 @@ $price_gross = round($price_net + $vat, 2);
 <body>
     <div class="checkout-container">
         <div class="checkout-header">
-            <h1>PunktePass Händler-Abo</h1>
-            <p>Aktivieren Sie Ihr Abo für <?php echo esc_html($store->store_name); ?></p>
+            <h1><?php echo esc_html(PPV_Lang::t('checkout_title')); ?></h1>
+            <p><?php echo esc_html(sprintf(PPV_Lang::t('checkout_activate_for'), $store->store_name)); ?></p>
         </div>
 
         <div class="checkout-card">
@@ -295,32 +407,32 @@ $price_gross = round($price_net + $vat, 2);
             <div id="error-message" class="error-message"></div>
 
             <div class="price-summary">
-                <div class="price-amount"><?php echo number_format($price_gross, 2, ',', '.'); ?> €</div>
-                <div class="price-period">pro Monat<?php if ($is_domestic): ?> (inkl. 19% MwSt)<?php else: ?> (netto, ohne MwSt)<?php endif; ?></div>
+                <div class="price-amount"><?php echo number_format($price_gross, 2, $dec_sep, $thou_sep); ?> €</div>
+                <div class="price-period"><?php echo esc_html(PPV_Lang::t('checkout_per_month')); ?><?php if ($is_domestic): ?> <?php echo esc_html(PPV_Lang::t('checkout_incl_vat')); ?><?php else: ?> <?php echo esc_html(PPV_Lang::t('checkout_net_no_vat')); ?><?php endif; ?></div>
                 <?php if ($is_domestic): ?>
-                    <div class="price-details"><?php echo number_format($price_net, 2, ',', '.'); ?> € netto + <?php echo number_format($vat, 2, ',', '.'); ?> € MwSt</div>
+                    <div class="price-details"><?php echo esc_html(sprintf(PPV_Lang::t('checkout_net_plus_vat'), number_format($price_net, 2, $dec_sep, $thou_sep), number_format($vat, 2, $dec_sep, $thou_sep))); ?></div>
                 <?php else: ?>
-                    <div class="price-details">Kein MwSt-Aufschlag für Unternehmen außerhalb Deutschlands</div>
+                    <div class="price-details"><?php echo esc_html(PPV_Lang::t('checkout_no_vat_note')); ?></div>
                 <?php endif; ?>
             </div>
 
             <div class="features-list">
-                <div class="feature-item"><i class="ri-check-line"></i> Unbegrenzte Kunden</div>
-                <div class="feature-item"><i class="ri-check-line"></i> Bonuspunkte-System</div>
-                <div class="feature-item"><i class="ri-check-line"></i> QR-Code Scanner</div>
-                <div class="feature-item"><i class="ri-check-line"></i> Reparaturformular</div>
-                <div class="feature-item"><i class="ri-check-line"></i> Rechnungen erstellen</div>
-                <div class="feature-item"><i class="ri-check-line"></i> Kundenverwaltung</div>
-                <div class="feature-item"><i class="ri-check-line"></i> E-Mail Benachrichtigungen</div>
-                <div class="feature-item"><i class="ri-check-line"></i> Support</div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_unlimited_customers')); ?></div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_bonus_system')); ?></div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_qr_scanner')); ?></div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_repair_form')); ?></div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_invoices')); ?></div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_customer_mgmt')); ?></div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_email_notifications')); ?></div>
+                <div class="feature-item"><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_support')); ?></div>
             </div>
 
             <div class="cancellation-note">
                 <i class="ri-information-line"></i>
-                <span>Monatlich kündbar - Sie können Ihr Abo jederzeit zum Monatsende kündigen.</span>
+                <span><?php echo esc_html(PPV_Lang::t('checkout_cancel_note')); ?></span>
             </div>
 
-            <h3 style="margin: 24px 0 16px; font-size: 16px; color: #374151;">Zahlung über PayPal</h3>
+            <h3 style="margin: 24px 0 16px; font-size: 16px; color: #374151;"><?php echo esc_html(PPV_Lang::t('checkout_pay_via_paypal')); ?></h3>
 
             <div class="payment-methods">
                 <div class="payment-option selected" data-method="paypal">
@@ -328,27 +440,164 @@ $price_gross = round($price_net + $vat, 2);
                         <i class="ri-paypal-fill"></i>
                         <h3>PayPal</h3>
                     </div>
-                    <p>Automatische monatliche Abbuchung über PayPal (auch per Kreditkarte möglich)</p>
+                    <p><?php echo esc_html(PPV_Lang::t('checkout_paypal_desc')); ?></p>
                     <div id="paypal-button-container" style="margin-top: 16px;"></div>
                 </div>
             </div>
 
+            <!-- Promo Code Section -->
+            <div class="promo-section">
+                <h4><i class="ri-coupon-3-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_promo_title')); ?></h4>
+                <div class="promo-input-row">
+                    <input type="text" id="promo-code-input" placeholder="<?php echo esc_attr(PPV_Lang::t('checkout_promo_placeholder')); ?>" maxlength="30" autocomplete="off">
+                    <button type="button" class="promo-btn" id="promo-validate-btn"><?php echo esc_html(PPV_Lang::t('checkout_promo_redeem')); ?></button>
+                </div>
+                <div class="promo-result" id="promo-result"></div>
+                <button type="button" class="promo-activate-btn" id="promo-activate-btn">
+                    <i class="ri-gift-line"></i> <span id="promo-activate-text"><?php echo esc_html(PPV_Lang::t('checkout_promo_activate')); ?></span>
+                </button>
+            </div>
+
             <div class="terms">
-                Mit dem Abschluss akzeptieren Sie unsere
-                <a href="/agb" target="_blank">AGB</a> und
-                <a href="/datenschutz" target="_blank">Datenschutzerklärung</a>.
+                <?php echo esc_html(PPV_Lang::t('checkout_terms')); ?>
+                <a href="/agb" target="_blank"><?php echo esc_html(PPV_Lang::t('checkout_terms_link')); ?></a> <?php echo esc_html(PPV_Lang::t('checkout_terms_and')); ?>
+                <a href="/datenschutz" target="_blank"><?php echo esc_html(PPV_Lang::t('checkout_privacy_link')); ?></a>.
             </div>
         </div>
 
-        <a href="/handler_dashboard" class="back-link">
-            <i class="ri-arrow-left-line"></i> Zurück zum Dashboard
+        <a href="<?php echo esc_url($redirect_back); ?>" class="back-link">
+            <i class="ri-arrow-left-line"></i> <?php echo esc_html(PPV_Lang::t('checkout_back')); ?>
         </a>
     </div>
 
-    <!-- PayPal SDK (Live) -->
-    <script src="https://www.paypal.com/sdk/js?client-id=<?php echo defined('PAYPAL_CLIENT_ID') ? PAYPAL_CLIENT_ID : 'ATvIpJv2JtjokY3p4OBWc8ZfcJE5wUXn9Lt65IDYUewAoCAg0wMb3thS1bTYTETjeVl41BAX2djkO8FA'; ?>&vault=true&intent=subscription&locale=de_DE" data-sdk-integration-source="button-factory"></script>
+    <!-- Promo Code JS -->
+    <script>
+    (function() {
+        var T = <?php echo json_encode([
+            'redeem'        => PPV_Lang::t('checkout_promo_redeem'),
+            'activate'      => PPV_Lang::t('checkout_promo_activate'),
+            'months_free'   => PPV_Lang::t('checkout_promo_months_free'),
+            'activate_m'    => PPV_Lang::t('checkout_promo_activate_months'),
+            'activating'    => PPV_Lang::t('checkout_promo_activating'),
+            'success'       => PPV_Lang::t('checkout_promo_success'),
+            'invalid'       => PPV_Lang::t('checkout_promo_invalid'),
+            'error'         => PPV_Lang::t('checkout_promo_error'),
+            'network_error' => PPV_Lang::t('checkout_promo_network_error'),
+            'check_error'   => PPV_Lang::t('checkout_promo_check_error'),
+        ]); ?>;
+        var activeLang = <?php echo json_encode($lang); ?>;
+
+        const promoInput = document.getElementById('promo-code-input');
+        const promoBtn = document.getElementById('promo-validate-btn');
+        const promoResult = document.getElementById('promo-result');
+        const promoActivateBtn = document.getElementById('promo-activate-btn');
+        const promoActivateText = document.getElementById('promo-activate-text');
+        let validatedCode = '';
+
+        function fmt(tpl, vals) {
+            var r = tpl;
+            for (var i = 0; i < vals.length; i++) r = r.replace('%d', vals[i]).replace('%s', vals[i]);
+            return r;
+        }
+
+        promoInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                promoBtn.click();
+            }
+        });
+
+        promoBtn.addEventListener('click', async function() {
+            const code = promoInput.value.trim();
+            if (!code) return;
+
+            promoBtn.disabled = true;
+            promoBtn.textContent = '...';
+            promoResult.className = 'promo-result';
+            promoResult.style.display = 'none';
+            promoActivateBtn.style.display = 'none';
+            validatedCode = '';
+
+            try {
+                const res = await fetch('/wp-json/punktepass/v1/promo/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ code: code })
+                });
+                const data = await res.json();
+
+                if (data.valid) {
+                    promoInput.className = 'valid';
+                    promoResult.className = 'promo-result success';
+                    promoResult.innerHTML = '<i class="ri-check-line"></i> <strong>' + fmt(T.months_free, [data.months]) + '</strong> ' + (data.desc || '');
+                    promoActivateText.textContent = fmt(T.activate_m, [data.months]);
+                    promoActivateBtn.style.display = 'flex';
+                    validatedCode = code;
+                } else {
+                    promoInput.className = 'invalid';
+                    promoResult.className = 'promo-result error';
+                    promoResult.textContent = data.error || T.invalid;
+                }
+            } catch (err) {
+                promoResult.className = 'promo-result error';
+                promoResult.textContent = T.check_error;
+            }
+
+            promoBtn.disabled = false;
+            promoBtn.textContent = T.redeem;
+        });
+
+        promoActivateBtn.addEventListener('click', async function() {
+            if (!validatedCode) return;
+
+            promoActivateBtn.disabled = true;
+            promoActivateText.textContent = T.activating;
+
+            try {
+                const res = await fetch('/wp-json/punktepass/v1/promo/redeem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ code: validatedCode })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    var dateStr = new Date(data.expires).toLocaleDateString(activeLang === 'en' ? 'en-US' : activeLang + '-' + activeLang.toUpperCase());
+                    promoResult.className = 'promo-result success';
+                    promoResult.innerHTML = '<strong>' + fmt(T.success, [data.months, dateStr]) + '</strong>';
+                    promoActivateBtn.style.display = 'none';
+
+                    setTimeout(function() {
+                        window.location.href = '<?php echo esc_js($redirect_back); ?>?payment=success&method=promo';
+                    }, 2000);
+                } else {
+                    promoResult.className = 'promo-result error';
+                    promoResult.textContent = data.error || T.error;
+                    promoActivateBtn.disabled = false;
+                    promoActivateText.textContent = T.activate;
+                }
+            } catch (err) {
+                promoResult.className = 'promo-result error';
+                promoResult.textContent = T.network_error;
+                promoActivateBtn.disabled = false;
+                promoActivateText.textContent = T.activate;
+            }
+        });
+    })();
+    </script>
+
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=<?php echo defined('PAYPAL_CLIENT_ID') ? PAYPAL_CLIENT_ID : 'ATvIpJv2JtjokY3p4OBWc8ZfcJE5wUXn9Lt65IDYUewAoCAg0wMb3thS1bTYTETjeVl41BAX2djkO8FA'; ?>&vault=true&intent=subscription&locale=<?php echo $paypal_locale; ?>" data-sdk-integration-source="button-factory"></script>
 
     <script>
+        var TPaypal = <?php echo json_encode([
+            'thanks'   => PPV_Lang::t('checkout_paypal_thanks'),
+            'success'  => PPV_Lang::t('checkout_paypal_success'),
+            'redirect' => PPV_Lang::t('checkout_paypal_redirect'),
+            'error'    => PPV_Lang::t('checkout_paypal_error'),
+        ]); ?>;
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
         const storeId = <?php echo $store_id; ?>;
@@ -389,10 +638,10 @@ $price_gross = round($price_net + $vat, 2);
                     });
 
                     successMessage.innerHTML = `
-                        <strong>Vielen Dank!</strong><br>
-                        Ihr PayPal-Abo wurde erfolgreich aktiviert.<br>
+                        <strong>${TPaypal.thanks}</strong><br>
+                        ${TPaypal.success}<br>
                         Subscription ID: <code>${data.subscriptionID}</code><br><br>
-                        Sie werden gleich weitergeleitet...
+                        ${TPaypal.redirect}
                     `;
                     successMessage.style.display = 'block';
 
@@ -405,7 +654,7 @@ $price_gross = round($price_net + $vat, 2);
                 }
             },
             onError: function(err) {
-                errorMessage.textContent = 'PayPal Fehler: ' + (err.message || 'Bitte versuchen Sie es erneut.');
+                errorMessage.textContent = TPaypal.error;
                 errorMessage.style.display = 'block';
             }
         }).render('#paypal-button-container');

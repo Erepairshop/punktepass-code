@@ -49,9 +49,17 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
         add_action('wp_ajax_nopriv_ppv_repair_customer_lookup', [__CLASS__, 'ajax_customer_lookup']);
 
+        // AJAX: QR code user lookup for form prefill (public)
+        add_action('wp_ajax_ppv_repair_qr_lookup', [__CLASS__, 'ajax_qr_lookup']);
+        add_action('wp_ajax_nopriv_ppv_repair_qr_lookup', [__CLASS__, 'ajax_qr_lookup']);
+
         // AJAX: customer email search (autocomplete, public)
         add_action('wp_ajax_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
         add_action('wp_ajax_nopriv_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
+
+        // AJAX: AI repair analysis (public)
+        add_action('wp_ajax_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
+        add_action('wp_ajax_nopriv_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
 
         // AJAX: repair comments
         add_action('wp_ajax_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
@@ -1109,7 +1117,7 @@ class PPV_Repair_Core {
             }
         }
         // New built-in field types → stored in custom_fields JSON
-        $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit'];
+        $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit', 'vehicle_plate', 'vehicle_vin', 'vehicle_mileage', 'vehicle_first_reg', 'vehicle_tuev', 'condition_check_kfz'];
         foreach ($extra_keys as $ek) {
             if (!empty($_POST[$ek])) {
                 $custom_fields[$ek] = sanitize_text_field($_POST[$ek]);
@@ -1373,6 +1381,51 @@ class PPV_Repair_Core {
         wp_send_json_success($results ?: []);
     }
 
+    /** AJAX: AI-powered repair problem analysis */
+    public static function ajax_ai_analyze() {
+        // Rate limit: max 3 AI requests per IP per 10 minutes
+        $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '');
+        $rate_key = 'ppv_ai_rate_' . md5($ip);
+        $count = intval(get_transient($rate_key));
+        if ($count >= 3) {
+            wp_send_json_error(['message' => 'Too many requests. Please wait a few minutes.']);
+        }
+        set_transient($rate_key, $count + 1, 600);
+
+        $problem  = sanitize_textarea_field($_POST['problem'] ?? '');
+        $brand    = sanitize_text_field($_POST['brand'] ?? '');
+        $model    = sanitize_text_field($_POST['model'] ?? '');
+        $service  = sanitize_text_field($_POST['service_type'] ?? 'Allgemein');
+        $lang     = sanitize_text_field($_POST['lang'] ?? 'de');
+
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en', 'it'], true)) {
+            $lang = 'de';
+        }
+
+        if (empty($problem) || mb_strlen($problem) < 5) {
+            wp_send_json_error(['message' => 'Description too short']);
+        }
+
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
+
+        if (!PPV_AI_Engine::is_available()) {
+            wp_send_json_error(['message' => 'AI not available']);
+        }
+
+        $result = PPV_AI_Engine::analyze_repair([
+            'brand'        => $brand,
+            'model'        => $model,
+            'problem'      => $problem,
+            'service_type' => $service,
+        ], $lang);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        wp_send_json_success($result);
+    }
+
     /** AJAX: Lookup customer by email (for form autofill) */
     public static function ajax_customer_lookup() {
         $email = sanitize_email($_POST['email'] ?? '');
@@ -1404,6 +1457,95 @@ class PPV_Repair_Core {
         }
 
         wp_send_json_success(['found' => false]);
+    }
+
+    /** ============================================================
+     * AJAX: QR Code User Lookup (for form prefill)
+     * Scans PunktePass QR → returns user data to prefill form
+     * ============================================================ */
+    public static function ajax_qr_lookup() {
+        $qr_code = sanitize_text_field($_POST['qr_code'] ?? '');
+        $store_id = intval($_POST['store_id'] ?? 0);
+
+        if (empty($qr_code) || !$store_id) {
+            wp_send_json_error(['message' => 'Missing data']);
+        }
+
+        // Use existing QR decode logic from PPV_QR
+        if (!method_exists('PPV_QR', 'decode_user_from_qr')) {
+            wp_send_json_error(['message' => 'QR system not available']);
+        }
+
+        // decode_user_from_qr is private, so we replicate the lookup here
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $user_id = 0;
+
+        // PPUSER-{id}-{qr_token} format
+        if (strpos($qr_code, 'PPUSER-') === 0) {
+            $parts = explode('-', $qr_code);
+            $token = $parts[2] ?? '';
+            if (!empty($token)) {
+                $user_id = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_users WHERE qr_token = %s AND active = 1 LIMIT 1",
+                    $token
+                ));
+            }
+        }
+        // PPQR-{id}-{timed_token} format (30 min)
+        elseif (strpos($qr_code, 'PPQR-') === 0) {
+            $parts = explode('-', $qr_code);
+            $token = $parts[2] ?? '';
+            if (!empty($token) && strlen($token) === 32) {
+                $user_id = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_users WHERE timed_qr_token = %s AND timed_qr_expires > NOW() AND active = 1 LIMIT 1",
+                    $token
+                ));
+            }
+        }
+        // PPU{id}{16-char-token} format
+        elseif (strpos($qr_code, 'PPU') === 0) {
+            $body = substr($qr_code, 3);
+            if (strlen($body) >= 16) {
+                $token = substr($body, -16);
+                $entity_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT entity_id FROM {$prefix}ppv_tokens WHERE token = %s AND entity_type = 'user' AND expires_at > NOW() LIMIT 1",
+                    $token
+                ));
+                if ($entity_id) $user_id = (int)$entity_id;
+            }
+        }
+
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'QR code not recognized']);
+        }
+
+        // Fetch user data for form prefill
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT first_name, last_name, display_name, email, phone_number, address, city
+             FROM {$prefix}ppv_users WHERE id = %d LIMIT 1",
+            $user_id
+        ));
+
+        if (!$user) {
+            wp_send_json_error(['message' => 'User not found']);
+        }
+
+        // Build full name
+        $name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+        if (empty($name)) $name = $user->display_name ?? '';
+
+        // Build address string
+        $address = trim(($user->address ?? '') . (($user->address && $user->city) ? ', ' : '') . ($user->city ?? ''));
+
+        wp_send_json_success([
+            'found'   => true,
+            'user_id' => $user_id,
+            'name'    => $name,
+            'email'   => $user->email ?? '',
+            'phone'   => $user->phone_number ?? '',
+            'address' => $address,
+        ]);
     }
 
     /** ============================================================

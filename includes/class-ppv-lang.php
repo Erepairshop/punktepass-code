@@ -11,13 +11,13 @@ if (!defined('ABSPATH')) exit;
  * 3. Cookie (ppv_lang)
  * 4. Session
  * 5. Browser Accept-Language
- * 6. Default: Romanian
+ * 6. Default: English
  */
 
 class PPV_Lang {
 
     public static $strings = [];
-    public static $active  = 'ro';
+    public static $active  = 'en';
 
     /** ============================================================
      *  🔹 Init
@@ -52,7 +52,7 @@ class PPV_Lang {
         // 1️⃣ REST header (API calls)
         if (!empty($_SERVER['HTTP_X_PPV_LANG'])) {
             $rest_lang = strtolower(sanitize_text_field($_SERVER['HTTP_X_PPV_LANG']));
-            if (in_array($rest_lang, ['de','en','hu','ro'], true)) {
+            if (in_array($rest_lang, ['de','en','hu','ro','it'], true)) {
                 self::$active = $rest_lang;
                 $_COOKIE['ppv_lang'] = $rest_lang;
                 $_SESSION['ppv_lang'] = $rest_lang;
@@ -67,7 +67,7 @@ class PPV_Lang {
         $get_lang = $_GET['lang'] ?? $_GET['ppv_lang'] ?? $_GET['ppv_js_lang'] ?? null;
         if ($get_lang) {
             $get_lang = strtolower(sanitize_text_field($get_lang));
-            if (in_array($get_lang, ['de', 'en', 'hu', 'ro'], true)) {
+            if (in_array($get_lang, ['de', 'en', 'hu', 'ro', 'it'], true)) {
                 $lang = $get_lang;
                 $_SESSION['ppv_lang'] = $lang;
                 self::set_cookie_all($lang, $domain, $secure);
@@ -78,7 +78,7 @@ class PPV_Lang {
         // 3️⃣ Cookie
         if (!$lang && !empty($_COOKIE['ppv_lang'])) {
             $cookie_lang = strtolower($_COOKIE['ppv_lang']);
-            if (in_array($cookie_lang, ['de', 'en', 'hu', 'ro'], true)) {
+            if (in_array($cookie_lang, ['de', 'en', 'hu', 'ro', 'it'], true)) {
                 $lang = $cookie_lang;
                 ppv_log("🌍 [PPV_Lang] Cookie → {$lang}");
             }
@@ -87,7 +87,7 @@ class PPV_Lang {
         // 4️⃣ Session
         if (!$lang && !empty($_SESSION['ppv_lang'])) {
             $session_lang = strtolower($_SESSION['ppv_lang']);
-            if (in_array($session_lang, ['de', 'en', 'hu', 'ro'], true)) {
+            if (in_array($session_lang, ['de', 'en', 'hu', 'ro', 'it'], true)) {
                 $lang = $session_lang;
                 ppv_log("🌍 [PPV_Lang] Session → {$lang}");
             }
@@ -97,7 +97,7 @@ class PPV_Lang {
         if (!$lang) {
             $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
             if ($accept) {
-                $supported = ['de', 'hu', 'ro', 'en'];
+                $supported = ['de', 'hu', 'ro', 'en', 'it'];
                 $detected = self::parse_accept_language($accept, $supported);
                 if ($detected) {
                     $lang = $detected;
@@ -106,10 +106,10 @@ class PPV_Lang {
             }
         }
 
-        // 6️⃣ Default: German
+        // 6️⃣ Default: English
         if (!$lang) {
-            $lang = 'de';
-            ppv_log("🌍 [PPV_Lang] Default → de");
+            $lang = 'en';
+            ppv_log("🌍 [PPV_Lang] Default → en");
         }
 
         // Set cookie if not already set (for subsequent requests)
@@ -172,7 +172,7 @@ class PPV_Lang {
      * ============================================================ */
     public static function load($lang) {
         $path = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
-        $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php"; // German fallback
+        $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-en.php"; // English fallback
 
         $used_fallback = false;
         if (!file_exists($path)) {
@@ -212,12 +212,12 @@ class PPV_Lang {
      *  Usage: PPV_Lang::load_extra('ppv-repair-lang');
      * ============================================================ */
     public static function load_extra($prefix) {
-        $lang = self::$active ?: 'de';
+        $lang = self::$active ?: 'en';
         $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-{$lang}.php";
 
         if (!file_exists($path)) {
-            // Fallback to German
-            $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-de.php";
+            // Fallback to English
+            $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-en.php";
         }
 
         if (file_exists($path)) {
@@ -232,7 +232,7 @@ class PPV_Lang {
      *  🔹 Get active language
      * ============================================================ */
     public static function current() {
-        return self::$active ?? 'ro';
+        return self::$active ?? 'en';
     }
 }
 
