@@ -11,13 +11,13 @@ if (!defined('ABSPATH')) exit;
  * 3. Cookie (ppv_lang)
  * 4. Session
  * 5. Browser Accept-Language
- * 6. Default: Romanian
+ * 6. Default: English
  */
 
 class PPV_Lang {
 
     public static $strings = [];
-    public static $active  = 'ro';
+    public static $active  = 'en';
 
     /** ============================================================
      *  🔹 Init
@@ -106,10 +106,10 @@ class PPV_Lang {
             }
         }
 
-        // 6️⃣ Default: German
+        // 6️⃣ Default: English
         if (!$lang) {
-            $lang = 'de';
-            ppv_log("🌍 [PPV_Lang] Default → de");
+            $lang = 'en';
+            ppv_log("🌍 [PPV_Lang] Default → en");
         }
 
         // Set cookie if not already set (for subsequent requests)
@@ -172,7 +172,7 @@ class PPV_Lang {
      * ============================================================ */
     public static function load($lang) {
         $path = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
-        $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php"; // German fallback
+        $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-en.php"; // English fallback
 
         $used_fallback = false;
         if (!file_exists($path)) {
@@ -212,12 +212,12 @@ class PPV_Lang {
      *  Usage: PPV_Lang::load_extra('ppv-repair-lang');
      * ============================================================ */
     public static function load_extra($prefix) {
-        $lang = self::$active ?: 'de';
+        $lang = self::$active ?: 'en';
         $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-{$lang}.php";
 
         if (!file_exists($path)) {
-            // Fallback to German
-            $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-de.php";
+            // Fallback to English
+            $path = PPV_PLUGIN_DIR . "includes/lang/{$prefix}-en.php";
         }
 
         if (file_exists($path)) {
@@ -232,7 +232,7 @@ class PPV_Lang {
      *  🔹 Get active language
      * ============================================================ */
     public static function current() {
-        return self::$active ?? 'ro';
+        return self::$active ?? 'en';
     }
 }
 
