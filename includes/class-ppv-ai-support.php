@@ -37,7 +37,7 @@ class PPV_AI_Support {
             return true;
         }
 
-        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+        if (!empty($_SESSION['ppv_vendor_store_id']) || !empty($_SESSION['ppv_repair_store_id'])) {
             return true;
         }
 
@@ -212,6 +212,100 @@ PROMPT;
     }
 
     /**
+     * Build repair-form-specific system prompt (for /formular/admin chat)
+     */
+    public static function get_repair_system_prompt($lang = 'de') {
+        $lang_names = [
+            'de' => 'German', 'hu' => 'Hungarian', 'ro' => 'Romanian',
+            'en' => 'English', 'it' => 'Italian',
+        ];
+        $lang_name = $lang_names[$lang] ?? 'German';
+
+        return <<<PROMPT
+You are the PunktePass Repair Form Assistant. You help store owners and handlers with their repair form system and repair management.
+
+RESPOND ONLY IN {$lang_name}. Be concise, friendly, and practical. Use short paragraphs and bullet points (•) where helpful. Do NOT use markdown formatting (no **, ##, etc.) - just plain text.
+
+=== REPAIR FORM SYSTEM KNOWLEDGE ===
+
+REPAIR FORM (/formular/slug):
+• Public repair request form for customers to submit repair orders
+• Customizable fields: brand, model, IMEI, accessories, photos, signature
+• Custom problem categories (quick-select tags for common issues)
+• Repair form gives bonus points to customers with PunktePass account
+• Email notifications to store + customer when repair is submitted
+• Tracking system with QR code for customers to check status
+• Offline support: queues submissions when no internet, sends when back online
+• KFZ/Vehicle mode: license plate, VIN, mileage fields for auto repair shops
+• Multi-language support (DE, HU, RO, EN, IT)
+
+REPAIR ADMIN (/formular/admin):
+• Dashboard to manage all incoming repair requests
+• Status workflow: new → in progress → done → delivered
+• Comments system for internal notes on each repair
+• Auto-polling every 15 seconds for new repairs
+• Print/PDF export for individual repairs
+• Feedback email sent 24h after "done" status
+• Search and filter repairs by customer name, phone, status
+• Invoice/billing integration
+• Ankauf (buy-back) module for used device purchases
+
+REPAIR FORM SETTINGS:
+• Enable/disable fields (IMEI, accessories, photos, signature, etc.)
+• Add custom brands (phone brands, car brands, etc.)
+• Add custom problem categories (screen repair, battery, water damage, etc.)
+• Set estimated repair time defaults
+• Configure notification emails
+• Set form language
+• Enable/disable KFZ (vehicle) mode
+• Custom CSS for form appearance
+• Set form as public or require login
+
+REPAIR STATUS MANAGEMENT:
+• new: Just received, not yet started
+• in_progress: Repair is being worked on
+• done: Repair is complete, waiting for pickup
+• delivered: Customer picked up the device
+• cancelled: Repair was cancelled
+
+COMMON QUESTIONS:
+
+Q: How do customers submit a repair?
+A: Share the repair form link (/formular/your-slug). Customers fill in their device info, describe the problem, and submit. You get a notification.
+
+Q: How to add custom problem categories?
+A: Go to Settings tab → Problem Categories. Add tags like "Display", "Battery", "Charging port" etc. Customers see them as quick-select buttons.
+
+Q: How does the QR tracking work?
+A: Each repair gets a unique QR code. Print it and attach to the device. Customer scans to see repair status.
+
+Q: How to set up the feedback system?
+A: Feedback emails are sent automatically 24h after marking a repair as "done". The customer rates their experience.
+
+Q: How to handle multiple locations (Filialen)?
+A: Each branch has its own repair form with its own slug. Switch between branches in the admin dashboard.
+
+Q: How to customize the form fields?
+A: Settings tab → Form Fields. Toggle fields on/off, rearrange order, add custom fields.
+
+Q: How to print a repair ticket?
+A: Open the repair card → click the Print/PDF button. It generates a formatted receipt with QR code.
+
+Q: Can customers upload photos?
+A: Yes, enable the photo upload field in Settings. Customers can take or upload photos of the device/damage.
+
+=== RULES ===
+• ONLY answer questions about the repair form system, repair management, and related settings
+• If the question is about other PunktePass features (QR Center, points, rewards, etc.), say this chat is specifically for repair form help and suggest they use the main PunktePass support
+• If you don't know something specific, say so honestly
+• Don't make up features that don't exist
+• Give practical, actionable advice
+• Keep answers concise (2-4 short paragraphs max)
+• ESCALATION: If you cannot answer a question, or the user needs personal help, add [ESCALATE] at the very end of your response. This will show a WhatsApp/email contact button.
+PROMPT;
+    }
+
+    /**
      * AJAX handler for support chat
      */
     public static function ajax_chat() {
@@ -273,8 +367,13 @@ PROMPT;
 
         $messages[] = ['role' => 'user', 'content' => $message];
 
+        $context = sanitize_text_field($_POST['context'] ?? '');
+        $system_prompt = ($context === 'repair')
+            ? self::get_repair_system_prompt($lang)
+            : self::get_system_prompt($lang);
+
         $result = PPV_AI_Engine::chat_with_history(
-            self::get_system_prompt($lang),
+            $system_prompt,
             $messages
         );
 
@@ -604,5 +703,289 @@ PROMPT;
             'it' => "Hai raggiunto il limite di chat per questa sessione (max 10 messaggi).\n\nPer ulteriore aiuto, contattaci:\ninfo@punktepass.de",
         ];
         return $msgs[$lang] ?? $msgs['de'];
+    }
+
+    /**
+     * Get UI labels for the repair chat widget
+     */
+    private static function get_repair_labels($lang) {
+        $labels = [
+            'de' => [
+                'title'             => 'Reparatur-Assistent',
+                'status'            => 'KI-Hilfe für Reparaturen',
+                'welcome'           => 'Hallo! Ich bin Ihr Reparatur-Assistent. Fragen Sie mich zu Reparaturformularen, Status-Verwaltung, Einstellungen oder Kundenkommunikation.',
+                'placeholder'       => 'Frage zur Reparatur...',
+                'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
+                'limit_placeholder' => 'Chat-Limit erreicht',
+                'wa_prefill'        => 'Hallo, ich brauche Hilfe mit dem Reparaturformular',
+            ],
+            'hu' => [
+                'title'             => 'Javítás Asszisztens',
+                'status'            => 'AI segítség a javításokhoz',
+                'welcome'           => 'Helló! Én vagyok a javítás asszisztens. Kérdezzen a javítási űrlapokról, állapotkezelésről, beállításokról vagy ügyfélkommunikációról.',
+                'placeholder'       => 'Kérdés a javításról...',
+                'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
+                'limit_placeholder' => 'Chat limit elérve',
+                'wa_prefill'        => 'Szia, segítségre van szükségem a javítási űrlappal',
+            ],
+            'ro' => [
+                'title'             => 'Asistent Reparații',
+                'status'            => 'Ajutor AI pentru reparații',
+                'welcome'           => 'Bună! Sunt asistentul pentru reparații. Întrebați-mă despre formulare, gestionarea statusului, setări sau comunicarea cu clienții.',
+                'placeholder'       => 'Întrebare despre reparații...',
+                'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
+                'limit_placeholder' => 'Limită chat atinsă',
+                'wa_prefill'        => 'Bună, am nevoie de ajutor cu formularul de reparații',
+            ],
+            'en' => [
+                'title'             => 'Repair Assistant',
+                'status'            => 'AI help for repairs',
+                'welcome'           => 'Hello! I\'m your repair assistant. Ask me about repair forms, status management, settings, or customer communication.',
+                'placeholder'       => 'Ask about repairs...',
+                'error'             => 'Sorry, something went wrong. Please try again.',
+                'limit_placeholder' => 'Chat limit reached',
+                'wa_prefill'        => 'Hello, I need help with the repair form',
+            ],
+            'it' => [
+                'title'             => 'Assistente Riparazioni',
+                'status'            => 'Aiuto AI per riparazioni',
+                'welcome'           => 'Ciao! Sono il tuo assistente per le riparazioni. Chiedimi dei moduli di riparazione, gestione stato, impostazioni o comunicazione con i clienti.',
+                'placeholder'       => 'Domanda sulle riparazioni...',
+                'error'             => 'Spiacente, si è verificato un errore. Riprova.',
+                'limit_placeholder' => 'Limite chat raggiunto',
+                'wa_prefill'        => 'Ciao, ho bisogno di aiuto con il modulo di riparazione',
+            ],
+        ];
+
+        return $labels[$lang] ?? $labels['de'];
+    }
+
+    /**
+     * Render floating chat widget for repair admin (/formular/admin)
+     * This is a standalone widget (the page doesn't use WP shortcodes/bottom nav)
+     */
+    public static function render_repair_widget($lang = 'de') {
+        $labels   = self::get_repair_labels($lang);
+        $ajax_url = admin_url('admin-ajax.php');
+        ?>
+
+<style>
+#ppv-repair-chat-fab{position:fixed;bottom:24px;right:24px;z-index:9990;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(102,126,234,0.4);transition:transform .2s,box-shadow .2s}
+#ppv-repair-chat-fab:hover{transform:scale(1.08);box-shadow:0 8px 28px rgba(102,126,234,0.5)}
+#ppv-repair-chat-fab.has-panel{background:rgba(100,116,139,0.8);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+#ppv-repair-chat-panel{position:fixed;bottom:92px;right:24px;z-index:9991;width:380px;max-width:calc(100vw - 48px);height:480px;max-height:calc(100vh - 140px);background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden;animation:ppvRcSlideUp .25s ease}
+@keyframes ppvRcSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+#ppv-repair-chat-panel.visible{display:flex}
+.ppv-rc-header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;flex-shrink:0}
+.ppv-rc-header-icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
+.ppv-rc-header-info{flex:1}
+.ppv-rc-header-name{font-size:14px;font-weight:700}
+.ppv-rc-header-status{font-size:11px;opacity:.8}
+.ppv-rc-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:4px;opacity:.8;transition:opacity .2s}
+.ppv-rc-close:hover{opacity:1}
+.ppv-rc-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ppv-rc-msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;white-space:pre-line}
+.ppv-rc-msg.bot{background:#f1f5f9;color:#334155;align-self:flex-start;border-bottom-left-radius:4px}
+.ppv-rc-msg.user{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.ppv-rc-msg.typing{background:#f1f5f9;align-self:flex-start;border-bottom-left-radius:4px;padding:12px 18px}
+.ppv-rc-typing-dots{display:flex;gap:4px}
+.ppv-rc-typing-dots span{width:7px;height:7px;border-radius:50%;background:#94a3b8;animation:ppvRcBounce 1.2s infinite}
+.ppv-rc-typing-dots span:nth-child(2){animation-delay:.2s}
+.ppv-rc-typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes ppvRcBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.ppv-rc-input-wrap{display:flex;gap:8px;padding:12px 16px;border-top:1px solid #f1f5f9;flex-shrink:0;background:#fff}
+.ppv-rc-input{flex:1;border:1.5px solid #e2e8f0;border-radius:20px;padding:8px 14px;font-size:13px;outline:none;font-family:inherit;resize:none;max-height:60px;line-height:1.4}
+.ppv-rc-input:focus{border-color:#667eea}
+.ppv-rc-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:transform .2s}
+.ppv-rc-send:hover{transform:scale(1.08)}
+.ppv-rc-send:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ppv-rc-escalate{display:flex;gap:8px;align-self:flex-start;flex-wrap:wrap;margin:2px 0}
+.ppv-rc-escalate a{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:600;transition:filter .2s}
+.ppv-rc-escalate a:hover{filter:brightness(0.9)}
+.ppv-rc-wa-btn{background:#25d366;color:#fff!important}
+.ppv-rc-email-btn{background:#667eea;color:#fff!important}
+@media(max-width:480px){#ppv-repair-chat-fab{bottom:16px;right:16px;width:50px;height:50px;font-size:22px}#ppv-repair-chat-panel{right:8px;left:8px;width:auto;bottom:80px;height:calc(100vh - 120px);max-height:none}}
+</style>
+
+<button type="button" id="ppv-repair-chat-fab" title="<?php echo esc_attr($labels['title']); ?>">
+    <i class="ri-sparkling-2-fill"></i>
+</button>
+
+<div id="ppv-repair-chat-panel">
+    <div class="ppv-rc-header">
+        <div class="ppv-rc-header-icon"><i class="ri-tools-fill"></i></div>
+        <div class="ppv-rc-header-info">
+            <div class="ppv-rc-header-name"><?php echo esc_html($labels['title']); ?></div>
+            <div class="ppv-rc-header-status"><?php echo esc_html($labels['status']); ?></div>
+        </div>
+        <button type="button" class="ppv-rc-close" id="ppv-rc-close">&times;</button>
+    </div>
+    <div class="ppv-rc-messages" id="ppv-rc-messages">
+        <div class="ppv-rc-msg bot"><?php echo esc_html($labels['welcome']); ?></div>
+    </div>
+    <div class="ppv-rc-input-wrap">
+        <textarea class="ppv-rc-input" id="ppv-rc-input" rows="1" placeholder="<?php echo esc_attr($labels['placeholder']); ?>"></textarea>
+        <button type="button" class="ppv-rc-send" id="ppv-rc-send"><i class="ri-send-plane-fill"></i></button>
+    </div>
+</div>
+
+<script>
+(function(){
+    var fab = document.getElementById('ppv-repair-chat-fab');
+    var panel = document.getElementById('ppv-repair-chat-panel');
+    var closeBtn = document.getElementById('ppv-rc-close');
+    var input = document.getElementById('ppv-rc-input');
+    var sendBtn = document.getElementById('ppv-rc-send');
+    var msgContainer = document.getElementById('ppv-rc-messages');
+    var ajaxUrl = <?php echo wp_json_encode(esc_url($ajax_url)); ?>;
+    var lang = <?php echo wp_json_encode(esc_js($lang)); ?>;
+    var isOpen = false;
+    var isSending = false;
+    var history = [];
+
+    if (!fab || !panel) return;
+
+    try {
+        var saved = sessionStorage.getItem('ppv_rc_history');
+        if (saved) {
+            history = JSON.parse(saved);
+            history.forEach(function(h) {
+                addMessage(h.content, h.role === 'user' ? 'user' : 'bot', true);
+            });
+        }
+    } catch(e) {}
+
+    function saveHistory() {
+        try { sessionStorage.setItem('ppv_rc_history', JSON.stringify(history)); } catch(e) {}
+    }
+
+    function toggle() {
+        isOpen = !isOpen;
+        panel.classList.toggle('visible', isOpen);
+        fab.classList.toggle('has-panel', isOpen);
+        fab.innerHTML = isOpen ? '<i class="ri-close-line"></i>' : '<i class="ri-sparkling-2-fill"></i>';
+        if (isOpen) {
+            scrollToBottom();
+            setTimeout(function() { input.focus(); }, 100);
+        }
+    }
+
+    function addMessage(text, type, silent) {
+        var msg = document.createElement('div');
+        msg.className = 'ppv-rc-msg ' + type;
+        msg.textContent = text;
+        msgContainer.appendChild(msg);
+        if (!silent) scrollToBottom();
+    }
+
+    function showTyping() {
+        var msg = document.createElement('div');
+        msg.className = 'ppv-rc-msg typing';
+        msg.id = 'ppv-rc-typing';
+        msg.innerHTML = '<div class="ppv-rc-typing-dots"><span></span><span></span><span></span></div>';
+        msgContainer.appendChild(msg);
+        scrollToBottom();
+    }
+
+    function hideTyping() {
+        var el = document.getElementById('ppv-rc-typing');
+        if (el) el.remove();
+    }
+
+    function scrollToBottom() {
+        requestAnimationFrame(function() {
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        });
+    }
+
+    function sendMessage() {
+        var text = input.value.trim();
+        if (!text || isSending) return;
+
+        addMessage(text, 'user');
+        history.push({ role: 'user', content: text });
+        saveHistory();
+        input.value = '';
+        input.style.height = 'auto';
+        isSending = true;
+        sendBtn.disabled = true;
+        showTyping();
+
+        var fd = new FormData();
+        fd.append('action', 'ppv_ai_support_chat');
+        fd.append('message', text);
+        fd.append('history', JSON.stringify(history.slice(-10)));
+        fd.append('lang', lang);
+        fd.append('context', 'repair');
+
+        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(r) {
+                if (!r.ok) console.error('PPV Repair Chat: HTTP ' + r.status);
+                return r.text();
+            })
+            .then(function(raw) {
+                hideTyping();
+                var data;
+                try { data = JSON.parse(raw); } catch(e) {
+                    console.error('PPV Repair Chat: invalid JSON', raw.substring(0, 200));
+                    addMessage(<?php echo wp_json_encode($labels['error']); ?> + ' (server error)', 'bot');
+                    return;
+                }
+                if (data.success && data.data && data.data.reply) {
+                    addMessage(data.data.reply, 'bot');
+                    history.push({ role: 'assistant', content: data.data.reply });
+                    saveHistory();
+                    if (data.data.escalate && data.data.whatsapp_url) {
+                        var lastQ = history.filter(function(h){return h.role==='user'}).slice(-1);
+                        var ctx = lastQ.length ? lastQ[0].content : '';
+                        var waText = <?php echo wp_json_encode($labels['wa_prefill']); ?> + (ctx ? ':\n' + ctx : '');
+                        var esc = document.createElement('div');
+                        esc.className = 'ppv-rc-escalate';
+                        esc.innerHTML = '<a class="ppv-rc-wa-btn" href="' + data.data.whatsapp_url + '?text=' + encodeURIComponent(waText) + '" target="_blank" rel="noopener"><i class="ri-whatsapp-fill"></i> WhatsApp</a>'
+                            + '<a class="ppv-rc-email-btn" href="mailto:' + (data.data.support_email || 'info@punktepass.de') + '?subject=PunktePass%20Repair%20Support&body=' + encodeURIComponent(ctx) + '"><i class="ri-mail-fill"></i> Email</a>';
+                        msgContainer.appendChild(esc);
+                        scrollToBottom();
+                    }
+                    if (data.data.limit_reached) {
+                        input.disabled = true;
+                        sendBtn.disabled = true;
+                        input.placeholder = <?php echo wp_json_encode($labels['limit_placeholder']); ?>;
+                    }
+                } else {
+                    var errMsg = (data.data && data.data.message) ? data.data.message : <?php echo wp_json_encode($labels['error']); ?>;
+                    console.error('PPV Repair Chat: error', data);
+                    addMessage(errMsg, 'bot');
+                }
+            })
+            .catch(function(err) {
+                hideTyping();
+                console.error('PPV Repair Chat: fetch error', err);
+                addMessage(<?php echo wp_json_encode($labels['error']); ?>, 'bot');
+            })
+            .finally(function() {
+                isSending = false;
+                sendBtn.disabled = false;
+                input.focus();
+            });
+    }
+
+    fab.addEventListener('click', toggle);
+    closeBtn.addEventListener('click', toggle);
+    sendBtn.addEventListener('click', sendMessage);
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    input.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 60) + 'px';
+    });
+})();
+</script>
+        <?php
     }
 }

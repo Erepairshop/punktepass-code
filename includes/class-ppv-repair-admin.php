@@ -6175,7 +6175,12 @@ echo '</div></div>
 .kiosk-tip-external{font-size:13px;color:#667eea;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:500}
 .kiosk-tip-external:hover{text-decoration:underline}
 </style>
-
+';
+        // Render floating AI chat widget for repair admin
+        if (class_exists('PPV_AI_Support')) {
+            PPV_AI_Support::render_repair_widget($lang);
+        }
+        echo '
 </body>
 </html>';
     }
