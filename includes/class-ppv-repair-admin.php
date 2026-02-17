@@ -700,6 +700,18 @@ a:hover{color:#5a67d8}
 .ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
 .ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
 
+/* ========== Chip/Tag Editor ========== */
+.ra-chip-editor{border:2px solid #e2e8f0;border-radius:12px;background:#f8fafc;padding:8px 10px;min-height:48px;transition:all .2s;cursor:text}
+.ra-chip-editor:focus-within{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,0.1)}
+.ra-chip-wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ra-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 8px 5px 10px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-radius:20px;font-size:12.5px;font-weight:500;animation:ra-chip-in .2s ease}
+@keyframes ra-chip-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.ra-chip-x{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:14px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:background .15s}
+.ra-chip-x:hover{background:rgba(255,255,255,0.45)}
+.ra-chip-input{border:none;outline:none;background:transparent;font-size:13px;font-family:inherit;color:#0f172a;min-width:120px;flex:1;padding:4px 2px}
+.ra-chip-input::placeholder{color:#94a3b8}
+.ra-chip-count{font-size:11px;color:#94a3b8;margin-top:4px}
+
 /* ========== Toolbar ========== */
 .ra-toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .ra-search{flex:1;position:relative;min-width:200px}
@@ -1702,20 +1714,38 @@ echo '</div></div>
 
             <div class="field" style="margin-bottom:16px">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_brands_label')) . '</label>
-                <textarea name="repair_custom_brands" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Apple&#10;Samsung&#10;Huawei&#10;Xiaomi&#10;...">' . $custom_brands . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_brands_hint')) . '</p>
+                <div class="ra-chip-editor" data-chip-for="repair_custom_brands">
+                    <div class="ra-chip-wrap">
+                        <input type="text" class="ra-chip-input" placeholder="+ Apple, Samsung, Huawei…">
+                    </div>
+                </div>
+                <textarea name="repair_custom_brands" style="display:none">' . $custom_brands . '</textarea>
+                <div class="ra-chip-count"></div>
+                <p style="font-size:11px;color:#9ca3af;margin-top:2px">' . esc_html(PPV_Lang::t('repair_admin_brands_hint')) . '</p>
             </div>
 
             <div class="field" style="margin-bottom:16px">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_problems_label')) . '</label>
-                <textarea name="repair_custom_problems" rows="5" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Display gebrochen&#10;Akku tauschen&#10;Wasserschaden&#10;Ladebuchse defekt&#10;...">' . $custom_problems . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_problems_hint')) . '</p>
+                <div class="ra-chip-editor" data-chip-for="repair_custom_problems">
+                    <div class="ra-chip-wrap">
+                        <input type="text" class="ra-chip-input" placeholder="+ Display gebrochen, Akku tauschen…">
+                    </div>
+                </div>
+                <textarea name="repair_custom_problems" style="display:none">' . $custom_problems . '</textarea>
+                <div class="ra-chip-count"></div>
+                <p style="font-size:11px;color:#9ca3af;margin-top:2px">' . esc_html(PPV_Lang::t('repair_admin_problems_hint')) . '</p>
             </div>
 
             <div class="field" style="margin-bottom:16px">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_accessories_label')) . '</label>
-                <textarea name="repair_custom_accessories" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical">' . $custom_accessories . '</textarea>
-                <p style="font-size:11px;color:#9ca3af;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_accessories_hint')) . '</p>
+                <div class="ra-chip-editor" data-chip-for="repair_custom_accessories">
+                    <div class="ra-chip-wrap">
+                        <input type="text" class="ra-chip-input" placeholder="+ Hülle, Panzerglas, Ladekabel…">
+                    </div>
+                </div>
+                <textarea name="repair_custom_accessories" style="display:none">' . $custom_accessories . '</textarea>
+                <div class="ra-chip-count"></div>
+                <p style="font-size:11px;color:#9ca3af;margin-top:2px">' . esc_html(PPV_Lang::t('repair_admin_accessories_hint')) . '</p>
             </div>
 
             <div class="ra-settings-grid" style="margin-bottom:16px">
@@ -4688,6 +4718,65 @@ echo '</div></div>
             field.scrollIntoView({behavior:"smooth",block:"center"});
         });
     }
+    /* ===== Chip/Tag Editors ===== */
+    document.querySelectorAll(".ra-chip-editor").forEach(function(editor){
+        var taName=editor.getAttribute("data-chip-for");
+        var ta=document.querySelector("textarea[name=\""+taName+"\"]");
+        if(!ta)return;
+        var wrap=editor.querySelector(".ra-chip-wrap");
+        var inp=editor.querySelector(".ra-chip-input");
+        var countEl=editor.parentNode.querySelector(".ra-chip-count");
+
+        function syncTA(){
+            var chips=wrap.querySelectorAll(".ra-chip");
+            var vals=[];
+            chips.forEach(function(c){vals.push(c.getAttribute("data-val"))});
+            ta.value=vals.join("\\n");
+            if(countEl)countEl.textContent=vals.length>0?vals.length+" Einträge":"";
+        }
+
+        function addChip(text){
+            text=text.trim();
+            if(!text)return;
+            var exists=false;
+            wrap.querySelectorAll(".ra-chip").forEach(function(c){if(c.getAttribute("data-val").toLowerCase()===text.toLowerCase())exists=true});
+            if(exists)return;
+            var chip=document.createElement("span");
+            chip.className="ra-chip";
+            chip.setAttribute("data-val",text);
+            chip.innerHTML=text+" <button type=\\"button\\" class=\\"ra-chip-x\\" title=\\"Entfernen\\">&times;</button>";
+            chip.querySelector(".ra-chip-x").addEventListener("click",function(){chip.remove();syncTA()});
+            wrap.insertBefore(chip,inp);
+            syncTA();
+        }
+
+        // Init from textarea
+        var initVal=ta.value.trim();
+        if(initVal){initVal.split("\\n").forEach(function(line){addChip(line)})}
+
+        // Enter / comma to add
+        inp.addEventListener("keydown",function(e){
+            if(e.key==="Enter"||e.key===","){
+                e.preventDefault();
+                addChip(inp.value.replace(/,$/,""));
+                inp.value="";
+            }
+            // Backspace on empty input removes last chip
+            if(e.key==="Backspace"&&!inp.value){
+                var chips=wrap.querySelectorAll(".ra-chip");
+                if(chips.length){chips[chips.length-1].remove();syncTA()}
+            }
+        });
+
+        // Also add on blur
+        inp.addEventListener("blur",function(){
+            if(inp.value.trim()){addChip(inp.value);inp.value=""}
+        });
+
+        // Click on editor focuses input
+        editor.addEventListener("click",function(){inp.focus()});
+    });
+
     /* ===== Settings Form ===== */
     var settingsFormEl = document.getElementById("ra-settings-form");
     if(settingsFormEl){
