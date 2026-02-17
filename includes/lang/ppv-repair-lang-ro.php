@@ -409,6 +409,7 @@ return [
     'repair_admin_fc_options_hint'=> 'O opțiune pe linie',
     'repair_admin_fc_add_custom'  => 'Adaugă câmp personalizat',
     'repair_admin_fc_custom'      => 'Câmp personalizat',
+    'repair_admin_fc_live_preview' => 'Previzualizare live',
     'repair_admin_fc_palette'     => 'Câmpuri',
     'repair_admin_fc_basic'       => 'Câmpuri de bază',
     'repair_admin_fc_device'      => 'Câmpuri dispozitiv',

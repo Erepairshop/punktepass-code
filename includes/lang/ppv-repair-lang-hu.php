@@ -409,6 +409,7 @@ return [
     'repair_admin_fc_options_hint'=> 'Soronként egy opció',
     'repair_admin_fc_add_custom'  => 'Saját mező hozzáadása',
     'repair_admin_fc_custom'      => 'Saját mező',
+    'repair_admin_fc_live_preview' => 'Élő előnézet',
     'repair_admin_fc_palette'     => 'Mezők',
     'repair_admin_fc_basic'       => 'Alapmezők',
     'repair_admin_fc_device'      => 'Eszközmezők',

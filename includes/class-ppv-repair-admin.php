@@ -1459,7 +1459,7 @@ a:hover{color:#5a67d8}
                 <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_form_fields')) . '</label>
                 <div class="ra-fb" id="ra-form-builder">
                     <div class="ra-fb-toolbar">
-                        <span class="ra-fb-toolbar-title"><i class="ri-eye-line"></i> Live-Vorschau</span>
+                        <span class="ra-fb-toolbar-title"><i class="ri-eye-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_live_preview')) . '</span>
                         <span class="ra-fb-toolbar-hint"><i class="ri-drag-move-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_drag_hint')) . '</span>
                     </div>
                     <div class="ra-fb-body">

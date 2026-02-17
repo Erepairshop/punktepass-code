@@ -409,6 +409,7 @@ return [
     'repair_admin_fc_options_hint'=> 'Un\'opzione per riga',
     'repair_admin_fc_add_custom'  => 'Aggiungi campo personalizzato',
     'repair_admin_fc_custom'      => 'Campo personalizzato',
+    'repair_admin_fc_live_preview' => 'Anteprima live',
     'repair_admin_fc_palette'     => 'Campi',
     'repair_admin_fc_basic'       => 'Campi base',
     'repair_admin_fc_device'      => 'Campi dispositivo',

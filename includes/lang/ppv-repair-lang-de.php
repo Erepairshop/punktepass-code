@@ -409,6 +409,7 @@ return [
     'repair_admin_fc_options_hint'=> 'Eine Option pro Zeile',
     'repair_admin_fc_add_custom'  => 'Eigenes Feld hinzufügen',
     'repair_admin_fc_custom'      => 'Eigenes Feld',
+    'repair_admin_fc_live_preview' => 'Live-Vorschau',
     'repair_admin_fc_palette'     => 'Felder',
     'repair_admin_fc_basic'       => 'Grundfelder',
     'repair_admin_fc_device'      => 'Gerätefelder',

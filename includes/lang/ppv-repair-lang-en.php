@@ -409,6 +409,7 @@ return [
     'repair_admin_fc_options_hint'=> 'One option per line',
     'repair_admin_fc_add_custom'  => 'Add custom field',
     'repair_admin_fc_custom'      => 'Custom Field',
+    'repair_admin_fc_live_preview' => 'Live Preview',
     'repair_admin_fc_palette'     => 'Fields',
     'repair_admin_fc_basic'       => 'Basic Fields',
     'repair_admin_fc_device'      => 'Device Fields',
