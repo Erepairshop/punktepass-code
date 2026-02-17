@@ -57,6 +57,10 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
         add_action('wp_ajax_nopriv_ppv_repair_customer_email_search', [__CLASS__, 'ajax_customer_email_search']);
 
+        // AJAX: AI repair analysis (public)
+        add_action('wp_ajax_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
+        add_action('wp_ajax_nopriv_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
+
         // AJAX: repair comments
         add_action('wp_ajax_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
         add_action('wp_ajax_nopriv_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
@@ -1375,6 +1379,51 @@ class PPV_Repair_Core {
         ));
 
         wp_send_json_success($results ?: []);
+    }
+
+    /** AJAX: AI-powered repair problem analysis */
+    public static function ajax_ai_analyze() {
+        // Rate limit: max 3 AI requests per IP per 10 minutes
+        $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '');
+        $rate_key = 'ppv_ai_rate_' . md5($ip);
+        $count = intval(get_transient($rate_key));
+        if ($count >= 3) {
+            wp_send_json_error(['message' => 'Too many requests. Please wait a few minutes.']);
+        }
+        set_transient($rate_key, $count + 1, 600);
+
+        $problem  = sanitize_textarea_field($_POST['problem'] ?? '');
+        $brand    = sanitize_text_field($_POST['brand'] ?? '');
+        $model    = sanitize_text_field($_POST['model'] ?? '');
+        $service  = sanitize_text_field($_POST['service_type'] ?? 'Allgemein');
+        $lang     = sanitize_text_field($_POST['lang'] ?? 'de');
+
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en', 'it'], true)) {
+            $lang = 'de';
+        }
+
+        if (empty($problem) || mb_strlen($problem) < 5) {
+            wp_send_json_error(['message' => 'Description too short']);
+        }
+
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
+
+        if (!PPV_AI_Engine::is_available()) {
+            wp_send_json_error(['message' => 'AI not available']);
+        }
+
+        $result = PPV_AI_Engine::analyze_repair([
+            'brand'        => $brand,
+            'model'        => $model,
+            'problem'      => $problem,
+            'service_type' => $service,
+        ], $lang);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        wp_send_json_success($result);
     }
 
     /** AJAX: Lookup customer by email (for form autofill) */

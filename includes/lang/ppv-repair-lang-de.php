@@ -1165,4 +1165,11 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Beleuchtung',
     'repair_cond_kfz_lenkung'          => 'Lenkung',
     'repair_cond_kfz_fahrwerk'         => 'Fahrwerk',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'KI-Analyse starten',
+    'repair_ai_analyzing'              => 'Wird analysiert...',
+    'repair_ai_title'                  => 'KI-Einschätzung',
+    'repair_ai_error'                  => 'Analyse nicht verfügbar. Bitte versuchen Sie es später.',
+    'repair_ai_hint'                   => 'Automatische Einschätzung – keine verbindliche Diagnose.',
 ];

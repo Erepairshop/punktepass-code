@@ -1165,4 +1165,11 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Lighting',
     'repair_cond_kfz_lenkung'          => 'Steering',
     'repair_cond_kfz_fahrwerk'         => 'Suspension',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'Start AI analysis',
+    'repair_ai_analyzing'              => 'Analyzing...',
+    'repair_ai_title'                  => 'AI Assessment',
+    'repair_ai_error'                  => 'Analysis not available. Please try again later.',
+    'repair_ai_hint'                   => 'Automatic assessment – not a binding diagnosis.',
 ];

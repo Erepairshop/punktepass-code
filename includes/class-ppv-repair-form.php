@@ -115,6 +115,11 @@ class PPV_Repair_Form {
             'qr_scan_success'  => PPV_Lang::t('repair_qr_scan_success'),
             'qr_scan_error'    => PPV_Lang::t('repair_qr_scan_error'),
             'qr_scan_no_camera'=> PPV_Lang::t('repair_qr_scan_no_camera'),
+            'ai_btn'           => PPV_Lang::t('repair_ai_btn'),
+            'ai_analyzing'     => PPV_Lang::t('repair_ai_analyzing'),
+            'ai_title'         => PPV_Lang::t('repair_ai_title'),
+            'ai_error'         => PPV_Lang::t('repair_ai_error'),
+            'ai_hint'          => PPV_Lang::t('repair_ai_hint'),
         ], JSON_UNESCAPED_UNICODE);
 
         ob_start();
@@ -521,6 +526,24 @@ class PPV_Repair_Form {
             <div class="repair-field">
                 <label for="rf-problem"><?php echo esc_html(PPV_Lang::t('repair_problem_label')); ?></label>
                 <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo esc_attr(!empty($custom_problems) ? PPV_Lang::t('repair_problem_detail_placeholder') : PPV_Lang::t('repair_problem_placeholder')); ?>"></textarea>
+                <?php
+                require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
+                if (PPV_AI_Engine::is_available()):
+                ?>
+                <button type="button" id="rf-ai-btn" class="repair-ai-btn" style="display:none">
+                    <i class="ri-sparkling-2-fill"></i>
+                    <span id="rf-ai-btn-text"><?php echo esc_html(PPV_Lang::t('repair_ai_btn')); ?></span>
+                </button>
+                <div id="rf-ai-result" class="repair-ai-result" style="display:none">
+                    <div class="repair-ai-header">
+                        <i class="ri-sparkling-2-fill"></i>
+                        <span><?php echo esc_html(PPV_Lang::t('repair_ai_title')); ?></span>
+                        <button type="button" id="rf-ai-close" class="repair-ai-close">&times;</button>
+                    </div>
+                    <div id="rf-ai-content" class="repair-ai-content"></div>
+                    <div class="repair-ai-hint"><?php echo esc_html(PPV_Lang::t('repair_ai_hint')); ?></div>
+                </div>
+                <?php endif; ?>
             </div>
 
 
@@ -1765,6 +1788,113 @@ function toggleProblemTag(btn, text) {
     }
 })();
 </script>
+
+<?php if (PPV_AI_Engine::is_available()): ?>
+<style>
+.repair-ai-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:8px 16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit;box-shadow:0 2px 8px rgba(102,126,234,0.25)}
+.repair-ai-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(102,126,234,0.35)}
+.repair-ai-btn:active{transform:translateY(0)}
+.repair-ai-btn:disabled{opacity:.6;cursor:wait;transform:none}
+.repair-ai-btn i{font-size:16px}
+@keyframes ppvAiPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.repair-ai-btn:disabled i{animation:ppvAiPulse 1.2s ease-in-out infinite}
+.repair-ai-result{margin-top:10px;border:1.5px solid #e0e7ff;border-radius:12px;background:linear-gradient(135deg,#f5f3ff 0%,#eff6ff 100%);overflow:hidden;animation:ppvAiFadeIn .3s ease}
+@keyframes ppvAiFadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.repair-ai-header{display:flex;align-items:center;gap:6px;padding:10px 14px;background:rgba(102,126,234,0.08);font-size:13px;font-weight:600;color:#4f46e5}
+.repair-ai-header i{font-size:16px}
+.repair-ai-close{margin-left:auto;background:none;border:none;font-size:18px;color:#94a3b8;cursor:pointer;padding:0 4px;line-height:1}
+.repair-ai-close:hover{color:#64748b}
+.repair-ai-content{padding:12px 14px;font-size:13px;line-height:1.6;color:#334155;white-space:pre-line}
+.repair-ai-hint{padding:6px 14px 10px;font-size:11px;color:#94a3b8;font-style:italic}
+</style>
+<script>
+(function(){
+    var aiBtn = document.getElementById('rf-ai-btn');
+    var aiBtnText = document.getElementById('rf-ai-btn-text');
+    var aiResult = document.getElementById('rf-ai-result');
+    var aiContent = document.getElementById('rf-ai-content');
+    var aiClose = document.getElementById('rf-ai-close');
+    var problemField = document.getElementById('rf-problem');
+    var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
+    var lang = '<?php echo esc_js($lang); ?>';
+    var serviceType = <?php echo json_encode($service_type); ?>;
+
+    if (!aiBtn || !problemField) return;
+
+    // Show AI button when user types enough text
+    var showTimer = null;
+    problemField.addEventListener('input', function() {
+        clearTimeout(showTimer);
+        var len = problemField.value.trim().length;
+        if (len >= 10) {
+            showTimer = setTimeout(function() {
+                aiBtn.style.display = 'inline-flex';
+            }, 500);
+        } else {
+            aiBtn.style.display = 'none';
+            aiResult.style.display = 'none';
+        }
+    });
+
+    // Check on load (for restored drafts)
+    if (problemField.value.trim().length >= 10) {
+        aiBtn.style.display = 'inline-flex';
+    }
+
+    aiBtn.addEventListener('click', function() {
+        var problem = problemField.value.trim();
+        if (problem.length < 5) return;
+
+        // Get device info if available
+        var brandEl = document.getElementById('rf-brand');
+        var modelEl = document.getElementById('rf-model');
+        var brand = brandEl ? brandEl.value : '';
+        var model = modelEl ? modelEl.value : '';
+
+        // Loading state
+        aiBtn.disabled = true;
+        aiBtnText.textContent = ppvLang.ai_analyzing;
+        aiResult.style.display = 'none';
+
+        var fd = new FormData();
+        fd.append('action', 'ppv_repair_ai_analyze');
+        fd.append('problem', problem);
+        fd.append('brand', brand);
+        fd.append('model', model);
+        fd.append('service_type', serviceType);
+        fd.append('lang', lang);
+
+        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.data.analysis) {
+                    aiContent.textContent = data.data.analysis;
+                    aiResult.style.display = 'block';
+                    aiResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    aiContent.textContent = data.data?.message || ppvLang.ai_error;
+                    aiResult.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                aiContent.textContent = ppvLang.ai_error;
+                aiResult.style.display = 'block';
+            })
+            .finally(function() {
+                aiBtn.disabled = false;
+                aiBtnText.textContent = ppvLang.ai_btn;
+            });
+    });
+
+    // Close AI result
+    if (aiClose) {
+        aiClose.addEventListener('click', function() {
+            aiResult.style.display = 'none';
+        });
+    }
+})();
+</script>
+<?php endif; ?>
 
 </body>
 </html>

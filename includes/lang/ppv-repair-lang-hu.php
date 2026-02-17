@@ -1165,4 +1165,11 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Világítás',
     'repair_cond_kfz_lenkung'          => 'Kormányzás',
     'repair_cond_kfz_fahrwerk'         => 'Futómű',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'AI elemzés indítása',
+    'repair_ai_analyzing'              => 'Elemzés folyamatban...',
+    'repair_ai_title'                  => 'AI becslés',
+    'repair_ai_error'                  => 'Az elemzés nem elérhető. Próbálja újra később.',
+    'repair_ai_hint'                   => 'Automatikus becslés – nem kötelező érvényű diagnózis.',
 ];

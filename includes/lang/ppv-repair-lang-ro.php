@@ -1165,4 +1165,11 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Iluminare',
     'repair_cond_kfz_lenkung'          => 'Direcție',
     'repair_cond_kfz_fahrwerk'         => 'Suspensie',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'Pornește analiza AI',
+    'repair_ai_analyzing'              => 'Se analizează...',
+    'repair_ai_title'                  => 'Estimare AI',
+    'repair_ai_error'                  => 'Analiza nu este disponibilă. Încercați mai târziu.',
+    'repair_ai_hint'                   => 'Estimare automată – nu este un diagnostic obligatoriu.',
 ];

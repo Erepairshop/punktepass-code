@@ -1165,4 +1165,11 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Illuminazione',
     'repair_cond_kfz_lenkung'          => 'Sterzo',
     'repair_cond_kfz_fahrwerk'         => 'Sospensioni',
+
+    // AI Assistant
+    'repair_ai_btn'                    => 'Avvia analisi AI',
+    'repair_ai_analyzing'              => 'Analisi in corso...',
+    'repair_ai_title'                  => 'Valutazione AI',
+    'repair_ai_error'                  => 'Analisi non disponibile. Riprova più tardi.',
+    'repair_ai_hint'                   => 'Valutazione automatica – non è una diagnosi vincolante.',
 ];
