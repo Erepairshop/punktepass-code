@@ -241,7 +241,7 @@ PROMPT;
         require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
 
         if (!PPV_AI_Engine::is_available()) {
-            wp_send_json_error(['message' => 'AI not available']);
+            wp_send_json_error(['message' => 'AI not configured. Please add ANTHROPIC_API_KEY to wp-config.php']);
         }
 
         // Build messages array from history + new message
@@ -434,26 +434,38 @@ PROMPT;
         fd.append('lang', lang);
 
         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function(r) {
+                if (!r.ok) {
+                    console.error('PPV AI Support: HTTP ' + r.status);
+                }
+                return r.text();
+            })
+            .then(function(raw) {
                 hideTyping();
-                var reply = (data.success && data.data.reply)
-                    ? data.data.reply
-                    : (data.data?.message || <?php echo wp_json_encode($labels['error']); ?>);
-                addMessage(reply, 'bot');
-                if (data.success) {
-                    history.push({ role: 'assistant', content: reply });
+                var data;
+                try { data = JSON.parse(raw); } catch(e) {
+                    console.error('PPV AI Support: invalid JSON', raw.substring(0, 200));
+                    addMessage(<?php echo wp_json_encode($labels['error']); ?> + ' (server error)', 'bot');
+                    return;
+                }
+                if (data.success && data.data && data.data.reply) {
+                    addMessage(data.data.reply, 'bot');
+                    history.push({ role: 'assistant', content: data.data.reply });
                     saveHistory();
-                    // Disable input if conversation limit reached
                     if (data.data.limit_reached) {
                         input.disabled = true;
                         sendBtn.disabled = true;
                         input.placeholder = <?php echo wp_json_encode($labels['limit_placeholder'] ?? 'Limit reached'); ?>;
                     }
+                } else {
+                    var errMsg = (data.data && data.data.message) ? data.data.message : <?php echo wp_json_encode($labels['error']); ?>;
+                    console.error('PPV AI Support: error response', data);
+                    addMessage(errMsg, 'bot');
                 }
             })
-            .catch(function() {
+            .catch(function(err) {
                 hideTyping();
+                console.error('PPV AI Support: fetch error', err);
                 addMessage(<?php echo wp_json_encode($labels['error']); ?>, 'bot');
             })
             .finally(function() {
