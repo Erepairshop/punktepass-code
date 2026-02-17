@@ -56,7 +56,20 @@ class PPV_Repair_Form {
             'accessories'     => ['enabled' => true, 'label' => PPV_Lang::t('repair_accessories_label')],
             'customer_phone'  => ['enabled' => true, 'label' => PPV_Lang::t('repair_phone_label')],
             'customer_address'=> ['enabled' => true, 'label' => PPV_Lang::t('repair_address_label')],
-            'muster_image'    => ['enabled' => true, 'label' => PPV_Lang::t('repair_pattern_label')]
+            'muster_image'    => ['enabled' => true, 'label' => PPV_Lang::t('repair_pattern_label')],
+            'photo_upload'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_photo')],
+            'condition_check' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition')],
+            'priority'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_priority')],
+            'purchase_date'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_purchase_date')],
+            'device_color'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_color')],
+            'cost_limit'      => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+            // KFZ / Vehicle fields
+            'vehicle_plate'       => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_plate_label')],
+            'vehicle_vin'         => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_vin_label')],
+            'vehicle_mileage'     => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_mileage_label')],
+            'vehicle_first_reg'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
+            'vehicle_tuev'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
+            'condition_check_kfz' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_kfz')],
         ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
@@ -293,7 +306,7 @@ class PPV_Repair_Form {
 
         <!-- Step 2: Informationen -->
         <?php
-        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']) || !empty($field_config['muster_image']['enabled']);
+        $has_device_fields = !empty($field_config['device_brand']['enabled']) || !empty($field_config['device_model']['enabled']) || !empty($field_config['device_imei']['enabled']) || !empty($field_config['device_pattern']['enabled']) || !empty($field_config['muster_image']['enabled']) || !empty($field_config['vehicle_plate']['enabled']) || !empty($field_config['vehicle_vin']['enabled']) || !empty($field_config['vehicle_mileage']['enabled']) || !empty($field_config['vehicle_first_reg']['enabled']) || !empty($field_config['vehicle_tuev']['enabled']) || !empty($field_config['condition_check_kfz']['enabled']);
         if ($has_device_fields):
         ?>
         <div class="repair-section" id="step-device">
@@ -411,6 +424,80 @@ class PPV_Repair_Form {
                 <input type="hidden" name="condition_check" id="rf-condition-data">
             </div>
             <?php endif; ?>
+
+            <?php // === KFZ / Vehicle fields === ?>
+            <?php if (!empty($field_config['vehicle_plate']['enabled']) || !empty($field_config['vehicle_vin']['enabled'])): ?>
+            <div class="repair-row">
+                <?php if (!empty($field_config['vehicle_plate']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-plate"><?php echo esc_html($field_config['vehicle_plate']['label'] ?? PPV_Lang::t('repair_vehicle_plate_label')); ?></label>
+                    <input type="text" id="rf-vehicle-plate" name="vehicle_plate" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_plate_placeholder')); ?>" style="text-transform:uppercase">
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($field_config['vehicle_vin']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-vin"><?php echo esc_html($field_config['vehicle_vin']['label'] ?? PPV_Lang::t('repair_vehicle_vin_label')); ?></label>
+                    <input type="text" id="rf-vehicle-vin" name="vehicle_vin" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_vin_placeholder')); ?>" maxlength="17" style="text-transform:uppercase">
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['vehicle_mileage']['enabled'])): ?>
+            <div class="repair-field">
+                <label for="rf-vehicle-mileage"><?php echo esc_html($field_config['vehicle_mileage']['label'] ?? PPV_Lang::t('repair_vehicle_mileage_label')); ?></label>
+                <input type="number" id="rf-vehicle-mileage" name="vehicle_mileage" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_mileage_placeholder')); ?>" min="0" step="1">
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['vehicle_first_reg']['enabled']) || !empty($field_config['vehicle_tuev']['enabled'])): ?>
+            <div class="repair-row">
+                <?php if (!empty($field_config['vehicle_first_reg']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-first-reg"><?php echo esc_html($field_config['vehicle_first_reg']['label'] ?? PPV_Lang::t('repair_vehicle_first_reg_label')); ?></label>
+                    <input type="text" id="rf-vehicle-first-reg" name="vehicle_first_reg" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_first_reg_placeholder')); ?>">
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($field_config['vehicle_tuev']['enabled'])): ?>
+                <div class="repair-field">
+                    <label for="rf-vehicle-tuev"><?php echo esc_html($field_config['vehicle_tuev']['label'] ?? PPV_Lang::t('repair_vehicle_tuev_label')); ?></label>
+                    <input type="text" id="rf-vehicle-tuev" name="vehicle_tuev" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_vehicle_tuev_placeholder')); ?>">
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['condition_check_kfz']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['condition_check_kfz']['label'] ?? PPV_Lang::t('repair_fb_condition_kfz')); ?></label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rf-condition-kfz-grid">
+                    <?php
+                    $kfz_parts = [
+                        PPV_Lang::t('repair_cond_kfz_motor'),
+                        PPV_Lang::t('repair_cond_kfz_getriebe'),
+                        PPV_Lang::t('repair_cond_kfz_bremsen'),
+                        PPV_Lang::t('repair_cond_kfz_reifen'),
+                        PPV_Lang::t('repair_cond_kfz_karosserie'),
+                        PPV_Lang::t('repair_cond_kfz_elektronik'),
+                        PPV_Lang::t('repair_cond_kfz_klima'),
+                        PPV_Lang::t('repair_cond_kfz_beleuchtung'),
+                        PPV_Lang::t('repair_cond_kfz_lenkung'),
+                        PPV_Lang::t('repair_cond_kfz_fahrwerk'),
+                    ];
+                    foreach ($kfz_parts as $part): ?>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc">
+                        <span><?php echo esc_html($part); ?></span>
+                        <div style="display:flex;gap:4px">
+                            <button type="button" class="repair-cond-kfz-btn" data-part="<?php echo esc_attr($part); ?>" data-val="ok" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#d1fae5;color:#059669" onclick="ppvCondKfzToggle(this,'ok')">OK</button>
+                            <button type="button" class="repair-cond-kfz-btn" data-part="<?php echo esc_attr($part); ?>" data-val="defekt" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#f1f5f9;color:#94a3b8" onclick="ppvCondKfzToggle(this,'defekt')">Defekt</button>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <input type="hidden" name="condition_check_kfz" id="rf-condition-kfz-data">
+            </div>
+            <?php endif; ?>
+
             <?php endif; ?>
 
         <!-- Step: Problem -->
@@ -859,6 +946,19 @@ function ppvCondToggle(btn,val){
         if(parseFloat(b.style.opacity)===1){result[b.getAttribute('data-part')]=b.getAttribute('data-val')}
     });
     var inp=document.getElementById('rf-condition-data');
+    if(inp) inp.value=JSON.stringify(result);
+}
+// KFZ Condition check toggle
+function ppvCondKfzToggle(btn,val){
+    var row=btn.parentNode;
+    row.querySelectorAll('.repair-cond-kfz-btn').forEach(function(b){b.style.opacity='0.4';b.style.background='#f1f5f9';b.style.color='#94a3b8'});
+    if(val==='ok'){btn.style.opacity='1';btn.style.background='#d1fae5';btn.style.color='#059669'}
+    else{btn.style.opacity='1';btn.style.background='#fee2e2';btn.style.color='#dc2626'}
+    var result={};
+    document.querySelectorAll('#rf-condition-kfz-grid .repair-cond-kfz-btn').forEach(function(b){
+        if(parseFloat(b.style.opacity)===1){result[b.getAttribute('data-part')]=b.getAttribute('data-val')}
+    });
+    var inp=document.getElementById('rf-condition-kfz-data');
     if(inp) inp.value=JSON.stringify(result);
 }
 // Photo preview

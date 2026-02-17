@@ -482,6 +482,13 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
             'purchase_date'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_purchase_date')],
             'device_color'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_color')],
             'cost_limit'      => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+            // KFZ / Vehicle fields
+            'vehicle_plate'       => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_plate_label')],
+            'vehicle_vin'         => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_vin_label')],
+            'vehicle_mileage'     => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_mileage_label')],
+            'vehicle_first_reg'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
+            'vehicle_tuev'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
+            'condition_check_kfz' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_kfz')],
         ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
@@ -1477,6 +1484,13 @@ $fb_all_builtins = [
     'device_color'    => ['section' => 2, 'icon' => 'ri-palette-line',  'ph' => '',    'input' => 'color'],
     'purchase_date'   => ['section' => 2, 'icon' => 'ri-calendar-line', 'ph' => '',    'input' => 'date'],
     'condition_check' => ['section' => 2, 'icon' => 'ri-shield-check-line','ph' => '', 'input' => 'condition'],
+    // KFZ / Vehicle fields
+    'vehicle_plate'       => ['section' => 2, 'icon' => 'ri-car-line',       'ph' => PPV_Lang::t('repair_vehicle_plate_placeholder'), 'input' => 'text'],
+    'vehicle_vin'         => ['section' => 2, 'icon' => 'ri-fingerprint-line','ph' => PPV_Lang::t('repair_vehicle_vin_placeholder'),   'input' => 'text'],
+    'vehicle_mileage'     => ['section' => 2, 'icon' => 'ri-dashboard-3-line','ph' => PPV_Lang::t('repair_vehicle_mileage_placeholder'),'input' => 'number'],
+    'vehicle_first_reg'   => ['section' => 2, 'icon' => 'ri-calendar-check-line','ph' => PPV_Lang::t('repair_vehicle_first_reg_placeholder'),'input' => 'text'],
+    'vehicle_tuev'        => ['section' => 2, 'icon' => 'ri-shield-star-line','ph' => PPV_Lang::t('repair_vehicle_tuev_placeholder'), 'input' => 'text'],
+    'condition_check_kfz' => ['section' => 2, 'icon' => 'ri-car-washing-line','ph' => '', 'input' => 'condition_kfz'],
     'accessories'     => ['section' => 3, 'icon' => 'ri-checkbox-multiple-line','ph' => '', 'input' => 'accessories'],
     'photo_upload'    => ['section' => 3, 'icon' => 'ri-camera-line',   'ph' => '',    'input' => 'photo'],
     'priority'        => ['section' => 3, 'icon' => 'ri-flashlight-line','ph' => '',   'input' => 'priority'],
@@ -1508,6 +1522,8 @@ function ppv_fb_render_field($fk, $meta, $fc, $fc_defaults) {
         $html .= '<div class="ra-fb-photo-preview"><div class="ra-fb-photo-box"><i class="ri-camera-line"></i><span>Foto 1</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 2</span></div><div class="ra-fb-photo-box"><i class="ri-add-line"></i><span>Foto 3</span></div></div>';
     } elseif ($input === 'condition') {
         $html .= '<div class="ra-fb-condition-grid"><div class="ra-fb-condition-item"><span>Display</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Tasten</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Kamera</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>Lautsprecher</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div></div>';
+    } elseif ($input === 'condition_kfz') {
+        $html .= '<div class="ra-fb-condition-grid"><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_motor')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_bremsen')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_reifen')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div><div class="ra-fb-condition-item"><span>' . esc_html(PPV_Lang::t('repair_cond_kfz_karosserie')) . '</span><div class="ra-fb-cond-btns"><span class="ra-fb-cond-btn ok">OK</span><span class="ra-fb-cond-btn nok">Defekt</span></div></div></div>';
     } elseif ($input === 'priority') {
         $html .= '<div class="ra-fb-priority-cards"><div class="ra-fb-priority-card"><i class="ri-flashlight-line"></i><strong>Express</strong>24h</div><div class="ra-fb-priority-card active"><i class="ri-time-line"></i><strong>Normal</strong>3-5 Tage</div><div class="ra-fb-priority-card"><i class="ri-leaf-line"></i><strong>Sparsam</strong>7-10 Tage</div></div>';
     } elseif ($input === 'color') {
@@ -1649,6 +1665,14 @@ $pal_groups = [
         'device_color'    => ['icon' => 'ri-palette-line',       'name' => $fc_defaults['device_color']['label']],
         'purchase_date'   => ['icon' => 'ri-calendar-line',      'name' => $fc_defaults['purchase_date']['label']],
         'condition_check' => ['icon' => 'ri-shield-check-line',  'name' => $fc_defaults['condition_check']['label']],
+    ],
+    PPV_Lang::t('repair_admin_fc_vehicle') => [
+        'vehicle_plate'       => ['icon' => 'ri-car-line',            'name' => $fc_defaults['vehicle_plate']['label']],
+        'vehicle_vin'         => ['icon' => 'ri-fingerprint-line',    'name' => $fc_defaults['vehicle_vin']['label']],
+        'vehicle_mileage'     => ['icon' => 'ri-dashboard-3-line',    'name' => $fc_defaults['vehicle_mileage']['label']],
+        'vehicle_first_reg'   => ['icon' => 'ri-calendar-check-line', 'name' => $fc_defaults['vehicle_first_reg']['label']],
+        'vehicle_tuev'        => ['icon' => 'ri-shield-star-line',    'name' => $fc_defaults['vehicle_tuev']['label']],
+        'condition_check_kfz' => ['icon' => 'ri-car-washing-line',    'name' => $fc_defaults['condition_check_kfz']['label']],
     ],
     PPV_Lang::t('repair_admin_fc_extra') => [
         'accessories'   => ['icon' => 'ri-checkbox-multiple-line',   'name' => $fc_defaults['accessories']['label']],
@@ -3110,6 +3134,13 @@ echo '</div></div>
         'cf_purchase_date' => PPV_Lang::t('repair_fb_purchase_date'),
         'cf_priority' => PPV_Lang::t('repair_fb_priority'),
         'cf_cost_limit' => PPV_Lang::t('repair_fb_cost_limit'),
+        // KFZ field labels for print
+        'cf_vehicle_plate' => PPV_Lang::t('repair_vehicle_plate_label'),
+        'cf_vehicle_vin' => PPV_Lang::t('repair_vehicle_vin_label'),
+        'cf_vehicle_mileage' => PPV_Lang::t('repair_vehicle_mileage_label'),
+        'cf_vehicle_first_reg' => PPV_Lang::t('repair_vehicle_first_reg_label'),
+        'cf_vehicle_tuev' => PPV_Lang::t('repair_vehicle_tuev_label'),
+        'cf_condition_kfz' => PPV_Lang::t('repair_fb_condition_kfz'),
     ], JSON_UNESCAPED_UNICODE) . ';
 
     // Language switcher
@@ -3308,9 +3339,9 @@ echo '</div></div>
         if(data.customfields){
             try{
                 var cf=JSON.parse(data.customfields);
-                var cfLabels={device_color:L.cf_color||"Farbe",purchase_date:L.cf_purchase_date||"Kaufdatum",priority:L.cf_priority||"Priorität",cost_limit:L.cf_cost_limit||"Kostenrahmen"};
+                var cfLabels={device_color:L.cf_color||"Farbe",purchase_date:L.cf_purchase_date||"Kaufdatum",priority:L.cf_priority||"Priorität",cost_limit:L.cf_cost_limit||"Kostenrahmen",vehicle_plate:L.cf_vehicle_plate||"Kennzeichen",vehicle_vin:L.cf_vehicle_vin||"FIN/VIN",vehicle_mileage:L.cf_vehicle_mileage||"Kilometerstand",vehicle_first_reg:L.cf_vehicle_first_reg||"Erstzulassung",vehicle_tuev:L.cf_vehicle_tuev||"TÜV/HU"};
                 for(var ck in cf){
-                    if(ck==="photos"||ck==="condition_check") continue;
+                    if(ck==="photos"||ck==="condition_check"||ck==="condition_check_kfz") continue;
                     var lbl=cfLabels[ck]||ck;
                     if(typeof cf[ck]==="string"&&cf[ck]) cfHtml+=\'<div class="field"><span class="label">\'+esc(lbl)+\':</span><span class="value">\'+esc(cf[ck])+\'</span></div>\';
                 }
@@ -3319,6 +3350,12 @@ echo '</div></div>
                     var cParts=[];
                     for(var cp in cond) cParts.push(cp+": "+cond[cp].toUpperCase());
                     if(cParts.length) cfHtml+=\'<div class="field"><span class="label">Zustand:</span><span class="value">\'+esc(cParts.join(", "))+\'</span></div>\';
+                }
+                if(cf.condition_check_kfz){
+                    var ckfz=typeof cf.condition_check_kfz==="string"?JSON.parse(cf.condition_check_kfz):cf.condition_check_kfz;
+                    var kParts=[];
+                    for(var kp in ckfz) kParts.push(kp+": "+ckfz[kp].toUpperCase());
+                    if(kParts.length) cfHtml+=\'<div class="field"><span class="label">\'+(L.cf_condition_kfz||"KFZ-Zustand")+\':</span><span class="value">\'+esc(kParts.join(", "))+\'</span></div>\';
                 }
                 if(cf.photos&&cf.photos.length){
                     cfHtml+=\'<div class="field"><span class="label">Fotos:</span><span class="value">\';
@@ -6214,9 +6251,14 @@ echo '</div></div>
                     'purchase_date' => ['icon' => 'ri-calendar-line', 'label' => PPV_Lang::t('repair_fb_purchase_date')],
                     'priority' => ['icon' => 'ri-flashlight-line', 'label' => PPV_Lang::t('repair_fb_priority')],
                     'cost_limit' => ['icon' => 'ri-money-euro-circle-line', 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+                    'vehicle_plate' => ['icon' => 'ri-car-line', 'label' => PPV_Lang::t('repair_vehicle_plate_label')],
+                    'vehicle_vin' => ['icon' => 'ri-fingerprint-line', 'label' => PPV_Lang::t('repair_vehicle_vin_label')],
+                    'vehicle_mileage' => ['icon' => 'ri-dashboard-3-line', 'label' => PPV_Lang::t('repair_vehicle_mileage_label')],
+                    'vehicle_first_reg' => ['icon' => 'ri-calendar-check-line', 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
+                    'vehicle_tuev' => ['icon' => 'ri-shield-star-line', 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
                 ];
                 foreach ($cf as $ck => $cv) {
-                    if ($ck === 'photos' || $ck === 'condition_check') continue; // handled separately
+                    if ($ck === 'photos' || $ck === 'condition_check' || $ck === 'condition_check_kfz') continue; // handled separately
                     $icon = 'ri-file-text-line';
                     $lbl = $ck;
                     if (isset($cf_labels[$ck])) { $icon = $cf_labels[$ck]['icon']; $lbl = $cf_labels[$ck]['label']; }
@@ -6239,6 +6281,18 @@ echo '</div></div>
                             $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
                         }
                         $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition')) . ': ' . implode(', ', $cond_items) . '</div>';
+                    }
+                }
+                // KFZ Condition check
+                if (!empty($cf['condition_check_kfz'])) {
+                    $cond = is_string($cf['condition_check_kfz']) ? json_decode($cf['condition_check_kfz'], true) : $cf['condition_check_kfz'];
+                    if (is_array($cond)) {
+                        $cond_items = [];
+                        foreach ($cond as $part => $status) {
+                            $color = $status === 'ok' ? '#059669' : '#dc2626';
+                            $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
+                        }
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-car-washing-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition_kfz')) . ': ' . implode(', ', $cond_items) . '</div>';
                     }
                 }
                 // Photos
