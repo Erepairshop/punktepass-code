@@ -8,6 +8,7 @@ return [
     'repair_datenschutz'        => 'Privacy Policy',
     'repair_agb'                => 'Terms & Conditions',
     'repair_impressum'          => 'Legal Notice',
+    'repair_partner'            => 'Partner',
     'repair_ssl_encrypted'      => 'SSL encrypted',
     'repair_dsgvo_conform'      => 'GDPR compliant',
     'repair_powered_by'         => 'Powered by',

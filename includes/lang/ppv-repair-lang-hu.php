@@ -8,6 +8,7 @@ return [
     'repair_datenschutz'        => 'Adatvédelem',
     'repair_agb'                => 'ÁSZF',
     'repair_impressum'          => 'Impresszum',
+    'repair_partner'            => 'Partner',
     'repair_ssl_encrypted'      => 'SSL-titkosított',
     'repair_dsgvo_conform'      => 'GDPR-kompatibilis',
     'repair_powered_by'         => 'Üzemeltető:',

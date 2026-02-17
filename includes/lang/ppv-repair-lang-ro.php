@@ -8,6 +8,7 @@ return [
     'repair_datenschutz'        => 'Confidențialitate',
     'repair_agb'                => 'Termeni și condiții',
     'repair_impressum'          => 'Impresum',
+    'repair_partner'            => 'Partner',
     'repair_ssl_encrypted'      => 'Criptat SSL',
     'repair_dsgvo_conform'      => 'Conform GDPR',
     'repair_powered_by'         => 'Operat de',
