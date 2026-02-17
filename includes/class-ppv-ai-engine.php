@@ -22,7 +22,7 @@ class PPV_AI_Engine {
     }
 
     /**
-     * Send a message to Claude API
+     * Send a single message to Claude API
      *
      * @param string $system  System prompt
      * @param string $user    User message
@@ -30,17 +30,42 @@ class PPV_AI_Engine {
      * @return array|WP_Error ['text' => string] or WP_Error
      */
     public static function chat($system, $user, $lang = 'de') {
+        return self::chat_with_history($system, [
+            ['role' => 'user', 'content' => $user]
+        ]);
+    }
+
+    /**
+     * Send messages with conversation history to Claude API
+     *
+     * @param string $system    System prompt
+     * @param array  $messages  Array of ['role' => 'user'|'assistant', 'content' => string]
+     * @return array|WP_Error   ['text' => string] or WP_Error
+     */
+    public static function chat_with_history($system, $messages) {
         if (!self::is_available()) {
             return new WP_Error('ai_not_configured', 'AI API key not configured');
+        }
+
+        // Sanitize messages and limit history to last 20 messages
+        $clean = [];
+        foreach (array_slice($messages, -20) as $msg) {
+            $role = ($msg['role'] === 'assistant') ? 'assistant' : 'user';
+            $content = sanitize_textarea_field($msg['content'] ?? '');
+            if ($content !== '') {
+                $clean[] = ['role' => $role, 'content' => $content];
+            }
+        }
+
+        if (empty($clean)) {
+            return new WP_Error('empty_message', 'No message provided');
         }
 
         $body = [
             'model'      => self::$model,
             'max_tokens' => self::$max_tokens,
             'system'     => $system,
-            'messages'   => [
-                ['role' => 'user', 'content' => $user]
-            ],
+            'messages'   => $clean,
         ];
 
         $response = wp_remote_post(self::$api_url, [

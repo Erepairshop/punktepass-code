@@ -302,6 +302,8 @@ $core_modules = [
     'includes/class-ppv-repair-registration.php',
     'includes/class-ppv-repair-admin.php',
     'includes/class-ppv-repair-invoice.php',
+    // AI Support Chat Widget (handler pages)
+    'includes/class-ppv-ai-support.php',
 ];
 
 // Debug only if enabled
@@ -670,6 +672,9 @@ if (class_exists('PPV_Standalone_Shell')) PPV_Standalone_Shell::hooks();
 
 // Repair Form Module (standalone: only Core has hooks for routing + AJAX)
 if (class_exists('PPV_Repair_Core')) PPV_Repair_Core::hooks();
+
+// AI Support Chat Widget (handler/admin pages)
+if (class_exists('PPV_AI_Support')) PPV_AI_Support::hooks();
 
 // Vendor/User Signup
 foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
