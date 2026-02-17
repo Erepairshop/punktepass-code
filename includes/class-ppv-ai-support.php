@@ -284,9 +284,9 @@ PROMPT;
      * Render the floating chat widget in wp_footer
      */
     public static function render_widget() {
-        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
-
-        if (!PPV_AI_Engine::is_available()) return;
+        // Always render the chat panel - don't gate on is_available()
+        // The AJAX handler checks availability and returns a proper error message
+        // This ensures the nav button click always opens the panel
 
         $lang = 'de';
         if (class_exists('PPV_Lang')) {
