@@ -476,8 +476,24 @@
   }
 
   // ============================================================
-  // QUICK STATS
+  // QUICK STATS (server-rendered initial values, JS increments)
   // ============================================================
+
+  // Increment stats locally when a new scan comes in (no API needed)
+  function incrementQuickStats(points) {
+    const scansEl = document.getElementById('ppv-qs-scans');
+    const pointsEl = document.getElementById('ppv-qs-points');
+    if (scansEl) {
+      const cur = parseInt(scansEl.textContent) || 0;
+      animateStat('ppv-qs-scans', cur + 1);
+    }
+    if (pointsEl && points > 0) {
+      const cur = parseInt(pointsEl.textContent) || 0;
+      animateStat('ppv-qs-points', cur + points);
+    }
+  }
+
+  // Try API refresh (best-effort, server-rendered values are the fallback)
   async function loadQuickStats() {
     const storeKey = getStoreKey();
     const storeId = window.PPV_STORE_DATA?.store_id || 0;
@@ -588,9 +604,12 @@
     OfflineSyncManager.sync();
     loadQuickStats();
 
-    // Listen for successful scans to refresh stats
-    document.addEventListener('ppv:scan-success', () => {
-      setTimeout(loadQuickStats, 1500);
+    // Listen for successful scans to increment stats locally
+    document.addEventListener('ppv:scan-success', (e) => {
+      const pts = e.detail?.points || 1;
+      incrementQuickStats(pts);
+      // Also try API refresh in background (best-effort)
+      setTimeout(loadQuickStats, 2000);
     });
 
     // ============================================================
@@ -641,7 +660,9 @@
         } else {
           console.warn('📡 [Ably] STATE.uiManager is null!');
         }
-        setTimeout(loadQuickStats, 1000);
+        if (message.data?.success !== false) {
+          incrementQuickStats(message.data?.points || 1);
+        }
       }, STATE.ablySubscriberId);
 
       manager.subscribe(channelName, 'reward-request', (message) => {
