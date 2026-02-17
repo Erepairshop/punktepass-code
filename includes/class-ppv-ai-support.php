@@ -419,10 +419,32 @@ PROMPT;
 
         $messages[] = ['role' => 'user', 'content' => $message];
 
-        $context = sanitize_text_field($_POST['context'] ?? '');
+        $context    = sanitize_text_field($_POST['context'] ?? '');
+        $current_url = sanitize_text_field($_POST['current_url'] ?? '');
+
+        // Get store name for personalized responses
+        $store_name = '';
+        if (!empty($_SESSION['ppv_repair_store_name'])) {
+            $store_name = $_SESSION['ppv_repair_store_name'];
+        } elseif (class_exists('PPV_Session')) {
+            $store = PPV_Session::current_store();
+            if (!empty($store->name)) $store_name = $store->name;
+        }
+
         $system_prompt = ($context === 'repair')
             ? self::get_repair_system_prompt($lang)
             : self::get_system_prompt($lang);
+
+        // Append dynamic context
+        $extra_context = "\n\n=== CURRENT SESSION ===\n";
+        if ($store_name) {
+            $extra_context .= "Store name: {$store_name}\n";
+        }
+        if ($current_url) {
+            $extra_context .= "User is currently on page: {$current_url}\n";
+            $extra_context .= "If the answer is on THIS page, say so (e.g. 'Du bist schon auf der richtigen Seite, klick oben auf den X Tab').\n";
+        }
+        $system_prompt .= $extra_context;
 
         $result = PPV_AI_Engine::chat_with_history(
             $system_prompt,
@@ -499,6 +521,9 @@ PROMPT;
 .ppv-chat-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:transform .2s}
 .ppv-chat-send:hover{transform:scale(1.08)}
 .ppv-chat-send:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ppv-chat-chips{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;margin:4px 0}
+.ppv-chat-chip{background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:16px;padding:6px 12px;font-size:12px;color:#475569;cursor:pointer;transition:all .2s;font-family:inherit;line-height:1.3}
+.ppv-chat-chip:hover{background:#667eea;color:#fff;border-color:#667eea}
 .ppv-chat-escalate{display:flex;gap:8px;align-self:flex-start;flex-wrap:wrap;margin:2px 0}
 .ppv-chat-escalate a{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:600;transition:filter .2s}
 .ppv-chat-escalate a:hover{filter:brightness(0.9)}
@@ -542,15 +567,38 @@ PROMPT;
     if (!navBtn || !panel) return;
 
     // Restore history from sessionStorage
+    var hasHistory = false;
     try {
         var saved = sessionStorage.getItem('ppv_ai_chat_history');
         if (saved) {
             history = JSON.parse(saved);
+            if (history.length) hasHistory = true;
             history.forEach(function(h) {
                 addMessage(h.content, h.role === 'user' ? 'user' : 'bot', true);
             });
         }
     } catch(e) {}
+
+    // Show quick question chips if no previous chat
+    var chips = <?php echo wp_json_encode($labels['chips'] ?? []); ?>;
+    if (!hasHistory && chips.length) {
+        var chipWrap = document.createElement('div');
+        chipWrap.className = 'ppv-chat-chips';
+        chipWrap.id = 'ppv-chat-chips';
+        chips.forEach(function(c) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ppv-chat-chip';
+            btn.textContent = c;
+            btn.addEventListener('click', function() {
+                input.value = c;
+                chipWrap.remove();
+                sendMessage();
+            });
+            chipWrap.appendChild(btn);
+        });
+        msgContainer.appendChild(chipWrap);
+    }
 
     function saveHistory() {
         try { sessionStorage.setItem('ppv_ai_chat_history', JSON.stringify(history)); } catch(e) {}
@@ -612,6 +660,7 @@ PROMPT;
         fd.append('message', text);
         fd.append('history', JSON.stringify(history.slice(-10)));
         fd.append('lang', lang);
+        fd.append('current_url', window.location.pathname);
 
         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
             .then(function(r) {
@@ -696,47 +745,52 @@ PROMPT;
             'de' => [
                 'title'             => 'PunktePass Assistent',
                 'status'            => 'KI-Hilfe für Ihr Geschäft',
-                'welcome'           => 'Hallo! Ich bin Ihr PunktePass-Assistent. Wie kann ich Ihnen helfen? Fragen Sie mich zu QR-Center, Statistiken, Belohnungen, Reparaturformularen oder anderen Funktionen.',
+                'welcome'           => 'Hallo! Ich bin Ihr PunktePass-Assistent. Wie kann ich Ihnen helfen?',
                 'placeholder'       => 'Nachricht eingeben...',
                 'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
                 'limit_placeholder' => 'Chat-Limit erreicht',
                 'wa_prefill'        => 'Hallo, ich brauche Hilfe mit PunktePass',
+                'chips'             => ['Öffnungszeiten ändern', 'Neues Gerät registrieren', 'Belohnung erstellen', 'Statistik exportieren'],
             ],
             'hu' => [
                 'title'             => 'PunktePass Asszisztens',
                 'status'            => 'AI segítség az üzletéhez',
-                'welcome'           => 'Helló! Én vagyok a PunktePass asszisztens. Hogyan segíthetek? Kérdezzen a QR Centerről, statisztikákról, jutalmakról, javítási űrlapokról vagy bármilyen funkcióról.',
+                'welcome'           => 'Helló! Én vagyok a PunktePass asszisztens. Hogyan segíthetek?',
                 'placeholder'       => 'Írjon üzenetet...',
                 'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
                 'limit_placeholder' => 'Chat limit elérve',
                 'wa_prefill'        => 'Szia, segítségre van szükségem a PunktePass-szal',
+                'chips'             => ['Nyitvatartás módosítása', 'Új eszköz regisztrálása', 'Jutalom létrehozása', 'Statisztika exportálása'],
             ],
             'ro' => [
                 'title'             => 'Asistent PunktePass',
                 'status'            => 'Ajutor AI pentru afacerea dvs.',
-                'welcome'           => 'Bună! Sunt asistentul PunktePass. Cum vă pot ajuta? Întrebați-mă despre QR Center, statistici, recompense, formulare de reparații sau alte funcții.',
+                'welcome'           => 'Bună! Sunt asistentul PunktePass. Cum vă pot ajuta?',
                 'placeholder'       => 'Scrieți un mesaj...',
                 'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
                 'limit_placeholder' => 'Limită chat atinsă',
                 'wa_prefill'        => 'Bună, am nevoie de ajutor cu PunktePass',
+                'chips'             => ['Modificare program', 'Înregistrare dispozitiv', 'Creare recompensă', 'Export statistici'],
             ],
             'en' => [
                 'title'             => 'PunktePass Assistant',
                 'status'            => 'AI help for your business',
-                'welcome'           => 'Hello! I\'m your PunktePass assistant. How can I help? Ask me about QR Center, statistics, rewards, repair forms, or any other feature.',
+                'welcome'           => 'Hello! I\'m your PunktePass assistant. How can I help?',
                 'placeholder'       => 'Type a message...',
                 'error'             => 'Sorry, something went wrong. Please try again.',
                 'limit_placeholder' => 'Chat limit reached',
                 'wa_prefill'        => 'Hello, I need help with PunktePass',
+                'chips'             => ['Change opening hours', 'Register new device', 'Create reward', 'Export statistics'],
             ],
             'it' => [
                 'title'             => 'Assistente PunktePass',
                 'status'            => 'Aiuto AI per la tua attività',
-                'welcome'           => 'Ciao! Sono il tuo assistente PunktePass. Come posso aiutarti? Chiedimi del QR Center, statistiche, premi, moduli di riparazione o altre funzionalità.',
+                'welcome'           => 'Ciao! Sono il tuo assistente PunktePass. Come posso aiutarti?',
                 'placeholder'       => 'Scrivi un messaggio...',
                 'error'             => 'Spiacente, si è verificato un errore. Riprova.',
                 'limit_placeholder' => 'Limite chat raggiunto',
                 'wa_prefill'        => 'Ciao, ho bisogno di aiuto con PunktePass',
+                'chips'             => ['Modificare orari', 'Registrare dispositivo', 'Creare premio', 'Esportare statistiche'],
             ],
         ];
 
@@ -765,47 +819,52 @@ PROMPT;
             'de' => [
                 'title'             => 'Reparatur-Assistent',
                 'status'            => 'KI-Hilfe für Reparaturen',
-                'welcome'           => 'Hallo! Ich bin Ihr Reparatur-Assistent. Fragen Sie mich zu Reparaturformularen, Status-Verwaltung, Einstellungen oder Kundenkommunikation.',
+                'welcome'           => 'Hallo! Ich bin Ihr Reparatur-Assistent. Wie kann ich helfen?',
                 'placeholder'       => 'Frage zur Reparatur...',
                 'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
                 'limit_placeholder' => 'Chat-Limit erreicht',
                 'wa_prefill'        => 'Hallo, ich brauche Hilfe mit dem Reparaturformular',
+                'chips'             => ['Rechnung per Mail senden', 'Status ändern', 'Felder anpassen', 'Reparatur drucken'],
             ],
             'hu' => [
                 'title'             => 'Javítás Asszisztens',
                 'status'            => 'AI segítség a javításokhoz',
-                'welcome'           => 'Helló! Én vagyok a javítás asszisztens. Kérdezzen a javítási űrlapokról, állapotkezelésről, beállításokról vagy ügyfélkommunikációról.',
+                'welcome'           => 'Helló! Én vagyok a javítás asszisztens. Hogyan segíthetek?',
                 'placeholder'       => 'Kérdés a javításról...',
                 'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
                 'limit_placeholder' => 'Chat limit elérve',
                 'wa_prefill'        => 'Szia, segítségre van szükségem a javítási űrlappal',
+                'chips'             => ['Számla küldés emailben', 'Státusz módosítás', 'Mezők testreszabása', 'Javítás nyomtatása'],
             ],
             'ro' => [
                 'title'             => 'Asistent Reparații',
                 'status'            => 'Ajutor AI pentru reparații',
-                'welcome'           => 'Bună! Sunt asistentul pentru reparații. Întrebați-mă despre formulare, gestionarea statusului, setări sau comunicarea cu clienții.',
+                'welcome'           => 'Bună! Sunt asistentul pentru reparații. Cum vă pot ajuta?',
                 'placeholder'       => 'Întrebare despre reparații...',
                 'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
                 'limit_placeholder' => 'Limită chat atinsă',
                 'wa_prefill'        => 'Bună, am nevoie de ajutor cu formularul de reparații',
+                'chips'             => ['Trimite factură email', 'Schimbare status', 'Personalizare câmpuri', 'Tipărire reparație'],
             ],
             'en' => [
                 'title'             => 'Repair Assistant',
                 'status'            => 'AI help for repairs',
-                'welcome'           => 'Hello! I\'m your repair assistant. Ask me about repair forms, status management, settings, or customer communication.',
+                'welcome'           => 'Hello! I\'m your repair assistant. How can I help?',
                 'placeholder'       => 'Ask about repairs...',
                 'error'             => 'Sorry, something went wrong. Please try again.',
                 'limit_placeholder' => 'Chat limit reached',
                 'wa_prefill'        => 'Hello, I need help with the repair form',
+                'chips'             => ['Send invoice by email', 'Change status', 'Customize fields', 'Print repair ticket'],
             ],
             'it' => [
                 'title'             => 'Assistente Riparazioni',
                 'status'            => 'Aiuto AI per riparazioni',
-                'welcome'           => 'Ciao! Sono il tuo assistente per le riparazioni. Chiedimi dei moduli di riparazione, gestione stato, impostazioni o comunicazione con i clienti.',
+                'welcome'           => 'Ciao! Sono il tuo assistente riparazioni. Come posso aiutarti?',
                 'placeholder'       => 'Domanda sulle riparazioni...',
                 'error'             => 'Spiacente, si è verificato un errore. Riprova.',
                 'limit_placeholder' => 'Limite chat raggiunto',
                 'wa_prefill'        => 'Ciao, ho bisogno di aiuto con il modulo di riparazione',
+                'chips'             => ['Invia fattura email', 'Cambia stato', 'Personalizza campi', 'Stampa riparazione'],
             ],
         ];
 
@@ -851,6 +910,9 @@ PROMPT;
 .ppv-rc-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:transform .2s}
 .ppv-rc-send:hover{transform:scale(1.08)}
 .ppv-rc-send:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ppv-chat-chips{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;margin:4px 0}
+.ppv-chat-chip{background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:16px;padding:6px 12px;font-size:12px;color:#475569;cursor:pointer;transition:all .2s;font-family:inherit;line-height:1.3}
+.ppv-chat-chip:hover{background:#667eea;color:#fff;border-color:#667eea}
 .ppv-rc-escalate{display:flex;gap:8px;align-self:flex-start;flex-wrap:wrap;margin:2px 0}
 .ppv-rc-escalate a{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:600;transition:filter .2s}
 .ppv-rc-escalate a:hover{filter:brightness(0.9)}
@@ -897,15 +959,37 @@ PROMPT;
 
     if (!fab || !panel) return;
 
+    var hasHistory = false;
     try {
         var saved = sessionStorage.getItem('ppv_rc_history');
         if (saved) {
             history = JSON.parse(saved);
+            if (history.length) hasHistory = true;
             history.forEach(function(h) {
                 addMessage(h.content, h.role === 'user' ? 'user' : 'bot', true);
             });
         }
     } catch(e) {}
+
+    var chips = <?php echo wp_json_encode($labels['chips'] ?? []); ?>;
+    if (!hasHistory && chips.length) {
+        var chipWrap = document.createElement('div');
+        chipWrap.className = 'ppv-chat-chips';
+        chipWrap.id = 'ppv-rc-chips';
+        chips.forEach(function(c) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ppv-chat-chip';
+            btn.textContent = c;
+            btn.addEventListener('click', function() {
+                input.value = c;
+                chipWrap.remove();
+                sendMessage();
+            });
+            chipWrap.appendChild(btn);
+        });
+        msgContainer.appendChild(chipWrap);
+    }
 
     function saveHistory() {
         try { sessionStorage.setItem('ppv_rc_history', JSON.stringify(history)); } catch(e) {}
@@ -968,6 +1052,7 @@ PROMPT;
         fd.append('message', text);
         fd.append('history', JSON.stringify(history.slice(-10)));
         fd.append('lang', lang);
+        fd.append('current_url', window.location.pathname);
         fd.append('context', 'repair');
 
         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })

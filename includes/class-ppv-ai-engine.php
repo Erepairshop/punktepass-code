@@ -12,7 +12,7 @@ class PPV_AI_Engine {
 
     private static $api_url = 'https://api.anthropic.com/v1/messages';
     private static $model = 'claude-haiku-4-5-20251001';
-    private static $max_tokens = 300;
+    private static $max_tokens = 500;
 
     /**
      * Check if AI features are available (API key configured)
