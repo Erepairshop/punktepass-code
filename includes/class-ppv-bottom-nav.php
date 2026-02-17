@@ -158,6 +158,7 @@ class PPV_Bottom_Nav {
                 <a href="/statistik" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_statistics')); ?>"><i class="ri-bar-chart-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_statistics')); ?></span></a>
                 <a href="#" class="nav-item" id="ppv-ai-support-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_support') ?: 'Support'); ?>"><i class="ri-sparkling-2-fill"></i><span><?php echo esc_html(PPV_Lang::t('nav_support') ?: 'Support'); ?></span></a>
             </nav>
+            <?php if (class_exists('PPV_AI_Support')) { PPV_AI_Support::render_widget(); } ?>
         <?php
         // --- Alap user nav (basic users) ---
         else: ?>

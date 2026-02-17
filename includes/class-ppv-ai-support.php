@@ -12,7 +12,8 @@ if (!defined('ABSPATH')) exit;
 class PPV_AI_Support {
 
     public static function hooks() {
-        add_action('wp_footer', [__CLASS__, 'render_widget'], 2);
+        // render_widget() is called directly from PPV_Bottom_Nav::render_nav() (handler section)
+        // Same pattern as the feedback modal - rendered inside the shortcode output
         add_action('wp_ajax_ppv_ai_support_chat', [__CLASS__, 'ajax_chat']);
     }
 
