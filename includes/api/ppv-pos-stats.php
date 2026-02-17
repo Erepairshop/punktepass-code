@@ -38,18 +38,26 @@ class PPV_POS_STATS_API {
      *  🔹 Jogosultság-ellenőrzés
      * ============================================================ */
     public static function check_permission($request) {
+        // WordPress admin
         if (current_user_can('manage_options')) return true;
 
+        // Session-based handler auth (same as QR scanner endpoints)
+        if (class_exists('PPV_Permissions') && PPV_Permissions::check_handler() === true) {
+            return true;
+        }
+
+        // POS token (pos_token or store_key)
         $token = $request->get_header('ppv-pos-token') ?: $request->get_param('pos_token');
-        if (empty($token)) return false;
+        if (!empty($token)) {
+            global $wpdb;
+            $valid = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE (pos_token = %s OR store_key = %s)",
+                $token, $token
+            ));
+            if ($valid > 0) return true;
+        }
 
-        global $wpdb;
-        $valid = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s AND pos_enabled = 1",
-            $token
-        ));
-
-        return ($valid > 0);
+        return false;
     }
 
     /** ============================================================
