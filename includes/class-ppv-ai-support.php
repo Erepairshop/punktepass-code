@@ -15,6 +15,7 @@ class PPV_AI_Support {
         // render_widget() is called directly from PPV_Bottom_Nav::render_nav() (handler section)
         // Same pattern as the feedback modal - rendered inside the shortcode output
         add_action('wp_ajax_ppv_ai_support_chat', [__CLASS__, 'ajax_chat']);
+        add_action('wp_ajax_nopriv_ppv_ai_support_chat', [__CLASS__, 'ajax_chat']);
     }
 
     /**
@@ -213,13 +214,15 @@ PROMPT;
      * AJAX handler for support chat
      */
     public static function ajax_chat() {
-        // Rate limit: 10 messages per 10 minutes per user
-        $user_id = get_current_user_id();
-        if (!$user_id) {
-            wp_send_json_error(['message' => 'Not logged in']);
+        // Auth: check PunktePass session (handlers use session auth, not WP login)
+        if (!self::is_handler()) {
+            wp_send_json_error(['message' => 'Not authorized']);
         }
 
-        $rate_key = 'ppv_ai_chat_' . $user_id;
+        // Rate limit: 10 messages per 10 minutes per user/IP
+        $user_id = get_current_user_id();
+        $rate_id = $user_id ?: ('ip_' . $_SERVER['REMOTE_ADDR']);
+        $rate_key = 'ppv_ai_chat_' . md5($rate_id);
         $count = intval(get_transient($rate_key));
         if ($count >= 10) {
             wp_send_json_error(['message' => 'Too many messages. Please wait a few minutes.']);
