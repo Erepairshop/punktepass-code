@@ -1177,7 +1177,8 @@ a:hover{color:#5a67d8}
         </div>
     </div>';
 
-        // Partner directory section (all active partners)
+        // Partner directory section (all active partners) — temporarily disabled, will return later
+        /* COMMENTED OUT - Recommended Suppliers section
         if (!empty($all_partners)) {
             $partner_count = count($all_partners);
             echo '<div class="ra-suppliers">
@@ -1224,6 +1225,7 @@ a:hover{color:#5a67d8}
 
             echo '</div></div></div>';
         }
+        END COMMENTED OUT */
 
         // Settings panel
         echo '<div id="ra-settings" class="ra-settings ra-hidden">
@@ -5833,7 +5835,7 @@ echo '</div></div>
     window.copyKioskUrl=function(){var url=document.getElementById("kiosk-form-url").textContent;navigator.clipboard.writeText(url).then(function(){var btn=document.querySelector(".kiosk-copy-btn");btn.innerHTML=\'<i class="ri-check-line"></i>\';setTimeout(function(){btn.innerHTML=\'<i class="ri-file-copy-line"></i>\'},2000)})};
     document.addEventListener("keydown",function(e){if(e.key==="Escape")closeKioskTips()});
 
-    // Supplier directory toggle
+    /* COMMENTED OUT - Supplier directory toggle (temporarily disabled)
     window.toggleSuppliers=function(){
         var body=document.getElementById("ra-suppliers-body");
         var arrow=document.getElementById("ra-suppliers-arrow");
@@ -5844,7 +5846,6 @@ echo '</div></div>
         if(toggle)toggle.classList.toggle("open");
         try{localStorage.setItem("ra_suppliers_open",isOpen?"0":"1")}catch(e){}
     };
-    // Auto-open if was open before
     (function(){
         var body=document.getElementById("ra-suppliers-body");
         var toggle=document.getElementById("ra-suppliers-toggle");
@@ -5852,9 +5853,9 @@ echo '</div></div>
         var saved=null;try{saved=localStorage.getItem("ra_suppliers_open")}catch(e){}
         if(saved==="1"||saved===null){body.classList.add("open");if(toggle)toggle.classList.add("open")}
     })();
-    // Make header clickable too
     var suppH=document.querySelector(".ra-suppliers-header");
     if(suppH)suppH.addEventListener("click",function(){toggleSuppliers()});
+    END COMMENTED OUT */
 
     /* ===== Filiale Switcher ===== */
     var filialeBtn = document.getElementById("ra-filiale-btn");
