@@ -467,7 +467,22 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $vat_enabled = isset($store->repair_vat_enabled) ? intval($store->repair_vat_enabled) : 1;
         $vat_rate = floatval($store->repair_vat_rate ?? 19);
         $field_config = json_decode($store->repair_field_config ?? '', true) ?: [];
-        $fc_defaults = ['device_brand' => ['enabled' => true, 'label' => 'Marke'], 'device_model' => ['enabled' => true, 'label' => 'Modell'], 'device_imei' => ['enabled' => true, 'label' => 'Seriennummer / IMEI'], 'device_pattern' => ['enabled' => true, 'label' => 'Entsperrcode / PIN'], 'accessories' => ['enabled' => true, 'label' => 'Mitgegebenes Zubehör'], 'customer_phone' => ['enabled' => true, 'label' => 'Telefon'], 'customer_address' => ['enabled' => true, 'label' => 'Adresse'], 'muster_image' => ['enabled' => true, 'label' => 'Entsperrmuster'], 'photo_upload' => ['enabled' => false, 'label' => 'Fotos'], 'condition_check' => ['enabled' => false, 'label' => 'Gerätezustand'], 'priority' => ['enabled' => false, 'label' => 'Priorität'], 'purchase_date' => ['enabled' => false, 'label' => 'Kaufdatum'], 'device_color' => ['enabled' => false, 'label' => 'Gerätefarbe'], 'cost_limit' => ['enabled' => false, 'label' => 'Kostenrahmen']];
+        $fc_defaults = [
+            'device_brand'    => ['enabled' => true,  'label' => PPV_Lang::t('repair_brand_label')],
+            'device_model'    => ['enabled' => true,  'label' => PPV_Lang::t('repair_model_label')],
+            'device_imei'     => ['enabled' => true,  'label' => PPV_Lang::t('repair_imei_label')],
+            'device_pattern'  => ['enabled' => true,  'label' => PPV_Lang::t('repair_pin_label')],
+            'accessories'     => ['enabled' => true,  'label' => PPV_Lang::t('repair_accessories_label')],
+            'customer_phone'  => ['enabled' => true,  'label' => PPV_Lang::t('repair_phone_label')],
+            'customer_address'=> ['enabled' => true,  'label' => PPV_Lang::t('repair_address_label')],
+            'muster_image'    => ['enabled' => true,  'label' => PPV_Lang::t('repair_pattern_label')],
+            'photo_upload'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_photo')],
+            'condition_check' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition')],
+            'priority'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_priority')],
+            'purchase_date'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_purchase_date')],
+            'device_color'    => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_color')],
+            'cost_limit'      => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_cost_limit')],
+        ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
         // Email template settings
@@ -1617,15 +1632,15 @@ echo '</div></div>';
 
 // === PALETTE SIDEBAR ===
 echo '<div class="ra-fb-palette">
-    <div class="ra-fb-pal-title"><i class="ri-apps-line"></i> Felder</div>';
+    <div class="ra-fb-pal-title"><i class="ri-apps-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_fc_palette')) . '</div>';
 
 // Palette groups
 $pal_groups = [
-    'Grundfelder' => [
+    PPV_Lang::t('repair_admin_fc_basic') => [
         'customer_phone'   => ['icon' => 'ri-phone-line',    'name' => $fc_defaults['customer_phone']['label']],
         'customer_address' => ['icon' => 'ri-map-pin-line',  'name' => $fc_defaults['customer_address']['label']],
     ],
-    'Gerätefelder' => [
+    PPV_Lang::t('repair_admin_fc_device') => [
         'device_brand'    => ['icon' => 'ri-smartphone-line',    'name' => $fc_defaults['device_brand']['label']],
         'device_model'    => ['icon' => 'ri-device-line',        'name' => $fc_defaults['device_model']['label']],
         'device_imei'     => ['icon' => 'ri-barcode-line',       'name' => $fc_defaults['device_imei']['label']],
@@ -1635,7 +1650,7 @@ $pal_groups = [
         'purchase_date'   => ['icon' => 'ri-calendar-line',      'name' => $fc_defaults['purchase_date']['label']],
         'condition_check' => ['icon' => 'ri-shield-check-line',  'name' => $fc_defaults['condition_check']['label']],
     ],
-    'Zusatzfelder' => [
+    PPV_Lang::t('repair_admin_fc_extra') => [
         'accessories'   => ['icon' => 'ri-checkbox-multiple-line',   'name' => $fc_defaults['accessories']['label']],
         'photo_upload'  => ['icon' => 'ri-camera-line',              'name' => $fc_defaults['photo_upload']['label']],
         'priority'      => ['icon' => 'ri-flashlight-line',          'name' => $fc_defaults['priority']['label']],
@@ -3090,6 +3105,11 @@ echo '</div></div>
         'status_done' => PPV_Lang::t('repair_admin_status_done'),
         'status_delivered' => PPV_Lang::t('repair_admin_status_delivered'),
         'status_cancelled' => PPV_Lang::t('repair_admin_status_cancelled'),
+        // Custom field labels for print
+        'cf_color' => PPV_Lang::t('repair_fb_color'),
+        'cf_purchase_date' => PPV_Lang::t('repair_fb_purchase_date'),
+        'cf_priority' => PPV_Lang::t('repair_fb_priority'),
+        'cf_cost_limit' => PPV_Lang::t('repair_fb_cost_limit'),
     ], JSON_UNESCAPED_UNICODE) . ';
 
     // Language switcher
@@ -3288,7 +3308,7 @@ echo '</div></div>
         if(data.customfields){
             try{
                 var cf=JSON.parse(data.customfields);
-                var cfLabels={device_color:"Farbe",purchase_date:"Kaufdatum",priority:"Priorität",cost_limit:"Kostenrahmen"};
+                var cfLabels={device_color:L.cf_color||"Farbe",purchase_date:L.cf_purchase_date||"Kaufdatum",priority:L.cf_priority||"Priorität",cost_limit:L.cf_cost_limit||"Kostenrahmen"};
                 for(var ck in cf){
                     if(ck==="photos"||ck==="condition_check") continue;
                     var lbl=cfLabels[ck]||ck;
