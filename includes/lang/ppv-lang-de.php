@@ -210,6 +210,8 @@ return [
 'rewards_form_filiale_current' => 'Nur diese Filiale',
 'rewards_form_apply_all' => 'Auf alle Filialen anwenden',
 'rewards_form_apply_all_hint' => 'Diese Prämie wird bei allen Filialen erstellt',
+'rewards_templates_label' => 'Schnellstart-Vorlagen',
+'rewards_ai_hint' => 'Ideen für dich',
 
 
   'dashboard' => 'Dein PunktePass Dashboard',

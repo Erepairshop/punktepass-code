@@ -241,6 +241,8 @@ return [
 'rewards_form_filiale_current' => 'Csak ez a filiálé',
 'rewards_form_apply_all' => 'Alkalmazás az összes filiáléra',
 'rewards_form_apply_all_hint' => 'Ugyanez a jutalom létrejön minden filiálénál',
+'rewards_templates_label' => 'Gyorsindító sablonok',
+'rewards_ai_hint' => 'Ötletek neked',
 
 
 

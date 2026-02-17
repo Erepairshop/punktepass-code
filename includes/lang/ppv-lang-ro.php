@@ -248,6 +248,8 @@ return [
 'rewards_form_filiale_current' => 'Doar această filială',
 'rewards_form_apply_all' => 'Aplică la toate filialele',
 'rewards_form_apply_all_hint' => 'Aceeași recompensă va fi creată la toate filialele',
+'rewards_templates_label' => 'Șabloane rapide',
+'rewards_ai_hint' => 'Idei pentru tine',
   // ==============================
   // 🔹 Általános
   // ==============================

@@ -206,6 +206,8 @@ return [
 'rewards_form_filiale_current' => 'This branch only',
 'rewards_form_apply_all' => 'Apply to all branches',
 'rewards_form_apply_all_hint' => 'This reward will be created at all branches',
+'rewards_templates_label' => 'Modelli rapidi',
+'rewards_ai_hint' => 'Idee per te',
 
 
 'dashboard' => 'Your PunktePass Dashboard',
