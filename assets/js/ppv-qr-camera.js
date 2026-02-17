@@ -68,6 +68,8 @@
     createMiniScanner() {
       const existing = document.getElementById('ppv-mini-scanner');
       if (existing) existing.remove();
+      const existingFab = document.getElementById('ppv-mini-restore-fab');
+      if (existingFab) existingFab.remove();
 
       this.miniContainer = document.createElement('div');
       this.miniContainer.id = 'ppv-mini-scanner';

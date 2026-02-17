@@ -480,12 +480,17 @@
   // ============================================================
   async function loadQuickStats() {
     const storeKey = getStoreKey();
-    if (!storeKey) return;
+    const storeId = window.PPV_STORE_DATA?.store_id || 0;
+    if (!storeKey && !storeId) return;
     try {
-      const res = await fetch('/wp-json/ppv/v1/pos/stats', {
-        headers: { 'ppv-pos-token': storeKey }
-      });
-      if (!res.ok) return;
+      const mgmt = window.ppv_rewards_mgmt || {};
+      const nonce = mgmt.nonce || '';
+      const baseUrl = mgmt.base || '/wp-json/ppv/v1/';
+      const url = baseUrl + 'pos/stats?store_id=' + storeId;
+      const headers = { 'PPV-POS-Token': storeKey };
+      if (nonce) headers['X-WP-Nonce'] = nonce;
+      const res = await fetch(url, { headers, credentials: 'same-origin' });
+      if (!res.ok) { ppvLog('[QS] Stats response:', res.status); return; }
       const data = await res.json();
       if (!data.success || !data.stats) return;
       const s = data.stats;
