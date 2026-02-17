@@ -207,6 +207,7 @@ A: Each scanner device has a unique fingerprint. Check scan logs in Statistics
 • Give practical, actionable advice
 • Keep answers concise (2-4 short paragraphs max)
 • Suggest relevant pages/settings when applicable (e.g., "Go to /mein-profil to change this")
+• ESCALATION: If you cannot answer a question, or if the user asks about billing/invoices/account issues, custom development, or anything that needs personal human support, add the exact marker [ESCALATE] at the very end of your response (after your helpful message). This will show the user a button to contact support directly via WhatsApp or email. Always try to give a helpful partial answer first before escalating.
 PROMPT;
     }
 
@@ -281,7 +282,27 @@ PROMPT;
             wp_send_json_error(['message' => $result->get_error_message()]);
         }
 
-        wp_send_json_success(['reply' => $result['text']]);
+        // Check for escalation marker from AI
+        $reply = $result['text'];
+        $escalate = false;
+        if (strpos($reply, '[ESCALATE]') !== false) {
+            $reply = trim(str_replace('[ESCALATE]', '', $reply));
+            $escalate = true;
+        }
+
+        $response = ['reply' => $reply];
+
+        if ($escalate) {
+            $whatsapp = get_option('ppv_support_whatsapp', '4917698479520');
+            $email    = get_option('ppv_support_email', 'info@punktepass.de');
+            if ($whatsapp) {
+                $response['escalate']     = true;
+                $response['whatsapp_url'] = 'https://wa.me/' . preg_replace('/[^0-9]/', '', $whatsapp);
+                $response['support_email'] = $email;
+            }
+        }
+
+        wp_send_json_success($response);
     }
 
     /**
@@ -327,6 +348,11 @@ PROMPT;
 .ppv-chat-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:transform .2s}
 .ppv-chat-send:hover{transform:scale(1.08)}
 .ppv-chat-send:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ppv-chat-escalate{display:flex;gap:8px;align-self:flex-start;flex-wrap:wrap;margin:2px 0}
+.ppv-chat-escalate a{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:600;transition:filter .2s}
+.ppv-chat-escalate a:hover{filter:brightness(0.9)}
+.ppv-chat-wa-btn{background:#25d366;color:#fff!important}
+.ppv-chat-email-btn{background:#667eea;color:#fff!important}
 @media(max-width:480px){#ppv-ai-chat-panel{right:8px;left:8px;width:auto;bottom:140px;height:calc(100vh - 180px);max-height:none}}
 </style>
 
@@ -455,6 +481,17 @@ PROMPT;
                     addMessage(data.data.reply, 'bot');
                     history.push({ role: 'assistant', content: data.data.reply });
                     saveHistory();
+                    if (data.data.escalate && data.data.whatsapp_url) {
+                        var lastQ = history.filter(function(h){return h.role==='user'}).slice(-1);
+                        var ctx = lastQ.length ? lastQ[0].content : '';
+                        var waText = <?php echo wp_json_encode($labels['wa_prefill'] ?? 'Hallo, ich brauche Hilfe mit PunktePass'); ?> + (ctx ? ':\n' + ctx : '');
+                        var esc = document.createElement('div');
+                        esc.className = 'ppv-chat-escalate';
+                        esc.innerHTML = '<a class="ppv-chat-wa-btn" href="' + data.data.whatsapp_url + '?text=' + encodeURIComponent(waText) + '" target="_blank" rel="noopener"><i class="ri-whatsapp-fill"></i> WhatsApp</a>'
+                            + '<a class="ppv-chat-email-btn" href="mailto:' + (data.data.support_email || 'info@punktepass.de') + '?subject=PunktePass%20Support&body=' + encodeURIComponent(ctx) + '"><i class="ri-mail-fill"></i> Email</a>';
+                        msgContainer.appendChild(esc);
+                        scrollToBottom();
+                    }
                     if (data.data.limit_reached) {
                         input.disabled = true;
                         sendBtn.disabled = true;
@@ -512,6 +549,7 @@ PROMPT;
                 'placeholder'       => 'Nachricht eingeben...',
                 'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
                 'limit_placeholder' => 'Chat-Limit erreicht',
+                'wa_prefill'        => 'Hallo, ich brauche Hilfe mit PunktePass',
             ],
             'hu' => [
                 'title'             => 'PunktePass Asszisztens',
@@ -520,6 +558,7 @@ PROMPT;
                 'placeholder'       => 'Írjon üzenetet...',
                 'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
                 'limit_placeholder' => 'Chat limit elérve',
+                'wa_prefill'        => 'Szia, segítségre van szükségem a PunktePass-szal',
             ],
             'ro' => [
                 'title'             => 'Asistent PunktePass',
@@ -528,6 +567,7 @@ PROMPT;
                 'placeholder'       => 'Scrieți un mesaj...',
                 'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
                 'limit_placeholder' => 'Limită chat atinsă',
+                'wa_prefill'        => 'Bună, am nevoie de ajutor cu PunktePass',
             ],
             'en' => [
                 'title'             => 'PunktePass Assistant',
@@ -536,6 +576,7 @@ PROMPT;
                 'placeholder'       => 'Type a message...',
                 'error'             => 'Sorry, something went wrong. Please try again.',
                 'limit_placeholder' => 'Chat limit reached',
+                'wa_prefill'        => 'Hello, I need help with PunktePass',
             ],
             'it' => [
                 'title'             => 'Assistente PunktePass',
@@ -544,6 +585,7 @@ PROMPT;
                 'placeholder'       => 'Scrivi un messaggio...',
                 'error'             => 'Spiacente, si è verificato un errore. Riprova.',
                 'limit_placeholder' => 'Limite chat raggiunto',
+                'wa_prefill'        => 'Ciao, ho bisogno di aiuto con PunktePass',
             ],
         ];
 
