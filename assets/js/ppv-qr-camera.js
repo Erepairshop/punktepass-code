@@ -96,13 +96,13 @@
       this.restoreFab = document.createElement('button');
       this.restoreFab.id = 'ppv-mini-restore-fab';
       this.restoreFab.className = 'ppv-mini-restore-fab';
-      this.restoreFab.innerHTML = '<i class="ri-camera-line"></i> <span>Scanner</span>';
+      this.restoreFab.innerHTML = '<i class="ri-camera-line"></i> <span>' + (L.scanner_btn || 'Scanner') + '</span>';
       this.restoreFab.style.display = 'none';
       this.restoreFab.addEventListener('click', () => this.restoreMiniScanner());
       document.body.appendChild(this.restoreFab);
 
-      // Check if was minimized
-      if (localStorage.getItem('ppv_mini_minimized') === 'true') {
+      // Default: minimized. Only restore if user explicitly opened it before.
+      if (localStorage.getItem('ppv_mini_minimized') !== 'false') {
         this.minimizeMiniScanner(true);
       }
       this.isFullscreen = false;
