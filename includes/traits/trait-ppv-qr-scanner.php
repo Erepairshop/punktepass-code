@@ -220,20 +220,36 @@ trait PPV_QR_Scanner_Trait {
                 </button>
             </div>
 
+            <!-- 📊 TODAY QUICK STATS -->
+            <div id="ppv-today-stats" class="ppv-today-stats">
+                <div class="ppv-today-stat">
+                    <div class="ppv-today-stat-icon"><i class="ri-qr-scan-2-line"></i></div>
+                    <div class="ppv-today-stat-data">
+                        <span class="ppv-today-stat-value" id="ppv-qs-scans">0</span>
+                        <span class="ppv-today-stat-label"><?php echo self::t('qs_scans', 'Scans'); ?></span>
+                    </div>
+                </div>
+                <div class="ppv-today-stat">
+                    <div class="ppv-today-stat-icon"><i class="ri-coin-line"></i></div>
+                    <div class="ppv-today-stat-data">
+                        <span class="ppv-today-stat-value" id="ppv-qs-points">0</span>
+                        <span class="ppv-today-stat-label"><?php echo self::t('qs_points', 'Punkte'); ?></span>
+                    </div>
+                </div>
+                <div class="ppv-today-stat">
+                    <div class="ppv-today-stat-icon"><i class="ri-gift-line"></i></div>
+                    <div class="ppv-today-stat-data">
+                        <span class="ppv-today-stat-value" id="ppv-qs-rewards">0</span>
+                        <span class="ppv-today-stat-label"><?php echo self::t('qs_rewards', 'Rewards'); ?></span>
+                    </div>
+                </div>
+            </div>
+
             <div class="ppv-pos-header" style="margin-bottom: 8px;">
                 <h4 class="ppv-pos-title" style="font-size: 14px; margin: 0;"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
             </div>
 
-            <table id="ppv-pos-log" class="glass-table">
-                <thead>
-                    <tr>
-                        <th><?php echo self::t('t_col_time', 'Zeit'); ?></th>
-                        <th><?php echo self::t('t_col_customer', 'Kunde'); ?></th>
-                        <th><?php echo self::t('t_col_status', 'Status'); ?></th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div id="ppv-pos-log" class="ppv-scan-list"></div>
 
             <!-- 📥 CSV EXPORT DROPDOWN - at bottom -->
             <div class="ppv-csv-wrapper" style="margin-top: 12px; text-align: center;">

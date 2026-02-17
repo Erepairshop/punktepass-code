@@ -476,6 +476,39 @@
   }
 
   // ============================================================
+  // QUICK STATS
+  // ============================================================
+  async function loadQuickStats() {
+    const storeKey = getStoreKey();
+    if (!storeKey) return;
+    try {
+      const res = await fetch('/wp-json/ppv/v1/pos/stats', {
+        headers: { 'ppv-pos-token': storeKey }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.success || !data.stats) return;
+      const s = data.stats;
+      animateStat('ppv-qs-scans', s.today_scans || 0);
+      animateStat('ppv-qs-points', s.today_points || 0);
+      animateStat('ppv-qs-rewards', s.today_rewards || 0);
+    } catch (e) {
+      ppvLog('[QS] Stats fetch failed:', e);
+    }
+  }
+
+  function animateStat(id, newVal) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const old = parseInt(el.textContent) || 0;
+    if (old === newVal) return;
+    el.textContent = newVal;
+    el.classList.remove('ppv-bump');
+    void el.offsetWidth; // reflow
+    el.classList.add('ppv-bump');
+  }
+
+  // ============================================================
   // INITIALIZATION
   // ============================================================
   function init() {
@@ -548,6 +581,12 @@
     STATE.scanProcessor.loadLogs();
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
+    loadQuickStats();
+
+    // Listen for successful scans to refresh stats
+    document.addEventListener('ppv:scan-success', () => {
+      setTimeout(loadQuickStats, 1500);
+    });
 
     // ============================================================
     // REAL-TIME UPDATES: Ably (primary) or Polling (fallback)
@@ -597,6 +636,7 @@
         } else {
           console.warn('📡 [Ably] STATE.uiManager is null!');
         }
+        setTimeout(loadQuickStats, 1000);
       }, STATE.ablySubscriberId);
 
       manager.subscribe(channelName, 'reward-request', (message) => {
@@ -685,6 +725,7 @@
           lastVis = Date.now();
           STATE.campaignManager?.load();
           STATE.scanProcessor?.loadLogs();
+          loadQuickStats();
         }
       };
       document.addEventListener('visibilitychange', STATE.visibilityHandler);
