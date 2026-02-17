@@ -287,8 +287,6 @@ PROMPT;
         require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
 
         if (!PPV_AI_Engine::is_available()) return;
-        if (!self::is_handler()) return;
-        if (self::is_user_page()) return;
 
         $lang = 'de';
         if (class_exists('PPV_Lang')) {
@@ -541,11 +539,11 @@ PROMPT;
      */
     private static function get_limit_message($lang) {
         $msgs = [
-            'de' => "Sie haben das Chat-Limit für diese Sitzung erreicht (max. 10 Nachrichten).\n\nFür weitere Hilfe kontaktieren Sie uns:\nsupport@punktepass.de",
-            'hu' => "Elérte a chat limitet ebben a munkamenetben (max. 10 üzenet).\n\nTovábbi segítségért írjon nekünk:\nsupport@punktepass.de",
-            'ro' => "Ați atins limita de chat pentru această sesiune (max. 10 mesaje).\n\nPentru ajutor suplimentar contactați-ne:\nsupport@punktepass.de",
-            'en' => "You've reached the chat limit for this session (max 10 messages).\n\nFor further help, contact us:\nsupport@punktepass.de",
-            'it' => "Hai raggiunto il limite di chat per questa sessione (max 10 messaggi).\n\nPer ulteriore aiuto, contattaci:\nsupport@punktepass.de",
+            'de' => "Sie haben das Chat-Limit für diese Sitzung erreicht (max. 10 Nachrichten).\n\nFür weitere Hilfe kontaktieren Sie uns:\ninfo@punktepass.de",
+            'hu' => "Elérte a chat limitet ebben a munkamenetben (max. 10 üzenet).\n\nTovábbi segítségért írjon nekünk:\ninfo@punktepass.de",
+            'ro' => "Ați atins limita de chat pentru această sesiune (max. 10 mesaje).\n\nPentru ajutor suplimentar contactați-ne:\ninfo@punktepass.de",
+            'en' => "You've reached the chat limit for this session (max 10 messages).\n\nFor further help, contact us:\ninfo@punktepass.de",
+            'it' => "Hai raggiunto il limite di chat per questa sessione (max 10 messaggi).\n\nPer ulteriore aiuto, contattaci:\ninfo@punktepass.de",
         ];
         return $msgs[$lang] ?? $msgs['de'];
     }
