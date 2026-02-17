@@ -270,6 +270,109 @@ $price_gross = round($price_net + $vat, 2);
         .cancellation-note i {
             font-size: 18px;
         }
+        /* Promo code section */
+        .promo-section {
+            margin-top: 24px;
+            padding: 20px;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+        .promo-section h4 {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .promo-input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .promo-input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .promo-input-row input:focus {
+            border-color: #667eea;
+        }
+        .promo-input-row input.valid {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+        .promo-input-row input.invalid {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .promo-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .promo-btn:hover { background: #5a6fd6; }
+        .promo-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .promo-result {
+            margin-top: 10px;
+            font-size: 13px;
+            display: none;
+        }
+        .promo-result.success {
+            color: #065f46;
+            background: #d1fae5;
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: block;
+        }
+        .promo-result.error {
+            color: #991b1b;
+            display: block;
+        }
+        .promo-activate-btn {
+            width: 100%;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .promo-activate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        .promo-activate-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         @media (max-width: 600px) {
             .features-list {
                 grid-template-columns: 1fr;
@@ -333,6 +436,19 @@ $price_gross = round($price_net + $vat, 2);
                 </div>
             </div>
 
+            <!-- Promo Code Section -->
+            <div class="promo-section">
+                <h4><i class="ri-coupon-3-line"></i> Haben Sie einen Promo-Code?</h4>
+                <div class="promo-input-row">
+                    <input type="text" id="promo-code-input" placeholder="Code eingeben..." maxlength="30" autocomplete="off">
+                    <button type="button" class="promo-btn" id="promo-validate-btn">Einlösen</button>
+                </div>
+                <div class="promo-result" id="promo-result"></div>
+                <button type="button" class="promo-activate-btn" id="promo-activate-btn">
+                    <i class="ri-gift-line"></i> <span id="promo-activate-text">Gratis aktivieren</span>
+                </button>
+            </div>
+
             <div class="terms">
                 Mit dem Abschluss akzeptieren Sie unsere
                 <a href="/agb" target="_blank">AGB</a> und
@@ -344,6 +460,103 @@ $price_gross = round($price_net + $vat, 2);
             <i class="ri-arrow-left-line"></i> Zurück zum Dashboard
         </a>
     </div>
+
+    <!-- Promo Code JS -->
+    <script>
+    (function() {
+        const promoInput = document.getElementById('promo-code-input');
+        const promoBtn = document.getElementById('promo-validate-btn');
+        const promoResult = document.getElementById('promo-result');
+        const promoActivateBtn = document.getElementById('promo-activate-btn');
+        const promoActivateText = document.getElementById('promo-activate-text');
+        let validatedCode = '';
+
+        promoInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                promoBtn.click();
+            }
+        });
+
+        promoBtn.addEventListener('click', async function() {
+            const code = promoInput.value.trim();
+            if (!code) return;
+
+            promoBtn.disabled = true;
+            promoBtn.textContent = '...';
+            promoResult.className = 'promo-result';
+            promoResult.style.display = 'none';
+            promoActivateBtn.style.display = 'none';
+            validatedCode = '';
+
+            try {
+                const res = await fetch('/wp-json/punktepass/v1/promo/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ code: code })
+                });
+                const data = await res.json();
+
+                if (data.valid) {
+                    promoInput.className = 'valid';
+                    promoResult.className = 'promo-result success';
+                    promoResult.innerHTML = '<i class="ri-check-line"></i> <strong>' + data.months + ' Monate gratis!</strong> ' + (data.desc || '');
+                    promoActivateText.textContent = data.months + ' Monate gratis aktivieren';
+                    promoActivateBtn.style.display = 'flex';
+                    validatedCode = code;
+                } else {
+                    promoInput.className = 'invalid';
+                    promoResult.className = 'promo-result error';
+                    promoResult.textContent = data.error || 'Ungültiger Code';
+                }
+            } catch (err) {
+                promoResult.className = 'promo-result error';
+                promoResult.textContent = 'Fehler bei der Überprüfung. Bitte versuchen Sie es erneut.';
+            }
+
+            promoBtn.disabled = false;
+            promoBtn.textContent = 'Einlösen';
+        });
+
+        promoActivateBtn.addEventListener('click', async function() {
+            if (!validatedCode) return;
+
+            promoActivateBtn.disabled = true;
+            promoActivateText.textContent = 'Wird aktiviert...';
+
+            try {
+                const res = await fetch('/wp-json/punktepass/v1/promo/redeem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ code: validatedCode })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    promoResult.className = 'promo-result success';
+                    promoResult.innerHTML = '<strong>Erfolgreich aktiviert!</strong> Ihr Abo ist ' + data.months + ' Monate kostenlos aktiv (bis ' + new Date(data.expires).toLocaleDateString('de-DE') + ').<br>Sie werden weitergeleitet...';
+                    promoActivateBtn.style.display = 'none';
+
+                    setTimeout(function() {
+                        window.location.href = '<?php echo esc_js($redirect_back); ?>?payment=success&method=promo';
+                    }, 2000);
+                } else {
+                    promoResult.className = 'promo-result error';
+                    promoResult.textContent = data.error || 'Fehler beim Einlösen.';
+                    promoActivateBtn.disabled = false;
+                    promoActivateText.textContent = 'Gratis aktivieren';
+                }
+            } catch (err) {
+                promoResult.className = 'promo-result error';
+                promoResult.textContent = 'Netzwerkfehler. Bitte versuchen Sie es erneut.';
+                promoActivateBtn.disabled = false;
+                promoActivateText.textContent = 'Gratis aktivieren';
+            }
+        });
+    })();
+    </script>
 
     <!-- PayPal SDK (Live) -->
     <script src="https://www.paypal.com/sdk/js?client-id=<?php echo defined('PAYPAL_CLIENT_ID') ? PAYPAL_CLIENT_ID : 'ATvIpJv2JtjokY3p4OBWc8ZfcJE5wUXn9Lt65IDYUewAoCAg0wMb3thS1bTYTETjeVl41BAX2djkO8FA'; ?>&vault=true&intent=subscription&locale=de_DE" data-sdk-integration-source="button-factory"></script>

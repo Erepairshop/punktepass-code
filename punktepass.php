@@ -1184,6 +1184,11 @@ add_action('init', function () {
         require_once PPV_PLUGIN_DIR . 'includes/class-ppv-bank-transfer.php';
         if (class_exists('PPV_Bank_Transfer')) PPV_Bank_Transfer::hooks();
     }
+    // Promo Codes
+    if (file_exists(PPV_PLUGIN_DIR . 'includes/class-ppv-promo-code.php')) {
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-promo-code.php';
+        if (class_exists('PPV_Promo_Code')) PPV_Promo_Code::hooks();
+    }
 }, 99);
 
 // ========================================
