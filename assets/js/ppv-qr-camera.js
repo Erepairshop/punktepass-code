@@ -73,7 +73,10 @@
       this.miniContainer.id = 'ppv-mini-scanner';
       this.miniContainer.className = 'ppv-mini-scanner-active';
       this.miniContainer.innerHTML = `
-        <div id="ppv-mini-drag-handle" class="ppv-mini-drag-handle"><span class="ppv-drag-icon">⋮⋮</span></div>
+        <div id="ppv-mini-drag-handle" class="ppv-mini-drag-handle">
+          <span class="ppv-drag-icon">⋮⋮</span>
+          <button id="ppv-mini-minimize" class="ppv-mini-minimize-btn" title="${L.minimize || 'Minimieren'}"><i class="ri-subtract-line"></i></button>
+        </div>
         <div id="ppv-mini-reader" style="display:none;"></div>
         <div id="ppv-mini-status" style="display:none;"><span class="ppv-mini-icon">📷</span><span class="ppv-mini-text">${L.scanner_active || 'Scanner aktiv'}</span></div>
         <div class="ppv-mini-controls">
@@ -86,6 +89,20 @@
         </div>
       `;
       document.body.appendChild(this.miniContainer);
+
+      // Restore FAB pill (shown when minimized)
+      this.restoreFab = document.createElement('button');
+      this.restoreFab.id = 'ppv-mini-restore-fab';
+      this.restoreFab.className = 'ppv-mini-restore-fab';
+      this.restoreFab.innerHTML = '<i class="ri-camera-line"></i> <span>Scanner</span>';
+      this.restoreFab.style.display = 'none';
+      this.restoreFab.addEventListener('click', () => this.restoreMiniScanner());
+      document.body.appendChild(this.restoreFab);
+
+      // Check if was minimized
+      if (localStorage.getItem('ppv_mini_minimized') === 'true') {
+        this.minimizeMiniScanner(true);
+      }
       this.isFullscreen = false;
 
       this.readerDiv = document.getElementById('ppv-mini-reader');
@@ -96,12 +113,52 @@
       this.fullscreenBtn = document.getElementById('ppv-mini-fullscreen');
       this.toolbar = this.miniContainer.querySelector('.ppv-mini-toolbar');
 
+      this.minimizeBtn = document.getElementById('ppv-mini-minimize');
+
       this.loadPosition();
       this.makeDraggable();
       this.setupToggle();
       this.setupTorch();
       this.setupRefocus();
       this.setupFullscreen();
+      this.setupMinimize();
+    }
+
+    // ============================================================
+    // MINIMIZE / RESTORE
+    // ============================================================
+    setupMinimize() {
+      if (!this.minimizeBtn) return;
+      this.minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.minimizeMiniScanner();
+      });
+    }
+
+    minimizeMiniScanner(instant) {
+      if (!this.miniContainer || !this.restoreFab) return;
+      if (instant) {
+        this.miniContainer.style.transition = 'none';
+        this.restoreFab.style.transition = 'none';
+      }
+      this.miniContainer.classList.add('ppv-mini-hidden');
+      this.restoreFab.style.display = 'flex';
+      if (instant) {
+        requestAnimationFrame(() => {
+          this.miniContainer.style.transition = '';
+          this.restoreFab.style.transition = '';
+        });
+      }
+      try { localStorage.setItem('ppv_mini_minimized', 'true'); } catch(e) {}
+      ppvLog('[Camera] Mini scanner minimized');
+    }
+
+    restoreMiniScanner() {
+      if (!this.miniContainer || !this.restoreFab) return;
+      this.miniContainer.classList.remove('ppv-mini-hidden');
+      this.restoreFab.style.display = 'none';
+      try { localStorage.setItem('ppv_mini_minimized', 'false'); } catch(e) {}
+      ppvLog('[Camera] Mini scanner restored');
     }
 
     // ============================================================
