@@ -75,6 +75,7 @@ class PPV_Rewards_Management {
             'base'   => esc_url(rest_url('ppv/v1/')),
             'nonce'  => wp_create_nonce('wp_rest'),
             'store_id' => self::get_store_id(),
+            'ajax_url' => admin_url('admin-ajax.php'),
             'ably' => $ably_config
         ];
 
@@ -241,6 +242,58 @@ class PPV_Rewards_Management {
                     <i class="ri-add-line"></i>
                     <span><?php echo esc_html(PPV_Lang::t('rewards_add_new') ?: 'Új jutalom'); ?></span>
                 </button>
+            </div>
+
+            <!-- 🎯 TEMPLATE PRESETS / QUICK-START -->
+            <div class="ppv-templates-section">
+                <div class="ppv-templates-label">
+                    <i class="ri-lightbulb-flash-line"></i>
+                    <?php echo esc_html(PPV_Lang::t('rewards_templates_label') ?: 'Schnellstart-Vorlagen'); ?>
+                </div>
+                <div class="ppv-templates-row">
+                    <div class="ppv-tpl-card" data-tpl="percent" data-title="10% Rabatt" data-type="discount_percent" data-value="10" data-points="50" data-given="1" data-desc="10% Rabatt auf den nächsten Einkauf">
+                        <div class="ppv-tpl-icon"><i class="ri-percent-line"></i></div>
+                        <div class="ppv-tpl-title">10% Rabatt</div>
+                        <div class="ppv-tpl-hint">50 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
+                    </div>
+                    <div class="ppv-tpl-card" data-tpl="fixed" data-title="5&euro; Gutschein" data-type="discount_fixed" data-value="5" data-points="30" data-given="1" data-desc="5&euro; Gutschein einlösbar beim nächsten Besuch">
+                        <div class="ppv-tpl-icon"><i class="ri-money-euro-circle-line"></i></div>
+                        <div class="ppv-tpl-title">5&euro; Gutschein</div>
+                        <div class="ppv-tpl-hint">30 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
+                    </div>
+                    <div class="ppv-tpl-card" data-tpl="free" data-title="Gratis Kaffee" data-type="free_product" data-value="0" data-points="80" data-given="2" data-desc="Ein gratis Kaffee nach Wahl" data-product="Kaffee">
+                        <div class="ppv-tpl-icon"><i class="ri-cup-line"></i></div>
+                        <div class="ppv-tpl-title">Gratis Kaffee</div>
+                        <div class="ppv-tpl-hint">80 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
+                    </div>
+                    <div class="ppv-tpl-card" data-tpl="vip" data-title="20% VIP Rabatt" data-type="discount_percent" data-value="20" data-points="100" data-given="2" data-desc="Exklusiver VIP Rabatt für treue Kunden">
+                        <div class="ppv-tpl-icon"><i class="ri-vip-crown-line"></i></div>
+                        <div class="ppv-tpl-title">20% VIP</div>
+                        <div class="ppv-tpl-hint">100 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
+                    </div>
+                    <div class="ppv-tpl-card" data-tpl="gift" data-title="Treuegeschenk" data-type="free_product" data-value="0" data-points="150" data-given="2" data-desc="Überraschungsgeschenk für treue Stammkunden" data-product="Überraschungsgeschenk">
+                        <div class="ppv-tpl-icon"><i class="ri-gift-2-line"></i></div>
+                        <div class="ppv-tpl-title">Treuegeschenk</div>
+                        <div class="ppv-tpl-hint">150 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
+                    </div>
+                    <div class="ppv-tpl-card" data-tpl="ai" id="ppv-ai-suggest-btn">
+                        <div class="ppv-tpl-icon"><i class="ri-sparkling-2-fill"></i></div>
+                        <div class="ppv-tpl-title">AI Vorschlag</div>
+                        <div class="ppv-tpl-hint"><?php echo esc_html(PPV_Lang::t('rewards_ai_hint') ?: 'Ideen für dich'); ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🤖 AI SUGGESTIONS PANEL -->
+            <div class="ppv-ai-suggestions" id="ppv-ai-suggestions">
+                <div class="ppv-ai-sug-header">
+                    <i class="ri-sparkling-2-fill"></i>
+                    AI Vorschläge
+                    <button type="button" class="ppv-ai-sug-close" id="ppv-ai-sug-close">&times;</button>
+                </div>
+                <div class="ppv-ai-sug-body" id="ppv-ai-sug-body">
+                    <div class="ppv-ai-sug-loading"><i class="ri-loader-4-line"></i> Ideen werden generiert...</div>
+                </div>
             </div>
 
             <!-- 📝 CREATE/EDIT FORM (collapsed by default) -->
@@ -1100,6 +1153,172 @@ class PPV_Rewards_Management {
         }
 
         /* ============================================
+           🎯 TEMPLATE PRESETS / QUICK-START
+           ============================================ */
+        .ppv-templates-section {
+            margin-bottom: 20px;
+        }
+        .ppv-templates-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--pp-text-2, #64748b);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ppv-templates-label i { color: #00a8cc; }
+        body.ppv-dark .ppv-templates-label,
+        [data-theme="dark"] .ppv-templates-label { color: #94a3b8; }
+
+        .ppv-templates-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+            scroll-snap-type: x mandatory;
+        }
+        .ppv-templates-row::-webkit-scrollbar { height: 4px; }
+        .ppv-templates-row::-webkit-scrollbar-thumb { background: rgba(0,168,204,0.3); border-radius: 4px; }
+
+        .ppv-tpl-card {
+            flex: 0 0 auto;
+            width: 140px;
+            padding: 14px 12px;
+            border-radius: 14px;
+            border: 1.5px solid var(--pp-border, rgba(0,168,204,0.15));
+            background: var(--pp-surface, #fff);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+            scroll-snap-align: start;
+            user-select: none;
+        }
+        .ppv-tpl-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,168,204,0.15);
+            border-color: rgba(0,168,204,0.4);
+        }
+        .ppv-tpl-card:active { transform: scale(0.97); }
+
+        body.ppv-dark .ppv-tpl-card,
+        [data-theme="dark"] .ppv-tpl-card {
+            background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.9) 100%);
+            border-color: rgba(0,168,204,0.2);
+        }
+
+        .ppv-tpl-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 22px;
+        }
+        .ppv-tpl-card[data-tpl="percent"] .ppv-tpl-icon { background: rgba(16,185,129,0.12); color: #10b981; }
+        .ppv-tpl-card[data-tpl="fixed"] .ppv-tpl-icon { background: rgba(59,130,246,0.12); color: #3b82f6; }
+        .ppv-tpl-card[data-tpl="free"] .ppv-tpl-icon { background: rgba(249,115,22,0.12); color: #f97316; }
+        .ppv-tpl-card[data-tpl="vip"] .ppv-tpl-icon { background: rgba(168,85,247,0.12); color: #a855f7; }
+        .ppv-tpl-card[data-tpl="gift"] .ppv-tpl-icon { background: rgba(236,72,153,0.12); color: #ec4899; }
+        .ppv-tpl-card[data-tpl="ai"] .ppv-tpl-icon { background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(168,85,247,0.15) 100%); color: #7c3aed; }
+
+        .ppv-tpl-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--pp-text, #1e293b);
+            margin-bottom: 2px;
+        }
+        body.ppv-dark .ppv-tpl-title,
+        [data-theme="dark"] .ppv-tpl-title { color: #e2e8f0; }
+
+        .ppv-tpl-hint {
+            font-size: 0.7rem;
+            color: var(--pp-text-3, #94a3b8);
+            line-height: 1.3;
+        }
+
+        /* AI Suggestions Panel */
+        .ppv-ai-suggestions {
+            display: none;
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(102,126,234,0.06) 100%);
+            border: 1px solid rgba(124,58,237,0.2);
+            animation: slideDown 0.3s ease-out;
+        }
+        .ppv-ai-suggestions.show { display: block; }
+
+        body.ppv-dark .ppv-ai-suggestions,
+        [data-theme="dark"] .ppv-ai-suggestions {
+            background: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(102,126,234,0.1) 100%);
+        }
+
+        .ppv-ai-sug-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #7c3aed;
+        }
+        .ppv-ai-sug-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+        }
+
+        .ppv-ai-sug-loading {
+            text-align: center;
+            padding: 20px;
+            color: #7c3aed;
+            font-size: 0.9rem;
+        }
+        .ppv-ai-sug-loading i { animation: spin 1s linear infinite; display: inline-block; margin-right: 6px; }
+
+        .ppv-ai-sug-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .ppv-ai-sug-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: var(--pp-surface, #fff);
+            border-radius: 10px;
+            border: 1px solid rgba(124,58,237,0.15);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ppv-ai-sug-item:hover {
+            border-color: #7c3aed;
+            box-shadow: 0 4px 12px rgba(124,58,237,0.15);
+        }
+        body.ppv-dark .ppv-ai-sug-item,
+        [data-theme="dark"] .ppv-ai-sug-item {
+            background: rgba(15,23,42,0.6);
+        }
+
+        .ppv-ai-sug-item-icon { font-size: 24px; flex-shrink: 0; }
+        .ppv-ai-sug-item-text { flex: 1; }
+        .ppv-ai-sug-item-title { font-size: 0.85rem; font-weight: 600; color: var(--pp-text, #1e293b); }
+        body.ppv-dark .ppv-ai-sug-item-title, [data-theme="dark"] .ppv-ai-sug-item-title { color: #e2e8f0; }
+        .ppv-ai-sug-item-desc { font-size: 0.75rem; color: var(--pp-text-3, #94a3b8); margin-top: 2px; }
+        .ppv-ai-sug-item-arrow { color: #7c3aed; font-size: 18px; flex-shrink: 0; }
+
+        /* ============================================
            📱 MOBILE RESPONSIVE - APP FEEL
            ============================================ */
         @media (max-width: 480px) {
@@ -1246,6 +1465,19 @@ class PPV_Rewards_Management {
 
             .ppv-loading-state {
                 padding: 32px;
+            }
+
+            .ppv-tpl-card {
+                width: 120px;
+                padding: 12px 10px;
+            }
+            .ppv-tpl-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 18px;
+            }
+            .ppv-ai-suggestions {
+                padding: 12px;
             }
         }
         </style>
