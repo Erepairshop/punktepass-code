@@ -243,7 +243,21 @@ return [
 'rewards_form_apply_all_hint' => 'Ugyanez a jutalom létrejön minden filiálénál',
 'rewards_templates_label' => 'Gyorsindító sablonok',
 'rewards_ai_hint' => 'Ötletek neked',
-
+'rewards_ai_suggestions' => 'AI javaslatok',
+'rewards_ai_loading' => 'Ötletek generálása...',
+'rewards_tpl_percent_title' => '10% kedvezmény',
+'rewards_tpl_percent_desc' => '10% kedvezmény a következő vásárlásra',
+'rewards_tpl_fixed_title' => '5€ kupon',
+'rewards_tpl_fixed_desc' => '5€ kupon beváltható a következő alkalommal',
+'rewards_tpl_free_title' => 'Gratis kávé',
+'rewards_tpl_free_desc' => 'Egy ingyenes kávé tetszés szerint',
+'rewards_tpl_free_product' => 'Kávé',
+'rewards_tpl_vip_title' => '20% VIP kedvezmény',
+'rewards_tpl_vip_desc' => 'Exkluzív VIP kedvezmény hűséges vásárlóknak',
+'rewards_tpl_gift_title' => 'Hűségajándék',
+'rewards_tpl_gift_desc' => 'Meglepetés ajándék hűséges törzsvendégeknek',
+'rewards_tpl_gift_product' => 'Meglepetés ajándék',
+'rewards_tpl_ai_title' => 'AI javaslat',
 
 
   'dashboard' => 'A te PunktePass irányítópultod',

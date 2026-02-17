@@ -251,34 +251,34 @@ class PPV_Rewards_Management {
                     <?php echo esc_html(PPV_Lang::t('rewards_templates_label') ?: 'Schnellstart-Vorlagen'); ?>
                 </div>
                 <div class="ppv-templates-row">
-                    <div class="ppv-tpl-card" data-tpl="percent" data-title="10% Rabatt" data-type="discount_percent" data-value="10" data-points="50" data-given="1" data-desc="10% Rabatt auf den nächsten Einkauf">
+                    <div class="ppv-tpl-card" data-tpl="percent" data-title="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_percent_title') ?: '10% Rabatt'); ?>" data-type="discount_percent" data-value="10" data-points="50" data-given="1" data-desc="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_percent_desc') ?: '10% Rabatt auf den nächsten Einkauf'); ?>">
                         <div class="ppv-tpl-icon"><i class="ri-percent-line"></i></div>
-                        <div class="ppv-tpl-title">10% Rabatt</div>
+                        <div class="ppv-tpl-title"><?php echo esc_html(PPV_Lang::t('rewards_tpl_percent_title') ?: '10% Rabatt'); ?></div>
                         <div class="ppv-tpl-hint">50 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
                     </div>
-                    <div class="ppv-tpl-card" data-tpl="fixed" data-title="5&euro; Gutschein" data-type="discount_fixed" data-value="5" data-points="30" data-given="1" data-desc="5&euro; Gutschein einlösbar beim nächsten Besuch">
+                    <div class="ppv-tpl-card" data-tpl="fixed" data-title="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_fixed_title') ?: '5€ Gutschein'); ?>" data-type="discount_fixed" data-value="5" data-points="30" data-given="1" data-desc="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_fixed_desc') ?: '5€ Gutschein einlösbar beim nächsten Besuch'); ?>">
                         <div class="ppv-tpl-icon"><i class="ri-money-euro-circle-line"></i></div>
-                        <div class="ppv-tpl-title">5&euro; Gutschein</div>
+                        <div class="ppv-tpl-title"><?php echo esc_html(PPV_Lang::t('rewards_tpl_fixed_title') ?: '5€ Gutschein'); ?></div>
                         <div class="ppv-tpl-hint">30 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
                     </div>
-                    <div class="ppv-tpl-card" data-tpl="free" data-title="Gratis Kaffee" data-type="free_product" data-value="0" data-points="80" data-given="2" data-desc="Ein gratis Kaffee nach Wahl" data-product="Kaffee">
+                    <div class="ppv-tpl-card" data-tpl="free" data-title="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_free_title') ?: 'Gratis Kaffee'); ?>" data-type="free_product" data-value="0" data-points="80" data-given="2" data-desc="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_free_desc') ?: 'Ein gratis Kaffee nach Wahl'); ?>" data-product="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_free_product') ?: 'Kaffee'); ?>" data-product-value="3.50">
                         <div class="ppv-tpl-icon"><i class="ri-cup-line"></i></div>
-                        <div class="ppv-tpl-title">Gratis Kaffee</div>
+                        <div class="ppv-tpl-title"><?php echo esc_html(PPV_Lang::t('rewards_tpl_free_title') ?: 'Gratis Kaffee'); ?></div>
                         <div class="ppv-tpl-hint">80 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
                     </div>
-                    <div class="ppv-tpl-card" data-tpl="vip" data-title="20% VIP Rabatt" data-type="discount_percent" data-value="20" data-points="100" data-given="2" data-desc="Exklusiver VIP Rabatt für treue Kunden">
+                    <div class="ppv-tpl-card" data-tpl="vip" data-title="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_vip_title') ?: '20% VIP Rabatt'); ?>" data-type="discount_percent" data-value="20" data-points="100" data-given="2" data-desc="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_vip_desc') ?: 'Exklusiver VIP Rabatt für treue Kunden'); ?>">
                         <div class="ppv-tpl-icon"><i class="ri-vip-crown-line"></i></div>
-                        <div class="ppv-tpl-title">20% VIP</div>
+                        <div class="ppv-tpl-title"><?php echo esc_html(PPV_Lang::t('rewards_tpl_vip_title') ?: '20% VIP Rabatt'); ?></div>
                         <div class="ppv-tpl-hint">100 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
                     </div>
-                    <div class="ppv-tpl-card" data-tpl="gift" data-title="Treuegeschenk" data-type="free_product" data-value="0" data-points="150" data-given="2" data-desc="Überraschungsgeschenk für treue Stammkunden" data-product="Überraschungsgeschenk">
+                    <div class="ppv-tpl-card" data-tpl="gift" data-title="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_gift_title') ?: 'Treuegeschenk'); ?>" data-type="free_product" data-value="0" data-points="150" data-given="2" data-desc="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_gift_desc') ?: 'Überraschungsgeschenk für treue Stammkunden'); ?>" data-product="<?php echo esc_attr(PPV_Lang::t('rewards_tpl_gift_product') ?: 'Überraschungsgeschenk'); ?>" data-product-value="10">
                         <div class="ppv-tpl-icon"><i class="ri-gift-2-line"></i></div>
-                        <div class="ppv-tpl-title">Treuegeschenk</div>
+                        <div class="ppv-tpl-title"><?php echo esc_html(PPV_Lang::t('rewards_tpl_gift_title') ?: 'Treuegeschenk'); ?></div>
                         <div class="ppv-tpl-hint">150 <?php echo esc_html(PPV_Lang::t('rewards_points_label') ?: 'Punkte'); ?></div>
                     </div>
                     <div class="ppv-tpl-card" data-tpl="ai" id="ppv-ai-suggest-btn">
                         <div class="ppv-tpl-icon"><i class="ri-sparkling-2-fill"></i></div>
-                        <div class="ppv-tpl-title">AI Vorschlag</div>
+                        <div class="ppv-tpl-title"><?php echo esc_html(PPV_Lang::t('rewards_tpl_ai_title') ?: 'AI Vorschlag'); ?></div>
                         <div class="ppv-tpl-hint"><?php echo esc_html(PPV_Lang::t('rewards_ai_hint') ?: 'Ideen für dich'); ?></div>
                     </div>
                 </div>
@@ -288,11 +288,11 @@ class PPV_Rewards_Management {
             <div class="ppv-ai-suggestions" id="ppv-ai-suggestions">
                 <div class="ppv-ai-sug-header">
                     <i class="ri-sparkling-2-fill"></i>
-                    AI Vorschläge
+                    <?php echo esc_html(PPV_Lang::t('rewards_ai_suggestions') ?: 'AI Vorschläge'); ?>
                     <button type="button" class="ppv-ai-sug-close" id="ppv-ai-sug-close">&times;</button>
                 </div>
                 <div class="ppv-ai-sug-body" id="ppv-ai-sug-body">
-                    <div class="ppv-ai-sug-loading"><i class="ri-loader-4-line"></i> Ideen werden generiert...</div>
+                    <div class="ppv-ai-sug-loading"><i class="ri-loader-4-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_ai_loading') ?: 'Ideen werden generiert...'); ?></div>
                 </div>
             </div>
 

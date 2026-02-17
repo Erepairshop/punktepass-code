@@ -73,6 +73,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (typeEl) { typeEl.value = data.type || "discount_percent"; typeEl.dispatchEvent(new Event("change")); }
     if (valueEl) valueEl.value = data.value || "";
     if (freeProductEl && data.product) freeProductEl.value = data.product;
+    const freeProductValueEl = document.getElementById("reward-free-product-value");
+    if (freeProductValueEl && data.product_value) freeProductValueEl.value = data.product_value;
 
     // Reset edit mode
     editMode = false;
@@ -95,6 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
         value: card.dataset.value || "",
         points: card.dataset.points || "",
         given: card.dataset.given || "1",
+        product_value: card.dataset.productValue || "",
         desc: card.dataset.desc || "",
         product: card.dataset.product || ""
       });
@@ -157,7 +160,8 @@ document.addEventListener("DOMContentLoaded", function () {
                   points: String(sug.points || "50"),
                   given: String(sug.given || "1"),
                   desc: sug.desc || "",
-                  product: sug.product || ""
+                  product: sug.product || "",
+                  product_value: String(sug.product_value || "")
                 });
               });
             });

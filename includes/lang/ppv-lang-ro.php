@@ -250,6 +250,21 @@ return [
 'rewards_form_apply_all_hint' => 'Aceeași recompensă va fi creată la toate filialele',
 'rewards_templates_label' => 'Șabloane rapide',
 'rewards_ai_hint' => 'Idei pentru tine',
+'rewards_ai_suggestions' => 'Sugestii AI',
+'rewards_ai_loading' => 'Se generează idei...',
+'rewards_tpl_percent_title' => '10% reducere',
+'rewards_tpl_percent_desc' => '10% reducere la următoarea cumpărătură',
+'rewards_tpl_fixed_title' => 'Cupon 5€',
+'rewards_tpl_fixed_desc' => 'Cupon de 5€ valabil la următoarea vizită',
+'rewards_tpl_free_title' => 'Cafea gratuită',
+'rewards_tpl_free_desc' => 'O cafea gratuită la alegere',
+'rewards_tpl_free_product' => 'Cafea',
+'rewards_tpl_vip_title' => '20% reducere VIP',
+'rewards_tpl_vip_desc' => 'Reducere VIP exclusivă pentru clienții fideli',
+'rewards_tpl_gift_title' => 'Cadou de fidelitate',
+'rewards_tpl_gift_desc' => 'Cadou surpriză pentru clienții fideli',
+'rewards_tpl_gift_product' => 'Cadou surpriză',
+'rewards_tpl_ai_title' => 'Sugestie AI',
   // ==============================
   // 🔹 Általános
   // ==============================
