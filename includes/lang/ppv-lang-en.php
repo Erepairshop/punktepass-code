@@ -223,6 +223,11 @@ return [
 'rewards_tpl_gift_desc' => 'Surprise gift for loyal regulars',
 'rewards_tpl_gift_product' => 'Surprise gift',
 'rewards_tpl_ai_title' => 'AI Suggestion',
+'rewards_form_free_product_name' => 'Product name',
+'rewards_form_free_product_placeholder' => 'e.g. Coffee, Dessert...',
+'rewards_form_free_product_value_label' => 'Product value',
+'rewards_form_free_product_value_ph' => 'e.g. 3.50',
+'rewards_form_free_product_value_helper' => 'The regular price of this product (for invoicing)',
 
 
 'dashboard' => 'Your PunktePass Dashboard',

@@ -223,6 +223,11 @@ return [
 'rewards_tpl_gift_desc' => 'Regalo sorpresa per clienti fedeli',
 'rewards_tpl_gift_product' => 'Regalo sorpresa',
 'rewards_tpl_ai_title' => 'Suggerimento AI',
+'rewards_form_free_product_name' => 'Nome del prodotto',
+'rewards_form_free_product_placeholder' => 'es. Caffè, Dessert...',
+'rewards_form_free_product_value_label' => 'Valore del prodotto',
+'rewards_form_free_product_value_ph' => 'es. 3.50',
+'rewards_form_free_product_value_helper' => 'Il prezzo normale del prodotto (per la fattura)',
 
 
 'dashboard' => 'Your PunktePass Dashboard',

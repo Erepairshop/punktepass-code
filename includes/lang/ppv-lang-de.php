@@ -227,6 +227,11 @@ return [
 'rewards_tpl_gift_desc' => 'Überraschungsgeschenk für treue Stammkunden',
 'rewards_tpl_gift_product' => 'Überraschungsgeschenk',
 'rewards_tpl_ai_title' => 'AI Vorschlag',
+'rewards_form_free_product_name' => 'Produktname',
+'rewards_form_free_product_placeholder' => 'z.B. Kaffee, Dessert...',
+'rewards_form_free_product_value_label' => 'Produktwert',
+'rewards_form_free_product_value_ph' => 'z.B. 3.50',
+'rewards_form_free_product_value_helper' => 'Der reguläre Preis dieses Produkts (für die Rechnung)',
 
 
   'dashboard' => 'Dein PunktePass Dashboard',

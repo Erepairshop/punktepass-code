@@ -258,6 +258,11 @@ return [
 'rewards_tpl_gift_desc' => 'Meglepetés ajándék hűséges törzsvendégeknek',
 'rewards_tpl_gift_product' => 'Meglepetés ajándék',
 'rewards_tpl_ai_title' => 'AI javaslat',
+'rewards_form_free_product_name' => 'Termék neve',
+'rewards_form_free_product_placeholder' => 'pl. Kávé, Desszert...',
+'rewards_form_free_product_value_label' => 'Termék értéke',
+'rewards_form_free_product_value_ph' => 'pl. 3.50',
+'rewards_form_free_product_value_helper' => 'A termék normál ára (a számlához)',
 
 
   'dashboard' => 'A te PunktePass irányítópultod',

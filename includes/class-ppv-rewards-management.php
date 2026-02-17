@@ -336,6 +336,18 @@ class PPV_Rewards_Management {
                                 <input type="text" name="action_value" id="reward-value" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_value_placeholder') ?: 'pl. 10'); ?>" required>
                             </div>
 
+                            <div class="ppv-form-group" id="reward-free-product-name-wrapper" style="display:none">
+                                <label><i class="ri-gift-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_free_product_name') ?: 'Produktname'); ?></label>
+                                <input type="text" name="free_product" id="reward-free-product-name" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_free_product_placeholder') ?: 'z.B. Kaffee, Dessert...'); ?>">
+                                <small><?php echo esc_html(PPV_Lang::t('rewards_form_free_product_helper') ?: 'Name des kostenlosen Produkts'); ?></small>
+                            </div>
+
+                            <div class="ppv-form-group" id="reward-free-product-value-wrapper" style="display:none">
+                                <label><i class="ri-money-euro-circle-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_free_product_value_label') ?: 'Produktwert'); ?> (<?php echo esc_html($currency); ?>)</label>
+                                <input type="number" name="free_product_value" id="reward-free-product-value" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_free_product_value_ph') ?: 'z.B. 3.50'); ?>" min="0" step="0.01">
+                                <small><?php echo esc_html(PPV_Lang::t('rewards_form_free_product_value_helper') ?: 'Der reguläre Preis dieses Produkts (für die Rechnung)'); ?></small>
+                            </div>
+
                             <div class="ppv-form-group <?php echo $is_filiale ? 'ppv-filiale-locked' : ''; ?>">
                                 <label><i class="ri-coin-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_points_given') ?: 'Punkte pro Scan'); ?></label>
                                 <?php if ($is_filiale): ?>

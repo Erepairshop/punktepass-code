@@ -265,6 +265,11 @@ return [
 'rewards_tpl_gift_desc' => 'Cadou surpriză pentru clienții fideli',
 'rewards_tpl_gift_product' => 'Cadou surpriză',
 'rewards_tpl_ai_title' => 'Sugestie AI',
+'rewards_form_free_product_name' => 'Numele produsului',
+'rewards_form_free_product_placeholder' => 'ex. Cafea, Desert...',
+'rewards_form_free_product_value_label' => 'Valoarea produsului',
+'rewards_form_free_product_value_ph' => 'ex. 3.50',
+'rewards_form_free_product_value_helper' => 'Prețul normal al produsului (pentru factură)',
   // ==============================
   // 🔹 Általános
   // ==============================
