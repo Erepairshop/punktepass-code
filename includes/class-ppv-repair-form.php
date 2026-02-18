@@ -1065,11 +1065,17 @@ function toggleProblemTag(btn, text) {
 
     // Shared function to display the success page with data
     function showSuccessPage(d) {
+        console.log('[Repair] showSuccessPage called with:', d);
+
         // Hide form, show success
         form.style.display = 'none';
         var bonusBadge = document.querySelector('.repair-bonus-badge');
         if (bonusBadge) bonusBadge.style.display = 'none';
+        if (!successDiv) { console.error('[Repair] successDiv is null!'); return; }
         successDiv.style.display = 'block';
+        successDiv.style.padding = '48px 24px';
+        successDiv.style.textAlign = 'center';
+        console.log('[Repair] successDiv visible:', successDiv.offsetHeight, 'px');
 
         // Collapse hero header to give more room for success content
         var header = document.querySelector('.repair-header');
@@ -1138,10 +1144,12 @@ function toggleProblemTag(btn, text) {
     // Check if form was already submitted in this session
     var dupKey = 'ppv_repair_submitted_' + storeId;
     var lastSubmit = sessionStorage.getItem(dupKey);
+    console.log('[Repair] dupKey check:', dupKey, 'lastSubmit:', lastSubmit, 'age:', lastSubmit ? (Date.now() - parseInt(lastSubmit)) + 'ms' : 'none');
     if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
         // Restore saved success data (tracking card, points, QR code)
         var savedData = null;
         try { savedData = JSON.parse(sessionStorage.getItem(dupKey + '_data')); } catch(e) {}
+        console.log('[Repair] Restoring success page from session, data:', savedData);
         try {
             showSuccessPage(savedData);
         } catch(e) {
@@ -1149,6 +1157,8 @@ function toggleProblemTag(btn, text) {
             form.style.display = 'none';
             successDiv.style.display = 'block';
         }
+    } else {
+        console.log('[Repair] Fresh form load (no recent submission)');
     }
 
     // Email lookup for returning customers with debounce
