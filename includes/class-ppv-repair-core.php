@@ -105,6 +105,7 @@ class PPV_Repair_Core {
             'ppv_repair_reward_approve' => [__CLASS__, 'ajax_reward_approve'],
             'ppv_repair_reward_reject'  => [__CLASS__, 'ajax_reward_reject'],
             'ppv_repair_send_email'     => [__CLASS__, 'ajax_send_repair_email'],
+            'ppv_repair_parts_arrived'  => [__CLASS__, 'ajax_parts_arrived'],
         ];
         foreach ($admin_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -999,6 +1000,16 @@ class PPV_Repair_Core {
             }
             update_option('ppv_repair_migration_version', '2.8');
         }
+
+        // v2.9: Add termin_at column for appointment scheduling (Teil angekommen feature)
+        if (version_compare($version, '2.9', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$repairs_table} LIKE 'termin_at'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$repairs_table} ADD COLUMN termin_at DATETIME NULL AFTER feedback_email_sent");
+            }
+            update_option('ppv_repair_migration_version', '2.9');
+        }
     }
 
     /** ============================================================
@@ -1786,6 +1797,16 @@ class PPV_Repair_Core {
             <div class="detail-row">
                 <span class="detail-label">Endpreis</span>
                 <span class="detail-value" style="color:#059669;font-weight:600"><?php echo number_format($repair->final_cost, 2, ',', '.'); ?> €</span>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($repair->termin_at) && strtotime($repair->termin_at) > time()): ?>
+            <div class="detail-row" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;margin-top:8px">
+                <span class="detail-label" style="color:#059669"><i class="ri-calendar-check-line"></i> Termin</span>
+                <span class="detail-value" style="color:#059669;font-weight:600"><?php
+                    $t_ts = strtotime($repair->termin_at);
+                    echo date('d.m.Y', $t_ts);
+                    if (date('H:i', $t_ts) !== '00:00') echo ' um ' . date('H:i', $t_ts) . ' Uhr';
+                ?></span>
             </div>
             <?php endif; ?>
 
@@ -2687,6 +2708,119 @@ class PPV_Repair_Core {
         ]);
     }
 
+    /** ============================================================
+     * AJAX: Teil angekommen - Part arrived, schedule appointment
+     * ============================================================ */
+    public static function ajax_parts_arrived() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        $termin_date = sanitize_text_field($_POST['termin_date'] ?? '');
+        $termin_time = sanitize_text_field($_POST['termin_time'] ?? '');
+        $send_email = !empty($_POST['send_email']);
+        $custom_message = sanitize_textarea_field($_POST['custom_message'] ?? '');
+
+        global $wpdb;
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_repairs WHERE id=%d AND store_id=%d", $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        // Build termin datetime
+        $termin_at = null;
+        if (!empty($termin_date)) {
+            $termin_at = $termin_date . ($termin_time ? ' ' . $termin_time . ':00' : ' 00:00:00');
+        }
+
+        // Update repair: status → in_progress, set termin_at
+        $update = [
+            'status' => 'in_progress',
+            'updated_at' => current_time('mysql'),
+        ];
+        if ($termin_at) {
+            $update['termin_at'] = $termin_at;
+        }
+        $wpdb->update($wpdb->prefix . 'ppv_repairs', $update, ['id' => $repair_id]);
+
+        // Send appointment email to customer
+        if ($send_email && !empty($repair->customer_email) && $termin_at) {
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
+            ));
+            if ($store) {
+                self::send_termin_notification($store, $repair, $termin_at, $custom_message);
+            }
+        }
+
+        wp_send_json_success([
+            'message' => 'Teil angekommen - Termin gesetzt',
+            'new_status' => 'in_progress',
+        ]);
+    }
+
+    /**
+     * Send appointment (Termin) notification email to customer
+     */
+    private static function send_termin_notification($store, $repair, $termin_at, $custom_message = '') {
+        PPV_Lang::load_extra('ppv-repair-lang');
+
+        $company_name = $store->repair_company_name ?: $store->name;
+        $company_phone = $store->repair_company_phone ?: $store->phone;
+        $company_email = $store->repair_company_email ?: '';
+        $device = trim(($repair->device_brand ?: '') . ' ' . ($repair->device_model ?: ''));
+
+        // Format termin date nicely
+        $termin_ts = strtotime($termin_at);
+        $termin_formatted = date('d.m.Y', $termin_ts);
+        $termin_time = date('H:i', $termin_ts);
+        if ($termin_time !== '00:00') {
+            $termin_formatted .= ' ' . PPV_Lang::t('repair_email_termin_at_time') . ' ' . $termin_time . ' ' . PPV_Lang::t('repair_email_termin_clock');
+        }
+
+        $subject = str_replace('{company}', $company_name, PPV_Lang::t('repair_email_termin_subject'));
+
+        $body = str_replace('{customer_name}', $repair->customer_name, PPV_Lang::t('repair_email_status_greeting')) . "\n\n";
+        $body .= PPV_Lang::t('repair_email_termin_parts_arrived') . "\n\n";
+
+        if (!empty($custom_message)) {
+            $body .= $custom_message . "\n\n";
+        }
+
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $body .= PPV_Lang::t('repair_email_termin_appointment') . "\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $body .= "📅 " . PPV_Lang::t('repair_email_termin_date') . ": " . $termin_formatted . "\n";
+        $body .= "📋 " . PPV_Lang::t('repair_email_status_order_nr') . ": #{$repair->id}\n";
+        if ($device) $body .= "📱 " . PPV_Lang::t('repair_email_status_device') . ": {$device}\n";
+        $body .= "\n";
+
+        $body .= PPV_Lang::t('repair_email_termin_bring_device') . "\n\n";
+
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $body .= PPV_Lang::t('repair_email_status_contact') . "\n";
+        $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        if ($company_phone) $body .= "📞 {$company_phone}\n";
+        if ($company_email) $body .= "📧 {$company_email}\n";
+        $body .= "\n";
+        $body .= PPV_Lang::t('repair_email_status_regards') . "\n";
+        $body .= "{$company_name}\n";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            "From: {$company_name} <noreply@punktepass.de>"
+        ];
+        if ($company_email) {
+            $headers[] = "Reply-To: {$company_email}";
+        }
+
+        wp_mail($repair->customer_email, $subject, $body, $headers);
+    }
+
     /** AJAX: Delete Repair */
     public static function ajax_delete_repair() {
         if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
@@ -3180,6 +3314,7 @@ class PPV_Repair_Core {
         $notify_statuses = [];
         if (!empty($_POST['notify_in_progress'])) $notify_statuses[] = 'in_progress';
         if (!empty($_POST['notify_waiting_parts'])) $notify_statuses[] = 'waiting_parts';
+        if (!empty($_POST['notify_parts_arrived'])) $notify_statuses[] = 'parts_arrived';
         if (!empty($_POST['notify_done'])) $notify_statuses[] = 'done';
         if (!empty($_POST['notify_delivered'])) $notify_statuses[] = 'delivered';
         if (!empty($notify_statuses)) {

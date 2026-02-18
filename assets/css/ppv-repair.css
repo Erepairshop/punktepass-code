@@ -1749,6 +1749,52 @@
 .ra-status-delivered { background: #e5e7eb; color: #374151; }
 .ra-status-cancelled { background: #fecaca; color: #991b1b; }
 
+/* Teil angekommen button */
+.ra-btn-parts-arrived {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 14px;
+    background: #f0fdf4;
+    color: #059669;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: fit-content;
+}
+.ra-btn-parts-arrived:hover {
+    background: #dcfce7;
+    border-color: #86efac;
+}
+.ra-btn-parts-arrived:active {
+    transform: scale(0.97);
+}
+.ra-btn-parts-arrived i {
+    font-size: 16px;
+}
+
+/* Termin badge on repair card */
+.ra-termin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    background: #f0fdf4;
+    color: #059669;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.ra-termin-badge i {
+    font-size: 14px;
+}
+
 .ra-repair-customer strong {
     display: block;
     font-size: 15px;

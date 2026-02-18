@@ -500,6 +500,19 @@ return [
     'repair_admin_status_cancelled' => 'Anulat',
     'repair_admin_status_all'     => 'Toate statusurile',
 
+    // Teil angekommen + Termin
+    'repair_admin_parts_arrived'       => 'Piesa a sosit',
+    'repair_admin_parts_arrived_short' => 'Piesa a sosit',
+    'repair_admin_parts_arrived_desc'  => 'Piesa de schimb a sosit. Programați o întâlnire cu clientul.',
+    'repair_admin_termin_date'         => 'Data programării',
+    'repair_admin_termin_time'         => 'Ora',
+    'repair_admin_termin_message'      => 'Mesaj suplimentar (opțional)',
+    'repair_admin_termin_message_ph'   => 'ex. Vă rugăm să aduceți dispozitivul...',
+    'repair_admin_termin_send_email'   => 'Trimite e-mail programare clientului',
+    'repair_admin_termin_confirm'      => 'Confirmă programarea',
+    'repair_admin_termin_success'      => 'Programare setată, client informat',
+    'repair_admin_termin_no_date'      => 'Vă rugăm selectați o dată',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abonament și plată',
     'repair_admin_abo_status'     => 'Status',
@@ -1023,6 +1036,15 @@ return [
     'repair_email_status_device'             => 'Dispozitiv',
     'repair_email_status_contact'            => 'CONTACT',
     'repair_email_status_regards'            => 'Cu stimă,',
+
+    // ===== E-mail: Programare (Piesa sosită + Programare) =====
+    'repair_email_termin_subject'        => 'Programarea dvs. la {company}',
+    'repair_email_termin_parts_arrived'  => 'Vești bune! Piesa necesară pentru reparația dvs. a sosit. Am programat o întâlnire pentru dvs.',
+    'repair_email_termin_appointment'    => 'PROGRAMAREA DVS.',
+    'repair_email_termin_date'           => 'Data',
+    'repair_email_termin_at_time'        => 'la',
+    'repair_email_termin_clock'          => '',
+    'repair_email_termin_bring_device'   => 'Vă rugăm să aduceți dispozitivul la data programată. Dacă nu puteți veni, vă rugăm să ne contactați din timp.',
 
     // ===== E-mail: Achiziție (Contract de vânzare) =====
     'repair_email_ankauf_subject'   => 'Contract de vânzare {number} - {company}',

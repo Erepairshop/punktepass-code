@@ -1927,6 +1927,10 @@ echo '</div></div>
                         <span style="color:#ec4899"><i class="ri-time-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_waiting')) . '
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_parts_arrived" value="1" ' . (in_array('parts_arrived', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#059669"><i class="ri-checkbox-circle-fill"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived_short')) . '
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                         <input type="checkbox" name="notify_done" value="1" ' . (in_array('done', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
                         <span style="color:#059669"><i class="ri-checkbox-circle-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_done')) . '
                     </label>
@@ -2530,6 +2534,42 @@ echo '</div></div>
             </button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2;min-width:180px" id="ra-inv-modal-submit">
                 <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_finish_invoice')) . '
+            </button>
+        </div>
+    </div>
+</div>';
+
+        // Termin Modal (Teil angekommen - part arrived, schedule appointment)
+        echo '<div class="ra-modal-overlay" id="ra-termin-modal">
+    <div class="ra-modal" style="max-width:440px">
+        <h3 style="display:flex;align-items:center;gap:8px"><i class="ri-checkbox-circle-fill" style="color:#059669"></i> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived')) . '</h3>
+        <p class="ra-modal-sub">' . esc_html(PPV_Lang::t('repair_admin_parts_arrived_desc')) . '</p>
+        <div id="ra-termin-info" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;display:none"></div>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-calendar-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_date')) . '</label>
+            <input type="date" id="ra-termin-date" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-time-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_time')) . '</label>
+            <input type="time" id="ra-termin-time" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-chat-1-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_message')) . '</label>
+            <textarea id="ra-termin-message" class="ra-input" rows="2" style="width:100%;font-size:13px;padding:10px 12px;resize:vertical" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_termin_message_ph')) . '"></textarea>
+        </div>
+
+        <div style="margin-bottom:16px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                <input type="checkbox" id="ra-termin-send-email" checked style="width:18px;height:18px;cursor:pointer;accent-color:#059669">
+                <i class="ri-mail-send-line" style="color:#059669"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_send_email')) . '
+            </label>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-termin-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2;background:#059669" id="ra-termin-submit">
+                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_confirm')) . '
             </button>
         </div>
     </div>
@@ -3172,6 +3212,11 @@ echo '</div></div>
         'btn_delete' => PPV_Lang::t('repair_admin_delete_repair'),
         'comments_label' => PPV_Lang::t('repair_admin_comments'),
         'add_comment_ph' => PPV_Lang::t('repair_admin_add_comment_ph'),
+        'parts_arrived' => PPV_Lang::t('repair_admin_parts_arrived'),
+        'parts_arrived_desc' => PPV_Lang::t('repair_admin_parts_arrived_desc'),
+        'termin_confirm' => PPV_Lang::t('repair_admin_termin_confirm'),
+        'termin_success' => PPV_Lang::t('repair_admin_termin_success'),
+        'termin_no_date' => PPV_Lang::t('repair_admin_termin_no_date'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
         'finish_title' => PPV_Lang::t('repair_admin_finish_repair'),
@@ -3356,6 +3401,95 @@ echo '</div></div>
         .catch(function(){
             btn.disabled=false;
             btn.innerHTML=\'<i class="ri-delete-bin-line"></i>\';
+            toast(L.connection_error);
+        });
+    });
+
+    /* ===== Teil angekommen (Parts Arrived) + Termin Modal ===== */
+    var terminModal=document.getElementById("ra-termin-modal"),
+        terminRepairId=null;
+
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-btn-parts-arrived");
+        if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
+        terminRepairId=card.dataset.id;
+        // Show customer info
+        var info=document.getElementById("ra-termin-info");
+        var cname=card.dataset.name||"";
+        var cdev=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
+        if(cname||cdev){info.textContent=cname+(cdev?" \u2013 "+cdev:"");info.style.display="block"}else{info.style.display="none"}
+        // Reset fields with tomorrow as default
+        var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+        document.getElementById("ra-termin-date").value=tomorrow.toISOString().split("T")[0];
+        document.getElementById("ra-termin-time").value="10:00";
+        document.getElementById("ra-termin-message").value="";
+        document.getElementById("ra-termin-send-email").checked=true;
+        terminModal.classList.add("show");
+    });
+
+    document.getElementById("ra-termin-cancel").addEventListener("click",function(){
+        terminModal.classList.remove("show");
+        terminRepairId=null;
+    });
+    terminModal.addEventListener("click",function(e){
+        if(e.target===terminModal){terminModal.classList.remove("show");terminRepairId=null}
+    });
+
+    document.getElementById("ra-termin-submit").addEventListener("click",function(){
+        if(!terminRepairId)return;
+        var tDate=document.getElementById("ra-termin-date").value;
+        if(!tDate){toast(L.termin_no_date);return}
+        var tTime=document.getElementById("ra-termin-time").value;
+        var msg=document.getElementById("ra-termin-message").value;
+        var sendEmail=document.getElementById("ra-termin-send-email").checked;
+        var btn=this;
+        btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_parts_arrived");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",terminRepairId);
+        fd.append("termin_date",tDate);
+        fd.append("termin_time",tTime);
+        fd.append("custom_message",msg);
+        if(sendEmail)fd.append("send_email","1");
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
+            if(data.success){
+                toast(L.termin_success);
+                terminModal.classList.remove("show");
+                // Update card status to in_progress
+                var card=document.querySelector(\'.ra-repair-card[data-id="\'+terminRepairId+\'"]\');
+                if(card){
+                    updateBadge(card,"in_progress");
+                    var sel=card.querySelector(".ra-status-select");
+                    if(sel){sel.value="in_progress";sel.setAttribute("data-prev","in_progress")}
+                    // Remove the parts-arrived button
+                    var paBtn=card.querySelector(".ra-btn-parts-arrived");
+                    if(paBtn)paBtn.remove();
+                    // Add termin badge
+                    var body=card.querySelector(".ra-repair-body");
+                    if(body&&tDate){
+                        var tBadge=document.createElement("div");
+                        tBadge.className="ra-termin-badge";
+                        var dParts=tDate.split("-");
+                        tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                        body.appendChild(tBadge);
+                    }
+                }
+                terminRepairId=null;
+            }else{
+                toast(data.data&&data.data.message?data.data.message:L.error);
+            }
+        })
+        .catch(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
             toast(L.connection_error);
         });
     });
@@ -3676,6 +3810,8 @@ echo '</div></div>
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
                 invoiceBadgeHtml+
+                (r.status==="waiting_parts"?\'<button class="ra-btn-parts-arrived" data-repair-id="\'+r.id+\'"><i class="ri-checkbox-circle-fill"></i> \'+L.parts_arrived+\'</button>\':"")+
+                (r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()?\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\':"")+
             \'</div>\'+
             commentsHtml+
             \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
@@ -6596,6 +6732,8 @@ echo '</div></div>
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="' . esc_attr(PPV_Lang::t('repair_admin_last_modified')) . '">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
                 . $invoice_badge_html
+                . ($r->status === 'waiting_parts' ? '<button class="ra-btn-parts-arrived" data-repair-id="' . intval($r->id) . '"><i class="ri-checkbox-circle-fill"></i> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived')) . '</button>' : '')
+                . (!empty($r->termin_at) && strtotime($r->termin_at) > time() ? '<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>' : '')
             . '</div>'
             . $reward_html
             . '<div class="ra-repair-comments-section">'

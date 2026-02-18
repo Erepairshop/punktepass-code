@@ -500,6 +500,19 @@ return [
     'repair_admin_status_cancelled' => 'Storniert',
     'repair_admin_status_all'     => 'Alle Status',
 
+    // Teil angekommen + Termin
+    'repair_admin_parts_arrived'       => 'Teil angekommen',
+    'repair_admin_parts_arrived_short' => 'Teil angekommen',
+    'repair_admin_parts_arrived_desc'  => 'Das Ersatzteil ist eingetroffen. Vereinbaren Sie einen Termin mit dem Kunden.',
+    'repair_admin_termin_date'         => 'Termin-Datum',
+    'repair_admin_termin_time'         => 'Uhrzeit',
+    'repair_admin_termin_message'      => 'Zusätzliche Nachricht (optional)',
+    'repair_admin_termin_message_ph'   => 'z.B. Bitte bringen Sie Ihr Gerät mit...',
+    'repair_admin_termin_send_email'   => 'Termin-E-Mail an Kunden senden',
+    'repair_admin_termin_confirm'      => 'Termin bestätigen',
+    'repair_admin_termin_success'      => 'Termin gesetzt & Kunde informiert',
+    'repair_admin_termin_no_date'      => 'Bitte wählen Sie ein Datum',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abo & Zahlung',
     'repair_admin_abo_status'     => 'Status',
@@ -1023,6 +1036,15 @@ return [
     'repair_email_status_device'             => 'Gerät',
     'repair_email_status_contact'            => 'KONTAKT',
     'repair_email_status_regards'            => 'Mit freundlichen Grüßen,',
+
+    // ===== Email: Termin (Part arrived + Appointment) =====
+    'repair_email_termin_subject'        => 'Ihr Termin bei {company}',
+    'repair_email_termin_parts_arrived'  => 'Gute Nachrichten! Das benötigte Ersatzteil für Ihre Reparatur ist eingetroffen. Wir haben einen Termin für Sie vereinbart.',
+    'repair_email_termin_appointment'    => 'IHR TERMIN',
+    'repair_email_termin_date'           => 'Datum',
+    'repair_email_termin_at_time'        => 'um',
+    'repair_email_termin_clock'          => 'Uhr',
+    'repair_email_termin_bring_device'   => 'Bitte bringen Sie Ihr Gerät zum vereinbarten Termin mit. Falls Sie den Termin nicht wahrnehmen können, kontaktieren Sie uns bitte rechtzeitig.',
 
     // ===== Email: Ankauf (Purchase Contract) =====
     'repair_email_ankauf_subject'   => 'Kaufvertrag {number} - {company}',

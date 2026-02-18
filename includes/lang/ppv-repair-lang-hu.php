@@ -500,6 +500,19 @@ return [
     'repair_admin_status_cancelled' => 'Törölve',
     'repair_admin_status_all'     => 'Minden állapot',
 
+    // Teil angekommen + Termin
+    'repair_admin_parts_arrived'       => 'Alkatrész megérkezett',
+    'repair_admin_parts_arrived_short' => 'Alkatrész megérkezett',
+    'repair_admin_parts_arrived_desc'  => 'Az alkatrész megérkezett. Egyeztessen időpontot az ügyféllel.',
+    'repair_admin_termin_date'         => 'Időpont dátuma',
+    'repair_admin_termin_time'         => 'Időpont',
+    'repair_admin_termin_message'      => 'További üzenet (opcionális)',
+    'repair_admin_termin_message_ph'   => 'pl. Kérjük, hozza magával a készüléket...',
+    'repair_admin_termin_send_email'   => 'Időpont e-mail küldése az ügyfélnek',
+    'repair_admin_termin_confirm'      => 'Időpont megerősítése',
+    'repair_admin_termin_success'      => 'Időpont beállítva, ügyfél értesítve',
+    'repair_admin_termin_no_date'      => 'Kérjük, válasszon dátumot',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Előfizetés és fizetés',
     'repair_admin_abo_status'     => 'Állapot',
@@ -1023,6 +1036,15 @@ return [
     'repair_email_status_device'             => 'Készülék',
     'repair_email_status_contact'            => 'KAPCSOLAT',
     'repair_email_status_regards'            => 'Üdvözlettel,',
+
+    // ===== E-mail: Időpont (Alkatrész megérkezett + Időpont) =====
+    'repair_email_termin_subject'        => 'Időpontja a {company} cégnél',
+    'repair_email_termin_parts_arrived'  => 'Jó hír! A javításhoz szükséges alkatrész megérkezett. Időpontot egyeztettünk Önnel.',
+    'repair_email_termin_appointment'    => 'AZ ÖN IDŐPONTJA',
+    'repair_email_termin_date'           => 'Dátum',
+    'repair_email_termin_at_time'        => '',
+    'repair_email_termin_clock'          => 'óra',
+    'repair_email_termin_bring_device'   => 'Kérjük, hozza magával készülékét a megbeszélt időpontra. Ha nem tud megjelenni, kérjük, értesítsen minket időben.',
 
     // ===== E-mail: Felvásárlás (Adásvételi szerződés) =====
     'repair_email_ankauf_subject'   => 'Adásvételi szerződés {number} - {company}',
