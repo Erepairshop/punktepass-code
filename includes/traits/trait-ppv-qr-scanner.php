@@ -173,7 +173,12 @@ trait PPV_QR_Scanner_Trait {
             ));
             if ($qs_row) { $qs_scans = (int)$qs_row->cnt; $qs_points = (int)$qs_row->pts; }
             $qs_rewards = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d AND redeemed = 1 AND redeemed_at BETWEEN %s AND %s",
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed WHERE store_id = %d AND status = 'approved' AND redeemed_at BETWEEN %s AND %s",
+                $store_id, $qs_start, $qs_end
+            ));
+            // Also count repair rewards approved today
+            $qs_rewards += (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_repairs WHERE store_id = %d AND reward_approved = 1 AND reward_approved_date BETWEEN %s AND %s",
                 $store_id, $qs_start, $qs_end
             ));
         }

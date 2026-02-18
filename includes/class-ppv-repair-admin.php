@@ -561,7 +561,7 @@ a:hover{color:#5a67d8}
 
 /* ========== Layout ========== */
 @keyframes raFadeIn{from{opacity:0.99}to{opacity:1}}
-.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box;transform:translateZ(0);backface-visibility:hidden;animation:raFadeIn 0.01s ease-out}
+.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box;animation:raFadeIn 0.01s ease-out}
 @media(min-width:1200px){.ra-wrap{padding:16px 40px 40px}}
 
 /* ========== Header ========== */

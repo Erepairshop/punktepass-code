@@ -257,8 +257,12 @@ if (
         ", $store_id, $today)),
 
         'today_rewards' => (int) $wpdb->get_var($wpdb->prepare("
-            SELECT COUNT(*) FROM {$prefix}ppv_rewards
-            WHERE store_id=%d AND redeemed=1 AND DATE(redeemed_at)=%s
+            SELECT COUNT(*) FROM {$prefix}ppv_rewards_redeemed
+            WHERE store_id=%d AND status='approved' AND DATE(redeemed_at)=%s
+        ", $store_id, $today))
+        + (int) $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$prefix}ppv_repairs
+            WHERE store_id=%d AND reward_approved=1 AND DATE(reward_approved_date)=%s
         ", $store_id, $today)),
 
         'active_campaigns' => (int) $wpdb->get_var($wpdb->prepare("

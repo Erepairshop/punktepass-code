@@ -124,7 +124,11 @@ class PPV_POS_STATS_API {
         }
 
         $today_rewards = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$prefix}ppv_rewards WHERE store_id=%d AND redeemed=1 AND redeemed_at BETWEEN %s AND %s",
+            "SELECT COUNT(*) FROM {$prefix}ppv_rewards_redeemed WHERE store_id=%d AND status='approved' AND redeemed_at BETWEEN %s AND %s",
+            $store_id, $start, $end
+        ));
+        $today_rewards += (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$prefix}ppv_repairs WHERE store_id=%d AND reward_approved=1 AND reward_approved_date BETWEEN %s AND %s",
             $store_id, $start, $end
         ));
 
