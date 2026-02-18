@@ -168,7 +168,7 @@ trait PPV_QR_Scanner_Trait {
             $qs_start = "$qs_today 00:00:00";
             $qs_end   = "$qs_today 23:59:59";
             $qs_row = $wpdb->get_row($wpdb->prepare(
-                "SELECT COUNT(*) AS cnt, COALESCE(SUM(points),0) AS pts FROM {$wpdb->prefix}ppv_points WHERE store_id = %d AND created BETWEEN %s AND %s",
+                "SELECT COUNT(*) AS cnt, COALESCE(SUM(points),0) AS pts FROM {$wpdb->prefix}ppv_points WHERE store_id = %d AND created BETWEEN %s AND %s AND points > 0",
                 $store_id, $qs_start, $qs_end
             ));
             if ($qs_row) { $qs_scans = (int)$qs_row->cnt; $qs_points = (int)$qs_row->pts; }
