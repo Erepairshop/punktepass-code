@@ -1082,46 +1082,57 @@ function toggleProblemTag(btn, text) {
         }
 
         // Show tracking card with QR code
-        if (d && d.tracking_url && d.repair_id) {
-            document.getElementById('repair-tracking-card').style.display = 'flex';
-            document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
-            document.getElementById('repair-tracking-link').href = d.tracking_url;
+        try {
+            if (d && d.tracking_url && d.repair_id) {
+                var trackCard = document.getElementById('repair-tracking-card');
+                var trackId = document.getElementById('repair-tracking-id');
+                var trackLink = document.getElementById('repair-tracking-link');
+                var qrContainer = document.getElementById('repair-qr-container');
+                if (trackCard) trackCard.style.display = 'flex';
+                if (trackId) trackId.textContent = '#' + d.repair_id;
+                if (trackLink) trackLink.href = d.tracking_url;
 
-            // Generate QR code
-            if (typeof qrcode !== 'undefined') {
-                var qr = qrcode(0, 'M');
-                qr.addData(d.tracking_url);
-                qr.make();
-                document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
+                // Generate QR code
+                if (qrContainer && typeof qrcode !== 'undefined') {
+                    var qr = qrcode(0, 'M');
+                    qr.addData(d.tracking_url);
+                    qr.make();
+                    qrContainer.innerHTML = qr.createImgTag(4, 0);
+                }
             }
-        }
+        } catch(e) { console.warn('[Repair] QR render error:', e); }
 
         // Show points card
         <?php if ($pp_enabled): ?>
-        if (d && d.points_added > 0) {
-            document.getElementById('repair-points-card').style.display = 'block';
-            document.getElementById('repair-points-count').textContent = d.points_added;
-            if (d.total_points) {
-                var reqPts = <?php echo $required_pts; ?>;
-                var rwName = <?php echo json_encode($reward_name); ?>;
-                var remaining = Math.max(0, reqPts - d.total_points);
-                var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
-                var suffixStr = remaining > 0
-                    ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
-                    : ppvLang.points_redeemable.replace('%s', rwName);
-                document.getElementById('repair-points-total').textContent = totalStr + ' — ' + suffixStr;
+        try {
+            if (d && d.points_added > 0) {
+                var ptsCard = document.getElementById('repair-points-card');
+                var ptsCount = document.getElementById('repair-points-count');
+                var ptsTotal = document.getElementById('repair-points-total');
+                if (ptsCard) ptsCard.style.display = 'block';
+                if (ptsCount) ptsCount.textContent = d.points_added;
+                if (ptsTotal && d.total_points) {
+                    var reqPts = <?php echo $required_pts; ?>;
+                    var rwName = <?php echo json_encode($reward_name); ?>;
+                    var remaining = Math.max(0, reqPts - d.total_points);
+                    var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
+                    var suffixStr = remaining > 0
+                        ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
+                        : ppvLang.points_redeemable.replace('%s', rwName);
+                    ptsTotal.textContent = totalStr + ' — ' + suffixStr;
+                }
             }
-        }
+        } catch(e) { console.warn('[Repair] Points render error:', e); }
         <?php endif; ?>
 
         // Confetti effect
-        createConfetti();
+        try { createConfetti(); } catch(e) {}
 
         // Start auto-redirect countdown (2 min)
-        startAutoRedirect();
+        try { startAutoRedirect(); } catch(e) {}
 
         // Scroll to success content (past the header)
-        successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        try { successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
     }
 
     // Check if form was already submitted in this session
@@ -1131,7 +1142,13 @@ function toggleProblemTag(btn, text) {
         // Restore saved success data (tracking card, points, QR code)
         var savedData = null;
         try { savedData = JSON.parse(sessionStorage.getItem(dupKey + '_data')); } catch(e) {}
-        showSuccessPage(savedData);
+        try {
+            showSuccessPage(savedData);
+        } catch(e) {
+            console.error('[Repair] Session restore error:', e);
+            form.style.display = 'none';
+            successDiv.style.display = 'block';
+        }
     }
 
     // Email lookup for returning customers with debounce
@@ -1545,7 +1562,10 @@ function toggleProblemTag(btn, text) {
             body: fd,
             credentials: 'same-origin'
         })
-        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (!res.ok) console.warn('[Repair] HTTP', res.status);
+            return res.json();
+        })
         .then(function(data) {
             if (data.success) {
                 formSubmitted = true;
@@ -1558,7 +1578,14 @@ function toggleProblemTag(btn, text) {
                 localStorage.removeItem(offlineStorageKey);
 
                 // Show success with full data
-                showSuccessPage(data.data);
+                try {
+                    showSuccessPage(data.data);
+                } catch(err) {
+                    console.error('[Repair] showSuccessPage error:', err);
+                    // Ensure success div is visible even if JS error
+                    form.style.display = 'none';
+                    successDiv.style.display = 'block';
+                }
             } else {
                 errorDiv.textContent = data.data?.message || ppvLang.error_generic;
                 errorDiv.style.display = 'block';
@@ -1569,9 +1596,15 @@ function toggleProblemTag(btn, text) {
                 }
             }
         })
-        .catch(function() {
-            errorDiv.textContent = ppvLang.connection_error;
-            errorDiv.style.display = 'block';
+        .catch(function(err) {
+            console.error('[Repair] Submit error:', err);
+            // If form already hidden (success was partial), show success div anyway
+            if (form.style.display === 'none') {
+                successDiv.style.display = 'block';
+            } else {
+                errorDiv.textContent = ppvLang.connection_error;
+                errorDiv.style.display = 'block';
+            }
         })
         .finally(function() {
             if (!formSubmitted) {
