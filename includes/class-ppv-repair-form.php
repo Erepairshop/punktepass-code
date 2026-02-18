@@ -88,11 +88,15 @@ class PPV_Repair_Form {
         $ajax_url = admin_url('admin-ajax.php');
 
         // Prefill from query params (for "Nochmal Anliegen" button)
-        $pf_name  = esc_attr($_GET['name'] ?? '');
-        $pf_email = esc_attr($_GET['email'] ?? '');
-        $pf_phone = esc_attr($_GET['phone'] ?? '');
-        $pf_brand = esc_attr($_GET['brand'] ?? '');
-        $pf_model = esc_attr($_GET['model'] ?? '');
+        $pf_name    = esc_attr($_GET['name'] ?? '');
+        $pf_email   = esc_attr($_GET['email'] ?? '');
+        $pf_phone   = esc_attr($_GET['phone'] ?? '');
+        $pf_address = esc_attr($_GET['address'] ?? '');
+        $pf_brand   = esc_attr($_GET['brand'] ?? '');
+        $pf_model   = esc_attr($_GET['model'] ?? '');
+        $pf_imei    = esc_attr($_GET['imei'] ?? '');
+        $pf_pin     = esc_attr($_GET['pin'] ?? '');
+        $pf_problem = esc_attr($_GET['problem'] ?? '');
 
         // Country code for Nominatim address search
         $nominatim_cc = 'de';
@@ -303,7 +307,7 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
             <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? PPV_Lang::t('repair_address_label')); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" autocomplete="street-address">
+                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" value="<?php echo $pf_address; ?>" autocomplete="street-address">
                 <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
             </div>
             <?php endif; ?>
@@ -352,7 +356,7 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['device_imei']['enabled'])): ?>
             <div class="repair-field">
                 <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?></label>
-                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?>">
+                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?>" value="<?php echo $pf_imei; ?>">
             </div>
             <?php endif; ?>
 
@@ -371,7 +375,7 @@ class PPV_Repair_Form {
                 <?php endif; ?>
                 <?php if ($show_pin): ?>
                 <div class="repair-unlock-content" id="repair-unlock-pin">
-                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? PPV_Lang::t('repair_pin_label')); ?>">
+                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? PPV_Lang::t('repair_pin_label')); ?>" value="<?php echo $pf_pin; ?>">
                 </div>
                 <?php endif; ?>
                 <?php if ($show_muster): ?>
@@ -525,7 +529,7 @@ class PPV_Repair_Form {
 
             <div class="repair-field">
                 <label for="rf-problem"><?php echo esc_html(PPV_Lang::t('repair_problem_label')); ?></label>
-                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo esc_attr(!empty($custom_problems) ? PPV_Lang::t('repair_problem_detail_placeholder') : PPV_Lang::t('repair_problem_placeholder')); ?>"></textarea>
+                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo esc_attr(!empty($custom_problems) ? PPV_Lang::t('repair_problem_detail_placeholder') : PPV_Lang::t('repair_problem_placeholder')); ?>"><?php echo $pf_problem; ?></textarea>
                 <?php
                 require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
                 if (PPV_AI_Engine::is_available()):
