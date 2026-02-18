@@ -1031,7 +1031,7 @@ return [
 'scanner_desc' => 'Scan the customer\'s QR code',
 'scan_placeholder' => 'Scan here...',
 'scan_button' => 'Check QR',
-'table_title' => '📋 Recent Scans',
+'table_title' => 'Recent Scans',
 'qs_scans' => 'Scans',
 'qs_points' => 'Points',
 'qs_rewards' => 'Rewards',

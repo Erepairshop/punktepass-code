@@ -1095,7 +1095,7 @@ return [
 'scanner_desc' => 'Scanne den QR-Code des Kunden',
 'scan_placeholder' => 'Hier scannen...',
 'scan_button' => 'QR prüfen',
-'table_title' => '📋 Letzte Scans',
+'table_title' => 'Letzte Scans',
 'qs_scans' => 'Scans',
 'qs_points' => 'Punkte',
 'qs_rewards' => 'Rewards',

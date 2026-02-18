@@ -1078,7 +1078,7 @@ return [
 'scanner_desc' => 'Scanează codul QR al clientului',
 'scan_placeholder' => 'Scannează aici...',
 'scan_button' => 'Verifica QR',
-'table_title' => '📋 Ultimele Scanări',
+'table_title' => 'Ultimele Scanări',
 'qs_scans' => 'Scanări',
 'qs_points' => 'Puncte',
 'qs_rewards' => 'Recompense',

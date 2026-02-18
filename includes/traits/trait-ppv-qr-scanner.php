@@ -262,8 +262,9 @@ trait PPV_QR_Scanner_Trait {
                 </div>
             </div>
 
-            <div class="ppv-pos-header" style="margin-bottom: 8px;">
-                <h4 class="ppv-pos-title" style="font-size: 14px; margin: 0;"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
+            <div class="ppv-pos-header" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 0;">
+                <i class="ri-list-check-3" style="font-size:18px;color:var(--pp-primary,#6366f1);"></i>
+                <h4 class="ppv-pos-title" style="font-size:14px;margin:0;font-weight:600;color:var(--pp-text,#1e293b);letter-spacing:-0.01em;"><?php echo self::t('table_title', 'Letzte Scans'); ?></h4>
             </div>
 
             <div id="ppv-pos-log" class="ppv-scan-list"></div>

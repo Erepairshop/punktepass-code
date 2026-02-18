@@ -1069,7 +1069,7 @@ return [
 'scanner_desc' => 'Szkennelje az ügyfél QR-kódját',
 'scan_placeholder' => 'Szkennelje ide...',
 'scan_button' => 'QR ellenőrzése',
-'table_title' => '📋 Legutóbbi szkennek',
+'table_title' => 'Legutóbbi szkennek',
 'qs_scans' => 'Szkennek',
 'qs_points' => 'Pontok',
 'qs_rewards' => 'Jutalmak',
