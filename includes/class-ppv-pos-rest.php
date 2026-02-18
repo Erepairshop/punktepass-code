@@ -248,12 +248,12 @@ if (
     $stats = [
         'today_scans' => (int) $wpdb->get_var($wpdb->prepare("
             SELECT COUNT(*) FROM {$prefix}ppv_points
-            WHERE store_id=%d AND DATE(created)=%s
+            WHERE store_id=%d AND DATE(created)=%s AND points > 0
         ", $store_id, $today)),
 
         'today_points' => (int) $wpdb->get_var($wpdb->prepare("
             SELECT COALESCE(SUM(points),0) FROM {$prefix}ppv_points
-            WHERE store_id=%d AND DATE(created)=%s
+            WHERE store_id=%d AND DATE(created)=%s AND points > 0
         ", $store_id, $today)),
 
         'today_rewards' => (int) $wpdb->get_var($wpdb->prepare("
@@ -271,7 +271,7 @@ if (
     $weekly = $wpdb->get_results($wpdb->prepare("
         SELECT DATE(created) as day, SUM(points) as total
         FROM {$prefix}ppv_points
-        WHERE store_id=%d AND DATE(created) BETWEEN %s AND %s
+        WHERE store_id=%d AND DATE(created) BETWEEN %s AND %s AND points > 0
         GROUP BY DATE(created)
         ORDER BY day ASC
     ", $store_id, $week_start, $today));
