@@ -524,6 +524,10 @@ return [
     'repair_admin_termin_confirm'      => 'Confirm Appointment',
     'repair_admin_termin_success'      => 'Appointment set & customer notified',
     'repair_admin_termin_no_date'      => 'Please select a date',
+    'repair_admin_no_termin'           => 'Mark as arrived only (without appointment)',
+    'repair_admin_no_termin_desc'      => 'Status will be set to "In Progress" without scheduling an appointment.',
+    'repair_admin_no_termin_confirm'   => 'Confirm part arrived',
+    'repair_admin_no_termin_success'   => 'Part marked as arrived',
 
     // Subscription Settings
     'repair_admin_abo_title'      => 'Subscription & Payment',

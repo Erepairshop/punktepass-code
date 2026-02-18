@@ -524,6 +524,10 @@ return [
     'repair_admin_termin_confirm'      => 'Confirmă programarea',
     'repair_admin_termin_success'      => 'Programare setată, client informat',
     'repair_admin_termin_no_date'      => 'Vă rugăm selectați o dată',
+    'repair_admin_no_termin'           => 'Marchează doar ca sosit (fără programare)',
+    'repair_admin_no_termin_desc'      => 'Statusul va fi setat la „În lucru" fără a programa o întâlnire.',
+    'repair_admin_no_termin_confirm'   => 'Confirmă sosirea piesei',
+    'repair_admin_no_termin_success'   => 'Piesa marcată ca sosită',
 
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abonament și plată',

@@ -2725,6 +2725,7 @@ class PPV_Repair_Core {
         }
 
         $repair_id = intval($_POST['repair_id'] ?? 0);
+        $no_termin = !empty($_POST['no_termin']);
         $termin_date = sanitize_text_field($_POST['termin_date'] ?? '');
         $termin_time = sanitize_text_field($_POST['termin_time'] ?? '');
         $send_email = !empty($_POST['send_email']);
@@ -2739,24 +2740,22 @@ class PPV_Repair_Core {
         ));
         if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
 
-        // Build termin datetime
-        $termin_at = null;
-        if (!empty($termin_date)) {
-            $termin_at = $termin_date . ($termin_time ? ' ' . $termin_time . ':00' : ' 00:00:00');
-        }
-
-        // Update repair: status → in_progress, set termin_at
+        // Update repair: status → in_progress
         $update = [
             'status' => 'in_progress',
             'updated_at' => current_time('mysql'),
         ];
-        if ($termin_at) {
+
+        // Build termin datetime (only when termin is requested)
+        if (!$no_termin && !empty($termin_date)) {
+            $termin_at = $termin_date . ($termin_time ? ' ' . $termin_time . ':00' : ' 00:00:00');
             $update['termin_at'] = $termin_at;
         }
+
         $wpdb->update($wpdb->prefix . 'ppv_repairs', $update, ['id' => $repair_id]);
 
-        // Send appointment email to customer
-        if ($send_email && !empty($repair->customer_email) && $termin_at) {
+        // Send appointment email to customer (only with termin)
+        if (!$no_termin && $send_email && !empty($repair->customer_email) && !empty($termin_at)) {
             $store = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
             ));
@@ -2766,7 +2765,7 @@ class PPV_Repair_Core {
         }
 
         wp_send_json_success([
-            'message' => 'Teil angekommen - Termin gesetzt',
+            'message' => $no_termin ? 'Teil angekommen' : 'Teil angekommen - Termin gesetzt',
             'new_status' => 'in_progress',
         ]);
     }

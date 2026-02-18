@@ -524,6 +524,10 @@ return [
     'repair_admin_termin_confirm'      => 'Conferma appuntamento',
     'repair_admin_termin_success'      => 'Appuntamento impostato, cliente informato',
     'repair_admin_termin_no_date'      => 'Selezionare una data',
+    'repair_admin_no_termin'           => 'Segna solo come arrivato (senza appuntamento)',
+    'repair_admin_no_termin_desc'      => 'Lo stato sarà impostato su „In lavorazione" senza fissare un appuntamento.',
+    'repair_admin_no_termin_confirm'   => 'Conferma arrivo pezzo',
+    'repair_admin_no_termin_success'   => 'Pezzo segnato come arrivato',
 
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abbonamento e Pagamento',

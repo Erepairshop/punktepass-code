@@ -524,6 +524,10 @@ return [
     'repair_admin_termin_confirm'      => 'Időpont megerősítése',
     'repair_admin_termin_success'      => 'Időpont beállítva, ügyfél értesítve',
     'repair_admin_termin_no_date'      => 'Kérjük, válasszon dátumot',
+    'repair_admin_no_termin'           => 'Csak megérkezettnek jelölés (időpont nélkül)',
+    'repair_admin_no_termin_desc'      => 'A státusz „Folyamatban"-ra változik időpont egyeztetés nélkül.',
+    'repair_admin_no_termin_confirm'   => 'Alkatrész megérkezését megerősítem',
+    'repair_admin_no_termin_success'   => 'Alkatrész megérkezettnek jelölve',
 
     // Subscription Settings
     'repair_admin_abo_title'      => 'Előfizetés és fizetés',

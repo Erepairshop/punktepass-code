@@ -524,6 +524,10 @@ return [
     'repair_admin_termin_confirm'      => 'Termin bestätigen',
     'repair_admin_termin_success'      => 'Termin gesetzt & Kunde informiert',
     'repair_admin_termin_no_date'      => 'Bitte wählen Sie ein Datum',
+    'repair_admin_no_termin'           => 'Nur als angekommen markieren (ohne Termin)',
+    'repair_admin_no_termin_desc'      => 'Status wird auf „In Bearbeitung" gesetzt, ohne einen Termin zu vereinbaren.',
+    'repair_admin_no_termin_confirm'   => 'Teil angekommen bestätigen',
+    'repair_admin_no_termin_success'   => 'Teil als angekommen markiert',
 
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abo & Zahlung',

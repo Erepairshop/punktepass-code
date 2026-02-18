@@ -2574,6 +2574,15 @@ echo '</div></div>
         <p class="ra-modal-sub">' . esc_html(PPV_Lang::t('repair_admin_parts_arrived_desc')) . '</p>
         <div id="ra-termin-info" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;display:none"></div>
 
+        <div style="margin-bottom:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                <input type="checkbox" id="ra-termin-no-termin" style="width:18px;height:18px;cursor:pointer;accent-color:#d97706">
+                <i class="ri-checkbox-circle-fill" style="color:#d97706"></i> ' . esc_html(PPV_Lang::t('repair_admin_no_termin')) . '
+            </label>
+            <p style="margin:6px 0 0 26px;font-size:12px;color:#92400e">' . esc_html(PPV_Lang::t('repair_admin_no_termin_desc')) . '</p>
+        </div>
+
+        <div id="ra-termin-fields">
         <div style="margin-bottom:16px">
             <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-calendar-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_date')) . '</label>
             <input type="date" id="ra-termin-date" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
@@ -2592,6 +2601,7 @@ echo '</div></div>
                 <input type="checkbox" id="ra-termin-send-email" checked style="width:18px;height:18px;cursor:pointer;accent-color:#059669">
                 <i class="ri-mail-send-line" style="color:#059669"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_send_email')) . '
             </label>
+        </div>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:16px">
@@ -3249,6 +3259,8 @@ echo '</div></div>
         'termin_confirm' => PPV_Lang::t('repair_admin_termin_confirm'),
         'termin_success' => PPV_Lang::t('repair_admin_termin_success'),
         'termin_no_date' => PPV_Lang::t('repair_admin_termin_no_date'),
+        'no_termin_confirm' => PPV_Lang::t('repair_admin_no_termin_confirm'),
+        'no_termin_success' => PPV_Lang::t('repair_admin_no_termin_success'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
         'finish_title' => PPV_Lang::t('repair_admin_finish_repair'),
@@ -3439,7 +3451,21 @@ echo '</div></div>
 
     /* ===== Teil angekommen (Parts Arrived) + Termin Modal ===== */
     var terminModal=document.getElementById("ra-termin-modal"),
-        terminRepairId=null;
+        terminRepairId=null,
+        terminNoTerminCb=document.getElementById("ra-termin-no-termin"),
+        terminFields=document.getElementById("ra-termin-fields"),
+        terminSubmitBtn=document.getElementById("ra-termin-submit");
+
+    // Toggle termin fields visibility
+    terminNoTerminCb.addEventListener("change",function(){
+        if(this.checked){
+            terminFields.style.display="none";
+            terminSubmitBtn.innerHTML='<i class="ri-check-line"></i> '+L.no_termin_confirm;
+        }else{
+            terminFields.style.display="";
+            terminSubmitBtn.innerHTML='<i class="ri-check-line"></i> '+L.termin_confirm;
+        }
+    });
 
     document.getElementById("ra-repairs-list").addEventListener("click",function(e){
         var btn=e.target.closest(".ra-btn-parts-arrived");
@@ -3458,6 +3484,10 @@ echo '</div></div>
         document.getElementById("ra-termin-time").value="10:00";
         document.getElementById("ra-termin-message").value="";
         document.getElementById("ra-termin-send-email").checked=true;
+        // Reset no-termin checkbox
+        terminNoTerminCb.checked=false;
+        terminFields.style.display="";
+        terminSubmitBtn.innerHTML='<i class="ri-check-line"></i> '+L.termin_confirm;
         terminModal.classList.add("show");
         // Scroll modal content to top and ensure visibility
         var mContent=terminModal.querySelector(".ra-modal");
@@ -3475,11 +3505,15 @@ echo '</div></div>
 
     document.getElementById("ra-termin-submit").addEventListener("click",function(){
         if(!terminRepairId)return;
-        var tDate=document.getElementById("ra-termin-date").value;
-        if(!tDate){toast(L.termin_no_date);return}
-        var tTime=document.getElementById("ra-termin-time").value;
-        var msg=document.getElementById("ra-termin-message").value;
-        var sendEmail=document.getElementById("ra-termin-send-email").checked;
+        var noTermin=terminNoTerminCb.checked;
+        var tDate="",tTime="",msg="",sendEmail=false;
+        if(!noTermin){
+            tDate=document.getElementById("ra-termin-date").value;
+            if(!tDate){toast(L.termin_no_date);return}
+            tTime=document.getElementById("ra-termin-time").value;
+            msg=document.getElementById("ra-termin-message").value;
+            sendEmail=document.getElementById("ra-termin-send-email").checked;
+        }
         var btn=this;
         btn.disabled=true;
         btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
@@ -3487,17 +3521,22 @@ echo '</div></div>
         fd.append("action","ppv_repair_parts_arrived");
         fd.append("nonce",NONCE);
         fd.append("repair_id",terminRepairId);
-        fd.append("termin_date",tDate);
-        fd.append("termin_time",tTime);
-        fd.append("custom_message",msg);
-        if(sendEmail)fd.append("send_email","1");
+        if(noTermin){
+            fd.append("no_termin","1");
+        }else{
+            fd.append("termin_date",tDate);
+            fd.append("termin_time",tTime);
+            fd.append("custom_message",msg);
+            if(sendEmail)fd.append("send_email","1");
+        }
+        var btnLabel=noTermin?L.no_termin_confirm:L.termin_confirm;
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(data){
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
+            btn.innerHTML=\'<i class="ri-check-line"></i> \'+btnLabel;
             if(data.success){
-                toast(L.termin_success);
+                toast(noTermin?L.no_termin_success:L.termin_success);
                 terminModal.classList.remove("show");
                 // Update card status to in_progress
                 var card=document.querySelector(\'.ra-repair-card[data-id="\'+terminRepairId+\'"]\');
@@ -3508,14 +3547,16 @@ echo '</div></div>
                     // Remove the parts-arrived button
                     var paBtn=card.querySelector(".ra-btn-parts-arrived");
                     if(paBtn)paBtn.remove();
-                    // Add termin badge
-                    var body=card.querySelector(".ra-repair-body");
-                    if(body&&tDate){
-                        var tBadge=document.createElement("div");
-                        tBadge.className="ra-termin-badge";
-                        var dParts=tDate.split("-");
-                        tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
-                        body.appendChild(tBadge);
+                    // Add termin badge only if termin was set
+                    if(!noTermin){
+                        var body=card.querySelector(".ra-repair-body");
+                        if(body&&tDate){
+                            var tBadge=document.createElement("div");
+                            tBadge.className="ra-termin-badge";
+                            var dParts=tDate.split("-");
+                            tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                            body.appendChild(tBadge);
+                        }
                     }
                 }
                 terminRepairId=null;
@@ -3525,7 +3566,7 @@ echo '</div></div>
         })
         .catch(function(){
             btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
+            btn.innerHTML=\'<i class="ri-check-line"></i> \'+btnLabel;
             toast(L.connection_error);
         });
     });
