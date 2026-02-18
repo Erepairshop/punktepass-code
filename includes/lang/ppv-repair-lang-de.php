@@ -1189,6 +1189,20 @@ return [
     'repair_cond_kfz_lenkung'          => 'Lenkung',
     'repair_cond_kfz_fahrwerk'         => 'Fahrwerk',
 
+    // PC / Computer condition check
+    'repair_fb_condition_pc'           => 'PC-Zustand',
+    'repair_admin_fc_pc'               => 'PC / Computer',
+    'repair_cond_pc_mainboard'         => 'Mainboard',
+    'repair_cond_pc_cpu'               => 'Prozessor (CPU)',
+    'repair_cond_pc_ram'               => 'Arbeitsspeicher (RAM)',
+    'repair_cond_pc_storage'           => 'Festplatte / SSD',
+    'repair_cond_pc_gpu'               => 'Grafikkarte (GPU)',
+    'repair_cond_pc_display'           => 'Bildschirm / Display',
+    'repair_cond_pc_keyboard'          => 'Tastatur',
+    'repair_cond_pc_fan'               => 'Lüfter / Kühlung',
+    'repair_cond_pc_power'             => 'Netzteil / Akku',
+    'repair_cond_pc_ports'             => 'Anschlüsse (USB, HDMI)',
+
     // AI Assistant
     'repair_ai_btn'                    => 'KI-Analyse starten',
     'repair_ai_analyzing'              => 'Wird analysiert...',

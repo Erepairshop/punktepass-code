@@ -1128,7 +1128,7 @@ class PPV_Repair_Core {
             }
         }
         // New built-in field types → stored in custom_fields JSON
-        $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit', 'vehicle_plate', 'vehicle_vin', 'vehicle_mileage', 'vehicle_first_reg', 'vehicle_tuev', 'condition_check_kfz'];
+        $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit', 'vehicle_plate', 'vehicle_vin', 'vehicle_mileage', 'vehicle_first_reg', 'vehicle_tuev', 'condition_check_kfz', 'condition_check_pc'];
         foreach ($extra_keys as $ek) {
             if (!empty($_POST[$ek])) {
                 $custom_fields[$ek] = sanitize_text_field($_POST[$ek]);

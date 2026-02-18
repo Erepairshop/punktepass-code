@@ -338,6 +338,8 @@ REPAIR FORM (public customer form at /formular/slug):
 • QR tracking code generated for each repair
 • Offline mode: queues submissions when no internet
 • KFZ/Vehicle mode: license plate, VIN, mileage (for auto repair shops)
+• PC/Computer mode: condition check for PC components (mainboard, CPU, RAM, SSD, GPU, display, keyboard, fan, power supply, ports) - enable in Settings
+• Form is fully configurable for any repair type (phone, PC, vehicle) via field toggles in Settings
 • Bonus points for customers with PunktePass account
 • Email notification to store + customer on submission
 

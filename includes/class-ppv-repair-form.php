@@ -70,6 +70,8 @@ class PPV_Repair_Form {
             'vehicle_first_reg'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
             'vehicle_tuev'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
             'condition_check_kfz' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_kfz')],
+            // PC / Computer fields
+            'condition_check_pc' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_pc')],
         ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
@@ -504,6 +506,37 @@ class PPV_Repair_Form {
                     <?php endforeach; ?>
                 </div>
                 <input type="hidden" name="condition_check_kfz" id="rf-condition-kfz-data">
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($field_config['condition_check_pc']['enabled'])): ?>
+            <div class="repair-field">
+                <label><?php echo esc_html($field_config['condition_check_pc']['label'] ?? PPV_Lang::t('repair_fb_condition_pc')); ?></label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rf-condition-pc-grid">
+                    <?php
+                    $pc_parts = [
+                        PPV_Lang::t('repair_cond_pc_mainboard'),
+                        PPV_Lang::t('repair_cond_pc_cpu'),
+                        PPV_Lang::t('repair_cond_pc_ram'),
+                        PPV_Lang::t('repair_cond_pc_storage'),
+                        PPV_Lang::t('repair_cond_pc_gpu'),
+                        PPV_Lang::t('repair_cond_pc_display'),
+                        PPV_Lang::t('repair_cond_pc_keyboard'),
+                        PPV_Lang::t('repair_cond_pc_fan'),
+                        PPV_Lang::t('repair_cond_pc_power'),
+                        PPV_Lang::t('repair_cond_pc_ports'),
+                    ];
+                    foreach ($pc_parts as $part): ?>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc">
+                        <span><?php echo esc_html($part); ?></span>
+                        <div style="display:flex;gap:4px">
+                            <button type="button" class="repair-cond-pc-btn" data-part="<?php echo esc_attr($part); ?>" data-val="ok" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#d1fae5;color:#059669" onclick="ppvCondPcToggle(this,'ok')">OK</button>
+                            <button type="button" class="repair-cond-pc-btn" data-part="<?php echo esc_attr($part); ?>" data-val="defekt" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#f1f5f9;color:#94a3b8" onclick="ppvCondPcToggle(this,'defekt')">Defekt</button>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <input type="hidden" name="condition_check_pc" id="rf-condition-pc-data">
             </div>
             <?php endif; ?>
 
@@ -987,6 +1020,19 @@ function ppvCondKfzToggle(btn,val){
         if(parseFloat(b.style.opacity)===1){result[b.getAttribute('data-part')]=b.getAttribute('data-val')}
     });
     var inp=document.getElementById('rf-condition-kfz-data');
+    if(inp) inp.value=JSON.stringify(result);
+}
+// PC Condition check toggle
+function ppvCondPcToggle(btn,val){
+    var row=btn.parentNode;
+    row.querySelectorAll('.repair-cond-pc-btn').forEach(function(b){b.style.opacity='0.4';b.style.background='#f1f5f9';b.style.color='#94a3b8'});
+    if(val==='ok'){btn.style.opacity='1';btn.style.background='#d1fae5';btn.style.color='#059669'}
+    else{btn.style.opacity='1';btn.style.background='#fee2e2';btn.style.color='#dc2626'}
+    var result={};
+    document.querySelectorAll('#rf-condition-pc-grid .repair-cond-pc-btn').forEach(function(b){
+        if(parseFloat(b.style.opacity)===1){result[b.getAttribute('data-part')]=b.getAttribute('data-val')}
+    });
+    var inp=document.getElementById('rf-condition-pc-data');
     if(inp) inp.value=JSON.stringify(result);
 }
 // Photo preview

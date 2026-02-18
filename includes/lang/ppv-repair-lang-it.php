@@ -1189,6 +1189,20 @@ return [
     'repair_cond_kfz_lenkung'          => 'Sterzo',
     'repair_cond_kfz_fahrwerk'         => 'Sospensioni',
 
+    // PC / Computer verifica stato
+    'repair_fb_condition_pc'           => 'Stato PC',
+    'repair_admin_fc_pc'               => 'PC / Computer',
+    'repair_cond_pc_mainboard'         => 'Scheda madre',
+    'repair_cond_pc_cpu'               => 'Processore (CPU)',
+    'repair_cond_pc_ram'               => 'Memoria (RAM)',
+    'repair_cond_pc_storage'           => 'Disco / SSD',
+    'repair_cond_pc_gpu'               => 'Scheda video (GPU)',
+    'repair_cond_pc_display'           => 'Schermo / Display',
+    'repair_cond_pc_keyboard'          => 'Tastiera',
+    'repair_cond_pc_fan'               => 'Ventola / Raffreddamento',
+    'repair_cond_pc_power'             => 'Alimentatore / Batteria',
+    'repair_cond_pc_ports'             => 'Porte (USB, HDMI)',
+
     // AI Assistant
     'repair_ai_btn'                    => 'Avvia analisi AI',
     'repair_ai_analyzing'              => 'Analisi in corso...',

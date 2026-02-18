@@ -1189,6 +1189,20 @@ return [
     'repair_cond_kfz_lenkung'          => 'Steering',
     'repair_cond_kfz_fahrwerk'         => 'Suspension',
 
+    // PC / Computer condition check
+    'repair_fb_condition_pc'           => 'PC Condition',
+    'repair_admin_fc_pc'               => 'PC / Computer',
+    'repair_cond_pc_mainboard'         => 'Motherboard',
+    'repair_cond_pc_cpu'               => 'Processor (CPU)',
+    'repair_cond_pc_ram'               => 'Memory (RAM)',
+    'repair_cond_pc_storage'           => 'Hard Drive / SSD',
+    'repair_cond_pc_gpu'               => 'Graphics Card (GPU)',
+    'repair_cond_pc_display'           => 'Screen / Display',
+    'repair_cond_pc_keyboard'          => 'Keyboard',
+    'repair_cond_pc_fan'               => 'Fan / Cooling',
+    'repair_cond_pc_power'             => 'Power Supply / Battery',
+    'repair_cond_pc_ports'             => 'Ports (USB, HDMI)',
+
     // AI Assistant
     'repair_ai_btn'                    => 'Start AI analysis',
     'repair_ai_analyzing'              => 'Analyzing...',

@@ -1189,6 +1189,20 @@ return [
     'repair_cond_kfz_lenkung'          => 'Direcție',
     'repair_cond_kfz_fahrwerk'         => 'Suspensie',
 
+    // PC / Calculator verificare stare
+    'repair_fb_condition_pc'           => 'Stare PC',
+    'repair_admin_fc_pc'               => 'PC / Calculator',
+    'repair_cond_pc_mainboard'         => 'Placă de bază',
+    'repair_cond_pc_cpu'               => 'Procesor (CPU)',
+    'repair_cond_pc_ram'               => 'Memorie (RAM)',
+    'repair_cond_pc_storage'           => 'Hard Disk / SSD',
+    'repair_cond_pc_gpu'               => 'Placă video (GPU)',
+    'repair_cond_pc_display'           => 'Ecran / Monitor',
+    'repair_cond_pc_keyboard'          => 'Tastatură',
+    'repair_cond_pc_fan'               => 'Ventilator / Răcire',
+    'repair_cond_pc_power'             => 'Sursă / Baterie',
+    'repair_cond_pc_ports'             => 'Porturi (USB, HDMI)',
+
     // AI Assistant
     'repair_ai_btn'                    => 'Pornește analiza AI',
     'repair_ai_analyzing'              => 'Se analizează...',

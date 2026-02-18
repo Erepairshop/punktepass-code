@@ -1189,6 +1189,20 @@ return [
     'repair_cond_kfz_lenkung'          => 'Kormányzás',
     'repair_cond_kfz_fahrwerk'         => 'Futómű',
 
+    // PC / Számítógép állapot ellenőrzés
+    'repair_fb_condition_pc'           => 'PC állapot',
+    'repair_admin_fc_pc'               => 'PC / Számítógép',
+    'repair_cond_pc_mainboard'         => 'Alaplap',
+    'repair_cond_pc_cpu'               => 'Processzor (CPU)',
+    'repair_cond_pc_ram'               => 'Memória (RAM)',
+    'repair_cond_pc_storage'           => 'Merevlemez / SSD',
+    'repair_cond_pc_gpu'               => 'Videókártya (GPU)',
+    'repair_cond_pc_display'           => 'Kijelző / Monitor',
+    'repair_cond_pc_keyboard'          => 'Billentyűzet',
+    'repair_cond_pc_fan'               => 'Ventilátor / Hűtés',
+    'repair_cond_pc_power'             => 'Tápegység / Akku',
+    'repair_cond_pc_ports'             => 'Csatlakozók (USB, HDMI)',
+
     // AI Assistant
     'repair_ai_btn'                    => 'AI elemzés indítása',
     'repair_ai_analyzing'              => 'Elemzés folyamatban...',

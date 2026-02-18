@@ -489,6 +489,8 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
             'vehicle_first_reg'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
             'vehicle_tuev'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
             'condition_check_kfz' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_kfz')],
+            // PC / Computer fields
+            'condition_check_pc' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_pc')],
         ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
@@ -1529,6 +1531,8 @@ $fb_all_builtins = [
     'vehicle_first_reg'   => ['section' => 2, 'icon' => 'ri-calendar-check-line','ph' => PPV_Lang::t('repair_vehicle_first_reg_placeholder'),'input' => 'text'],
     'vehicle_tuev'        => ['section' => 2, 'icon' => 'ri-shield-star-line','ph' => PPV_Lang::t('repair_vehicle_tuev_placeholder'), 'input' => 'text'],
     'condition_check_kfz' => ['section' => 2, 'icon' => 'ri-car-washing-line','ph' => '', 'input' => 'condition_kfz'],
+    // PC / Computer fields
+    'condition_check_pc' => ['section' => 2, 'icon' => 'ri-computer-line','ph' => '', 'input' => 'condition_pc'],
     'accessories'     => ['section' => 3, 'icon' => 'ri-checkbox-multiple-line','ph' => '', 'input' => 'accessories'],
     'photo_upload'    => ['section' => 3, 'icon' => 'ri-camera-line',   'ph' => '',    'input' => 'photo'],
     'priority'        => ['section' => 3, 'icon' => 'ri-flashlight-line','ph' => '',   'input' => 'priority'],
@@ -1711,6 +1715,9 @@ $pal_groups = [
         'vehicle_first_reg'   => ['icon' => 'ri-calendar-check-line', 'name' => $fc_defaults['vehicle_first_reg']['label']],
         'vehicle_tuev'        => ['icon' => 'ri-shield-star-line',    'name' => $fc_defaults['vehicle_tuev']['label']],
         'condition_check_kfz' => ['icon' => 'ri-car-washing-line',    'name' => $fc_defaults['condition_check_kfz']['label']],
+    ],
+    PPV_Lang::t('repair_admin_fc_pc') => [
+        'condition_check_pc' => ['icon' => 'ri-computer-line',       'name' => $fc_defaults['condition_check_pc']['label']],
     ],
     PPV_Lang::t('repair_admin_fc_extra') => [
         'accessories'   => ['icon' => 'ri-checkbox-multiple-line',   'name' => $fc_defaults['accessories']['label']],
@@ -3427,6 +3434,10 @@ echo '</div></div>
         document.getElementById("ra-termin-message").value="";
         document.getElementById("ra-termin-send-email").checked=true;
         terminModal.classList.add("show");
+        // Scroll modal content to top and ensure visibility
+        var mContent=terminModal.querySelector(".ra-modal");
+        if(mContent)mContent.scrollTop=0;
+        window.scrollTo(0,0);
     });
 
     document.getElementById("ra-termin-cancel").addEventListener("click",function(){
@@ -3537,7 +3548,7 @@ echo '</div></div>
                 var cf=JSON.parse(data.customfields);
                 var cfLabels={device_color:L.cf_color||"Farbe",purchase_date:L.cf_purchase_date||"Kaufdatum",priority:L.cf_priority||"Priorität",cost_limit:L.cf_cost_limit||"Kostenrahmen",vehicle_plate:L.cf_vehicle_plate||"Kennzeichen",vehicle_vin:L.cf_vehicle_vin||"FIN/VIN",vehicle_mileage:L.cf_vehicle_mileage||"Kilometerstand",vehicle_first_reg:L.cf_vehicle_first_reg||"Erstzulassung",vehicle_tuev:L.cf_vehicle_tuev||"TÜV/HU"};
                 for(var ck in cf){
-                    if(ck==="photos"||ck==="condition_check"||ck==="condition_check_kfz") continue;
+                    if(ck==="photos"||ck==="condition_check"||ck==="condition_check_kfz"||ck==="condition_check_pc") continue;
                     var lbl=cfLabels[ck]||ck;
                     if(typeof cf[ck]==="string"&&cf[ck]) cfHtml+=\'<div class="field"><span class="label">\'+esc(lbl)+\':</span><span class="value">\'+esc(cf[ck])+\'</span></div>\';
                 }
@@ -3552,6 +3563,12 @@ echo '</div></div>
                     var kParts=[];
                     for(var kp in ckfz) kParts.push(kp+": "+ckfz[kp].toUpperCase());
                     if(kParts.length) cfHtml+=\'<div class="field"><span class="label">\'+(L.cf_condition_kfz||"KFZ-Zustand")+\':</span><span class="value">\'+esc(kParts.join(", "))+\'</span></div>\';
+                }
+                if(cf.condition_check_pc){
+                    var cpc=typeof cf.condition_check_pc==="string"?JSON.parse(cf.condition_check_pc):cf.condition_check_pc;
+                    var pcParts=[];
+                    for(var pp in cpc) pcParts.push(pp+": "+cpc[pp].toUpperCase());
+                    if(pcParts.length) cfHtml+=\'<div class="field"><span class="label">PC-Zustand:</span><span class="value">\'+esc(pcParts.join(", "))+\'</span></div>\';
                 }
                 if(cf.photos&&cf.photos.length){
                     cfHtml+=\'<div class="field"><span class="label">Fotos:</span><span class="value">\';
@@ -6531,7 +6548,7 @@ echo '</div></div>
                     'vehicle_tuev' => ['icon' => 'ri-shield-star-line', 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
                 ];
                 foreach ($cf as $ck => $cv) {
-                    if ($ck === 'photos' || $ck === 'condition_check' || $ck === 'condition_check_kfz') continue; // handled separately
+                    if ($ck === 'photos' || $ck === 'condition_check' || $ck === 'condition_check_kfz' || $ck === 'condition_check_pc') continue; // handled separately
                     $icon = 'ri-file-text-line';
                     $lbl = $ck;
                     if (isset($cf_labels[$ck])) { $icon = $cf_labels[$ck]['icon']; $lbl = $cf_labels[$ck]['label']; }
@@ -6566,6 +6583,18 @@ echo '</div></div>
                             $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
                         }
                         $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-car-washing-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition_kfz')) . ': ' . implode(', ', $cond_items) . '</div>';
+                    }
+                }
+                // PC Condition check
+                if (!empty($cf['condition_check_pc'])) {
+                    $cond = is_string($cf['condition_check_pc']) ? json_decode($cf['condition_check_pc'], true) : $cf['condition_check_pc'];
+                    if (is_array($cond)) {
+                        $cond_items = [];
+                        foreach ($cond as $part => $status) {
+                            $color = $status === 'ok' ? '#059669' : '#dc2626';
+                            $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
+                        }
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-computer-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition_pc')) . ': ' . implode(', ', $cond_items) . '</div>';
                     }
                 }
                 // Photos
