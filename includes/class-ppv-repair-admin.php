@@ -3460,10 +3460,10 @@ echo '</div></div>
     terminNoTerminCb.addEventListener("change",function(){
         if(this.checked){
             terminFields.style.display="none";
-            terminSubmitBtn.innerHTML='<i class="ri-check-line"></i> '+L.no_termin_confirm;
+            terminSubmitBtn.innerHTML=\'<i class="ri-check-line"></i> \'+L.no_termin_confirm;
         }else{
             terminFields.style.display="";
-            terminSubmitBtn.innerHTML='<i class="ri-check-line"></i> '+L.termin_confirm;
+            terminSubmitBtn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
         }
     });
 
@@ -3487,7 +3487,7 @@ echo '</div></div>
         // Reset no-termin checkbox
         terminNoTerminCb.checked=false;
         terminFields.style.display="";
-        terminSubmitBtn.innerHTML='<i class="ri-check-line"></i> '+L.termin_confirm;
+        terminSubmitBtn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
         terminModal.classList.add("show");
         // Scroll modal content to top and ensure visibility
         var mContent=terminModal.querySelector(".ra-modal");
