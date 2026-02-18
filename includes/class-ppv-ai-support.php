@@ -307,11 +307,10 @@ REPAIR MANAGEMENT (Reparaturen tab):
 • Search by customer name, phone, device info
 • Filter by status
 • Feedback email sent automatically 24h after "done" status
-• TEIL ANGEKOMMEN (Part arrived): When repair is in "Wartet auf Teile" status, a green "Teil angekommen" button appears on the card. Click it to:
-  - Set an appointment date/time (Termin) for the customer
-  - Optionally send an appointment email to the customer with date, time, and custom message
-  - Status automatically changes back to "In Bearbeitung"
-  - Appointment date is shown as a green badge on the card and on the public tracking page
+• TEIL ANGEKOMMEN (Part arrived): When repair is in "Wartet auf Teile" status, an amber/orange "Teil angekommen" button appears on the card. Click it to open a modal with two options:
+  OPTION 1 - With appointment (Termin): Set date/time, optionally send appointment email to customer. Termin badge appears on card and public tracking page.
+  OPTION 2 - Without appointment (ohne Termin): Check "Nur als angekommen markieren (ohne Termin)" checkbox. Hides date/time fields. Just marks the part as arrived.
+  Both options change status to "In Bearbeitung" and remove the Teil angekommen button.
 
 INVOICE SYSTEM (Rechnungen tab):
 • Create invoices (Rechnung) or quotes (Angebot)
