@@ -697,6 +697,7 @@ return [
     'repair_admin_reward_approve' => 'Jóváhagyás',
     'repair_admin_reward_reject'  => 'Elutasítás',
     'repair_admin_reward_approved' => 'jóváhagyva',
+    'repair_admin_reward_discount' => 'PunktePass Kedvezmény',
     'repair_admin_last_modified'  => 'Utoljára módosítva',
     'repair_admin_comments'       => 'Hozzászólások',
     'repair_admin_add_comment_ph' => 'Hozzászólás hozzáadása...',

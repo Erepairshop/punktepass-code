@@ -2485,6 +2485,21 @@ echo '</div></div>
         <button type="button" class="ra-inv-add" id="ra-inv-add-line">
             <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_line')) . '
         </button>
+        <div id="ra-inv-discount-section" style="display:none;margin:12px 0;padding:12px 14px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1.5px solid #86efac;border-radius:10px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <i class="ri-gift-line" style="color:#059669;font-size:16px"></i>
+                <span style="font-size:13px;font-weight:700;color:#059669">' . esc_html(PPV_Lang::t('repair_admin_reward_discount')) . '</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+                <input type="text" id="ra-inv-discount-desc" class="ra-input" style="flex:2;font-size:13px;background:#fff" placeholder="Rabatt">
+                <div style="display:flex;align-items:center;gap:4px;flex:1">
+                    <span style="color:#dc2626;font-weight:700;font-size:14px">&minus;</span>
+                    <input type="number" id="ra-inv-discount-amount" class="ra-input" style="flex:1;font-size:13px;background:#fff;color:#dc2626;font-weight:600" step="0.01" min="0" placeholder="0.00">
+                    <span style="color:#dc2626;font-weight:600;font-size:13px">&euro;</span>
+                </div>
+                <button type="button" id="ra-inv-discount-remove" style="width:28px;height:28px;border:none;background:#fee2e2;color:#dc2626;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
+            </div>
+        </div>
         <div class="ra-inv-totals">
             <div class="ra-inv-total-row">
                 <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
@@ -3053,6 +3068,10 @@ echo '</div></div>
         STORE_EMAIL="' . esc_js($store->repair_company_email ?? '') . '",
         STORE_TAX_ID="' . esc_js($store->repair_tax_id ?? '') . '",
         STORE_OWNER="' . esc_js($store->repair_owner_name ?? '') . '",
+        REWARD_NAME="' . esc_js($reward_name) . '",
+        REWARD_TYPE="' . esc_js($reward_type) . '",
+        REWARD_VALUE=parseFloat("' . $reward_value . '"),
+        PP_ENABLED=!!parseInt("' . intval($store->repair_punktepass_enabled ?? 1) . '"),
         searchTimer=null,
         currentPage=1,
         invSortBy="created_at",
@@ -3869,6 +3888,19 @@ echo '</div></div>
         }
         // Reset lines
         document.getElementById("ra-inv-lines").innerHTML=buildLineHtml("","");
+        // Auto-populate reward discount if approved
+        var discSec=document.getElementById("ra-inv-discount-section");
+        var discDesc=document.getElementById("ra-inv-discount-desc");
+        var discAmt=document.getElementById("ra-inv-discount-amount");
+        if(card && card.dataset.rewardApproved==="1" && PP_ENABLED && REWARD_VALUE>0){
+            discDesc.value=REWARD_NAME;
+            discAmt.value=REWARD_VALUE.toFixed(2);
+            discSec.style.display="block";
+        }else{
+            discDesc.value="";
+            discAmt.value="";
+            discSec.style.display="none";
+        }
         // Reset payment fields
         document.getElementById("ra-inv-paid-toggle").checked=false;
         document.getElementById("ra-inv-paid-fields").style.display="none";
@@ -3961,17 +3993,24 @@ echo '</div></div>
         var amounts=document.querySelectorAll("#ra-inv-lines .ra-inv-line-amount");
         var brutto=0;
         amounts.forEach(function(a){brutto+=parseFloat(a.value)||0});
+        // Subtract discount if visible
+        var discSec=document.getElementById("ra-inv-discount-section");
+        var discountVal=0;
+        if(discSec&&discSec.style.display!=="none"){
+            discountVal=parseFloat(document.getElementById("ra-inv-discount-amount").value)||0;
+        }
+        var afterDiscount=Math.max(0,brutto-discountVal);
         var net,vat;
         if(VAT_ENABLED){
-            net=Math.round(brutto/(1+VAT_RATE/100)*100)/100;
-            vat=Math.round((brutto-net)*100)/100;
+            net=Math.round(afterDiscount/(1+VAT_RATE/100)*100)/100;
+            vat=Math.round((afterDiscount-net)*100)/100;
         }else{
-            net=brutto;
+            net=afterDiscount;
             vat=0;
         }
         document.getElementById("ra-inv-modal-net").textContent=fmtEur(net);
         document.getElementById("ra-inv-modal-vat").textContent=fmtEur(vat);
-        document.getElementById("ra-inv-modal-total").textContent=fmtEur(brutto);
+        document.getElementById("ra-inv-modal-total").textContent=fmtEur(afterDiscount);
     }
 
     // Line items: delegated events
@@ -3990,6 +4029,15 @@ echo '</div></div>
     });
     document.getElementById("ra-inv-lines").addEventListener("input",function(e){
         if(e.target.classList.contains("ra-inv-line-amount"))recalcInvoiceModal();
+    });
+    // Discount amount input recalc
+    document.getElementById("ra-inv-discount-amount").addEventListener("input",function(){recalcInvoiceModal()});
+    // Discount remove button
+    document.getElementById("ra-inv-discount-remove").addEventListener("click",function(){
+        document.getElementById("ra-inv-discount-section").style.display="none";
+        document.getElementById("ra-inv-discount-desc").value="";
+        document.getElementById("ra-inv-discount-amount").value="";
+        recalcInvoiceModal();
     });
 
     document.getElementById("ra-inv-add-line").addEventListener("click",function(){
@@ -4057,12 +4105,24 @@ echo '</div></div>
         // Add differenzbesteuerung flag
         fd.append("is_differenzbesteuerung",document.getElementById("ra-inv-differenz").checked?"1":"0");
 
+        // Collect manual discount from modal (if visible)
+        var discSec=document.getElementById("ra-inv-discount-section");
+        var manualDiscDesc="",manualDiscVal=0;
+        if(discSec&&discSec.style.display!=="none"){
+            manualDiscDesc=document.getElementById("ra-inv-discount-desc").value.trim();
+            manualDiscVal=parseFloat(document.getElementById("ra-inv-discount-amount").value)||0;
+        }
+
         if(invoiceEditId){
             // Edit mode
             fd.append("action","ppv_repair_invoice_update");
             fd.append("invoice_id",invoiceEditId);
             fd.append("subtotal",totalAmt);
             fd.append("line_items",JSON.stringify(items));
+            if(manualDiscVal>0){
+                fd.append("manual_discount_desc",manualDiscDesc);
+                fd.append("manual_discount_value",manualDiscVal);
+            }
         }else{
             // Create mode
             fd.append("action","ppv_repair_update_status");
@@ -4070,6 +4130,10 @@ echo '</div></div>
             fd.append("status","done");
             fd.append("final_cost",totalAmt);
             fd.append("line_items",JSON.stringify(items));
+            if(manualDiscVal>0){
+                fd.append("manual_discount_desc",manualDiscDesc);
+                fd.append("manual_discount_value",manualDiscVal);
+            }
             // Check if already paid
             if(document.getElementById("ra-inv-paid-toggle").checked){
                 fd.append("mark_paid","1");
@@ -6741,7 +6805,9 @@ echo '</div></div>
             . ' data-signature="' . esc_attr($r->signature_image) . '"'
             . ' data-accessories="' . esc_attr($r->accessories) . '"'
             . ' data-customfields="' . $cf_data_json . '"'
-            . ' data-invoice="' . esc_attr($invoice_numbers) . '">'
+            . ' data-invoice="' . esc_attr($invoice_numbers) . '"'
+            . ' data-reward-approved="' . (int)(!empty($r->reward_approved)) . '"'
+            . '>'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
                 . '<span class="ra-status ' . esc_attr($st[1]) . '">' . esc_html($st[0]) . '</span>'

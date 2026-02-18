@@ -697,6 +697,7 @@ return [
     'repair_admin_reward_approve' => 'Approva',
     'repair_admin_reward_reject'  => 'Rifiuta',
     'repair_admin_reward_approved' => 'approvato',
+    'repair_admin_reward_discount' => 'Sconto PunktePass',
     'repair_admin_last_modified'  => 'Ultima modifica',
     'repair_admin_comments'       => 'Commenti',
     'repair_admin_add_comment_ph' => 'Aggiungi commento...',

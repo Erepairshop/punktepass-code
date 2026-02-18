@@ -2682,7 +2682,15 @@ class PPV_Repair_Core {
                         $line_items = json_decode(stripslashes($_POST['line_items']), true);
                         if (!is_array($line_items)) $line_items = [];
                     }
-                    $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items);
+                    // Pass manual discount from invoice modal (admin can edit amount)
+                    $manual_discount = [];
+                    if (!empty($_POST['manual_discount_value'])) {
+                        $manual_discount = [
+                            'desc'  => sanitize_text_field($_POST['manual_discount_desc'] ?? ''),
+                            'value' => floatval($_POST['manual_discount_value']),
+                        ];
+                    }
+                    $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items, $manual_discount);
 
                     // If mark_paid is set, update invoice to paid status
                     if ($invoice_id && !empty($_POST['mark_paid'])) {
