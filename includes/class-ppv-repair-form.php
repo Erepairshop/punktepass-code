@@ -1075,7 +1075,9 @@ function toggleProblemTag(btn, text) {
         successDiv.style.display = 'block';
         successDiv.style.padding = '48px 24px';
         successDiv.style.textAlign = 'center';
-        console.log('[Repair] successDiv visible:', successDiv.offsetHeight, 'px');
+        console.log('[Repair] successDiv children:', successDiv.childElementCount, 'innerHTML length:', successDiv.innerHTML.length);
+        console.log('[Repair] successDiv first 300 chars:', successDiv.innerHTML.substring(0, 300));
+        console.log('[Repair] successDiv offsetHeight:', successDiv.offsetHeight, 'px, parent:', successDiv.parentElement?.className, 'parentHeight:', successDiv.parentElement?.offsetHeight);
 
         // Collapse hero header to give more room for success content
         var header = document.querySelector('.repair-header');
