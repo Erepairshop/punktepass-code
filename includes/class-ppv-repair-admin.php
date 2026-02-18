@@ -802,7 +802,7 @@ a:hover{color:#5a67d8}
 .ra-reward-reject:hover{background:#fef2f2}
 .ra-reward-approved-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#d1fae5;color:#065f46;font-size:12px;font-weight:600;border-radius:8px;margin:8px 0}
 .ra-btn-parts-arrived{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:10px 18px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .25s ease;width:fit-content;box-shadow:0 2px 8px rgba(217,119,6,.3);letter-spacing:.2px;position:relative;overflow:hidden}
-.ra-btn-parts-arrived::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);transition:left .5s}
+.ra-btn-parts-arrived::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);transition:left .5s}
 .ra-btn-parts-arrived:hover{background:linear-gradient(135deg,#b45309,#d97706);box-shadow:0 4px 14px rgba(217,119,6,.4);transform:translateY(-1px)}
 .ra-btn-parts-arrived:hover::before{left:100%}
 .ra-btn-parts-arrived:active{transform:translateY(0) scale(.98);box-shadow:0 1px 4px rgba(217,119,6,.3)}
