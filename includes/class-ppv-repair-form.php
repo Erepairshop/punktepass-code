@@ -88,11 +88,15 @@ class PPV_Repair_Form {
         $ajax_url = admin_url('admin-ajax.php');
 
         // Prefill from query params (for "Nochmal Anliegen" button)
-        $pf_name  = esc_attr($_GET['name'] ?? '');
-        $pf_email = esc_attr($_GET['email'] ?? '');
-        $pf_phone = esc_attr($_GET['phone'] ?? '');
-        $pf_brand = esc_attr($_GET['brand'] ?? '');
-        $pf_model = esc_attr($_GET['model'] ?? '');
+        $pf_name    = esc_attr($_GET['name'] ?? '');
+        $pf_email   = esc_attr($_GET['email'] ?? '');
+        $pf_phone   = esc_attr($_GET['phone'] ?? '');
+        $pf_address = esc_attr($_GET['address'] ?? '');
+        $pf_brand   = esc_attr($_GET['brand'] ?? '');
+        $pf_model   = esc_attr($_GET['model'] ?? '');
+        $pf_imei    = esc_attr($_GET['imei'] ?? '');
+        $pf_pin     = esc_attr($_GET['pin'] ?? '');
+        $pf_problem = esc_attr($_GET['problem'] ?? '');
 
         // Country code for Nominatim address search
         $nominatim_cc = 'de';
@@ -303,7 +307,7 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
             <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? PPV_Lang::t('repair_address_label')); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" autocomplete="street-address">
+                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" value="<?php echo $pf_address; ?>" autocomplete="street-address">
                 <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
             </div>
             <?php endif; ?>
@@ -352,7 +356,7 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['device_imei']['enabled'])): ?>
             <div class="repair-field">
                 <label for="rf-imei"><?php echo esc_html($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?></label>
-                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?>">
+                <input type="text" id="rf-imei" name="device_imei" placeholder="<?php echo esc_attr($field_config['device_imei']['label'] ?? PPV_Lang::t('repair_imei_label')); ?>" value="<?php echo $pf_imei; ?>">
             </div>
             <?php endif; ?>
 
@@ -371,7 +375,7 @@ class PPV_Repair_Form {
                 <?php endif; ?>
                 <?php if ($show_pin): ?>
                 <div class="repair-unlock-content" id="repair-unlock-pin">
-                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? PPV_Lang::t('repair_pin_label')); ?>">
+                    <input type="text" id="rf-pattern" name="device_pattern" placeholder="<?php echo esc_attr($field_config['device_pattern']['label'] ?? PPV_Lang::t('repair_pin_label')); ?>" value="<?php echo $pf_pin; ?>">
                 </div>
                 <?php endif; ?>
                 <?php if ($show_muster): ?>
@@ -525,7 +529,7 @@ class PPV_Repair_Form {
 
             <div class="repair-field">
                 <label for="rf-problem"><?php echo esc_html(PPV_Lang::t('repair_problem_label')); ?></label>
-                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo esc_attr(!empty($custom_problems) ? PPV_Lang::t('repair_problem_detail_placeholder') : PPV_Lang::t('repair_problem_placeholder')); ?>"></textarea>
+                <textarea id="rf-problem" name="problem_description" required rows="4" placeholder="<?php echo esc_attr(!empty($custom_problems) ? PPV_Lang::t('repair_problem_detail_placeholder') : PPV_Lang::t('repair_problem_placeholder')); ?>"><?php echo $pf_problem; ?></textarea>
                 <?php
                 require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
                 if (PPV_AI_Engine::is_available()):
@@ -1061,11 +1065,17 @@ function toggleProblemTag(btn, text) {
 
     // Shared function to display the success page with data
     function showSuccessPage(d) {
+        console.log('[Repair] showSuccessPage called with:', d);
+
         // Hide form, show success
         form.style.display = 'none';
         var bonusBadge = document.querySelector('.repair-bonus-badge');
         if (bonusBadge) bonusBadge.style.display = 'none';
+        if (!successDiv) { console.error('[Repair] successDiv is null!'); return; }
         successDiv.style.display = 'block';
+        successDiv.style.padding = '48px 24px';
+        successDiv.style.textAlign = 'center';
+        console.log('[Repair] successDiv visible:', successDiv.offsetHeight, 'px');
 
         // Collapse hero header to give more room for success content
         var header = document.querySelector('.repair-header');
@@ -1078,56 +1088,77 @@ function toggleProblemTag(btn, text) {
         }
 
         // Show tracking card with QR code
-        if (d && d.tracking_url && d.repair_id) {
-            document.getElementById('repair-tracking-card').style.display = 'flex';
-            document.getElementById('repair-tracking-id').textContent = '#' + d.repair_id;
-            document.getElementById('repair-tracking-link').href = d.tracking_url;
+        try {
+            if (d && d.tracking_url && d.repair_id) {
+                var trackCard = document.getElementById('repair-tracking-card');
+                var trackId = document.getElementById('repair-tracking-id');
+                var trackLink = document.getElementById('repair-tracking-link');
+                var qrContainer = document.getElementById('repair-qr-container');
+                if (trackCard) trackCard.style.display = 'flex';
+                if (trackId) trackId.textContent = '#' + d.repair_id;
+                if (trackLink) trackLink.href = d.tracking_url;
 
-            // Generate QR code
-            if (typeof qrcode !== 'undefined') {
-                var qr = qrcode(0, 'M');
-                qr.addData(d.tracking_url);
-                qr.make();
-                document.getElementById('repair-qr-container').innerHTML = qr.createImgTag(4, 0);
+                // Generate QR code
+                if (qrContainer && typeof qrcode !== 'undefined') {
+                    var qr = qrcode(0, 'M');
+                    qr.addData(d.tracking_url);
+                    qr.make();
+                    qrContainer.innerHTML = qr.createImgTag(4, 0);
+                }
             }
-        }
+        } catch(e) { console.warn('[Repair] QR render error:', e); }
 
         // Show points card
         <?php if ($pp_enabled): ?>
-        if (d && d.points_added > 0) {
-            document.getElementById('repair-points-card').style.display = 'block';
-            document.getElementById('repair-points-count').textContent = d.points_added;
-            if (d.total_points) {
-                var reqPts = <?php echo $required_pts; ?>;
-                var rwName = <?php echo json_encode($reward_name); ?>;
-                var remaining = Math.max(0, reqPts - d.total_points);
-                var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
-                var suffixStr = remaining > 0
-                    ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
-                    : ppvLang.points_redeemable.replace('%s', rwName);
-                document.getElementById('repair-points-total').textContent = totalStr + ' — ' + suffixStr;
+        try {
+            if (d && d.points_added > 0) {
+                var ptsCard = document.getElementById('repair-points-card');
+                var ptsCount = document.getElementById('repair-points-count');
+                var ptsTotal = document.getElementById('repair-points-total');
+                if (ptsCard) ptsCard.style.display = 'block';
+                if (ptsCount) ptsCount.textContent = d.points_added;
+                if (ptsTotal && d.total_points) {
+                    var reqPts = <?php echo $required_pts; ?>;
+                    var rwName = <?php echo json_encode($reward_name); ?>;
+                    var remaining = Math.max(0, reqPts - d.total_points);
+                    var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
+                    var suffixStr = remaining > 0
+                        ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
+                        : ppvLang.points_redeemable.replace('%s', rwName);
+                    ptsTotal.textContent = totalStr + ' — ' + suffixStr;
+                }
             }
-        }
+        } catch(e) { console.warn('[Repair] Points render error:', e); }
         <?php endif; ?>
 
         // Confetti effect
-        createConfetti();
+        try { createConfetti(); } catch(e) {}
 
         // Start auto-redirect countdown (2 min)
-        startAutoRedirect();
+        try { startAutoRedirect(); } catch(e) {}
 
         // Scroll to success content (past the header)
-        successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        try { successDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
     }
 
     // Check if form was already submitted in this session
     var dupKey = 'ppv_repair_submitted_' + storeId;
     var lastSubmit = sessionStorage.getItem(dupKey);
+    console.log('[Repair] dupKey check:', dupKey, 'lastSubmit:', lastSubmit, 'age:', lastSubmit ? (Date.now() - parseInt(lastSubmit)) + 'ms' : 'none');
     if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 300000) { // 5 min
         // Restore saved success data (tracking card, points, QR code)
         var savedData = null;
         try { savedData = JSON.parse(sessionStorage.getItem(dupKey + '_data')); } catch(e) {}
-        showSuccessPage(savedData);
+        console.log('[Repair] Restoring success page from session, data:', savedData);
+        try {
+            showSuccessPage(savedData);
+        } catch(e) {
+            console.error('[Repair] Session restore error:', e);
+            form.style.display = 'none';
+            successDiv.style.display = 'block';
+        }
+    } else {
+        console.log('[Repair] Fresh form load (no recent submission)');
     }
 
     // Email lookup for returning customers with debounce
@@ -1541,7 +1572,10 @@ function toggleProblemTag(btn, text) {
             body: fd,
             credentials: 'same-origin'
         })
-        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (!res.ok) console.warn('[Repair] HTTP', res.status);
+            return res.json();
+        })
         .then(function(data) {
             if (data.success) {
                 formSubmitted = true;
@@ -1554,7 +1588,14 @@ function toggleProblemTag(btn, text) {
                 localStorage.removeItem(offlineStorageKey);
 
                 // Show success with full data
-                showSuccessPage(data.data);
+                try {
+                    showSuccessPage(data.data);
+                } catch(err) {
+                    console.error('[Repair] showSuccessPage error:', err);
+                    // Ensure success div is visible even if JS error
+                    form.style.display = 'none';
+                    successDiv.style.display = 'block';
+                }
             } else {
                 errorDiv.textContent = data.data?.message || ppvLang.error_generic;
                 errorDiv.style.display = 'block';
@@ -1565,9 +1606,15 @@ function toggleProblemTag(btn, text) {
                 }
             }
         })
-        .catch(function() {
-            errorDiv.textContent = ppvLang.connection_error;
-            errorDiv.style.display = 'block';
+        .catch(function(err) {
+            console.error('[Repair] Submit error:', err);
+            // If form already hidden (success was partial), show success div anyway
+            if (form.style.display === 'none') {
+                successDiv.style.display = 'block';
+            } else {
+                errorDiv.textContent = ppvLang.connection_error;
+                errorDiv.style.display = 'block';
+            }
         })
         .finally(function() {
             if (!formSubmitted) {

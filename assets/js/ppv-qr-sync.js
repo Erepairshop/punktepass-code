@@ -112,6 +112,7 @@
 
         if (data.success) {
           this.ui.showMessage('✅ ' + data.message, 'success');
+          document.dispatchEvent(new CustomEvent('ppv:scan-success', { detail: { points: data.points || 1 } }));
 
           const now = new Date();
           const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;

@@ -800,6 +800,32 @@ a:hover{color:#5a67d8}
 .ra-reward-reject:hover{background:#fef2f2}
 .ra-reward-approved-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#d1fae5;color:#065f46;font-size:12px;font-weight:600;border-radius:8px;margin:8px 0}
 
+/* ========== Comments Widget - Modern ========== */
+.ra-repair-comments-section{margin:10px 0 4px}
+.ra-btn-comments-toggle{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #e0e7ff;background:#f0f4ff;color:#6366f1;transition:all .2s}
+.ra-btn-comments-toggle:hover{background:#e0e7ff;border-color:#c7d2fe}
+.ra-btn-comments-toggle.active{background:#6366f1;color:#fff;border-color:#6366f1}
+.ra-btn-comments-toggle i{font-size:15px}
+.ra-comments-container{margin-top:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;animation:slideDown .2s ease}
+.ra-comments-list{max-height:200px;overflow-y:auto;margin-bottom:10px}
+.ra-comments-list::-webkit-scrollbar{width:4px}
+.ra-comments-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+.ra-comment-item{position:relative;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 32px 10px 12px;margin-bottom:8px;transition:box-shadow .15s}
+.ra-comment-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.ra-comment-item:last-child{margin-bottom:0}
+.ra-comment-text{font-size:13px;color:#1e293b;line-height:1.5;word-break:break-word}
+.ra-comment-meta{font-size:11px;color:#94a3b8;margin-top:4px;display:flex;align-items:center;gap:4px}
+.ra-comment-delete{position:absolute;top:6px;right:6px;width:22px;height:22px;border:none;background:transparent;color:#cbd5e1;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;padding:0}
+.ra-comment-delete:hover{background:#fee2e2;color:#ef4444}
+.ra-comment-add{display:flex;gap:8px;align-items:center}
+.ra-comment-input{flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none;transition:border-color .2s}
+.ra-comment-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+.ra-comment-input::placeholder{color:#94a3b8}
+.ra-comment-submit{width:38px;height:38px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;flex-shrink:0}
+.ra-comment-submit:hover{background:linear-gradient(135deg,#4f46e5,#6366f1);transform:scale(1.05)}
+.ra-comment-submit:disabled{opacity:.5;transform:none}
+.ra-comments-empty{text-align:center;padding:16px;color:#94a3b8;font-size:12px}
+
 /* ========== Reward Reject Modal ========== */
 .ra-reject-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;padding:16px}
 .ra-reject-modal.show{display:flex}
@@ -3144,6 +3170,8 @@ echo '</div></div>
         'invoice_exists' => PPV_Lang::t('repair_admin_invoice_exists'),
         'invoice_duplicate_warn' => PPV_Lang::t('repair_admin_invoice_duplicate_warn'),
         'btn_delete' => PPV_Lang::t('repair_admin_delete_repair'),
+        'comments_label' => PPV_Lang::t('repair_admin_comments'),
+        'add_comment_ph' => PPV_Lang::t('repair_admin_add_comment_ph'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
         'finish_title' => PPV_Lang::t('repair_admin_finish_repair'),
@@ -3275,8 +3303,12 @@ echo '</div></div>
         if(card.dataset.name)params.set("name",card.dataset.name);
         if(card.dataset.email)params.set("email",card.dataset.email);
         if(card.dataset.phone)params.set("phone",card.dataset.phone);
+        if(card.dataset.address)params.set("address",card.dataset.address);
         if(card.dataset.brand)params.set("brand",card.dataset.brand);
         if(card.dataset.model)params.set("model",card.dataset.model);
+        if(card.dataset.imei)params.set("imei",card.dataset.imei);
+        if(card.dataset.pin)params.set("pin",card.dataset.pin);
+        if(card.dataset.problem)params.set("problem",card.dataset.problem);
         window.open("/formular/"+SLUG+"?"+params.toString(),"_blank");
     });
 
@@ -3626,7 +3658,17 @@ echo '</div></div>
         var invBtnClass=hasInvoice?"ra-btn-invoice ra-btn-invoice-exists":"ra-btn-invoice";
         var invBtnTitle=hasInvoice?(L.invoice_exists+": "+esc(r.invoice_numbers)):L.btn_create_inv;
         var invBtnIcon=hasInvoice?"ri-file-list-3-fill":"ri-file-list-3-line";
-        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'" data-invoice="\'+esc(r.invoice_numbers||"")+\'">\'+
+        var commentsHtml=\'<div class="ra-repair-comments-section">\'+
+            \'<button class="ra-btn-comments-toggle" data-repair-id="\'+r.id+\'"><i class="ri-chat-3-line"></i> \'+L.comments_label+\'</button>\'+
+            \'<div class="ra-comments-container" style="display:none" data-repair-id="\'+r.id+\'">\'+
+                \'<div class="ra-comments-list"></div>\'+
+                \'<div class="ra-comment-add">\'+
+                    \'<input type="text" class="ra-comment-input" placeholder="\'+esc(L.add_comment_ph)+\'">\'+
+                    \'<button class="ra-comment-submit"><i class="ri-send-plane-fill"></i></button>\'+
+                \'</div>\'+
+            \'</div>\'+
+        \'</div>\';
+        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-imei="\'+esc(r.device_imei||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'" data-invoice="\'+esc(r.invoice_numbers||"")+\'">\'+
             \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
             \'<div class="ra-repair-body">\'+
                 \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span>\'+addressHtml+\'</div>\'+
@@ -3635,6 +3677,7 @@ echo '</div></div>
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
                 invoiceBadgeHtml+
             \'</div>\'+
+            commentsHtml+
             \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
         \'</div>\';
     }

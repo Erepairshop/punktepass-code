@@ -476,6 +476,63 @@
   }
 
   // ============================================================
+  // QUICK STATS (server-rendered initial values, JS increments)
+  // ============================================================
+
+  // Increment stats locally when a new scan comes in (no API needed)
+  function incrementQuickStats(points) {
+    const scansEl = document.getElementById('ppv-qs-scans');
+    const pointsEl = document.getElementById('ppv-qs-points');
+    if (scansEl) {
+      const cur = parseInt(scansEl.textContent) || 0;
+      animateStat('ppv-qs-scans', cur + 1);
+    }
+    if (pointsEl && points > 0) {
+      const cur = parseInt(pointsEl.textContent) || 0;
+      animateStat('ppv-qs-points', cur + points);
+    }
+  }
+
+  // Try API refresh (best-effort, server-rendered values are the fallback)
+  // Uses XMLHttpRequest to avoid browser console 401 error on failed auth
+  function loadQuickStats() {
+    const storeKey = getStoreKey();
+    const storeId = window.PPV_STORE_DATA?.store_id || 0;
+    if (!storeKey && !storeId) return;
+    const mgmt = window.ppv_rewards_mgmt || {};
+    const nonce = mgmt.nonce || '';
+    const baseUrl = mgmt.base || '/wp-json/ppv/v1/';
+    const url = baseUrl + 'pos/stats?store_id=' + storeId;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.setRequestHeader('PPV-POS-Token', storeKey);
+    if (nonce) xhr.setRequestHeader('X-WP-Nonce', nonce);
+    xhr.withCredentials = true;
+    xhr.onload = function() {
+      if (xhr.status !== 200) return;
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (!data.success || !data.stats) return;
+        animateStat('ppv-qs-scans', data.stats.today_scans || 0);
+        animateStat('ppv-qs-points', data.stats.today_points || 0);
+        animateStat('ppv-qs-rewards', data.stats.today_rewards || 0);
+      } catch(e) {}
+    };
+    xhr.send();
+  }
+
+  function animateStat(id, newVal) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const old = parseInt(el.textContent) || 0;
+    if (old === newVal) return;
+    el.textContent = newVal;
+    el.classList.remove('ppv-bump');
+    void el.offsetWidth; // reflow
+    el.classList.add('ppv-bump');
+  }
+
+  // ============================================================
   // INITIALIZATION
   // ============================================================
   function init() {
@@ -548,6 +605,13 @@
     STATE.scanProcessor.loadLogs();
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
+    // Quick stats are server-rendered in PHP, no API call needed on init
+
+    // Listen for successful scans to increment stats locally
+    document.addEventListener('ppv:scan-success', (e) => {
+      const pts = e.detail?.points || 1;
+      incrementQuickStats(pts);
+    });
 
     // ============================================================
     // REAL-TIME UPDATES: Ably (primary) or Polling (fallback)
@@ -596,6 +660,9 @@
           STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
         } else {
           console.warn('📡 [Ably] STATE.uiManager is null!');
+        }
+        if (message.data?.success !== false) {
+          incrementQuickStats(message.data?.points || 1);
         }
       }, STATE.ablySubscriberId);
 

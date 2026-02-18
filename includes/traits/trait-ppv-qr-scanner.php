@@ -161,6 +161,23 @@ trait PPV_QR_Scanner_Trait {
         // ✅ Check if scanner user (don't show subscription info to scanners)
         $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
 
+        // ── Quick Stats: query today's numbers server-side ──
+        $qs_scans = 0; $qs_points = 0; $qs_rewards = 0;
+        if ($store_id > 0) {
+            $qs_today = date('Y-m-d');
+            $qs_start = "$qs_today 00:00:00";
+            $qs_end   = "$qs_today 23:59:59";
+            $qs_row = $wpdb->get_row($wpdb->prepare(
+                "SELECT COUNT(*) AS cnt, COALESCE(SUM(points),0) AS pts FROM {$wpdb->prefix}ppv_points WHERE store_id = %d AND created BETWEEN %s AND %s",
+                $store_id, $qs_start, $qs_end
+            ));
+            if ($qs_row) { $qs_scans = (int)$qs_row->cnt; $qs_points = (int)$qs_row->pts; }
+            $qs_rewards = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d AND redeemed = 1 AND redeemed_at BETWEEN %s AND %s",
+                $store_id, $qs_start, $qs_end
+            ));
+        }
+
         if (!$is_scanner): ?>
         <div class="ppv-trial-info-block" style="margin-bottom: 10px; padding: 8px 12px; background: <?php echo $info_color; ?>; border-radius: 8px;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
@@ -220,20 +237,37 @@ trait PPV_QR_Scanner_Trait {
                 </button>
             </div>
 
-            <div class="ppv-pos-header" style="margin-bottom: 8px;">
-                <h4 class="ppv-pos-title" style="font-size: 14px; margin: 0;"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
+            <!-- 📊 TODAY QUICK STATS (server-rendered, JS refreshes) -->
+            <div id="ppv-today-stats" class="ppv-today-stats">
+                <div class="ppv-today-stat">
+                    <div class="ppv-today-stat-icon"><i class="ri-qr-scan-2-line"></i></div>
+                    <div class="ppv-today-stat-data">
+                        <span class="ppv-today-stat-value" id="ppv-qs-scans"><?php echo $qs_scans; ?></span>
+                        <span class="ppv-today-stat-label"><?php echo self::t('qs_scans', 'Scans'); ?></span>
+                    </div>
+                </div>
+                <div class="ppv-today-stat">
+                    <div class="ppv-today-stat-icon"><i class="ri-coin-line"></i></div>
+                    <div class="ppv-today-stat-data">
+                        <span class="ppv-today-stat-value" id="ppv-qs-points"><?php echo $qs_points; ?></span>
+                        <span class="ppv-today-stat-label"><?php echo self::t('qs_points', 'Punkte'); ?></span>
+                    </div>
+                </div>
+                <div class="ppv-today-stat">
+                    <div class="ppv-today-stat-icon"><i class="ri-gift-line"></i></div>
+                    <div class="ppv-today-stat-data">
+                        <span class="ppv-today-stat-value" id="ppv-qs-rewards"><?php echo $qs_rewards; ?></span>
+                        <span class="ppv-today-stat-label"><?php echo self::t('qs_rewards', 'Rewards'); ?></span>
+                    </div>
+                </div>
             </div>
 
-            <table id="ppv-pos-log" class="glass-table">
-                <thead>
-                    <tr>
-                        <th><?php echo self::t('t_col_time', 'Zeit'); ?></th>
-                        <th><?php echo self::t('t_col_customer', 'Kunde'); ?></th>
-                        <th><?php echo self::t('t_col_status', 'Status'); ?></th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div class="ppv-pos-header" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 0;">
+                <i class="ri-list-check-3" style="font-size:18px;color:var(--pp-primary,#6366f1);"></i>
+                <h4 class="ppv-pos-title" style="font-size:14px;margin:0;font-weight:600;color:var(--pp-text,#1e293b);letter-spacing:-0.01em;"><?php echo self::t('table_title', 'Letzte Scans'); ?></h4>
+            </div>
+
+            <div id="ppv-pos-log" class="ppv-scan-list"></div>
 
             <!-- 📥 CSV EXPORT DROPDOWN - at bottom -->
             <div class="ppv-csv-wrapper" style="margin-top: 12px; text-align: center;">

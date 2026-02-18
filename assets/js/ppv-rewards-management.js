@@ -42,6 +42,149 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ============================================================
+   * 🎯 TEMPLATE PRESETS - PRE-FILL FORM
+   * ============================================================ */
+  const tplCards = document.querySelectorAll(".ppv-tpl-card:not(#ppv-ai-suggest-btn)");
+  const aiSuggestBtn = document.getElementById("ppv-ai-suggest-btn");
+  const aiSugPanel = document.getElementById("ppv-ai-suggestions");
+  const aiSugBody = document.getElementById("ppv-ai-sug-body");
+  const aiSugClose = document.getElementById("ppv-ai-sug-close");
+
+  function applyTemplate(data) {
+    // Show form
+    if (formWrapper) formWrapper.style.display = "block";
+    if (toggleFormBtn) {
+      toggleFormBtn.innerHTML = '<i class="ri-close-line"></i><span>' + (L.rewards_form_cancel || 'Mégse') + '</span>';
+    }
+
+    // Pre-fill fields
+    const titleEl = document.getElementById("reward-title");
+    const pointsEl = document.getElementById("reward-points");
+    const pointsGivenEl = document.getElementById("reward-points-given");
+    const descEl = document.getElementById("reward-description");
+    const typeEl = document.getElementById("reward-type");
+    const valueEl = document.getElementById("reward-value");
+    const freeProductEl = document.getElementById("reward-free-product-name");
+
+    if (titleEl) titleEl.value = data.title || "";
+    if (pointsEl) pointsEl.value = data.points || "";
+    if (pointsGivenEl && !pointsGivenEl.disabled) pointsGivenEl.value = data.given || "1";
+    if (descEl) descEl.value = data.desc || "";
+    if (typeEl) { typeEl.value = data.type || "discount_percent"; typeEl.dispatchEvent(new Event("change")); }
+    if (valueEl) valueEl.value = data.value || "";
+    if (freeProductEl && data.product) freeProductEl.value = data.product;
+    const freeProductValueEl = document.getElementById("reward-free-product-value");
+    if (freeProductValueEl && data.product_value) freeProductValueEl.value = data.product_value;
+
+    // Reset edit mode
+    editMode = false;
+    editID = 0;
+    if (saveBtn) saveBtn.innerHTML = '<i class="ri-save-line"></i><span>' + (L.rewards_form_save || 'Mentés') + '</span>';
+
+    // Scroll to form
+    if (formWrapper) formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Template card clicks
+  tplCards.forEach(function(card) {
+    card.addEventListener("click", function() {
+      // Close AI panel if open
+      if (aiSugPanel) aiSugPanel.classList.remove("show");
+
+      applyTemplate({
+        title: card.dataset.title || "",
+        type: card.dataset.type || "discount_percent",
+        value: card.dataset.value || "",
+        points: card.dataset.points || "",
+        given: card.dataset.given || "1",
+        product_value: card.dataset.productValue || "",
+        desc: card.dataset.desc || "",
+        product: card.dataset.product || ""
+      });
+    });
+  });
+
+  // AI Suggest button
+  if (aiSuggestBtn && aiSugPanel && aiSugBody) {
+    aiSuggestBtn.addEventListener("click", async function() {
+      const isVisible = aiSugPanel.classList.contains("show");
+      if (isVisible) { aiSugPanel.classList.remove("show"); return; }
+
+      aiSugPanel.classList.add("show");
+      aiSugBody.innerHTML = '<div class="ppv-ai-sug-loading"><i class="ri-loader-4-line"></i> Ideen werden generiert...</div>';
+
+      const ajaxUrl = ppv_rewards_mgmt?.ajax_url || "/wp-admin/admin-ajax.php";
+      const storeName = document.querySelector(".ppv-rewards-store-name")?.textContent || "";
+
+      try {
+        const fd = new FormData();
+        fd.append("action", "ppv_ai_support_chat");
+        fd.append("message", "Schlage mir 3 kreative Belohnungs-Ideen für mein Geschäft vor. Für jede Idee gib: Titel, Typ (discount_percent/discount_fixed/free_product), Wert, benötigte Punkte, Punkte pro Scan, und kurze Beschreibung. Format: JSON Array mit Objekten {title, type, value, points, given, desc, product}. NUR das JSON Array zurückgeben, kein Text davor oder danach.");
+        fd.append("history", "[]");
+        fd.append("lang", "de");
+
+        const res = await fetch(ajaxUrl, { method: "POST", body: fd, credentials: "same-origin" });
+        const json = await res.json();
+
+        if (json.success && json.data?.reply) {
+          // Try to parse JSON from AI reply
+          let suggestions = [];
+          try {
+            const raw = json.data.reply;
+            const jsonMatch = raw.match(/\[[\s\S]*\]/);
+            if (jsonMatch) suggestions = JSON.parse(jsonMatch[0]);
+          } catch(e) { /* parse failed */ }
+
+          if (suggestions.length > 0) {
+            const icons = ["ri-percent-line", "ri-money-euro-circle-line", "ri-gift-line", "ri-cup-line", "ri-vip-crown-line"];
+            aiSugBody.innerHTML = '<div class="ppv-ai-sug-list">' + suggestions.map(function(s, i) {
+              return '<div class="ppv-ai-sug-item" data-sug=\'' + JSON.stringify(s).replace(/'/g, "&#39;") + '">'
+                + '<div class="ppv-ai-sug-item-icon"><i class="' + icons[i % icons.length] + '"></i></div>'
+                + '<div class="ppv-ai-sug-item-text">'
+                + '<div class="ppv-ai-sug-item-title">' + escapeHtml(s.title || "Vorschlag " + (i+1)) + '</div>'
+                + '<div class="ppv-ai-sug-item-desc">' + escapeHtml(s.desc || "") + '</div>'
+                + '</div>'
+                + '<div class="ppv-ai-sug-item-arrow"><i class="ri-arrow-right-s-line"></i></div>'
+                + '</div>';
+            }).join("") + '</div>';
+
+            // Click handlers for suggestions
+            aiSugBody.querySelectorAll(".ppv-ai-sug-item").forEach(function(item) {
+              item.addEventListener("click", function() {
+                const sug = JSON.parse(item.dataset.sug);
+                aiSugPanel.classList.remove("show");
+                applyTemplate({
+                  title: sug.title || "",
+                  type: sug.type || "discount_percent",
+                  value: String(sug.value || ""),
+                  points: String(sug.points || "50"),
+                  given: String(sug.given || "1"),
+                  desc: sug.desc || "",
+                  product: sug.product || "",
+                  product_value: String(sug.product_value || "")
+                });
+              });
+            });
+          } else {
+            aiSugBody.innerHTML = '<div class="ppv-ai-sug-loading" style="color:#94a3b8">Keine Vorschläge erhalten. Versuche es nochmal.</div>';
+          }
+        } else {
+          aiSugBody.innerHTML = '<div class="ppv-ai-sug-loading" style="color:#ef4444">Fehler beim Laden der Vorschläge.</div>';
+        }
+      } catch(err) {
+        aiSugBody.innerHTML = '<div class="ppv-ai-sug-loading" style="color:#ef4444">Verbindungsfehler. Versuche es nochmal.</div>';
+      }
+    });
+  }
+
+  // Close AI suggestions
+  if (aiSugClose) {
+    aiSugClose.addEventListener("click", function() {
+      if (aiSugPanel) aiSugPanel.classList.remove("show");
+    });
+  }
+
+  /* ============================================================
    * 🧩 TOAST HELPER
    * ============================================================ */
   function showToast(msg, type = "info") {
