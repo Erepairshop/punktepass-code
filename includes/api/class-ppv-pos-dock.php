@@ -285,11 +285,11 @@ class PPV_POS_DOCK {
         global $wpdb;
         $today = date('Y-m-d');
         $scans = (int)$wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points WHERE store_id=%d AND DATE(created)=%s",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points WHERE store_id=%d AND DATE(created)=%s AND points > 0",
             $store_id, $today
         ));
         $points = (int)$wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points) FROM {$wpdb->prefix}ppv_points WHERE store_id=%d AND DATE(created)=%s",
+            "SELECT COALESCE(SUM(points),0) FROM {$wpdb->prefix}ppv_points WHERE store_id=%d AND DATE(created)=%s AND points > 0",
             $store_id, $today
         ));
         return [

@@ -101,8 +101,8 @@ class PPV_POS_STATS_API {
 
         // Combine 3 ppv_points queries into 1
         $points_stats = $wpdb->get_row($wpdb->prepare(
-            "SELECT COUNT(*) AS scan_count,
-                    COALESCE(SUM(points), 0) AS total_points,
+            "SELECT COUNT(CASE WHEN points > 0 THEN 1 END) AS scan_count,
+                    COALESCE(SUM(CASE WHEN points > 0 THEN points ELSE 0 END), 0) AS total_points,
                     COALESCE(SUM(CASE WHEN type='sale' THEN points ELSE 0 END), 0) AS sale_points,
                     MAX(created) AS last_scan
              FROM {$prefix}ppv_points
@@ -136,7 +136,7 @@ class PPV_POS_STATS_API {
         $chart_data = $wpdb->get_results($wpdb->prepare(
             "SELECT DATE(created) as day, SUM(points) as total
              FROM {$prefix}ppv_points
-             WHERE store_id=%d AND created >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+             WHERE store_id=%d AND created >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND points > 0
              GROUP BY DATE(created)
              ORDER BY day DESC
              LIMIT 7",
