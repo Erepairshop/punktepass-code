@@ -131,6 +131,14 @@
             '</div>' +
             '<div class="ra-repair-actions">' +
                 '<select class="ra-status-select" data-repair-id="' + r.id + '">' + options + '</select>' +
+                '<button type="button" class="ra-btn ra-btn-sm ra-angebot-from-repair" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;margin-left:8px;font-size:11px" ' +
+                    'data-name="' + escAttr(r.customer_name || '') + '" ' +
+                    'data-email="' + escAttr(r.customer_email || '') + '" ' +
+                    'data-phone="' + escAttr(r.customer_phone || '') + '" ' +
+                    'data-device="' + escAttr(device) + '" ' +
+                    'data-problem="' + escAttr(r.problem_description || '') + '">' +
+                    '<i class="ri-draft-line"></i> Angebot' +
+                '</button>' +
             '</div>' +
         '</div>';
     }
@@ -261,6 +269,11 @@
         var div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    }
+
+    function escAttr(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
     function formatDate(str) {

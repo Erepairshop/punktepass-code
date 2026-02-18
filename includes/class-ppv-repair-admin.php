@@ -5333,6 +5333,24 @@ echo '</div></div>
         if(e.target===nangModal)nangModal.classList.remove("show");
     });
 
+    // Angebot from repair card (event delegation)
+    document.addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-angebot-from-repair");
+        if(!btn)return;
+        clearNewAngebotForm();
+        document.getElementById("ra-nang-name").value=btn.dataset.name||"";
+        document.getElementById("ra-nang-email").value=btn.dataset.email||"";
+        document.getElementById("ra-nang-phone").value=btn.dataset.phone||"";
+        // Pre-fill first line with device + problem
+        var desc=(btn.dataset.device||"");
+        if(btn.dataset.problem)desc+=(desc?" - ":"")+btn.dataset.problem;
+        if(desc){
+            var firstDesc=document.querySelector("#ra-nang-lines .ra-inv-line-desc");
+            if(firstDesc)firstDesc.value=desc;
+        }
+        nangModal.classList.add("show");
+    });
+
     function clearNewAngebotForm(){
         document.getElementById("ra-nang-customer-id").value="";
         document.getElementById("ra-nang-name").value="";

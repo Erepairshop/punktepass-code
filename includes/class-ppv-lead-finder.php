@@ -144,39 +144,91 @@ class PPV_Lead_Finder {
         $query = sanitize_text_field($_POST['search_query'] ?? '');
         $region = sanitize_text_field($_POST['search_region'] ?? '');
 
-        if (empty($query) || empty($region)) {
+        if (empty($query)) {
             wp_redirect("/formular/lead-finder?error=empty_search");
             exit;
         }
 
-        $full_query = "$query $region";
+        // Build full query - region is optional (user may include it in query itself)
+        $full_query = trim("$query $region");
         $found_count = 0;
+        $emails_found = 0;
 
-        // Method 1: Google Maps search (via places autocomplete-like approach)
-        $maps_results = self::search_google_maps($query, $region);
-        foreach ($maps_results as $business) {
-            if (self::add_lead_if_new($business, $region, $full_query)) {
-                $found_count++;
+        // --- Tavily API search: multiple query variations for max coverage ---
+        $queries = [
+            $full_query,
+            "$full_query email kontakt",
+            "$full_query impressum",
+        ];
+
+        $all_results = [];
+        foreach ($queries as $q) {
+            $results = self::tavily_search($q, 10);
+            foreach ($results as $r) {
+                // Deduplicate by URL
+                $url = $r['url'] ?? '';
+                if (!empty($url) && !isset($all_results[$url])) {
+                    $all_results[$url] = $r;
+                }
             }
         }
 
-        // Method 2: Bing Places search
-        $bing_results = self::search_bing($full_query);
-        foreach ($bing_results as $business) {
-            if (self::add_lead_if_new($business, $region, $full_query)) {
+        // Process each Tavily result
+        foreach ($all_results as $url => $r) {
+            $title = $r['title'] ?? '';
+            $content = ($r['content'] ?? '') . ' ' . $title;
+            $domain = parse_url($url, PHP_URL_HOST);
+
+            // Skip social media / non-business sites
+            if (preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft|apple\.com)/i', $domain ?? '')) {
+                continue;
+            }
+
+            // Extract business name from title
+            $name = preg_replace('/\s*[-|–—]\s*.*$/', '', $title); // Remove " - Site description"
+            $name = self::clean_business_name($name);
+
+            if (strlen($name) < 4 || !self::is_valid_business_name($name)) {
+                // Fallback: use domain as name
+                $name = preg_replace('/^www\./', '', $domain ?? '');
+                $name = preg_replace('/\.(de|com|net|org|eu|info|shop|store)$/i', '', $name);
+                $name = ucfirst($name);
+            }
+
+            if (strlen($name) < 3) continue;
+
+            // Extract emails from content
+            $email = '';
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $email_matches);
+            if (!empty($email_matches[0])) {
+                $valid = self::filter_emails($email_matches[0]);
+                if (!empty($valid)) {
+                    $email = strtolower(reset($valid));
+                }
+            }
+
+            // Extract phone from content
+            $phone = '';
+            preg_match_all('/(?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18}/u', $content, $phone_matches);
+            if (!empty($phone_matches[0])) {
+                $phone = trim(preg_replace('/\s+/', ' ', $phone_matches[0][0]));
+                if (strlen(preg_replace('/\D/', '', $phone)) < 8) $phone = '';
+            }
+
+            $business = [
+                'name' => $name,
+                'website' => $url,
+                'email' => $email,
+                'phone' => $phone,
+            ];
+
+            if (self::add_lead_if_new($business, $region ?: '', $full_query)) {
                 $found_count++;
+                if (!empty($email)) $emails_found++;
             }
         }
 
-        // Method 3: DuckDuckGo search
-        $ddg_results = self::search_duckduckgo($full_query);
-        foreach ($ddg_results as $business) {
-            if (self::add_lead_if_new($business, $region, $full_query)) {
-                $found_count++;
-            }
-        }
-
-        wp_redirect("/formular/lead-finder?success=search&found=$found_count&region=" . urlencode($region));
+        wp_redirect("/formular/lead-finder?success=search&found=$found_count&emails=$emails_found&region=" . urlencode($region));
         exit;
     }
 
@@ -1690,7 +1742,7 @@ class PPV_Lead_Finder {
 
         <?php if ($success === 'search'): ?>
             <div class="alert alert-success">
-                <i class="ri-check-line"></i> Suche abgeschlossen! <?php echo intval($_GET['found'] ?? 0); ?> neue Leads gefunden.
+                <i class="ri-check-line"></i> Suche abgeschlossen! <?php echo intval($_GET['found'] ?? 0); ?> neue Leads gefunden<?php if (!empty($_GET['emails'])): ?>, davon <strong><?php echo intval($_GET['emails']); ?> mit Email</strong><?php endif; ?>. <?php if (intval($_GET['found'] ?? 0) > 0 && intval($_GET['emails'] ?? 0) < intval($_GET['found'] ?? 0)): ?>Klicke "Alle scrapen" für die restlichen Emails!<?php endif; ?>
             </div>
         <?php elseif ($success === 'import'): ?>
             <div class="alert alert-success">
@@ -1716,7 +1768,7 @@ class PPV_Lead_Finder {
 
         <?php if ($error === 'empty_search'): ?>
             <div class="alert alert-error">
-                <i class="ri-error-warning-line"></i> Bitte Suchbegriff und Region eingeben.
+                <i class="ri-error-warning-line"></i> Bitte Suchbegriff eingeben.
             </div>
         <?php elseif ($error === 'no_emails'): ?>
             <div class="alert alert-error">
@@ -1742,8 +1794,12 @@ class PPV_Lead_Finder {
 
         <!-- Manual Import (Google Maps) -->
         <div class="card">
-            <div class="card-header"><i class="ri-map-pin-line"></i> Google Maps Import <span style="font-weight:normal;color:#10b981;font-size:12px;margin-left:8px">EMPFOHLEN</span></div>
-            <div class="card-body">
+            <div class="card-header" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+                <i class="ri-map-pin-line"></i> Google Maps Import
+                <span style="font-weight:normal;color:#6b7280;font-size:12px;margin-left:8px">(manuelles Copy&amp;Paste)</span>
+                <i class="ri-arrow-down-s-line" style="margin-left:auto"></i>
+            </div>
+            <div class="card-body" style="display:none">
                 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:16px">
                     <strong style="color:#065f46"><i class="ri-lightbulb-line"></i> So geht's:</strong>
                     <ol style="margin:10px 0 0 20px;color:#065f46;font-size:13px;line-height:1.8">
@@ -1779,25 +1835,33 @@ class PPV_Lead_Finder {
             </div>
         </div>
 
-        <!-- Auto Search (may be blocked) -->
+        <!-- Auto Search (Tavily API) -->
         <div class="card">
-            <div class="card-header" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <div class="card-header">
                 <i class="ri-search-line"></i> Automatische Suche
-                <span style="font-weight:normal;color:#f59e0b;font-size:11px;margin-left:8px">(kann blockiert werden)</span>
-                <i class="ri-arrow-down-s-line" style="margin-left:auto"></i>
+                <span style="font-weight:normal;color:#10b981;font-size:12px;margin-left:8px">Tavily API</span>
             </div>
-            <div class="card-body" style="display:none">
+            <div class="card-body">
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:16px">
+                    <strong style="color:#1e40af"><i class="ri-lightbulb-line"></i> Wie Google suchen:</strong>
+                    <p style="margin:8px 0 0;color:#1e40af;font-size:13px;line-height:1.6">
+                        Gib einfach ein, wonach du suchst – wie bei Google. z.B.:<br>
+                        <code style="background:#dbeafe;padding:2px 6px;border-radius:4px">computer service münchen email</code> oder
+                        <code style="background:#dbeafe;padding:2px 6px;border-radius:4px">handyreparatur hamburg kontakt</code><br>
+                        Die Suche findet Firmen, Websites und Emails automatisch!
+                    </p>
+                </div>
                 <form method="post">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Suchbegriff (z.B. "Handyreparatur")</label>
-                            <input type="text" name="search_query" class="form-control" value="Handyreparatur" placeholder="Handyreparatur">
+                    <div style="display:flex;gap:12px;align-items:end">
+                        <div class="form-group" style="flex:3">
+                            <label>Suchbegriff <span style="font-weight:normal;color:#6b7280;font-size:12px">(wie bei Google eingeben)</span></label>
+                            <input type="text" name="search_query" class="form-control" placeholder="z.B. computer service münchen email" style="font-size:16px;padding:12px 16px">
                         </div>
-                        <div class="form-group">
-                            <label>Region / Stadt</label>
-                            <input type="text" name="search_region" class="form-control" placeholder="z.B. Hamburg, München, Berlin">
+                        <div class="form-group" style="flex:1">
+                            <label>Region <span style="font-weight:normal;color:#6b7280;font-size:12px">(optional)</span></label>
+                            <input type="text" name="search_region" class="form-control" placeholder="z.B. München" style="padding:12px 16px">
                         </div>
-                        <button type="submit" name="start_search" class="btn btn-primary">
+                        <button type="submit" name="start_search" class="btn btn-primary" style="padding:12px 24px;font-size:15px">
                             <i class="ri-search-line"></i> Suchen
                         </button>
                     </div>
