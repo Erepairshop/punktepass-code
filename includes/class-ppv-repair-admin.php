@@ -489,6 +489,8 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
             'vehicle_first_reg'   => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_first_reg_label')],
             'vehicle_tuev'        => ['enabled' => false, 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
             'condition_check_kfz' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_kfz')],
+            // PC / Computer fields
+            'condition_check_pc' => ['enabled' => false, 'label' => PPV_Lang::t('repair_fb_condition_pc')],
         ];
         foreach ($fc_defaults as $k => $v) { if (!isset($field_config[$k])) $field_config[$k] = $v; }
 
@@ -559,7 +561,7 @@ a:hover{color:#5a67d8}
 
 /* ========== Layout ========== */
 @keyframes raFadeIn{from{opacity:0.99}to{opacity:1}}
-.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box;transform:translateZ(0);backface-visibility:hidden;animation:raFadeIn 0.01s ease-out}
+.ra-wrap{width:100%;max-width:100%;margin:0 auto;padding:16px 24px 40px;box-sizing:border-box;animation:raFadeIn 0.01s ease-out}
 @media(min-width:1200px){.ra-wrap{padding:16px 40px 40px}}
 
 /* ========== Header ========== */
@@ -799,6 +801,12 @@ a:hover{color:#5a67d8}
 .ra-reward-reject{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #fecaca;background:#fff;color:#dc2626;display:inline-flex;align-items:center;gap:4px;transition:all .2s}
 .ra-reward-reject:hover{background:#fef2f2}
 .ra-reward-approved-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#d1fae5;color:#065f46;font-size:12px;font-weight:600;border-radius:8px;margin:8px 0}
+.ra-btn-parts-arrived{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:10px 18px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .25s ease;width:fit-content;box-shadow:0 2px 8px rgba(217,119,6,.3);letter-spacing:.2px;position:relative;overflow:hidden}
+.ra-btn-parts-arrived::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);transition:left .5s}
+.ra-btn-parts-arrived:hover{background:linear-gradient(135deg,#b45309,#d97706);box-shadow:0 4px 14px rgba(217,119,6,.4);transform:translateY(-1px)}
+.ra-btn-parts-arrived:hover::before{left:100%}
+.ra-btn-parts-arrived:active{transform:translateY(0) scale(.98);box-shadow:0 1px 4px rgba(217,119,6,.3)}
+.ra-btn-parts-arrived i{font-size:17px}
 
 /* ========== Comments Widget - Modern ========== */
 .ra-repair-comments-section{margin:10px 0 4px}
@@ -1529,6 +1537,8 @@ $fb_all_builtins = [
     'vehicle_first_reg'   => ['section' => 2, 'icon' => 'ri-calendar-check-line','ph' => PPV_Lang::t('repair_vehicle_first_reg_placeholder'),'input' => 'text'],
     'vehicle_tuev'        => ['section' => 2, 'icon' => 'ri-shield-star-line','ph' => PPV_Lang::t('repair_vehicle_tuev_placeholder'), 'input' => 'text'],
     'condition_check_kfz' => ['section' => 2, 'icon' => 'ri-car-washing-line','ph' => '', 'input' => 'condition_kfz'],
+    // PC / Computer fields
+    'condition_check_pc' => ['section' => 2, 'icon' => 'ri-computer-line','ph' => '', 'input' => 'condition_pc'],
     'accessories'     => ['section' => 3, 'icon' => 'ri-checkbox-multiple-line','ph' => '', 'input' => 'accessories'],
     'photo_upload'    => ['section' => 3, 'icon' => 'ri-camera-line',   'ph' => '',    'input' => 'photo'],
     'priority'        => ['section' => 3, 'icon' => 'ri-flashlight-line','ph' => '',   'input' => 'priority'],
@@ -1711,6 +1721,9 @@ $pal_groups = [
         'vehicle_first_reg'   => ['icon' => 'ri-calendar-check-line', 'name' => $fc_defaults['vehicle_first_reg']['label']],
         'vehicle_tuev'        => ['icon' => 'ri-shield-star-line',    'name' => $fc_defaults['vehicle_tuev']['label']],
         'condition_check_kfz' => ['icon' => 'ri-car-washing-line',    'name' => $fc_defaults['condition_check_kfz']['label']],
+    ],
+    PPV_Lang::t('repair_admin_fc_pc') => [
+        'condition_check_pc' => ['icon' => 'ri-computer-line',       'name' => $fc_defaults['condition_check_pc']['label']],
     ],
     PPV_Lang::t('repair_admin_fc_extra') => [
         'accessories'   => ['icon' => 'ri-checkbox-multiple-line',   'name' => $fc_defaults['accessories']['label']],
@@ -1925,6 +1938,10 @@ echo '</div></div>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                         <input type="checkbox" name="notify_waiting_parts" value="1" ' . (in_array('waiting_parts', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
                         <span style="color:#ec4899"><i class="ri-time-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_waiting')) . '
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_parts_arrived" value="1" ' . (in_array('parts_arrived', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#059669"><i class="ri-checkbox-circle-fill"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived_short')) . '
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                         <input type="checkbox" name="notify_done" value="1" ' . (in_array('done', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
@@ -2474,6 +2491,21 @@ echo '</div></div>
         <button type="button" class="ra-inv-add" id="ra-inv-add-line">
             <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_line')) . '
         </button>
+        <div id="ra-inv-discount-section" style="display:none;margin:12px 0;padding:12px 14px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1.5px solid #86efac;border-radius:10px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <i class="ri-gift-line" style="color:#059669;font-size:16px"></i>
+                <span style="font-size:13px;font-weight:700;color:#059669">' . esc_html(PPV_Lang::t('repair_admin_reward_discount')) . '</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+                <input type="text" id="ra-inv-discount-desc" class="ra-input" style="flex:2;font-size:13px;background:#fff" placeholder="Rabatt">
+                <div style="display:flex;align-items:center;gap:4px;flex:1">
+                    <span style="color:#dc2626;font-weight:700;font-size:14px">&minus;</span>
+                    <input type="number" id="ra-inv-discount-amount" class="ra-input" style="flex:1;font-size:13px;background:#fff;color:#dc2626;font-weight:600" step="0.01" min="0" placeholder="0.00">
+                    <span style="color:#dc2626;font-weight:600;font-size:13px">&euro;</span>
+                </div>
+                <button type="button" id="ra-inv-discount-remove" style="width:28px;height:28px;border:none;background:#fee2e2;color:#dc2626;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
+            </div>
+        </div>
         <div class="ra-inv-totals">
             <div class="ra-inv-total-row">
                 <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
@@ -2530,6 +2562,52 @@ echo '</div></div>
             </button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2;min-width:180px" id="ra-inv-modal-submit">
                 <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_finish_invoice')) . '
+            </button>
+        </div>
+    </div>
+</div>';
+
+        // Termin Modal (Teil angekommen - part arrived, schedule appointment)
+        echo '<div class="ra-modal-overlay" id="ra-termin-modal">
+    <div class="ra-modal" style="max-width:440px">
+        <h3 style="display:flex;align-items:center;gap:8px"><i class="ri-checkbox-circle-fill" style="color:#059669"></i> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived')) . '</h3>
+        <p class="ra-modal-sub">' . esc_html(PPV_Lang::t('repair_admin_parts_arrived_desc')) . '</p>
+        <div id="ra-termin-info" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#0369a1;display:none"></div>
+
+        <div style="margin-bottom:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                <input type="checkbox" id="ra-termin-no-termin" style="width:18px;height:18px;cursor:pointer;accent-color:#d97706">
+                <i class="ri-checkbox-circle-fill" style="color:#d97706"></i> ' . esc_html(PPV_Lang::t('repair_admin_no_termin')) . '
+            </label>
+            <p style="margin:6px 0 0 26px;font-size:12px;color:#92400e">' . esc_html(PPV_Lang::t('repair_admin_no_termin_desc')) . '</p>
+        </div>
+
+        <div id="ra-termin-fields">
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-calendar-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_date')) . '</label>
+            <input type="date" id="ra-termin-date" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-time-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_time')) . '</label>
+            <input type="time" id="ra-termin-time" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-chat-1-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_message')) . '</label>
+            <textarea id="ra-termin-message" class="ra-input" rows="2" style="width:100%;font-size:13px;padding:10px 12px;resize:vertical" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_termin_message_ph')) . '"></textarea>
+        </div>
+
+        <div style="margin-bottom:16px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                <input type="checkbox" id="ra-termin-send-email" checked style="width:18px;height:18px;cursor:pointer;accent-color:#059669">
+                <i class="ri-mail-send-line" style="color:#059669"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_send_email')) . '
+            </label>
+        </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-termin-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2;background:#059669" id="ra-termin-submit">
+                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_confirm')) . '
             </button>
         </div>
     </div>
@@ -3006,6 +3084,10 @@ echo '</div></div>
         STORE_EMAIL="' . esc_js($store->repair_company_email ?? '') . '",
         STORE_TAX_ID="' . esc_js($store->repair_tax_id ?? '') . '",
         STORE_OWNER="' . esc_js($store->repair_owner_name ?? '') . '",
+        REWARD_NAME="' . esc_js($reward_name) . '",
+        REWARD_TYPE="' . esc_js($reward_type) . '",
+        REWARD_VALUE=parseFloat("' . $reward_value . '"),
+        PP_ENABLED=!!parseInt("' . intval($store->repair_punktepass_enabled ?? 1) . '"),
         searchTimer=null,
         currentPage=1,
         invSortBy="created_at",
@@ -3172,6 +3254,13 @@ echo '</div></div>
         'btn_delete' => PPV_Lang::t('repair_admin_delete_repair'),
         'comments_label' => PPV_Lang::t('repair_admin_comments'),
         'add_comment_ph' => PPV_Lang::t('repair_admin_add_comment_ph'),
+        'parts_arrived' => PPV_Lang::t('repair_admin_parts_arrived'),
+        'parts_arrived_desc' => PPV_Lang::t('repair_admin_parts_arrived_desc'),
+        'termin_confirm' => PPV_Lang::t('repair_admin_termin_confirm'),
+        'termin_success' => PPV_Lang::t('repair_admin_termin_success'),
+        'termin_no_date' => PPV_Lang::t('repair_admin_termin_no_date'),
+        'no_termin_confirm' => PPV_Lang::t('repair_admin_no_termin_confirm'),
+        'no_termin_success' => PPV_Lang::t('repair_admin_no_termin_success'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
         'finish_title' => PPV_Lang::t('repair_admin_finish_repair'),
@@ -3360,6 +3449,128 @@ echo '</div></div>
         });
     });
 
+    /* ===== Teil angekommen (Parts Arrived) + Termin Modal ===== */
+    var terminModal=document.getElementById("ra-termin-modal"),
+        terminRepairId=null,
+        terminNoTerminCb=document.getElementById("ra-termin-no-termin"),
+        terminFields=document.getElementById("ra-termin-fields"),
+        terminSubmitBtn=document.getElementById("ra-termin-submit");
+
+    // Toggle termin fields visibility
+    terminNoTerminCb.addEventListener("change",function(){
+        if(this.checked){
+            terminFields.style.display="none";
+            terminSubmitBtn.innerHTML=\'<i class="ri-check-line"></i> \'+L.no_termin_confirm;
+        }else{
+            terminFields.style.display="";
+            terminSubmitBtn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
+        }
+    });
+
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-btn-parts-arrived");
+        if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
+        terminRepairId=card.dataset.id;
+        // Show customer info
+        var info=document.getElementById("ra-termin-info");
+        var cname=card.dataset.name||"";
+        var cdev=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
+        if(cname||cdev){info.textContent=cname+(cdev?" \u2013 "+cdev:"");info.style.display="block"}else{info.style.display="none"}
+        // Reset fields with tomorrow as default
+        var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+        document.getElementById("ra-termin-date").value=tomorrow.toISOString().split("T")[0];
+        document.getElementById("ra-termin-time").value="10:00";
+        document.getElementById("ra-termin-message").value="";
+        document.getElementById("ra-termin-send-email").checked=true;
+        // Reset no-termin checkbox
+        terminNoTerminCb.checked=false;
+        terminFields.style.display="";
+        terminSubmitBtn.innerHTML=\'<i class="ri-check-line"></i> \'+L.termin_confirm;
+        terminModal.classList.add("show");
+        // Scroll modal content to top and ensure visibility
+        var mContent=terminModal.querySelector(".ra-modal");
+        if(mContent)mContent.scrollTop=0;
+        window.scrollTo(0,0);
+    });
+
+    document.getElementById("ra-termin-cancel").addEventListener("click",function(){
+        terminModal.classList.remove("show");
+        terminRepairId=null;
+    });
+    terminModal.addEventListener("click",function(e){
+        if(e.target===terminModal){terminModal.classList.remove("show");terminRepairId=null}
+    });
+
+    document.getElementById("ra-termin-submit").addEventListener("click",function(){
+        if(!terminRepairId)return;
+        var noTermin=terminNoTerminCb.checked;
+        var tDate="",tTime="",msg="",sendEmail=false;
+        if(!noTermin){
+            tDate=document.getElementById("ra-termin-date").value;
+            if(!tDate){toast(L.termin_no_date);return}
+            tTime=document.getElementById("ra-termin-time").value;
+            msg=document.getElementById("ra-termin-message").value;
+            sendEmail=document.getElementById("ra-termin-send-email").checked;
+        }
+        var btn=this;
+        btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_parts_arrived");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",terminRepairId);
+        if(noTermin){
+            fd.append("no_termin","1");
+        }else{
+            fd.append("termin_date",tDate);
+            fd.append("termin_time",tTime);
+            fd.append("custom_message",msg);
+            if(sendEmail)fd.append("send_email","1");
+        }
+        var btnLabel=noTermin?L.no_termin_confirm:L.termin_confirm;
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-check-line"></i> \'+btnLabel;
+            if(data.success){
+                toast(noTermin?L.no_termin_success:L.termin_success);
+                terminModal.classList.remove("show");
+                // Update card status to in_progress
+                var card=document.querySelector(\'.ra-repair-card[data-id="\'+terminRepairId+\'"]\');
+                if(card){
+                    updateBadge(card,"in_progress");
+                    var sel=card.querySelector(".ra-status-select");
+                    if(sel){sel.value="in_progress";sel.setAttribute("data-prev","in_progress")}
+                    // Remove the parts-arrived button
+                    var paBtn=card.querySelector(".ra-btn-parts-arrived");
+                    if(paBtn)paBtn.remove();
+                    // Add termin badge only if termin was set
+                    if(!noTermin){
+                        var body=card.querySelector(".ra-repair-body");
+                        if(body&&tDate){
+                            var tBadge=document.createElement("div");
+                            tBadge.className="ra-termin-badge";
+                            var dParts=tDate.split("-");
+                            tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                            body.appendChild(tBadge);
+                        }
+                    }
+                }
+                terminRepairId=null;
+            }else{
+                toast(data.data&&data.data.message?data.data.message:L.error);
+            }
+        })
+        .catch(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-check-line"></i> \'+btnLabel;
+            toast(L.connection_error);
+        });
+    });
+
     /* ===== Print Repair ===== */
     document.getElementById("ra-repairs-list").addEventListener("click",function(e){
         var btn=e.target.closest(".ra-btn-print");
@@ -3403,7 +3614,7 @@ echo '</div></div>
                 var cf=JSON.parse(data.customfields);
                 var cfLabels={device_color:L.cf_color||"Farbe",purchase_date:L.cf_purchase_date||"Kaufdatum",priority:L.cf_priority||"Priorität",cost_limit:L.cf_cost_limit||"Kostenrahmen",vehicle_plate:L.cf_vehicle_plate||"Kennzeichen",vehicle_vin:L.cf_vehicle_vin||"FIN/VIN",vehicle_mileage:L.cf_vehicle_mileage||"Kilometerstand",vehicle_first_reg:L.cf_vehicle_first_reg||"Erstzulassung",vehicle_tuev:L.cf_vehicle_tuev||"TÜV/HU"};
                 for(var ck in cf){
-                    if(ck==="photos"||ck==="condition_check"||ck==="condition_check_kfz") continue;
+                    if(ck==="photos"||ck==="condition_check"||ck==="condition_check_kfz"||ck==="condition_check_pc") continue;
                     var lbl=cfLabels[ck]||ck;
                     if(typeof cf[ck]==="string"&&cf[ck]) cfHtml+=\'<div class="field"><span class="label">\'+esc(lbl)+\':</span><span class="value">\'+esc(cf[ck])+\'</span></div>\';
                 }
@@ -3418,6 +3629,12 @@ echo '</div></div>
                     var kParts=[];
                     for(var kp in ckfz) kParts.push(kp+": "+ckfz[kp].toUpperCase());
                     if(kParts.length) cfHtml+=\'<div class="field"><span class="label">\'+(L.cf_condition_kfz||"KFZ-Zustand")+\':</span><span class="value">\'+esc(kParts.join(", "))+\'</span></div>\';
+                }
+                if(cf.condition_check_pc){
+                    var cpc=typeof cf.condition_check_pc==="string"?JSON.parse(cf.condition_check_pc):cf.condition_check_pc;
+                    var pcParts=[];
+                    for(var pp in cpc) pcParts.push(pp+": "+cpc[pp].toUpperCase());
+                    if(pcParts.length) cfHtml+=\'<div class="field"><span class="label">PC-Zustand:</span><span class="value">\'+esc(pcParts.join(", "))+\'</span></div>\';
                 }
                 if(cf.photos&&cf.photos.length){
                     cfHtml+=\'<div class="field"><span class="label">Fotos:</span><span class="value">\';
@@ -3676,6 +3893,8 @@ echo '</div></div>
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
                 \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
                 invoiceBadgeHtml+
+                (r.status==="waiting_parts"?\'<button class="ra-btn-parts-arrived" data-repair-id="\'+r.id+\'"><i class="ri-checkbox-circle-fill"></i> \'+L.parts_arrived+\'</button>\':"")+
+                (r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()?\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\':"")+
             \'</div>\'+
             commentsHtml+
             \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
@@ -3716,6 +3935,19 @@ echo '</div></div>
         }
         // Reset lines
         document.getElementById("ra-inv-lines").innerHTML=buildLineHtml("","");
+        // Auto-populate reward discount if approved
+        var discSec=document.getElementById("ra-inv-discount-section");
+        var discDesc=document.getElementById("ra-inv-discount-desc");
+        var discAmt=document.getElementById("ra-inv-discount-amount");
+        if(card && card.dataset.rewardApproved==="1" && PP_ENABLED && REWARD_VALUE>0){
+            discDesc.value=REWARD_NAME;
+            discAmt.value=REWARD_VALUE.toFixed(2);
+            discSec.style.display="block";
+        }else{
+            discDesc.value="";
+            discAmt.value="";
+            discSec.style.display="none";
+        }
         // Reset payment fields
         document.getElementById("ra-inv-paid-toggle").checked=false;
         document.getElementById("ra-inv-paid-fields").style.display="none";
@@ -3808,17 +4040,24 @@ echo '</div></div>
         var amounts=document.querySelectorAll("#ra-inv-lines .ra-inv-line-amount");
         var brutto=0;
         amounts.forEach(function(a){brutto+=parseFloat(a.value)||0});
+        // Subtract discount if visible
+        var discSec=document.getElementById("ra-inv-discount-section");
+        var discountVal=0;
+        if(discSec&&discSec.style.display!=="none"){
+            discountVal=parseFloat(document.getElementById("ra-inv-discount-amount").value)||0;
+        }
+        var afterDiscount=Math.max(0,brutto-discountVal);
         var net,vat;
         if(VAT_ENABLED){
-            net=Math.round(brutto/(1+VAT_RATE/100)*100)/100;
-            vat=Math.round((brutto-net)*100)/100;
+            net=Math.round(afterDiscount/(1+VAT_RATE/100)*100)/100;
+            vat=Math.round((afterDiscount-net)*100)/100;
         }else{
-            net=brutto;
+            net=afterDiscount;
             vat=0;
         }
         document.getElementById("ra-inv-modal-net").textContent=fmtEur(net);
         document.getElementById("ra-inv-modal-vat").textContent=fmtEur(vat);
-        document.getElementById("ra-inv-modal-total").textContent=fmtEur(brutto);
+        document.getElementById("ra-inv-modal-total").textContent=fmtEur(afterDiscount);
     }
 
     // Line items: delegated events
@@ -3837,6 +4076,15 @@ echo '</div></div>
     });
     document.getElementById("ra-inv-lines").addEventListener("input",function(e){
         if(e.target.classList.contains("ra-inv-line-amount"))recalcInvoiceModal();
+    });
+    // Discount amount input recalc
+    document.getElementById("ra-inv-discount-amount").addEventListener("input",function(){recalcInvoiceModal()});
+    // Discount remove button
+    document.getElementById("ra-inv-discount-remove").addEventListener("click",function(){
+        document.getElementById("ra-inv-discount-section").style.display="none";
+        document.getElementById("ra-inv-discount-desc").value="";
+        document.getElementById("ra-inv-discount-amount").value="";
+        recalcInvoiceModal();
     });
 
     document.getElementById("ra-inv-add-line").addEventListener("click",function(){
@@ -3904,12 +4152,24 @@ echo '</div></div>
         // Add differenzbesteuerung flag
         fd.append("is_differenzbesteuerung",document.getElementById("ra-inv-differenz").checked?"1":"0");
 
+        // Collect manual discount from modal (if visible)
+        var discSec=document.getElementById("ra-inv-discount-section");
+        var manualDiscDesc="",manualDiscVal=0;
+        if(discSec&&discSec.style.display!=="none"){
+            manualDiscDesc=document.getElementById("ra-inv-discount-desc").value.trim();
+            manualDiscVal=parseFloat(document.getElementById("ra-inv-discount-amount").value)||0;
+        }
+
         if(invoiceEditId){
             // Edit mode
             fd.append("action","ppv_repair_invoice_update");
             fd.append("invoice_id",invoiceEditId);
             fd.append("subtotal",totalAmt);
             fd.append("line_items",JSON.stringify(items));
+            if(manualDiscVal>0){
+                fd.append("manual_discount_desc",manualDiscDesc);
+                fd.append("manual_discount_value",manualDiscVal);
+            }
         }else{
             // Create mode
             fd.append("action","ppv_repair_update_status");
@@ -3917,6 +4177,10 @@ echo '</div></div>
             fd.append("status","done");
             fd.append("final_cost",totalAmt);
             fd.append("line_items",JSON.stringify(items));
+            if(manualDiscVal>0){
+                fd.append("manual_discount_desc",manualDiscDesc);
+                fd.append("manual_discount_value",manualDiscVal);
+            }
             // Check if already paid
             if(document.getElementById("ra-inv-paid-toggle").checked){
                 fd.append("mark_paid","1");
@@ -6395,7 +6659,7 @@ echo '</div></div>
                     'vehicle_tuev' => ['icon' => 'ri-shield-star-line', 'label' => PPV_Lang::t('repair_vehicle_tuev_label')],
                 ];
                 foreach ($cf as $ck => $cv) {
-                    if ($ck === 'photos' || $ck === 'condition_check' || $ck === 'condition_check_kfz') continue; // handled separately
+                    if ($ck === 'photos' || $ck === 'condition_check' || $ck === 'condition_check_kfz' || $ck === 'condition_check_pc') continue; // handled separately
                     $icon = 'ri-file-text-line';
                     $lbl = $ck;
                     if (isset($cf_labels[$ck])) { $icon = $cf_labels[$ck]['icon']; $lbl = $cf_labels[$ck]['label']; }
@@ -6430,6 +6694,18 @@ echo '</div></div>
                             $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
                         }
                         $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-car-washing-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition_kfz')) . ': ' . implode(', ', $cond_items) . '</div>';
+                    }
+                }
+                // PC Condition check
+                if (!empty($cf['condition_check_pc'])) {
+                    $cond = is_string($cf['condition_check_pc']) ? json_decode($cf['condition_check_pc'], true) : $cf['condition_check_pc'];
+                    if (is_array($cond)) {
+                        $cond_items = [];
+                        foreach ($cond as $part => $status) {
+                            $color = $status === 'ok' ? '#059669' : '#dc2626';
+                            $cond_items[] = '<span style="color:' . $color . '">' . esc_html($part) . ': ' . esc_html(strtoupper($status)) . '</span>';
+                        }
+                        $cf_parts[] = '<div style="font-size:12px;color:#6b7280;margin-top:2px"><i class="ri-computer-line"></i> ' . esc_html(PPV_Lang::t('repair_fb_condition_pc')) . ': ' . implode(', ', $cond_items) . '</div>';
                     }
                 }
                 // Photos
@@ -6576,7 +6852,9 @@ echo '</div></div>
             . ' data-signature="' . esc_attr($r->signature_image) . '"'
             . ' data-accessories="' . esc_attr($r->accessories) . '"'
             . ' data-customfields="' . $cf_data_json . '"'
-            . ' data-invoice="' . esc_attr($invoice_numbers) . '">'
+            . ' data-invoice="' . esc_attr($invoice_numbers) . '"'
+            . ' data-reward-approved="' . (int)(!empty($r->reward_approved)) . '"'
+            . '>'
             . '<div class="ra-repair-header">'
                 . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
                 . '<span class="ra-status ' . esc_attr($st[1]) . '">' . esc_html($st[0]) . '</span>'
@@ -6596,6 +6874,8 @@ echo '</div></div>
                 . '<div class="ra-repair-problem">' . $problem . '</div>'
                 . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="' . esc_attr(PPV_Lang::t('repair_admin_last_modified')) . '">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
                 . $invoice_badge_html
+                . ($r->status === 'waiting_parts' ? '<button class="ra-btn-parts-arrived" data-repair-id="' . intval($r->id) . '"><i class="ri-checkbox-circle-fill"></i> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived')) . '</button>' : '')
+                . (!empty($r->termin_at) && strtotime($r->termin_at) > time() ? '<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>' : '')
             . '</div>'
             . $reward_html
             . '<div class="ra-repair-comments-section">'

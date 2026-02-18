@@ -299,7 +299,7 @@ TABS IN REPAIR ADMIN:
 
 REPAIR MANAGEMENT (Reparaturen tab):
 • View all repairs in card layout
-• Status workflow: new → in_progress → done → delivered → cancelled
+• Status workflow: new → in_progress → waiting_parts → done → delivered → cancelled
 • Change status via dropdown on each repair card
 • Add internal comments/notes to each repair
 • Print individual repair ticket (with QR code) via Print button
@@ -307,6 +307,11 @@ REPAIR MANAGEMENT (Reparaturen tab):
 • Search by customer name, phone, device info
 • Filter by status
 • Feedback email sent automatically 24h after "done" status
+• TEIL ANGEKOMMEN (Part arrived): When repair is in "Wartet auf Teile" status, a green "Teil angekommen" button appears on the card. Click it to:
+  - Set an appointment date/time (Termin) for the customer
+  - Optionally send an appointment email to the customer with date, time, and custom message
+  - Status automatically changes back to "In Bearbeitung"
+  - Appointment date is shown as a green badge on the card and on the public tracking page
 
 INVOICE SYSTEM (Rechnungen tab):
 • Create invoices (Rechnung) or quotes (Angebot)
@@ -333,6 +338,8 @@ REPAIR FORM (public customer form at /formular/slug):
 • QR tracking code generated for each repair
 • Offline mode: queues submissions when no internet
 • KFZ/Vehicle mode: license plate, VIN, mileage (for auto repair shops)
+• PC/Computer mode: condition check for PC components (mainboard, CPU, RAM, SSD, GPU, display, keyboard, fan, power supply, ports) - enable in Settings
+• Form is fully configurable for any repair type (phone, PC, vehicle) via field toggles in Settings
 • Bonus points for customers with PunktePass account
 • Email notification to store + customer on submission
 

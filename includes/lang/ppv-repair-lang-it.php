@@ -126,9 +126,15 @@ return [
     'repair_reg_price_free_f1'  => 'Fino a 50 moduli / mese',
     'repair_reg_price_free_f2'  => 'Modulo di riparazione e gestione clienti',
     'repair_reg_price_free_f3'  => 'Fatture e preventivi (PDF)',
-    'repair_reg_price_free_f4'  => 'Esportazione Excel',
+    'repair_reg_price_free_f4'  => 'Esportazione DATEV & Excel',
     'repair_reg_price_free_f5'  => 'Acquisto digitale',
     'repair_reg_price_free_f6'  => 'Notifiche email',
+    'repair_reg_price_free_f7'  => 'Sistema fedeltà PunktePass incluso',
+    'repair_reg_price_free_f8'  => 'Tracciamento QR code & stato',
+    'repair_reg_price_free_f9'  => 'Firma digitale',
+    'repair_reg_price_free_f10' => 'Analisi AI dei problemi',
+    'repair_reg_price_free_f11' => 'Modalità offline (senza internet)',
+    'repair_reg_price_free_f12' => 'Controllo stato & documentazione foto',
     'repair_reg_price_pro'      => 'Premium',
     'repair_reg_price_pro_val'  => '€39',
     'repair_reg_price_pro_per'  => 'al mese (netto)',
@@ -136,6 +142,12 @@ return [
     'repair_reg_price_pro_f2'   => 'Tutto dallo Starter incluso',
     'repair_reg_price_pro_f3'   => 'Più sedi',
     'repair_reg_price_pro_f4'   => 'Supporto prioritario',
+    'repair_reg_price_pro_f5'   => 'Moduli auto & PC',
+    'repair_reg_price_pro_f6'   => 'Chat supporto AI & escalation',
+    'repair_reg_price_pro_f7'   => 'Gestione appuntamenti & notifiche',
+    'repair_reg_price_pro_f8'   => 'Statistiche & report settimanali',
+    'repair_reg_price_pro_f9'   => 'Integrazione WhatsApp',
+    'repair_reg_price_pro_f10'  => 'Branding personalizzato & logo',
     'repair_reg_price_popular'  => 'Popolare',
 
     // OAuth
@@ -500,6 +512,23 @@ return [
     'repair_admin_status_cancelled' => 'Annullato',
     'repair_admin_status_all'     => 'Tutti gli stati',
 
+    // Teil angekommen + Termin
+    'repair_admin_parts_arrived'       => 'Ricambio arrivato',
+    'repair_admin_parts_arrived_short' => 'Ricambio arrivato',
+    'repair_admin_parts_arrived_desc'  => 'Il ricambio è arrivato. Pianifica un appuntamento con il cliente.',
+    'repair_admin_termin_date'         => 'Data appuntamento',
+    'repair_admin_termin_time'         => 'Ora',
+    'repair_admin_termin_message'      => 'Messaggio aggiuntivo (opzionale)',
+    'repair_admin_termin_message_ph'   => 'es. Si prega di portare il dispositivo...',
+    'repair_admin_termin_send_email'   => 'Invia email appuntamento al cliente',
+    'repair_admin_termin_confirm'      => 'Conferma appuntamento',
+    'repair_admin_termin_success'      => 'Appuntamento impostato, cliente informato',
+    'repair_admin_termin_no_date'      => 'Selezionare una data',
+    'repair_admin_no_termin'           => 'Segna solo come arrivato (senza appuntamento)',
+    'repair_admin_no_termin_desc'      => 'Lo stato sarà impostato su „In lavorazione" senza fissare un appuntamento.',
+    'repair_admin_no_termin_confirm'   => 'Conferma arrivo pezzo',
+    'repair_admin_no_termin_success'   => 'Pezzo segnato come arrivato',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abbonamento e Pagamento',
     'repair_admin_abo_status'     => 'Stato',
@@ -684,6 +713,7 @@ return [
     'repair_admin_reward_approve' => 'Approva',
     'repair_admin_reward_reject'  => 'Rifiuta',
     'repair_admin_reward_approved' => 'approvato',
+    'repair_admin_reward_discount' => 'Sconto PunktePass',
     'repair_admin_last_modified'  => 'Ultima modifica',
     'repair_admin_comments'       => 'Commenti',
     'repair_admin_add_comment_ph' => 'Aggiungi commento...',
@@ -1024,6 +1054,15 @@ return [
     'repair_email_status_contact'            => 'CONTATTO',
     'repair_email_status_regards'            => 'Cordiali saluti,',
 
+    // ===== Email: Appuntamento (Ricambio arrivato + Pianificazione) =====
+    'repair_email_termin_subject'        => 'Il Suo appuntamento presso {company}',
+    'repair_email_termin_parts_arrived'  => 'Buone notizie! Il ricambio necessario per la Sua riparazione è arrivato. Abbiamo fissato un appuntamento per Lei.',
+    'repair_email_termin_appointment'    => 'IL SUO APPUNTAMENTO',
+    'repair_email_termin_date'           => 'Data',
+    'repair_email_termin_at_time'        => 'alle',
+    'repair_email_termin_clock'          => '',
+    'repair_email_termin_bring_device'   => 'La preghiamo di portare il Suo dispositivo all\'appuntamento. Se non può venire, La preghiamo di contattarci in anticipo.',
+
     // ===== Email: Ankauf (Purchase Contract) =====
     'repair_email_ankauf_subject'   => 'Contratto di acquisto {number} - {company}',
     'repair_email_ankauf_greeting'  => 'Gentile {name},',
@@ -1166,6 +1205,20 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Illuminazione',
     'repair_cond_kfz_lenkung'          => 'Sterzo',
     'repair_cond_kfz_fahrwerk'         => 'Sospensioni',
+
+    // PC / Computer verifica stato
+    'repair_fb_condition_pc'           => 'Stato PC',
+    'repair_admin_fc_pc'               => 'PC / Computer',
+    'repair_cond_pc_mainboard'         => 'Scheda madre',
+    'repair_cond_pc_cpu'               => 'Processore (CPU)',
+    'repair_cond_pc_ram'               => 'Memoria (RAM)',
+    'repair_cond_pc_storage'           => 'Disco / SSD',
+    'repair_cond_pc_gpu'               => 'Scheda video (GPU)',
+    'repair_cond_pc_display'           => 'Schermo / Display',
+    'repair_cond_pc_keyboard'          => 'Tastiera',
+    'repair_cond_pc_fan'               => 'Ventola / Raffreddamento',
+    'repair_cond_pc_power'             => 'Alimentatore / Batteria',
+    'repair_cond_pc_ports'             => 'Porte (USB, HDMI)',
 
     // AI Assistant
     'repair_ai_btn'                    => 'Avvia analisi AI',

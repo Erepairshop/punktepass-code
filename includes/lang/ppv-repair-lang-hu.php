@@ -129,6 +129,12 @@ return [
     'repair_reg_price_free_f4'  => 'DATEV és Excel export',
     'repair_reg_price_free_f5'  => 'Digitális felvásárlás',
     'repair_reg_price_free_f6'  => 'E-mail értesítések',
+    'repair_reg_price_free_f7'  => 'PunktePass hűségrendszer mellékelve',
+    'repair_reg_price_free_f8'  => 'QR-kód követés & állapotkövetés',
+    'repair_reg_price_free_f9'  => 'Digitális aláírás',
+    'repair_reg_price_free_f10' => 'AI probléma-elemzés',
+    'repair_reg_price_free_f11' => 'Offline mód (internet nélkül)',
+    'repair_reg_price_free_f12' => 'Állapotfelmérés & fotódokumentáció',
     'repair_reg_price_pro'      => 'Prémium',
     'repair_reg_price_pro_val'  => '39 €',
     'repair_reg_price_pro_per'  => 'havonta (nettó)',
@@ -136,6 +142,12 @@ return [
     'repair_reg_price_pro_f2'   => 'Minden a Kezdő csomagból',
     'repair_reg_price_pro_f3'   => 'Több telephely',
     'repair_reg_price_pro_f4'   => 'Prioritás-támogatás',
+    'repair_reg_price_pro_f5'   => 'Autó & PC szerviz modulok',
+    'repair_reg_price_pro_f6'   => 'AI támogatás chat & eszkaláció',
+    'repair_reg_price_pro_f7'   => 'Időpontkezelés & értesítések',
+    'repair_reg_price_pro_f8'   => 'Statisztikák & heti jelentések',
+    'repair_reg_price_pro_f9'   => 'WhatsApp integráció',
+    'repair_reg_price_pro_f10'  => 'Egyedi arculat & logó',
     'repair_reg_price_popular'  => 'Népszerű',
 
     // OAuth
@@ -500,6 +512,23 @@ return [
     'repair_admin_status_cancelled' => 'Törölve',
     'repair_admin_status_all'     => 'Minden állapot',
 
+    // Teil angekommen + Termin
+    'repair_admin_parts_arrived'       => 'Alkatrész megérkezett',
+    'repair_admin_parts_arrived_short' => 'Alkatrész megérkezett',
+    'repair_admin_parts_arrived_desc'  => 'Az alkatrész megérkezett. Egyeztessen időpontot az ügyféllel.',
+    'repair_admin_termin_date'         => 'Időpont dátuma',
+    'repair_admin_termin_time'         => 'Időpont',
+    'repair_admin_termin_message'      => 'További üzenet (opcionális)',
+    'repair_admin_termin_message_ph'   => 'pl. Kérjük, hozza magával a készüléket...',
+    'repair_admin_termin_send_email'   => 'Időpont e-mail küldése az ügyfélnek',
+    'repair_admin_termin_confirm'      => 'Időpont megerősítése',
+    'repair_admin_termin_success'      => 'Időpont beállítva, ügyfél értesítve',
+    'repair_admin_termin_no_date'      => 'Kérjük, válasszon dátumot',
+    'repair_admin_no_termin'           => 'Csak megérkezettnek jelölés (időpont nélkül)',
+    'repair_admin_no_termin_desc'      => 'A státusz „Folyamatban"-ra változik időpont egyeztetés nélkül.',
+    'repair_admin_no_termin_confirm'   => 'Alkatrész megérkezését megerősítem',
+    'repair_admin_no_termin_success'   => 'Alkatrész megérkezettnek jelölve',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Előfizetés és fizetés',
     'repair_admin_abo_status'     => 'Állapot',
@@ -684,6 +713,7 @@ return [
     'repair_admin_reward_approve' => 'Jóváhagyás',
     'repair_admin_reward_reject'  => 'Elutasítás',
     'repair_admin_reward_approved' => 'jóváhagyva',
+    'repair_admin_reward_discount' => 'PunktePass Kedvezmény',
     'repair_admin_last_modified'  => 'Utoljára módosítva',
     'repair_admin_comments'       => 'Hozzászólások',
     'repair_admin_add_comment_ph' => 'Hozzászólás hozzáadása...',
@@ -1024,6 +1054,15 @@ return [
     'repair_email_status_contact'            => 'KAPCSOLAT',
     'repair_email_status_regards'            => 'Üdvözlettel,',
 
+    // ===== E-mail: Időpont (Alkatrész megérkezett + Időpont) =====
+    'repair_email_termin_subject'        => 'Időpontja a {company} cégnél',
+    'repair_email_termin_parts_arrived'  => 'Jó hír! A javításhoz szükséges alkatrész megérkezett. Időpontot egyeztettünk Önnel.',
+    'repair_email_termin_appointment'    => 'AZ ÖN IDŐPONTJA',
+    'repair_email_termin_date'           => 'Dátum',
+    'repair_email_termin_at_time'        => '',
+    'repair_email_termin_clock'          => 'óra',
+    'repair_email_termin_bring_device'   => 'Kérjük, hozza magával készülékét a megbeszélt időpontra. Ha nem tud megjelenni, kérjük, értesítsen minket időben.',
+
     // ===== E-mail: Felvásárlás (Adásvételi szerződés) =====
     'repair_email_ankauf_subject'   => 'Adásvételi szerződés {number} - {company}',
     'repair_email_ankauf_greeting'  => 'Tisztelt {name}!',
@@ -1166,6 +1205,20 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Világítás',
     'repair_cond_kfz_lenkung'          => 'Kormányzás',
     'repair_cond_kfz_fahrwerk'         => 'Futómű',
+
+    // PC / Számítógép állapot ellenőrzés
+    'repair_fb_condition_pc'           => 'PC állapot',
+    'repair_admin_fc_pc'               => 'PC / Számítógép',
+    'repair_cond_pc_mainboard'         => 'Alaplap',
+    'repair_cond_pc_cpu'               => 'Processzor (CPU)',
+    'repair_cond_pc_ram'               => 'Memória (RAM)',
+    'repair_cond_pc_storage'           => 'Merevlemez / SSD',
+    'repair_cond_pc_gpu'               => 'Videókártya (GPU)',
+    'repair_cond_pc_display'           => 'Kijelző / Monitor',
+    'repair_cond_pc_keyboard'          => 'Billentyűzet',
+    'repair_cond_pc_fan'               => 'Ventilátor / Hűtés',
+    'repair_cond_pc_power'             => 'Tápegység / Akku',
+    'repair_cond_pc_ports'             => 'Csatlakozók (USB, HDMI)',
 
     // AI Assistant
     'repair_ai_btn'                    => 'AI elemzés indítása',

@@ -129,6 +129,12 @@ return [
     'repair_reg_price_free_f4'  => 'Export DATEV și Excel',
     'repair_reg_price_free_f5'  => 'Achiziție digitală',
     'repair_reg_price_free_f6'  => 'Notificări e-mail',
+    'repair_reg_price_free_f7'  => 'Sistem de fidelizare PunktePass inclus',
+    'repair_reg_price_free_f8'  => 'Urmărire QR cod & stare reparație',
+    'repair_reg_price_free_f9'  => 'Semnătură digitală',
+    'repair_reg_price_free_f10' => 'Analiză AI a problemelor',
+    'repair_reg_price_free_f11' => 'Mod offline (fără internet)',
+    'repair_reg_price_free_f12' => 'Verificare stare & documentare foto',
     'repair_reg_price_pro'      => 'Premium',
     'repair_reg_price_pro_val'  => '39 €',
     'repair_reg_price_pro_per'  => 'pe lună (net)',
@@ -136,6 +142,12 @@ return [
     'repair_reg_price_pro_f2'   => 'Tot din Starter inclus',
     'repair_reg_price_pro_f3'   => 'Mai multe filiale',
     'repair_reg_price_pro_f4'   => 'Suport prioritar',
+    'repair_reg_price_pro_f5'   => 'Module auto & PC',
+    'repair_reg_price_pro_f6'   => 'Chat suport AI & escalare',
+    'repair_reg_price_pro_f7'   => 'Gestionare programări & notificări',
+    'repair_reg_price_pro_f8'   => 'Statistici & rapoarte săptămânale',
+    'repair_reg_price_pro_f9'   => 'Integrare WhatsApp',
+    'repair_reg_price_pro_f10'  => 'Branding personalizat & logo',
     'repair_reg_price_popular'  => 'Popular',
 
     // OAuth
@@ -500,6 +512,23 @@ return [
     'repair_admin_status_cancelled' => 'Anulat',
     'repair_admin_status_all'     => 'Toate statusurile',
 
+    // Teil angekommen + Termin
+    'repair_admin_parts_arrived'       => 'Piesa a sosit',
+    'repair_admin_parts_arrived_short' => 'Piesa a sosit',
+    'repair_admin_parts_arrived_desc'  => 'Piesa de schimb a sosit. Programați o întâlnire cu clientul.',
+    'repair_admin_termin_date'         => 'Data programării',
+    'repair_admin_termin_time'         => 'Ora',
+    'repair_admin_termin_message'      => 'Mesaj suplimentar (opțional)',
+    'repair_admin_termin_message_ph'   => 'ex. Vă rugăm să aduceți dispozitivul...',
+    'repair_admin_termin_send_email'   => 'Trimite e-mail programare clientului',
+    'repair_admin_termin_confirm'      => 'Confirmă programarea',
+    'repair_admin_termin_success'      => 'Programare setată, client informat',
+    'repair_admin_termin_no_date'      => 'Vă rugăm selectați o dată',
+    'repair_admin_no_termin'           => 'Marchează doar ca sosit (fără programare)',
+    'repair_admin_no_termin_desc'      => 'Statusul va fi setat la „În lucru" fără a programa o întâlnire.',
+    'repair_admin_no_termin_confirm'   => 'Confirmă sosirea piesei',
+    'repair_admin_no_termin_success'   => 'Piesa marcată ca sosită',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abonament și plată',
     'repair_admin_abo_status'     => 'Status',
@@ -684,6 +713,7 @@ return [
     'repair_admin_reward_approve' => 'Aprobare',
     'repair_admin_reward_reject'  => 'Refuzare',
     'repair_admin_reward_approved' => 'aprobat',
+    'repair_admin_reward_discount' => 'Reducere PunktePass',
     'repair_admin_last_modified'  => 'Ultima modificare',
     'repair_admin_comments'       => 'Comentarii',
     'repair_admin_add_comment_ph' => 'Adaugă comentariu...',
@@ -1024,6 +1054,15 @@ return [
     'repair_email_status_contact'            => 'CONTACT',
     'repair_email_status_regards'            => 'Cu stimă,',
 
+    // ===== E-mail: Programare (Piesa sosită + Programare) =====
+    'repair_email_termin_subject'        => 'Programarea dvs. la {company}',
+    'repair_email_termin_parts_arrived'  => 'Vești bune! Piesa necesară pentru reparația dvs. a sosit. Am programat o întâlnire pentru dvs.',
+    'repair_email_termin_appointment'    => 'PROGRAMAREA DVS.',
+    'repair_email_termin_date'           => 'Data',
+    'repair_email_termin_at_time'        => 'la',
+    'repair_email_termin_clock'          => '',
+    'repair_email_termin_bring_device'   => 'Vă rugăm să aduceți dispozitivul la data programată. Dacă nu puteți veni, vă rugăm să ne contactați din timp.',
+
     // ===== E-mail: Achiziție (Contract de vânzare) =====
     'repair_email_ankauf_subject'   => 'Contract de vânzare {number} - {company}',
     'repair_email_ankauf_greeting'  => 'Stimate {name},',
@@ -1166,6 +1205,20 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Iluminare',
     'repair_cond_kfz_lenkung'          => 'Direcție',
     'repair_cond_kfz_fahrwerk'         => 'Suspensie',
+
+    // PC / Calculator verificare stare
+    'repair_fb_condition_pc'           => 'Stare PC',
+    'repair_admin_fc_pc'               => 'PC / Calculator',
+    'repair_cond_pc_mainboard'         => 'Placă de bază',
+    'repair_cond_pc_cpu'               => 'Procesor (CPU)',
+    'repair_cond_pc_ram'               => 'Memorie (RAM)',
+    'repair_cond_pc_storage'           => 'Hard Disk / SSD',
+    'repair_cond_pc_gpu'               => 'Placă video (GPU)',
+    'repair_cond_pc_display'           => 'Ecran / Monitor',
+    'repair_cond_pc_keyboard'          => 'Tastatură',
+    'repair_cond_pc_fan'               => 'Ventilator / Răcire',
+    'repair_cond_pc_power'             => 'Sursă / Baterie',
+    'repair_cond_pc_ports'             => 'Porturi (USB, HDMI)',
 
     // AI Assistant
     'repair_ai_btn'                    => 'Pornește analiza AI',

@@ -129,6 +129,12 @@ return [
     'repair_reg_price_free_f4'  => 'DATEV & Excel export',
     'repair_reg_price_free_f5'  => 'Digital purchase',
     'repair_reg_price_free_f6'  => 'Email notifications',
+    'repair_reg_price_free_f7'  => 'PunktePass loyalty system included',
+    'repair_reg_price_free_f8'  => 'QR code tracking & status tracking',
+    'repair_reg_price_free_f9'  => 'Digital signature',
+    'repair_reg_price_free_f10' => 'AI problem analysis',
+    'repair_reg_price_free_f11' => 'Offline mode (no internet needed)',
+    'repair_reg_price_free_f12' => 'Condition check & photo documentation',
     'repair_reg_price_pro'      => 'Premium',
     'repair_reg_price_pro_val'  => '€39',
     'repair_reg_price_pro_per'  => 'per month (net)',
@@ -136,6 +142,12 @@ return [
     'repair_reg_price_pro_f2'   => 'Everything from Starter included',
     'repair_reg_price_pro_f3'   => 'Multiple branches',
     'repair_reg_price_pro_f4'   => 'Priority support',
+    'repair_reg_price_pro_f5'   => 'Vehicle & PC repair modules',
+    'repair_reg_price_pro_f6'   => 'AI support chat & escalation',
+    'repair_reg_price_pro_f7'   => 'Appointment management & notifications',
+    'repair_reg_price_pro_f8'   => 'Statistics & weekly reports',
+    'repair_reg_price_pro_f9'   => 'WhatsApp integration',
+    'repair_reg_price_pro_f10'  => 'Custom branding & logo',
     'repair_reg_price_popular'  => 'Popular',
 
     // OAuth
@@ -500,6 +512,23 @@ return [
     'repair_admin_status_cancelled' => 'Cancelled',
     'repair_admin_status_all'     => 'All Statuses',
 
+    // Teil angekommen + Termin
+    'repair_admin_parts_arrived'       => 'Part Arrived',
+    'repair_admin_parts_arrived_short' => 'Part Arrived',
+    'repair_admin_parts_arrived_desc'  => 'The spare part has arrived. Schedule an appointment with the customer.',
+    'repair_admin_termin_date'         => 'Appointment Date',
+    'repair_admin_termin_time'         => 'Time',
+    'repair_admin_termin_message'      => 'Additional message (optional)',
+    'repair_admin_termin_message_ph'   => 'e.g. Please bring your device with you...',
+    'repair_admin_termin_send_email'   => 'Send appointment email to customer',
+    'repair_admin_termin_confirm'      => 'Confirm Appointment',
+    'repair_admin_termin_success'      => 'Appointment set & customer notified',
+    'repair_admin_termin_no_date'      => 'Please select a date',
+    'repair_admin_no_termin'           => 'Mark as arrived only (without appointment)',
+    'repair_admin_no_termin_desc'      => 'Status will be set to "In Progress" without scheduling an appointment.',
+    'repair_admin_no_termin_confirm'   => 'Confirm part arrived',
+    'repair_admin_no_termin_success'   => 'Part marked as arrived',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Subscription & Payment',
     'repair_admin_abo_status'     => 'Status',
@@ -684,6 +713,7 @@ return [
     'repair_admin_reward_approve' => 'Approve',
     'repair_admin_reward_reject'  => 'Reject',
     'repair_admin_reward_approved' => 'approved',
+    'repair_admin_reward_discount' => 'PunktePass Discount',
     'repair_admin_last_modified'  => 'Last modified',
     'repair_admin_comments'       => 'Comments',
     'repair_admin_add_comment_ph' => 'Add comment...',
@@ -1024,6 +1054,15 @@ return [
     'repair_email_status_contact'            => 'CONTACT',
     'repair_email_status_regards'            => 'Kind regards,',
 
+    // ===== Email: Appointment (Part arrived + Scheduling) =====
+    'repair_email_termin_subject'        => 'Your appointment at {company}',
+    'repair_email_termin_parts_arrived'  => 'Good news! The spare part needed for your repair has arrived. We have scheduled an appointment for you.',
+    'repair_email_termin_appointment'    => 'YOUR APPOINTMENT',
+    'repair_email_termin_date'           => 'Date',
+    'repair_email_termin_at_time'        => 'at',
+    'repair_email_termin_clock'          => '',
+    'repair_email_termin_bring_device'   => 'Please bring your device to the scheduled appointment. If you cannot make it, please contact us in advance.',
+
     // ===== Email: Ankauf (Purchase Contract) =====
     'repair_email_ankauf_subject'   => 'Purchase Contract {number} - {company}',
     'repair_email_ankauf_greeting'  => 'Dear {name},',
@@ -1166,6 +1205,20 @@ return [
     'repair_cond_kfz_beleuchtung'      => 'Lighting',
     'repair_cond_kfz_lenkung'          => 'Steering',
     'repair_cond_kfz_fahrwerk'         => 'Suspension',
+
+    // PC / Computer condition check
+    'repair_fb_condition_pc'           => 'PC Condition',
+    'repair_admin_fc_pc'               => 'PC / Computer',
+    'repair_cond_pc_mainboard'         => 'Motherboard',
+    'repair_cond_pc_cpu'               => 'Processor (CPU)',
+    'repair_cond_pc_ram'               => 'Memory (RAM)',
+    'repair_cond_pc_storage'           => 'Hard Drive / SSD',
+    'repair_cond_pc_gpu'               => 'Graphics Card (GPU)',
+    'repair_cond_pc_display'           => 'Screen / Display',
+    'repair_cond_pc_keyboard'          => 'Keyboard',
+    'repair_cond_pc_fan'               => 'Fan / Cooling',
+    'repair_cond_pc_power'             => 'Power Supply / Battery',
+    'repair_cond_pc_ports'             => 'Ports (USB, HDMI)',
 
     // AI Assistant
     'repair_ai_btn'                    => 'Start AI analysis',

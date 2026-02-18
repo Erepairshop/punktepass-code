@@ -21,7 +21,7 @@ class PPV_Repair_Invoice {
      * @param float  $amount - The repair cost (from final_cost POST or estimated_cost)
      * @return int|null - Invoice ID or null on failure
      */
-    public static function generate_invoice($store, $repair, $amount = 0, $line_items = []) {
+    public static function generate_invoice($store, $repair, $amount = 0, $line_items = [], $manual_discount = []) {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
@@ -71,39 +71,19 @@ class PPV_Repair_Invoice {
 
         $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
 
-        if ($pp_enabled && !empty($repair->user_id)) {
-            $required = intval($store->repair_required_points ?: 4);
-            $total_points = (int)$wpdb->get_var($wpdb->prepare(
-                "SELECT COALESCE(SUM(points),0) FROM {$prefix}ppv_points WHERE user_id=%d AND store_id=%d",
-                $repair->user_id, $store->id
-            ));
+        // Use manual discount from invoice modal (admin-edited) if provided
+        if (!empty($manual_discount['value']) && $manual_discount['value'] > 0) {
+            $discount_value = min(floatval($manual_discount['value']), $subtotal);
+            $discount_desc = !empty($manual_discount['desc']) ? $manual_discount['desc'] : ($store->repair_reward_name ?: 'Rabatt');
+            $discount_desc .= ' (-' . number_format($discount_value, 2, ',', '.') . ' €)';
+            $discount_type = $store->repair_reward_type ?: 'discount_fixed';
+            $reward_applied = 1;
 
-            if ($total_points >= $required) {
-                $reward_type = $store->repair_reward_type ?: 'discount_fixed';
-                $reward_value = floatval($store->repair_reward_value ?: 10);
-                $reward_name = $store->repair_reward_name ?: '10 Euro Rabatt';
-
-                $discount_type = $reward_type;
-                $reward_applied = 1;
+            // Deduct points if reward was approved
+            if ($pp_enabled && !empty($repair->user_id) && !empty($repair->reward_approved)) {
+                $required = intval($store->repair_required_points ?: 4);
                 $points_used = $required;
-
-                switch ($reward_type) {
-                    case 'discount_fixed':
-                        $discount_value = min($reward_value, $subtotal);
-                        $discount_desc = $reward_name . ' (-' . number_format($discount_value, 2, ',', '.') . ' €)';
-                        break;
-                    case 'discount_percent':
-                        $discount_value = round($subtotal * ($reward_value / 100), 2);
-                        $discount_desc = $reward_name . ' (-' . intval($reward_value) . '%)';
-                        break;
-                    case 'free_product':
-                        $product_name = $store->repair_reward_product ?: $reward_name;
-                        $discount_value = $reward_value; // value of the free product
-                        $discount_desc = 'Gratis: ' . $product_name;
-                        break;
-                }
-
-                // Deduct points
+                $reward_name = $store->repair_reward_name ?: '10 Euro Rabatt';
                 $wpdb->insert("{$prefix}ppv_points", [
                     'user_id' => $repair->user_id,
                     'store_id' => $store->id,
@@ -113,6 +93,42 @@ class PPV_Repair_Invoice {
                     'created' => current_time('mysql'),
                 ]);
             }
+        } elseif ($pp_enabled && !empty($repair->user_id) && !empty($repair->reward_approved)) {
+            // Fallback: auto-calculate discount if reward approved but no manual values
+            $required = intval($store->repair_required_points ?: 4);
+            $reward_type = $store->repair_reward_type ?: 'discount_fixed';
+            $reward_value = floatval($store->repair_reward_value ?: 10);
+            $reward_name = $store->repair_reward_name ?: '10 Euro Rabatt';
+
+            $discount_type = $reward_type;
+            $reward_applied = 1;
+            $points_used = $required;
+
+            switch ($reward_type) {
+                case 'discount_fixed':
+                    $discount_value = min($reward_value, $subtotal);
+                    $discount_desc = $reward_name . ' (-' . number_format($discount_value, 2, ',', '.') . ' €)';
+                    break;
+                case 'discount_percent':
+                    $discount_value = round($subtotal * ($reward_value / 100), 2);
+                    $discount_desc = $reward_name . ' (-' . intval($reward_value) . '%)';
+                    break;
+                case 'free_product':
+                    $product_name = $store->repair_reward_product ?: $reward_name;
+                    $discount_value = $reward_value;
+                    $discount_desc = 'Gratis: ' . $product_name;
+                    break;
+            }
+
+            // Deduct points
+            $wpdb->insert("{$prefix}ppv_points", [
+                'user_id' => $repair->user_id,
+                'store_id' => $store->id,
+                'points' => -$required,
+                'type' => 'redeem',
+                'reference' => 'Eingelöst: ' . $reward_name . ' (Rechnung ' . $invoice_number . ')',
+                'created' => current_time('mysql'),
+            ]);
         }
 
         // VAT calculation

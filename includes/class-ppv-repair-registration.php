@@ -1652,6 +1652,12 @@ class PPV_Repair_Registration {
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f4')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f5')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f6')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f7')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f8')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f9')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f10')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f11')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f12')); ?></li>
             </ul>
         </div>
         <div class="pp-pricing-card featured pp-fade-in pp-fade-in-2">
@@ -1664,6 +1670,12 @@ class PPV_Repair_Registration {
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f2')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f3')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f4')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f5')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f6')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f7')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f8')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f9')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f10')); ?></li>
             </ul>
         </div>
     </div>
