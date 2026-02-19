@@ -1947,7 +1947,9 @@ function toggleProblemTag(btn, text) {
 
         function fetchAddrSuggestions(q) {
             var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&email=info@punktepass.de&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
+            console.log('[PunktePass] Fetching Nominatim:', q, url);
             xhrGet(url, function(err, results){
+                console.log('[PunktePass] Nominatim response:', err ? 'ERROR: '+err : (results ? results.length+' results' : 'null'));
                 if (err) { console.warn('Nominatim error:', err); }
                 if (err || !results || !results.length) {
                     hideSuggestions(addrBox);
