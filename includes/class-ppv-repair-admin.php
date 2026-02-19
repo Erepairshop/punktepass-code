@@ -3234,109 +3234,200 @@ echo '</div></div>
 
         // Invoice Edit Modal (with customer fields)
         echo '<div class="ra-modal-overlay" id="ra-edit-invoice-modal">
-    <div class="ra-modal" style="max-width:650px;max-height:90vh;overflow-y:auto">
-        <h3><i class="ri-pencil-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_edit_invoice')) . '</h3>
-        <p class="ra-modal-sub" id="ra-einv-subtitle">' . esc_html(PPV_Lang::t('repair_admin_edit_inv_sub')) . '</p>
+    <div class="ra-modal nang-modal ninv-modal">
 
-        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:16px">
-            <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
-                <div>
-                    <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_inv_number')) . '</label>
-                    <input type="text" id="ra-einv-number-input" class="ra-input" style="background:#fff;font-weight:600">
-                </div>
-                <div style="font-size:13px;color:#6b7280;padding-bottom:10px">
-                    ' . esc_html(PPV_Lang::t('repair_admin_date')) . ': <span id="ra-einv-date"></span>
-                </div>
+        <!-- Header -->
+        <div class="nang-header" style="background:linear-gradient(135deg,#2563eb,#3b82f6)">
+            <div class="nang-header-icon"><i class="ri-pencil-line"></i></div>
+            <div>
+                <h3>' . esc_html(PPV_Lang::t('repair_admin_edit_invoice')) . '</h3>
+                <p id="ra-einv-subtitle">' . esc_html(PPV_Lang::t('repair_admin_edit_inv_sub')) . '</p>
             </div>
+            <button type="button" class="nang-close" id="ra-einv-close">&times;</button>
         </div>
 
-        <details open style="margin-bottom:16px">
-            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">' . esc_html(PPV_Lang::t('repair_admin_cust_data')) . '</summary>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-                <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
-                    <input type="text" id="ra-einv-name" class="ra-input" required>
-                </div>
-                <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
-                    <input type="text" id="ra-einv-company" class="ra-input">
-                </div>
-                <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
-                    <input type="email" id="ra-einv-email" class="ra-input">
-                </div>
-                <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
-                    <input type="tel" id="ra-einv-phone" class="ra-input">
-                </div>
-                <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_address')) . '</label>
-                    <input type="text" id="ra-einv-address" class="ra-input">
-                </div>
-                <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
-                    <input type="text" id="ra-einv-plz" class="ra-input">
-                </div>
-                <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</label>
-                    <input type="text" id="ra-einv-city" class="ra-input">
-                </div>
-                <div style="grid-column:span 2">
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
-                    <input type="text" id="ra-einv-taxid" class="ra-input">
-                </div>
-            </div>
-        </details>
-
-        <details open style="margin-bottom:16px">
-            <summary style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 0">' . esc_html(PPV_Lang::t('repair_admin_positions')) . '</summary>
-            <div class="ra-inv-lines" id="ra-einv-lines" style="margin-top:12px">
-                <div class="ra-inv-line">
-                    <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_service')) . '" class="ra-inv-line-desc">
-                    <input type="number" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_gross')) . '" step="0.01" min="0" class="ra-inv-line-amount">
-                    <button type="button" class="ra-inv-line-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
-                </div>
-            </div>
-            <button type="button" class="ra-inv-add" id="ra-einv-add-line">
-                <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_position')) . '
-            </button>
-        </details>
-
-        <div class="ra-inv-totals" style="margin-bottom:16px">
-            <div class="ra-inv-total-row">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
-                <span id="ra-einv-net">0,00 &euro;</span>
-            </div>
-            <div class="ra-inv-total-row" id="ra-einv-vat-row">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' ' . intval($vat_rate) . '%:</span>
-                <span id="ra-einv-vat">0,00 &euro;</span>
-            </div>
-            <div class="ra-inv-total-row ra-inv-total-final">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_total')) . '</span>
-                <span id="ra-einv-total">0,00 &euro;</span>
-            </div>
+        <!-- Step indicator -->
+        <div class="nang-steps">
+            <div class="nang-step active" data-step="1"><span class="nang-step-num" style="background:#2563eb;color:#fff">1</span> ' . esc_html(PPV_Lang::t('repair_admin_customer_data')) . '</div>
+            <div class="nang-step-line"></div>
+            <div class="nang-step" data-step="2"><span class="nang-step-num">2</span> ' . esc_html(PPV_Lang::t('repair_admin_positions')) . '</div>
         </div>
 
-        <div style="margin-bottom:12px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
-                <input type="checkbox" id="ra-einv-differenz" style="width:18px;height:18px;cursor:pointer">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
-            </label>
-        </div>
+        <!-- SECTION 1: Customer -->
+        <div class="nang-section" id="einv-sec-customer">
+            <div class="nang-fields">
+                <div class="nang-field-row">
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
+                        <div class="nang-input-wrap ninv-focus"><i class="ri-user-line"></i>
+                            <input type="text" id="ra-einv-name" required>
+                        </div>
+                    </div>
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
+                        <div class="nang-input-wrap ninv-focus"><i class="ri-building-line"></i>
+                            <input type="text" id="ra-einv-company">
+                        </div>
+                    </div>
+                </div>
+                <div class="nang-field-row">
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
+                        <div class="nang-input-wrap ninv-focus"><i class="ri-mail-line"></i>
+                            <input type="email" id="ra-einv-email">
+                        </div>
+                    </div>
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
+                        <div class="nang-input-wrap ninv-focus"><i class="ri-phone-line"></i>
+                            <input type="tel" id="ra-einv-phone">
+                        </div>
+                    </div>
+                </div>
+                <div class="nang-field-row">
+                    <div class="nang-field" style="flex:2">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_address')) . '</label>
+                        <div class="nang-input-wrap ninv-focus"><i class="ri-map-pin-line"></i>
+                            <input type="text" id="ra-einv-address">
+                        </div>
+                    </div>
+                    <div class="nang-field" style="flex:0.6">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <input type="text" id="ra-einv-plz">
+                        </div>
+                    </div>
+                    <div class="nang-field" style="flex:1">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <input type="text" id="ra-einv-city">
+                        </div>
+                    </div>
+                </div>
+                <div class="nang-field-row">
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
+                        <div class="nang-input-wrap ninv-focus"><i class="ri-hashtag"></i>
+                            <input type="text" id="ra-einv-taxid" placeholder="DE123456789">
+                        </div>
+                    </div>
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_inv_number')) . '</label>
+                        <div class="nang-input-wrap ninv-focus" style="background:#eff6ff;border-color:#bfdbfe">
+                            <i class="ri-file-text-line" style="color:#2563eb"></i>
+                            <input type="text" id="ra-einv-number-input" style="font-weight:600">
+                        </div>
+                        <span class="nang-field-hint" id="ra-einv-date"></span>
+                    </div>
+                </div>
+            </div>
 
-        <div style="margin-bottom:16px">
-            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
-            <textarea id="ra-einv-notes" class="ra-input" rows="2" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_notes_ph')) . '"></textarea>
-        </div>
-
-        <input type="hidden" id="ra-einv-id" value="">
-
-        <div style="display:flex;gap:10px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-einv-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
-            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-einv-submit">
-                <i class="ri-save-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_save')) . '
+            <button type="button" class="nang-next-btn" id="einv-next-to-positions" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 2px 8px rgba(37,99,235,.25)">
+                ' . esc_html(PPV_Lang::t('repair_admin_positions')) . ' <i class="ri-arrow-right-line"></i>
             </button>
         </div>
+
+        <!-- SECTION 2: Positions + Totals -->
+        <div class="nang-section" id="einv-sec-positions" style="display:none">
+
+            <button type="button" class="nang-back-link" id="einv-back-to-customer">
+                <i class="ri-arrow-left-s-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_customer_data')) . '
+            </button>
+
+            <div class="nang-customer-chip" id="einv-customer-chip" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af"></div>
+
+            <!-- Line items -->
+            <div class="nang-positions-header">
+                <span class="nang-ph-desc">' . esc_html(PPV_Lang::t('repair_admin_service')) . '</span>
+                <span class="nang-ph-qty">' . esc_html(PPV_Lang::t('repair_admin_qty')) . '</span>
+                <span class="nang-ph-price">' . esc_html(PPV_Lang::t('repair_admin_unit_price')) . '</span>
+                <span class="nang-ph-total">' . esc_html(PPV_Lang::t('repair_admin_line_total')) . '</span>
+                <span class="nang-ph-del"></span>
+            </div>
+            <div class="nang-lines" id="ra-einv-lines">
+                <div class="nang-line" data-idx="0">
+                    <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_service')) . '" class="nang-line-desc">
+                    <input type="number" value="1" min="1" step="1" class="nang-line-qty">
+                    <div class="nang-line-price-wrap">
+                        <input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price">
+                        <span class="nang-line-currency">&euro;</span>
+                    </div>
+                    <span class="nang-line-total">0,00 &euro;</span>
+                    <button type="button" class="nang-line-del" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '"><i class="ri-delete-bin-line"></i></button>
+                </div>
+            </div>
+            <button type="button" class="nang-add-line" id="ra-einv-add-line">
+                <i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_position')) . '
+            </button>
+
+            <!-- Totals card -->
+            <div class="nang-totals-card">
+                <div class="nang-totals-row"><span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span><span id="ra-einv-net">0,00 &euro;</span></div>
+                <div class="nang-totals-row" id="ra-einv-vat-row"><span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' ' . intval($vat_rate) . '%</span><span id="ra-einv-vat">0,00 &euro;</span></div>
+                <div class="nang-totals-row nang-totals-final" style="border-color:#2563eb;color:#2563eb"><span>' . esc_html(PPV_Lang::t('repair_admin_gross')) . '</span><span id="ra-einv-total">0,00 &euro;</span></div>
+            </div>
+
+            <!-- Options -->
+            <div class="ninv-options">
+                <label class="ninv-checkbox-label">
+                    <input type="checkbox" id="ra-einv-differenz">
+                    <span class="ninv-checkmark"><i class="ri-check-line"></i></span>
+                    <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
+                </label>
+            </div>
+
+            <!-- Payment section -->
+            <div id="ra-einv-payment-section">
+                <div class="ninv-options">
+                    <label class="ninv-checkbox-label">
+                        <input type="checkbox" id="ra-einv-paid-toggle">
+                        <span class="ninv-checkmark"><i class="ri-check-line"></i></span>
+                        <span>' . esc_html(PPV_Lang::t('repair_admin_already_paid')) . '</span>
+                    </label>
+                </div>
+                <div id="ra-einv-paid-fields" style="display:none;margin-bottom:16px">
+                    <div class="nang-field-row">
+                        <div class="nang-field nang-field-grow">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_payment_method')) . '</label>
+                            <div class="nang-input-wrap ninv-focus"><i class="ri-bank-card-line"></i>
+                                <select id="ra-einv-payment-method" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                                    <option value="">' . esc_html(PPV_Lang::t('repair_admin_please_select')) . '</option>
+                                    <option value="bar">' . esc_html(PPV_Lang::t('repair_admin_pay_cash')) . '</option>
+                                    <option value="ec">' . esc_html(PPV_Lang::t('repair_admin_pay_ec')) . '</option>
+                                    <option value="kreditkarte">' . esc_html(PPV_Lang::t('repair_admin_pay_credit')) . '</option>
+                                    <option value="ueberweisung">' . esc_html(PPV_Lang::t('repair_admin_pay_transfer')) . '</option>
+                                    <option value="paypal">' . esc_html(PPV_Lang::t('repair_admin_pay_paypal')) . '</option>
+                                    <option value="andere">' . esc_html(PPV_Lang::t('repair_admin_pay_other')) . '</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="nang-field nang-field-grow">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
+                            <div class="nang-input-wrap ninv-focus"><i class="ri-calendar-line"></i>
+                                <input type="date" id="ra-einv-paid-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="nang-field" style="margin-bottom:20px">
+                <label><i class="ri-sticky-note-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
+                <textarea id="ra-einv-notes" class="nang-meta-input" rows="2" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_notes_ph')) . '" style="resize:vertical"></textarea>
+            </div>
+
+            <input type="hidden" id="ra-einv-id" value="">
+
+            <!-- Action buttons -->
+            <div class="nang-actions">
+                <button type="button" class="nang-cancel-btn" id="ra-einv-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+                <button type="button" class="nang-submit-btn" id="ra-einv-submit" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 2px 8px rgba(37,99,235,.25)">
+                    <i class="ri-save-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_save')) . '
+                </button>
+            </div>
+        </div>
+
     </div>
 </div>';
 
@@ -4319,9 +4410,23 @@ echo '</div></div>
         document.getElementById("ra-inv-paid-fields").style.display=this.checked?"block":"none";
     });
 
+    function buildEinvLineHtml(desc,amt){
+        var idx=0;
+        var price=amt||0;
+        return '<div class="nang-line" data-idx="'+idx+'"><input type="text" placeholder="'+L.service+'" class="nang-line-desc" value="'+esc(desc||"")+'"><input type="number" value="1" min="1" step="1" class="nang-line-qty"><div class="nang-line-price-wrap"><input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price" value="'+(price||"")+'"><span class="nang-line-currency">&euro;</span></div><span class="nang-line-total">'+(price?fmtEur(price):'0,00 &euro;')+'</span><button type="button" class="nang-line-del" title="'+L["delete"]+'"><i class="ri-delete-bin-line"></i></button></div>';
+    }
+
     function showEditInvoiceModal(inv){
-        // Use new edit modal with customer fields
         var modal=document.getElementById("ra-edit-invoice-modal");
+        // Reset to step 1
+        document.getElementById("einv-sec-customer").style.display="block";
+        document.getElementById("einv-sec-positions").style.display="none";
+        modal.querySelectorAll(".nang-step").forEach(function(s,i){
+            s.classList.toggle("active",i===0);
+            var num=s.querySelector(".nang-step-num");
+            if(num){num.style.background=i===0?"#2563eb":"";num.style.color=i===0?"#fff":""}
+        });
+
         document.getElementById("ra-einv-id").value=inv.id;
         document.getElementById("ra-einv-number-input").value=inv.invoice_number;
         var d=new Date(inv.created_at);
@@ -4339,14 +4444,21 @@ echo '</div></div>
         document.getElementById("ra-einv-notes").value=inv.notes||"";
         document.getElementById("ra-einv-differenz").checked=!!parseInt(inv.is_differenzbesteuerung);
 
-        // Fill line items
+        // Fill payment status
+        var isPaid=inv.status==="paid";
+        document.getElementById("ra-einv-paid-toggle").checked=isPaid;
+        document.getElementById("ra-einv-paid-fields").style.display=isPaid?"block":"none";
+        document.getElementById("ra-einv-payment-method").value=inv.payment_method||"";
+        document.getElementById("ra-einv-paid-date").value=inv.paid_at?inv.paid_at.split(" ")[0]:new Date().toISOString().split("T")[0];
+
+        // Fill line items (nang-line format)
         var lines=document.getElementById("ra-einv-lines");
         var items=[];
         try{items=JSON.parse(inv.line_items||"[]")}catch(e){}
         if(items&&items.length>0){
-            lines.innerHTML=items.map(function(it){return buildLineHtml(it.description,it.amount)}).join("");
+            lines.innerHTML=items.map(function(it){return buildEinvLineHtml(it.description,it.amount)}).join("");
         }else{
-            lines.innerHTML=buildLineHtml("",inv.subtotal||"");
+            lines.innerHTML=buildEinvLineHtml("",inv.subtotal||"");
         }
         recalcEditInvoiceModal();
         modal.classList.add("show");
@@ -6270,43 +6382,79 @@ echo '</div></div>
     /* ===== EDIT INVOICE MODAL ===== */
     var editInvModal=document.getElementById("ra-edit-invoice-modal");
 
+    var einvLineIdx=1;
+
     function recalcEditInvoiceModal(){
-        var amounts=document.querySelectorAll("#ra-einv-lines .ra-inv-line-amount");
         var brutto=0;
-        amounts.forEach(function(a){brutto+=parseFloat(a.value)||0});
+        document.querySelectorAll("#ra-einv-lines .nang-line").forEach(function(line){
+            var qty=parseFloat(line.querySelector(".nang-line-qty").value)||1;
+            var price=parseFloat(line.querySelector(".nang-line-price").value)||0;
+            var t=Math.round(qty*price*100)/100;
+            line.querySelector(".nang-line-total").textContent=fmtEur(t);
+            brutto+=t;
+        });
         var net,vat;
         if(VAT_ENABLED){
             net=Math.round(brutto/(1+VAT_RATE/100)*100)/100;
             vat=Math.round((brutto-net)*100)/100;
-        }else{
-            net=brutto;
-            vat=0;
-        }
+        }else{net=brutto;vat=0}
         document.getElementById("ra-einv-net").textContent=fmtEur(net);
         document.getElementById("ra-einv-vat").textContent=fmtEur(vat);
         document.getElementById("ra-einv-total").textContent=fmtEur(brutto);
     }
 
-    document.getElementById("ra-einv-cancel").addEventListener("click",function(){
-        editInvModal.classList.remove("show");
+    // Step navigation
+    document.getElementById("einv-next-to-positions").addEventListener("click",function(){
+        var name=document.getElementById("ra-einv-name").value.trim();
+        if(!name){toast(L.cust_name_req);return}
+        document.getElementById("einv-sec-customer").style.display="none";
+        document.getElementById("einv-sec-positions").style.display="block";
+        var chip=document.getElementById("einv-customer-chip");
+        chip.innerHTML=\'<i class="ri-user-line"></i> <strong>\'+esc(name)+\'</strong>\';
+        var email=document.getElementById("ra-einv-email").value;
+        if(email)chip.innerHTML+=\' &bull; \'+esc(email);
+        editInvModal.querySelectorAll(".nang-step").forEach(function(s,i){
+            s.classList.toggle("active",i===1);
+            var num=s.querySelector(".nang-step-num");
+            if(num){num.style.background=i<=1?"#2563eb":"";num.style.color=i<=1?"#fff":""}
+        });
     });
-    editInvModal.addEventListener("click",function(e){
-        if(e.target===editInvModal)editInvModal.classList.remove("show");
+    document.getElementById("einv-back-to-customer").addEventListener("click",function(){
+        document.getElementById("einv-sec-positions").style.display="none";
+        document.getElementById("einv-sec-customer").style.display="block";
+        editInvModal.querySelectorAll(".nang-step").forEach(function(s,i){
+            s.classList.toggle("active",i===0);
+            var num=s.querySelector(".nang-step-num");
+            if(num){num.style.background=i===0?"#2563eb":"";num.style.color=i===0?"#fff":""}
+        });
+    });
+
+    // Close
+    document.getElementById("ra-einv-close").addEventListener("click",function(){editInvModal.classList.remove("show")});
+    document.getElementById("ra-einv-cancel").addEventListener("click",function(){editInvModal.classList.remove("show")});
+    editInvModal.addEventListener("click",function(e){if(e.target===editInvModal)editInvModal.classList.remove("show")});
+
+    // Paid toggle
+    document.getElementById("ra-einv-paid-toggle").addEventListener("change",function(){
+        document.getElementById("ra-einv-paid-fields").style.display=this.checked?"block":"none";
     });
 
     // Add line
     document.getElementById("ra-einv-add-line").addEventListener("click",function(){
+        var idx=einvLineIdx++;
         var line=document.createElement("div");
-        line.className="ra-inv-line";
-        line.innerHTML=\'<input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button>\';
+        line.className="nang-line";
+        line.setAttribute("data-idx",idx);
+        line.innerHTML=\'<input type="text" placeholder="\'+L.service+\'" class="nang-line-desc"><input type="number" value="1" min="1" step="1" class="nang-line-qty"><div class="nang-line-price-wrap"><input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price"><span class="nang-line-currency">&euro;</span></div><span class="nang-line-total">0,00 &euro;</span><button type="button" class="nang-line-del" title="\'+L["delete"]+\'"><i class="ri-delete-bin-line"></i></button>\';
         document.getElementById("ra-einv-lines").appendChild(line);
     });
 
     // Remove line + recalc
     document.getElementById("ra-einv-lines").addEventListener("click",function(e){
-        if(e.target.classList.contains("ra-inv-line-remove")){
-            var lines=this.querySelectorAll(".ra-inv-line");
-            if(lines.length>1)e.target.closest(".ra-inv-line").remove();
+        var del=e.target.closest(".nang-line-del");
+        if(del){
+            var lines=this.querySelectorAll(".nang-line");
+            if(lines.length>1)del.closest(".nang-line").remove();
             recalcEditInvoiceModal();
         }
     });
@@ -6315,14 +6463,15 @@ echo '</div></div>
     // Submit edit
     document.getElementById("ra-einv-submit").addEventListener("click",function(){
         var name=document.getElementById("ra-einv-name").value.trim();
-        if(!name){toast(L.cust_name_req);return;}
+        if(!name){toast(L.cust_name_req);return}
 
         // Collect line items
-        var items=[];
-        var subtotal=0;
-        document.querySelectorAll("#ra-einv-lines .ra-inv-line").forEach(function(line){
-            var desc=line.querySelector(".ra-inv-line-desc").value.trim();
-            var amt=parseFloat(line.querySelector(".ra-inv-line-amount").value)||0;
+        var items=[];var subtotal=0;
+        document.querySelectorAll("#ra-einv-lines .nang-line").forEach(function(line){
+            var desc=line.querySelector(".nang-line-desc").value.trim();
+            var qty=parseFloat(line.querySelector(".nang-line-qty").value)||1;
+            var price=parseFloat(line.querySelector(".nang-line-price").value)||0;
+            var amt=Math.round(qty*price*100)/100;
             if(desc||amt>0){items.push({description:desc,amount:amt});subtotal+=amt}
         });
 
@@ -6343,10 +6492,20 @@ echo '</div></div>
         fd.append("is_differenzbesteuerung",document.getElementById("ra-einv-differenz").checked?"1":"0");
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
+        // Payment status
+        if(document.getElementById("ra-einv-paid-toggle").checked){
+            fd.append("status","paid");
+            var pm=document.getElementById("ra-einv-payment-method").value;
+            var pd=document.getElementById("ra-einv-paid-date").value;
+            if(pm)fd.append("payment_method",pm);
+            if(pd)fd.append("paid_at",pd);
+        }
 
+        var btn=this;btn.disabled=true;btn.style.opacity="0.7";
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(data){
+            btn.disabled=false;btn.style.opacity="";
             if(data.success){
                 toast(L.inv_updated);
                 editInvModal.classList.remove("show");
@@ -6356,7 +6515,7 @@ echo '</div></div>
                 toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast(L.connection_error)});
+        .catch(function(){btn.disabled=false;btn.style.opacity="";toast(L.connection_error)});
     });
 
     /* ===== CUSTOMERS TAB ===== */
