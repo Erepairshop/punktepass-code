@@ -1717,6 +1717,18 @@ class PPV_Repair_Core {
         $color = esc_attr($store->repair_color ?: '#667eea');
         $logo = esc_url($store->logo ?: PPV_PLUGIN_URL . 'assets/img/punktepass-logo.png');
 
+        // Store contact info
+        $store_phone = $store->repair_company_phone ?: ($store->phone ?? '');
+        $store_email = $store->repair_company_email ?: ($store->email ?? '');
+        $store_address = $store->repair_company_address ?: '';
+        if (empty($store_address) && !empty($store->address)) {
+            $store_address = $store->address;
+            if (!empty($store->plz) || !empty($store->city)) {
+                $store_address .= ', ' . trim(($store->plz ?? '') . ' ' . ($store->city ?? ''));
+            }
+        }
+        $store_hours = $store->repair_opening_hours ?? '';
+
         ob_start();
         ?>
 <!DOCTYPE html>
@@ -1730,56 +1742,123 @@ class PPV_Repair_Core {
     <link rel="icon" href="<?php echo $logo; ?>" type="image/png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <style>
-        :root{--color-accent:<?php echo $color; ?>;}
+        :root{--color-accent:<?php echo $color; ?>;--color-accent-light:color-mix(in srgb,var(--color-accent),#fff 88%);--color-accent-dark:color-mix(in srgb,var(--color-accent),#000 20%)}
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f4f4f5;color:#1f2937;min-height:100vh;padding:20px}
-        .container{max-width:480px;margin:0 auto}
-        .card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);overflow:hidden}
-        .header{background:linear-gradient(135deg,var(--color-accent),color-mix(in srgb,var(--color-accent),#000 20%));padding:24px 20px;text-align:center}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f4f4f5;color:#1f2937;min-height:100vh;padding:16px}
+        .container{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+        .card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden}
+        .header{background:linear-gradient(135deg,var(--color-accent),var(--color-accent-dark));padding:24px 20px;text-align:center}
         .header img{height:48px;border-radius:8px;margin-bottom:12px}
         .header h1{color:#fff;font-size:18px;font-weight:600;margin:0}
-        .header p{color:rgba(255,255,255,0.85);font-size:13px;margin-top:4px}
-        .content{padding:24px 20px}
-        .status-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:20px}
+        .header .greeting{color:rgba(255,255,255,0.95);font-size:15px;margin-top:6px;font-weight:500}
+        .header .subtitle{color:rgba(255,255,255,0.7);font-size:12px;margin-top:4px}
+
+        /* Status hero */
+        .status-hero{padding:20px;text-align:center;border-bottom:1px solid #f3f4f6}
+        .status-badge{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600}
         .status-neu{background:#fef3c7;color:#92400e}
         .status-in-bearbeitung{background:#dbeafe;color:#1d4ed8}
         .status-warten{background:#fce7f3;color:#9d174d}
         .status-fertig{background:#d1fae5;color:#065f46}
         .status-abgeholt{background:#e5e7eb;color:#374151}
-        .repair-id{font-size:32px;font-weight:700;color:#1f2937;margin-bottom:4px}
-        .repair-date{font-size:13px;color:#6b7280;margin-bottom:20px}
-        .detail-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+        .status-badge i{font-size:16px}
+        .repair-id{font-size:28px;font-weight:700;color:#1f2937;margin-top:12px}
+        .repair-meta{font-size:12px;color:#9ca3af;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:12px}
+        .repair-meta span{display:flex;align-items:center;gap:3px}
+        @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+        .live-dot{width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse-dot 2s ease-in-out infinite}
+
+        /* Widget cards */
+        .widget{padding:16px 20px}
+        .widget-title{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+        .widget-title i{font-size:14px;color:var(--color-accent)}
+
+        /* Detail rows */
+        .detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f8f9fa;font-size:14px}
         .detail-row:last-child{border-bottom:none}
-        .detail-label{color:#6b7280}
-        .detail-value{font-weight:500;text-align:right}
-        .problem-box{background:#f8fafc;border-radius:12px;padding:16px;margin-top:20px}
-        .problem-label{font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;margin-bottom:8px}
-        .problem-text{font-size:14px;color:#374151;line-height:1.6}
-        .timeline{margin-top:24px;padding-top:20px;border-top:1px solid #e5e7eb}
-        .timeline-title{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:12px;text-transform:uppercase}
-        .timeline-item{display:flex;gap:12px;padding:8px 0}
-        .timeline-dot{width:10px;height:10px;border-radius:50%;background:#e5e7eb;flex-shrink:0;margin-top:5px}
-        .timeline-dot.active{background:var(--color-accent)}
-        .timeline-text{font-size:13px;color:#6b7280}
-        .timeline-text.active{color:#1f2937;font-weight:500}
+        .detail-label{color:#6b7280;font-size:13px}
+        .detail-value{font-weight:500;text-align:right;max-width:60%}
+
+        /* Cost widget */
+        .cost-card{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px}
+        .cost-row{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+        .cost-row+.cost-row{margin-top:8px;padding-top:8px;border-top:1px dashed #bbf7d0}
+        .cost-label{color:#059669;font-size:13px}
+        .cost-value{font-weight:700;color:#065f46;font-size:16px}
+        .cost-estimate{font-weight:500;color:#6b7280;font-size:14px}
+
+        /* Termin widget */
+        .termin-card{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+        .termin-icon{width:40px;height:40px;border-radius:10px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;color:#2563eb;flex-shrink:0}
+        .termin-info{flex:1}
+        .termin-label{font-size:11px;font-weight:600;color:#3b82f6;text-transform:uppercase}
+        .termin-date{font-size:15px;font-weight:600;color:#1e40af;margin-top:2px}
+
+        /* Accessories widget */
+        .accessories-box{background:#f8fafc;border-radius:12px;padding:14px 16px}
+        .accessories-text{font-size:13px;color:#374151;line-height:1.6}
+
+        /* Problem box */
+        .problem-box{background:#f8fafc;border-radius:12px;padding:14px 16px}
+        .problem-text{font-size:13px;color:#374151;line-height:1.6}
+
+        /* Timeline */
+        .timeline-track{display:flex;align-items:flex-start;gap:0;position:relative;padding:0 4px}
+        .timeline-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1}
+        .timeline-dot{width:28px;height:28px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;transition:all .3s}
+        .timeline-dot.active{background:var(--color-accent);box-shadow:0 2px 8px color-mix(in srgb,var(--color-accent),transparent 60%)}
+        .timeline-dot.current{box-shadow:0 0 0 4px var(--color-accent-light),0 2px 8px color-mix(in srgb,var(--color-accent),transparent 60%)}
+        .timeline-label{font-size:10px;color:#9ca3af;margin-top:6px;text-align:center;line-height:1.2;font-weight:500}
+        .timeline-label.active{color:#1f2937;font-weight:600}
+        .timeline-date{font-size:9px;color:#9ca3af;margin-top:2px}
+        .timeline-line{position:absolute;top:14px;left:0;right:0;height:2px;background:#e5e7eb;z-index:0}
+        .timeline-line-fill{height:100%;background:var(--color-accent);transition:width .5s}
+
+        /* Contact card */
+        .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .contact-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;border-radius:10px;text-decoration:none;color:#374151;font-size:13px;transition:background .2s}
+        .contact-item:hover{background:#f0f0f2}
+        .contact-item.full-width{grid-column:1/-1}
+        .contact-icon{width:32px;height:32px;border-radius:8px;background:var(--color-accent-light);display:flex;align-items:center;justify-content:center;color:var(--color-accent);font-size:15px;flex-shrink:0}
+        .contact-text{line-height:1.3;overflow:hidden}
+        .contact-label{font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase}
+        .contact-value{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+        /* Not found */
         .not-found{text-align:center;padding:40px 20px}
         .not-found i{font-size:48px;color:#e5e7eb;margin-bottom:16px}
         .not-found h2{font-size:18px;color:#374151;margin-bottom:8px}
         .not-found p{font-size:14px;color:#6b7280}
-        .footer{text-align:center;padding:16px;font-size:12px;color:#9ca3af}
-        .footer a{color:var(--color-accent);text-decoration:none}
+
+        /* Footer */
+        .footer{text-align:center;padding:8px;font-size:12px;color:#9ca3af}
+        .footer a{color:var(--color-accent);text-decoration:none;font-weight:500}
+
+        /* Refresh indicator */
+        .refresh-bar{height:2px;background:transparent;border-radius:1px;overflow:hidden;position:relative}
+        .refresh-bar.loading{background:#f3f4f6}
+        .refresh-bar.loading::after{content:'';position:absolute;left:-40%;width:40%;height:100%;background:var(--color-accent);animation:slide 1s ease-in-out infinite}
+        @keyframes slide{0%{left:-40%}100%{left:100%}}
+
+        /* Status change flash */
+        @keyframes flash{0%{background:#fff}50%{background:var(--color-accent-light)}100%{background:#fff}}
+        .status-changed{animation:flash 1s ease}
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="card">
+    <div class="card" id="tracking-card">
         <div class="header">
             <?php if ($store->logo): ?>
                 <img src="<?php echo $logo; ?>" alt="<?php echo $store_name; ?>">
             <?php endif; ?>
             <h1><?php echo $store_name; ?></h1>
-            <p>Reparaturstatus</p>
+            <?php if ($repair): ?>
+                <div class="greeting">Hallo <?php echo esc_html(explode(' ', $repair->customer_name)[0]); ?>!</div>
+            <?php endif; ?>
+            <div class="subtitle">Reparaturstatus</div>
         </div>
+        <div class="refresh-bar" id="refresh-bar"></div>
 
         <?php if (!$repair): ?>
         <div class="not-found">
@@ -1798,74 +1877,258 @@ class PPV_Repair_Core {
             ];
             $current_status = $repair->status ?: 'new';
             $status_info = $status_map[$current_status] ?? ['Unbekannt', 'status-neu', 'ri-question-line'];
+
+            // Relative time for "last updated"
+            $updated_ts = strtotime($repair->updated_at);
+            $diff_seconds = time() - $updated_ts;
+            if ($diff_seconds < 60) {
+                $relative_time = 'gerade eben';
+            } elseif ($diff_seconds < 3600) {
+                $mins = floor($diff_seconds / 60);
+                $relative_time = 'vor ' . $mins . ' Min.';
+            } elseif ($diff_seconds < 86400) {
+                $hours = floor($diff_seconds / 3600);
+                $relative_time = 'vor ' . $hours . ' Std.';
+            } else {
+                $days = floor($diff_seconds / 86400);
+                $relative_time = 'vor ' . $days . ($days == 1 ? ' Tag' : ' Tagen');
+            }
+
+            // Timeline dates
+            $timeline_dates = [
+                'new' => $repair->created_at ? date('d.m.Y', strtotime($repair->created_at)) : '',
+                'in_progress' => '',
+                'done' => $repair->completed_at ? date('d.m.Y', strtotime($repair->completed_at)) : '',
+                'delivered' => $repair->delivered_at ? date('d.m.Y', strtotime($repair->delivered_at)) : '',
+            ];
+            // in_progress date: use updated_at if status is currently in_progress or beyond
+            if (in_array($current_status, ['in_progress', 'waiting_parts', 'done', 'delivered'])) {
+                $timeline_dates['in_progress'] = date('d.m.Y', strtotime($repair->updated_at));
+            }
         ?>
-        <div class="content">
+
+        <!-- Status Hero -->
+        <div class="status-hero" id="status-hero">
             <div class="status-badge <?php echo $status_info[1]; ?>">
                 <i class="<?php echo $status_info[2]; ?>"></i>
                 <?php echo $status_info[0]; ?>
             </div>
-
             <div class="repair-id">#<?php echo intval($repair->id); ?></div>
-            <div class="repair-date">Eingereicht am <?php echo date('d.m.Y', strtotime($repair->created_at)); ?></div>
+            <div class="repair-meta">
+                <span><i class="ri-calendar-line"></i> <?php echo date('d.m.Y', strtotime($repair->created_at)); ?></span>
+                <span><span class="live-dot"></span> <?php echo $relative_time; ?></span>
+            </div>
+        </div>
 
+        <!-- Device Info -->
+        <div class="widget">
+            <div class="widget-title"><i class="ri-smartphone-line"></i> Gerät</div>
             <div class="detail-row">
-                <span class="detail-label">Gerät</span>
+                <span class="detail-label">Modell</span>
                 <span class="detail-value"><?php echo esc_html(trim(($repair->device_brand ?: '') . ' ' . ($repair->device_model ?: '')) ?: '-'); ?></span>
             </div>
-            <?php if (!empty($repair->estimated_cost) && $repair->estimated_cost > 0): ?>
+            <?php if (!empty($repair->device_imei)): ?>
             <div class="detail-row">
-                <span class="detail-label">Geschätzte Kosten</span>
-                <span class="detail-value"><?php echo number_format($repair->estimated_cost, 2, ',', '.'); ?> €</span>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($repair->final_cost) && $repair->final_cost > 0): ?>
-            <div class="detail-row">
-                <span class="detail-label">Endpreis</span>
-                <span class="detail-value" style="color:#059669;font-weight:600"><?php echo number_format($repair->final_cost, 2, ',', '.'); ?> €</span>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($repair->termin_at) && strtotime($repair->termin_at) > time()): ?>
-            <div class="detail-row" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;margin-top:8px">
-                <span class="detail-label" style="color:#059669"><i class="ri-calendar-check-line"></i> Termin</span>
-                <span class="detail-value" style="color:#059669;font-weight:600"><?php
-                    $t_ts = strtotime($repair->termin_at);
-                    echo date('d.m.Y', $t_ts);
-                    if (date('H:i', $t_ts) !== '00:00') echo ' um ' . date('H:i', $t_ts) . ' Uhr';
+                <span class="detail-label">IMEI</span>
+                <span class="detail-value" style="font-family:monospace;font-size:13px"><?php
+                    $imei = $repair->device_imei;
+                    echo esc_html(str_repeat('*', max(0, strlen($imei) - 4)) . substr($imei, -4));
                 ?></span>
             </div>
             <?php endif; ?>
+        </div>
 
+        <!-- Cost Widget -->
+        <?php if ((!empty($repair->estimated_cost) && $repair->estimated_cost > 0) || (!empty($repair->final_cost) && $repair->final_cost > 0)): ?>
+        <div class="widget">
+            <div class="widget-title"><i class="ri-money-euro-circle-line"></i> Kosten</div>
+            <div class="cost-card">
+                <?php if (!empty($repair->final_cost) && $repair->final_cost > 0): ?>
+                <div class="cost-row">
+                    <span class="cost-label">Endpreis</span>
+                    <span class="cost-value"><?php echo number_format($repair->final_cost, 2, ',', '.'); ?> €</span>
+                </div>
+                    <?php if (!empty($repair->estimated_cost) && $repair->estimated_cost > 0 && $repair->estimated_cost != $repair->final_cost): ?>
+                    <div class="cost-row">
+                        <span class="cost-label" style="color:#9ca3af">Kostenvoranschlag</span>
+                        <span class="cost-estimate" style="text-decoration:line-through"><?php echo number_format($repair->estimated_cost, 2, ',', '.'); ?> €</span>
+                    </div>
+                    <?php endif; ?>
+                <?php else: ?>
+                <div class="cost-row">
+                    <span class="cost-label">Kostenvoranschlag</span>
+                    <span class="cost-value"><?php echo number_format($repair->estimated_cost, 2, ',', '.'); ?> €</span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Termin Widget -->
+        <?php if (!empty($repair->termin_at) && strtotime($repair->termin_at) > time()): ?>
+        <div class="widget">
+            <div class="termin-card">
+                <div class="termin-icon"><i class="ri-calendar-check-line"></i></div>
+                <div class="termin-info">
+                    <div class="termin-label">Abholtermin</div>
+                    <div class="termin-date"><?php
+                        $t_ts = strtotime($repair->termin_at);
+                        echo date('d.m.Y', $t_ts);
+                        if (date('H:i', $t_ts) !== '00:00') echo ' um ' . date('H:i', $t_ts) . ' Uhr';
+                    ?></div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Problem Description -->
+        <div class="widget">
+            <div class="widget-title"><i class="ri-file-text-line"></i> Beschreibung</div>
             <div class="problem-box">
-                <div class="problem-label">Beschreibung</div>
                 <div class="problem-text"><?php echo nl2br(esc_html($repair->problem_description ?: '-')); ?></div>
             </div>
+        </div>
 
-            <div class="timeline">
-                <div class="timeline-title">Fortschritt</div>
-                <?php
-                $stages = ['new', 'in_progress', 'done', 'delivered'];
-                $stage_labels = ['Eingegangen', 'In Bearbeitung', 'Fertig', 'Abgeholt'];
-                $current_idx = array_search($current_status, $stages);
-                if ($current_idx === false) $current_idx = 0;
-                if ($current_status === 'waiting_parts') $current_idx = 1; // Show as "in progress" level
-                if ($current_status === 'cancelled') $current_idx = -1; // Don't highlight any
-                foreach ($stages as $idx => $stage):
+        <!-- Accessories -->
+        <?php if (!empty($repair->accessories)): ?>
+        <div class="widget">
+            <div class="widget-title"><i class="ri-luggage-cart-line"></i> Mitgegebenes Zubehör</div>
+            <div class="accessories-box">
+                <div class="accessories-text"><?php echo nl2br(esc_html($repair->accessories)); ?></div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Progress Timeline -->
+        <div class="widget">
+            <div class="widget-title"><i class="ri-route-line"></i> Fortschritt</div>
+            <?php
+            $stages = ['new', 'in_progress', 'done', 'delivered'];
+            $stage_labels = ['Eingang', 'Reparatur', 'Fertig', 'Abgeholt'];
+            $stage_icons = ['ri-inbox-line', 'ri-tools-line', 'ri-checkbox-circle-line', 'ri-check-double-line'];
+            $current_idx = array_search($current_status, $stages);
+            if ($current_idx === false) $current_idx = 0;
+            if ($current_status === 'waiting_parts') $current_idx = 1;
+            if ($current_status === 'cancelled') $current_idx = -1;
+            $fill_pct = $current_idx >= 0 ? round(($current_idx / (count($stages) - 1)) * 100) : 0;
+            ?>
+            <div class="timeline-track">
+                <div class="timeline-line"><div class="timeline-line-fill" style="width:<?php echo $fill_pct; ?>%"></div></div>
+                <?php foreach ($stages as $idx => $stage):
                     $is_active = ($current_status !== 'cancelled' && $idx <= $current_idx);
+                    $is_current = ($current_status !== 'cancelled' && $idx === $current_idx);
                 ?>
-                <div class="timeline-item">
-                    <div class="timeline-dot <?php echo $is_active ? 'active' : ''; ?>"></div>
-                    <div class="timeline-text <?php echo $is_active ? 'active' : ''; ?>"><?php echo $stage_labels[$idx]; ?></div>
+                <div class="timeline-step">
+                    <div class="timeline-dot <?php echo $is_active ? 'active' : ''; ?> <?php echo $is_current ? 'current' : ''; ?>">
+                        <i class="<?php echo $stage_icons[$idx]; ?>" style="font-size:13px"></i>
+                    </div>
+                    <div class="timeline-label <?php echo $is_active ? 'active' : ''; ?>"><?php echo $stage_labels[$idx]; ?></div>
+                    <?php if (!empty($timeline_dates[$stage])): ?>
+                    <div class="timeline-date"><?php echo $timeline_dates[$stage]; ?></div>
+                    <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
             </div>
         </div>
+
         <?php endif; ?>
     </div>
+
+    <!-- Store Contact Card -->
+    <?php if ($repair && ($store_phone || $store_email || $store_address || $store_hours)): ?>
+    <div class="card">
+        <div class="widget">
+            <div class="widget-title"><i class="ri-store-2-line"></i> Kontakt</div>
+            <div class="contact-grid">
+                <?php if ($store_phone): ?>
+                <a href="tel:<?php echo esc_attr(preg_replace('/[^\d+]/', '', $store_phone)); ?>" class="contact-item">
+                    <div class="contact-icon"><i class="ri-phone-line"></i></div>
+                    <div class="contact-text">
+                        <div class="contact-label">Telefon</div>
+                        <div class="contact-value"><?php echo esc_html($store_phone); ?></div>
+                    </div>
+                </a>
+                <?php endif; ?>
+                <?php if ($store_email): ?>
+                <a href="mailto:<?php echo esc_attr($store_email); ?>" class="contact-item">
+                    <div class="contact-icon"><i class="ri-mail-line"></i></div>
+                    <div class="contact-text">
+                        <div class="contact-label">E-Mail</div>
+                        <div class="contact-value"><?php echo esc_html($store_email); ?></div>
+                    </div>
+                </a>
+                <?php endif; ?>
+                <?php if ($store_address): ?>
+                <a href="https://maps.google.com/?q=<?php echo urlencode($store_address); ?>" target="_blank" class="contact-item full-width">
+                    <div class="contact-icon"><i class="ri-map-pin-line"></i></div>
+                    <div class="contact-text">
+                        <div class="contact-label">Adresse</div>
+                        <div class="contact-value" style="white-space:normal"><?php echo esc_html($store_address); ?></div>
+                    </div>
+                </a>
+                <?php endif; ?>
+                <?php if ($store_hours): ?>
+                <div class="contact-item full-width">
+                    <div class="contact-icon"><i class="ri-time-line"></i></div>
+                    <div class="contact-text">
+                        <div class="contact-label">Öffnungszeiten</div>
+                        <div class="contact-value" style="white-space:normal"><?php echo esc_html($store_hours); ?></div>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="footer">
         <a href="/formular/<?php echo esc_attr($store->store_slug); ?>">Neues Anliegen melden</a>
     </div>
 </div>
+
+<?php if ($repair): ?>
+<script>
+(function(){
+    var lastStatus = <?php echo json_encode($current_status); ?>;
+    var refreshInterval = 60000;
+
+    function refreshStatus() {
+        var bar = document.getElementById('refresh-bar');
+        bar.classList.add('loading');
+        fetch(window.location.href, {headers:{'X-Requested-With':'tracking-refresh'}})
+            .then(function(r){return r.text()})
+            .then(function(html){
+                bar.classList.remove('loading');
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var newHero = doc.getElementById('status-hero');
+                var oldHero = document.getElementById('status-hero');
+                if (newHero && oldHero) {
+                    var newBadge = newHero.querySelector('.status-badge');
+                    var oldBadge = oldHero.querySelector('.status-badge');
+                    if (newBadge && oldBadge && newBadge.textContent.trim() !== oldBadge.textContent.trim()) {
+                        var card = document.getElementById('tracking-card');
+                        var newCard = doc.getElementById('tracking-card');
+                        if (card && newCard) {
+                            card.innerHTML = newCard.innerHTML;
+                            card.classList.add('status-changed');
+                            setTimeout(function(){card.classList.remove('status-changed')}, 1500);
+                        }
+                    } else {
+                        var oldMeta = oldHero.querySelector('.repair-meta');
+                        var newMeta = newHero.querySelector('.repair-meta');
+                        if (oldMeta && newMeta) oldMeta.innerHTML = newMeta.innerHTML;
+                    }
+                }
+            })
+            .catch(function(){bar.classList.remove('loading')});
+    }
+
+    setInterval(refreshStatus, refreshInterval);
+})();
+</script>
+<?php endif; ?>
+
 </body>
 </html>
         <?php
