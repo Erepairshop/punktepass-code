@@ -8057,6 +8057,22 @@ echo '</div></div>
             . $problem_section
             // Custom fields section
             . $cf_section
+            // Tracking section
+            . (!empty($r->tracking_token) && $store ? (function() use ($r, $store) {
+                $tracking_url = esc_attr(home_url("/formular/{$store->store_slug}/status/{$r->tracking_token}"));
+                return '<div class="ra-card-section ra-tracking-section">'
+                    . '<div class="ra-card-section-title"><i class="ri-live-line"></i> Live-Tracking</div>'
+                    . '<div class="ra-tracking-row">'
+                        . '<button type="button" class="ra-tracking-btn ra-tracking-btn-copy" onclick="'
+                            . "var u='" . $tracking_url . "';"
+                            . "navigator.clipboard?navigator.clipboard.writeText(u):function(){var t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t)}();"
+                            . "this.innerHTML='<i class=&quot;ri-check-line&quot;></i> Kopiert!';"
+                            . "var b=this;setTimeout(function(){b.innerHTML='<i class=&quot;ri-file-copy-line&quot;></i> Link kopieren'},1500)"
+                        . '"><i class="ri-file-copy-line"></i> Link kopieren</button>'
+                        . '<a href="' . $tracking_url . '" target="_blank" class="ra-tracking-btn ra-tracking-btn-open"><i class="ri-external-link-line"></i> Öffnen</a>'
+                    . '</div>'
+                . '</div>';
+            })() : '')
             // Badges row
             . $badges_row
             // Parts arrived button
