@@ -4413,7 +4413,7 @@ echo '</div></div>
     function buildEinvLineHtml(desc,amt){
         var idx=0;
         var price=amt||0;
-        return '<div class="nang-line" data-idx="'+idx+'"><input type="text" placeholder="'+L.service+'" class="nang-line-desc" value="'+esc(desc||"")+'"><input type="number" value="1" min="1" step="1" class="nang-line-qty"><div class="nang-line-price-wrap"><input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price" value="'+(price||"")+'"><span class="nang-line-currency">&euro;</span></div><span class="nang-line-total">'+(price?fmtEur(price):'0,00 &euro;')+'</span><button type="button" class="nang-line-del" title="'+L["delete"]+'"><i class="ri-delete-bin-line"></i></button></div>';
+        return \'<div class="nang-line" data-idx="\'+idx+\'"><input type="text" placeholder="\'+L.service+\'" class="nang-line-desc" value="\'+esc(desc||"")+\'"><input type="number" value="1" min="1" step="1" class="nang-line-qty"><div class="nang-line-price-wrap"><input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price" value="\'+(price||"")+\'"><span class="nang-line-currency">&euro;</span></div><span class="nang-line-total">\'+(price?fmtEur(price):\'0,00 &euro;\')+\'</span><button type="button" class="nang-line-del" title="\'+L["delete"]+\'"><i class="ri-delete-bin-line"></i></button></div>\';
     }
 
     function showEditInvoiceModal(inv){
