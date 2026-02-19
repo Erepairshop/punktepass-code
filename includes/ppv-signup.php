@@ -16,8 +16,11 @@ class PPV_Signup {
      * 🔹 Hooks
      * ============================================================ */
     public static function hooks() {
+        // Standalone: intercept signup page before WP theme renders
+        add_action('template_redirect', [__CLASS__, 'intercept_signup_page']);
+
+        // Keep shortcode as fallback
         add_shortcode('ppv_signup', [__CLASS__, 'render_signup_page']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
         // AJAX hooks - for logged OUT users (nopriv)
         add_action('wp_ajax_nopriv_ppv_signup', [__CLASS__, 'ajax_signup']);
@@ -113,119 +116,106 @@ class PPV_Signup {
     }
 
     /** ============================================================
-     * 🔹 Asset Loading
+     * Intercept Signup Page → Standalone HTML
      * ============================================================ */
-    public static function enqueue_assets() {
-        // Only load on signup page
+    public static function intercept_signup_page() {
         if (!is_page(['signup', 'registrierung', 'regisztracio'])) {
-            global $post;
-            if (!isset($post->post_content) || !has_shortcode($post->post_content, 'ppv_signup')) {
-                return;
-            }
+            return;
         }
+        self::render_standalone_signup();
+        exit;
+    }
 
-        // Google Fonts - Inter (DISABLED for performance - uses system fonts)
-        // wp_enqueue_style(
-        //     'ppv-inter-font',
-        //     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-        //     [],
-        //     null
-        // );
+    /** ============================================================
+     * Render Standalone Signup (full HTML, no WP theme)
+     * ============================================================ */
+    private static function render_standalone_signup() {
+        $plugin_url = PPV_PLUGIN_URL;
+        $plugin_dir = PPV_PLUGIN_DIR;
+        $version    = PPV_VERSION;
+        $lang       = self::get_current_lang();
 
-        // Use same CSS as login
-        wp_enqueue_style(
-            'ppv-login',
-            PPV_PLUGIN_URL . 'assets/css/ppv-login-light.css',
-            [],
-            PPV_VERSION
-        );
+        // Page content
+        $page_html = self::render_signup_page([]);
 
-        // Add password generator button CSS
-        wp_add_inline_style('ppv-login', '
-            .ppv-password-wrapper input[type="password"] {
-                padding-right: 100px !important;
-            }
-            .ppv-generate-password-btn {
-                position: absolute;
-                right: 48px;
-                top: 50%;
-                transform: translateY(-50%);
-                background: #6366f1;
-                border: none;
-                border-radius: 6px;
-                padding: 8px;
-                cursor: pointer;
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.2s;
-                z-index: 10;
-            }
-            .ppv-generate-password-btn:hover {
-                background: #4f46e5;
-                transform: translateY(-50%) scale(1.05);
-            }
-            .ppv-generate-password-btn:active {
-                transform: translateY(-50%) scale(0.95);
-            }
-            .ppv-password-wrapper .ppv-password-toggle {
-                right: 8px;
-            }
-        ');
-
-        // Signup JS
-        wp_enqueue_script(
-            'ppv-signup',
-            PPV_PLUGIN_URL . 'assets/js/ppv-signup.js',
-            ['jquery'],
-            PPV_VERSION,
-            true
-        );
-
-        // Google OAuth Library
-        wp_enqueue_script(
-            'google-platform',
-            'https://accounts.google.com/gsi/client',
-            [],
-            null,
-            true
-        );
+        // CSS version
+        $css_ver = class_exists('PPV_Core') ? PPV_Core::asset_version($plugin_dir . 'assets/css/ppv-login-light.css') : $version;
+        $js_ver  = class_exists('PPV_Core') ? PPV_Core::asset_version($plugin_dir . 'assets/js/ppv-signup.js') : $version;
 
         $google_client_id = defined('PPV_GOOGLE_CLIENT_ID')
             ? PPV_GOOGLE_CLIENT_ID
             : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
 
-        // Localize
-        wp_localize_script('ppv-signup', 'ppvSignup', [
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('ppv_signup_nonce'),
-            'google_client_id' => $google_client_id,
-            'redirect_url' => home_url('/user_dashboard'),
-            'vendor_redirect_url' => home_url('/haendler'),
-            'debug' => true
-        ]);
-
-        // Add translations for JavaScript
-        wp_add_inline_script('ppv-signup', 'window.ppvSignupTranslations = ' . wp_json_encode([
-            'error_fill_all' => PPV_Lang::t('signup_error_empty'),
-            'error_invalid_email' => PPV_Lang::t('signup_error_invalid_email'),
-            'error_password_mismatch' => PPV_Lang::t('signup_error_password_mismatch'),
-            'error_password_short' => PPV_Lang::t('signup_error_password_short'),
-            'error_password_requirements' => PPV_Lang::t('signup_error_password_weak'),
-            'error_terms' => PPV_Lang::t('signup_error_terms'),
-            'error_connection' => PPV_Lang::t('network_error'),
-            'error_google_unavailable' => PPV_Lang::t('signup_google_error'),
-            'error_google_failed' => PPV_Lang::t('signup_google_error'),
-            'password_strength_weak' => PPV_Lang::t('password_strength_weak'),
-            'password_strength_medium' => PPV_Lang::t('password_strength_medium'),
-            'password_strength_good' => PPV_Lang::t('password_strength_good'),
-            'password_strength_strong' => PPV_Lang::t('password_strength_strong'),
-            'registering' => PPV_Lang::t('signup_registering'),
-            'signup_google_btn' => PPV_Lang::t('signup_google_btn'),
-        ]) . ';', 'before');
-
-        ppv_log("✅ [PPV_Signup] Assets enqueued");
+        header('Content-Type: text/html; charset=utf-8');
+        ?><!DOCTYPE html>
+<html lang="<?php echo esc_attr($lang); ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title><?php echo esc_html(PPV_Lang::t('signup_title')); ?> - PunktePass</title>
+    <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin>
+    <link rel="preload" href="<?php echo esc_url($plugin_url); ?>assets/img/logo.webp?v=2" as="image" type="image/webp">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
+    <style id="ppv-critical-css">
+        :root{--pp-primary:#0066FF;--ppv-bg:#F8F9FB;--ppv-card-glass:rgba(255,255,255,0.85);--ppv-text:#1A1A1A;--ppv-border-glass:rgba(255,255,255,0.3);--safe-area-top:env(safe-area-inset-top,0px)}
+        html,body{margin:0;padding:0;height:auto;min-height:100%;width:100%;background:linear-gradient(135deg,#F8F9FB 0%,#E6F0FF 100%)}
+        .ppv-landing-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+        .ppv-landing-header{position:sticky;top:0;z-index:100;background:var(--ppv-card-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--ppv-border-glass);padding:8px 0;padding-top:calc(8px + var(--safe-area-top));flex-shrink:0}
+        .ppv-header-content{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+        .ppv-lang-switcher{display:flex;gap:4px;background:var(--ppv-bg);border:1px solid #E5E7EB;border-radius:8px;padding:4px}
+        .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
+        .ppv-lang-btn.active{background:var(--pp-primary);color:white}
+        .ppv-login-card{background:var(--ppv-card-glass);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--ppv-border-glass);padding:28px}
+        @media(max-width:640px){.ppv-header-content{gap:8px;padding:0 12px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
+    </style>
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-login-light.css?ver=<?php echo esc_attr($css_ver); ?>">
+    <style>
+        .ppv-password-wrapper input[type="password"]{padding-right:100px}
+        .ppv-generate-password-btn{position:absolute;right:48px;top:50%;transform:translateY(-50%);background:#6366f1;border:none;border-radius:6px;padding:8px;cursor:pointer;color:white;display:flex;align-items:center;justify-content:center;transition:all 0.2s;z-index:10}
+        .ppv-generate-password-btn:hover{background:#4f46e5;transform:translateY(-50%) scale(1.05)}
+        .ppv-generate-password-btn:active{transform:translateY(-50%) scale(0.95)}
+        .ppv-password-wrapper .ppv-password-toggle{right:8px}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+</head>
+<body>
+<?php echo $page_html; ?>
+<script>
+window.ppvSignup = {
+    ajaxurl: '<?php echo admin_url('admin-ajax.php'); ?>',
+    nonce: '<?php echo wp_create_nonce('ppv_signup_nonce'); ?>',
+    google_client_id: '<?php echo esc_js($google_client_id); ?>',
+    redirect_url: '<?php echo home_url('/user_dashboard'); ?>',
+    vendor_redirect_url: '<?php echo home_url('/haendler'); ?>',
+    debug: true
+};
+window.ppvSignupTranslations = <?php echo wp_json_encode([
+    'error_fill_all' => PPV_Lang::t('signup_error_empty'),
+    'error_invalid_email' => PPV_Lang::t('signup_error_invalid_email'),
+    'error_password_mismatch' => PPV_Lang::t('signup_error_password_mismatch'),
+    'error_password_short' => PPV_Lang::t('signup_error_password_short'),
+    'error_password_requirements' => PPV_Lang::t('signup_error_password_weak'),
+    'error_terms' => PPV_Lang::t('signup_error_terms'),
+    'error_connection' => PPV_Lang::t('network_error'),
+    'error_google_unavailable' => PPV_Lang::t('signup_google_error'),
+    'error_google_failed' => PPV_Lang::t('signup_google_error'),
+    'password_strength_weak' => PPV_Lang::t('password_strength_weak'),
+    'password_strength_medium' => PPV_Lang::t('password_strength_medium'),
+    'password_strength_good' => PPV_Lang::t('password_strength_good'),
+    'password_strength_strong' => PPV_Lang::t('password_strength_strong'),
+    'registering' => PPV_Lang::t('signup_registering'),
+    'signup_google_btn' => PPV_Lang::t('signup_google_btn'),
+]); ?>;
+</script>
+<script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-signup.js?ver=<?php echo esc_attr($js_ver); ?>"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>
+<?php
     }
 
     /** ============================================================
