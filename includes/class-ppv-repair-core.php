@@ -2694,18 +2694,22 @@ class PPV_Repair_Core {
                             'value' => floatval($_POST['manual_discount_value']),
                         ];
                     }
-                    $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items, $manual_discount);
+                    // Payment info (passed directly to generate_invoice to set status on insert)
+                    $payment = [];
+                    if (!empty($_POST['mark_paid'])) {
+                        $payment['mark_paid'] = true;
+                        if (!empty($_POST['payment_method'])) $payment['payment_method'] = sanitize_text_field($_POST['payment_method']);
+                        if (!empty($_POST['paid_at'])) $payment['paid_at'] = sanitize_text_field($_POST['paid_at']);
+                    }
+                    $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items, $manual_discount, $payment);
 
-                    // If mark_paid is set, update invoice to paid status
+                    // If existing invoice returned (already existed), still apply payment status
                     if ($invoice_id && !empty($_POST['mark_paid'])) {
-                        $invoice_update = [
+                        $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', [
                             'status' => 'paid',
                             'paid_at' => !empty($_POST['paid_at']) ? sanitize_text_field($_POST['paid_at']) : current_time('mysql'),
-                        ];
-                        if (!empty($_POST['payment_method'])) {
-                            $invoice_update['payment_method'] = sanitize_text_field($_POST['payment_method']);
-                        }
-                        $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', $invoice_update, ['id' => $invoice_id]);
+                            'payment_method' => sanitize_text_field($_POST['payment_method'] ?? ''),
+                        ], ['id' => $invoice_id]);
                     }
                 }
             } catch (\Exception $e) {

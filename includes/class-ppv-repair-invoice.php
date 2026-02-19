@@ -21,7 +21,7 @@ class PPV_Repair_Invoice {
      * @param float  $amount - The repair cost (from final_cost POST or estimated_cost)
      * @return int|null - Invoice ID or null on failure
      */
-    public static function generate_invoice($store, $repair, $amount = 0, $line_items = [], $manual_discount = []) {
+    public static function generate_invoice($store, $repair, $amount = 0, $line_items = [], $manual_discount = [], $payment = []) {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
@@ -189,7 +189,9 @@ class PPV_Repair_Invoice {
             'is_kleinunternehmer'       => $is_klein,
             'punktepass_reward_applied'  => $reward_applied,
             'points_used'               => $points_used,
-            'status'                    => 'draft',
+            'status'                    => !empty($payment['mark_paid']) ? 'paid' : 'draft',
+            'payment_method'            => !empty($payment['payment_method']) ? $payment['payment_method'] : null,
+            'paid_at'                   => !empty($payment['mark_paid']) ? (!empty($payment['paid_at']) ? $payment['paid_at'] : current_time('mysql')) : null,
             'created_at'                => current_time('mysql'),
         ]);
 
