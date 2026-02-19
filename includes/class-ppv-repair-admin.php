@@ -1773,7 +1773,7 @@ function ppv_fb_render_field($fk, $meta, $fc, $fc_defaults) {
     } elseif ($input === 'cost') {
         $html .= '<div class="ra-fb-cost-options"><span class="ra-fb-cost-opt">max. 50&euro;</span><span class="ra-fb-cost-opt active">max. 100&euro;</span><span class="ra-fb-cost-opt">max. 200&euro;</span><span class="ra-fb-cost-opt">Kein Limit</span></div>';
     } elseif ($input === 'date') {
-        $html .= '<input type="date" placeholder="' . esc_attr($label) . '">';
+        $html .= '<input type="date" lang="de" placeholder="' . esc_attr($label) . '">';
     } else {
         $html .= '<input type="' . esc_attr($input) . '" placeholder="' . esc_attr($meta['ph']) . '">';
     }
@@ -2457,11 +2457,11 @@ echo '</div></div>
             </select>
             <div class="field">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_from')) . '</label>
-                <input type="date" id="ra-inv-from">
+                <input type="date" lang="de" id="ra-inv-from">
             </div>
             <div class="field">
                 <label>' . esc_html(PPV_Lang::t('repair_admin_to')) . '</label>
-                <input type="date" id="ra-inv-to">
+                <input type="date" lang="de" id="ra-inv-to">
             </div>
             <button class="ra-btn ra-btn-outline ra-btn-sm" id="ra-inv-filter-btn">
                 <i class="ri-filter-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_filter')) . '
@@ -2742,7 +2742,7 @@ echo '</div></div>
                     </div>
                     <div>
                         <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
-                        <input type="date" id="ra-inv-paid-date" class="ra-input" style="width:100%">
+                        <input type="date" lang="de" id="ra-inv-paid-date" class="ra-input" style="width:100%">
                     </div>
                 </div>
             </div>
@@ -2757,7 +2757,7 @@ echo '</div></div>
 
         <div style="margin-top:12px">
             <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px"><i class="ri-shield-check-line" style="font-size:13px;vertical-align:-1px"></i> ' . esc_html(PPV_Lang::t('repair_admin_warranty_date')) . '</label>
-            <input type="date" id="ra-inv-warranty-date" class="ra-input" style="width:100%;max-width:200px">
+            <input type="date" lang="de" id="ra-inv-warranty-date" class="ra-input" style="width:100%;max-width:200px">
             <textarea id="ra-inv-warranty-desc" class="ra-input" rows="2" style="width:100%;margin-top:6px;font-size:12px;display:none" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_warranty_desc_ph')) . '"></textarea>
         </div>
 
@@ -2791,7 +2791,7 @@ echo '</div></div>
         <div id="ra-termin-fields">
         <div style="margin-bottom:16px">
             <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-calendar-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_date')) . '</label>
-            <input type="date" id="ra-termin-date" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+            <input type="date" lang="de" id="ra-termin-date" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
         </div>
         <div style="margin-bottom:16px">
             <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-time-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_time')) . '</label>
@@ -3039,7 +3039,7 @@ echo '</div></div>
                             <label>' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
                             <div class="nang-input-wrap ninv-focus">
                                 <i class="ri-calendar-line"></i>
-                                <input type="date" id="ra-ninv-paid-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                                <input type="date" lang="de" id="ra-ninv-paid-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
                             </div>
                         </div>
                     </div>
@@ -3051,7 +3051,7 @@ echo '</div></div>
                 <label><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_warranty_date')) . '</label>
                 <div class="nang-input-wrap ninv-focus" style="max-width:220px">
                     <i class="ri-calendar-check-line"></i>
-                    <input type="date" id="ra-ninv-warranty-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                    <input type="date" lang="de" id="ra-ninv-warranty-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
                 </div>
             </div>
             <div class="nang-field" id="ra-ninv-warranty-desc-wrap" style="margin-bottom:12px;display:none">
@@ -3222,7 +3222,7 @@ echo '</div></div>
             <div class="nang-meta-row">
                 <div class="nang-field nang-field-grow">
                     <label><i class="ri-calendar-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_valid_until')) . '</label>
-                    <input type="date" id="ra-nang-valid-until" class="nang-meta-input">
+                    <input type="date" lang="de" id="ra-nang-valid-until" class="nang-meta-input">
                 </div>
                 <div class="nang-field nang-field-grow">
                     <label><i class="ri-sticky-note-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
@@ -3470,7 +3470,7 @@ echo '</div></div>
                         <div class="nang-field nang-field-grow">
                             <label>' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
                             <div class="nang-input-wrap ninv-focus"><i class="ri-calendar-line"></i>
-                                <input type="date" id="ra-einv-paid-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                                <input type="date" lang="de" id="ra-einv-paid-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
                             </div>
                         </div>
                     </div>
@@ -3482,7 +3482,7 @@ echo '</div></div>
                 <label><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_warranty_date')) . '</label>
                 <div class="nang-input-wrap ninv-focus" style="max-width:220px">
                     <i class="ri-calendar-check-line"></i>
-                    <input type="date" id="ra-einv-warranty-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                    <input type="date" lang="de" id="ra-einv-warranty-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
                 </div>
             </div>
             <div class="nang-field" id="ra-einv-warranty-desc-wrap" style="margin-bottom:12px;display:none">
@@ -3531,7 +3531,7 @@ echo '</div></div>
 
         <div style="margin-bottom:20px">
             <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
-            <input type="date" id="ra-payment-date" class="ra-input" style="width:100%">
+            <input type="date" lang="de" id="ra-payment-date" class="ra-input" style="width:100%">
         </div>
 
         <input type="hidden" id="ra-payment-inv-id" value="">
