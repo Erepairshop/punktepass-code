@@ -1148,8 +1148,9 @@ a:hover{color:#5a67d8}
 .nang-next-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(5,150,105,.35)}
 
 /* Back link */
-.nang-back-link{display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:#64748b;font-size:13px;font-family:inherit;cursor:pointer;padding:0;margin-bottom:12px;transition:color .15s}
-.nang-back-link:hover{color:#059669}
+.nang-back-link{display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border:1.5px solid #e2e8f0;color:#475569;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;padding:8px 16px 8px 12px;margin-bottom:16px;border-radius:8px;transition:all .15s}
+.nang-back-link:hover{background:#e2e8f0;border-color:#cbd5e1;color:#1e293b}
+.nang-back-link:active{transform:scale(.97)}
 
 /* Customer chip */
 .nang-customer-chip{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:16px;font-size:13px;color:#166534}
@@ -1228,7 +1229,8 @@ a:hover{color:#5a67d8}
 .ninv-modal .nang-line-qty:focus{border-color:#2563eb}
 .ninv-modal .nang-line-price-wrap:focus-within{border-color:#2563eb}
 .ninv-modal .nang-add-line:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
-.ninv-modal .nang-back-link:hover{color:#2563eb}
+.ninv-modal .nang-back-link{background:#eff6ff;border-color:#bfdbfe;color:#2563eb}
+.ninv-modal .nang-back-link:hover{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
 .ninv-modal .nang-meta-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
 .ninv-options{margin:12px 0 16px}
 .ninv-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#475569;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;transition:all .2s}
