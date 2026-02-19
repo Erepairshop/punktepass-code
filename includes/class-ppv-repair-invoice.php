@@ -614,21 +614,48 @@ class PPV_Repair_Invoice {
             wp_send_json_error(['message' => 'Kundenname ist erforderlich']);
         }
 
-        // Save customer if requested
+        // Save customer if requested (find existing by email or name to avoid duplicates)
         $save_customer = !empty($_POST['save_customer']);
         if ($save_customer && !$customer_id) {
-            $wpdb->insert("{$prefix}ppv_repair_customers", [
-                'store_id' => $store_id,
-                'name' => $customer_name,
-                'email' => $customer_email ?: null,
-                'phone' => $customer_phone ?: null,
-                'company_name' => $customer_company ?: null,
-                'tax_id' => $customer_tax_id ?: null,
-                'address' => $customer_address ?: null,
-                'plz' => $customer_plz ?: null,
-                'city' => $customer_city ?: null,
-            ]);
-            $customer_id = $wpdb->insert_id;
+            // Check for existing customer: match by email first, then by exact name
+            if ($customer_email) {
+                $customer_id = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_repair_customers WHERE store_id = %d AND email = %s LIMIT 1",
+                    $store_id, $customer_email
+                ));
+            }
+            if (!$customer_id && $customer_name) {
+                $customer_id = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_repair_customers WHERE store_id = %d AND name = %s AND (email IS NULL OR email = '') LIMIT 1",
+                    $store_id, $customer_name
+                ));
+            }
+            if ($customer_id) {
+                // Update existing customer with latest data
+                $wpdb->update("{$prefix}ppv_repair_customers", [
+                    'name' => $customer_name,
+                    'email' => $customer_email ?: null,
+                    'phone' => $customer_phone ?: null,
+                    'company_name' => $customer_company ?: null,
+                    'tax_id' => $customer_tax_id ?: null,
+                    'address' => $customer_address ?: null,
+                    'plz' => $customer_plz ?: null,
+                    'city' => $customer_city ?: null,
+                ], ['id' => $customer_id]);
+            } else {
+                $wpdb->insert("{$prefix}ppv_repair_customers", [
+                    'store_id' => $store_id,
+                    'name' => $customer_name,
+                    'email' => $customer_email ?: null,
+                    'phone' => $customer_phone ?: null,
+                    'company_name' => $customer_company ?: null,
+                    'tax_id' => $customer_tax_id ?: null,
+                    'address' => $customer_address ?: null,
+                    'plz' => $customer_plz ?: null,
+                    'city' => $customer_city ?: null,
+                ]);
+                $customer_id = $wpdb->insert_id;
+            }
         }
 
         // Invoice data
