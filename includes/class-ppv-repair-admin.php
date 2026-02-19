@@ -787,6 +787,9 @@ a:hover{color:#5a67d8}
 .ra-tracking-btn-copy:hover{background:#fef3c7}
 .ra-tracking-btn-open{background:#fff;color:#92400e}
 .ra-tracking-btn-open:hover{background:#fef3c7}
+.ra-tracking-btn-send{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.ra-tracking-btn-send:hover{background:#bfdbfe}
+.ra-tracking-btn-send.sent{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
 .ra-tracking-btn i{font-size:14px}
 /* Details section (custom fields) */
 .ra-card-section-details{background:#fafbfc}
@@ -4029,6 +4032,36 @@ echo '</div></div>
         window.scrollTo(0,0);
     });
 
+    /* ===== Send Tracking Email (temporary) ===== */
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var btn=e.target.closest(".ra-tracking-btn-send");
+        if(!btn)return;
+        var rid=btn.getAttribute("data-repair-id");
+        if(!rid)return;
+        btn.disabled=true;
+        btn.innerHTML='<i class="ri-loader-4-line ri-spin"></i> Sende...';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_send_tracking");
+        fd.append("repair_id",rid);
+        fd.append("nonce",NONCE);
+        fetch(AJAX_URL,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if(data.success){
+                btn.innerHTML='<i class="ri-check-line"></i> Gesendet!';
+                btn.classList.add("sent");
+            }else{
+                btn.innerHTML='<i class="ri-error-warning-line"></i> '+(data.data&&data.data.message||"Fehler");
+                btn.disabled=false;
+                setTimeout(function(){btn.innerHTML='<i class="ri-mail-send-line"></i> Tracking senden';},3000);
+            }
+        })
+        .catch(function(){
+            btn.innerHTML='<i class="ri-mail-send-line"></i> Tracking senden';
+            btn.disabled=false;
+        });
+    });
+
     document.getElementById("ra-termin-cancel").addEventListener("click",function(){
         terminModal.classList.remove("show");
         terminRepairId=null;
@@ -4463,7 +4496,7 @@ echo '</div></div>
                 \'<div class="ra-card-section-title"><i class="ri-error-warning-line"></i> \'+(L.problem_section||"Problem")+\'</div>\'+
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
             \'</div>\'+
-            (r.tracking_token?\'<div class="ra-card-section ra-tracking-section"><div class="ra-card-section-title"><i class="ri-live-line"></i> Live-Tracking</div><div class="ra-tracking-row"><button type="button" class="ra-tracking-btn ra-tracking-btn-copy" onclick="var u=\\\'\'+esc(FORM_BASE_URL+r.tracking_token)+\'\\\';navigator.clipboard?navigator.clipboard.writeText(u).then(function(){}.bind(this)):function(){var t=document.createElement(\\\'textarea\\\');t.value=u;document.body.appendChild(t);t.select();document.execCommand(\\\'copy\\\');document.body.removeChild(t)}();this.innerHTML=\\\'<i class=&quot;ri-check-line&quot;></i> Kopiert!\\\';var b=this;setTimeout(function(){b.innerHTML=\\\'<i class=&quot;ri-file-copy-line&quot;></i> Link kopieren\\\'},1500)"><i class="ri-file-copy-line"></i> Link kopieren</button><a href="\'+esc(FORM_BASE_URL+r.tracking_token)+\'" target="_blank" class="ra-tracking-btn ra-tracking-btn-open"><i class="ri-external-link-line"></i> Öffnen</a></div></div>\':"")+
+            (r.tracking_token?\'<div class="ra-card-section ra-tracking-section"><div class="ra-card-section-title"><i class="ri-live-line"></i> Live-Tracking</div><div class="ra-tracking-row"><button type="button" class="ra-tracking-btn ra-tracking-btn-copy" onclick="var u=\\\'\'+esc(FORM_BASE_URL+r.tracking_token)+\'\\\';navigator.clipboard?navigator.clipboard.writeText(u).then(function(){}.bind(this)):function(){var t=document.createElement(\\\'textarea\\\');t.value=u;document.body.appendChild(t);t.select();document.execCommand(\\\'copy\\\');document.body.removeChild(t)}();this.innerHTML=\\\'<i class=&quot;ri-check-line&quot;></i> Kopiert!\\\';var b=this;setTimeout(function(){b.innerHTML=\\\'<i class=&quot;ri-file-copy-line&quot;></i> Link kopieren\\\'},1500)"><i class="ri-file-copy-line"></i> Link kopieren</button><a href="\'+esc(FORM_BASE_URL+r.tracking_token)+\'" target="_blank" class="ra-tracking-btn ra-tracking-btn-open"><i class="ri-external-link-line"></i> Öffnen</a>\'+(r.customer_email?\'<button type="button" class="ra-tracking-btn ra-tracking-btn-send" data-repair-id="\'+r.id+\'"><i class="ri-mail-send-line"></i> Tracking senden</button>\':\'\')+\'</div></div>\':"")+
             badgesRow+
             (r.status==="waiting_parts"?\'<button class="ra-btn-parts-arrived" data-repair-id="\'+r.id+\'"><i class="ri-checkbox-circle-fill"></i> \'+L.parts_arrived+\'</button>\':"")+
             commentsHtml+
@@ -8060,6 +8093,9 @@ echo '</div></div>
             // Tracking section
             . (!empty($r->tracking_token) && $store ? (function() use ($r, $store) {
                 $tracking_url = esc_attr(home_url("/formular/{$store->store_slug}/status/{$r->tracking_token}"));
+                $send_btn = !empty($r->customer_email)
+                    ? '<button type="button" class="ra-tracking-btn ra-tracking-btn-send" data-repair-id="' . intval($r->id) . '"><i class="ri-mail-send-line"></i> Tracking senden</button>'
+                    : '';
                 return '<div class="ra-card-section ra-tracking-section">'
                     . '<div class="ra-card-section-title"><i class="ri-live-line"></i> Live-Tracking</div>'
                     . '<div class="ra-tracking-row">'
@@ -8070,6 +8106,7 @@ echo '</div></div>
                             . "var b=this;setTimeout(function(){b.innerHTML='<i class=&quot;ri-file-copy-line&quot;></i> Link kopieren'},1500)"
                         . '"><i class="ri-file-copy-line"></i> Link kopieren</button>'
                         . '<a href="' . $tracking_url . '" target="_blank" class="ra-tracking-btn ra-tracking-btn-open"><i class="ri-external-link-line"></i> Öffnen</a>'
+                        . $send_btn
                     . '</div>'
                 . '</div>';
             })() : '')

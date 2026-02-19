@@ -109,6 +109,7 @@ class PPV_Repair_Core {
             'ppv_repair_reward_approve' => [__CLASS__, 'ajax_reward_approve'],
             'ppv_repair_reward_reject'  => [__CLASS__, 'ajax_reward_reject'],
             'ppv_repair_send_email'     => [__CLASS__, 'ajax_send_repair_email'],
+            'ppv_repair_send_tracking'  => [__CLASS__, 'ajax_send_tracking_email'],
             'ppv_repair_parts_arrived'  => [__CLASS__, 'ajax_parts_arrived'],
         ];
         foreach ($admin_actions as $action => $callback) {
@@ -1395,6 +1396,33 @@ class PPV_Repair_Core {
             'From: ' . $store_name . ' <' . ($store->email ?: get_option('admin_email')) . '>',
         ];
         wp_mail($email, $subject, $body, $headers);
+    }
+
+    /** AJAX: Send tracking email for existing repair (temporary) */
+    public static function ajax_send_tracking_email() {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Missing repair_id']);
+
+        // Get repair + store
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_repairs WHERE id = %d", $repair_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Repair not found']);
+        if (empty($repair->customer_email)) wp_send_json_error(['message' => 'Keine E-Mail-Adresse vorhanden']);
+        if (empty($repair->tracking_token)) wp_send_json_error(['message' => 'Kein Tracking-Token vorhanden']);
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $repair->store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store not found']);
+
+        $tracking_url = home_url("/formular/{$store->store_slug}/status/{$repair->tracking_token}");
+        self::send_tracking_email($store, $repair->customer_email, $repair->customer_name, $repair->id, $tracking_url);
+
+        wp_send_json_success(['message' => 'Tracking-E-Mail gesendet an ' . $repair->customer_email]);
     }
 
     /** AJAX: Search customers by email prefix (for form email autocomplete) */
