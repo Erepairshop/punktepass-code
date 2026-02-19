@@ -3567,7 +3567,8 @@ class PPV_Repair_Core {
     }
 
     /** ============================================================
-     * AJAX: Nominatim address proxy (avoids CORS issues)
+     * AJAX: Address autocomplete proxy (Photon API - typo-tolerant)
+     * Returns Nominatim-compatible format for the JS frontend
      * ============================================================ */
     public static function ajax_nominatim_proxy() {
         $q = sanitize_text_field($_GET['q'] ?? '');
@@ -3577,22 +3578,25 @@ class PPV_Repair_Core {
             wp_send_json_success([]);
         }
 
-        // Rate limit: 1 req/sec per IP (Nominatim usage policy)
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        $transient_key = 'ppv_nom_' . md5($ip);
-        if (get_transient($transient_key)) {
-            wp_send_json_success([]); // silently skip if too fast
-        }
-        set_transient($transient_key, 1, 1); // 1 second
+        // Location bias per country (lat, lon) for better results
+        $bias = [
+            'de' => ['lat' => 51.1, 'lon' => 10.4],
+            'hu' => ['lat' => 47.5, 'lon' => 19.0],
+            'ro' => ['lat' => 45.9, 'lon' => 25.0],
+            'it' => ['lat' => 42.5, 'lon' => 12.5],
+            'at' => ['lat' => 47.5, 'lon' => 14.5],
+        ];
+        $loc = $bias[$cc] ?? $bias['de'];
 
-        $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
-            'format'         => 'json',
-            'addressdetails' => 1,
-            'limit'          => 5,
-            'countrycodes'   => $cc,
-            'q'              => $q,
-            'email'          => 'info@punktepass.de',
-        ]);
+        $params = [
+            'q'     => $q,
+            'limit' => 5,
+            'lang'  => $cc === 'hu' ? 'default' : $cc,
+            'lat'   => $loc['lat'],
+            'lon'   => $loc['lon'],
+        ];
+
+        $url = 'https://photon.komoot.io/api/?' . http_build_query($params);
 
         $response = wp_remote_get($url, [
             'timeout'    => 5,
@@ -3605,12 +3609,46 @@ class PPV_Repair_Core {
         }
 
         $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
+        $geojson = json_decode($body, true);
 
-        if (!is_array($data)) {
+        if (!is_array($geojson) || empty($geojson['features'])) {
             wp_send_json_success([]);
         }
 
-        wp_send_json_success($data);
+        // Convert Photon GeoJSON to Nominatim-like format for JS compatibility
+        $results = [];
+        foreach ($geojson['features'] as $f) {
+            $p = $f['properties'] ?? [];
+            $results[] = [
+                'display_name' => self::photon_display_name($p),
+                'address' => [
+                    'road'         => $p['street'] ?? '',
+                    'house_number' => $p['housenumber'] ?? '',
+                    'postcode'     => $p['postcode'] ?? '',
+                    'city'         => $p['city'] ?? ($p['town'] ?? ($p['village'] ?? '')),
+                    'town'         => $p['town'] ?? '',
+                    'village'      => $p['village'] ?? '',
+                    'municipality' => $p['district'] ?? '',
+                    'state'        => $p['state'] ?? '',
+                    'country'      => $p['country'] ?? '',
+                ],
+            ];
+        }
+
+        wp_send_json_success($results);
+    }
+
+    /** Build display name from Photon properties */
+    private static function photon_display_name($p) {
+        $parts = [];
+        $street = ($p['street'] ?? '') . (!empty($p['housenumber']) ? ' ' . $p['housenumber'] : '');
+        if ($street) $parts[] = $street;
+        if (!empty($p['name']) && $p['name'] !== ($p['street'] ?? '')) $parts[] = $p['name'];
+        $city = $p['city'] ?? ($p['town'] ?? ($p['village'] ?? ''));
+        if (!empty($p['postcode'])) $parts[] = $p['postcode'] . ($city ? ' ' . $city : '');
+        elseif ($city) $parts[] = $city;
+        if (!empty($p['state'])) $parts[] = $p['state'];
+        if (!empty($p['country'])) $parts[] = $p['country'];
+        return implode(', ', $parts);
     }
 }
