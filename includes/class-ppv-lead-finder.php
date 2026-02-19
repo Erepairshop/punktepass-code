@@ -326,6 +326,33 @@ class PPV_Lead_Finder {
             }
         }
 
+        // --- Phase 3: Auto-scrape leads that have website but no email ---
+        $no_email_leads = $wpdb->get_results(
+            "SELECT id, business_name, region, website FROM {$wpdb->prefix}ppv_leads
+             WHERE email = '' AND website != '' AND scraped_at IS NULL
+             ORDER BY id DESC LIMIT 30"
+        );
+
+        foreach ($no_email_leads as $lead) {
+            $keyword = '';
+            $found = self::smart_find_email($lead->business_name, $lead->region, $keyword);
+
+            $status = !empty($found['email']) ? 'email_found' : 'no_email_found';
+            $update_data = [
+                'scraped_at' => current_time('mysql'),
+                'scrape_status' => $status
+            ];
+            if (!empty($found['email'])) {
+                $update_data['email'] = $found['email'];
+                $emails_found++;
+            }
+            if (!empty($found['phone'])) {
+                $update_data['phone'] = $found['phone'];
+            }
+
+            $wpdb->update($wpdb->prefix . 'ppv_leads', $update_data, ['id' => $lead->id]);
+        }
+
         wp_redirect("/formular/lead-finder?success=search&found=$found_count&emails=$emails_found&region=" . urlencode($region));
         exit;
     }
@@ -649,78 +676,127 @@ class PPV_Lead_Finder {
             return false;
         }
 
-        // Reject if starts with time/day patterns
-        if (preg_match('/^(Öffnet|Öffnungszeiten|Geschlossen|Geöffnet|Schließt|Jetzt|Heute|Morgen)/iu', $name)) {
+        // --- EXACT MATCH rejects (case-insensitive) ---
+        $exact_rejects = [
+            // Web UI elements
+            'mehr lesen', 'weniger', 'zurück', 'weiter', 'schließen', 'abbrechen',
+            'ok', 'ja', 'nein', 'laden', 'anmelden', 'abmelden', 'registrieren',
+            'suchen', 'suche', 'senden', 'absenden', 'speichern', 'teilen',
+            'anrufen', 'anzeigen', 'ausblenden', 'bearbeiten', 'löschen',
+            'reservieren', 'buchen', 'bestellen', 'kaufen', 'hinzufügen',
+            'entfernen', 'drucken', 'herunterladen', 'hochladen', 'aktualisieren',
+            'e-mail', 'email', 'telefon', 'fax', 'website', 'webseite',
+            'homepage', 'kontakt', 'impressum', 'datenschutz', 'agb',
+            'mehr anzeigen', 'alle anzeigen', 'mehr erfahren', 'details anzeigen',
+            'jetzt anrufen', 'gratis anrufen', 'kostenlos anrufen', 'route planen',
+            'auf karte zeigen', 'karte anzeigen', 'bewertung schreiben',
+            'bewertung abgeben', 'fotos ansehen', 'fotos anzeigen',
+            'bedenken melden', 'problem melden', 'als unangemessen melden',
+            'nicht hilfreich', 'hilfreich', 'war das hilfreich',
+            'in gesamtnote eingerechnet', 'daten aus 1 quelle', 'daten aus 2 quellen',
+            'und so funktioniert es', 'so funktioniert es', 'hinweis',
+            'ihre gewünschte verbindung', 'verbindung wird aufgebaut',
+            'die nummer', 'anbieter kontaktieren', 'nachricht senden',
+            'termin vereinbaren', 'termin buchen', 'jetzt anfragen',
+            'angebot anfordern', 'angebot einholen', 'kostenlos anfragen',
+            'premium eintrag', 'gesponsert', 'werbung', 'anzeige',
+            'öffnungszeiten', 'geschlossen', 'geöffnet', 'jetzt geöffnet',
+            'jetzt geschlossen', 'hat geöffnet', 'hat geschlossen',
+            // Shipping
+            'dhl', 'ups', 'hermes', 'dpd', 'gls',
+            // Common categories (not business names)
+            'handyreparaturen', 'telefonläden', 'telekommunikation',
+            'elektronik', 'computer', 'reparatur', 'dienstleistungen',
+            'handyreparatur', 'smartphone reparatur',
+        ];
+        $name_lower = mb_strtolower(trim($name));
+        if (in_array($name_lower, $exact_rejects, true)) {
             return false;
         }
 
-        // Reject day names at start
-        if (preg_match('/^(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo\s|Di\s|Mi\s|Do\s|Fr\s|Sa\s|So\s)/iu', $name)) {
+        // --- STARTS WITH rejects ---
+        if (preg_match('/^(Öffnet|Öffnungszeiten|Geschlossen|Geöffnet|Schließt|Jetzt|Heute|Morgen|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo\s|Di\s|Mi\s|Do\s|Fr\s|Sa\s|So\s)/iu', $name)) {
             return false;
         }
 
-        // Reject Google Maps UI elements
-        if (preg_match('/^(Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern|Route|Wegbeschreibung|Fotos|Rezensionen|Übersicht|Info|Karte|Satellit|Gelände|Alle\s|Filter|Sortieren|Neuste|Neueste|Standort|Entfernung)/iu', $name)) {
+        // Google Maps / directory UI elements
+        if (preg_match('/^(Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern|Route|Wegbeschreibung|Fotos|Rezensionen|Übersicht|Info|Karte|Satellit|Gelände|Alle\s|Filter|Sortieren|Neuste|Neueste|Standort|Entfernung|Seite\s|Zeige|Hier\s|Klicke|Nutze|Wähle|Bitte\s|Achtung|Hinweis|Tipp|Und so|So\s|Gratis|Kostenlos|Premium|Anzeige|Gesponsert|Ihre\s|Daten\s|Dieser|Diese|Das\s|Der\s|Die\s|Ein\s|Eine\s|Wir\s|Sie\s|Ich\s|Es\s|Man\s|Nicht\s|Noch\s|Schon\s|Nur\s|Auch\s|Oder\s|Aber\s|Wenn\s|Weil\s|Dass\s|Wird\s|Wurde\s|Haben\s|Sind\s|Kann\s|Muss\s|Soll\s)/iu', $name)) {
             return false;
         }
 
-        // Reject standalone street names (with or without number)
-        // German street suffixes: straße, str, weg, allee, platz, gasse, ring, damm, ufer, hof, park, markt, chaussee, steig
+        // --- Reject concatenated category words (no spaces, too long lowercase) ---
+        // e.g. "HandyreparaturenTelefonlädenTelekommunikation"
+        if (preg_match('/[a-zäöüß]{10,}[A-ZÄÖÜ][a-zäöüß]{10,}/u', $name)) {
+            return false;
+        }
+
+        // --- Reject if contains suspicious random characters (e.g. "Holger Will9h3J") ---
+        if (preg_match('/[a-zA-Z][0-9][a-zA-Z][0-9][a-zA-Z]/i', $name)) {
+            return false;
+        }
+
+        // --- Address patterns ---
         $street_suffixes = 'str(?:a(?:ß|ss)e|\.)?|weg|allee|platz|gasse|ring|damm|ufer|hof|park|markt|chaussee|steig|pfad|stieg|brücke|graben|grund|berg|tal';
 
-        // Reject if the entire name IS a street name (e.g., "Schwabstraße", "Giescheweg", "Annonay-Straße")
+        // Reject standalone street name
         if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+(?:' . $street_suffixes . ')(?:\s*\d+[a-z]?)?\s*,?\s*$/iu', $name)) {
             return false;
         }
-
-        // Reject "Word-Straße" patterns (e.g., "Annonay-Straße")
         if (preg_match('/^[A-ZÄÖÜa-zäöüß]+[\-\s](?:Straße|Strasse|Str\.|Weg|Allee|Platz|Gasse|Ring|Damm|Ufer)\s*\d*\s*,?\s*$/iu', $name)) {
             return false;
         }
 
-        // Reject addresses - street name + number patterns (multiword streets)
+        // Reject "Streetname 16, 40235 Düsseldorf" pattern
+        if (preg_match('/(?:' . $street_suffixes . ')\s+\d+\s*,\s*\d{5}/iu', $name)) {
+            return false;
+        }
+
+        // Reject addresses with PLZ
+        if (preg_match('/\d+\s*,\s*\d{5}\s+[A-ZÄÖÜa-zäöüß]/u', $name)) {
+            return false;
+        }
+
+        // Reject street + number if that's all there is
         if (preg_match('/(?:' . $street_suffixes . ')\s+\d+/iu', $name)) {
-            // But allow if it's clearly a business name containing a street
-            // Business names typically have more than just street + number
             $without_address = preg_replace('/[A-ZÄÖÜa-zäöüß\-]+(?:' . $street_suffixes . ')\s*\d+[a-z]?\s*,?/iu', '', $name);
             if (strlen(trim($without_address)) < 5) {
                 return false;
             }
         }
 
-        // Reject if it looks like just "Word Number" or "Word Number," (address pattern)
+        // Reject "Word Number" or "Word Number,"
         if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+\s+\d+[a-z]?\s*,?\s*$/iu', $name)) {
             return false;
         }
 
-        // Reject short entries like "DHL 5," or similar
+        // --- Time / Number patterns ---
+        if (preg_match('/um\s+\d{1,2}[:\.]?\d{0,2}|^\d{1,2}[:\.]?\d{0,2}\s*Uhr/iu', $name)) {
+            return false;
+        }
+        if (preg_match('/^\d{5}\s+[A-ZÄÖÜa-zäöüß]/u', $name)) {
+            return false;
+        }
+        if (preg_match('/^\d+\s*,?\s*$/', $name)) {
+            return false;
+        }
         if (preg_match('/^[A-Z]{2,5}\s+\d+\s*,?\s*$/i', $name)) {
             return false;
         }
 
-        // Reject time patterns like "um 10:00" or "10:00 Uhr"
-        if (preg_match('/um\s+\d{1,2}[:\.]?\d{0,2}|^\d{1,2}[:\.]?\d{0,2}\s*Uhr/iu', $name)) {
-            return false;
+        // --- Reject single common German words ---
+        if (preg_match('/^[A-ZÄÖÜa-zäöüß]+$/u', $name) && mb_strlen($name) < 15) {
+            $common_words = ['Mehr','Weniger','Zurück','Weiter','Laden','Suchen','Anrufen',
+                'Teilen','Speichern','Senden','Drucken','Anzeigen','Bearbeiten',
+                'Löschen','Reservieren','Buchen','Bestellen','Kaufen','Hinzufügen',
+                'Entfernen','Aktualisieren','Bewertung','Bewertungen','Ergebnisse',
+                'Handyreparaturen','Telefonläden','Telekommunikation','Elektronik',
+                'Dienstleistungen','Handyreparatur','Reparaturen','Reparatur',
+                'Übersicht','Zusammenfassung','Beschreibung','Informationen',
+                'Empfehlungen','Vorschläge','Favoriten','Einstellungen'];
+            if (in_array($name, $common_words, true)) {
+                return false;
+            }
         }
-
-        // Reject PLZ + City patterns
-        if (preg_match('/^\d{5}\s+[A-ZÄÖÜa-zäöüß]/u', $name)) {
-            return false;
-        }
-
-        // Reject pure numbers or very short entries
-        if (preg_match('/^\d+\s*,?\s*$/', $name)) {
-            return false;
-        }
-
-        // Reject common non-business patterns
-        if (preg_match('/^(Mehr|Weniger|Zurück|Vor|Weiter|Schließen|Abbrechen|OK|Ja|Nein|DHL|UPS|Hermes|DPD)\s*\d*\s*,?\s*$/iu', $name)) {
-            return false;
-        }
-
-        // Reject if name ends with just a number+comma (likely address fragment leaked into name)
-        // e.g., "Business Name 4," -> clean to "Business Name"
-        // This is handled in clean_business_name() instead
 
         return true;
     }
@@ -1684,65 +1760,53 @@ class PPV_Lead_Finder {
 
         for ($i = 0; $i < count($lines); $i++) {
             $line = trim($lines[$i]);
-            if (empty($line) || strlen($line) < 5) continue;
+            if (empty($line) || strlen($line) < 5 || strlen($line) > 120) continue;
 
-            // Skip common directory UI elements
-            if (preg_match('/^(Sortieren|Filter|Ergebnisse|Seite|Anzeige|Werbung|Anzeigen|Gesponsert|Premium|Bewertung|Entfernung|Mehr anzeigen|Weniger|Zurück|Weiter)/iu', $line)) continue;
+            // Must start uppercase and pass business name validation
+            if (!preg_match('/^[A-ZÄÖÜ]/u', $line)) continue;
+            if (!self::is_valid_business_name($line)) continue;
 
-            // Business name patterns: capitalized, reasonable length, not an address
-            $is_potential_name = (
-                strlen($line) >= 5 && strlen($line) <= 120
-                && preg_match('/^[A-ZÄÖÜ]/u', $line) // Starts uppercase
-                && !preg_match('/^\d{5}\s/', $line) // Not a PLZ
-                && !preg_match('/^(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo|Di|Mi|Do|Fr|Sa|So)\b/iu', $line)
-                && !preg_match('/^(Öffnungszeiten|Geschlossen|Geöffnet|Jetzt)/iu', $line)
-                && self::is_valid_business_name($line)
-            );
+            $clean_name = self::clean_business_name($line);
+            $name_key = mb_strtolower($clean_name);
+            if (strlen($clean_name) < 5 || isset($seen_names[$name_key])) continue;
 
-            if ($is_potential_name) {
-                $clean_name = self::clean_business_name($line);
-                $name_key = mb_strtolower($clean_name);
-                if (strlen($clean_name) >= 5 && !isset($seen_names[$name_key])) {
-                    $seen_names[$name_key] = true;
+            // Look ahead for contact info (email, phone, website)
+            $biz = ['name' => $clean_name, 'email' => '', 'phone' => '', 'address' => '', 'website' => ''];
+            $has_contact = false;
 
-                    // Look ahead for contact info in the next few lines
-                    $biz = ['name' => $clean_name, 'email' => '', 'phone' => '', 'address' => '', 'website' => ''];
-                    for ($j = $i + 1; $j < min($i + 8, count($lines)); $j++) {
-                        $next = trim($lines[$j] ?? '');
+            for ($j = $i + 1; $j < min($i + 8, count($lines)); $j++) {
+                $next = trim($lines[$j] ?? '');
 
-                        // Email
-                        if (empty($biz['email']) && preg_match('/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i', $next, $em)) {
-                            $valid = self::filter_emails([$em[1]]);
-                            if (!empty($valid)) $biz['email'] = strtolower(reset($valid));
-                        }
-                        // Phone
-                        if (empty($biz['phone']) && preg_match('/((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/u', $next, $pm)) {
-                            $p = trim(preg_replace('/\s+/', ' ', $pm[1]));
-                            if (strlen(preg_replace('/\D/', '', $p)) >= 8) $biz['phone'] = $p;
-                        }
-                        // Address
-                        if (empty($biz['address']) && preg_match('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)/iu', $next, $am)) {
-                            $biz['address'] = $am[1];
-                        }
-                        // Website URL
-                        if (empty($biz['website']) && preg_match('/(https?:\/\/[^\s<>"]+)/i', $next, $wm)) {
-                            $d = parse_url($wm[1], PHP_URL_HOST);
-                            if ($d && !preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
-                                $biz['website'] = $wm[1];
-                            }
-                        }
-                        // Bare domain
-                        if (empty($biz['website']) && preg_match('/^((?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-]+\.[a-zA-Z]{2,})$/i', $next, $dm)) {
-                            $d = $dm[1];
-                            if (!preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
-                                $biz['website'] = 'https://' . $d;
-                            }
-                        }
-                    }
-
-                    $businesses[] = $biz;
-                    if (count($businesses) >= 50) break;
+                if (empty($biz['email']) && preg_match('/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i', $next, $em)) {
+                    $valid = self::filter_emails([$em[1]]);
+                    if (!empty($valid)) { $biz['email'] = strtolower(reset($valid)); $has_contact = true; }
                 }
+                if (empty($biz['phone']) && preg_match('/((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/u', $next, $pm)) {
+                    $p = trim(preg_replace('/\s+/', ' ', $pm[1]));
+                    if (strlen(preg_replace('/\D/', '', $p)) >= 8) { $biz['phone'] = $p; $has_contact = true; }
+                }
+                if (empty($biz['website']) && preg_match('/(https?:\/\/[^\s<>"]+)/i', $next, $wm)) {
+                    $d = parse_url($wm[1], PHP_URL_HOST);
+                    if ($d && !preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
+                        $biz['website'] = $wm[1]; $has_contact = true;
+                    }
+                }
+                if (empty($biz['website']) && preg_match('/^((?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-]+\.[a-zA-Z]{2,})$/i', $next, $dm)) {
+                    $d = $dm[1];
+                    if (!preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
+                        $biz['website'] = 'https://' . $d; $has_contact = true;
+                    }
+                }
+                if (empty($biz['address']) && preg_match('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)/iu', $next, $am)) {
+                    $biz['address'] = $am[1]; $has_contact = true;
+                }
+            }
+
+            // ONLY save if we found at least some contact info (prevents UI garbage)
+            if ($has_contact) {
+                $seen_names[$name_key] = true;
+                $businesses[] = $biz;
+                if (count($businesses) >= 50) break;
             }
         }
 
