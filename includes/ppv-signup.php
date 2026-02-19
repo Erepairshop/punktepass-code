@@ -469,125 +469,62 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
         </div>
 
         <style>
-        /* ============================================
-           SIGNUP PAGE SPECIFIC OVERRIDES
-           ============================================ */
-
-        /* Enable scrolling for signup (longer form) */
+        /* Signup: override login's fixed viewport for scrollable form */
         html, body {
             overflow-y: auto !important;
             position: static !important;
             height: auto !important;
-            min-height: 100% !important;
+            min-height: 100%;
         }
-
         .ppv-landing-container {
             min-height: 100vh;
             min-height: 100dvh;
             height: auto !important;
             overflow: visible !important;
         }
-
-        /* Smaller header for signup */
-        .ppv-landing-header {
-            padding: 8px 0 !important;
-            padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
-        }
-
-        .ppv-header-content {
-            padding: 0 16px !important;
-        }
-
-        .ppv-slogan {
-            display: none !important;
-        }
-
-        /* Hero section - allow natural height */
+        .ppv-slogan { display: none; }
         .ppv-hero-section {
-            min-height: auto !important;
+            min-height: auto;
             flex: 1;
-            padding: 24px 16px 40px !important;
+            padding: 20px 16px 32px;
         }
-
-        /* Card adjustments for mobile */
-        .ppv-login-card {
-            padding: 20px !important;
+        .ppv-hero-content {
+            grid-template-columns: 1fr;
         }
+        .ppv-login-card { padding: 24px; }
+        .ppv-login-welcome { margin-bottom: 12px; }
+        .ppv-login-welcome h2 { font-size: 22px; }
+        .ppv-login-welcome p { font-size: 14px; }
 
-        .ppv-login-welcome h2 {
-            font-size: 22px !important;
-        }
+        /* Form: tighter spacing (login CSS has gap:12px, remove extra margin) */
+        .ppv-login-form { gap: 10px !important; }
+        .ppv-form-group { margin-bottom: 0; gap: 4px; }
+        .ppv-form-group input { min-height: 46px; padding: 10px 14px; }
+        .ppv-form-footer { padding: 10px 14px !important; margin-top: 4px !important; }
 
-        /* Form spacing */
-        .ppv-form-group {
-            margin-bottom: 16px !important;
-        }
+        /* User Type Selector */
+        .ppv-user-type-selector { margin-bottom: 16px; }
+        .ppv-type-option > div { transition: all 0.3s ease; }
+        .ppv-type-option:hover > div,
+        .ppv-type-option.ppv-type-active > div { border-color: #3B82F6; background: #EFF6FF; }
+        .ppv-type-option.ppv-type-active svg { color: #3B82F6; }
+        .ppv-type-option.ppv-type-active strong { color: #1E40AF; }
 
-        /* User Type Selector Styling */
-        .ppv-type-option > div {
-            transition: all 0.3s ease;
-        }
+        /* Password requirements compact */
+        .ppv-password-requirements { margin-top: 4px; }
+        .ppv-password-requirements ul { margin: 2px 0; font-size: 11px; }
+        .ppv-password-requirements p { margin: 4px 0 2px 0; }
 
-        .ppv-type-option:hover > div {
-            border-color: #3B82F6 !important;
-            background: #EFF6FF;
-        }
+        /* Footer */
+        .ppv-landing-footer { margin-top: auto; flex-shrink: 0; }
 
-        .ppv-type-option.ppv-type-active > div {
-            border-color: #3B82F6 !important;
-            background: #EFF6FF;
-        }
-
-        .ppv-type-option.ppv-type-active svg {
-            color: #3B82F6 !important;
-        }
-
-        .ppv-type-option.ppv-type-active strong {
-            color: #1E40AF !important;
-        }
-
-        /* Password requirements - compact */
-        .ppv-password-requirements {
-            margin-top: 8px;
-        }
-
-        .ppv-password-requirements ul {
-            margin: 4px 0 !important;
-            font-size: 11px !important;
-        }
-
-        /* Footer sticky at bottom */
-        .ppv-landing-footer {
-            margin-top: auto;
-            flex-shrink: 0;
-        }
-
-        /* Mobile optimizations */
         @media (max-width: 640px) {
-            .ppv-hero-section {
-                padding: 16px 12px 32px !important;
-            }
-
-            .ppv-login-card {
-                padding: 16px !important;
-            }
-
-            .ppv-login-welcome h2 {
-                font-size: 20px !important;
-            }
-
-            .ppv-user-type-selector p {
-                font-size: 13px !important;
-            }
-
-            .ppv-type-option > div {
-                padding: 12px !important;
-            }
-
-            .ppv-type-option svg {
-                width: 28px !important;
-                height: 28px !important;
-            }
+            .ppv-hero-section { padding: 12px 12px 24px; }
+            .ppv-login-card { padding: 18px 16px; }
+            .ppv-login-welcome h2 { font-size: 20px; }
+            .ppv-user-type-selector p { font-size: 13px; }
+            .ppv-type-option > div { padding: 12px; }
+            .ppv-type-option svg { width: 28px; height: 28px; }
         }
         </style>
 
