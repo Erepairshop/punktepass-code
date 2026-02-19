@@ -226,6 +226,7 @@ Invoice features (Rechnungen tab):
 • Auto-generate when repair = "done"
 • Custom invoice number prefix (e.g. RE-001)
 • Line items: service description + amount
+• Optional warranty date (Garantie bis): appears on PDF if set
 • VAT/MwSt (configurable, can disable for Kleinunternehmer)
 • Send invoice email: click envelope icon → PDF sent to customer
 • Bulk email: select multiple → Massen Email
@@ -303,6 +304,7 @@ REPAIR MANAGEMENT (Reparaturen tab):
 • Change status via dropdown on each repair card
 • Add internal comments/notes to each repair
 • Print individual repair ticket (with QR code) via Print button
+• Live-tracking URL on each repair card: copyable link that customers can use to check repair status
 • Auto-polling every 15 seconds for new incoming repairs
 • Search by customer name, phone, device info
 • Filter by status
@@ -314,9 +316,15 @@ REPAIR MANAGEMENT (Reparaturen tab):
 
 INVOICE SYSTEM (Rechnungen tab):
 • Create invoices (Rechnung) or quotes (Angebot)
+• QUOTE CREATION (Neues Angebot): modern 2-step wizard modal
+  - Step 1: Customer data (name, company, email, phone, single address field that auto-parses street/PLZ/city)
+  - Step 2: Positions with Qty × Unit Price per line (auto-calculated line totals), totals card (Netto/MwSt/Brutto), valid-until date, notes
+  - Customer search: type to search existing customers, results appear in dropdown
+  - Can also create quote from repair card (pre-fills customer + device info)
 • Auto-generate invoice when repair status set to "done"
 • Custom invoice numbering with prefix (e.g. RE-001)
-• Line items: add service descriptions + amounts
+• Optional warranty date (Garantie bis) + warranty conditions text: set in invoice, default text configurable in Einstellungen. Displayed on PDF as yellow box.
+• Line items: add service descriptions + qty × price amounts
 • VAT/MwSt calculation (configurable rate, can disable for Kleinunternehmer)
 • EMAIL SEND: click the email icon (envelope) on any invoice to send PDF to customer
 • Bulk email: select multiple invoices → "Massen Email" button

@@ -163,6 +163,14 @@ class PPV_Repair_Form {
     .repair-lang.open .repair-lang-dd{display:block}
     .repair-lang-dd a{display:block;padding:7px 14px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;font-weight:500;transition:background .15s}
     .repair-lang-dd a:hover{background:rgba(255,255,255,.1);color:#fff}
+
+    /* ===== Autocomplete suggestions ===== */
+    .rf-suggestions-desktop{display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)}
+    .rf-sug-item{padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9;-webkit-tap-highlight-color:transparent}
+    .rf-sug-item:active{background:#f1f5f9}
+    .rf-sug-main{font-weight:500;color:#0f172a}
+    .rf-sug-sub{font-size:12px;color:#94a3b8;margin-top:2px}
+
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -295,7 +303,7 @@ class PPV_Repair_Form {
             <div class="repair-field" style="position:relative">
                 <label for="rf-email"><?php echo esc_html(PPV_Lang::t('repair_email_label')); ?></label>
                 <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email">
-                <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+                <div id="rf-email-suggestions" class="rf-suggestions-desktop"></div>
                 <p class="repair-field-hint"><i class="ri-gift-line"></i> <?php echo esc_html(PPV_Lang::t('repair_email_hint')); ?></p>
             </div>
 
@@ -309,8 +317,8 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
             <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? PPV_Lang::t('repair_address_label')); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" value="<?php echo $pf_address; ?>" autocomplete="street-address">
-                <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" value="<?php echo $pf_address; ?>" autocomplete="nope" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <div id="rf-address-suggestions" class="rf-suggestions-desktop"></div>
             </div>
             <?php endif; ?>
         </div>
@@ -1710,22 +1718,32 @@ function toggleProblemTag(btn, text) {
 
 <script>
 (function(){
-    // XHR helper (works on all WebViews)
+    // HTTP GET helper (fetch with XHR fallback for old WebViews)
     function xhrGet(url, cb) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try { cb(null, JSON.parse(xhr.responseText)); }
-                    catch(e) { cb('parse error'); }
-                } else { cb('HTTP ' + xhr.status); }
-            }
-        };
-        xhr.onerror = function(){ cb('Network error'); };
-        xhr.timeout = 8000;
-        xhr.ontimeout = function(){ cb('Timeout'); };
-        xhr.send();
+        if (window.fetch) {
+            fetch(url, {method:'GET',headers:{'Accept':'application/json'}})
+            .then(function(r){
+                if (!r.ok) { cb('HTTP ' + r.status); return; }
+                return r.json();
+            })
+            .then(function(data){ if(data) cb(null, data); })
+            .catch(function(e){ cb(e.message || 'Network error'); });
+        } else {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try { cb(null, JSON.parse(xhr.responseText)); }
+                        catch(e) { cb('parse error'); }
+                    } else { cb('HTTP ' + xhr.status); }
+                }
+            };
+            xhr.onerror = function(){ cb('Network error'); };
+            xhr.timeout = 8000;
+            xhr.ontimeout = function(){ cb('Timeout'); };
+            xhr.send();
+        }
     }
 
     function escH(s) {
@@ -1734,7 +1752,7 @@ function toggleProblemTag(btn, text) {
         return d.innerHTML;
     }
 
-    // ===== DISMISS: hide dropdowns when tapping OUTSIDE (not blur!) =====
+    // ===== DISMISS: hide dropdowns when tapping OUTSIDE =====
     var emailInput = document.getElementById('rf-email');
     var emailBox = document.getElementById('rf-email-suggestions');
     var addrInput = document.getElementById('rf-address');
@@ -1761,28 +1779,27 @@ function toggleProblemTag(btn, text) {
             var q = emailInput.value.trim();
             if (q === lastEmailQ) return;
             lastEmailQ = q;
-            if (q.length < 2) { emailBox.style.display = 'none'; return; }
+            if (q.length < 2) { emailBox.style.display='none'; return; }
             emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
         }
 
         emailInput.addEventListener('input', triggerEmailSearch);
-        emailInput.addEventListener('keyup', triggerEmailSearch);
 
         function searchEmails(q) {
             var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, resp){
+                if (err) { console.warn('Email search error:', err); }
                 if (err || !resp || !resp.success || !resp.data || !resp.data.length) {
-                    emailBox.style.display = 'none';
+                    emailBox.style.display='none';
                     return;
                 }
                 emailBox.innerHTML = '';
                 resp.data.forEach(function(c){
                     var item = document.createElement('div');
-                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
-                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
-                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
-                    // Use onclick - works on both mouse and touch
-                    item.onclick = function(){
+                    item.className = 'rf-sug-item';
+                    item.innerHTML = '<div class="rf-sug-main">' + escH(c.customer_email) + '</div>' +
+                        '<div class="rf-sug-sub">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
+                    item._onSelect = function(){
                         emailInput.value = c.customer_email;
                         emailBox.style.display = 'none';
                         var nameF = document.getElementById('rf-name');
@@ -1799,14 +1816,19 @@ function toggleProblemTag(btn, text) {
                             }
                         });
                     };
+                    item.addEventListener('click', function(e){
+                        e.preventDefault();
+                        e.stopPropagation();
+                        item._onSelect();
+                    });
                     emailBox.appendChild(item);
                 });
-                emailBox.style.display = 'block';
+                emailBox.style.display='block';
             });
         }
     }
 
-    // ===== ADDRESS AUTOCOMPLETE =====
+    // ===== ADDRESS AUTOCOMPLETE (via server proxy to avoid CORS) =====
     if (addrInput && addrBox) {
         var addrTimer = null;
         var lastAddrQ = '';
@@ -1825,18 +1847,18 @@ function toggleProblemTag(btn, text) {
             var q = addrInput.value.trim();
             if (q === lastAddrQ) return;
             lastAddrQ = q;
-            if (q.length < 3) { addrBox.style.display = 'none'; return; }
-            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 400);
+            if (q.length < 3) { addrBox.style.display='none'; return; }
+            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 250);
         }
 
         addrInput.addEventListener('input', triggerAddrSearch);
-        addrInput.addEventListener('keyup', triggerAddrSearch);
 
         function fetchAddrSuggestions(q) {
-            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
-            xhrGet(url, function(err, results){
+            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_nominatim&cc=' + nominatimCC + '&q=' + encodeURIComponent(q);
+            xhrGet(url, function(err, resp){
+                var results = (resp && resp.success) ? resp.data : null;
                 if (err || !results || !results.length) {
-                    addrBox.style.display = 'none';
+                    addrBox.style.display='none';
                     return;
                 }
                 var userStreet = getUserStreet(addrInput.value);
@@ -1856,17 +1878,22 @@ function toggleProblemTag(btn, text) {
                     var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
                     var displayFull = r.display_name;
                     var item = document.createElement('div');
-                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
-                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(displayShort || displayFull) + '</div>' +
-                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(displayFull) + '</div>';
-                    item.onclick = function(){
+                    item.className = 'rf-sug-item';
+                    item.innerHTML = '<div class="rf-sug-main">' + escH(displayShort || displayFull) + '</div>' +
+                        '<div class="rf-sug-sub">' + escH(displayFull) + '</div>';
+                    item._onSelect = function(){
                         var finalStreet = street || userStreet;
                         addrInput.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
                         addrBox.style.display = 'none';
                     };
+                    item.addEventListener('click', function(e){
+                        e.preventDefault();
+                        e.stopPropagation();
+                        item._onSelect();
+                    });
                     addrBox.appendChild(item);
                 });
-                addrBox.style.display = 'block';
+                addrBox.style.display='block';
             });
         }
     }

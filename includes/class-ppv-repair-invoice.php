@@ -21,7 +21,7 @@ class PPV_Repair_Invoice {
      * @param float  $amount - The repair cost (from final_cost POST or estimated_cost)
      * @return int|null - Invoice ID or null on failure
      */
-    public static function generate_invoice($store, $repair, $amount = 0, $line_items = [], $manual_discount = []) {
+    public static function generate_invoice($store, $repair, $amount = 0, $line_items = [], $manual_discount = [], $payment = []) {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
@@ -187,9 +187,13 @@ class PPV_Repair_Invoice {
             'vat_amount'                => $vat_amount,
             'total'                     => $total,
             'is_kleinunternehmer'       => $is_klein,
+            'warranty_date'             => !empty($payment['warranty_date']) ? $payment['warranty_date'] : null,
+            'warranty_description'      => !empty($payment['warranty_description']) ? $payment['warranty_description'] : null,
             'punktepass_reward_applied'  => $reward_applied,
             'points_used'               => $points_used,
-            'status'                    => 'draft',
+            'status'                    => !empty($payment['mark_paid']) ? 'paid' : 'draft',
+            'payment_method'            => !empty($payment['payment_method']) ? $payment['payment_method'] : null,
+            'paid_at'                   => !empty($payment['mark_paid']) ? (!empty($payment['paid_at']) ? $payment['paid_at'] : current_time('mysql')) : null,
             'created_at'                => current_time('mysql'),
         ]);
 
@@ -495,6 +499,15 @@ class PPV_Repair_Invoice {
             }
         }
 
+        // Warranty date
+        if (isset($_POST['warranty_date'])) {
+            $wd = sanitize_text_field($_POST['warranty_date']);
+            $update['warranty_date'] = $wd ?: null;
+        }
+        if (isset($_POST['warranty_description'])) {
+            $update['warranty_description'] = sanitize_textarea_field($_POST['warranty_description']) ?: null;
+        }
+
         // Differenzbesteuerung
         if (isset($_POST['is_differenzbesteuerung'])) {
             $is_differenz = intval($_POST['is_differenzbesteuerung']) ? 1 : 0;
@@ -612,21 +625,48 @@ class PPV_Repair_Invoice {
             wp_send_json_error(['message' => 'Kundenname ist erforderlich']);
         }
 
-        // Save customer if requested
+        // Save customer if requested (find existing by email or name to avoid duplicates)
         $save_customer = !empty($_POST['save_customer']);
         if ($save_customer && !$customer_id) {
-            $wpdb->insert("{$prefix}ppv_repair_customers", [
-                'store_id' => $store_id,
-                'name' => $customer_name,
-                'email' => $customer_email ?: null,
-                'phone' => $customer_phone ?: null,
-                'company_name' => $customer_company ?: null,
-                'tax_id' => $customer_tax_id ?: null,
-                'address' => $customer_address ?: null,
-                'plz' => $customer_plz ?: null,
-                'city' => $customer_city ?: null,
-            ]);
-            $customer_id = $wpdb->insert_id;
+            // Check for existing customer: match by email first, then by exact name
+            if ($customer_email) {
+                $customer_id = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_repair_customers WHERE store_id = %d AND email = %s LIMIT 1",
+                    $store_id, $customer_email
+                ));
+            }
+            if (!$customer_id && $customer_name) {
+                $customer_id = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$prefix}ppv_repair_customers WHERE store_id = %d AND name = %s AND (email IS NULL OR email = '') LIMIT 1",
+                    $store_id, $customer_name
+                ));
+            }
+            if ($customer_id) {
+                // Update existing customer with latest data
+                $wpdb->update("{$prefix}ppv_repair_customers", [
+                    'name' => $customer_name,
+                    'email' => $customer_email ?: null,
+                    'phone' => $customer_phone ?: null,
+                    'company_name' => $customer_company ?: null,
+                    'tax_id' => $customer_tax_id ?: null,
+                    'address' => $customer_address ?: null,
+                    'plz' => $customer_plz ?: null,
+                    'city' => $customer_city ?: null,
+                ], ['id' => $customer_id]);
+            } else {
+                $wpdb->insert("{$prefix}ppv_repair_customers", [
+                    'store_id' => $store_id,
+                    'name' => $customer_name,
+                    'email' => $customer_email ?: null,
+                    'phone' => $customer_phone ?: null,
+                    'company_name' => $customer_company ?: null,
+                    'tax_id' => $customer_tax_id ?: null,
+                    'address' => $customer_address ?: null,
+                    'plz' => $customer_plz ?: null,
+                    'city' => $customer_city ?: null,
+                ]);
+                $customer_id = $wpdb->insert_id;
+            }
         }
 
         // Invoice data
@@ -646,6 +686,8 @@ class PPV_Repair_Invoice {
 
         $subtotal = floatval($_POST['subtotal'] ?? 0);
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
+        $warranty_date = sanitize_text_field($_POST['warranty_date'] ?? '');
+        $warranty_description = sanitize_textarea_field($_POST['warranty_description'] ?? '');
 
         // Generate invoice number (or use custom if provided)
         $custom_invoice_number = sanitize_text_field($_POST['invoice_number'] ?? '');
@@ -701,9 +743,10 @@ class PPV_Repair_Invoice {
         }
 
         // Insert invoice
+        $repair_id = !empty($_POST['repair_id']) ? intval($_POST['repair_id']) : null;
         $wpdb->insert("{$prefix}ppv_repair_invoices", [
             'store_id'          => $store_id,
-            'repair_id'         => null, // Standalone invoice
+            'repair_id'         => $repair_id,
             'customer_id'       => $customer_id,
             'invoice_number'    => $invoice_number,
             'customer_name'     => $customer_name,
@@ -730,6 +773,8 @@ class PPV_Repair_Invoice {
             'punktepass_reward_applied' => 0,
             'points_used'       => 0,
             'notes'             => $notes,
+            'warranty_date'     => $warranty_date ?: null,
+            'warranty_description' => $warranty_description ?: null,
             'status'            => 'draft',
             'created_at'        => current_time('mysql'),
         ]);
@@ -742,6 +787,16 @@ class PPV_Repair_Invoice {
                 "UPDATE {$prefix}ppv_stores SET repair_invoice_next_number = %d WHERE id = %d",
                 $next_num + 1, $store_id
             ));
+        }
+
+        // Mark as paid if requested
+        if ($invoice_id && !empty($_POST['mark_paid'])) {
+            $paid_data = ['status' => 'paid'];
+            $payment_method = sanitize_text_field($_POST['payment_method'] ?? '');
+            if ($payment_method) $paid_data['payment_method'] = $payment_method;
+            $paid_at = sanitize_text_field($_POST['paid_at'] ?? '');
+            $paid_data['paid_at'] = $paid_at ?: current_time('mysql');
+            $wpdb->update("{$prefix}ppv_repair_invoices", $paid_data, ['id' => $invoice_id]);
         }
 
         wp_send_json_success([
@@ -1170,6 +1225,12 @@ class PPV_Repair_Invoice {
         $is_angebot = ($doc_type === 'angebot');
         $doc_type_label = $is_angebot ? PPV_Lang::t('repair_pdf_quote') : PPV_Lang::t('repair_pdf_invoice');
         $valid_until = ($is_angebot && !empty($invoice->valid_until)) ? date('d.m.Y', strtotime($invoice->valid_until)) : '';
+        $warranty_date = !empty($invoice->warranty_date) ? date('d.m.Y', strtotime($invoice->warranty_date)) : '';
+        $warranty_desc = nl2br(esc_html($invoice->warranty_description ?? ''));
+        // Fallback to store default if warranty date set but no description
+        if ($warranty_date && !$warranty_desc && !empty($store->repair_warranty_text)) {
+            $warranty_desc = nl2br(esc_html($store->repair_warranty_text));
+        }
         $cust_name = esc_html($invoice->customer_name);
         $cust_email = esc_html($invoice->customer_email);
         $cust_phone = esc_html($invoice->customer_phone ?: '');
@@ -1265,6 +1326,7 @@ class PPV_Repair_Invoice {
         $t_date = PPV_Lang::t('repair_pdf_date');
         $t_nr = PPV_Lang::t('repair_pdf_nr');
         $t_valid_until = PPV_Lang::t('repair_pdf_valid_until');
+        $t_warranty_until = PPV_Lang::t('repair_pdf_warranty_until');
         $t_your_vat_id = PPV_Lang::t('repair_pdf_your_vat_id');
         $t_greeting = PPV_Lang::t('repair_pdf_greeting');
         $t_intro = $is_angebot ? PPV_Lang::t('repair_pdf_intro_quote') : PPV_Lang::t('repair_pdf_intro_invoice');
@@ -1375,6 +1437,7 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 .info-box{padding:3mm 4mm;margin-top:4mm;margin-right:1mm;font-size:9pt}
 .info-box.payment{background:#f0f9ff;border-left:3px solid ' . $color . ';color:#0c4a6e}
 .info-box.reward{background:#f0fdf4;border-left:3px solid #22c55e;color:#14532d}
+.info-box.warranty{background:#fefce8;border-left:3px solid #eab308;color:#713f12}
 .info-box strong{font-weight:700}
 .vat-notice{font-size:8pt;color:#94a3b8;margin-top:3mm;font-style:italic}
 
@@ -1434,6 +1497,7 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 <tr><td>' . $doc_type_label . ' ' . $t_nr . ':</td><td><span class="invoice-number">' . $inv_nr . '</span></td></tr>
 <tr><td>' . $t_date . ':</td><td>' . $inv_date . '</td></tr>
 ' . ($valid_until ? '<tr><td>' . $t_valid_until . ':</td><td>' . $valid_until . '</td></tr>' : '') . '
+' . ($warranty_date ? '<tr><td>' . $t_warranty_until . ':</td><td>' . $warranty_date . '</td></tr>' : '') . '
 ' . ($cust_tax_id ? '<tr><td>' . $t_your_vat_id . ':</td><td>' . $cust_tax_id . '</td></tr>' : '') . '
 </table>
 </div>
@@ -1466,6 +1530,8 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 ' . $payment_html . '
 
 ' . ($invoice->punktepass_reward_applied ? '<div class="info-box reward"><strong>' . $t_reward_redeemed . '</strong> ' . $discount_desc . '</div>' : '') . '
+
+' . ($warranty_date ? '<div class="info-box warranty"><strong>' . $t_warranty_until . ': ' . $warranty_date . '</strong>' . ($warranty_desc ? '<br><span style="font-size:8pt;font-weight:400">' . $warranty_desc . '</span>' : '') . '</div>' : '') . '
 
 ' . ($notes ? '<div class="notes-section"><div class="notes-label">' . $t_notes . ':</div><p class="notes-text">' . $notes . '</p></div>' : '') . '
 

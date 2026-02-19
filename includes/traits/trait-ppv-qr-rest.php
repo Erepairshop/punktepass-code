@@ -181,10 +181,10 @@ trait PPV_QR_REST_Trait {
     }
 
     public static function rest_get_strings(WP_REST_Request $r) {
-        $lang = sanitize_text_field($r->get_header('X-Lang') ?? $_GET['lang'] ?? 'de');
+        $lang = sanitize_text_field($r->get_header('X-Lang') ?? $_GET['lang'] ?? 'en');
 
-        if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
-            $lang = 'de';
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en', 'it'])) {
+            $lang = 'en';
         }
 
         $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
@@ -1268,9 +1268,9 @@ trait PPV_QR_REST_Trait {
         // 📊 CUSTOMER INSIGHTS: Get customer insights for Händler display
         $customer_insights = null;
         if (class_exists('PPV_Customer_Insights')) {
-            $lang = sanitize_text_field($r->get_header('X-Lang') ?? 'de');
-            if (!in_array($lang, ['de', 'hu', 'ro', 'en'])) {
-                $lang = 'de';
+            $lang = sanitize_text_field($r->get_header('X-Lang') ?? 'en');
+            if (!in_array($lang, ['de', 'hu', 'ro', 'en', 'it'])) {
+                $lang = 'en';
             }
             $customer_insights = PPV_Customer_Insights::get_insights($user_id, $store_id, $lang);
         }
@@ -1398,7 +1398,7 @@ trait PPV_QR_REST_Trait {
     // ============================================================
     private static function get_csv_export_headers() {
         // Detect language from cookie, query param, or locale
-        $lang = 'de';
+        $lang = 'en';
         if (isset($_COOKIE['ppv_lang'])) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang']);
         } elseif (isset($_GET['lang'])) {

@@ -144,39 +144,216 @@ class PPV_Lead_Finder {
         $query = sanitize_text_field($_POST['search_query'] ?? '');
         $region = sanitize_text_field($_POST['search_region'] ?? '');
 
-        if (empty($query) || empty($region)) {
+        if (empty($query)) {
             wp_redirect("/formular/lead-finder?error=empty_search");
             exit;
         }
 
-        $full_query = "$query $region";
+        // Build full query - region is optional (user may include it in query itself)
+        $full_query = trim("$query $region");
         $found_count = 0;
+        $emails_found = 0;
 
-        // Method 1: Google Maps search (via places autocomplete-like approach)
-        $maps_results = self::search_google_maps($query, $region);
-        foreach ($maps_results as $business) {
-            if (self::add_lead_if_new($business, $region, $full_query)) {
-                $found_count++;
+        // --- Phase 1: Direct business website search (advanced depth, max coverage) ---
+        $queries = [
+            $full_query . ' email',
+            $full_query . ' kontakt impressum',
+            $full_query . ' bewertungen',
+        ];
+
+        $all_results = [];
+        foreach ($queries as $q) {
+            $results = self::tavily_search($q, 20, 'advanced');
+            foreach ($results as $r) {
+                $url = $r['url'] ?? '';
+                if (!empty($url) && !isset($all_results[$url])) {
+                    $all_results[$url] = $r;
+                }
             }
         }
 
-        // Method 2: Bing Places search
-        $bing_results = self::search_bing($full_query);
-        foreach ($bing_results as $business) {
-            if (self::add_lead_if_new($business, $region, $full_query)) {
-                $found_count++;
+        // --- Phase 2: Directory search (gelbeseiten, 11880, golocal etc.) ---
+        $directory_queries = [
+            $full_query . ' gelbeseiten.de',
+            $full_query . ' 11880.com',
+            $full_query . ' golocal.de',
+        ];
+        $directory_results = [];
+        foreach ($directory_queries as $dq) {
+            $results = self::tavily_search($dq, 5, 'advanced');
+            foreach ($results as $r) {
+                $directory_results[] = $r;
             }
         }
 
-        // Method 3: DuckDuckGo search
-        $ddg_results = self::search_duckduckgo($full_query);
-        foreach ($ddg_results as $business) {
-            if (self::add_lead_if_new($business, $region, $full_query)) {
+        // --- Process direct results: each URL = one business ---
+        $excluded_domains = '/(google|facebook|instagram|twitter|youtube|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft|apple\.com|trustpilot|kununu|xing)/i';
+        // Directory domains - we extract multiple businesses from their content
+        $directory_domains = '/(gelbeseiten|11880|golocal|yelp|cylex|branchenbuch|meinestadt|dasoertliche|kennstdueinen)/i';
+
+        foreach ($all_results as $url => $r) {
+            $title = $r['title'] ?? '';
+            $content = ($r['content'] ?? '') . ' ' . $title;
+            $domain = parse_url($url, PHP_URL_HOST) ?? '';
+
+            // Skip social media
+            if (preg_match($excluded_domains, $domain)) continue;
+
+            // Directory pages → extract multiple businesses from content (Phase 2 handles this below)
+            if (preg_match($directory_domains, $domain)) {
+                $directory_results[] = $r;
+                continue;
+            }
+
+            // Direct business website → one lead
+            $name = preg_replace('/\s*[-|–—]\s*.*$/', '', $title);
+            $name = self::clean_business_name($name);
+
+            if (strlen($name) < 4 || !self::is_valid_business_name($name)) {
+                $name = preg_replace('/^www\./', '', $domain);
+                $name = preg_replace('/\.(de|com|net|org|eu|info|shop|store)$/i', '', $name);
+                $name = ucfirst($name);
+            }
+            if (strlen($name) < 3) continue;
+
+            $email = '';
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $em);
+            if (!empty($em[0])) {
+                $valid = self::filter_emails($em[0]);
+                if (!empty($valid)) $email = strtolower(reset($valid));
+            }
+
+            $phone = '';
+            preg_match_all('/(?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18}/u', $content, $pm);
+            if (!empty($pm[0])) {
+                $phone = trim(preg_replace('/\s+/', ' ', $pm[0][0]));
+                if (strlen(preg_replace('/\D/', '', $phone)) < 8) $phone = '';
+            }
+
+            if (self::add_lead_if_new(['name' => $name, 'website' => $url, 'email' => $email, 'phone' => $phone], $region ?: '', $full_query)) {
                 $found_count++;
+                if (!empty($email)) $emails_found++;
             }
         }
 
-        wp_redirect("/formular/lead-finder?success=search&found=$found_count&region=" . urlencode($region));
+        // --- Process directory results: extract multiple businesses from content ---
+        foreach ($directory_results as $r) {
+            $content = ($r['content'] ?? '') . ' ' . ($r['title'] ?? '');
+            $url = $r['url'] ?? '';
+
+            // Extract all emails from directory page
+            $all_emails = [];
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $em);
+            if (!empty($em[0])) $all_emails = self::filter_emails($em[0]);
+
+            // Extract all phone numbers
+            $all_phones = [];
+            preg_match_all('/(?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18}/u', $content, $pm);
+            if (!empty($pm[0])) {
+                foreach ($pm[0] as $p) {
+                    $p = trim(preg_replace('/\s+/', ' ', $p));
+                    if (strlen(preg_replace('/\D/', '', $p)) >= 8) $all_phones[] = $p;
+                }
+            }
+
+            // Extract all website URLs from directory content
+            $all_urls = [];
+            preg_match_all('/(https?:\/\/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:\/[^\s<>"\']*)?)/i', $content, $um);
+            if (!empty($um[1])) {
+                foreach ($um[1] as $u) {
+                    $d = parse_url($u, PHP_URL_HOST);
+                    if ($d && !preg_match($excluded_domains, $d) && !preg_match($directory_domains, $d)) {
+                        $all_urls[] = $u;
+                    }
+                }
+            }
+
+            // Try to extract business names from directory content
+            // Pattern: business names are typically proper-cased words before addresses/ratings
+            $extracted = self::extract_businesses_from_directory($content, $region);
+
+            if (!empty($extracted)) {
+                $email_idx = 0;
+                $phone_idx = 0;
+                $url_idx = 0;
+                foreach ($extracted as $biz) {
+                    $biz_email = $biz['email'] ?? '';
+                    if (empty($biz_email) && isset($all_emails[$email_idx])) {
+                        $biz_email = $all_emails[$email_idx++];
+                    }
+                    $biz_phone = $biz['phone'] ?? '';
+                    if (empty($biz_phone) && isset($all_phones[$phone_idx])) {
+                        $biz_phone = $all_phones[$phone_idx++];
+                    }
+                    $biz_url = $biz['website'] ?? '';
+                    if (empty($biz_url) && isset($all_urls[$url_idx])) {
+                        $biz_url = $all_urls[$url_idx++];
+                    }
+
+                    if (self::add_lead_if_new([
+                        'name' => $biz['name'],
+                        'website' => $biz_url,
+                        'email' => $biz_email,
+                        'phone' => $biz_phone,
+                        'address' => $biz['address'] ?? '',
+                    ], $region ?: '', $full_query . ' (Verzeichnis)')) {
+                        $found_count++;
+                        if (!empty($biz_email)) $emails_found++;
+                    }
+                }
+            } else {
+                // Fallback: if we can't parse names, at least save emails we found
+                foreach ($all_emails as $email) {
+                    $name_part = explode('@', $email)[0];
+                    $name_part = str_replace(['.', '_', '-'], ' ', $name_part);
+                    $name_part = ucwords($name_part);
+                    // Skip generic emails like "info", "kontakt"
+                    if (preg_match('/^(Info|Kontakt|Office|Mail|Service|Hallo|Hello|Admin|Support)$/i', $name_part)) {
+                        $domain_name = explode('@', $email)[1];
+                        $name_part = preg_replace('/\.(de|com|net|org)$/i', '', $domain_name);
+                        $name_part = ucfirst($name_part);
+                    }
+                    if (strlen($name_part) >= 3) {
+                        if (self::add_lead_if_new([
+                            'name' => $name_part,
+                            'email' => strtolower($email),
+                        ], $region ?: '', $full_query . ' (Email)')) {
+                            $found_count++;
+                            $emails_found++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Phase 3: Auto-scrape leads that have website but no email ---
+        $no_email_leads = $wpdb->get_results(
+            "SELECT id, business_name, region, website FROM {$wpdb->prefix}ppv_leads
+             WHERE email = '' AND website != '' AND scraped_at IS NULL
+             ORDER BY id DESC LIMIT 30"
+        );
+
+        foreach ($no_email_leads as $lead) {
+            $keyword = '';
+            $found = self::smart_find_email($lead->business_name, $lead->region, $keyword);
+
+            $status = !empty($found['email']) ? 'email_found' : 'no_email_found';
+            $update_data = [
+                'scraped_at' => current_time('mysql'),
+                'scrape_status' => $status
+            ];
+            if (!empty($found['email'])) {
+                $update_data['email'] = $found['email'];
+                $emails_found++;
+            }
+            if (!empty($found['phone'])) {
+                $update_data['phone'] = $found['phone'];
+            }
+
+            $wpdb->update($wpdb->prefix . 'ppv_leads', $update_data, ['id' => $lead->id]);
+        }
+
+        wp_redirect("/formular/lead-finder?success=search&found=$found_count&emails=$emails_found&region=" . urlencode($region));
         exit;
     }
 
@@ -499,78 +676,127 @@ class PPV_Lead_Finder {
             return false;
         }
 
-        // Reject if starts with time/day patterns
-        if (preg_match('/^(Öffnet|Öffnungszeiten|Geschlossen|Geöffnet|Schließt|Jetzt|Heute|Morgen)/iu', $name)) {
+        // --- EXACT MATCH rejects (case-insensitive) ---
+        $exact_rejects = [
+            // Web UI elements
+            'mehr lesen', 'weniger', 'zurück', 'weiter', 'schließen', 'abbrechen',
+            'ok', 'ja', 'nein', 'laden', 'anmelden', 'abmelden', 'registrieren',
+            'suchen', 'suche', 'senden', 'absenden', 'speichern', 'teilen',
+            'anrufen', 'anzeigen', 'ausblenden', 'bearbeiten', 'löschen',
+            'reservieren', 'buchen', 'bestellen', 'kaufen', 'hinzufügen',
+            'entfernen', 'drucken', 'herunterladen', 'hochladen', 'aktualisieren',
+            'e-mail', 'email', 'telefon', 'fax', 'website', 'webseite',
+            'homepage', 'kontakt', 'impressum', 'datenschutz', 'agb',
+            'mehr anzeigen', 'alle anzeigen', 'mehr erfahren', 'details anzeigen',
+            'jetzt anrufen', 'gratis anrufen', 'kostenlos anrufen', 'route planen',
+            'auf karte zeigen', 'karte anzeigen', 'bewertung schreiben',
+            'bewertung abgeben', 'fotos ansehen', 'fotos anzeigen',
+            'bedenken melden', 'problem melden', 'als unangemessen melden',
+            'nicht hilfreich', 'hilfreich', 'war das hilfreich',
+            'in gesamtnote eingerechnet', 'daten aus 1 quelle', 'daten aus 2 quellen',
+            'und so funktioniert es', 'so funktioniert es', 'hinweis',
+            'ihre gewünschte verbindung', 'verbindung wird aufgebaut',
+            'die nummer', 'anbieter kontaktieren', 'nachricht senden',
+            'termin vereinbaren', 'termin buchen', 'jetzt anfragen',
+            'angebot anfordern', 'angebot einholen', 'kostenlos anfragen',
+            'premium eintrag', 'gesponsert', 'werbung', 'anzeige',
+            'öffnungszeiten', 'geschlossen', 'geöffnet', 'jetzt geöffnet',
+            'jetzt geschlossen', 'hat geöffnet', 'hat geschlossen',
+            // Shipping
+            'dhl', 'ups', 'hermes', 'dpd', 'gls',
+            // Common categories (not business names)
+            'handyreparaturen', 'telefonläden', 'telekommunikation',
+            'elektronik', 'computer', 'reparatur', 'dienstleistungen',
+            'handyreparatur', 'smartphone reparatur',
+        ];
+        $name_lower = mb_strtolower(trim($name));
+        if (in_array($name_lower, $exact_rejects, true)) {
             return false;
         }
 
-        // Reject day names at start
-        if (preg_match('/^(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo\s|Di\s|Mi\s|Do\s|Fr\s|Sa\s|So\s)/iu', $name)) {
+        // --- STARTS WITH rejects ---
+        if (preg_match('/^(Öffnet|Öffnungszeiten|Geschlossen|Geöffnet|Schließt|Jetzt|Heute|Morgen|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo\s|Di\s|Mi\s|Do\s|Fr\s|Sa\s|So\s)/iu', $name)) {
             return false;
         }
 
-        // Reject Google Maps UI elements
-        if (preg_match('/^(Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern|Route|Wegbeschreibung|Fotos|Rezensionen|Übersicht|Info|Karte|Satellit|Gelände|Alle\s|Filter|Sortieren|Neuste|Neueste|Standort|Entfernung)/iu', $name)) {
+        // Google Maps / directory UI elements
+        if (preg_match('/^(Google|Maps|Routenplaner|Weitere|Ergebnisse|Bewertung|Website|Anrufen|Teilen|Speichern|Route|Wegbeschreibung|Fotos|Rezensionen|Übersicht|Info|Karte|Satellit|Gelände|Alle\s|Filter|Sortieren|Neuste|Neueste|Standort|Entfernung|Seite\s|Zeige|Hier\s|Klicke|Nutze|Wähle|Bitte\s|Achtung|Hinweis|Tipp|Und so|So\s|Gratis|Kostenlos|Premium|Anzeige|Gesponsert|Ihre\s|Daten\s|Dieser|Diese|Das\s|Der\s|Die\s|Ein\s|Eine\s|Wir\s|Sie\s|Ich\s|Es\s|Man\s|Nicht\s|Noch\s|Schon\s|Nur\s|Auch\s|Oder\s|Aber\s|Wenn\s|Weil\s|Dass\s|Wird\s|Wurde\s|Haben\s|Sind\s|Kann\s|Muss\s|Soll\s)/iu', $name)) {
             return false;
         }
 
-        // Reject standalone street names (with or without number)
-        // German street suffixes: straße, str, weg, allee, platz, gasse, ring, damm, ufer, hof, park, markt, chaussee, steig
+        // --- Reject concatenated category words (no spaces, too long lowercase) ---
+        // e.g. "HandyreparaturenTelefonlädenTelekommunikation"
+        if (preg_match('/[a-zäöüß]{10,}[A-ZÄÖÜ][a-zäöüß]{10,}/u', $name)) {
+            return false;
+        }
+
+        // --- Reject if contains suspicious random characters (e.g. "Holger Will9h3J") ---
+        if (preg_match('/[a-zA-Z][0-9][a-zA-Z][0-9][a-zA-Z]/i', $name)) {
+            return false;
+        }
+
+        // --- Address patterns ---
         $street_suffixes = 'str(?:a(?:ß|ss)e|\.)?|weg|allee|platz|gasse|ring|damm|ufer|hof|park|markt|chaussee|steig|pfad|stieg|brücke|graben|grund|berg|tal';
 
-        // Reject if the entire name IS a street name (e.g., "Schwabstraße", "Giescheweg", "Annonay-Straße")
+        // Reject standalone street name
         if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+(?:' . $street_suffixes . ')(?:\s*\d+[a-z]?)?\s*,?\s*$/iu', $name)) {
             return false;
         }
-
-        // Reject "Word-Straße" patterns (e.g., "Annonay-Straße")
         if (preg_match('/^[A-ZÄÖÜa-zäöüß]+[\-\s](?:Straße|Strasse|Str\.|Weg|Allee|Platz|Gasse|Ring|Damm|Ufer)\s*\d*\s*,?\s*$/iu', $name)) {
             return false;
         }
 
-        // Reject addresses - street name + number patterns (multiword streets)
+        // Reject "Streetname 16, 40235 Düsseldorf" pattern
+        if (preg_match('/(?:' . $street_suffixes . ')\s+\d+\s*,\s*\d{5}/iu', $name)) {
+            return false;
+        }
+
+        // Reject addresses with PLZ
+        if (preg_match('/\d+\s*,\s*\d{5}\s+[A-ZÄÖÜa-zäöüß]/u', $name)) {
+            return false;
+        }
+
+        // Reject street + number if that's all there is
         if (preg_match('/(?:' . $street_suffixes . ')\s+\d+/iu', $name)) {
-            // But allow if it's clearly a business name containing a street
-            // Business names typically have more than just street + number
             $without_address = preg_replace('/[A-ZÄÖÜa-zäöüß\-]+(?:' . $street_suffixes . ')\s*\d+[a-z]?\s*,?/iu', '', $name);
             if (strlen(trim($without_address)) < 5) {
                 return false;
             }
         }
 
-        // Reject if it looks like just "Word Number" or "Word Number," (address pattern)
+        // Reject "Word Number" or "Word Number,"
         if (preg_match('/^[A-ZÄÖÜa-zäöüß\-]+\s+\d+[a-z]?\s*,?\s*$/iu', $name)) {
             return false;
         }
 
-        // Reject short entries like "DHL 5," or similar
+        // --- Time / Number patterns ---
+        if (preg_match('/um\s+\d{1,2}[:\.]?\d{0,2}|^\d{1,2}[:\.]?\d{0,2}\s*Uhr/iu', $name)) {
+            return false;
+        }
+        if (preg_match('/^\d{5}\s+[A-ZÄÖÜa-zäöüß]/u', $name)) {
+            return false;
+        }
+        if (preg_match('/^\d+\s*,?\s*$/', $name)) {
+            return false;
+        }
         if (preg_match('/^[A-Z]{2,5}\s+\d+\s*,?\s*$/i', $name)) {
             return false;
         }
 
-        // Reject time patterns like "um 10:00" or "10:00 Uhr"
-        if (preg_match('/um\s+\d{1,2}[:\.]?\d{0,2}|^\d{1,2}[:\.]?\d{0,2}\s*Uhr/iu', $name)) {
-            return false;
+        // --- Reject single common German words ---
+        if (preg_match('/^[A-ZÄÖÜa-zäöüß]+$/u', $name) && mb_strlen($name) < 15) {
+            $common_words = ['Mehr','Weniger','Zurück','Weiter','Laden','Suchen','Anrufen',
+                'Teilen','Speichern','Senden','Drucken','Anzeigen','Bearbeiten',
+                'Löschen','Reservieren','Buchen','Bestellen','Kaufen','Hinzufügen',
+                'Entfernen','Aktualisieren','Bewertung','Bewertungen','Ergebnisse',
+                'Handyreparaturen','Telefonläden','Telekommunikation','Elektronik',
+                'Dienstleistungen','Handyreparatur','Reparaturen','Reparatur',
+                'Übersicht','Zusammenfassung','Beschreibung','Informationen',
+                'Empfehlungen','Vorschläge','Favoriten','Einstellungen'];
+            if (in_array($name, $common_words, true)) {
+                return false;
+            }
         }
-
-        // Reject PLZ + City patterns
-        if (preg_match('/^\d{5}\s+[A-ZÄÖÜa-zäöüß]/u', $name)) {
-            return false;
-        }
-
-        // Reject pure numbers or very short entries
-        if (preg_match('/^\d+\s*,?\s*$/', $name)) {
-            return false;
-        }
-
-        // Reject common non-business patterns
-        if (preg_match('/^(Mehr|Weniger|Zurück|Vor|Weiter|Schließen|Abbrechen|OK|Ja|Nein|DHL|UPS|Hermes|DPD)\s*\d*\s*,?\s*$/iu', $name)) {
-            return false;
-        }
-
-        // Reject if name ends with just a number+comma (likely address fragment leaked into name)
-        // e.g., "Business Name 4," -> clean to "Business Name"
-        // This is handled in clean_business_name() instead
 
         return true;
     }
@@ -908,9 +1134,9 @@ class PPV_Lead_Finder {
     /**
      * Search via Tavily API - returns array of results with 'url', 'title', 'content'
      */
-    private static function tavily_search($query, $max_results = 5) {
+    private static function tavily_search($query, $max_results = 5, $depth = 'basic') {
         $response = wp_remote_post('https://api.tavily.com/search', [
-            'timeout' => 15,
+            'timeout' => 30,
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
@@ -918,7 +1144,7 @@ class PPV_Lead_Finder {
                 'api_key' => self::$tavily_api_key,
                 'query' => $query,
                 'max_results' => $max_results,
-                'search_depth' => 'basic',
+                'search_depth' => $depth,
                 'include_answer' => false,
                 'include_raw_content' => false,
             ]),
@@ -1524,6 +1750,70 @@ class PPV_Lead_Finder {
     }
 
     /**
+     * Extract business names from directory page content (gelbeseiten, 11880, etc.)
+     * Returns array of ['name' => ..., 'email' => ..., 'phone' => ..., 'address' => ..., 'website' => ...]
+     */
+    private static function extract_businesses_from_directory($content, $region = '') {
+        $businesses = [];
+        $lines = preg_split('/[\r\n]+/', $content);
+        $seen_names = [];
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = trim($lines[$i]);
+            if (empty($line) || strlen($line) < 5 || strlen($line) > 120) continue;
+
+            // Must start uppercase and pass business name validation
+            if (!preg_match('/^[A-ZÄÖÜ]/u', $line)) continue;
+            if (!self::is_valid_business_name($line)) continue;
+
+            $clean_name = self::clean_business_name($line);
+            $name_key = mb_strtolower($clean_name);
+            if (strlen($clean_name) < 5 || isset($seen_names[$name_key])) continue;
+
+            // Look ahead for contact info (email, phone, website)
+            $biz = ['name' => $clean_name, 'email' => '', 'phone' => '', 'address' => '', 'website' => ''];
+            $has_contact = false;
+
+            for ($j = $i + 1; $j < min($i + 8, count($lines)); $j++) {
+                $next = trim($lines[$j] ?? '');
+
+                if (empty($biz['email']) && preg_match('/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i', $next, $em)) {
+                    $valid = self::filter_emails([$em[1]]);
+                    if (!empty($valid)) { $biz['email'] = strtolower(reset($valid)); $has_contact = true; }
+                }
+                if (empty($biz['phone']) && preg_match('/((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/u', $next, $pm)) {
+                    $p = trim(preg_replace('/\s+/', ' ', $pm[1]));
+                    if (strlen(preg_replace('/\D/', '', $p)) >= 8) { $biz['phone'] = $p; $has_contact = true; }
+                }
+                if (empty($biz['website']) && preg_match('/(https?:\/\/[^\s<>"]+)/i', $next, $wm)) {
+                    $d = parse_url($wm[1], PHP_URL_HOST);
+                    if ($d && !preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
+                        $biz['website'] = $wm[1]; $has_contact = true;
+                    }
+                }
+                if (empty($biz['website']) && preg_match('/^((?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-]+\.[a-zA-Z]{2,})$/i', $next, $dm)) {
+                    $d = $dm[1];
+                    if (!preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
+                        $biz['website'] = 'https://' . $d; $has_contact = true;
+                    }
+                }
+                if (empty($biz['address']) && preg_match('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)/iu', $next, $am)) {
+                    $biz['address'] = $am[1]; $has_contact = true;
+                }
+            }
+
+            // ONLY save if we found at least some contact info (prevents UI garbage)
+            if ($has_contact) {
+                $seen_names[$name_key] = true;
+                $businesses[] = $biz;
+                if (count($businesses) >= 50) break;
+            }
+        }
+
+        return $businesses;
+    }
+
+    /**
      * Handle delete lead
      */
     private static function handle_delete() {
@@ -1690,7 +1980,7 @@ class PPV_Lead_Finder {
 
         <?php if ($success === 'search'): ?>
             <div class="alert alert-success">
-                <i class="ri-check-line"></i> Suche abgeschlossen! <?php echo intval($_GET['found'] ?? 0); ?> neue Leads gefunden.
+                <i class="ri-check-line"></i> Suche abgeschlossen! <?php echo intval($_GET['found'] ?? 0); ?> neue Leads gefunden<?php if (!empty($_GET['emails'])): ?>, davon <strong><?php echo intval($_GET['emails']); ?> mit Email</strong><?php endif; ?>. <?php if (intval($_GET['found'] ?? 0) > 0 && intval($_GET['emails'] ?? 0) < intval($_GET['found'] ?? 0)): ?>Klicke "Alle scrapen" für die restlichen Emails!<?php endif; ?>
             </div>
         <?php elseif ($success === 'import'): ?>
             <div class="alert alert-success">
@@ -1716,7 +2006,7 @@ class PPV_Lead_Finder {
 
         <?php if ($error === 'empty_search'): ?>
             <div class="alert alert-error">
-                <i class="ri-error-warning-line"></i> Bitte Suchbegriff und Region eingeben.
+                <i class="ri-error-warning-line"></i> Bitte Suchbegriff eingeben.
             </div>
         <?php elseif ($error === 'no_emails'): ?>
             <div class="alert alert-error">
@@ -1742,8 +2032,12 @@ class PPV_Lead_Finder {
 
         <!-- Manual Import (Google Maps) -->
         <div class="card">
-            <div class="card-header"><i class="ri-map-pin-line"></i> Google Maps Import <span style="font-weight:normal;color:#10b981;font-size:12px;margin-left:8px">EMPFOHLEN</span></div>
-            <div class="card-body">
+            <div class="card-header" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+                <i class="ri-map-pin-line"></i> Google Maps Import
+                <span style="font-weight:normal;color:#6b7280;font-size:12px;margin-left:8px">(manuelles Copy&amp;Paste)</span>
+                <i class="ri-arrow-down-s-line" style="margin-left:auto"></i>
+            </div>
+            <div class="card-body" style="display:none">
                 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:16px">
                     <strong style="color:#065f46"><i class="ri-lightbulb-line"></i> So geht's:</strong>
                     <ol style="margin:10px 0 0 20px;color:#065f46;font-size:13px;line-height:1.8">
@@ -1779,25 +2073,33 @@ class PPV_Lead_Finder {
             </div>
         </div>
 
-        <!-- Auto Search (may be blocked) -->
+        <!-- Auto Search (Tavily API) -->
         <div class="card">
-            <div class="card-header" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <div class="card-header">
                 <i class="ri-search-line"></i> Automatische Suche
-                <span style="font-weight:normal;color:#f59e0b;font-size:11px;margin-left:8px">(kann blockiert werden)</span>
-                <i class="ri-arrow-down-s-line" style="margin-left:auto"></i>
+                <span style="font-weight:normal;color:#10b981;font-size:12px;margin-left:8px">Tavily API</span>
             </div>
-            <div class="card-body" style="display:none">
+            <div class="card-body">
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:16px">
+                    <strong style="color:#1e40af"><i class="ri-lightbulb-line"></i> Wie Google suchen:</strong>
+                    <p style="margin:8px 0 0;color:#1e40af;font-size:13px;line-height:1.6">
+                        Gib einfach ein, wonach du suchst – wie bei Google. z.B.:<br>
+                        <code style="background:#dbeafe;padding:2px 6px;border-radius:4px">computer service münchen email</code> oder
+                        <code style="background:#dbeafe;padding:2px 6px;border-radius:4px">handyreparatur hamburg kontakt</code><br>
+                        Die Suche findet Firmen, Websites und Emails automatisch!
+                    </p>
+                </div>
                 <form method="post">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Suchbegriff (z.B. "Handyreparatur")</label>
-                            <input type="text" name="search_query" class="form-control" value="Handyreparatur" placeholder="Handyreparatur">
+                    <div style="display:flex;gap:12px;align-items:end">
+                        <div class="form-group" style="flex:3">
+                            <label>Suchbegriff <span style="font-weight:normal;color:#6b7280;font-size:12px">(wie bei Google eingeben)</span></label>
+                            <input type="text" name="search_query" class="form-control" placeholder="z.B. computer service münchen email" style="font-size:16px;padding:12px 16px">
                         </div>
-                        <div class="form-group">
-                            <label>Region / Stadt</label>
-                            <input type="text" name="search_region" class="form-control" placeholder="z.B. Hamburg, München, Berlin">
+                        <div class="form-group" style="flex:1">
+                            <label>Region <span style="font-weight:normal;color:#6b7280;font-size:12px">(optional)</span></label>
+                            <input type="text" name="search_region" class="form-control" placeholder="z.B. München" style="padding:12px 16px">
                         </div>
-                        <button type="submit" name="start_search" class="btn btn-primary">
+                        <button type="submit" name="start_search" class="btn btn-primary" style="padding:12px 24px;font-size:15px">
                             <i class="ri-search-line"></i> Suchen
                         </button>
                     </div>

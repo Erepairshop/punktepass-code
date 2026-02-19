@@ -38,7 +38,7 @@ class PPV_ROI_Calculator {
      * Render standalone calculator page (no WP theme)
      */
     public static function render_standalone_page() {
-        $lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'de';
+        $lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'en';
 
         // Translations
         $t = self::get_translations($lang);
