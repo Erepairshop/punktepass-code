@@ -3692,8 +3692,26 @@ echo '</div></div>
         if(existingInv){
             if(!confirm(L.invoice_duplicate_warn.replace("%s",existingInv))){return}
         }
-        var sel=card.querySelector(".ra-status-select");
-        showInvoiceModal(rid,sel);
+        // Open modern invoice modal with pre-filled data from repair card
+        clearNewInvoiceForm();
+        document.getElementById("ra-ninv-name").value=card.dataset.name||"";
+        document.getElementById("ra-ninv-email").value=card.dataset.email||"";
+        document.getElementById("ra-ninv-phone").value=card.dataset.phone||"";
+        var addr=card.dataset.address||"";
+        document.getElementById("ra-ninv-address").value=addr;
+        document.getElementById("ra-ninv-full-address").value=addr;
+        ninvParseAddress();
+        // Pre-fill first line with device + problem
+        var device=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
+        var desc=device;
+        if(card.dataset.problem)desc+=(desc?" - ":"")+card.dataset.problem;
+        if(desc){
+            var firstDesc=document.querySelector("#ra-ninv-lines .nang-line-desc");
+            if(firstDesc)firstDesc.value=desc;
+        }
+        // Store repair_id for linking
+        document.getElementById("ra-ninv-customer-id").dataset.repairId=rid;
+        ninvModal.classList.add("show");
     });
 
     /* ===== Delete Repair ===== */
@@ -5495,6 +5513,7 @@ echo '</div></div>
     function clearNewInvoiceForm(){
         ninvShowStep(1);
         document.getElementById("ra-ninv-customer-id").value="";
+        document.getElementById("ra-ninv-customer-id").dataset.repairId="";
         document.getElementById("ra-ninv-name").value="";
         document.getElementById("ra-ninv-company").value="";
         document.getElementById("ra-ninv-email").value="";
@@ -5693,6 +5712,9 @@ echo '</div></div>
         fd.append("is_differenzbesteuerung",document.getElementById("ra-ninv-differenz").checked?"1":"0");
         var customInvNum=document.getElementById("ra-ninv-number").value.trim();
         if(customInvNum)fd.append("invoice_number",customInvNum);
+        // Link to repair if opened from a repair card
+        var repairId=document.getElementById("ra-ninv-customer-id").dataset.repairId||"";
+        if(repairId)fd.append("repair_id",repairId);
 
         var btn=document.getElementById("ra-ninv-submit");
         btn.disabled=true;btn.style.opacity="0.7";

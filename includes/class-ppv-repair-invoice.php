@@ -701,9 +701,10 @@ class PPV_Repair_Invoice {
         }
 
         // Insert invoice
+        $repair_id = !empty($_POST['repair_id']) ? intval($_POST['repair_id']) : null;
         $wpdb->insert("{$prefix}ppv_repair_invoices", [
             'store_id'          => $store_id,
-            'repair_id'         => null, // Standalone invoice
+            'repair_id'         => $repair_id,
             'customer_id'       => $customer_id,
             'invoice_number'    => $invoice_number,
             'customer_name'     => $customer_name,
