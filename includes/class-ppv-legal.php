@@ -51,7 +51,7 @@ class PPV_Legal {
     /** ============================================================
      * Render Page Wrapper
      * ============================================================ */
-    private static function render_page($title, $content) {
+    private static function render_page($title, $icon, $content) {
         $lang = self::get_language();
 
         ob_start();
@@ -70,19 +70,26 @@ class PPV_Legal {
                     </div>
                 </div>
 
-                <h1 class="ppv-legal-title"><?php echo esc_html($title); ?></h1>
-                <p class="ppv-legal-updated"><?php echo PPV_Lang::t('legal_last_updated'); ?>: <?php echo date('d.m.Y'); ?></p>
+                <div class="ppv-legal-title-block">
+                    <div class="ppv-legal-title-icon">
+                        <i class="<?php echo esc_attr($icon); ?>"></i>
+                    </div>
+                    <div>
+                        <h1 class="ppv-legal-title"><?php echo esc_html($title); ?></h1>
+                        <p class="ppv-legal-updated"><?php echo PPV_Lang::t('legal_last_updated'); ?>: <?php echo date('d.m.Y'); ?></p>
+                    </div>
+                </div>
 
                 <div class="ppv-legal-content">
                     <?php echo $content; ?>
                 </div>
 
                 <div class="ppv-legal-footer">
-                    <a href="/datenschutz"><?php echo PPV_Lang::t('landing_footer_privacy'); ?></a>
+                    <a href="/datenschutz"><i class="ri-shield-check-line"></i> <?php echo PPV_Lang::t('landing_footer_privacy'); ?></a>
                     <span>•</span>
-                    <a href="/agb"><?php echo PPV_Lang::t('landing_footer_terms'); ?></a>
+                    <a href="/agb"><i class="ri-file-list-3-line"></i> <?php echo PPV_Lang::t('landing_footer_terms'); ?></a>
                     <span>•</span>
-                    <a href="/impressum"><?php echo PPV_Lang::t('landing_footer_imprint'); ?></a>
+                    <a href="/impressum"><i class="ri-building-2-line"></i> <?php echo PPV_Lang::t('landing_footer_imprint'); ?></a>
                 </div>
             </div>
         </div>
@@ -95,6 +102,20 @@ class PPV_Legal {
                 window.location.reload();
             });
         });
+
+        // Fade-in sections on scroll
+        (function() {
+            const sections = document.querySelectorAll('.ppv-legal-content section');
+            sections.forEach((s, i) => {
+                s.style.opacity = '0';
+                s.style.transform = 'translateY(16px)';
+                s.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                setTimeout(() => {
+                    s.style.opacity = '1';
+                    s.style.transform = 'translateY(0)';
+                }, 80 * i);
+            });
+        })();
         </script>
         <?php
         return ob_get_clean();
@@ -116,14 +137,16 @@ class PPV_Legal {
         <section>
             <h2><?php echo PPV_Lang::t('privacy_responsible_title'); ?></h2>
             <p><?php echo PPV_Lang::t('privacy_responsible_text'); ?></p>
-            <p>
-                <strong>PunktePass</strong><br>
-                Erik Borota<br>
-                Siedlungsring 51<br>
-                89415 Lauingen<br>
-                Deutschland<br><br>
-                E-Mail: <a href="mailto:info@punktepass.de">info@punktepass.de</a>
-            </p>
+            <div class="ppv-legal-contact-card">
+                <p>
+                    <strong>PunktePass</strong><br>
+                    Erik Borota<br>
+                    Siedlungsring 51<br>
+                    89415 Lauingen<br>
+                    Deutschland
+                </p>
+                <p><i class="ri-mail-line"></i> <a href="mailto:info@punktepass.de">info@punktepass.de</a></p>
+            </div>
         </section>
 
         <section>
@@ -180,12 +203,14 @@ class PPV_Legal {
         <section>
             <h2><?php echo PPV_Lang::t('privacy_contact_title'); ?></h2>
             <p><?php echo PPV_Lang::t('privacy_contact_text'); ?></p>
-            <p>E-Mail: <a href="mailto:info@punktepass.de">info@punktepass.de</a></p>
+            <div class="ppv-legal-contact-card">
+                <p><i class="ri-mail-line"></i> <a href="mailto:info@punktepass.de">info@punktepass.de</a></p>
+            </div>
         </section>
         <?php
         $content = ob_get_clean();
 
-        return self::render_page($title, $content);
+        return self::render_page($title, 'ri-shield-check-line', $content);
     }
 
     /** ============================================================
@@ -265,7 +290,7 @@ class PPV_Legal {
         <?php
         $content = ob_get_clean();
 
-        return self::render_page($title, $content);
+        return self::render_page($title, 'ri-file-list-3-line', $content);
     }
 
     /** ============================================================
@@ -278,38 +303,40 @@ class PPV_Legal {
         ?>
         <section>
             <h2><?php echo PPV_Lang::t('imprint_provider_title'); ?></h2>
-            <p>
-                <strong>PunktePass</strong><br>
-                Erik Borota<br>
-                Siedlungsring 51<br>
-                89415 Lauingen<br>
-                Deutschland<br><br>
-                <strong>USt.-ID:</strong> DE308874569<br>
-                E-Mail: <a href="mailto:info@punktepass.de">info@punktepass.de</a>
-            </p>
+            <div class="ppv-legal-contact-card">
+                <p>
+                    <strong>PunktePass</strong><br>
+                    Erik Borota<br>
+                    Siedlungsring 51<br>
+                    89415 Lauingen<br>
+                    Deutschland
+                </p>
+                <p><i class="ri-hashtag"></i> <strong>USt.-ID:</strong> DE308874569</p>
+                <p><i class="ri-mail-line"></i> <a href="mailto:info@punktepass.de">info@punktepass.de</a></p>
+            </div>
         </section>
 
         <section>
             <h2><?php echo PPV_Lang::t('imprint_contact_title'); ?></h2>
-            <p>
-                E-Mail: <a href="mailto:info@punktepass.de">info@punktepass.de</a><br>
-                Website: <a href="https://punktepass.de">www.punktepass.de</a>
-            </p>
+            <div class="ppv-legal-contact-card">
+                <p><i class="ri-mail-line"></i> <a href="mailto:info@punktepass.de">info@punktepass.de</a></p>
+                <p><i class="ri-global-line"></i> <a href="https://punktepass.de">www.punktepass.de</a></p>
+            </div>
         </section>
 
         <section>
             <h2><?php echo PPV_Lang::t('imprint_responsible_title'); ?></h2>
-            <p>Erik Borota</p>
+            <div class="ppv-legal-contact-card">
+                <p><i class="ri-user-line"></i> Erik Borota</p>
+            </div>
         </section>
 
         <section>
             <h2><?php echo PPV_Lang::t('imprint_dispute_title'); ?></h2>
             <p><?php echo PPV_Lang::t('imprint_dispute_text'); ?></p>
-            <p>
-                <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">
-                    https://ec.europa.eu/consumers/odr
-                </a>
-            </p>
+            <div class="ppv-legal-contact-card">
+                <p><i class="ri-external-link-line"></i> <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">https://ec.europa.eu/consumers/odr</a></p>
+            </div>
         </section>
 
         <section>
@@ -329,7 +356,7 @@ class PPV_Legal {
         <?php
         $content = ob_get_clean();
 
-        return self::render_page($title, $content);
+        return self::render_page($title, 'ri-building-2-line', $content);
     }
 }
 
