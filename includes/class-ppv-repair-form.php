@@ -335,7 +335,7 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['customer_address']['enabled'])): ?>
             <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? PPV_Lang::t('repair_address_label')); ?></label>
-                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" value="<?php echo $pf_address; ?>" autocomplete="street-address">
+                <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" value="<?php echo $pf_address; ?>" autocomplete="nope" autocorrect="off" autocapitalize="off" spellcheck="false">
                 <div id="rf-address-suggestions" class="rf-suggestions-desktop"></div>
             </div>
             <?php endif; ?>
@@ -1871,7 +1871,6 @@ function toggleProblemTag(btn, text) {
         }
 
         emailInput.addEventListener('input', triggerEmailSearch);
-        emailInput.addEventListener('keyup', triggerEmailSearch);
 
         function searchEmails(q) {
             var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
@@ -1939,11 +1938,10 @@ function toggleProblemTag(btn, text) {
             lastAddrQ = q;
             if (q.length < 3) { hideSuggestions(addrBox); return; }
             console.log('[PunktePass] Scheduling Nominatim search for:', q);
-            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 400);
+            addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 250);
         }
 
         addrInput.addEventListener('input', triggerAddrSearch);
-        addrInput.addEventListener('keyup', triggerAddrSearch);
 
         function fetchAddrSuggestions(q) {
             var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&email=info@punktepass.de&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
