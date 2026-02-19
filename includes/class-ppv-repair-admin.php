@@ -1094,7 +1094,7 @@ a:hover{color:#5a67d8}
     .ra-inv-line-amount{width:100%}
 }
 /* ===== Modern Angebot Modal ===== */
-.nang-modal{max-width:660px!important;padding:0!important;border-radius:20px!important;overflow:hidden}
+.nang-modal{max-width:660px!important;padding:0!important;border-radius:20px!important;overflow:hidden;display:flex;flex-direction:column}
 .nang-header{display:flex;align-items:center;gap:14px;padding:20px 24px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;position:relative}
 .nang-header-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .nang-header h3{font-size:17px;font-weight:700;color:#fff!important;margin:0}
@@ -1112,7 +1112,7 @@ a:hover{color:#5a67d8}
 .nang-step-line{flex:1;height:2px;background:#e2e8f0;margin:0 12px}
 
 /* Sections */
-.nang-section{padding:20px 24px 24px;animation:nangFadeIn .25s ease}
+.nang-section{padding:20px 24px 24px;animation:nangFadeIn .25s ease;overflow-y:auto;flex:1}
 @keyframes nangFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* Search */
