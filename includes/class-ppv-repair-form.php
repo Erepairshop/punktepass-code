@@ -1748,6 +1748,7 @@ function toggleProblemTag(btn, text) {
 
 <script>
 (function(){
+    console.log('[PunktePass] Autocomplete script loaded');
     // HTTP GET helper (fetch with XHR fallback for old WebViews)
     function xhrGet(url, cb) {
         if (window.fetch) {
@@ -1842,6 +1843,7 @@ function toggleProblemTag(btn, text) {
     var emailBox = document.getElementById('rf-email-suggestions');
     var addrInput = document.getElementById('rf-address');
     var addrBox = document.getElementById('rf-address-suggestions');
+    console.log('[PunktePass] emailInput:', !!emailInput, 'emailBox:', !!emailBox, 'addrInput:', !!addrInput, 'addrBox:', !!addrBox);
 
     document.addEventListener('click', function(e) {
         if (emailBox && emailInput && !emailInput.contains(e.target) && !emailBox.contains(e.target)) {
@@ -1915,6 +1917,7 @@ function toggleProblemTag(btn, text) {
     }
 
     // ===== ADDRESS AUTOCOMPLETE =====
+    console.log('[PunktePass] Address autocomplete init:', addrInput ? 'YES' : 'NO');
     if (addrInput && addrBox) {
         var addrTimer = null;
         var lastAddrQ = '';
@@ -1931,9 +1934,11 @@ function toggleProblemTag(btn, text) {
         function triggerAddrSearch(){
             clearTimeout(addrTimer);
             var q = addrInput.value.trim();
+            console.log('[PunktePass] Address input:', q, 'lastQ:', lastAddrQ);
             if (q === lastAddrQ) return;
             lastAddrQ = q;
             if (q.length < 3) { hideSuggestions(addrBox); return; }
+            console.log('[PunktePass] Scheduling Nominatim search for:', q);
             addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 400);
         }
 
