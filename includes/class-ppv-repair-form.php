@@ -1734,24 +1734,46 @@ function toggleProblemTag(btn, text) {
 })();
 </script>
 
+<!-- Mobile suggestions bottom-sheet -->
+<div class="rf-sheet-overlay" id="rf-sheet-overlay">
+    <div class="rf-sheet">
+        <div class="rf-sheet-handle"><span></span></div>
+        <div class="rf-sheet-header">
+            <h4 id="rf-sheet-title"></h4>
+            <button type="button" class="rf-sheet-close" id="rf-sheet-close">&times;</button>
+        </div>
+        <div class="rf-sheet-list" id="rf-sheet-list"></div>
+    </div>
+</div>
+
 <script>
 (function(){
-    // XHR helper (works on all WebViews)
+    // HTTP GET helper (fetch with XHR fallback for old WebViews)
     function xhrGet(url, cb) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try { cb(null, JSON.parse(xhr.responseText)); }
-                    catch(e) { cb('parse error'); }
-                } else { cb('HTTP ' + xhr.status); }
-            }
-        };
-        xhr.onerror = function(){ cb('Network error'); };
-        xhr.timeout = 8000;
-        xhr.ontimeout = function(){ cb('Timeout'); };
-        xhr.send();
+        if (window.fetch) {
+            fetch(url, {method:'GET',headers:{'Accept':'application/json'}})
+            .then(function(r){
+                if (!r.ok) { cb('HTTP ' + r.status); return; }
+                return r.json();
+            })
+            .then(function(data){ if(data) cb(null, data); })
+            .catch(function(e){ cb(e.message || 'Network error'); });
+        } else {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try { cb(null, JSON.parse(xhr.responseText)); }
+                        catch(e) { cb('parse error'); }
+                    } else { cb('HTTP ' + xhr.status); }
+                }
+            };
+            xhr.onerror = function(){ cb('Network error'); };
+            xhr.timeout = 8000;
+            xhr.ontimeout = function(){ cb('Timeout'); };
+            xhr.send();
+        }
     }
 
     function escH(s) {
@@ -1770,11 +1792,13 @@ function toggleProblemTag(btn, text) {
     var sheetClose = document.getElementById('rf-sheet-close');
 
     function showSheet(title) {
+        if (!sheetOverlay || !sheetTitle) return;
         sheetTitle.textContent = title;
         sheetOverlay.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
     function hideSheet() {
+        if (!sheetOverlay) return;
         sheetOverlay.classList.remove('show');
         document.body.style.overflow = '';
     }
@@ -1784,7 +1808,7 @@ function toggleProblemTag(btn, text) {
     });
 
     function showSuggestions(box, title) {
-        if (isTouchDevice) {
+        if (isTouchDevice && sheetList && sheetOverlay) {
             // Move content to bottom-sheet
             sheetList.innerHTML = box.innerHTML;
             // Re-bind click handlers by cloning approach
@@ -1850,6 +1874,7 @@ function toggleProblemTag(btn, text) {
         function searchEmails(q) {
             var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, resp){
+                if (err) { console.warn('Email search error:', err); }
                 if (err || !resp || !resp.success || !resp.data || !resp.data.length) {
                     hideSuggestions(emailBox);
                     return;
@@ -1916,8 +1941,9 @@ function toggleProblemTag(btn, text) {
         addrInput.addEventListener('keyup', triggerAddrSearch);
 
         function fetchAddrSuggestions(q) {
-            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
+            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&email=info@punktepass.de&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, results){
+                if (err) { console.warn('Nominatim error:', err); }
                 if (err || !results || !results.length) {
                     hideSuggestions(addrBox);
                     return;
@@ -2067,18 +2093,6 @@ function toggleProblemTag(btn, text) {
 })();
 </script>
 <?php endif; ?>
-
-<!-- Mobile suggestions bottom-sheet -->
-<div class="rf-sheet-overlay" id="rf-sheet-overlay">
-    <div class="rf-sheet">
-        <div class="rf-sheet-handle"><span></span></div>
-        <div class="rf-sheet-header">
-            <h4 id="rf-sheet-title"></h4>
-            <button type="button" class="rf-sheet-close" id="rf-sheet-close">&times;</button>
-        </div>
-        <div class="rf-sheet-list" id="rf-sheet-list"></div>
-    </div>
-</div>
 
 </body>
 </html>
