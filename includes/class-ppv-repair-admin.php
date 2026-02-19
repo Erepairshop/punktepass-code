@@ -1236,6 +1236,14 @@ a:hover{color:#5a67d8}
 .ninv-checkbox-label input[type="checkbox"]{display:none}
 .ninv-checkmark{width:20px;height:20px;border:2px solid #d1d5db;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-size:14px;color:transparent}
 .ninv-checkbox-label input:checked~.ninv-checkmark{background:#2563eb;border-color:#2563eb;color:#fff}
+.ninv-discount-section{margin:0 0 12px;padding:14px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1.5px solid #86efac;border-radius:10px}
+.ninv-discount-header{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:13px;font-weight:700;color:#059669}
+.ninv-discount-header i{font-size:16px}
+.ninv-discount-row{display:flex;gap:10px;align-items:center}
+.ninv-discount-remove{width:28px;height:28px;border:none;background:#fee2e2;color:#dc2626;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.ninv-discount-remove:hover{background:#dc2626;color:#fff}
+.ninv-skip-btn{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #bbf7d0;background:#f0fdf4;color:#16a34a;transition:all .2s;white-space:nowrap}
+.ninv-skip-btn:hover{background:#16a34a;color:#fff;border-color:#16a34a}
 
 /* Language Switcher */
 .ra-lang-wrap{position:relative}
@@ -2913,6 +2921,23 @@ echo '</div></div>
                 </div>
             </div>
 
+            <!-- Reward discount (only visible when from repair with reward) -->
+            <div id="ra-ninv-discount-section" class="ninv-discount-section" style="display:none">
+                <div class="ninv-discount-header">
+                    <i class="ri-gift-line"></i>
+                    <span>' . esc_html(PPV_Lang::t('repair_admin_reward_discount')) . '</span>
+                </div>
+                <div class="ninv-discount-row">
+                    <input type="text" id="ra-ninv-discount-desc" class="nang-meta-input" style="flex:2" placeholder="Rabatt">
+                    <div style="display:flex;align-items:center;gap:4px;flex:1">
+                        <span style="color:#dc2626;font-weight:700;font-size:14px">&minus;</span>
+                        <input type="number" id="ra-ninv-discount-amount" class="nang-meta-input" style="flex:1;color:#dc2626;font-weight:600" step="0.01" min="0" placeholder="0.00">
+                        <span style="color:#dc2626;font-weight:600;font-size:13px">&euro;</span>
+                    </div>
+                    <button type="button" id="ra-ninv-discount-remove" class="ninv-discount-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
+                </div>
+            </div>
+
             <!-- Options -->
             <div class="ninv-options">
                 <label class="ninv-checkbox-label">
@@ -2920,6 +2945,43 @@ echo '</div></div>
                     <span class="ninv-checkmark"><i class="ri-check-line"></i></span>
                     <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
                 </label>
+            </div>
+
+            <!-- Payment section (only visible in repair→done mode) -->
+            <div id="ra-ninv-payment-section" style="display:none">
+                <div class="ninv-options">
+                    <label class="ninv-checkbox-label">
+                        <input type="checkbox" id="ra-ninv-paid-toggle">
+                        <span class="ninv-checkmark"><i class="ri-check-line"></i></span>
+                        <span>' . esc_html(PPV_Lang::t('repair_admin_already_paid')) . '</span>
+                    </label>
+                </div>
+                <div id="ra-ninv-paid-fields" style="display:none;margin-bottom:16px">
+                    <div class="nang-field-row">
+                        <div class="nang-field nang-field-grow">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_payment_method')) . '</label>
+                            <div class="nang-input-wrap ninv-focus">
+                                <i class="ri-bank-card-line"></i>
+                                <select id="ra-ninv-payment-method" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                                    <option value="">' . esc_html(PPV_Lang::t('repair_admin_please_select')) . '</option>
+                                    <option value="bar">' . esc_html(PPV_Lang::t('repair_admin_pay_cash')) . '</option>
+                                    <option value="ec">' . esc_html(PPV_Lang::t('repair_admin_pay_ec')) . '</option>
+                                    <option value="kreditkarte">' . esc_html(PPV_Lang::t('repair_admin_pay_credit')) . '</option>
+                                    <option value="ueberweisung">' . esc_html(PPV_Lang::t('repair_admin_pay_transfer')) . '</option>
+                                    <option value="paypal">' . esc_html(PPV_Lang::t('repair_admin_pay_paypal')) . '</option>
+                                    <option value="andere">' . esc_html(PPV_Lang::t('repair_admin_pay_other')) . '</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="nang-field nang-field-grow">
+                            <label>' . esc_html(PPV_Lang::t('repair_admin_payment_date')) . '</label>
+                            <div class="nang-input-wrap ninv-focus">
+                                <i class="ri-calendar-line"></i>
+                                <input type="date" id="ra-ninv-paid-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Notes -->
@@ -2931,6 +2993,9 @@ echo '</div></div>
             <!-- Action buttons -->
             <div class="nang-actions">
                 <button type="button" class="nang-cancel-btn" id="ra-ninv-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+                <button type="button" id="ra-ninv-skip" class="ninv-skip-btn" style="display:none">
+                    <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_only_done')) . '
+                </button>
                 <button type="button" class="nang-submit-btn" id="ra-ninv-submit" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 2px 8px rgba(37,99,235,.25)">
                     <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_inv_btn')) . '
                 </button>
@@ -3543,6 +3608,7 @@ echo '</div></div>
         'no_termin_success' => PPV_Lang::t('repair_admin_no_termin_success'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
+        'create_inv_btn' => PPV_Lang::t('repair_admin_create_inv_btn'),
         'finish_title' => PPV_Lang::t('repair_admin_finish_repair'),
         'print_name' => PPV_Lang::t('repair_admin_print_name'),
         'print_muster' => PPV_Lang::t('repair_admin_print_muster'),
@@ -3618,7 +3684,8 @@ echo '</div></div>
                             return;
                         }
                     }
-                    showInvoiceModal(rid,this);
+                    // Open modern invoice modal in "finish repair" mode
+                    openNinvFromRepair(card,rid,this);
                     return;
                 }
                 var fd=new FormData();
@@ -3693,25 +3760,7 @@ echo '</div></div>
             if(!confirm(L.invoice_duplicate_warn.replace("%s",existingInv))){return}
         }
         // Open modern invoice modal with pre-filled data from repair card
-        clearNewInvoiceForm();
-        document.getElementById("ra-ninv-name").value=card.dataset.name||"";
-        document.getElementById("ra-ninv-email").value=card.dataset.email||"";
-        document.getElementById("ra-ninv-phone").value=card.dataset.phone||"";
-        var addr=card.dataset.address||"";
-        document.getElementById("ra-ninv-address").value=addr;
-        document.getElementById("ra-ninv-full-address").value=addr;
-        ninvParseAddress();
-        // Pre-fill first line with device + problem
-        var device=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
-        var desc=device;
-        if(card.dataset.problem)desc+=(desc?" - ":"")+card.dataset.problem;
-        if(desc){
-            var firstDesc=document.querySelector("#ra-ninv-lines .nang-line-desc");
-            if(firstDesc)firstDesc.value=desc;
-        }
-        // Store repair_id for linking
-        document.getElementById("ra-ninv-customer-id").dataset.repairId=rid;
-        ninvModal.classList.add("show");
+        openNinvFromRepair(card,rid,null);
     });
 
     /* ===== Delete Repair ===== */
@@ -5456,16 +5505,69 @@ echo '</div></div>
     var ninvModal=document.getElementById("ra-new-invoice-modal");
     var ninvSearchTimer=null;
     var ninvLineIdx=1;
+    var ninvRepairMode=false; // true when opened from repair card or status→done
+    var ninvRepairSelect=null; // the status select element to restore on cancel
 
-    // Open modal
+    // Open modal (standalone - from Rechnungen tab)
     document.getElementById("ra-new-invoice-btn").addEventListener("click",function(){
         clearNewInvoiceForm();
         ninvModal.classList.add("show");
     });
+
+    // Open from repair card (finish repair or direct invoice button)
+    function openNinvFromRepair(card,rid,selectEl){
+        clearNewInvoiceForm();
+        ninvRepairMode=!!selectEl;
+        ninvRepairSelect=selectEl||null;
+        // Pre-fill customer data
+        document.getElementById("ra-ninv-name").value=card.dataset.name||"";
+        document.getElementById("ra-ninv-email").value=card.dataset.email||"";
+        document.getElementById("ra-ninv-phone").value=card.dataset.phone||"";
+        var addr=card.dataset.address||"";
+        document.getElementById("ra-ninv-address").value=addr;
+        document.getElementById("ra-ninv-full-address").value=addr;
+        ninvParseAddress();
+        // Pre-fill first line with device + problem
+        var device=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
+        var desc=device;
+        if(card.dataset.problem)desc+=(desc?" - ":"")+card.dataset.problem;
+        if(desc){
+            var firstDesc=document.querySelector("#ra-ninv-lines .nang-line-desc");
+            if(firstDesc)firstDesc.value=desc;
+        }
+        // Store repair_id
+        document.getElementById("ra-ninv-customer-id").dataset.repairId=rid;
+        // Show repair-mode extras: skip button, payment section
+        document.getElementById("ra-ninv-skip").style.display=ninvRepairMode?"":"none";
+        document.getElementById("ra-ninv-payment-section").style.display="block";
+        document.getElementById("ra-ninv-paid-date").value=new Date().toISOString().split("T")[0];
+        // Reward discount
+        var discSec=document.getElementById("ra-ninv-discount-section");
+        if(card.dataset.rewardApproved==="1" && PP_ENABLED && REWARD_VALUE>0){
+            document.getElementById("ra-ninv-discount-desc").value=REWARD_NAME;
+            document.getElementById("ra-ninv-discount-amount").value=REWARD_VALUE.toFixed(2);
+            discSec.style.display="block";
+        }
+        // Update submit button text for finish mode
+        if(ninvRepairMode){
+            document.getElementById("ra-ninv-submit").innerHTML=\'<i class="ri-check-line"></i> \'+L.finish_inv;
+        }
+        ninvModal.classList.add("show");
+    }
+
+    function closeNinvModal(){
+        // Restore select if cancelled from status→done
+        if(ninvRepairSelect){
+            ninvRepairSelect.value=ninvRepairSelect.getAttribute("data-prev")||"in_progress";
+        }
+        ninvModal.classList.remove("show");
+        ninvRepairMode=false;
+        ninvRepairSelect=null;
+    }
     // Close
-    document.getElementById("ra-ninv-close").addEventListener("click",function(){ ninvModal.classList.remove("show"); });
-    document.getElementById("ra-ninv-cancel").addEventListener("click",function(){ ninvModal.classList.remove("show"); });
-    ninvModal.addEventListener("click",function(e){ if(e.target===ninvModal)ninvModal.classList.remove("show"); });
+    document.getElementById("ra-ninv-close").addEventListener("click",closeNinvModal);
+    document.getElementById("ra-ninv-cancel").addEventListener("click",closeNinvModal);
+    ninvModal.addEventListener("click",function(e){ if(e.target===ninvModal)closeNinvModal(); });
 
     // ESC key
     ninvModal.addEventListener("keydown",function(e){
@@ -5512,6 +5614,8 @@ echo '</div></div>
 
     function clearNewInvoiceForm(){
         ninvShowStep(1);
+        ninvRepairMode=false;
+        ninvRepairSelect=null;
         document.getElementById("ra-ninv-customer-id").value="";
         document.getElementById("ra-ninv-customer-id").dataset.repairId="";
         document.getElementById("ra-ninv-name").value="";
@@ -5528,6 +5632,16 @@ echo '</div></div>
         document.getElementById("ra-ninv-notes").value="";
         document.getElementById("ra-ninv-differenz").checked=false;
         document.getElementById("ra-ninv-customer-search").value="";
+        // Reset repair-mode extras
+        document.getElementById("ra-ninv-skip").style.display="none";
+        document.getElementById("ra-ninv-payment-section").style.display="none";
+        document.getElementById("ra-ninv-paid-toggle").checked=false;
+        document.getElementById("ra-ninv-paid-fields").style.display="none";
+        document.getElementById("ra-ninv-payment-method").value="";
+        document.getElementById("ra-ninv-discount-section").style.display="none";
+        document.getElementById("ra-ninv-discount-desc").value="";
+        document.getElementById("ra-ninv-discount-amount").value="";
+        document.getElementById("ra-ninv-submit").innerHTML=\'<i class="ri-check-line"></i> \'+L.create_inv_btn;
         ninvLineIdx=1;
         var lines=document.getElementById("ra-ninv-lines");
         lines.innerHTML=\'<div class="nang-line" data-idx="0"><input type="text" placeholder="z.B. Displaytausch iPhone 15" class="nang-line-desc"><input type="number" value="1" min="1" step="1" class="nang-line-qty"><div class="nang-line-price-wrap"><input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price"><span class="nang-line-currency">&euro;</span></div><span class="nang-line-total">0,00 &euro;</span><button type="button" class="nang-line-del" title="\'+L["delete"]+\'"><i class="ri-delete-bin-line"></i></button></div>\';
@@ -5659,20 +5773,73 @@ echo '</div></div>
             brutto+=qty*price;
         });
         brutto=Math.round(brutto*100)/100;
+        // Subtract discount if visible
+        var discSec=document.getElementById("ra-ninv-discount-section");
+        var discountVal=0;
+        if(discSec&&discSec.style.display!=="none"){
+            discountVal=parseFloat(document.getElementById("ra-ninv-discount-amount").value)||0;
+        }
+        var afterDiscount=Math.max(0,brutto-discountVal);
         var net,vat;
         if(VAT_ENABLED){
-            net=Math.round(brutto/(1+VAT_RATE/100)*100)/100;
-            vat=Math.round((brutto-net)*100)/100;
+            net=Math.round(afterDiscount/(1+VAT_RATE/100)*100)/100;
+            vat=Math.round((afterDiscount-net)*100)/100;
         }else{
-            net=brutto;vat=0;
+            net=afterDiscount;vat=0;
         }
         document.getElementById("ra-ninv-net").textContent=fmtEur(net);
         document.getElementById("ra-ninv-vat").textContent=fmtEur(vat);
-        document.getElementById("ra-ninv-total").textContent=fmtEur(brutto);
+        document.getElementById("ra-ninv-total").textContent=fmtEur(afterDiscount);
         if(!VAT_ENABLED)document.getElementById("ra-ninv-vat-row").style.display="none";
     }
 
-    // Submit new invoice
+    // Paid toggle
+    document.getElementById("ra-ninv-paid-toggle").addEventListener("change",function(){
+        document.getElementById("ra-ninv-paid-fields").style.display=this.checked?"block":"none";
+    });
+
+    // Discount recalc + remove
+    document.getElementById("ra-ninv-discount-amount").addEventListener("input",function(){updateNinvTotals()});
+    document.getElementById("ra-ninv-discount-remove").addEventListener("click",function(){
+        document.getElementById("ra-ninv-discount-section").style.display="none";
+        document.getElementById("ra-ninv-discount-desc").value="";
+        document.getElementById("ra-ninv-discount-amount").value="";
+        updateNinvTotals();
+    });
+
+    // Skip button (only in repair→done mode): mark as done without invoice
+    document.getElementById("ra-ninv-skip").addEventListener("click",function(){
+        var repairId=document.getElementById("ra-ninv-customer-id").dataset.repairId||"";
+        if(!repairId){closeNinvModal();return;}
+        var btn=this;
+        btn.disabled=true;btn.style.opacity="0.7";
+        var fd=new FormData();
+        fd.append("action","ppv_repair_update_status");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",repairId);
+        fd.append("status","done");
+        fd.append("skip_invoice","1");
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            btn.disabled=false;btn.style.opacity="";
+            if(data.success){
+                toast(L.marked_done);
+                if(ninvRepairSelect){
+                    updateBadge(ninvRepairSelect.closest(".ra-repair-card"),"done");
+                    ninvRepairSelect.value="done";
+                    ninvRepairSelect.setAttribute("data-prev","done");
+                }
+                ninvRepairSelect=null;
+                ninvModal.classList.remove("show");
+            }else{
+                toast(data.data&&data.data.message?data.data.message:L.error);
+            }
+        })
+        .catch(function(){btn.disabled=false;btn.style.opacity="";toast(L.connection_error)});
+    });
+
+    // Submit new invoice (dual mode: standalone or repair→done)
     document.getElementById("ra-ninv-submit").addEventListener("click",function(){
         var name=document.getElementById("ra-ninv-name").value.trim();
         if(!name){toast(L.name_required);ninvShowStep(1);return;}
@@ -5693,28 +5860,62 @@ echo '</div></div>
         var subtotal=0;
         items.forEach(function(i){subtotal+=i.amount});
 
-        var fd=new FormData();
-        fd.append("action","ppv_repair_invoice_create");
-        fd.append("nonce",NONCE);
-        fd.append("customer_id",document.getElementById("ra-ninv-customer-id").value);
-        fd.append("customer_name",name);
-        fd.append("customer_email",document.getElementById("ra-ninv-email").value);
-        fd.append("customer_phone",document.getElementById("ra-ninv-phone").value);
-        fd.append("customer_company",document.getElementById("ra-ninv-company").value);
-        fd.append("customer_tax_id",document.getElementById("ra-ninv-taxid").value);
-        fd.append("customer_address",document.getElementById("ra-ninv-address").value);
-        fd.append("customer_plz",document.getElementById("ra-ninv-plz").value);
-        fd.append("customer_city",document.getElementById("ra-ninv-city").value);
-        fd.append("save_customer","1");
-        fd.append("line_items",JSON.stringify(items));
-        fd.append("subtotal",subtotal);
-        fd.append("notes",document.getElementById("ra-ninv-notes").value);
-        fd.append("is_differenzbesteuerung",document.getElementById("ra-ninv-differenz").checked?"1":"0");
-        var customInvNum=document.getElementById("ra-ninv-number").value.trim();
-        if(customInvNum)fd.append("invoice_number",customInvNum);
-        // Link to repair if opened from a repair card
         var repairId=document.getElementById("ra-ninv-customer-id").dataset.repairId||"";
-        if(repairId)fd.append("repair_id",repairId);
+
+        // Collect discount
+        var discSec=document.getElementById("ra-ninv-discount-section");
+        var manualDiscDesc="",manualDiscVal=0;
+        if(discSec&&discSec.style.display!=="none"){
+            manualDiscDesc=document.getElementById("ra-ninv-discount-desc").value.trim();
+            manualDiscVal=parseFloat(document.getElementById("ra-ninv-discount-amount").value)||0;
+        }
+
+        var fd=new FormData();
+        fd.append("nonce",NONCE);
+        fd.append("is_differenzbesteuerung",document.getElementById("ra-ninv-differenz").checked?"1":"0");
+
+        if(ninvRepairMode && repairId){
+            // Finish repair mode: use ppv_repair_update_status (creates invoice + marks done)
+            fd.append("action","ppv_repair_update_status");
+            fd.append("repair_id",repairId);
+            fd.append("status","done");
+            fd.append("final_cost",subtotal);
+            fd.append("line_items",JSON.stringify(items));
+            if(manualDiscVal>0){
+                fd.append("manual_discount_desc",manualDiscDesc);
+                fd.append("manual_discount_value",manualDiscVal);
+            }
+            if(document.getElementById("ra-ninv-paid-toggle").checked){
+                fd.append("mark_paid","1");
+                var pm=document.getElementById("ra-ninv-payment-method").value;
+                var pd=document.getElementById("ra-ninv-paid-date").value;
+                if(pm)fd.append("payment_method",pm);
+                if(pd)fd.append("paid_at",pd);
+            }
+        }else{
+            // Standalone invoice mode: use ppv_repair_invoice_create
+            fd.append("action","ppv_repair_invoice_create");
+            fd.append("customer_id",document.getElementById("ra-ninv-customer-id").value);
+            fd.append("customer_name",name);
+            fd.append("customer_email",document.getElementById("ra-ninv-email").value);
+            fd.append("customer_phone",document.getElementById("ra-ninv-phone").value);
+            fd.append("customer_company",document.getElementById("ra-ninv-company").value);
+            fd.append("customer_tax_id",document.getElementById("ra-ninv-taxid").value);
+            fd.append("customer_address",document.getElementById("ra-ninv-address").value);
+            fd.append("customer_plz",document.getElementById("ra-ninv-plz").value);
+            fd.append("customer_city",document.getElementById("ra-ninv-city").value);
+            fd.append("save_customer","1");
+            fd.append("line_items",JSON.stringify(items));
+            fd.append("subtotal",subtotal);
+            fd.append("notes",document.getElementById("ra-ninv-notes").value);
+            if(manualDiscVal>0){
+                fd.append("manual_discount_desc",manualDiscDesc);
+                fd.append("manual_discount_value",manualDiscVal);
+            }
+            var customInvNum=document.getElementById("ra-ninv-number").value.trim();
+            if(customInvNum)fd.append("invoice_number",customInvNum);
+            if(repairId)fd.append("repair_id",repairId);
+        }
 
         var btn=document.getElementById("ra-ninv-submit");
         btn.disabled=true;btn.style.opacity="0.7";
@@ -5723,7 +5924,16 @@ echo '</div></div>
         .then(function(data){
             btn.disabled=false;btn.style.opacity="";
             if(data.success){
-                toast(L.inv_created.replace("%s",data.data.invoice_number));
+                if(ninvRepairMode && repairId){
+                    toast(L.repair_completed);
+                    if(ninvRepairSelect){
+                        updateBadge(ninvRepairSelect.closest(".ra-repair-card"),"done");
+                        ninvRepairSelect.setAttribute("data-prev","done");
+                    }
+                }else{
+                    toast(L.inv_created.replace("%s",data.data.invoice_number));
+                }
+                ninvRepairSelect=null;
                 ninvModal.classList.remove("show");
                 invoicesLoaded=false;
                 loadInvoices(1);
