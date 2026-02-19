@@ -1024,6 +1024,16 @@ class PPV_Repair_Core {
             }
             update_option('ppv_repair_migration_version', '3.0');
         }
+
+        // v3.1: Add warranty_description to invoices
+        if (version_compare($version, '3.1', '<')) {
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE 'warranty_description'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN warranty_description TEXT NULL AFTER warranty_date");
+            }
+            update_option('ppv_repair_migration_version', '3.1');
+        }
     }
 
     /** ============================================================
@@ -2714,6 +2724,7 @@ class PPV_Repair_Core {
                     }
                     if (!empty($_POST['warranty_date'])) {
                         $payment['warranty_date'] = sanitize_text_field($_POST['warranty_date']);
+                        $payment['warranty_description'] = sanitize_textarea_field($_POST['warranty_description'] ?? '');
                     }
                     $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items, $manual_discount, $payment);
 
@@ -3296,6 +3307,7 @@ class PPV_Repair_Core {
             'repair_website_url' => "VARCHAR(500) NULL",
             'repair_google_review_url' => "VARCHAR(500) NULL",
             'repair_feedback_email_enabled' => "TINYINT(1) DEFAULT 0",
+            'repair_warranty_text' => "TEXT NULL",
         ];
 
         foreach ($required_columns as $col => $definition) {
@@ -3314,7 +3326,7 @@ class PPV_Repair_Core {
                         'repair_bank_name', 'repair_bank_iban', 'repair_bank_bic', 'repair_paypal_email', 'repair_steuernummer', 'repair_website_url',
                         'repair_google_review_url'];
         // Textarea fields (allow newlines)
-        $textarea_fields = ['repair_invoice_email_body', 'repair_custom_brands', 'repair_custom_problems', 'repair_custom_accessories', 'repair_success_message'];
+        $textarea_fields = ['repair_invoice_email_body', 'repair_custom_brands', 'repair_custom_problems', 'repair_custom_accessories', 'repair_success_message', 'repair_warranty_text'];
         // Integer fields
         $int_fields = ['repair_points_per_form', 'repair_required_points', 'repair_invoice_next_number'];
         // Decimal fields

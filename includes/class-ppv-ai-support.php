@@ -304,6 +304,7 @@ REPAIR MANAGEMENT (Reparaturen tab):
 • Change status via dropdown on each repair card
 • Add internal comments/notes to each repair
 • Print individual repair ticket (with QR code) via Print button
+• Live-tracking URL on each repair card: copyable link that customers can use to check repair status
 • Auto-polling every 15 seconds for new incoming repairs
 • Search by customer name, phone, device info
 • Filter by status
@@ -322,7 +323,7 @@ INVOICE SYSTEM (Rechnungen tab):
   - Can also create quote from repair card (pre-fills customer + device info)
 • Auto-generate invoice when repair status set to "done"
 • Custom invoice numbering with prefix (e.g. RE-001)
-• Optional warranty date (Garantie bis): set expiration date on invoice/quote, displayed on PDF
+• Optional warranty date (Garantie bis) + warranty conditions text: set in invoice, default text configurable in Einstellungen. Displayed on PDF as yellow box.
 • Line items: add service descriptions + qty × price amounts
 • VAT/MwSt calculation (configurable rate, can disable for Kleinunternehmer)
 • EMAIL SEND: click the email icon (envelope) on any invoice to send PDF to customer
