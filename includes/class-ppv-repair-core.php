@@ -1237,9 +1237,14 @@ class PPV_Repair_Core {
         $store_slug = $store->store_slug;
         $tracking_url = home_url("/formular/{$store_slug}/status/{$tracking_token}");
 
-        // Send tracking email to customer if email provided
+        // Send tracking email to customer if email provided (deferred - non-blocking)
         if (!empty($email)) {
-            self::send_tracking_email($store, $email, $name, $repair_id, $tracking_url);
+            $async = ['store' => $store, 'email' => $email, 'name' => $name, 'rid' => $repair_id, 'url' => $tracking_url];
+            add_action('shutdown', function() use ($async) {
+                ignore_user_abort(true);
+                if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+                PPV_Repair_Core::deferred_send_tracking_email($async);
+            });
         }
 
         wp_send_json_success([
@@ -1363,6 +1368,11 @@ class PPV_Repair_Core {
         $subject = "Neue Reparatur #{$data['repair_id']} - {$data['name']}";
         $body = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,sans-serif;"><div style="max-width:560px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:16px 16px 0 0;padding:24px 28px;text-align:center;"><h1 style="color:#fff;font-size:20px;margin:0;">Neue Reparaturanfrage</h1></div><div style="background:#fff;padding:28px;border-radius:0 0 16px 16px;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151;"><tr><td style="padding:8px 0;font-weight:600;width:120px;">Auftrag:</td><td>#' . intval($data['repair_id']) . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">Name:</td><td>' . esc_html($data['name']) . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">E-Mail:</td><td>' . esc_html($data['email']) . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">Telefon:</td><td>' . esc_html($data['phone'] ?: '-') . '</td></tr><tr><td style="padding:8px 0;font-weight:600;">Ger&auml;t:</td><td>' . esc_html($data['device'] ?: '-') . '</td></tr></table><div style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;"><div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;">PROBLEM</div><div style="font-size:14px;color:#1f2937;line-height:1.5;">' . nl2br(esc_html($data['problem'])) . '</div></div><div style="margin-top:20px;text-align:center;"><a href="https://punktepass.de/formular/admin" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;text-decoration:none;border-radius:10px;font-weight:600;">Reparatur verwalten</a></div></div></div></body></html>';
         wp_mail($store->email, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+    }
+
+    /** Public wrapper for deferred (shutdown hook) tracking email */
+    public static function deferred_send_tracking_email($data) {
+        self::send_tracking_email($data['store'], $data['email'], $data['name'], $data['rid'], $data['url']);
     }
 
     /** Send Tracking Email to Customer */
