@@ -1072,7 +1072,8 @@ class PPV_Repair_Core {
         $device_imei  = sanitize_text_field($_POST['device_imei'] ?? '');
         $device_pattern = sanitize_text_field($_POST['device_pattern'] ?? '');
         $problem      = sanitize_textarea_field($_POST['problem_description'] ?? '');
-        $accessories  = sanitize_text_field($_POST['accessories'] ?? '[]');
+        $accessories  = sanitize_text_field($_POST['accessories'] ?? '');
+        if ($accessories === '[]' || $accessories === '[""]') $accessories = '';
         $address      = sanitize_textarea_field($_POST['customer_address'] ?? '');
 
         if (empty($problem)) {

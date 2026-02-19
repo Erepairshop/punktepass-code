@@ -1710,37 +1710,58 @@
     background: var(--repair-card);
 }
 
-/* Repair cards */
+/* Repair cards - Professional Widget */
 .ra-repair-card {
     background: var(--repair-card);
     border-radius: var(--repair-radius);
-    padding: 16px;
-    margin-bottom: 8px;
+    padding: 0;
+    margin-bottom: 0;
     box-shadow: var(--repair-shadow);
-    transition: box-shadow 0.15s;
+    transition: box-shadow 0.2s, transform 0.2s;
+    overflow: hidden;
 }
 .ra-repair-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
 }
 .ra-repair-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    padding: 16px 20px 12px;
+    background: var(--repair-bg);
+    border-bottom: 1px solid var(--repair-border);
+}
+.ra-repair-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 .ra-repair-id {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--repair-text-secondary);
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--repair-text);
+    font-variant-numeric: tabular-nums;
+}
+.ra-repair-date-inline {
+    font-size: 11px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.ra-repair-date-inline i {
+    font-size: 12px;
 }
 .ra-status {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
 }
 .ra-status-new { background: #dbeafe; color: #1d4ed8; }
 .ra-status-progress { background: #fef3c7; color: #92400e; }
@@ -1748,6 +1769,91 @@
 .ra-status-done { background: #d1fae5; color: #065f46; }
 .ra-status-delivered { background: #e5e7eb; color: #374151; }
 .ra-status-cancelled { background: #fecaca; color: #991b1b; }
+/* Card sections */
+.ra-card-section {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--repair-border);
+}
+.ra-card-section:last-of-type {
+    border-bottom: none;
+}
+.ra-card-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--repair-text-secondary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.ra-card-section-title i {
+    font-size: 13px;
+}
+/* Customer section */
+.ra-card-section-customer {
+    padding: 16px 20px;
+}
+.ra-customer-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+.ra-customer-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--repair-accent), #764ba2);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.ra-customer-info {
+    flex: 1;
+    min-width: 0;
+}
+.ra-customer-info strong {
+    font-size: 16px;
+    color: var(--repair-text);
+    display: block;
+    margin-bottom: 4px;
+}
+/* Device section */
+.ra-card-section-device {
+    background: var(--repair-bg);
+}
+.ra-device-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--repair-text);
+    margin-bottom: 6px;
+}
+/* Details section */
+.ra-card-section-details {
+    background: var(--repair-bg);
+}
+/* Badges */
+.ra-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 20px;
+}
+.ra-card-updated {
+    font-size: 11px;
+    color: #9ca3af;
+    padding: 4px 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ra-card-updated i {
+    font-size: 12px;
+}
 
 /* Teil angekommen button - modern CTA (amber/orange) */
 .ra-btn-parts-arrived {
@@ -1824,14 +1930,54 @@
     margin: auto;
 }
 
-.ra-repair-customer strong {
-    display: block;
-    font-size: 15px;
-    margin-bottom: 2px;
-}
 .ra-repair-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
     font-size: 12px;
     color: var(--repair-text-secondary);
+}
+.ra-repair-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.ra-repair-meta i {
+    font-size: 12px;
+    color: #9ca3af;
+}
+.ra-repair-address {
+    font-size: 12px;
+    color: var(--repair-text-secondary);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ra-repair-address i {
+    color: #9ca3af;
+}
+.ra-repair-imei {
+    font-size: 12px;
+    color: var(--repair-text-secondary);
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ra-repair-imei i {
+    color: #9ca3af;
+}
+.ra-repair-acc {
+    font-size: 12px;
+    color: var(--repair-text-secondary);
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ra-repair-acc i {
+    color: #9ca3af;
 }
 .ra-repair-device {
     display: flex;
@@ -1844,37 +1990,41 @@
 .ra-repair-problem {
     font-size: 13px;
     color: var(--repair-text);
-    margin-top: 8px;
-    line-height: 1.5;
-}
-.ra-repair-date {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: #9ca3af;
-    margin-top: 8px;
+    line-height: 1.6;
 }
 .ra-repair-actions {
-    margin-top: 12px;
-    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
     border-top: 1px solid var(--repair-border);
+    background: var(--repair-bg);
+    gap: 8px;
+}
+.ra-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 .ra-status-select {
-    padding: 6px 10px;
-    border: 1px solid var(--repair-border);
-    border-radius: 6px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--repair-border);
+    border-radius: 8px;
     font-size: 13px;
     font-family: inherit;
     color: var(--repair-text);
-    background: var(--repair-bg);
+    background: var(--repair-card);
     cursor: pointer;
+    max-width: 180px;
+}
+.ra-status-select:focus {
+    border-color: var(--repair-accent);
 }
 
 /* Repair comments */
 .ra-repair-comments-section {
-    margin-top: 10px;
-    padding-top: 10px;
+    padding: 10px 20px;
     border-top: 1px dashed #e5e7eb;
 }
 .ra-btn-comments-toggle {

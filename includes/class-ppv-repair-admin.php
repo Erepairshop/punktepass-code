@@ -724,43 +724,71 @@ a:hover{color:#5a67d8}
 .ra-filters select{padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:auto;min-width:140px}
 .ra-filters select:focus{border-color:#667eea}
 
-/* ========== Repair Cards - Modern ========== */
-.ra-repairs{display:grid;grid-template-columns:1fr;gap:14px}
+/* ========== Repair Cards - Professional Widget ========== */
+.ra-repairs{display:grid;grid-template-columns:1fr;gap:16px}
 @media(min-width:768px){.ra-repairs{grid-template-columns:repeat(2,1fr)}}
-@media(min-width:1200px){.ra-repairs{grid-template-columns:repeat(3,1fr)}}
-@media(min-width:1600px){.ra-repairs{grid-template-columns:repeat(4,1fr)}}
-.ra-repair-card{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:box-shadow .2s,transform .2s;box-shadow:0 1px 3px rgba(0,0,0,0.02)}
-.ra-repair-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);transform:translateY(-2px)}
-.ra-repair-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.ra-repair-id{font-size:13px;font-weight:700;color:#6b7280}
-.ra-status{display:inline-flex;align-items:center;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600}
+@media(min-width:1400px){.ra-repairs{grid-template-columns:repeat(3,1fr)}}
+.ra-repair-card{background:#fff;border-radius:16px;padding:0;border:1px solid #e2e8f0;transition:box-shadow .2s,transform .2s;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow:hidden}
+.ra-repair-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08);transform:translateY(-2px)}
+/* Status top-border accent */
+.ra-repair-card[data-status="new"]{border-top:3px solid #3b82f6}
+.ra-repair-card[data-status="in_progress"]{border-top:3px solid #f59e0b}
+.ra-repair-card[data-status="waiting_parts"]{border-top:3px solid #ec4899}
+.ra-repair-card[data-status="done"]{border-top:3px solid #10b981}
+.ra-repair-card[data-status="delivered"]{border-top:3px solid #6b7280}
+.ra-repair-card[data-status="cancelled"]{border-top:3px solid #ef4444}
+/* Header */
+.ra-repair-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;background:#f8fafc;border-bottom:1px solid #f1f5f9}
+.ra-repair-header-left{display:flex;align-items:center;gap:12px}
+.ra-repair-id{font-size:14px;font-weight:800;color:#374151;font-variant-numeric:tabular-nums}
+.ra-repair-date-inline{font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:3px}
+.ra-repair-date-inline i{font-size:12px}
+.ra-status{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .ra-status-new{background:#dbeafe;color:#1d4ed8}
 .ra-status-progress{background:#fef3c7;color:#92400e}
 .ra-status-waiting{background:#fce7f3;color:#9d174d}
 .ra-status-done{background:#d1fae5;color:#065f46}
 .ra-status-delivered{background:#e5e7eb;color:#374151}
 .ra-status-cancelled{background:#fecaca;color:#991b1b}
-/* Card border colors by status */
-.ra-repair-card[data-status="new"]{border-left:4px solid #3b82f6}
-.ra-repair-card[data-status="in_progress"]{border-left:4px solid #f59e0b}
-.ra-repair-card[data-status="waiting_parts"]{border-left:4px solid #ec4899}
-.ra-repair-card[data-status="done"]{border-left:4px solid #10b981}
-.ra-repair-card[data-status="delivered"]{border-left:4px solid #6b7280}
-.ra-repair-card[data-status="cancelled"]{border-left:4px solid #ef4444}
-.ra-repair-body{margin-bottom:12px}
-.ra-repair-customer{margin-bottom:6px}
-.ra-repair-customer strong{font-size:15px;color:#111827;display:block}
-.ra-repair-meta{font-size:13px;color:#6b7280}
-.ra-repair-device{font-size:13px;color:#374151;margin-bottom:4px;display:flex;align-items:center;gap:4px}
-.ra-repair-pin{font-size:12px;color:#667eea;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:4px}
-.ra-repair-address{font-size:12px;color:#6b7280;margin-top:4px;display:flex;align-items:center;gap:4px}
-.ra-repair-muster{margin:8px 0;padding:8px;background:#f9fafb;border-radius:8px;display:inline-block}
-.ra-repair-muster img{width:80px;height:80px;border-radius:4px;border:1px solid #e5e7eb;cursor:pointer}
+/* Card sections */
+.ra-card-section{padding:12px 20px;border-bottom:1px solid #f1f5f9}
+.ra-card-section:last-of-type{border-bottom:none}
+.ra-card-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.ra-card-section-title i{font-size:13px}
+/* Customer section */
+.ra-card-section-customer{padding:16px 20px}
+.ra-customer-row{display:flex;align-items:flex-start;gap:12px}
+.ra-customer-avatar{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ra-customer-info{flex:1;min-width:0}
+.ra-customer-info strong{font-size:16px;color:#111827;display:block;margin-bottom:4px}
+.ra-repair-meta{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:#6b7280}
+.ra-repair-meta span{display:inline-flex;align-items:center;gap:3px}
+.ra-repair-meta i{font-size:12px;color:#9ca3af}
+.ra-repair-address{font-size:12px;color:#6b7280;margin-top:6px;display:flex;align-items:center;gap:4px}
+.ra-repair-address i{color:#9ca3af}
+/* Device section */
+.ra-card-section-device{background:#fafbfc}
+.ra-device-name{font-size:15px;font-weight:600;color:#1f2937;margin-bottom:6px}
+.ra-repair-imei{font-size:12px;color:#6b7280;margin-top:3px;display:flex;align-items:center;gap:4px}
+.ra-repair-imei i{color:#9ca3af}
+.ra-repair-pin{font-size:12px;color:#667eea;font-weight:600;margin-top:3px;display:flex;align-items:center;gap:4px}
+.ra-repair-acc{font-size:12px;color:#6b7280;margin-top:3px;display:flex;align-items:center;gap:4px}
+.ra-repair-acc i{color:#9ca3af}
+.ra-repair-muster{margin:6px 0 0;padding:8px;background:#f1f5f9;border-radius:8px;display:inline-block}
+.ra-repair-muster img{width:80px;height:80px;border-radius:6px;border:1px solid #e2e8f0;cursor:pointer;transition:transform .2s}
 .ra-repair-muster img:hover{transform:scale(2);position:relative;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
-.ra-repair-problem{font-size:13px;color:#6b7280;margin-bottom:6px;line-height:1.5}
-.ra-repair-date{font-size:12px;color:#9ca3af;display:flex;align-items:center;gap:4px}
-.ra-repair-actions{display:flex;align-items:center;gap:8px}
-.ra-status-select{padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:auto;width:100%;max-width:200px}
+/* Problem section */
+.ra-repair-problem{font-size:13px;color:#374151;line-height:1.6}
+/* Details section (custom fields) */
+.ra-card-section-details{background:#fafbfc}
+/* Badges row */
+.ra-card-badges{display:flex;flex-wrap:wrap;gap:6px;padding:8px 20px}
+.ra-card-updated{font-size:11px;color:#9ca3af;padding:4px 20px 0;display:flex;align-items:center;gap:4px}
+.ra-card-updated i{font-size:12px}
+/* Actions toolbar */
+.ra-repair-actions{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid #f1f5f9;background:#fafbfc;gap:8px}
+.ra-actions-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ra-status-select{padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:auto;max-width:180px}
 .ra-status-select:focus{border-color:#667eea}
 .ra-btn-resubmit{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #c7d2fe;background:#eef2ff;color:#667eea;display:inline-flex;align-items:center;gap:4px;transition:all .2s;white-space:nowrap}
 .ra-btn-resubmit:hover{background:#667eea;color:#fff;border-color:#667eea}
@@ -768,7 +796,7 @@ a:hover{color:#5a67d8}
 .ra-btn-invoice:hover{background:#16a34a;color:#fff;border-color:#16a34a}
 .ra-btn-invoice-exists{border-color:#fbbf24;background:#fffbeb;color:#d97706}
 .ra-btn-invoice-exists:hover{background:#d97706;color:#fff;border-color:#d97706}
-.ra-invoice-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:2px 8px;margin-top:4px}
+.ra-invoice-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:3px 10px}
 .ra-invoice-badge i{font-size:12px}
 .ra-btn-delete{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
@@ -776,9 +804,11 @@ a:hover{color:#5a67d8}
 .ra-btn-print:hover{background:#374151;color:#fff;border-color:#374151}
 .ra-btn-email{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-email:hover{background:#2563eb;color:#fff;border-color:#2563eb}
+.ra-btn-angebot{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bbf7d0;background:#f0fdf4;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.ra-btn-angebot:hover{background:#16a34a;color:#fff;border-color:#16a34a}
 
 /* ========== Reward Section ========== */
-.ra-reward-toggle-section{margin:12px 0}
+.ra-reward-toggle-section{padding:10px 20px;margin:0}
 .ra-btn-reward-toggle{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;border:none}
 .ra-reward-badge-available{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e}
 .ra-reward-badge-available:hover{background:linear-gradient(135deg,#fde68a,#fcd34d)}
@@ -800,8 +830,8 @@ a:hover{color:#5a67d8}
 .ra-reward-approve:hover{background:#047857}
 .ra-reward-reject{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #fecaca;background:#fff;color:#dc2626;display:inline-flex;align-items:center;gap:4px;transition:all .2s}
 .ra-reward-reject:hover{background:#fef2f2}
-.ra-reward-approved-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#d1fae5;color:#065f46;font-size:12px;font-weight:600;border-radius:8px;margin:8px 0}
-.ra-btn-parts-arrived{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:10px 18px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .25s ease;width:fit-content;box-shadow:0 2px 8px rgba(217,119,6,.3);letter-spacing:.2px;position:relative;overflow:hidden}
+.ra-reward-approved-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#d1fae5;color:#065f46;font-size:12px;font-weight:600;border-radius:8px;margin:8px 20px}
+.ra-btn-parts-arrived{display:inline-flex;align-items:center;gap:8px;margin:10px 20px;padding:10px 18px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .25s ease;width:fit-content;box-shadow:0 2px 8px rgba(217,119,6,.3);letter-spacing:.2px;position:relative;overflow:hidden}
 .ra-btn-parts-arrived::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);transition:left .5s}
 .ra-btn-parts-arrived:hover{background:linear-gradient(135deg,#b45309,#d97706);box-shadow:0 4px 14px rgba(217,119,6,.4);transform:translateY(-1px)}
 .ra-btn-parts-arrived:hover::before{left:100%}
@@ -809,7 +839,7 @@ a:hover{color:#5a67d8}
 .ra-btn-parts-arrived i{font-size:17px}
 
 /* ========== Comments Widget - Modern ========== */
-.ra-repair-comments-section{margin:10px 0 4px}
+.ra-repair-comments-section{padding:10px 20px;margin:0}
 .ra-btn-comments-toggle{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #e0e7ff;background:#f0f4ff;color:#6366f1;transition:all .2s}
 .ra-btn-comments-toggle:hover{background:#e0e7ff;border-color:#c7d2fe}
 .ra-btn-comments-toggle.active{background:#6366f1;color:#fff;border-color:#6366f1}
@@ -3717,6 +3747,10 @@ echo '</div></div>
         'print_owner' => PPV_Lang::t('repair_admin_print_owner'),
         'print_tel' => PPV_Lang::t('repair_admin_print_tel'),
         'print_vatid' => PPV_Lang::t('repair_admin_print_vatid'),
+        // Card section labels
+        'device_section' => PPV_Lang::t('repair_admin_device_section', 'Gerät'),
+        'problem_section' => PPV_Lang::t('repair_admin_problem_section', 'Problem'),
+        'details_section' => PPV_Lang::t('repair_admin_details_section', 'Details'),
         // Status labels
         'status_new' => PPV_Lang::t('repair_admin_status_new'),
         'status_progress' => PPV_Lang::t('repair_admin_status_progress'),
@@ -4307,23 +4341,44 @@ echo '</div></div>
         var dateStr=d?pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear()+" "+pad(d.getHours())+":"+pad(d.getMinutes()):"";
         var problem=(r.problem_description||"");
         if(problem.length>150)problem=problem.substring(0,150)+"...";
+        var fullProblem=r.problem_description||"";
         var opts=["new","in_progress","waiting_parts","done","delivered","cancelled"];
         var labels=[L.status_new,L.status_progress,L.status_waiting,L.status_done,L.status_delivered,L.status_cancelled];
         var selectHtml="";
         for(var i=0;i<opts.length;i++){
             selectHtml+=\'<option value="\'+opts[i]+\'" \'+(r.status===opts[i]?"selected":"")+\'>\'+labels[i]+\'</option>\';
         }
-        var phone=r.customer_phone?(" &middot; "+esc(r.customer_phone)):"";
-        var deviceHtml=device?\'<div class="ra-repair-device"><i class="ri-smartphone-line"></i> \'+esc(device)+\'</div>\':"";
-        var pinHtml=r.device_pattern?\'<div class="ra-repair-pin"><i class="ri-lock-password-line"></i> PIN: \'+esc(r.device_pattern)+\'</div>\':"";
         var addressHtml=r.customer_address?\'<div class="ra-repair-address"><i class="ri-map-pin-line"></i> \'+esc(r.customer_address)+\'</div>\':"";
         var musterHtml=(r.muster_image&&r.muster_image.indexOf("data:image/")===0)?\'<div class="ra-repair-muster"><img src="\'+r.muster_image+\'" alt="\'+L.print_muster+\'" title="\'+L.print_muster+\'"></div>\':"";
-        var fullProblem=r.problem_description||"";
         var hasInvoice=!!(r.invoice_numbers);
         var invoiceBadgeHtml=hasInvoice?\'<div class="ra-invoice-badge"><i class="ri-file-list-3-line"></i> \'+esc(r.invoice_numbers)+\'</div>\':"";
         var invBtnClass=hasInvoice?"ra-btn-invoice ra-btn-invoice-exists":"ra-btn-invoice";
         var invBtnTitle=hasInvoice?(L.invoice_exists+": "+esc(r.invoice_numbers)):L.btn_create_inv;
         var invBtnIcon=hasInvoice?"ri-file-list-3-fill":"ri-file-list-3-line";
+        // Accessories (skip empty/[] values)
+        var acc=r.accessories||"";
+        var accHtml=(acc&&acc!=="[]"&&acc!=="[\\"\\"]")?\'<div class="ra-repair-acc"><i class="ri-checkbox-multiple-line"></i> \'+esc(acc)+\'</div>\':"";
+        // IMEI
+        var imeiHtml=r.device_imei?\'<div class="ra-repair-imei"><i class="ri-barcode-line"></i> IMEI: \'+esc(r.device_imei)+\'</div>\':"";
+        // PIN
+        var pinHtml=r.device_pattern?\'<div class="ra-repair-pin"><i class="ri-lock-password-line"></i> PIN: \'+esc(r.device_pattern)+\'</div>\':"";
+        // Device section
+        var deviceSection="";
+        if(device||imeiHtml||pinHtml||musterHtml||accHtml){
+            deviceSection=\'<div class="ra-card-section ra-card-section-device">\'+
+                \'<div class="ra-card-section-title"><i class="ri-smartphone-line"></i> \'+(L.device_section||"Gerät")+\'</div>\'+
+                (device?\'<div class="ra-device-name">\'+esc(device)+\'</div>\':"")+
+                imeiHtml+pinHtml+musterHtml+accHtml+
+            \'</div>\';
+        }
+        // Badges
+        var badges="";
+        if(invoiceBadgeHtml)badges+=invoiceBadgeHtml;
+        if(r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()){
+            badges+=\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\';
+        }
+        var badgesRow=badges?\'<div class="ra-card-badges">\'+badges+\'</div>\':"";
+        // Comments
         var commentsHtml=\'<div class="ra-repair-comments-section">\'+
             \'<button class="ra-btn-comments-toggle" data-repair-id="\'+r.id+\'"><i class="ri-chat-3-line"></i> \'+L.comments_label+\'</button>\'+
             \'<div class="ra-comments-container" style="display:none" data-repair-id="\'+r.id+\'">\'+
@@ -4334,19 +4389,43 @@ echo '</div></div>
                 \'</div>\'+
             \'</div>\'+
         \'</div>\';
-        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-imei="\'+esc(r.device_imei||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'" data-invoice="\'+esc(r.invoice_numbers||"")+\'">\'+
-            \'<div class="ra-repair-header"><div class="ra-repair-id">#\'+r.id+\'</div><span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span></div>\'+
-            \'<div class="ra-repair-body">\'+
-                \'<div class="ra-repair-customer"><strong>\'+esc(r.customer_name)+\'</strong><span class="ra-repair-meta">\'+esc(r.customer_email)+phone+\'</span>\'+addressHtml+\'</div>\'+
-                deviceHtml+pinHtml+musterHtml+
-                \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
-                \'<div class="ra-repair-date"><i class="ri-time-line"></i> \'+dateStr+\'</div>\'+
-                invoiceBadgeHtml+
-                (r.status==="waiting_parts"?\'<button class="ra-btn-parts-arrived" data-repair-id="\'+r.id+\'"><i class="ri-checkbox-circle-fill"></i> \'+L.parts_arrived+\'</button>\':"")+
-                (r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()?\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\':"")+
+        return \'<div class="ra-repair-card" data-id="\'+r.id+\'" data-status="\'+r.status+\'" data-name="\'+esc(r.customer_name)+\'" data-email="\'+esc(r.customer_email)+\'" data-phone="\'+esc(r.customer_phone||"")+\'" data-address="\'+esc(r.customer_address||"")+\'" data-brand="\'+esc(r.device_brand||"")+\'" data-model="\'+esc(r.device_model||"")+\'" data-pin="\'+esc(r.device_pattern||"")+\'" data-imei="\'+esc(r.device_imei||"")+\'" data-problem="\'+esc(fullProblem)+\'" data-date="\'+dateStr+\'" data-muster="\'+esc(r.muster_image||"")+\'" data-signature="\'+esc(r.signature_image||"")+\'" data-accessories="\'+esc(r.accessories||"")+\'" data-invoice="\'+esc(r.invoice_numbers||"")+\'">\'+
+            \'<div class="ra-repair-header">\'+
+                \'<div class="ra-repair-header-left"><div class="ra-repair-id">#\'+r.id+\'</div><div class="ra-repair-date-inline"><i class="ri-time-line"></i> \'+dateStr+\'</div></div>\'+
+                \'<span class="ra-status \'+st[1]+\'">\'+st[0]+\'</span>\'+
             \'</div>\'+
+            \'<div class="ra-card-section ra-card-section-customer">\'+
+                \'<div class="ra-customer-row">\'+
+                    \'<div class="ra-customer-avatar"><i class="ri-user-3-fill"></i></div>\'+
+                    \'<div class="ra-customer-info">\'+
+                        \'<strong>\'+esc(r.customer_name)+\'</strong>\'+
+                        \'<div class="ra-repair-meta">\'+
+                            (r.customer_email?\'<span><i class="ri-mail-line"></i> \'+esc(r.customer_email)+\'</span>\':"")+
+                            (r.customer_phone?\'<span><i class="ri-phone-line"></i> \'+esc(r.customer_phone)+\'</span>\':"")+
+                        \'</div>\'+
+                        addressHtml+
+                    \'</div>\'+
+                \'</div>\'+
+            \'</div>\'+
+            deviceSection+
+            \'<div class="ra-card-section ra-card-section-problem">\'+
+                \'<div class="ra-card-section-title"><i class="ri-error-warning-line"></i> \'+(L.problem_section||"Problem")+\'</div>\'+
+                \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
+            \'</div>\'+
+            badgesRow+
+            (r.status==="waiting_parts"?\'<button class="ra-btn-parts-arrived" data-repair-id="\'+r.id+\'"><i class="ri-checkbox-circle-fill"></i> \'+L.parts_arrived+\'</button>\':"")+
             commentsHtml+
-            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button><button class="ra-btn-angebot" title="Angebot erstellen" style="padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bbf7d0;background:#f0fdf4;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;transition:all .2s"><i class="ri-draft-line"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
+            \'<div class="ra-repair-actions">\'+
+                \'<div class="ra-actions-left">\'+
+                    \'<button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button>\'+
+                    \'<button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button>\'+
+                    \'<button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button>\'+
+                    \'<button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button>\'+
+                    \'<button class="ra-btn-angebot" title="Angebot erstellen"><i class="ri-draft-line"></i></button>\'+
+                    \'<button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button>\'+
+                \'</div>\'+
+                \'<select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select>\'+
+            \'</div>\'+
         \'</div>\';
     }
     function pad(n){return n<10?"0"+n:n}
@@ -7589,8 +7668,8 @@ echo '</div></div>
 
         // Accessories display
         $acc_html = '';
-        if (!empty($r->accessories)) {
-            $acc_html = '<div class="ra-repair-acc" style="font-size:12px;color:#6b7280;margin-top:4px"><i class="ri-checkbox-multiple-line"></i> ' . esc_html($r->accessories) . '</div>';
+        if (!empty($r->accessories) && $r->accessories !== '[]' && $r->accessories !== '[""]') {
+            $acc_html = '<div class="ra-repair-acc"><i class="ri-checkbox-multiple-line"></i> ' . esc_html($r->accessories) . '</div>';
         }
 
         // Custom fields (includes new built-in extras: color, date, condition, priority, cost, photos)
@@ -7790,6 +7869,48 @@ echo '</div></div>
             : esc_attr(PPV_Lang::t('repair_admin_create_inv_card'));
         $inv_btn_icon = $has_invoice ? 'ri-file-list-3-fill' : 'ri-file-list-3-line';
 
+        // Build detail rows for device section
+        $device_details = '';
+        if ($imei_html) $device_details .= $imei_html;
+        if ($pin_html) $device_details .= $pin_html;
+        if ($muster_html) $device_details .= $muster_html;
+        if ($acc_html) $device_details .= $acc_html;
+
+        // Device section block
+        $device_section = '';
+        if ($device_html || $device_details) {
+            $device_section = '<div class="ra-card-section ra-card-section-device">'
+                . '<div class="ra-card-section-title"><i class="ri-smartphone-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_device_section', 'Gerät')) . '</div>'
+                . ($device_html ? '<div class="ra-device-name">' . esc_html($device) . '</div>' : '')
+                . $device_details
+            . '</div>';
+        }
+
+        // Problem section
+        $problem_section = '<div class="ra-card-section ra-card-section-problem">'
+            . '<div class="ra-card-section-title"><i class="ri-error-warning-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_problem_section', 'Problem')) . '</div>'
+            . '<div class="ra-repair-problem">' . $problem . '</div>'
+        . '</div>';
+
+        // Custom fields section
+        $cf_section = '';
+        if ($cf_html) {
+            $cf_section = '<div class="ra-card-section ra-card-section-details">'
+                . '<div class="ra-card-section-title"><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_details_section', 'Details')) . '</div>'
+                . $cf_html
+            . '</div>';
+        }
+
+        // Badges row (invoice, termin, parts arrived)
+        $badges = '';
+        if ($invoice_badge_html) $badges .= $invoice_badge_html;
+        if (!empty($r->termin_at) && strtotime($r->termin_at) > time()) {
+            $badges .= '<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>';
+        }
+        $badges_row = $badges ? '<div class="ra-card-badges">' . $badges . '</div>' : '';
+
+        $parts_btn = ($r->status === 'waiting_parts') ? '<button class="ra-btn-parts-arrived" data-repair-id="' . intval($r->id) . '"><i class="ri-checkbox-circle-fill"></i> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived')) . '</button>' : '';
+
         return '<div class="ra-repair-card" data-id="' . intval($r->id) . '"'
             . ' data-status="' . esc_attr($r->status) . '"'
             . ' data-name="' . esc_attr($r->customer_name) . '"'
@@ -7809,29 +7930,43 @@ echo '</div></div>
             . ' data-invoice="' . esc_attr($invoice_numbers) . '"'
             . ' data-reward-approved="' . (int)(!empty($r->reward_approved)) . '"'
             . '>'
+            // Header: ID + Status badge + Date
             . '<div class="ra-repair-header">'
-                . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
+                . '<div class="ra-repair-header-left">'
+                    . '<div class="ra-repair-id">#' . intval($r->id) . '</div>'
+                    . '<div class="ra-repair-date-inline"><i class="ri-time-line"></i> ' . $date . '</div>'
+                . '</div>'
                 . '<span class="ra-status ' . esc_attr($st[1]) . '">' . esc_html($st[0]) . '</span>'
             . '</div>'
-            . '<div class="ra-repair-body">'
-                . '<div class="ra-repair-customer">'
-                    . '<strong>' . esc_html($r->customer_name) . '</strong>'
-                    . '<span class="ra-repair-meta">' . esc_html($r->customer_email) . $phone . '</span>'
-                    . $address_html
+            // Customer section
+            . '<div class="ra-card-section ra-card-section-customer">'
+                . '<div class="ra-customer-row">'
+                    . '<div class="ra-customer-avatar"><i class="ri-user-3-fill"></i></div>'
+                    . '<div class="ra-customer-info">'
+                        . '<strong>' . esc_html($r->customer_name) . '</strong>'
+                        . '<div class="ra-repair-meta">'
+                            . ($r->customer_email ? '<span><i class="ri-mail-line"></i> ' . esc_html($r->customer_email) . '</span>' : '')
+                            . ($r->customer_phone ? '<span><i class="ri-phone-line"></i> ' . esc_html($r->customer_phone) . '</span>' : '')
+                        . '</div>'
+                        . $address_html
+                    . '</div>'
                 . '</div>'
-                . $device_html
-                . $imei_html
-                . $pin_html
-                . $muster_html
-                . $acc_html
-                . $cf_html
-                . '<div class="ra-repair-problem">' . $problem . '</div>'
-                . '<div class="ra-repair-date"><i class="ri-time-line"></i> ' . $date . ($updated ? ' <span style="color:#9ca3af;font-size:11px" title="' . esc_attr(PPV_Lang::t('repair_admin_last_modified')) . '">&middot; <i class="ri-edit-line"></i> ' . $updated . '</span>' : '') . '</div>'
-                . $invoice_badge_html
-                . ($r->status === 'waiting_parts' ? '<button class="ra-btn-parts-arrived" data-repair-id="' . intval($r->id) . '"><i class="ri-checkbox-circle-fill"></i> ' . esc_html(PPV_Lang::t('repair_admin_parts_arrived')) . '</button>' : '')
-                . (!empty($r->termin_at) && strtotime($r->termin_at) > time() ? '<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>' : '')
             . '</div>'
+            // Device section
+            . $device_section
+            // Problem section
+            . $problem_section
+            // Custom fields section
+            . $cf_section
+            // Badges row
+            . $badges_row
+            // Parts arrived button
+            . $parts_btn
+            // Updated timestamp (subtle)
+            . ($updated ? '<div class="ra-card-updated"><i class="ri-edit-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_last_modified')) . ': ' . $updated . '</div>' : '')
+            // Reward
             . $reward_html
+            // Comments
             . '<div class="ra-repair-comments-section">'
                 . '<button class="ra-btn-comments-toggle" data-repair-id="' . intval($r->id) . '"><i class="ri-chat-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_comments')) . '</button>'
                 . '<div class="ra-comments-container" style="display:none" data-repair-id="' . intval($r->id) . '">'
@@ -7842,13 +7977,16 @@ echo '</div></div>
                     . '</div>'
                 . '</div>'
             . '</div>'
+            // Actions toolbar
             . '<div class="ra-repair-actions">'
-                . '<button class="ra-btn-print" title="' . esc_attr(PPV_Lang::t('repair_admin_print')) . '"><i class="ri-printer-line"></i></button>'
-                . '<button class="ra-btn-email" title="' . esc_attr(PPV_Lang::t('repair_admin_send_email')) . '"><i class="ri-mail-send-line"></i></button>'
-                . '<button class="ra-btn-resubmit" title="' . esc_attr(PPV_Lang::t('repair_admin_resubmit')) . '"><i class="ri-repeat-line"></i></button>'
-                . '<button class="' . $inv_btn_class . '" title="' . $inv_btn_title . '"><i class="' . $inv_btn_icon . '"></i></button>'
-                . '<button class="ra-btn-angebot" title="Angebot erstellen" style="padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bbf7d0;background:#f0fdf4;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;transition:all .2s"><i class="ri-draft-line"></i></button>'
-                . '<button class="ra-btn-delete" title="' . esc_attr(PPV_Lang::t('repair_admin_delete_repair')) . '"><i class="ri-delete-bin-line"></i></button>'
+                . '<div class="ra-actions-left">'
+                    . '<button class="ra-btn-print" title="' . esc_attr(PPV_Lang::t('repair_admin_print')) . '"><i class="ri-printer-line"></i></button>'
+                    . '<button class="ra-btn-email" title="' . esc_attr(PPV_Lang::t('repair_admin_send_email')) . '"><i class="ri-mail-send-line"></i></button>'
+                    . '<button class="ra-btn-resubmit" title="' . esc_attr(PPV_Lang::t('repair_admin_resubmit')) . '"><i class="ri-repeat-line"></i></button>'
+                    . '<button class="' . $inv_btn_class . '" title="' . $inv_btn_title . '"><i class="' . $inv_btn_icon . '"></i></button>'
+                    . '<button class="ra-btn-angebot" title="Angebot erstellen"><i class="ri-draft-line"></i></button>'
+                    . '<button class="ra-btn-delete" title="' . esc_attr(PPV_Lang::t('repair_admin_delete_repair')) . '"><i class="ri-delete-bin-line"></i></button>'
+                . '</div>'
                 . '<select class="ra-status-select" data-repair-id="' . intval($r->id) . '">' . $options . '</select>'
             . '</div>'
         . '</div>';
