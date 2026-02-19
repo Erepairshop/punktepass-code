@@ -1400,6 +1400,13 @@ class PPV_Repair_Core {
 
     /** AJAX: Send tracking email for existing repair (temporary) */
     public static function ajax_send_tracking_email() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) {
+            wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        }
+
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
         global $wpdb;
         $prefix = $wpdb->prefix;
 

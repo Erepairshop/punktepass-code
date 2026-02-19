@@ -4044,7 +4044,7 @@ echo '</div></div>
         fd.append("action","ppv_repair_send_tracking");
         fd.append("repair_id",rid);
         fd.append("nonce",NONCE);
-        fetch(AJAX_URL,{method:"POST",body:fd,credentials:"same-origin"})
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
