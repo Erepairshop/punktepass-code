@@ -1236,6 +1236,11 @@ class PPV_Repair_Core {
         $store_slug = $store->store_slug;
         $tracking_url = home_url("/formular/{$store_slug}/status/{$tracking_token}");
 
+        // Send tracking email to customer if email provided
+        if (!empty($email)) {
+            self::send_tracking_email($store, $email, $name, $repair_id, $tracking_url);
+        }
+
         wp_send_json_success([
             'repair_id'      => $repair_id,
             'tracking_token' => $tracking_token,
