@@ -163,6 +163,32 @@ class PPV_Repair_Form {
     .repair-lang.open .repair-lang-dd{display:block}
     .repair-lang-dd a{display:block;padding:7px 14px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;font-weight:500;transition:background .15s}
     .repair-lang-dd a:hover{background:rgba(255,255,255,.1);color:#fff}
+
+    /* ===== Autocomplete suggestions ===== */
+    .rf-suggestions-desktop{display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)}
+    .rf-sug-item{padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9;-webkit-tap-highlight-color:transparent}
+    .rf-sug-item:active{background:#f1f5f9}
+    .rf-sug-main{font-weight:500;color:#0f172a}
+    .rf-sug-sub{font-size:12px;color:#94a3b8;margin-top:2px}
+
+    /* Mobile bottom-sheet overlay for suggestions */
+    .rf-sheet-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent}
+    .rf-sheet-overlay.show{display:flex;flex-direction:column;justify-content:flex-end}
+    .rf-sheet{background:#fff;border-radius:16px 16px 0 0;max-height:70vh;display:flex;flex-direction:column;animation:rfSheetUp .25s ease-out}
+    @keyframes rfSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .rf-sheet-handle{text-align:center;padding:10px 0 4px;flex-shrink:0}
+    .rf-sheet-handle span{display:inline-block;width:36px;height:4px;border-radius:2px;background:#d1d5db}
+    .rf-sheet-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 12px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+    .rf-sheet-header h4{margin:0;font-size:15px;font-weight:600;color:#1e293b}
+    .rf-sheet-close{width:32px;height:32px;border:none;background:#f1f5f9;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;-webkit-tap-highlight-color:transparent}
+    .rf-sheet-close:active{background:#e2e8f0}
+    .rf-sheet-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;overscroll-behavior:contain}
+    .rf-sheet-item{padding:14px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer;min-height:48px;display:flex;flex-direction:column;justify-content:center;-webkit-tap-highlight-color:transparent}
+    .rf-sheet-item:active{background:#f8fafc}
+    .rf-sheet-item-main{font-weight:500;color:#0f172a;font-size:15px}
+    .rf-sheet-item-sub{font-size:13px;color:#94a3b8;margin-top:3px}
+    .rf-sheet-empty{padding:24px 16px;text-align:center;color:#94a3b8;font-size:14px}
+    .rf-sheet-loading{padding:24px 16px;text-align:center;color:#94a3b8;font-size:14px}
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -295,7 +321,7 @@ class PPV_Repair_Form {
             <div class="repair-field" style="position:relative">
                 <label for="rf-email"><?php echo esc_html(PPV_Lang::t('repair_email_label')); ?></label>
                 <input type="email" id="rf-email" name="customer_email" placeholder="ihre@email.de" value="<?php echo $pf_email; ?>" autocomplete="email">
-                <div id="rf-email-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+                <div id="rf-email-suggestions" class="rf-suggestions-desktop"></div>
                 <p class="repair-field-hint"><i class="ri-gift-line"></i> <?php echo esc_html(PPV_Lang::t('repair_email_hint')); ?></p>
             </div>
 
@@ -310,7 +336,7 @@ class PPV_Repair_Form {
             <div class="repair-field" style="position:relative">
                 <label for="rf-address"><?php echo esc_html($field_config['customer_address']['label'] ?? PPV_Lang::t('repair_address_label')); ?></label>
                 <input type="text" id="rf-address" name="customer_address" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_address_placeholder')); ?>" value="<?php echo $pf_address; ?>" autocomplete="street-address">
-                <div id="rf-address-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:2px solid var(--repair-accent);border-top:none;border-radius:0 0 10px 10px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+                <div id="rf-address-suggestions" class="rf-suggestions-desktop"></div>
             </div>
             <?php endif; ?>
         </div>
@@ -1734,7 +1760,60 @@ function toggleProblemTag(btn, text) {
         return d.innerHTML;
     }
 
-    // ===== DISMISS: hide dropdowns when tapping OUTSIDE (not blur!) =====
+    // ===== TOUCH DETECTION =====
+    var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+    // ===== BOTTOM-SHEET (mobile) =====
+    var sheetOverlay = document.getElementById('rf-sheet-overlay');
+    var sheetList = document.getElementById('rf-sheet-list');
+    var sheetTitle = document.getElementById('rf-sheet-title');
+    var sheetClose = document.getElementById('rf-sheet-close');
+
+    function showSheet(title) {
+        sheetTitle.textContent = title;
+        sheetOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    function hideSheet() {
+        sheetOverlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    if (sheetClose) sheetClose.addEventListener('click', hideSheet);
+    if (sheetOverlay) sheetOverlay.addEventListener('click', function(e) {
+        if (e.target === sheetOverlay) hideSheet();
+    });
+
+    function showSuggestions(box, title) {
+        if (isTouchDevice) {
+            // Move content to bottom-sheet
+            sheetList.innerHTML = box.innerHTML;
+            // Re-bind click handlers by cloning approach
+            var origItems = box.querySelectorAll('.rf-sug-item');
+            var sheetItems = sheetList.querySelectorAll('.rf-sug-item');
+            for (var si = 0; si < sheetItems.length; si++) {
+                (function(idx){
+                    sheetItems[idx].addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Trigger click on the original hidden item
+                        if (origItems[idx] && origItems[idx]._onSelect) {
+                            origItems[idx]._onSelect();
+                        }
+                        hideSheet();
+                    });
+                })(si);
+            }
+            showSheet(title);
+        } else {
+            box.style.display = 'block';
+        }
+    }
+    function hideSuggestions(box) {
+        box.style.display = 'none';
+        if (isTouchDevice) hideSheet();
+    }
+
+    // ===== DISMISS: hide dropdowns when tapping OUTSIDE =====
     var emailInput = document.getElementById('rf-email');
     var emailBox = document.getElementById('rf-email-suggestions');
     var addrInput = document.getElementById('rf-address');
@@ -1761,7 +1840,7 @@ function toggleProblemTag(btn, text) {
             var q = emailInput.value.trim();
             if (q === lastEmailQ) return;
             lastEmailQ = q;
-            if (q.length < 2) { emailBox.style.display = 'none'; return; }
+            if (q.length < 2) { hideSuggestions(emailBox); return; }
             emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
         }
 
@@ -1772,17 +1851,16 @@ function toggleProblemTag(btn, text) {
             var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, resp){
                 if (err || !resp || !resp.success || !resp.data || !resp.data.length) {
-                    emailBox.style.display = 'none';
+                    hideSuggestions(emailBox);
                     return;
                 }
                 emailBox.innerHTML = '';
                 resp.data.forEach(function(c){
                     var item = document.createElement('div');
-                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
-                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(c.customer_email) + '</div>' +
-                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
-                    // Use onclick - works on both mouse and touch
-                    item.onclick = function(){
+                    item.className = 'rf-sug-item';
+                    item.innerHTML = '<div class="rf-sug-main">' + escH(c.customer_email) + '</div>' +
+                        '<div class="rf-sug-sub">' + escH(c.customer_name) + (c.customer_phone ? ' &bull; ' + escH(c.customer_phone) : '') + '</div>';
+                    item._onSelect = function(){
                         emailInput.value = c.customer_email;
                         emailBox.style.display = 'none';
                         var nameF = document.getElementById('rf-name');
@@ -1799,9 +1877,14 @@ function toggleProblemTag(btn, text) {
                             }
                         });
                     };
+                    item.addEventListener('click', function(e){
+                        e.preventDefault();
+                        e.stopPropagation();
+                        item._onSelect();
+                    });
                     emailBox.appendChild(item);
                 });
-                emailBox.style.display = 'block';
+                showSuggestions(emailBox, 'E-Mail');
             });
         }
     }
@@ -1825,7 +1908,7 @@ function toggleProblemTag(btn, text) {
             var q = addrInput.value.trim();
             if (q === lastAddrQ) return;
             lastAddrQ = q;
-            if (q.length < 3) { addrBox.style.display = 'none'; return; }
+            if (q.length < 3) { hideSuggestions(addrBox); return; }
             addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 400);
         }
 
@@ -1836,7 +1919,7 @@ function toggleProblemTag(btn, text) {
             var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
             xhrGet(url, function(err, results){
                 if (err || !results || !results.length) {
-                    addrBox.style.display = 'none';
+                    hideSuggestions(addrBox);
                     return;
                 }
                 var userStreet = getUserStreet(addrInput.value);
@@ -1856,17 +1939,22 @@ function toggleProblemTag(btn, text) {
                     var displayShort = (street ? street + ', ' : '') + (plz ? plz + ' ' : '') + city;
                     var displayFull = r.display_name;
                     var item = document.createElement('div');
-                    item.style.cssText = 'padding:12px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid #f1f5f9';
-                    item.innerHTML = '<div style="font-weight:500;color:#0f172a">' + escH(displayShort || displayFull) + '</div>' +
-                        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">' + escH(displayFull) + '</div>';
-                    item.onclick = function(){
+                    item.className = 'rf-sug-item';
+                    item.innerHTML = '<div class="rf-sug-main">' + escH(displayShort || displayFull) + '</div>' +
+                        '<div class="rf-sug-sub">' + escH(displayFull) + '</div>';
+                    item._onSelect = function(){
                         var finalStreet = street || userStreet;
                         addrInput.value = finalStreet + ', ' + (plz ? plz + ' ' : '') + city;
                         addrBox.style.display = 'none';
                     };
+                    item.addEventListener('click', function(e){
+                        e.preventDefault();
+                        e.stopPropagation();
+                        item._onSelect();
+                    });
                     addrBox.appendChild(item);
                 });
-                addrBox.style.display = 'block';
+                showSuggestions(addrBox, '<?php echo esc_js(PPV_Lang::t('repair_address_label')); ?>');
             });
         }
     }
@@ -1979,6 +2067,18 @@ function toggleProblemTag(btn, text) {
 })();
 </script>
 <?php endif; ?>
+
+<!-- Mobile suggestions bottom-sheet -->
+<div class="rf-sheet-overlay" id="rf-sheet-overlay">
+    <div class="rf-sheet">
+        <div class="rf-sheet-handle"><span></span></div>
+        <div class="rf-sheet-header">
+            <h4 id="rf-sheet-title"></h4>
+            <button type="button" class="rf-sheet-close" id="rf-sheet-close">&times;</button>
+        </div>
+        <div class="rf-sheet-list" id="rf-sheet-list"></div>
+    </div>
+</div>
 
 </body>
 </html>
