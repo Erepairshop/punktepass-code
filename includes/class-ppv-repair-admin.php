@@ -1220,6 +1220,23 @@ a:hover{color:#5a67d8}
     .nang-step{font-size:12px}
 }
 
+/* ===== Invoice Modal (blue variant) ===== */
+.ninv-modal .nang-step.active .nang-step-num{background:#2563eb}
+.ninv-modal .nang-step.completed .nang-step-num{background:#2563eb}
+.ninv-focus:focus-within{border-color:#2563eb!important;box-shadow:0 0 0 3px rgba(37,99,235,.08)!important}
+.ninv-modal .nang-search-wrap:focus-within{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.ninv-modal .nang-line-qty:focus{border-color:#2563eb}
+.ninv-modal .nang-line-price-wrap:focus-within{border-color:#2563eb}
+.ninv-modal .nang-add-line:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
+.ninv-modal .nang-back-link:hover{color:#2563eb}
+.ninv-modal .nang-meta-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.ninv-options{margin:12px 0 16px}
+.ninv-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#475569;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;transition:all .2s}
+.ninv-checkbox-label:hover{background:#eff6ff;border-color:#bfdbfe}
+.ninv-checkbox-label input[type="checkbox"]{display:none}
+.ninv-checkmark{width:20px;height:20px;border:2px solid #d1d5db;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-size:14px;color:transparent}
+.ninv-checkbox-label input:checked~.ninv-checkmark{background:#2563eb;border-color:#2563eb;color:#fff}
+
 /* Language Switcher */
 .ra-lang-wrap{position:relative}
 .ra-lang-toggle{display:flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .2s}
@@ -2741,112 +2758,185 @@ echo '</div></div>
 </div>';
 
         // New Invoice Modal (standalone invoice creation)
+        // New Invoice Modal - Modern Design
         echo '<div class="ra-modal-overlay" id="ra-new-invoice-modal">
-    <div class="ra-modal" style="max-width:600px">
-        <h3><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_invoice')) . '</h3>
-        <p class="ra-modal-sub">' . esc_html(PPV_Lang::t('repair_admin_create_inv_sub')) . '</p>
+    <div class="ra-modal nang-modal ninv-modal">
 
-        <div style="margin-bottom:16px">
-            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">' . esc_html(PPV_Lang::t('repair_admin_search_or_new')) . '</label>
-            <div class="ra-search" style="margin-bottom:8px">
+        <!-- Header -->
+        <div class="nang-header" style="background:linear-gradient(135deg,#2563eb,#3b82f6)">
+            <div class="nang-header-icon"><i class="ri-file-list-3-line"></i></div>
+            <div>
+                <h3>' . esc_html(PPV_Lang::t('repair_admin_create_invoice')) . '</h3>
+                <p>' . esc_html(PPV_Lang::t('repair_admin_create_inv_sub')) . '</p>
+            </div>
+            <button type="button" class="nang-close" id="ra-ninv-close">&times;</button>
+        </div>
+
+        <!-- Step indicator -->
+        <div class="nang-steps">
+            <div class="nang-step active" data-step="1"><span class="nang-step-num" style="background:#2563eb;color:#fff">1</span> ' . esc_html(PPV_Lang::t('repair_admin_customer_data')) . '</div>
+            <div class="nang-step-line"></div>
+            <div class="nang-step" data-step="2"><span class="nang-step-num">2</span> ' . esc_html(PPV_Lang::t('repair_admin_positions')) . '</div>
+        </div>
+
+        <!-- SECTION 1: Customer -->
+        <div class="nang-section" id="ninv-sec-customer">
+
+            <!-- Search -->
+            <div class="nang-search-wrap" style="--focus-color:#2563eb">
                 <i class="ri-search-line"></i>
                 <input type="text" id="ra-ninv-customer-search" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_cust_search_ph')) . '" autocomplete="off">
+                <kbd>ESC</kbd>
             </div>
-            <div id="ra-ninv-customer-results" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:200px;overflow-y:auto;position:relative;z-index:10"></div>
-        </div>
+            <div id="ra-ninv-customer-results" class="nang-search-results"></div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-            <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
-                <input type="text" id="ra-ninv-name" class="ra-input" placeholder="Max Mustermann" required>
-            </div>
-            <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
-                <input type="text" id="ra-ninv-company" class="ra-input" placeholder="Firma GmbH">
-            </div>
-            <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
-                <input type="email" id="ra-ninv-email" class="ra-input" placeholder="email@example.de">
-            </div>
-            <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
-                <input type="text" id="ra-ninv-phone" class="ra-input" placeholder="+49...">
-            </div>
-            <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_street')) . '</label>
-                <input type="text" id="ra-ninv-address" class="ra-input" placeholder="Musterstra&szlig;e 1">
-            </div>
-            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px">
-                <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_zip')) . '</label>
-                    <input type="text" id="ra-ninv-plz" class="ra-input" placeholder="12345">
+            <!-- Customer fields -->
+            <div class="nang-fields">
+                <div class="nang-field-row">
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_name_required')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <i class="ri-user-line"></i>
+                            <input type="text" id="ra-ninv-name" placeholder="Max Mustermann" required>
+                        </div>
+                    </div>
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_company')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <i class="ri-building-line"></i>
+                            <input type="text" id="ra-ninv-company" placeholder="Firma GmbH">
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_col_city')) . '</label>
-                    <input type="text" id="ra-ninv-city" class="ra-input" placeholder="Berlin">
+                <div class="nang-field-row">
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_email')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <i class="ri-mail-line"></i>
+                            <input type="email" id="ra-ninv-email" placeholder="email@example.de">
+                        </div>
+                    </div>
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_col_phone')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <i class="ri-phone-line"></i>
+                            <input type="text" id="ra-ninv-phone" placeholder="+49...">
+                        </div>
+                    </div>
+                </div>
+                <div class="nang-field-row">
+                    <div class="nang-field" style="flex:1">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_full_address')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <i class="ri-map-pin-line"></i>
+                            <input type="text" id="ra-ninv-full-address" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_full_address_ph')) . '">
+                        </div>
+                        <span class="nang-field-hint" id="ninv-address-hint"></span>
+                    </div>
+                </div>
+                <div class="nang-field-row">
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
+                        <div class="nang-input-wrap ninv-focus">
+                            <i class="ri-hashtag"></i>
+                            <input type="text" id="ra-ninv-taxid" placeholder="DE123456789">
+                        </div>
+                    </div>
+                    <div class="nang-field nang-field-grow">
+                        <label>' . esc_html(PPV_Lang::t('repair_admin_inv_number')) . '</label>
+                        <div class="nang-input-wrap ninv-focus" style="background:#eff6ff;border-color:#bfdbfe">
+                            <i class="ri-file-text-line" style="color:#2563eb"></i>
+                            <input type="text" id="ra-ninv-number" placeholder="' . esc_attr($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '">
+                        </div>
+                        <span class="nang-field-hint">' . sprintf(esc_html(PPV_Lang::t('repair_admin_inv_auto_hint')), esc_html($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT))) . '</span>
+                    </div>
                 </div>
             </div>
-            <div>
-                <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_vat_id')) . '</label>
-                <input type="text" id="ra-ninv-taxid" class="ra-input" placeholder="DE123456789">
-            </div>
-        </div>
 
-        <div style="margin-bottom:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px">
-            <label style="font-size:12px;color:#0369a1;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_inv_number')) . '</label>
-            <input type="text" id="ra-ninv-number" class="ra-input" placeholder="' . esc_attr($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '" style="background:#fff">
-            <p style="font-size:11px;color:#6b7280;margin:4px 0 0">' . sprintf(esc_html(PPV_Lang::t('repair_admin_inv_auto_hint')), '<strong>' . esc_html($inv_prefix . str_pad($inv_suggested_next, 4, '0', STR_PAD_LEFT)) . '</strong>') . '</p>
-        </div>
+            <input type="hidden" id="ra-ninv-customer-id" value="">
+            <input type="hidden" id="ra-ninv-address" value="">
+            <input type="hidden" id="ra-ninv-plz" value="">
+            <input type="hidden" id="ra-ninv-city" value="">
 
-        <div style="margin-bottom:16px">
-            <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block">' . esc_html(PPV_Lang::t('repair_admin_positions')) . '</label>
-            <div class="ra-inv-lines" id="ra-ninv-lines">
-                <div class="ra-inv-line">
-                    <input type="text" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_service')) . '" class="ra-inv-line-desc">
-                    <input type="number" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_gross')) . '" step="0.01" min="0" class="ra-inv-line-amount">
-                    <button type="button" class="ra-inv-line-remove" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '">&times;</button>
-                </div>
-            </div>
-            <button type="button" class="ra-inv-add" id="ra-ninv-add-line">
-                <i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_position')) . '
+            <button type="button" class="nang-next-btn" id="ninv-next-to-positions" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 2px 8px rgba(37,99,235,.25)">
+                ' . esc_html(PPV_Lang::t('repair_admin_positions')) . ' <i class="ri-arrow-right-line"></i>
             </button>
         </div>
 
-        <div class="ra-inv-totals" style="margin-bottom:16px">
-            <div class="ra-inv-total-row">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
-                <span id="ra-ninv-net">0,00 &euro;</span>
-            </div>
-            <div class="ra-inv-total-row" id="ra-ninv-vat-row">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' ' . intval($vat_rate) . '%:</span>
-                <span id="ra-ninv-vat">0,00 &euro;</span>
-            </div>
-            <div class="ra-inv-total-row ra-inv-total-final">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_total')) . '</span>
-                <span id="ra-ninv-total">0,00 &euro;</span>
-            </div>
-        </div>
+        <!-- SECTION 2: Positions + Totals -->
+        <div class="nang-section" id="ninv-sec-positions" style="display:none">
 
-        <div style="margin-bottom:12px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
-                <input type="checkbox" id="ra-ninv-differenz" style="width:18px;height:18px;cursor:pointer">
-                <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
-            </label>
-        </div>
-
-        <div>
-            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
-            <textarea id="ra-ninv-notes" class="ra-input" rows="2" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_notes_ph')) . '"></textarea>
-        </div>
-
-        <input type="hidden" id="ra-ninv-customer-id" value="">
-
-        <div style="display:flex;gap:10px;margin-top:20px">
-            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-ninv-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
-            <button type="button" class="ra-btn ra-btn-primary" style="flex:2" id="ra-ninv-submit">
-                <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_inv_btn')) . '
+            <button type="button" class="nang-back-link" id="ninv-back-to-customer">
+                <i class="ri-arrow-left-s-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_customer_data')) . '
             </button>
+
+            <!-- Customer summary chip -->
+            <div class="nang-customer-chip" id="ninv-customer-chip" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af"></div>
+
+            <!-- Line items -->
+            <div class="nang-positions-header">
+                <span class="nang-ph-desc">' . esc_html(PPV_Lang::t('repair_admin_service')) . '</span>
+                <span class="nang-ph-qty">' . esc_html(PPV_Lang::t('repair_admin_qty')) . '</span>
+                <span class="nang-ph-price">' . esc_html(PPV_Lang::t('repair_admin_unit_price')) . '</span>
+                <span class="nang-ph-total">' . esc_html(PPV_Lang::t('repair_admin_line_total')) . '</span>
+                <span class="nang-ph-del"></span>
+            </div>
+            <div class="nang-lines" id="ra-ninv-lines">
+                <div class="nang-line" data-idx="0">
+                    <input type="text" placeholder="z.B. Displaytausch iPhone 15" class="nang-line-desc">
+                    <input type="number" value="1" min="1" step="1" class="nang-line-qty">
+                    <div class="nang-line-price-wrap">
+                        <input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price">
+                        <span class="nang-line-currency">&euro;</span>
+                    </div>
+                    <span class="nang-line-total">0,00 &euro;</span>
+                    <button type="button" class="nang-line-del" title="' . esc_attr(PPV_Lang::t('repair_admin_delete')) . '"><i class="ri-delete-bin-line"></i></button>
+                </div>
+            </div>
+            <button type="button" class="nang-add-line" id="ra-ninv-add-line">
+                <i class="ri-add-circle-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_add_position')) . '
+            </button>
+
+            <!-- Totals card -->
+            <div class="nang-totals-card">
+                <div class="nang-totals-row">
+                    <span>' . esc_html(PPV_Lang::t('repair_admin_net')) . '</span>
+                    <span id="ra-ninv-net">0,00 &euro;</span>
+                </div>
+                <div class="nang-totals-row" id="ra-ninv-vat-row">
+                    <span>' . esc_html(PPV_Lang::t('repair_admin_col_vat')) . ' ' . intval($vat_rate) . '%</span>
+                    <span id="ra-ninv-vat">0,00 &euro;</span>
+                </div>
+                <div class="nang-totals-row nang-totals-final" style="border-color:#2563eb;color:#2563eb">
+                    <span>' . esc_html(PPV_Lang::t('repair_admin_gross')) . '</span>
+                    <span id="ra-ninv-total">0,00 &euro;</span>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="ninv-options">
+                <label class="ninv-checkbox-label">
+                    <input type="checkbox" id="ra-ninv-differenz">
+                    <span class="ninv-checkmark"><i class="ri-check-line"></i></span>
+                    <span>' . esc_html(PPV_Lang::t('repair_admin_diff_tax')) . '</span>
+                </label>
+            </div>
+
+            <!-- Notes -->
+            <div class="nang-field" style="margin-bottom:20px">
+                <label><i class="ri-sticky-note-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_notes')) . '</label>
+                <textarea id="ra-ninv-notes" class="nang-meta-input" rows="2" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_notes_ph')) . '" style="resize:vertical"></textarea>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="nang-actions">
+                <button type="button" class="nang-cancel-btn" id="ra-ninv-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+                <button type="button" class="nang-submit-btn" id="ra-ninv-submit" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 2px 8px rgba(37,99,235,.25)">
+                    <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_create_inv_btn')) . '
+                </button>
+            </div>
         </div>
+
     </div>
 </div>';
 
@@ -5344,21 +5434,66 @@ echo '</div></div>
     });
 
     /* ===== NEW INVOICE MODAL ===== */
+    /* ===== NEW INVOICE MODAL (Modern) ===== */
     var ninvModal=document.getElementById("ra-new-invoice-modal");
     var ninvSearchTimer=null;
+    var ninvLineIdx=1;
 
+    // Open modal
     document.getElementById("ra-new-invoice-btn").addEventListener("click",function(){
         clearNewInvoiceForm();
         ninvModal.classList.add("show");
     });
-    document.getElementById("ra-ninv-cancel").addEventListener("click",function(){
-        ninvModal.classList.remove("show");
-    });
-    ninvModal.addEventListener("click",function(e){
-        if(e.target===ninvModal)ninvModal.classList.remove("show");
+    // Close
+    document.getElementById("ra-ninv-close").addEventListener("click",function(){ ninvModal.classList.remove("show"); });
+    document.getElementById("ra-ninv-cancel").addEventListener("click",function(){ ninvModal.classList.remove("show"); });
+    ninvModal.addEventListener("click",function(e){ if(e.target===ninvModal)ninvModal.classList.remove("show"); });
+
+    // ESC key
+    ninvModal.addEventListener("keydown",function(e){
+        if(e.key==="Escape"){
+            var res=document.getElementById("ra-ninv-customer-results");
+            if(res.classList.contains("show")){res.classList.remove("show");e.stopPropagation();}
+            else ninvModal.classList.remove("show");
+        }
     });
 
+    // Step navigation
+    function ninvShowStep(step){
+        var sec1=document.getElementById("ninv-sec-customer");
+        var sec2=document.getElementById("ninv-sec-positions");
+        var steps=ninvModal.querySelectorAll(".nang-step");
+        if(step===1){
+            sec1.style.display="";sec2.style.display="none";
+            steps[0].classList.add("active");steps[0].classList.remove("completed");
+            steps[0].querySelector(".nang-step-num").style.cssText="background:#2563eb;color:#fff";
+            steps[1].classList.remove("active");
+            steps[1].querySelector(".nang-step-num").style.cssText="";
+        }else{
+            sec1.style.display="none";sec2.style.display="";
+            steps[0].classList.remove("active");steps[0].classList.add("completed");
+            steps[1].classList.add("active");
+            steps[1].querySelector(".nang-step-num").style.cssText="background:#2563eb;color:#fff";
+            // Update customer chip
+            var cname=document.getElementById("ra-ninv-name").value.trim();
+            var cemail=document.getElementById("ra-ninv-email").value.trim();
+            var ccompany=document.getElementById("ra-ninv-company").value.trim();
+            var chip=document.getElementById("ninv-customer-chip");
+            chip.innerHTML=\'<i class="ri-user-line"></i> <span class="nang-cc-name">\'+esc(cname)+\'</span>\'+(ccompany?\' <span style="color:#6b7280;font-size:12px">(\'+esc(ccompany)+\')</span>\':\'\')+
+                (cemail?\' <span style="color:#94a3b8;margin-left:4px;font-size:12px">\'+esc(cemail)+\'</span>\':\'\')+
+                \' <span style="color:#94a3b8;font-size:12px;margin-left:4px">\'+esc(document.getElementById("ra-ninv-full-address").value)+\'</span>\';
+        }
+    }
+    document.getElementById("ninv-next-to-positions").addEventListener("click",function(){
+        var name=document.getElementById("ra-ninv-name").value.trim();
+        if(!name){toast(L.name_required);document.getElementById("ra-ninv-name").focus();return;}
+        ninvParseAddress();
+        ninvShowStep(2);
+    });
+    document.getElementById("ninv-back-to-customer").addEventListener("click",function(){ ninvShowStep(1); });
+
     function clearNewInvoiceForm(){
+        ninvShowStep(1);
         document.getElementById("ra-ninv-customer-id").value="";
         document.getElementById("ra-ninv-name").value="";
         document.getElementById("ra-ninv-company").value="";
@@ -5367,19 +5502,56 @@ echo '</div></div>
         document.getElementById("ra-ninv-address").value="";
         document.getElementById("ra-ninv-plz").value="";
         document.getElementById("ra-ninv-city").value="";
+        document.getElementById("ra-ninv-full-address").value="";
+        document.getElementById("ninv-address-hint").textContent="";
         document.getElementById("ra-ninv-taxid").value="";
         document.getElementById("ra-ninv-number").value="";
         document.getElementById("ra-ninv-notes").value="";
+        document.getElementById("ra-ninv-differenz").checked=false;
+        document.getElementById("ra-ninv-customer-search").value="";
+        ninvLineIdx=1;
         var lines=document.getElementById("ra-ninv-lines");
-        lines.innerHTML=\'<div class="ra-inv-line"><input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button></div>\';
+        lines.innerHTML=\'<div class="nang-line" data-idx="0"><input type="text" placeholder="z.B. Displaytausch iPhone 15" class="nang-line-desc"><input type="number" value="1" min="1" step="1" class="nang-line-qty"><div class="nang-line-price-wrap"><input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price"><span class="nang-line-currency">&euro;</span></div><span class="nang-line-total">0,00 &euro;</span><button type="button" class="nang-line-del" title="\'+L["delete"]+\'"><i class="ri-delete-bin-line"></i></button></div>\';
         updateNinvTotals();
     }
+
+    // Address parsing (same logic as Angebot)
+    function ninvParseAddress(){
+        var raw=document.getElementById("ra-ninv-full-address").value.trim();
+        var street="",plz="",city="";
+        if(raw){
+            var m=raw.match(/^(.+?)\s*,\s*(\d{5})\s+(.+)$/);
+            if(m){street=m[1];plz=m[2];city=m[3];}
+            else{
+                var m2=raw.match(/^(.+?)\s*,\s*(.+)$/);
+                if(m2){street=m2[1];city=m2[2];}
+                else{
+                    var m3=raw.match(/^(\d{5})\s+(.+)$/);
+                    if(m3){plz=m3[1];city=m3[2];}
+                    else{street=raw;}
+                }
+            }
+        }
+        document.getElementById("ra-ninv-address").value=street;
+        document.getElementById("ra-ninv-plz").value=plz;
+        document.getElementById("ra-ninv-city").value=city;
+        var hint=document.getElementById("ninv-address-hint");
+        if(street||plz||city){
+            var parts=[];
+            if(street)parts.push(street);
+            if(plz)parts.push(plz);
+            if(city)parts.push(city);
+            hint.textContent=parts.length>1?"\u2192 "+parts.join(" \u00b7 "):"";
+        }else{hint.textContent="";}
+    }
+    document.getElementById("ra-ninv-full-address").addEventListener("blur",ninvParseAddress);
 
     // Customer search
     document.getElementById("ra-ninv-customer-search").addEventListener("input",function(){
         var q=this.value.trim();
         if(ninvSearchTimer)clearTimeout(ninvSearchTimer);
-        if(q.length<2){document.getElementById("ra-ninv-customer-results").style.display="none";return;}
+        var res=document.getElementById("ra-ninv-customer-results");
+        if(q.length<2){res.classList.remove("show");return;}
         ninvSearchTimer=setTimeout(function(){
             var fd=new FormData();
             fd.append("action","ppv_repair_customer_search");
@@ -5388,21 +5560,19 @@ echo '</div></div>
             fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
             .then(function(r){return r.json()})
             .then(function(data){
-                var res=document.getElementById("ra-ninv-customer-results");
                 if(!data.success||!data.data.customers||data.data.customers.length===0){
-                    res.style.display="none";return;
+                    res.classList.remove("show");return;
                 }
                 res.innerHTML="";
                 data.data.customers.forEach(function(c){
                     var div=document.createElement("div");
-                    div.style.cssText="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6";
+                    div.className="nang-search-result";
                     var isRepairSource=c.source==="repair"||parseInt(c.id)<0;
                     var badge=isRepairSource
-                        ?"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#fef3c7;color:#92400e;margin-left:4px;\'>"+L.cust_form_badge+"</span>"
-                        :"<span style=\'display:inline-block;font-size:9px;padding:1px 4px;border-radius:4px;background:#d1fae5;color:#065f46;margin-left:4px;\'>"+L.cust_saved_badge+"</span>";
-                    div.innerHTML="<strong>"+esc(c.name)+"</strong>"+badge+(c.company_name?" <span style=\'color:#6b7280\'>("+esc(c.company_name)+")</span>":"")+"<br><span style=\'font-size:12px;color:#9ca3af\'>"+(c.email||"")+(c.phone?" &middot; "+c.phone:"")+"</span>";
+                        ?"<span style=\'display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;background:#fef3c7;color:#92400e;margin-left:6px;\'>"+L.cust_form_badge+"</span>"
+                        :"<span style=\'display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;background:#dbeafe;color:#1e40af;margin-left:6px;\'>"+L.cust_saved_badge+"</span>";
+                    div.innerHTML="<strong>"+esc(c.name)+"</strong>"+badge+(c.company_name?" <span class=\'nang-sr-company\'>("+esc(c.company_name)+")</span>":"")+"<div class=\'nang-sr-meta\'>"+(c.email||"")+(c.phone?" &middot; "+c.phone:"")+"</div>";
                     div.addEventListener("click",function(){
-                        // For repair-sourced customers (negative ID), don\'t set customer_id
                         document.getElementById("ra-ninv-customer-id").value=isRepairSource?"":c.id;
                         document.getElementById("ra-ninv-name").value=c.name||"";
                         document.getElementById("ra-ninv-company").value=c.company_name||"";
@@ -5412,14 +5582,17 @@ echo '</div></div>
                         document.getElementById("ra-ninv-plz").value=c.plz||"";
                         document.getElementById("ra-ninv-city").value=c.city||"";
                         document.getElementById("ra-ninv-taxid").value=c.tax_id||"";
+                        // Build full address
+                        var full=(c.address||"");
+                        if(c.plz||c.city) full+=(full?", ":"")+(c.plz||"")+(c.plz&&c.city?" ":"")+(c.city||"");
+                        document.getElementById("ra-ninv-full-address").value=full;
+                        ninvParseAddress();
                         document.getElementById("ra-ninv-customer-search").value="";
-                        res.style.display="none";
+                        res.classList.remove("show");
                     });
-                    div.addEventListener("mouseenter",function(){this.style.background="#f9fafb"});
-                    div.addEventListener("mouseleave",function(){this.style.background=""});
                     res.appendChild(div);
                 });
-                res.style.display="block";
+                res.classList.add("show");
             });
         },300);
     });
@@ -5427,32 +5600,52 @@ echo '</div></div>
     // Add line
     document.getElementById("ra-ninv-add-line").addEventListener("click",function(){
         var line=document.createElement("div");
-        line.className="ra-inv-line";
-        line.innerHTML=\'<input type="text" placeholder="\'+L.service+\'" class="ra-inv-line-desc"><input type="number" placeholder="\'+L.gross+\'" step="0.01" min="0" class="ra-inv-line-amount"><button type="button" class="ra-inv-line-remove" title="\'+L.delete+\'">&times;</button>\';
+        line.className="nang-line";
+        line.dataset.idx=ninvLineIdx++;
+        line.innerHTML=\'<input type="text" placeholder="z.B. Displaytausch iPhone 15" class="nang-line-desc"><input type="number" value="1" min="1" step="1" class="nang-line-qty"><div class="nang-line-price-wrap"><input type="number" placeholder="0,00" step="0.01" min="0" class="nang-line-price"><span class="nang-line-currency">&euro;</span></div><span class="nang-line-total">0,00 &euro;</span><button type="button" class="nang-line-del" title="\'+L["delete"]+\'"><i class="ri-delete-bin-line"></i></button>\';
         document.getElementById("ra-ninv-lines").appendChild(line);
+        line.querySelector(".nang-line-desc").focus();
     });
 
-    // Remove line + totals
+    // Remove line + update totals
     document.getElementById("ra-ninv-lines").addEventListener("click",function(e){
-        if(e.target.classList.contains("ra-inv-line-remove")){
-            var lines=this.querySelectorAll(".ra-inv-line");
-            if(lines.length>1)e.target.closest(".ra-inv-line").remove();
-            updateNinvTotals();
+        var del=e.target.closest(".nang-line-del");
+        if(!del)return;
+        var lines=this.querySelectorAll(".nang-line");
+        if(lines.length>1){
+            var line=del.closest(".nang-line");
+            line.style.opacity="0";line.style.transform="translateX(20px)";
+            setTimeout(function(){line.remove();updateNinvTotals();},150);
         }
+        updateNinvTotals();
     });
-    document.getElementById("ra-ninv-lines").addEventListener("input",function(){updateNinvTotals()});
+
+    // Input on lines -> recalc
+    document.getElementById("ra-ninv-lines").addEventListener("input",function(e){
+        var line=e.target.closest(".nang-line");
+        if(line){
+            var qty=parseFloat(line.querySelector(".nang-line-qty").value)||1;
+            var price=parseFloat(line.querySelector(".nang-line-price").value)||0;
+            var lineTotal=qty*price;
+            line.querySelector(".nang-line-total").textContent=fmtEur(lineTotal);
+        }
+        updateNinvTotals();
+    });
 
     function updateNinvTotals(){
         var brutto=0;
-        document.querySelectorAll("#ra-ninv-lines .ra-inv-line-amount").forEach(function(inp){
-            brutto+=parseFloat(inp.value)||0;
+        document.querySelectorAll("#ra-ninv-lines .nang-line").forEach(function(line){
+            var qty=parseFloat(line.querySelector(".nang-line-qty").value)||1;
+            var price=parseFloat(line.querySelector(".nang-line-price").value)||0;
+            brutto+=qty*price;
         });
+        brutto=Math.round(brutto*100)/100;
         var net,vat;
         if(VAT_ENABLED){
-            net=(brutto/(1+VAT_RATE/100)).toFixed(2);
-            vat=(brutto-net).toFixed(2);
+            net=Math.round(brutto/(1+VAT_RATE/100)*100)/100;
+            vat=Math.round((brutto-net)*100)/100;
         }else{
-            net=brutto.toFixed(2);vat="0.00";
+            net=brutto;vat=0;
         }
         document.getElementById("ra-ninv-net").textContent=fmtEur(net);
         document.getElementById("ra-ninv-vat").textContent=fmtEur(vat);
@@ -5463,12 +5656,20 @@ echo '</div></div>
     // Submit new invoice
     document.getElementById("ra-ninv-submit").addEventListener("click",function(){
         var name=document.getElementById("ra-ninv-name").value.trim();
-        if(!name){toast(L.name_required);return;}
+        if(!name){toast(L.name_required);ninvShowStep(1);return;}
+        ninvParseAddress();
+        // Build line items: qty * price = amount per line
         var items=[];
-        document.querySelectorAll("#ra-ninv-lines .ra-inv-line").forEach(function(line){
-            var d=line.querySelector(".ra-inv-line-desc").value.trim();
-            var a=parseFloat(line.querySelector(".ra-inv-line-amount").value)||0;
-            if(d||a>0)items.push({description:d,amount:a});
+        document.querySelectorAll("#ra-ninv-lines .nang-line").forEach(function(line){
+            var d=line.querySelector(".nang-line-desc").value.trim();
+            var qty=parseFloat(line.querySelector(".nang-line-qty").value)||1;
+            var price=parseFloat(line.querySelector(".nang-line-price").value)||0;
+            var amount=Math.round(qty*price*100)/100;
+            if(d||amount>0){
+                var desc=d;
+                if(qty>1)desc+=" (x"+qty+")";
+                items.push({description:desc,amount:amount});
+            }
         });
         var subtotal=0;
         items.forEach(function(i){subtotal+=i.amount});
@@ -5493,9 +5694,12 @@ echo '</div></div>
         var customInvNum=document.getElementById("ra-ninv-number").value.trim();
         if(customInvNum)fd.append("invoice_number",customInvNum);
 
+        var btn=document.getElementById("ra-ninv-submit");
+        btn.disabled=true;btn.style.opacity="0.7";
         fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
         .then(function(r){return r.json()})
         .then(function(data){
+            btn.disabled=false;btn.style.opacity="";
             if(data.success){
                 toast(L.inv_created.replace("%s",data.data.invoice_number));
                 ninvModal.classList.remove("show");
@@ -5505,7 +5709,7 @@ echo '</div></div>
                 toast(data.data&&data.data.message?data.data.message:L.error);
             }
         })
-        .catch(function(){toast(L.connection_error)});
+        .catch(function(){btn.disabled=false;btn.style.opacity="";toast(L.connection_error)});
     });
 
     /* ===== NEW ANGEBOT MODAL (Modern) ===== */
