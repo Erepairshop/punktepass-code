@@ -4039,7 +4039,7 @@ echo '</div></div>
         var rid=btn.getAttribute("data-repair-id");
         if(!rid)return;
         btn.disabled=true;
-        btn.innerHTML='<i class="ri-loader-4-line ri-spin"></i> Sende...';
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i> Sende...\';
         var fd=new FormData();
         fd.append("action","ppv_repair_send_tracking");
         fd.append("repair_id",rid);
@@ -4048,16 +4048,16 @@ echo '</div></div>
         .then(function(r){return r.json()})
         .then(function(data){
             if(data.success){
-                btn.innerHTML='<i class="ri-check-line"></i> Gesendet!';
+                btn.innerHTML=\'<i class="ri-check-line"></i> Gesendet!\';
                 btn.classList.add("sent");
             }else{
-                btn.innerHTML='<i class="ri-error-warning-line"></i> '+(data.data&&data.data.message||"Fehler");
+                btn.innerHTML=\'<i class="ri-error-warning-line"></i> \'+(data.data&&data.data.message||"Fehler");
                 btn.disabled=false;
-                setTimeout(function(){btn.innerHTML='<i class="ri-mail-send-line"></i> Tracking senden';},3000);
+                setTimeout(function(){btn.innerHTML=\'<i class="ri-mail-send-line"></i> Tracking senden\';},3000);
             }
         })
         .catch(function(){
-            btn.innerHTML='<i class="ri-mail-send-line"></i> Tracking senden';
+            btn.innerHTML=\'<i class="ri-mail-send-line"></i> Tracking senden\';
             btn.disabled=false;
         });
     });
