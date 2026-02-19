@@ -226,6 +226,7 @@ Invoice features (Rechnungen tab):
 • Auto-generate when repair = "done"
 • Custom invoice number prefix (e.g. RE-001)
 • Line items: service description + amount
+• Optional warranty date (Garantie bis): appears on PDF if set
 • VAT/MwSt (configurable, can disable for Kleinunternehmer)
 • Send invoice email: click envelope icon → PDF sent to customer
 • Bulk email: select multiple → Massen Email
@@ -321,6 +322,7 @@ INVOICE SYSTEM (Rechnungen tab):
   - Can also create quote from repair card (pre-fills customer + device info)
 • Auto-generate invoice when repair status set to "done"
 • Custom invoice numbering with prefix (e.g. RE-001)
+• Optional warranty date (Garantie bis): set expiration date on invoice/quote, displayed on PDF
 • Line items: add service descriptions + qty × price amounts
 • VAT/MwSt calculation (configurable rate, can disable for Kleinunternehmer)
 • EMAIL SEND: click the email icon (envelope) on any invoice to send PDF to customer

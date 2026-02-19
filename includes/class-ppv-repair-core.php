@@ -1014,6 +1014,16 @@ class PPV_Repair_Core {
             }
             update_option('ppv_repair_migration_version', '2.9');
         }
+
+        // v3.0: Add warranty_date to invoices
+        if (version_compare($version, '3.0', '<')) {
+            $inv_table = $wpdb->prefix . 'ppv_repair_invoices';
+            $col_exists = $wpdb->get_var("SHOW COLUMNS FROM {$inv_table} LIKE 'warranty_date'");
+            if (!$col_exists) {
+                $wpdb->query("ALTER TABLE {$inv_table} ADD COLUMN warranty_date DATE NULL AFTER valid_until");
+            }
+            update_option('ppv_repair_migration_version', '3.0');
+        }
     }
 
     /** ============================================================
@@ -2701,6 +2711,9 @@ class PPV_Repair_Core {
                         $payment['mark_paid'] = true;
                         if (!empty($_POST['payment_method'])) $payment['payment_method'] = sanitize_text_field($_POST['payment_method']);
                         if (!empty($_POST['paid_at'])) $payment['paid_at'] = sanitize_text_field($_POST['paid_at']);
+                    }
+                    if (!empty($_POST['warranty_date'])) {
+                        $payment['warranty_date'] = sanitize_text_field($_POST['warranty_date']);
                     }
                     $invoice_id = PPV_Repair_Invoice::generate_invoice($store, $repair, $final_cost, $line_items, $manual_discount, $payment);
 

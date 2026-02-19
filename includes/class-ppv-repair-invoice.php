@@ -187,6 +187,7 @@ class PPV_Repair_Invoice {
             'vat_amount'                => $vat_amount,
             'total'                     => $total,
             'is_kleinunternehmer'       => $is_klein,
+            'warranty_date'             => !empty($payment['warranty_date']) ? $payment['warranty_date'] : null,
             'punktepass_reward_applied'  => $reward_applied,
             'points_used'               => $points_used,
             'status'                    => !empty($payment['mark_paid']) ? 'paid' : 'draft',
@@ -497,6 +498,12 @@ class PPV_Repair_Invoice {
             }
         }
 
+        // Warranty date
+        if (isset($_POST['warranty_date'])) {
+            $wd = sanitize_text_field($_POST['warranty_date']);
+            $update['warranty_date'] = $wd ?: null;
+        }
+
         // Differenzbesteuerung
         if (isset($_POST['is_differenzbesteuerung'])) {
             $is_differenz = intval($_POST['is_differenzbesteuerung']) ? 1 : 0;
@@ -675,6 +682,7 @@ class PPV_Repair_Invoice {
 
         $subtotal = floatval($_POST['subtotal'] ?? 0);
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
+        $warranty_date = sanitize_text_field($_POST['warranty_date'] ?? '');
 
         // Generate invoice number (or use custom if provided)
         $custom_invoice_number = sanitize_text_field($_POST['invoice_number'] ?? '');
@@ -760,6 +768,7 @@ class PPV_Repair_Invoice {
             'punktepass_reward_applied' => 0,
             'points_used'       => 0,
             'notes'             => $notes,
+            'warranty_date'     => $warranty_date ?: null,
             'status'            => 'draft',
             'created_at'        => current_time('mysql'),
         ]);
@@ -1210,6 +1219,7 @@ class PPV_Repair_Invoice {
         $is_angebot = ($doc_type === 'angebot');
         $doc_type_label = $is_angebot ? PPV_Lang::t('repair_pdf_quote') : PPV_Lang::t('repair_pdf_invoice');
         $valid_until = ($is_angebot && !empty($invoice->valid_until)) ? date('d.m.Y', strtotime($invoice->valid_until)) : '';
+        $warranty_date = !empty($invoice->warranty_date) ? date('d.m.Y', strtotime($invoice->warranty_date)) : '';
         $cust_name = esc_html($invoice->customer_name);
         $cust_email = esc_html($invoice->customer_email);
         $cust_phone = esc_html($invoice->customer_phone ?: '');
@@ -1305,6 +1315,7 @@ class PPV_Repair_Invoice {
         $t_date = PPV_Lang::t('repair_pdf_date');
         $t_nr = PPV_Lang::t('repair_pdf_nr');
         $t_valid_until = PPV_Lang::t('repair_pdf_valid_until');
+        $t_warranty_until = PPV_Lang::t('repair_pdf_warranty_until');
         $t_your_vat_id = PPV_Lang::t('repair_pdf_your_vat_id');
         $t_greeting = PPV_Lang::t('repair_pdf_greeting');
         $t_intro = $is_angebot ? PPV_Lang::t('repair_pdf_intro_quote') : PPV_Lang::t('repair_pdf_intro_invoice');
@@ -1474,6 +1485,7 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 <tr><td>' . $doc_type_label . ' ' . $t_nr . ':</td><td><span class="invoice-number">' . $inv_nr . '</span></td></tr>
 <tr><td>' . $t_date . ':</td><td>' . $inv_date . '</td></tr>
 ' . ($valid_until ? '<tr><td>' . $t_valid_until . ':</td><td>' . $valid_until . '</td></tr>' : '') . '
+' . ($warranty_date ? '<tr><td>' . $t_warranty_until . ':</td><td>' . $warranty_date . '</td></tr>' : '') . '
 ' . ($cust_tax_id ? '<tr><td>' . $t_your_vat_id . ':</td><td>' . $cust_tax_id . '</td></tr>' : '') . '
 </table>
 </div>

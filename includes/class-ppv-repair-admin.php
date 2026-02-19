@@ -2740,6 +2740,11 @@ echo '</div></div>
             </label>
         </div>
 
+        <div style="margin-top:12px">
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px"><i class="ri-shield-check-line" style="font-size:13px;vertical-align:-1px"></i> ' . esc_html(PPV_Lang::t('repair_admin_warranty_date')) . '</label>
+            <input type="date" id="ra-inv-warranty-date" class="ra-input" style="width:100%;max-width:200px">
+        </div>
+
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1;min-width:100px" id="ra-inv-modal-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn" style="flex:1;min-width:140px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0" id="ra-inv-modal-skip">
@@ -3022,6 +3027,15 @@ echo '</div></div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Warranty date -->
+            <div class="nang-field" style="margin-bottom:12px">
+                <label><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_warranty_date')) . '</label>
+                <div class="nang-input-wrap ninv-focus" style="max-width:220px">
+                    <i class="ri-calendar-check-line"></i>
+                    <input type="date" id="ra-ninv-warranty-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
                 </div>
             </div>
 
@@ -3440,6 +3454,15 @@ echo '</div></div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Warranty date -->
+            <div class="nang-field" style="margin-bottom:12px">
+                <label><i class="ri-shield-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_warranty_date')) . '</label>
+                <div class="nang-input-wrap ninv-focus" style="max-width:220px">
+                    <i class="ri-calendar-check-line"></i>
+                    <input type="date" id="ra-einv-warranty-date" style="border:none;outline:none;background:transparent;font-size:14px;width:100%;padding:2px 0;color:#334155">
                 </div>
             </div>
 
@@ -4482,6 +4505,7 @@ echo '</div></div>
         document.getElementById("ra-inv-paid-fields").style.display="none";
         document.getElementById("ra-inv-payment-method").value="";
         document.getElementById("ra-inv-paid-date").value=new Date().toISOString().split("T")[0];
+        document.getElementById("ra-inv-warranty-date").value="";
         recalcInvoiceModal();
         invoiceModal.classList.add("show");
         document.querySelector("#ra-inv-lines .ra-inv-line-desc").focus();
@@ -4524,6 +4548,7 @@ echo '</div></div>
         document.getElementById("ra-einv-city").value=inv.customer_city||"";
         document.getElementById("ra-einv-taxid").value=inv.customer_tax_id||"";
         document.getElementById("ra-einv-notes").value=inv.notes||"";
+        document.getElementById("ra-einv-warranty-date").value=inv.warranty_date||"";
         document.getElementById("ra-einv-differenz").checked=!!parseInt(inv.is_differenzbesteuerung);
 
         // Fill payment status
@@ -4709,6 +4734,10 @@ echo '</div></div>
             manualDiscDesc=document.getElementById("ra-inv-discount-desc").value.trim();
             manualDiscVal=parseFloat(document.getElementById("ra-inv-discount-amount").value)||0;
         }
+
+        // Warranty date (both modes)
+        var wDateOld=document.getElementById("ra-inv-warranty-date").value;
+        if(wDateOld)fd.append("warranty_date",wDateOld);
 
         if(invoiceEditId){
             // Edit mode
@@ -5842,6 +5871,7 @@ echo '</div></div>
         document.getElementById("ra-ninv-taxid").value="";
         document.getElementById("ra-ninv-number").value="";
         document.getElementById("ra-ninv-notes").value="";
+        document.getElementById("ra-ninv-warranty-date").value="";
         document.getElementById("ra-ninv-differenz").checked=false;
         document.getElementById("ra-ninv-customer-search").value="";
         // Reset repair-mode extras
@@ -6098,6 +6128,8 @@ echo '</div></div>
                 fd.append("manual_discount_desc",manualDiscDesc);
                 fd.append("manual_discount_value",manualDiscVal);
             }
+            var wDate1=document.getElementById("ra-ninv-warranty-date").value;
+            if(wDate1)fd.append("warranty_date",wDate1);
             if(document.getElementById("ra-ninv-paid-toggle").checked){
                 fd.append("mark_paid","1");
                 var pm=document.getElementById("ra-ninv-payment-method").value;
@@ -6121,6 +6153,8 @@ echo '</div></div>
             fd.append("line_items",JSON.stringify(items));
             fd.append("subtotal",subtotal);
             fd.append("notes",document.getElementById("ra-ninv-notes").value);
+            var wDate=document.getElementById("ra-ninv-warranty-date").value;
+            if(wDate)fd.append("warranty_date",wDate);
             if(manualDiscVal>0){
                 fd.append("manual_discount_desc",manualDiscDesc);
                 fd.append("manual_discount_value",manualDiscVal);
@@ -6571,6 +6605,7 @@ echo '</div></div>
         fd.append("customer_city",document.getElementById("ra-einv-city").value);
         fd.append("customer_tax_id",document.getElementById("ra-einv-taxid").value);
         fd.append("notes",document.getElementById("ra-einv-notes").value);
+        fd.append("warranty_date",document.getElementById("ra-einv-warranty-date").value);
         fd.append("is_differenzbesteuerung",document.getElementById("ra-einv-differenz").checked?"1":"0");
         fd.append("line_items",JSON.stringify(items));
         fd.append("subtotal",subtotal);
