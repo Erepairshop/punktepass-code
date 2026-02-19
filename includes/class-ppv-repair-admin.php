@@ -782,9 +782,12 @@ a:hover{color:#5a67d8}
 .ra-repair-problem{font-size:13px;color:#374151;line-height:1.6}
 .ra-tracking-section{background:#fefce8;border-top:1px solid #fde68a}
 .ra-tracking-row{display:flex;align-items:center;gap:6px}
-.ra-tracking-input{flex:1;font-size:11px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 8px;outline:none;font-family:monospace}
-.ra-tracking-copy{width:30px;height:30px;border:1px solid #fde68a;background:#fffbeb;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#92400e;font-size:14px;transition:all .15s}
-.ra-tracking-copy:hover{background:#fef3c7}
+.ra-tracking-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid #fde68a;cursor:pointer;transition:all .15s;text-decoration:none}
+.ra-tracking-btn-copy{background:#fffbeb;color:#92400e}
+.ra-tracking-btn-copy:hover{background:#fef3c7}
+.ra-tracking-btn-open{background:#fff;color:#92400e}
+.ra-tracking-btn-open:hover{background:#fef3c7}
+.ra-tracking-btn i{font-size:14px}
 /* Details section (custom fields) */
 .ra-card-section-details{background:#fafbfc}
 /* Badges row */
@@ -4460,7 +4463,7 @@ echo '</div></div>
                 \'<div class="ra-card-section-title"><i class="ri-error-warning-line"></i> \'+(L.problem_section||"Problem")+\'</div>\'+
                 \'<div class="ra-repair-problem">\'+esc(problem)+\'</div>\'+
             \'</div>\'+
-            (r.tracking_token?\'<div class="ra-card-section ra-tracking-section"><div class="ra-card-section-title"><i class="ri-live-line"></i> \'+L.tracking_url+\'</div><div class="ra-tracking-row"><input type="text" readonly class="ra-tracking-input" value="\'+esc(FORM_BASE_URL+r.tracking_token)+\'"><button type="button" class="ra-tracking-copy" title="Copy" onclick="var i=this.previousElementSibling;i.select();document.execCommand(\\\'copy\\\');this.innerHTML=\\\'<i class=&quot;ri-check-line&quot;></i>\\\';var b=this;setTimeout(function(){b.innerHTML=\\\'<i class=&quot;ri-file-copy-line&quot;></i>\\\'},1500)"><i class="ri-file-copy-line"></i></button></div></div>\':"")+
+            (r.tracking_token?\'<div class="ra-card-section ra-tracking-section"><div class="ra-card-section-title"><i class="ri-live-line"></i> Live-Tracking</div><div class="ra-tracking-row"><button type="button" class="ra-tracking-btn ra-tracking-btn-copy" onclick="var u=\\\'\'+esc(FORM_BASE_URL+r.tracking_token)+\'\\\';navigator.clipboard?navigator.clipboard.writeText(u).then(function(){}.bind(this)):function(){var t=document.createElement(\\\'textarea\\\');t.value=u;document.body.appendChild(t);t.select();document.execCommand(\\\'copy\\\');document.body.removeChild(t)}();this.innerHTML=\\\'<i class=&quot;ri-check-line&quot;></i> Kopiert!\\\';var b=this;setTimeout(function(){b.innerHTML=\\\'<i class=&quot;ri-file-copy-line&quot;></i> Link kopieren\\\'},1500)"><i class="ri-file-copy-line"></i> Link kopieren</button><a href="\'+esc(FORM_BASE_URL+r.tracking_token)+\'" target="_blank" class="ra-tracking-btn ra-tracking-btn-open"><i class="ri-external-link-line"></i> Öffnen</a></div></div>\':"")+
             badgesRow+
             (r.status==="waiting_parts"?\'<button class="ra-btn-parts-arrived" data-repair-id="\'+r.id+\'"><i class="ri-checkbox-circle-fill"></i> \'+L.parts_arrived+\'</button>\':"")+
             commentsHtml+
