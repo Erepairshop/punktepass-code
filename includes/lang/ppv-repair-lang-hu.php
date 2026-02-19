@@ -675,6 +675,14 @@ return [
     'repair_admin_create_quote_sub' => 'Árajánlat / Ajánlat az ügyfélnek',
     'repair_admin_valid_until'    => 'Érvényes eddig',
     'repair_admin_notes_quote_ph' => 'pl. Szállítási idő 2 hét',
+    'repair_admin_full_address'   => 'Cím',
+    'repair_admin_full_address_ph' => 'Példa utca 1, 1234 Budapest',
+    'repair_admin_customer_data'  => 'Ügyfél adatok',
+    'repair_admin_qty'            => 'Db.',
+    'repair_admin_unit_price'     => 'Ár',
+    'repair_admin_line_total'     => 'Összesen',
+    'repair_admin_discount'       => 'Kedvezmény',
+    'repair_admin_discount_ph'    => 'pl. 10% vagy 5,00€',
     'repair_admin_create_quote_btn' => 'Ajánlat létrehozása',
 
     // Customer Modal

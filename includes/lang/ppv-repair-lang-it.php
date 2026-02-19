@@ -675,6 +675,14 @@ return [
     'repair_admin_create_quote_sub' => 'Preventivo / Stima costi per il cliente',
     'repair_admin_valid_until'    => 'Valido fino al',
     'repair_admin_notes_quote_ph' => 'es. Tempo di consegna 2 settimane',
+    'repair_admin_full_address'   => 'Indirizzo',
+    'repair_admin_full_address_ph' => 'Via Esempio 1, 12345 Città',
+    'repair_admin_customer_data'  => 'Dati cliente',
+    'repair_admin_qty'            => 'Qtà',
+    'repair_admin_unit_price'     => 'Prezzo',
+    'repair_admin_line_total'     => 'Totale',
+    'repair_admin_discount'       => 'Sconto',
+    'repair_admin_discount_ph'    => 'es. 10% o 5,00€',
     'repair_admin_create_quote_btn' => 'Crea preventivo',
 
     // Customer Modal

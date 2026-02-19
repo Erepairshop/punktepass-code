@@ -675,6 +675,14 @@ return [
     'repair_admin_create_quote_sub' => 'Cost estimate / quote for customer',
     'repair_admin_valid_until'    => 'Valid until',
     'repair_admin_notes_quote_ph' => 'e.g. Delivery time 2 weeks',
+    'repair_admin_full_address'   => 'Address',
+    'repair_admin_full_address_ph' => 'Street 1, 12345 City',
+    'repair_admin_customer_data'  => 'Customer data',
+    'repair_admin_qty'            => 'Qty',
+    'repair_admin_unit_price'     => 'Price',
+    'repair_admin_line_total'     => 'Total',
+    'repair_admin_discount'       => 'Discount',
+    'repair_admin_discount_ph'    => 'e.g. 10% or 5.00€',
     'repair_admin_create_quote_btn' => 'Create quote',
 
     // Customer Modal

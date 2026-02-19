@@ -675,6 +675,14 @@ return [
     'repair_admin_create_quote_sub' => 'Kostenvoranschlag / Angebot für Kunden',
     'repair_admin_valid_until'    => 'Gültig bis',
     'repair_admin_notes_quote_ph' => 'z.B. Lieferzeit 2 Wochen',
+    'repair_admin_full_address'   => 'Adresse',
+    'repair_admin_full_address_ph' => 'Musterstraße 1, 12345 Berlin',
+    'repair_admin_customer_data'  => 'Kundendaten',
+    'repair_admin_qty'            => 'Anz.',
+    'repair_admin_unit_price'     => 'Preis',
+    'repair_admin_line_total'     => 'Gesamt',
+    'repair_admin_discount'       => 'Rabatt',
+    'repair_admin_discount_ph'    => 'z.B. 10% oder 5,00€',
     'repair_admin_create_quote_btn' => 'Angebot erstellen',
 
     // Customer Modal

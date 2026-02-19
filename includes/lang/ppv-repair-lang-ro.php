@@ -675,6 +675,14 @@ return [
     'repair_admin_create_quote_sub' => 'Deviz / Ofertă pentru client',
     'repair_admin_valid_until'    => 'Valabilă până la',
     'repair_admin_notes_quote_ph' => 'ex. Termen de livrare 2 săptămâni',
+    'repair_admin_full_address'   => 'Adresă',
+    'repair_admin_full_address_ph' => 'Strada 1, 12345 Oraș',
+    'repair_admin_customer_data'  => 'Date client',
+    'repair_admin_qty'            => 'Buc.',
+    'repair_admin_unit_price'     => 'Preț',
+    'repair_admin_line_total'     => 'Total',
+    'repair_admin_discount'       => 'Reducere',
+    'repair_admin_discount_ph'    => 'ex. 10% sau 5,00€',
     'repair_admin_create_quote_btn' => 'Creare ofertă',
 
     // Customer Modal
