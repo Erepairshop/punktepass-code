@@ -3897,7 +3897,7 @@ echo '</div></div>
                 (r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()?\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\':"")+
             \'</div>\'+
             commentsHtml+
-            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
+            \'<div class="ra-repair-actions"><button class="ra-btn-print" title="\'+L.btn_print+\'"><i class="ri-printer-line"></i></button><button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button><button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button><button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button><button class="ra-btn-angebot" title="Angebot erstellen" style="padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bbf7d0;background:#f0fdf4;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;transition:all .2s"><i class="ri-draft-line"></i></button><button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button><select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select></div>\'+
         \'</div>\';
     }
     function pad(n){return n<10?"0"+n:n}
@@ -5335,15 +5335,19 @@ echo '</div></div>
 
     // Angebot from repair card (event delegation)
     document.addEventListener("click",function(e){
-        var btn=e.target.closest(".ra-angebot-from-repair");
+        var btn=e.target.closest(".ra-btn-angebot");
         if(!btn)return;
+        var card=btn.closest(".ra-repair-card");
+        if(!card)return;
         clearNewAngebotForm();
-        document.getElementById("ra-nang-name").value=btn.dataset.name||"";
-        document.getElementById("ra-nang-email").value=btn.dataset.email||"";
-        document.getElementById("ra-nang-phone").value=btn.dataset.phone||"";
+        document.getElementById("ra-nang-name").value=card.dataset.name||"";
+        document.getElementById("ra-nang-email").value=card.dataset.email||"";
+        document.getElementById("ra-nang-phone").value=card.dataset.phone||"";
+        document.getElementById("ra-nang-address").value=card.dataset.address||"";
         // Pre-fill first line with device + problem
-        var desc=(btn.dataset.device||"");
-        if(btn.dataset.problem)desc+=(desc?" - ":"")+btn.dataset.problem;
+        var device=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
+        var desc=device;
+        if(card.dataset.problem)desc+=(desc?" - ":"")+card.dataset.problem;
         if(desc){
             var firstDesc=document.querySelector("#ra-nang-lines .ra-inv-line-desc");
             if(firstDesc)firstDesc.value=desc;
@@ -6911,6 +6915,7 @@ echo '</div></div>
                 . '<button class="ra-btn-email" title="' . esc_attr(PPV_Lang::t('repair_admin_send_email')) . '"><i class="ri-mail-send-line"></i></button>'
                 . '<button class="ra-btn-resubmit" title="' . esc_attr(PPV_Lang::t('repair_admin_resubmit')) . '"><i class="ri-repeat-line"></i></button>'
                 . '<button class="' . $inv_btn_class . '" title="' . $inv_btn_title . '"><i class="' . $inv_btn_icon . '"></i></button>'
+                . '<button class="ra-btn-angebot" title="Angebot erstellen" style="padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #bbf7d0;background:#f0fdf4;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;transition:all .2s"><i class="ri-draft-line"></i></button>'
                 . '<button class="ra-btn-delete" title="' . esc_attr(PPV_Lang::t('repair_admin_delete_repair')) . '"><i class="ri-delete-bin-line"></i></button>'
                 . '<select class="ra-status-select" data-repair-id="' . intval($r->id) . '">' . $options . '</select>'
             . '</div>'
