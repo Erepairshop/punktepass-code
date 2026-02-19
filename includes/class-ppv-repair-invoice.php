@@ -745,6 +745,16 @@ class PPV_Repair_Invoice {
             ));
         }
 
+        // Mark as paid if requested
+        if ($invoice_id && !empty($_POST['mark_paid'])) {
+            $paid_data = ['status' => 'paid'];
+            $payment_method = sanitize_text_field($_POST['payment_method'] ?? '');
+            if ($payment_method) $paid_data['payment_method'] = $payment_method;
+            $paid_at = sanitize_text_field($_POST['paid_at'] ?? '');
+            $paid_data['paid_at'] = $paid_at ?: current_time('mysql');
+            $wpdb->update("{$prefix}ppv_repair_invoices", $paid_data, ['id' => $invoice_id]);
+        }
+
         wp_send_json_success([
             'message' => 'Rechnung erstellt',
             'invoice_id' => $invoice_id,

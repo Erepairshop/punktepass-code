@@ -5520,6 +5520,8 @@ echo '</div></div>
     // Open modal (standalone - from Rechnungen tab)
     document.getElementById("ra-new-invoice-btn").addEventListener("click",function(){
         clearNewInvoiceForm();
+        document.getElementById("ra-ninv-payment-section").style.display="block";
+        document.getElementById("ra-ninv-paid-date").value=new Date().toISOString().split("T")[0];
         ninvModal.classList.add("show");
     });
 
@@ -5932,6 +5934,14 @@ echo '</div></div>
             var customInvNum=document.getElementById("ra-ninv-number").value.trim();
             if(customInvNum)fd.append("invoice_number",customInvNum);
             if(repairId)fd.append("repair_id",repairId);
+            // Payment status
+            if(document.getElementById("ra-ninv-paid-toggle").checked){
+                fd.append("mark_paid","1");
+                var pm2=document.getElementById("ra-ninv-payment-method").value;
+                var pd2=document.getElementById("ra-ninv-paid-date").value;
+                if(pm2)fd.append("payment_method",pm2);
+                if(pd2)fd.append("paid_at",pd2);
+            }
         }
 
         var btn=document.getElementById("ra-ninv-submit");
