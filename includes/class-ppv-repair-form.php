@@ -171,24 +171,6 @@ class PPV_Repair_Form {
     .rf-sug-main{font-weight:500;color:#0f172a}
     .rf-sug-sub{font-size:12px;color:#94a3b8;margin-top:2px}
 
-    /* Mobile bottom-sheet overlay for suggestions */
-    .rf-sheet-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent}
-    .rf-sheet-overlay.show{display:flex;flex-direction:column;justify-content:flex-end}
-    .rf-sheet{background:#fff;border-radius:16px 16px 0 0;max-height:70vh;display:flex;flex-direction:column;animation:rfSheetUp .25s ease-out}
-    @keyframes rfSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-    .rf-sheet-handle{text-align:center;padding:10px 0 4px;flex-shrink:0}
-    .rf-sheet-handle span{display:inline-block;width:36px;height:4px;border-radius:2px;background:#d1d5db}
-    .rf-sheet-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 12px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
-    .rf-sheet-header h4{margin:0;font-size:15px;font-weight:600;color:#1e293b}
-    .rf-sheet-close{width:32px;height:32px;border:none;background:#f1f5f9;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;-webkit-tap-highlight-color:transparent}
-    .rf-sheet-close:active{background:#e2e8f0}
-    .rf-sheet-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;overscroll-behavior:contain}
-    .rf-sheet-item{padding:14px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer;min-height:48px;display:flex;flex-direction:column;justify-content:center;-webkit-tap-highlight-color:transparent}
-    .rf-sheet-item:active{background:#f8fafc}
-    .rf-sheet-item-main{font-weight:500;color:#0f172a;font-size:15px}
-    .rf-sheet-item-sub{font-size:13px;color:#94a3b8;margin-top:3px}
-    .rf-sheet-empty{padding:24px 16px;text-align:center;color:#94a3b8;font-size:14px}
-    .rf-sheet-loading{padding:24px 16px;text-align:center;color:#94a3b8;font-size:14px}
     </style>
 </head>
 <body class="ppv-repair-body">
@@ -1734,21 +1716,8 @@ function toggleProblemTag(btn, text) {
 })();
 </script>
 
-<!-- Mobile suggestions bottom-sheet -->
-<div class="rf-sheet-overlay" id="rf-sheet-overlay">
-    <div class="rf-sheet">
-        <div class="rf-sheet-handle"><span></span></div>
-        <div class="rf-sheet-header">
-            <h4 id="rf-sheet-title"></h4>
-            <button type="button" class="rf-sheet-close" id="rf-sheet-close">&times;</button>
-        </div>
-        <div class="rf-sheet-list" id="rf-sheet-list"></div>
-    </div>
-</div>
-
 <script>
 (function(){
-    console.log('[PunktePass] Autocomplete script loaded');
     // HTTP GET helper (fetch with XHR fallback for old WebViews)
     function xhrGet(url, cb) {
         if (window.fetch) {
@@ -1783,67 +1752,11 @@ function toggleProblemTag(btn, text) {
         return d.innerHTML;
     }
 
-    // ===== TOUCH DETECTION =====
-    var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
-    // ===== BOTTOM-SHEET (mobile) =====
-    var sheetOverlay = document.getElementById('rf-sheet-overlay');
-    var sheetList = document.getElementById('rf-sheet-list');
-    var sheetTitle = document.getElementById('rf-sheet-title');
-    var sheetClose = document.getElementById('rf-sheet-close');
-
-    function showSheet(title) {
-        if (!sheetOverlay || !sheetTitle) return;
-        sheetTitle.textContent = title;
-        sheetOverlay.classList.add('show');
-        document.body.style.overflow = 'hidden';
-    }
-    function hideSheet() {
-        if (!sheetOverlay) return;
-        sheetOverlay.classList.remove('show');
-        document.body.style.overflow = '';
-    }
-    if (sheetClose) sheetClose.addEventListener('click', hideSheet);
-    if (sheetOverlay) sheetOverlay.addEventListener('click', function(e) {
-        if (e.target === sheetOverlay) hideSheet();
-    });
-
-    function showSuggestions(box, title) {
-        if (isTouchDevice && sheetList && sheetOverlay) {
-            // Move content to bottom-sheet
-            sheetList.innerHTML = box.innerHTML;
-            // Re-bind click handlers by cloning approach
-            var origItems = box.querySelectorAll('.rf-sug-item');
-            var sheetItems = sheetList.querySelectorAll('.rf-sug-item');
-            for (var si = 0; si < sheetItems.length; si++) {
-                (function(idx){
-                    sheetItems[idx].addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Trigger click on the original hidden item
-                        if (origItems[idx] && origItems[idx]._onSelect) {
-                            origItems[idx]._onSelect();
-                        }
-                        hideSheet();
-                    });
-                })(si);
-            }
-            showSheet(title);
-        } else {
-            box.style.display = 'block';
-        }
-    }
-    function hideSuggestions(box) {
-        box.style.display = 'none';
-        if (isTouchDevice) hideSheet();
-    }
-
     // ===== DISMISS: hide dropdowns when tapping OUTSIDE =====
     var emailInput = document.getElementById('rf-email');
     var emailBox = document.getElementById('rf-email-suggestions');
     var addrInput = document.getElementById('rf-address');
     var addrBox = document.getElementById('rf-address-suggestions');
-    console.log('[PunktePass] emailInput:', !!emailInput, 'emailBox:', !!emailBox, 'addrInput:', !!addrInput, 'addrBox:', !!addrBox);
 
     document.addEventListener('click', function(e) {
         if (emailBox && emailInput && !emailInput.contains(e.target) && !emailBox.contains(e.target)) {
@@ -1866,7 +1779,7 @@ function toggleProblemTag(btn, text) {
             var q = emailInput.value.trim();
             if (q === lastEmailQ) return;
             lastEmailQ = q;
-            if (q.length < 2) { hideSuggestions(emailBox); return; }
+            if (q.length < 2) { emailBox.style.display='none'; return; }
             emailTimer = setTimeout(function(){ searchEmails(q); }, 300);
         }
 
@@ -1877,7 +1790,7 @@ function toggleProblemTag(btn, text) {
             xhrGet(url, function(err, resp){
                 if (err) { console.warn('Email search error:', err); }
                 if (err || !resp || !resp.success || !resp.data || !resp.data.length) {
-                    hideSuggestions(emailBox);
+                    emailBox.style.display='none';
                     return;
                 }
                 emailBox.innerHTML = '';
@@ -1910,13 +1823,12 @@ function toggleProblemTag(btn, text) {
                     });
                     emailBox.appendChild(item);
                 });
-                showSuggestions(emailBox, 'E-Mail');
+                emailBox.style.display='block';
             });
         }
     }
 
-    // ===== ADDRESS AUTOCOMPLETE =====
-    console.log('[PunktePass] Address autocomplete init:', addrInput ? 'YES' : 'NO');
+    // ===== ADDRESS AUTOCOMPLETE (via server proxy to avoid CORS) =====
     if (addrInput && addrBox) {
         var addrTimer = null;
         var lastAddrQ = '';
@@ -1933,24 +1845,20 @@ function toggleProblemTag(btn, text) {
         function triggerAddrSearch(){
             clearTimeout(addrTimer);
             var q = addrInput.value.trim();
-            console.log('[PunktePass] Address input:', q, 'lastQ:', lastAddrQ);
             if (q === lastAddrQ) return;
             lastAddrQ = q;
-            if (q.length < 3) { hideSuggestions(addrBox); return; }
-            console.log('[PunktePass] Scheduling Nominatim search for:', q);
+            if (q.length < 3) { addrBox.style.display='none'; return; }
             addrTimer = setTimeout(function(){ fetchAddrSuggestions(q); }, 250);
         }
 
         addrInput.addEventListener('input', triggerAddrSearch);
 
         function fetchAddrSuggestions(q) {
-            var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&email=info@punktepass.de&countrycodes=' + nominatimCC + '&q=' + encodeURIComponent(q);
-            console.log('[PunktePass] Fetching Nominatim:', q, url);
-            xhrGet(url, function(err, results){
-                console.log('[PunktePass] Nominatim response:', err ? 'ERROR: '+err : (results ? results.length+' results' : 'null'));
-                if (err) { console.warn('Nominatim error:', err); }
+            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_nominatim&cc=' + nominatimCC + '&q=' + encodeURIComponent(q);
+            xhrGet(url, function(err, resp){
+                var results = (resp && resp.success) ? resp.data : null;
                 if (err || !results || !results.length) {
-                    hideSuggestions(addrBox);
+                    addrBox.style.display='none';
                     return;
                 }
                 var userStreet = getUserStreet(addrInput.value);
@@ -1985,7 +1893,7 @@ function toggleProblemTag(btn, text) {
                     });
                     addrBox.appendChild(item);
                 });
-                showSuggestions(addrBox, '<?php echo esc_js(PPV_Lang::t('repair_address_label')); ?>');
+                addrBox.style.display='block';
             });
         }
     }

@@ -61,6 +61,10 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
         add_action('wp_ajax_nopriv_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
 
+        // AJAX: Nominatim address proxy (public, avoids CORS)
+        add_action('wp_ajax_ppv_repair_nominatim', [__CLASS__, 'ajax_nominatim_proxy']);
+        add_action('wp_ajax_nopriv_ppv_repair_nominatim', [__CLASS__, 'ajax_nominatim_proxy']);
+
         // AJAX: repair comments
         add_action('wp_ajax_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
         add_action('wp_ajax_nopriv_ppv_repair_comment_add', [__CLASS__, 'ajax_comment_add']);
@@ -3560,5 +3564,53 @@ class PPV_Repair_Core {
         $powered = esc_html(PPV_Lang::t('repair_legal_powered_by'));
 
         return '<!DOCTYPE html><html lang="' . $lang . '"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . esc_html($title) . ' - ' . $sn . '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f5f7;color:#1f2937;line-height:1.6}.hd{background:linear-gradient(135deg,' . $co . ',#764ba2);padding:24px 20px;text-align:center}.hd h1{color:#fff;font-size:20px}.hd .bk{color:rgba(255,255,255,0.8);text-decoration:none;font-size:14px;display:inline-block;margin-top:8px}.ct{max-width:700px;margin:0 auto;padding:24px 20px}.ct h2{font-size:18px;margin:24px 0 8px;color:#111827}.ct p{font-size:14px;margin-bottom:12px;color:#4b5563}.ct a{color:' . $co . '}.ft{text-align:center;padding:20px;font-size:12px;color:#9ca3af}.ft a{color:' . $co . ';text-decoration:none}</style></head><body><div class="hd">' . $logo_html . '<h1>' . esc_html($title) . '</h1><a href="/formular/' . $sl . '" class="bk">&larr; ' . $back_text . '</a></div><div class="ct">' . $content . '</div><div class="ft"><a href="/formular/' . $sl . '/datenschutz">' . $footer_priv . '</a> &middot; <a href="/formular/' . $sl . '/agb">' . $footer_terms . '</a> &middot; <a href="/formular/' . $sl . '/impressum">' . $footer_imp . '</a><br><br>' . $powered . ' <a href="https://punktepass.de">PunktePass</a></div></body></html>';
+    }
+
+    /** ============================================================
+     * AJAX: Nominatim address proxy (avoids CORS issues)
+     * ============================================================ */
+    public static function ajax_nominatim_proxy() {
+        $q = sanitize_text_field($_GET['q'] ?? '');
+        $cc = preg_replace('/[^a-z,]/', '', strtolower($_GET['cc'] ?? 'de'));
+
+        if (strlen($q) < 3) {
+            wp_send_json_success([]);
+        }
+
+        // Rate limit: 1 req/sec per IP (Nominatim usage policy)
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $transient_key = 'ppv_nom_' . md5($ip);
+        if (get_transient($transient_key)) {
+            wp_send_json_success([]); // silently skip if too fast
+        }
+        set_transient($transient_key, 1, 1); // 1 second
+
+        $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+            'format'         => 'json',
+            'addressdetails' => 1,
+            'limit'          => 5,
+            'countrycodes'   => $cc,
+            'q'              => $q,
+            'email'          => 'info@punktepass.de',
+        ]);
+
+        $response = wp_remote_get($url, [
+            'timeout'    => 5,
+            'user-agent' => 'PunktePass/1.0 (info@punktepass.de)',
+            'headers'    => ['Accept' => 'application/json'],
+        ]);
+
+        if (is_wp_error($response)) {
+            wp_send_json_success([]);
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (!is_array($data)) {
+            wp_send_json_success([]);
+        }
+
+        wp_send_json_success($data);
     }
 }
