@@ -14,112 +14,36 @@ class PPV_Login {
      * 🔹 Hooks
      * ============================================================ */
     public static function hooks() {
-        // Standalone disabled - login uses WordPress theme rendering via shortcode
-        // add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
+        // Standalone: intercept login page before WP theme renders
+        add_action('template_redirect', [__CLASS__, 'check_already_logged_in'], 1);
+        add_action('template_redirect', [__CLASS__, 'intercept_login_page'], 2);
+
+        // Keep shortcode as fallback
         add_shortcode('ppv_login_form', [__CLASS__, 'render_landing_page']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
-        add_action('wp_head', [__CLASS__, 'inject_head_assets'], 999); // ✅ Priority 999 = LAST, overrides theme CSS!
+
+        // AJAX handlers
         add_action('wp_ajax_nopriv_ppv_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_ppv_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_nopriv_ppv_google_login', [__CLASS__, 'ajax_google_login']);
         add_action('wp_ajax_ppv_google_login', [__CLASS__, 'ajax_google_login']);
         add_action('wp_ajax_nopriv_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
         add_action('wp_ajax_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
-        // add_action('wp_ajax_nopriv_ppv_tiktok_login', [__CLASS__, 'ajax_tiktok_login']); // TikTok login disabled
         add_action('wp_ajax_nopriv_ppv_apple_login', [__CLASS__, 'ajax_apple_login']);
         add_action('wp_ajax_ppv_apple_login', [__CLASS__, 'ajax_apple_login']);
-        add_action('template_redirect', [__CLASS__, 'check_already_logged_in'], 1);
     }
 
     /** ============================================================
-     * 🔹 Inject CSS into <head> for login page
+     * Intercept Login Page → Standalone HTML
+     * Runs at template_redirect priority 2 (after check_already_logged_in at 1)
      * ============================================================ */
-    public static function inject_head_assets() {
-        // Only on login page
+    public static function intercept_login_page() {
         if (!is_page(['login', 'bejelentkezes', 'anmelden'])) {
-            global $post;
-            if (!isset($post->post_content) || !has_shortcode($post->post_content, 'ppv_login_form')) {
-                return;
-            }
+            return;
         }
-
-        ?>
-        <!-- ⚡ PERFORMANCE: Preconnect to external domains -->
-        <!-- Google Fonts preconnect DISABLED for performance -->
-        <!-- <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin> -->
-        <!-- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
-        <link rel="preconnect" href="https://accounts.google.com" crossorigin>
-
-        <!-- ⚡ PERFORMANCE: Preload critical assets -->
-        <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" as="image" type="image/webp">
-
-        <!-- ⚡ PERFORMANCE: Inline Critical CSS for instant first paint -->
-        <style id="ppv-critical-css">
-            :root{--pp-primary:#0066FF;--ppv-bg:#F8F9FB;--ppv-card-glass:rgba(255,255,255,0.85);--ppv-text:#1A1A1A;--ppv-border-glass:rgba(255,255,255,0.3);--safe-area-top:env(safe-area-inset-top,0px)}
-            html,body{margin:0;padding:0;overflow:hidden;height:100%;width:100%;position:fixed;background:linear-gradient(135deg,#F8F9FB 0%,#E6F0FF 100%)}
-            .ppv-landing-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100%;height:100dvh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
-            .ppv-landing-header{position:sticky;top:0;z-index:100;background:var(--ppv-card-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--ppv-border-glass);padding:10px 0;padding-top:calc(10px + var(--safe-area-top));flex-shrink:0}
-            .ppv-header-content{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-            .ppv-lang-switcher{display:flex;gap:4px;background:var(--ppv-bg);border:1px solid #E5E7EB;border-radius:8px;padding:4px}
-            .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
-            .ppv-lang-btn.active{background:var(--pp-primary);color:white}
-            .ppv-login-card{background:var(--ppv-card-glass);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--ppv-border-glass);padding:28px}
-            @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
-        </style>
-
-        <!-- Google Fonts DISABLED for performance - uses system fonts instead -->
-        <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'"> -->
-        <!-- <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript> -->
-
-        <!-- Login CSS - Smart versioning -->
-        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/css/ppv-login-light.css'); ?>" type="text/css" media="all" id="ppv-login-main-css">
-        <?php
-    }
-    
-    // ============================================================
-    // 🚀 STANDALONE RENDERING (bypasses WordPress theme)
-    // ============================================================
-
-    public static function maybe_render_standalone() {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-        $path = rtrim($path, '/');
-        if ($path !== '/login' && $path !== '/anmelden') return;
-
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
-        }
-
-        // Restore session from cookie if needed
-        if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token']) && class_exists('PPV_SessionBridge')) {
-            PPV_SessionBridge::restore_from_token();
-        }
-
-        // Already logged in? Redirect.
-        if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_vendor_store_id'])) {
-            $user_type = $_SESSION['ppv_user_type'] ?? '';
-            if (in_array($user_type, ['store', 'handler', 'vendor', 'admin', 'scanner'])) {
-                header('Location: /qr-center');
-                exit;
-            }
-        }
-        if (!empty($_SESSION['ppv_user_id'])) {
-            global $wpdb;
-            $user_exists = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
-                intval($_SESSION['ppv_user_id'])
-            ));
-            if ($user_exists) {
-                header('Location: /user_dashboard');
-                exit;
-            }
-            // Invalid session - clear
-            unset($_SESSION['ppv_user_id'], $_SESSION['ppv_user_email'], $_SESSION['ppv_user_type']);
-        }
-
         self::render_standalone_login();
         exit;
     }
-
+    
     private static function render_standalone_login() {
         $plugin_url = PPV_PLUGIN_URL;
         $plugin_dir = PPV_PLUGIN_DIR;
@@ -149,7 +73,7 @@ class PPV_Login {
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="preconnect" href="https://accounts.google.com" crossorigin>
     <link rel="preload" href="<?php echo esc_url($plugin_url); ?>assets/img/logo.webp?v=2" as="image" type="image/webp">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
     <style id="ppv-critical-css">
         :root{--pp-primary:#0066FF;--ppv-bg:#F8F9FB;--ppv-card-glass:rgba(255,255,255,0.85);--ppv-text:#1A1A1A;--ppv-border-glass:rgba(255,255,255,0.3);--safe-area-top:env(safe-area-inset-top,0px)}
         html,body{margin:0;padding:0;height:100%;width:100%;background:linear-gradient(135deg,#F8F9FB 0%,#E6F0FF 100%)}
@@ -314,32 +238,6 @@ class PPV_Login {
             @session_start();
             ppv_log("✅ [PPV_Login] Session started (ID=" . session_id() . ")");
         }
-    }
-    
-    /** ============================================================
-     * 🔹 Asset Loading
-     * ============================================================ */
-    public static function enqueue_assets() {
-        // Only load on login page
-        if (!is_page(['login', 'bejelentkezes', 'anmelden'])) {
-            global $post;
-            if (!isset($post->post_content) || !has_shortcode($post->post_content, 'ppv_login')) {
-                return;
-            }
-        }
-
-        // ✅ DISABLED - Using inline <link> and <script> tags in template instead
-        // This prevents duplicate loading and cache issues
-        // See render_landing_page() for inline asset loading
-
-        // Google OAuth Library (still needed via enqueue)
-        wp_enqueue_script(
-            'google-platform',
-            'https://accounts.google.com/gsi/client',
-            [],
-            null,
-            true
-        );
     }
     
     /** ============================================================
