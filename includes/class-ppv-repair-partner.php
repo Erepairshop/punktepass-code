@@ -743,7 +743,7 @@ class PPV_Repair_Partner {
                 $lang = key($candidates);
             }
         }
-        if (!$lang) $lang = 'de';
+        if (!$lang) $lang = 'en';
 
         $all = self::get_translations();
         $t = $all[$lang];
