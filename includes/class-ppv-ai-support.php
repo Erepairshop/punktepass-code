@@ -314,9 +314,14 @@ REPAIR MANAGEMENT (Reparaturen tab):
 
 INVOICE SYSTEM (Rechnungen tab):
 • Create invoices (Rechnung) or quotes (Angebot)
+• QUOTE CREATION (Neues Angebot): modern 2-step wizard modal
+  - Step 1: Customer data (name, company, email, phone, single address field that auto-parses street/PLZ/city)
+  - Step 2: Positions with Qty × Unit Price per line (auto-calculated line totals), totals card (Netto/MwSt/Brutto), valid-until date, notes
+  - Customer search: type to search existing customers, results appear in dropdown
+  - Can also create quote from repair card (pre-fills customer + device info)
 • Auto-generate invoice when repair status set to "done"
 • Custom invoice numbering with prefix (e.g. RE-001)
-• Line items: add service descriptions + amounts
+• Line items: add service descriptions + qty × price amounts
 • VAT/MwSt calculation (configurable rate, can disable for Kleinunternehmer)
 • EMAIL SEND: click the email icon (envelope) on any invoice to send PDF to customer
 • Bulk email: select multiple invoices → "Massen Email" button
