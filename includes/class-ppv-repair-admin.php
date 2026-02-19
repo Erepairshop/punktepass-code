@@ -1244,6 +1244,7 @@ a:hover{color:#5a67d8}
 .ninv-discount-remove:hover{background:#dc2626;color:#fff}
 .ninv-skip-btn{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #bbf7d0;background:#f0fdf4;color:#16a34a;transition:all .2s;white-space:nowrap}
 .ninv-skip-btn:hover{background:#16a34a;color:#fff;border-color:#16a34a}
+.ninv-step1-actions{display:flex;gap:10px;margin-top:12px;padding-top:16px;border-top:1px dashed #e2e8f0}
 
 /* Language Switcher */
 .ra-lang-wrap{position:relative}
@@ -2869,6 +2870,14 @@ echo '</div></div>
             <button type="button" class="nang-next-btn" id="ninv-next-to-positions" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 2px 8px rgba(37,99,235,.25)">
                 ' . esc_html(PPV_Lang::t('repair_admin_positions')) . ' <i class="ri-arrow-right-line"></i>
             </button>
+
+            <!-- Quick actions for repair→done mode (visible on step 1) -->
+            <div class="ninv-step1-actions" id="ninv-step1-actions" style="display:none">
+                <button type="button" id="ra-ninv-skip-step1" class="ninv-skip-btn">
+                    <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_only_done')) . '
+                </button>
+                <button type="button" class="nang-cancel-btn" id="ra-ninv-cancel-step1">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+            </div>
         </div>
 
         <!-- SECTION 2: Positions + Totals -->
@@ -5539,6 +5548,7 @@ echo '</div></div>
         document.getElementById("ra-ninv-customer-id").dataset.repairId=rid;
         // Show repair-mode extras: skip button, payment section
         document.getElementById("ra-ninv-skip").style.display=ninvRepairMode?"":"none";
+        document.getElementById("ninv-step1-actions").style.display=ninvRepairMode?"flex":"none";
         document.getElementById("ra-ninv-payment-section").style.display="block";
         document.getElementById("ra-ninv-paid-date").value=new Date().toISOString().split("T")[0];
         // Reward discount
@@ -5567,7 +5577,13 @@ echo '</div></div>
     // Close
     document.getElementById("ra-ninv-close").addEventListener("click",closeNinvModal);
     document.getElementById("ra-ninv-cancel").addEventListener("click",closeNinvModal);
+    document.getElementById("ra-ninv-cancel-step1").addEventListener("click",closeNinvModal);
     ninvModal.addEventListener("click",function(e){ if(e.target===ninvModal)closeNinvModal(); });
+
+    // Step1 skip button reuses the same logic as step2 skip
+    document.getElementById("ra-ninv-skip-step1").addEventListener("click",function(){
+        document.getElementById("ra-ninv-skip").click();
+    });
 
     // ESC key
     ninvModal.addEventListener("keydown",function(e){
@@ -5634,6 +5650,7 @@ echo '</div></div>
         document.getElementById("ra-ninv-customer-search").value="";
         // Reset repair-mode extras
         document.getElementById("ra-ninv-skip").style.display="none";
+        document.getElementById("ninv-step1-actions").style.display="none";
         document.getElementById("ra-ninv-payment-section").style.display="none";
         document.getElementById("ra-ninv-paid-toggle").checked=false;
         document.getElementById("ra-ninv-paid-fields").style.display="none";
