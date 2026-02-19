@@ -154,18 +154,17 @@ class PPV_Lead_Finder {
         $found_count = 0;
         $emails_found = 0;
 
-        // --- Tavily API search: multiple query variations for max coverage ---
+        // --- Phase 1: Direct business website search (advanced depth, max coverage) ---
         $queries = [
-            $full_query,
-            "$full_query email kontakt",
-            "$full_query impressum",
+            $full_query . ' email',
+            $full_query . ' kontakt impressum',
+            $full_query . ' bewertungen',
         ];
 
         $all_results = [];
         foreach ($queries as $q) {
-            $results = self::tavily_search($q, 10);
+            $results = self::tavily_search($q, 20, 'advanced');
             foreach ($results as $r) {
-                // Deduplicate by URL
                 $url = $r['url'] ?? '';
                 if (!empty($url) && !isset($all_results[$url])) {
                     $all_results[$url] = $r;
@@ -173,58 +172,157 @@ class PPV_Lead_Finder {
             }
         }
 
-        // Process each Tavily result
+        // --- Phase 2: Directory search (gelbeseiten, 11880, golocal etc.) ---
+        $directory_queries = [
+            $full_query . ' gelbeseiten.de',
+            $full_query . ' 11880.com',
+            $full_query . ' golocal.de',
+        ];
+        $directory_results = [];
+        foreach ($directory_queries as $dq) {
+            $results = self::tavily_search($dq, 5, 'advanced');
+            foreach ($results as $r) {
+                $directory_results[] = $r;
+            }
+        }
+
+        // --- Process direct results: each URL = one business ---
+        $excluded_domains = '/(google|facebook|instagram|twitter|youtube|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft|apple\.com|trustpilot|kununu|xing)/i';
+        // Directory domains - we extract multiple businesses from their content
+        $directory_domains = '/(gelbeseiten|11880|golocal|yelp|cylex|branchenbuch|meinestadt|dasoertliche|kennstdueinen)/i';
+
         foreach ($all_results as $url => $r) {
             $title = $r['title'] ?? '';
             $content = ($r['content'] ?? '') . ' ' . $title;
-            $domain = parse_url($url, PHP_URL_HOST);
+            $domain = parse_url($url, PHP_URL_HOST) ?? '';
 
-            // Skip social media / non-business sites
-            if (preg_match('/(google|facebook|instagram|twitter|youtube|yelp|tripadvisor|wikipedia|amazon|ebay|linkedin|tiktok|pinterest|bing|reddit|microsoft|apple\.com)/i', $domain ?? '')) {
+            // Skip social media
+            if (preg_match($excluded_domains, $domain)) continue;
+
+            // Directory pages → extract multiple businesses from content (Phase 2 handles this below)
+            if (preg_match($directory_domains, $domain)) {
+                $directory_results[] = $r;
                 continue;
             }
 
-            // Extract business name from title
-            $name = preg_replace('/\s*[-|–—]\s*.*$/', '', $title); // Remove " - Site description"
+            // Direct business website → one lead
+            $name = preg_replace('/\s*[-|–—]\s*.*$/', '', $title);
             $name = self::clean_business_name($name);
 
             if (strlen($name) < 4 || !self::is_valid_business_name($name)) {
-                // Fallback: use domain as name
-                $name = preg_replace('/^www\./', '', $domain ?? '');
+                $name = preg_replace('/^www\./', '', $domain);
                 $name = preg_replace('/\.(de|com|net|org|eu|info|shop|store)$/i', '', $name);
                 $name = ucfirst($name);
             }
-
             if (strlen($name) < 3) continue;
 
-            // Extract emails from content
             $email = '';
-            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $email_matches);
-            if (!empty($email_matches[0])) {
-                $valid = self::filter_emails($email_matches[0]);
-                if (!empty($valid)) {
-                    $email = strtolower(reset($valid));
-                }
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $em);
+            if (!empty($em[0])) {
+                $valid = self::filter_emails($em[0]);
+                if (!empty($valid)) $email = strtolower(reset($valid));
             }
 
-            // Extract phone from content
             $phone = '';
-            preg_match_all('/(?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18}/u', $content, $phone_matches);
-            if (!empty($phone_matches[0])) {
-                $phone = trim(preg_replace('/\s+/', ' ', $phone_matches[0][0]));
+            preg_match_all('/(?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18}/u', $content, $pm);
+            if (!empty($pm[0])) {
+                $phone = trim(preg_replace('/\s+/', ' ', $pm[0][0]));
                 if (strlen(preg_replace('/\D/', '', $phone)) < 8) $phone = '';
             }
 
-            $business = [
-                'name' => $name,
-                'website' => $url,
-                'email' => $email,
-                'phone' => $phone,
-            ];
-
-            if (self::add_lead_if_new($business, $region ?: '', $full_query)) {
+            if (self::add_lead_if_new(['name' => $name, 'website' => $url, 'email' => $email, 'phone' => $phone], $region ?: '', $full_query)) {
                 $found_count++;
                 if (!empty($email)) $emails_found++;
+            }
+        }
+
+        // --- Process directory results: extract multiple businesses from content ---
+        foreach ($directory_results as $r) {
+            $content = ($r['content'] ?? '') . ' ' . ($r['title'] ?? '');
+            $url = $r['url'] ?? '';
+
+            // Extract all emails from directory page
+            $all_emails = [];
+            preg_match_all('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i', $content, $em);
+            if (!empty($em[0])) $all_emails = self::filter_emails($em[0]);
+
+            // Extract all phone numbers
+            $all_phones = [];
+            preg_match_all('/(?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18}/u', $content, $pm);
+            if (!empty($pm[0])) {
+                foreach ($pm[0] as $p) {
+                    $p = trim(preg_replace('/\s+/', ' ', $p));
+                    if (strlen(preg_replace('/\D/', '', $p)) >= 8) $all_phones[] = $p;
+                }
+            }
+
+            // Extract all website URLs from directory content
+            $all_urls = [];
+            preg_match_all('/(https?:\/\/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(?:\/[^\s<>"\']*)?)/i', $content, $um);
+            if (!empty($um[1])) {
+                foreach ($um[1] as $u) {
+                    $d = parse_url($u, PHP_URL_HOST);
+                    if ($d && !preg_match($excluded_domains, $d) && !preg_match($directory_domains, $d)) {
+                        $all_urls[] = $u;
+                    }
+                }
+            }
+
+            // Try to extract business names from directory content
+            // Pattern: business names are typically proper-cased words before addresses/ratings
+            $extracted = self::extract_businesses_from_directory($content, $region);
+
+            if (!empty($extracted)) {
+                $email_idx = 0;
+                $phone_idx = 0;
+                $url_idx = 0;
+                foreach ($extracted as $biz) {
+                    $biz_email = $biz['email'] ?? '';
+                    if (empty($biz_email) && isset($all_emails[$email_idx])) {
+                        $biz_email = $all_emails[$email_idx++];
+                    }
+                    $biz_phone = $biz['phone'] ?? '';
+                    if (empty($biz_phone) && isset($all_phones[$phone_idx])) {
+                        $biz_phone = $all_phones[$phone_idx++];
+                    }
+                    $biz_url = $biz['website'] ?? '';
+                    if (empty($biz_url) && isset($all_urls[$url_idx])) {
+                        $biz_url = $all_urls[$url_idx++];
+                    }
+
+                    if (self::add_lead_if_new([
+                        'name' => $biz['name'],
+                        'website' => $biz_url,
+                        'email' => $biz_email,
+                        'phone' => $biz_phone,
+                        'address' => $biz['address'] ?? '',
+                    ], $region ?: '', $full_query . ' (Verzeichnis)')) {
+                        $found_count++;
+                        if (!empty($biz_email)) $emails_found++;
+                    }
+                }
+            } else {
+                // Fallback: if we can't parse names, at least save emails we found
+                foreach ($all_emails as $email) {
+                    $name_part = explode('@', $email)[0];
+                    $name_part = str_replace(['.', '_', '-'], ' ', $name_part);
+                    $name_part = ucwords($name_part);
+                    // Skip generic emails like "info", "kontakt"
+                    if (preg_match('/^(Info|Kontakt|Office|Mail|Service|Hallo|Hello|Admin|Support)$/i', $name_part)) {
+                        $domain_name = explode('@', $email)[1];
+                        $name_part = preg_replace('/\.(de|com|net|org)$/i', '', $domain_name);
+                        $name_part = ucfirst($name_part);
+                    }
+                    if (strlen($name_part) >= 3) {
+                        if (self::add_lead_if_new([
+                            'name' => $name_part,
+                            'email' => strtolower($email),
+                        ], $region ?: '', $full_query . ' (Email)')) {
+                            $found_count++;
+                            $emails_found++;
+                        }
+                    }
+                }
             }
         }
 
@@ -960,9 +1058,9 @@ class PPV_Lead_Finder {
     /**
      * Search via Tavily API - returns array of results with 'url', 'title', 'content'
      */
-    private static function tavily_search($query, $max_results = 5) {
+    private static function tavily_search($query, $max_results = 5, $depth = 'basic') {
         $response = wp_remote_post('https://api.tavily.com/search', [
-            'timeout' => 15,
+            'timeout' => 30,
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
@@ -970,7 +1068,7 @@ class PPV_Lead_Finder {
                 'api_key' => self::$tavily_api_key,
                 'query' => $query,
                 'max_results' => $max_results,
-                'search_depth' => 'basic',
+                'search_depth' => $depth,
                 'include_answer' => false,
                 'include_raw_content' => false,
             ]),
@@ -1573,6 +1671,82 @@ class PPV_Lead_Finder {
             }
             return true;
         }));
+    }
+
+    /**
+     * Extract business names from directory page content (gelbeseiten, 11880, etc.)
+     * Returns array of ['name' => ..., 'email' => ..., 'phone' => ..., 'address' => ..., 'website' => ...]
+     */
+    private static function extract_businesses_from_directory($content, $region = '') {
+        $businesses = [];
+        $lines = preg_split('/[\r\n]+/', $content);
+        $seen_names = [];
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = trim($lines[$i]);
+            if (empty($line) || strlen($line) < 5) continue;
+
+            // Skip common directory UI elements
+            if (preg_match('/^(Sortieren|Filter|Ergebnisse|Seite|Anzeige|Werbung|Anzeigen|Gesponsert|Premium|Bewertung|Entfernung|Mehr anzeigen|Weniger|Zurück|Weiter)/iu', $line)) continue;
+
+            // Business name patterns: capitalized, reasonable length, not an address
+            $is_potential_name = (
+                strlen($line) >= 5 && strlen($line) <= 120
+                && preg_match('/^[A-ZÄÖÜ]/u', $line) // Starts uppercase
+                && !preg_match('/^\d{5}\s/', $line) // Not a PLZ
+                && !preg_match('/^(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag|Mo|Di|Mi|Do|Fr|Sa|So)\b/iu', $line)
+                && !preg_match('/^(Öffnungszeiten|Geschlossen|Geöffnet|Jetzt)/iu', $line)
+                && self::is_valid_business_name($line)
+            );
+
+            if ($is_potential_name) {
+                $clean_name = self::clean_business_name($line);
+                $name_key = mb_strtolower($clean_name);
+                if (strlen($clean_name) >= 5 && !isset($seen_names[$name_key])) {
+                    $seen_names[$name_key] = true;
+
+                    // Look ahead for contact info in the next few lines
+                    $biz = ['name' => $clean_name, 'email' => '', 'phone' => '', 'address' => '', 'website' => ''];
+                    for ($j = $i + 1; $j < min($i + 8, count($lines)); $j++) {
+                        $next = trim($lines[$j] ?? '');
+
+                        // Email
+                        if (empty($biz['email']) && preg_match('/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i', $next, $em)) {
+                            $valid = self::filter_emails([$em[1]]);
+                            if (!empty($valid)) $biz['email'] = strtolower(reset($valid));
+                        }
+                        // Phone
+                        if (empty($biz['phone']) && preg_match('/((?:\+49|0049|0)\s*[\d\s\-\/\(\)]{6,18})/u', $next, $pm)) {
+                            $p = trim(preg_replace('/\s+/', ' ', $pm[1]));
+                            if (strlen(preg_replace('/\D/', '', $p)) >= 8) $biz['phone'] = $p;
+                        }
+                        // Address
+                        if (empty($biz['address']) && preg_match('/([A-ZÄÖÜa-zäöüß\-]+(?:str(?:aße|\.)?|weg|allee|platz|gasse|ring|damm)\s*\d+[a-z]?)/iu', $next, $am)) {
+                            $biz['address'] = $am[1];
+                        }
+                        // Website URL
+                        if (empty($biz['website']) && preg_match('/(https?:\/\/[^\s<>"]+)/i', $next, $wm)) {
+                            $d = parse_url($wm[1], PHP_URL_HOST);
+                            if ($d && !preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
+                                $biz['website'] = $wm[1];
+                            }
+                        }
+                        // Bare domain
+                        if (empty($biz['website']) && preg_match('/^((?:www\.)?[a-zA-Z0-9][a-zA-Z0-9\-]+\.[a-zA-Z]{2,})$/i', $next, $dm)) {
+                            $d = $dm[1];
+                            if (!preg_match('/(gelbeseiten|11880|golocal|yelp|cylex|google|facebook)/i', $d)) {
+                                $biz['website'] = 'https://' . $d;
+                            }
+                        }
+                    }
+
+                    $businesses[] = $biz;
+                    if (count($businesses) >= 50) break;
+                }
+            }
+        }
+
+        return $businesses;
     }
 
     /**
