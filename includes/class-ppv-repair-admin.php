@@ -3728,6 +3728,7 @@ echo '</div></div>
         'btn_create_inv' => PPV_Lang::t('repair_admin_create_inv_card'),
         'invoice_exists' => PPV_Lang::t('repair_admin_invoice_exists'),
         'invoice_duplicate_warn' => PPV_Lang::t('repair_admin_invoice_duplicate_warn'),
+        'btn_angebot' => PPV_Lang::t('repair_admin_create_quote_btn'),
         'btn_delete' => PPV_Lang::t('repair_admin_delete_repair'),
         'comments_label' => PPV_Lang::t('repair_admin_comments'),
         'add_comment_ph' => PPV_Lang::t('repair_admin_add_comment_ph'),
@@ -4421,7 +4422,7 @@ echo '</div></div>
                     \'<button class="ra-btn-email" title="\'+L.btn_email+\'"><i class="ri-mail-send-line"></i></button>\'+
                     \'<button class="ra-btn-resubmit" title="\'+L.btn_resubmit+\'"><i class="ri-repeat-line"></i></button>\'+
                     \'<button class="\'+invBtnClass+\'" title="\'+invBtnTitle+\'"><i class="\'+invBtnIcon+\'"></i></button>\'+
-                    \'<button class="ra-btn-angebot" title="Angebot erstellen"><i class="ri-draft-line"></i></button>\'+
+                    \'<button class="ra-btn-angebot" title="\'+L.btn_angebot+\'"><i class="ri-draft-line"></i></button>\'+
                     \'<button class="ra-btn-delete" title="\'+L.btn_delete+\'"><i class="ri-delete-bin-line"></i></button>\'+
                 \'</div>\'+
                 \'<select class="ra-status-select" data-repair-id="\'+r.id+\'">\'+selectHtml+\'</select>\'+
@@ -7984,7 +7985,7 @@ echo '</div></div>
                     . '<button class="ra-btn-email" title="' . esc_attr(PPV_Lang::t('repair_admin_send_email')) . '"><i class="ri-mail-send-line"></i></button>'
                     . '<button class="ra-btn-resubmit" title="' . esc_attr(PPV_Lang::t('repair_admin_resubmit')) . '"><i class="ri-repeat-line"></i></button>'
                     . '<button class="' . $inv_btn_class . '" title="' . $inv_btn_title . '"><i class="' . $inv_btn_icon . '"></i></button>'
-                    . '<button class="ra-btn-angebot" title="Angebot erstellen"><i class="ri-draft-line"></i></button>'
+                    . '<button class="ra-btn-angebot" title="' . esc_attr(PPV_Lang::t('repair_admin_create_quote_btn')) . '"><i class="ri-draft-line"></i></button>'
                     . '<button class="ra-btn-delete" title="' . esc_attr(PPV_Lang::t('repair_admin_delete_repair')) . '"><i class="ri-delete-bin-line"></i></button>'
                 . '</div>'
                 . '<select class="ra-status-select" data-repair-id="' . intval($r->id) . '">' . $options . '</select>'
