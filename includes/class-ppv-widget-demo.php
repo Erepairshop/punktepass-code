@@ -12,7 +12,7 @@ class PPV_Widget_Demo {
     public static function render() {
         $code = sanitize_text_field($_GET['code'] ?? 'PP-DEMO01');
         $mode = sanitize_text_field($_GET['mode'] ?? 'float');
-        $lang = sanitize_text_field($_GET['lang'] ?? 'de');
+        $lang = sanitize_text_field($_GET['lang'] ?? 'en');
         $pos  = sanitize_text_field($_GET['position'] ?? 'bottom-right');
         $color = sanitize_text_field($_GET['color'] ?? '#667eea');
 

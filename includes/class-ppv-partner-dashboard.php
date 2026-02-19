@@ -37,7 +37,7 @@ class PPV_Partner_Dashboard {
     public static function render() {
         $code  = sanitize_text_field($_GET['code'] ?? '');
         $token = sanitize_text_field($_GET['token'] ?? '');
-        $lang  = sanitize_text_field($_GET['lang'] ?? 'de');
+        $lang  = sanitize_text_field($_GET['lang'] ?? 'en');
 
         if (!$code || !$token) {
             self::render_error('Zugang verweigert', 'Kein g&uuml;ltiger Dashboard-Link.', 'Access denied', 'No valid dashboard link.');
@@ -378,8 +378,8 @@ function copyRefLink(el) {
      * Render error page
      */
     private static function render_error($title_de, $msg_de, $title_en, $msg_en) {
-        $lang = sanitize_text_field($_GET['lang'] ?? 'de');
-        $title = $lang === 'en' ? $title_en : $title_de;
+        $lang = sanitize_text_field($_GET['lang'] ?? 'en');
+        $title = $lang === 'de' ? $title_de : $title_en;
         $msg = $lang === 'en' ? $msg_en : $msg_de;
         echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
         echo '<title>' . $title . '</title>';

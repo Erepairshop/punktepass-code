@@ -112,14 +112,14 @@ if (class_exists('PPV_Lang')) {
     ppv_log("    - Session: " . ($session_lang ?: 'EMPTY'));
     ppv_log("    - Header: " . ($header_lang ?: 'EMPTY'));
 
-    $lang = $header_lang ?: ($cookie_lang ?: $session_lang ?: 'de');
+    $lang = $header_lang ?: ($cookie_lang ?: $session_lang ?: 'en');
 
-    if (!empty($lang) && in_array($lang, ['de','hu','ro'], true)) {
+    if (!empty($lang) && in_array($lang, ['de','hu','ro','en','it'], true)) {
         PPV_Lang::load($lang);
         PPV_Lang::$active = $lang;
         ppv_log("🌍 [PPV_MyPoints_REST] Lang forced before response → {$lang}");
     } else {
-        ppv_log("⚠️ [PPV_MyPoints_REST] No valid lang detected, fallback → de");
+        ppv_log("⚠️ [PPV_MyPoints_REST] No valid lang detected, fallback → en");
     }
 }
 

@@ -22,10 +22,10 @@ class PPV_My_Points {
     /** ============================================================
      *  🌍 LOAD LANGUAGE STRINGS FROM FILES
      * ============================================================ */
-    private static function load_lang_file($lang = 'de') {
+    private static function load_lang_file($lang = 'en') {
         // Validate
         if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
-            $lang = 'de';
+            $lang = 'en';
         }
 
         // Try to load lang file
@@ -70,11 +70,11 @@ class PPV_My_Points {
             ppv_log("🔍 [PPV_My_Points] Lang from COOKIE: " . ($lang ?: 'EMPTY'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
-            $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
-            ppv_log("🔍 [PPV_My_Points] Lang from SESSION: " . ($lang ?: 'de'));
+            $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'en');
+            ppv_log("🔍 [PPV_My_Points] Lang from SESSION: " . ($lang ?: 'en'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
-            $lang = 'de';
+            $lang = 'en';
         }
 
         // Save to session + cookie
@@ -188,10 +188,10 @@ class PPV_My_Points {
         // ─── Language ───
         $lang = sanitize_text_field($_GET['lang'] ?? '');
         if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
-            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? ($_SESSION['ppv_lang'] ?? 'de'));
+            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? ($_SESSION['ppv_lang'] ?? 'en'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
-            $lang = 'de';
+            $lang = 'en';
         }
         $_SESSION['ppv_lang'] = $lang;
 
@@ -313,10 +313,10 @@ class PPV_My_Points {
         // Get active lang
         $lang = sanitize_text_field($_GET['lang'] ?? '');
         if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
-            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? ($_SESSION['ppv_lang'] ?? 'de'));
+            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? ($_SESSION['ppv_lang'] ?? 'en'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
-            $lang = 'de';
+            $lang = 'en';
         }
 
         // ✅ SAME AS USER DASHBOARD - No user check here, let JS/REST API handle it!

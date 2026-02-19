@@ -186,8 +186,8 @@ class PPV_Bottom_Nav {
      * ============================================================ */
     private static function render_feedback_modal($user_type = 'user') {
         // Get current language
-        $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
-        if (!in_array($lang, ['de', 'hu', 'en'])) $lang = 'de';
+        $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'en';
+        if (!in_array($lang, ['de', 'hu', 'en'])) $lang = 'en';
 
         // Translations
         $T = [
