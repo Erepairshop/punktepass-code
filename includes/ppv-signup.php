@@ -139,7 +139,7 @@ class PPV_Signup {
         $page_html = self::render_signup_page([]);
 
         // CSS version
-        $css_ver = class_exists('PPV_Core') ? PPV_Core::asset_version($plugin_dir . 'assets/css/ppv-login-light.css') : $version;
+        $css_ver = class_exists('PPV_Core') ? PPV_Core::asset_version($plugin_dir . 'assets/css/ppv-signup.css') : $version;
         $js_ver  = class_exists('PPV_Core') ? PPV_Core::asset_version($plugin_dir . 'assets/js/ppv-signup.js') : $version;
 
         $google_client_id = defined('PPV_GOOGLE_CLIENT_ID')
@@ -151,7 +151,7 @@ class PPV_Signup {
 <html lang="<?php echo esc_attr($lang); ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo esc_html(PPV_Lang::t('signup_title')); ?> - PunktePass</title>
@@ -160,26 +160,7 @@ class PPV_Signup {
     <link rel="preconnect" href="https://accounts.google.com" crossorigin>
     <link rel="preload" href="<?php echo esc_url($plugin_url); ?>assets/img/logo.webp?v=2" as="image" type="image/webp">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
-    <style id="ppv-critical-css">
-        :root{--pp-primary:#0066FF;--ppv-bg:#F8F9FB;--ppv-card-glass:rgba(255,255,255,0.85);--ppv-text:#1A1A1A;--ppv-border-glass:rgba(255,255,255,0.3);--safe-area-top:env(safe-area-inset-top,0px)}
-        html,body{margin:0;padding:0;height:auto;min-height:100%;width:100%;background:linear-gradient(135deg,#F8F9FB 0%,#E6F0FF 100%)}
-        .ppv-landing-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;-webkit-overflow-scrolling:touch}
-        .ppv-landing-header{position:sticky;top:0;z-index:100;background:var(--ppv-card-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--ppv-border-glass);padding:8px 0;padding-top:calc(8px + var(--safe-area-top));flex-shrink:0}
-        .ppv-header-content{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-        .ppv-lang-switcher{display:flex;gap:4px;background:var(--ppv-bg);border:1px solid #E5E7EB;border-radius:8px;padding:4px}
-        .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
-        .ppv-lang-btn.active{background:var(--pp-primary);color:white}
-        .ppv-login-card{background:var(--ppv-card-glass);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--ppv-border-glass);padding:28px}
-        @media(max-width:640px){.ppv-header-content{gap:8px;padding:0 12px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
-    </style>
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-login-light.css?ver=<?php echo esc_attr($css_ver); ?>">
-    <style>
-        .ppv-password-wrapper input[type="password"]{padding-right:100px}
-        .ppv-generate-password-btn{position:absolute;right:48px;top:50%;transform:translateY(-50%);background:#6366f1;border:none;border-radius:6px;padding:8px;cursor:pointer;color:white;display:flex;align-items:center;justify-content:center;transition:all 0.2s;z-index:10}
-        .ppv-generate-password-btn:hover{background:#4f46e5;transform:translateY(-50%) scale(1.05)}
-        .ppv-generate-password-btn:active{transform:translateY(-50%) scale(0.95)}
-        .ppv-password-wrapper .ppv-password-toggle{right:8px}
-    </style>
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-signup.css?ver=<?php echo esc_attr($css_ver); ?>">
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 </head>
 <body>
@@ -219,7 +200,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
     }
 
     /** ============================================================
-     * 🔹 Render Signup Page
+     * 🔹 Render Signup Page (Modern Design v2)
      * ============================================================ */
     public static function render_signup_page($atts) {
         self::ensure_session();
@@ -230,10 +211,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
             if ($user_type === 'user') {
                 wp_redirect(home_url('/user_dashboard'));
                 exit;
-            } elseif ($user_type === 'vendor') {
-                wp_redirect(home_url('/qr-center'));
-                exit;
-            } elseif ($user_type === 'scanner') {
+            } elseif (in_array($user_type, ['vendor', 'scanner'])) {
                 wp_redirect(home_url('/qr-center'));
                 exit;
             }
@@ -244,325 +222,182 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
         ob_start();
         ?>
 
-        <div class="ppv-landing-container">
+        <div class="su-page">
             <!-- Header -->
-            <header class="ppv-landing-header">
-                <div class="ppv-header-content">
-                    <div class="ppv-logo-section">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="ppv-logo">
-                        <h1>PunktePass</h1>
-                    </div>
-                    <p class="ppv-slogan"><?php echo PPV_Lang::t('signup_slogan'); ?></p>
-
-                    <!-- Language Switcher -->
+            <header class="su-header">
+                <div class="su-header-inner">
+                    <a href="/" class="su-brand">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass">
+                        <span>PunktePass</span>
+                    </a>
                     <?php if (class_exists('PPV_Lang_Switcher')) echo PPV_Lang_Switcher::render(); ?>
                 </div>
             </header>
 
-            <!-- Hero Section -->
-            <div class="ppv-hero-section">
-                <!-- Animated Background -->
-                <div class="ppv-hero-bg">
-                    <div class="ppv-bg-shape ppv-shape-1"></div>
-                    <div class="ppv-bg-shape ppv-shape-2"></div>
-                    <div class="ppv-bg-shape ppv-shape-3"></div>
-                </div>
+            <!-- Main -->
+            <main class="su-main">
+                <div class="su-card">
+                    <div class="su-card-body">
 
-                <div class="ppv-hero-content" style="justify-content: center;">
-                    <!-- Signup Card (Centered) -->
-                    <div class="ppv-login-section" style="max-width: 520px;">
-                        <div class="ppv-login-card">
-                            <!-- Welcome Text -->
-                            <div class="ppv-login-welcome">
-                                <h2><?php echo PPV_Lang::t('signup_title'); ?></h2>
-                                <p><?php echo PPV_Lang::t('signup_subtitle'); ?></p>
-                            </div>
+                        <!-- Welcome -->
+                        <div class="su-welcome">
+                            <h2><?php echo PPV_Lang::t('signup_title'); ?></h2>
+                            <p><?php echo PPV_Lang::t('signup_subtitle'); ?></p>
+                        </div>
 
-                            <!-- User Type Selection (NEW!) -->
-                            <div class="ppv-user-type-selector" style="margin-bottom: 24px;">
-                                <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;"><?php echo PPV_Lang::t('signup_i_am'); ?></p>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <label class="ppv-type-option ppv-type-active" data-type="user">
-                                        <input type="radio" name="user_type" value="user" checked style="display: none;">
-                                        <div style="padding: 16px; border: 2px solid #E5E7EB; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s;">
-                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 8px; color: #6B7280;">
-                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                <circle cx="12" cy="7" r="4"/>
-                                            </svg>
-                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;"><?php echo PPV_Lang::t('signup_type_customer'); ?></strong>
-                                            <span style="font-size: 12px; color: #6B7280;"><?php echo PPV_Lang::t('signup_type_customer_desc'); ?></span>
-                                        </div>
-                                    </label>
-
-                                    <label class="ppv-type-option" data-type="vendor">
-                                        <input type="radio" name="user_type" value="vendor" style="display: none;">
-                                        <div style="padding: 16px; border: 2px solid #E5E7EB; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s;">
-                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 8px; color: #6B7280;">
-                                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                                <polyline points="9 22 9 12 15 12 15 22"/>
-                                            </svg>
-                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;"><?php echo PPV_Lang::t('signup_type_vendor'); ?></strong>
-                                            <span style="font-size: 12px; color: #6B7280;"><?php echo PPV_Lang::t('signup_type_vendor_desc'); ?></span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Google Signup Button -->
-                            <button type="button" id="ppv-google-signup-btn" class="ppv-social-btn ppv-google-btn">
-                                <svg width="20" height="20" viewBox="0 0 48 48">
-                                    <path d="M47.532 24.5528C47.532 22.9214 47.3997 21.2811 47.1175 19.6761H24.48V28.9181H37.4434C36.9055 31.8988 35.177 34.5356 32.6461 36.2111V42.2078H40.3801C44.9217 38.0278 47.532 31.8547 47.532 24.5528Z" fill="#4285F4"/>
-                                    <path d="M24.48 48.0016C30.9529 48.0016 36.4116 45.8764 40.3888 42.2078L32.6549 36.2111C30.5031 37.675 27.7252 38.5039 24.4888 38.5039C18.2275 38.5039 12.9187 34.2798 11.0139 28.6006H3.03296V34.7825C7.10718 42.8868 15.4056 48.0016 24.48 48.0016Z" fill="#34A853"/>
-                                    <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04"/>
-                                    <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335"/>
-                                </svg>
-                                <span><?php echo PPV_Lang::t('signup_google_btn'); ?></span>
-                            </button>
-
-                            <!-- Divider -->
-                            <div class="ppv-login-divider">
-                                <span><?php echo PPV_Lang::t('signup_or_email'); ?></span>
-                            </div>
-
-                            <!-- Signup Form -->
-                            <form id="ppv-signup-form" class="ppv-login-form" autocomplete="off">
-                                <input type="hidden" name="user_type" id="ppv-user-type" value="user">
-
-                                <div class="ppv-form-group">
-                                    <label for="ppv-email">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                            <polyline points="22,6 12,13 2,6"/>
-                                        </svg>
-                                        <?php echo PPV_Lang::t('signup_email_label'); ?>
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="ppv-email"
-                                        name="email"
-                                        placeholder="<?php echo PPV_Lang::t('signup_email_placeholder'); ?>"
-                                        autocomplete="email"
-                                        required
-                                    >
-                                </div>
-
-                                <div class="ppv-form-group">
-                                    <label for="ppv-password">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                        </svg>
-                                        <?php echo PPV_Lang::t('signup_password_label'); ?>
-                                    </label>
-                                    <div class="ppv-password-wrapper">
-                                        <input
-                                            type="password"
-                                            id="ppv-password"
-                                            name="password"
-                                            placeholder="<?php echo PPV_Lang::t('signup_password_placeholder'); ?>"
-                                            autocomplete="new-password"
-                                            required
-                                        >
-                                        <button type="button" id="ppv-generate-password" class="ppv-generate-password-btn" title="<?php echo esc_attr(PPV_Lang::t('signup_generate_password')); ?>">
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                                <path d="M12 15v2"/>
-                                            </svg>
-                                        </button>
-                                        <button type="button" class="ppv-password-toggle" aria-label="<?php echo PPV_Lang::t('signup_show_password'); ?>">
-                                            <svg class="ppv-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                                <circle cx="12" cy="12" r="3"/>
-                                            </svg>
-                                            <svg class="ppv-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                                                <line x1="1" y1="1" x2="23" y2="23"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <!-- Password Strength Indicator -->
-                                    <div id="ppv-password-strength" class="ppv-password-strength" style="display:none;">
-                                        <div class="ppv-strength-bar">
-                                            <div class="ppv-strength-fill"></div>
-                                        </div>
-                                        <p class="ppv-strength-text"></p>
-                                    </div>
-                                    <!-- Password Requirements -->
-                                    <div class="ppv-password-requirements">
-                                        <p style="font-size: 12px; color: #6B7280; margin: 8px 0 4px 0;"><?php echo PPV_Lang::t('signup_password_requirements'); ?></p>
-                                        <ul style="font-size: 12px; color: #6B7280; margin: 0; padding-left: 20px;">
-                                            <li id="req-length"><?php echo PPV_Lang::t('signup_req_length'); ?></li>
-                                            <li id="req-uppercase"><?php echo PPV_Lang::t('signup_req_uppercase'); ?></li>
-                                            <li id="req-number"><?php echo PPV_Lang::t('signup_req_number'); ?></li>
-                                            <li id="req-special"><?php echo PPV_Lang::t('signup_req_special'); ?></li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div class="ppv-form-group">
-                                    <label for="ppv-password-confirm">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="20 6 9 17 4 12"/>
-                                        </svg>
-                                        <?php echo PPV_Lang::t('signup_password_confirm_label'); ?>
-                                    </label>
-                                    <div class="ppv-password-wrapper">
-                                        <input
-                                            type="password"
-                                            id="ppv-password-confirm"
-                                            name="password_confirm"
-                                            placeholder="<?php echo PPV_Lang::t('signup_password_confirm_placeholder'); ?>"
-                                            autocomplete="new-password"
-                                            required
-                                        >
-                                    </div>
-                                </div>
-
-                                <div class="ppv-form-footer" style="display: block;">
-                                    <label class="ppv-checkbox" style="margin-bottom: 12px;">
-                                        <input type="checkbox" name="terms" id="ppv-terms" required>
-                                        <span><?php echo PPV_Lang::t('signup_terms_agree'); ?> <a href="/agb" target="_blank"><?php echo PPV_Lang::t('signup_terms_link'); ?></a></span>
-                                    </label>
-                                    <label class="ppv-checkbox">
-                                        <input type="checkbox" name="privacy" id="ppv-privacy" required>
-                                        <span><?php echo PPV_Lang::t('signup_privacy_agree'); ?> <a href="/datenschutz" target="_blank"><?php echo PPV_Lang::t('signup_privacy_link'); ?></a></span>
-                                    </label>
-                                </div>
-
-                                <button type="submit" class="ppv-submit-btn" id="ppv-submit-btn">
-                                    <span class="ppv-btn-text"><?php echo PPV_Lang::t('signup_button'); ?></span>
-                                    <span class="ppv-btn-loader" style="display:none;">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <circle cx="12" cy="12" r="10" opacity="0.25"/>
-                                            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round">
-                                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
-                                            </path>
-                                        </svg>
-                                    </span>
+                        <!-- User Type Selector (Segmented Control) -->
+                        <div class="su-type-selector">
+                            <span class="su-type-label"><?php echo PPV_Lang::t('signup_i_am'); ?></span>
+                            <div class="su-type-tabs">
+                                <button type="button" class="su-type-tab active" data-type="user">
+                                    <i class="ri-user-line"></i>
+                                    <?php echo PPV_Lang::t('signup_type_customer'); ?>
                                 </button>
-                            </form>
-
-                            <!-- Alert Box -->
-                            <div id="ppv-signup-alert" class="ppv-alert" style="display:none;"></div>
-
-                            <!-- Login Link -->
-                            <div class="ppv-register-link">
-                                <p><?php echo PPV_Lang::t('signup_have_account'); ?> <a href="/login"><?php echo PPV_Lang::t('signup_login_now'); ?></a></p>
+                                <button type="button" class="su-type-tab" data-type="vendor">
+                                    <i class="ri-store-2-line"></i>
+                                    <?php echo PPV_Lang::t('signup_type_vendor'); ?>
+                                </button>
                             </div>
                         </div>
+
+                        <!-- Google Signup -->
+                        <button type="button" id="ppv-google-signup-btn" class="su-google-btn">
+                            <svg width="18" height="18" viewBox="0 0 48 48">
+                                <path d="M47.532 24.5528C47.532 22.9214 47.3997 21.2811 47.1175 19.6761H24.48V28.9181H37.4434C36.9055 31.8988 35.177 34.5356 32.6461 36.2111V42.2078H40.3801C44.9217 38.0278 47.532 31.8547 47.532 24.5528Z" fill="#4285F4"/>
+                                <path d="M24.48 48.0016C30.9529 48.0016 36.4116 45.8764 40.3888 42.2078L32.6549 36.2111C30.5031 37.675 27.7252 38.5039 24.4888 38.5039C18.2275 38.5039 12.9187 34.2798 11.0139 28.6006H3.03296V34.7825C7.10718 42.8868 15.4056 48.0016 24.48 48.0016Z" fill="#34A853"/>
+                                <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04"/>
+                                <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335"/>
+                            </svg>
+                            <span><?php echo PPV_Lang::t('signup_google_btn'); ?></span>
+                        </button>
+
+                        <!-- Divider -->
+                        <div class="su-divider"><?php echo PPV_Lang::t('signup_or_email'); ?></div>
+
+                        <!-- Signup Form -->
+                        <form id="ppv-signup-form" class="su-form" autocomplete="off">
+                            <input type="hidden" name="user_type" id="ppv-user-type" value="user">
+
+                            <!-- Email -->
+                            <div class="su-input-group">
+                                <label for="ppv-email"><i class="ri-mail-line"></i> <?php echo PPV_Lang::t('signup_email_label'); ?></label>
+                                <div class="su-input-wrap">
+                                    <input type="email" id="ppv-email" name="email" class="su-input" placeholder="<?php echo PPV_Lang::t('signup_email_placeholder'); ?>" autocomplete="email" required>
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="su-input-group">
+                                <label for="ppv-password"><i class="ri-lock-line"></i> <?php echo PPV_Lang::t('signup_password_label'); ?></label>
+                                <div class="su-input-wrap su-input-wrap--password">
+                                    <input type="password" id="ppv-password" name="password" class="su-input" placeholder="<?php echo PPV_Lang::t('signup_password_placeholder'); ?>" autocomplete="new-password" required>
+                                    <button type="button" id="ppv-generate-password" class="su-pw-generate" title="<?php echo esc_attr(PPV_Lang::t('signup_generate_password')); ?>">
+                                        <i class="ri-key-line" style="font-size: 16px;"></i>
+                                    </button>
+                                    <button type="button" class="su-pw-toggle ppv-password-toggle" aria-label="<?php echo PPV_Lang::t('signup_show_password'); ?>">
+                                        <i class="ri-eye-line ppv-eye-open" style="font-size: 18px;"></i>
+                                        <i class="ri-eye-off-line ppv-eye-closed" style="font-size: 18px; display:none;"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Password Strength -->
+                                <div id="ppv-password-strength" class="su-pw-strength" style="display:none;">
+                                    <div class="su-strength-bar">
+                                        <div class="ppv-strength-fill su-strength-fill"></div>
+                                    </div>
+                                    <p class="ppv-strength-text su-strength-text"></p>
+                                </div>
+
+                                <!-- Password Requirements -->
+                                <div class="su-pw-reqs">
+                                    <div class="su-pw-reqs-title"><?php echo PPV_Lang::t('signup_password_requirements'); ?></div>
+                                    <ul class="su-pw-reqs-list">
+                                        <li id="req-length"><i class="ri-checkbox-blank-circle-line"></i> <?php echo PPV_Lang::t('signup_req_length'); ?></li>
+                                        <li id="req-uppercase"><i class="ri-checkbox-blank-circle-line"></i> <?php echo PPV_Lang::t('signup_req_uppercase'); ?></li>
+                                        <li id="req-number"><i class="ri-checkbox-blank-circle-line"></i> <?php echo PPV_Lang::t('signup_req_number'); ?></li>
+                                        <li id="req-special"><i class="ri-checkbox-blank-circle-line"></i> <?php echo PPV_Lang::t('signup_req_special'); ?></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="su-input-group">
+                                <label for="ppv-password-confirm"><i class="ri-checkbox-circle-line"></i> <?php echo PPV_Lang::t('signup_password_confirm_label'); ?></label>
+                                <div class="su-input-wrap">
+                                    <input type="password" id="ppv-password-confirm" name="password_confirm" class="su-input" placeholder="<?php echo PPV_Lang::t('signup_password_confirm_placeholder'); ?>" autocomplete="new-password" required>
+                                </div>
+                            </div>
+
+                            <!-- Terms & Privacy -->
+                            <div class="su-terms">
+                                <label class="su-check">
+                                    <input type="checkbox" name="terms" id="ppv-terms" required>
+                                    <span><?php echo PPV_Lang::t('signup_terms_agree'); ?> <a href="/agb" target="_blank"><?php echo PPV_Lang::t('signup_terms_link'); ?></a></span>
+                                </label>
+                                <label class="su-check">
+                                    <input type="checkbox" name="privacy" id="ppv-privacy" required>
+                                    <span><?php echo PPV_Lang::t('signup_privacy_agree'); ?> <a href="/datenschutz" target="_blank"><?php echo PPV_Lang::t('signup_privacy_link'); ?></a></span>
+                                </label>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="submit" class="su-submit" id="ppv-submit-btn">
+                                <span class="ppv-btn-text"><?php echo PPV_Lang::t('signup_button'); ?></span>
+                                <span class="ppv-btn-loader" style="display:none;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" opacity="0.25"/>
+                                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round">
+                                            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </span>
+                            </button>
+                        </form>
+
+                        <!-- Alert -->
+                        <div id="ppv-signup-alert" class="su-alert" style="display:none;"></div>
+
+                        <!-- Login Link -->
+                        <div class="su-login-link">
+                            <?php echo PPV_Lang::t('signup_have_account'); ?> <a href="/login"><?php echo PPV_Lang::t('signup_login_now'); ?></a>
+                        </div>
+
                     </div>
                 </div>
-            </div>
+            </main>
 
             <!-- Footer -->
-            <footer class="ppv-landing-footer">
+            <footer class="su-footer">
                 <p><?php echo PPV_Lang::t('landing_footer_copyright'); ?></p>
-                <div class="ppv-footer-links">
+                <div class="su-footer-links">
                     <a href="/datenschutz"><?php echo PPV_Lang::t('landing_footer_privacy'); ?></a>
-                    <span>•</span>
+                    <span>&middot;</span>
                     <a href="/agb"><?php echo PPV_Lang::t('landing_footer_terms'); ?></a>
-                    <span>•</span>
+                    <span>&middot;</span>
                     <a href="/impressum"><?php echo PPV_Lang::t('landing_footer_imprint'); ?></a>
                 </div>
             </footer>
         </div>
 
-        <style>
-        /* Signup: override login's fixed viewport for scrollable form */
-        html, body {
-            overflow-y: auto !important;
-            position: static !important;
-            height: auto !important;
-            min-height: 100%;
-        }
-        .ppv-landing-container {
-            min-height: 100vh;
-            min-height: 100dvh;
-            height: auto !important;
-            overflow: visible !important;
-        }
-        .ppv-slogan { display: none; }
-        .ppv-hero-section {
-            min-height: auto;
-            flex: 1;
-            padding: 20px 16px 32px;
-        }
-        .ppv-hero-content {
-            grid-template-columns: 1fr;
-        }
-        .ppv-login-card { padding: 24px; }
-        .ppv-login-welcome { margin-bottom: 12px; }
-        .ppv-login-welcome h2 { font-size: 22px; }
-        .ppv-login-welcome p { font-size: 14px; }
-
-        /* Form: tighter spacing (login CSS has gap:12px, remove extra margin) */
-        .ppv-login-form { gap: 10px !important; }
-        .ppv-form-group { margin-bottom: 0; gap: 4px; }
-        .ppv-form-group input { min-height: 46px; padding: 10px 14px; }
-        .ppv-form-footer { padding: 10px 14px !important; margin-top: 4px !important; }
-
-        /* User Type Selector */
-        .ppv-user-type-selector { margin-bottom: 16px; }
-        .ppv-type-option > div { transition: all 0.3s ease; }
-        .ppv-type-option:hover > div,
-        .ppv-type-option.ppv-type-active > div { border-color: #3B82F6; background: #EFF6FF; }
-        .ppv-type-option.ppv-type-active svg { color: #3B82F6; }
-        .ppv-type-option.ppv-type-active strong { color: #1E40AF; }
-
-        /* Password requirements compact */
-        .ppv-password-requirements { margin-top: 4px; }
-        .ppv-password-requirements ul { margin: 2px 0; font-size: 11px; }
-        .ppv-password-requirements p { margin: 4px 0 2px 0; }
-
-        /* Footer */
-        .ppv-landing-footer { margin-top: auto; flex-shrink: 0; }
-
-        @media (max-width: 640px) {
-            .ppv-hero-section { padding: 12px 12px 24px; }
-            .ppv-login-card { padding: 18px 16px; }
-            .ppv-login-welcome h2 { font-size: 20px; }
-            .ppv-user-type-selector p { font-size: 13px; }
-            .ppv-type-option > div { padding: 12px; }
-            .ppv-type-option svg { width: 28px; height: 28px; }
-        }
-        </style>
-
         <script>
-        // User Type Toggle - wait for full page load
+        // User Type Segmented Control
         (function() {
             function initTypeToggle() {
-                const typeOptions = document.querySelectorAll('.ppv-type-option');
+                const tabs = document.querySelectorAll('.su-type-tab');
                 const hiddenInput = document.getElementById('ppv-user-type');
 
-                if (!typeOptions.length || !hiddenInput) {
-                    console.warn('[PPV] Type toggle elements not found, retrying...');
+                if (!tabs.length || !hiddenInput) {
                     setTimeout(initTypeToggle, 100);
                     return;
                 }
 
-                typeOptions.forEach(option => {
-                    option.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        // Remove active from all
-                        typeOptions.forEach(opt => opt.classList.remove('ppv-type-active'));
-
-                        // Add active to clicked
-                        this.classList.add('ppv-type-active');
-
-                        // Update radio and hidden input
-                        const radio = this.querySelector('input[type="radio"]');
-                        if (radio) {
-                            radio.checked = true;
-                            hiddenInput.value = radio.value;
-                            console.log('[PPV] User type changed to:', radio.value);
-                        }
+                tabs.forEach(function(tab) {
+                    tab.addEventListener('click', function() {
+                        tabs.forEach(function(t) { t.classList.remove('active'); });
+                        tab.classList.add('active');
+                        hiddenInput.value = tab.dataset.type;
                     });
                 });
-
-                console.log('[PPV] Type toggle initialized');
             }
 
             if (document.readyState === 'loading') {
