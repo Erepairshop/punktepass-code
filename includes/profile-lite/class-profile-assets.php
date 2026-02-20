@@ -49,13 +49,8 @@ class PPV_Profile_Assets {
             return;
         }
 
-        // CSS - Light theme (contains dark mode via body.ppv-dark)
-        wp_enqueue_style(
-            'ppv-theme-light',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-            [],
-            filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css')
-        );
+        // CSS - Legacy theme REMOVED – ppv-handler.css replaces ppv-theme-light.css
+        // wp_enqueue_style('ppv-theme-light');
 
         // Google Maps API (if configured)
         if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {

@@ -163,16 +163,8 @@ class PPV_Standalone_Shell {
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-core.css?v=<?php echo $version; ?>">
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-layout.css?v=<?php echo $version; ?>">
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-components.css?v=<?php echo $version; ?>">
-    <?php if ($is_handler): ?>
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-handler.css?v=<?php echo $version; ?>">
-    <?php else: ?>
-    <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-theme-light.css?v=<?php echo $version; ?>">
-    <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/handler-light.css?v=<?php echo $version; ?>">
-    <?php endif; ?>
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-bottom-nav.css?v=<?php echo $version; ?>">
-    <?php if ($is_dark): ?>
-    <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo $version; ?>">
-    <?php endif; ?>
     <?php echo $extra_css; ?>
     <?php
     // Fire wp_head to let shortcodes that enqueued styles get them output

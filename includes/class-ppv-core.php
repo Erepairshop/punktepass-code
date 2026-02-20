@@ -617,14 +617,9 @@ class PPV_Core {
         wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], PPV_VERSION);
         wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], PPV_VERSION);
 
-        // 🔹 Legacy theme (still needed during migration, loaded AFTER new CSS)
-        wp_register_style(
-            'ppv-theme-light',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-            ['ppv-core'],
-            PPV_VERSION
-        );
-        wp_enqueue_style('ppv-theme-light');
+        // 🔹 Legacy theme REMOVED – ppv-handler.css replaces ppv-theme-light.css + handler-light.css
+        // wp_register_style('ppv-theme-light', ...);
+        // wp_enqueue_style('ppv-theme-light');
 
         // 🔹 Theme váltó JS (globálisan minden oldalra)
         wp_enqueue_script(

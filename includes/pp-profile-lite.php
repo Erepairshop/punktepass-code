@@ -398,12 +398,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-handler.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
-<?php if ($is_dark): ?>
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
-<?php endif; ?>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script>
     var ajaxurl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
@@ -447,13 +443,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 return;
             }
 
-            // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
-            wp_enqueue_style(
-                'ppv-theme-light',
-                PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-                [],
-                filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css')
-            );
+            // 🔹 Legacy theme REMOVED – ppv-handler.css replaces ppv-theme-light.css
+            // wp_enqueue_style('ppv-theme-light');
             // Google Maps JS API
 if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
     wp_enqueue_script(
