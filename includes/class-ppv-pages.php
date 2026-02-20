@@ -265,7 +265,7 @@ public static function force_visible() {
         }
 
         // 🧹 Minden PPV CSS törlése (kivéve whitelist)
-        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-qr', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
+        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-qr', 'ppv-dashboard', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
