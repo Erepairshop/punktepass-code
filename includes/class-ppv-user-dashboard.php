@@ -1087,12 +1087,11 @@ private static function get_today_hours($opening_hours) {
         self::render_global_header();
         $global_header = ob_get_clean();
 
-        // ─── Bottom nav (context + HTML) ───
+        // ─── Bottom nav context (JS data only, HTML comes from render_dashboard) ───
         $bottom_nav_context = '';
         if (class_exists('PPV_Bottom_Nav')) {
             ob_start();
             PPV_Bottom_Nav::inject_context();
-            echo PPV_Bottom_Nav::render_nav();
             $bottom_nav_context = ob_get_clean();
         }
 
@@ -1137,6 +1136,10 @@ private static function get_today_hours($opening_hours) {
     html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
     .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
     .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    /* Override handler-light.css fixed app-shell for standalone page */
+    #ppv-dashboard-root{position:static!important;overflow:visible!important;height:auto!important;display:block!important}
+    .ppv-dashboard-netto{overflow:visible!important;padding-top:0!important;padding-bottom:100px!important}
+    .ppv-dashboard-inner{padding:16px!important}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
