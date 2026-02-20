@@ -1886,8 +1886,7 @@ async function initUserDashboard() {
           const toggleBtn = card.querySelector('.ppv-toggle-btn');
 
           if (details && toggleBtn) {
-            details.classList.toggle('expanded');
-            toggleBtn.classList.toggle('active');
+            card.classList.toggle('expanded');
           }
         }
         return;
