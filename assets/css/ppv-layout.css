@@ -376,7 +376,8 @@ body {
     max-width: 768px;
     margin: 0 auto;
     padding: 0;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: calc(var(--pp-header-height, 64px) + env(safe-area-inset-top, 0px) + 12px);
+    padding-bottom: calc(var(--pp-nav-height, 72px) + 32px + env(safe-area-inset-bottom, 0px));
     min-height: 100vh;
 }
 
@@ -536,6 +537,77 @@ body {
         padding-top: env(safe-area-inset-top);
         height: calc(var(--pp-header-height) + env(safe-area-inset-top)) !important;
     }
+}
+
+/* ── Light Mode Header ──────────────────── */
+body.ppv-light #ppv-global-header,
+[data-theme="light"] #ppv-global-header {
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+body.ppv-light #ppv-global-header .ppv-user-email {
+    color: var(--pp-text, #0f172a);
+}
+
+body.ppv-light #ppv-global-header .ppv-nav-btn {
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(0, 0, 0, 0.03) !important;
+    color: var(--pp-text-2, #334155) !important;
+}
+
+body.ppv-light #ppv-global-header .ppv-nav-btn:hover {
+    background: rgba(14, 165, 233, 0.08) !important;
+    border-color: rgba(14, 165, 233, 0.2) !important;
+    color: var(--pp-primary, #0ea5e9) !important;
+}
+
+body.ppv-light #ppv-global-header .ppv-stat-mini {
+    background: rgba(14, 165, 233, 0.06) !important;
+    border: 1px solid rgba(14, 165, 233, 0.1);
+    color: var(--pp-primary-dark, #0284c7);
+}
+
+body.ppv-light #ppv-global-header .ppv-stat-mini i {
+    color: #d97706;
+}
+
+body.ppv-light #ppv-global-header .ppv-theme-btn-mini {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: var(--pp-text-3, #64748b) !important;
+}
+
+body.ppv-light #ppv-global-header .ppv-theme-btn-mini:hover {
+    background: rgba(251, 191, 36, 0.08) !important;
+    border-color: rgba(251, 191, 36, 0.2) !important;
+    color: #d97706 !important;
+}
+
+body.ppv-light #ppv-global-header .ppv-lang-icon {
+    color: var(--pp-text-3, #64748b);
+}
+
+body.ppv-light #ppv-global-header .ppv-lang-select {
+    color: var(--pp-text-2, #334155) !important;
+}
+
+body.ppv-light #ppv-global-header .ppv-lang-select option {
+    background: #ffffff;
+    color: #1e293b;
+}
+
+body.ppv-light #ppv-global-header .ppv-header-avatar {
+    background:
+        linear-gradient(#ffffff, #ffffff) padding-box,
+        linear-gradient(135deg, var(--pp-primary), #9333ea, var(--pp-primary-light)) border-box !important;
+}
+
+body.ppv-light #ppv-global-header .ppv-lang-wrap:hover {
+    background: rgba(0, 0, 0, 0.04);
 }
 
 /* ── Dark Mode Layout Overrides ──────────── */

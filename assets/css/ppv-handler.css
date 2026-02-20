@@ -121,6 +121,41 @@ body {
     padding:0 16px;
     background:var(--color-header-bg);
     backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(0,0,0,.08)
+}
+
+/* Light mode header */
+body.ppv-light #ppv-global-header,
+[data-theme=light] #ppv-global-header {
+    background:#ffffff;
+    border-bottom:1px solid rgba(0,0,0,.08)
+}
+
+body.ppv-light #ppv-global-header .ppv-user-email {
+    color:var(--color-text)
+}
+
+body.ppv-light #ppv-global-header .ppv-nav-btn {
+    border:1px solid rgba(0,0,0,.1);
+    background:rgba(0,0,0,.04);
+    color:var(--color-text)
+}
+
+body.ppv-light #ppv-global-header .ppv-nav-btn:hover {
+    background:rgba(14,165,233,.1);
+    border-color:var(--pp-primary);
+    color:var(--pp-primary)
+}
+
+body.ppv-light #ppv-global-header .ppv-stat-mini {
+    background:rgba(14,165,233,.08);
+    color:var(--pp-primary-dark)
+}
+
+/* Dark mode header */
+body.ppv-dark #ppv-global-header,
+[data-theme=dark] #ppv-global-header {
+    background:linear-gradient(135deg,#0f172a,#1e293b);
     border-bottom:1px solid rgba(255,255,255,.1)
 }
 
@@ -3522,6 +3557,17 @@ body.ppv-dark .ppv-scan-points.vip {
 .scanner-user-info {
     flex:1;
     min-width:0
+}
+
+@media (max-width:480px) {
+    .scanner-user-card-inner {
+        flex-direction:column;
+        align-items:flex-start
+    }
+    .scanner-user-actions {
+        width:100%;
+        justify-content:flex-start
+    }
 }
 
 .scanner-user-email {
