@@ -671,6 +671,44 @@ body.ppv-dark #ppv-global-header,
     color:#e2e8f0!important
 }
 
+/* ═══════════════════════════════════════════════════════════
+   VIP SETTINGS – Modern Redesign with animated borders,
+   mouse spotlight, and premium card design
+   ═══════════════════════════════════════════════════════════ */
+
+/* Animated gradient border keyframes */
+@keyframes ppv-border-rotate {
+    0% { --ppv-border-angle: 0deg }
+    100% { --ppv-border-angle: 360deg }
+}
+
+@keyframes ppv-shimmer {
+    0% { background-position: -200% center }
+    100% { background-position: 200% center }
+}
+
+@keyframes ppv-float {
+    0%,100% { transform: translateY(0) }
+    50% { transform: translateY(-4px) }
+}
+
+@keyframes ppv-pulse-glow {
+    0%,100% { opacity: .6 }
+    50% { opacity: 1 }
+}
+
+@keyframes ppv-save-success {
+    0% { transform: scale(1) }
+    50% { transform: scale(1.05) }
+    100% { transform: scale(1) }
+}
+
+@property --ppv-border-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false
+}
+
 .ppv-vip-settings-wrapper {
     max-width:600px;
     margin:0 auto;
@@ -690,6 +728,7 @@ body.ppv-dark #ppv-global-header,
     max-width:100%
 }
 
+/* ── Header ── */
 .ppv-vip-header {
     text-align:center;
     margin-bottom:28px
@@ -708,8 +747,13 @@ body.ppv-dark #ppv-global-header,
 }
 
 .ppv-vip-header h2 i {
-    color:gold;
-    font-size:1.5rem
+    font-size:1.6rem;
+    background:linear-gradient(135deg,#fbbf24,#f59e0b,#d97706);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    filter:drop-shadow(0 0 8px rgba(251,191,36,.4));
+    animation:ppv-float 3s ease-in-out infinite
 }
 
 .ppv-vip-subtitle {
@@ -728,10 +772,11 @@ body.ppv-dark #ppv-global-header,
     margin-bottom:24px
 }
 
+/* ── Toggle Switch ── */
 .ppv-toggle-switch {
     position:relative;
-    width:44px;
-    height:24px;
+    width:48px;
+    height:26px;
     flex-shrink:0
 }
 
@@ -749,73 +794,75 @@ body.ppv-dark #ppv-global-header,
     left:0;
     right:0;
     bottom:0;
-    background:#cbd5e1;
-    border-radius:24px;
-    transition:all .25s cubic-bezier(.4,0,.2,1)
+    background:#475569;
+    border-radius:26px;
+    transition:all .3s cubic-bezier(.4,0,.2,1)
 }
 
 .ppv-toggle-slider::before {
     position:absolute;
     content:"";
-    height:18px;
-    width:18px;
+    height:20px;
+    width:20px;
     left:3px;
     top:3px;
     background:#fff;
     border-radius:50%;
-    transition:all .25s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 1px 3px rgba(0,0,0,.2)
+    transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 2px 6px rgba(0,0,0,.25)
 }
 
 .ppv-toggle-switch input:checked+.ppv-toggle-slider {
-    background:#10b981
+    background:linear-gradient(135deg,#10b981,#059669);
+    box-shadow:0 0 12px rgba(16,185,129,.35)
 }
 
 .ppv-toggle-switch input:checked+.ppv-toggle-slider::before {
-    transform:translateX(20px)
+    transform:translateX(22px)
 }
 
 .ppv-toggle-switch:hover .ppv-toggle-slider {
-    background:#94a3b8
+    background:#64748b
 }
 
 .ppv-toggle-switch input:checked+.ppv-toggle-slider:hover {
-    background:#059669
+    background:linear-gradient(135deg,#059669,#047857)
 }
 
 .ppv-toggle-wrapper {
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:10px;
     flex-shrink:0
 }
 
 .ppv-toggle-status {
-    font-size:11px;
+    font-size:10px;
     font-weight:700;
-    min-width:42px;
-    padding:4px 8px;
-    border-radius:6px;
+    min-width:38px;
+    padding:3px 8px;
+    border-radius:20px;
     text-align:center;
-    transition:all .25s ease;
-    background:#fee2e2;
-    color:#dc2626;
+    transition:all .3s cubic-bezier(.4,0,.2,1);
+    background:rgba(239,68,68,.15);
+    color:#ef4444;
     text-transform:uppercase;
-    letter-spacing:.5px
+    letter-spacing:.8px
 }
 
 .ppv-toggle-status.active {
-    background:#dcfce7;
-    color:#16a34a
+    background:rgba(16,185,129,.15);
+    color:#10b981;
+    box-shadow:0 0 8px rgba(16,185,129,.2)
 }
 
 [data-theme=dark] .ppv-toggle-status {
-    background:#7f1d1d;
+    background:rgba(239,68,68,.15);
     color:#fca5a5
 }
 
 [data-theme=dark] .ppv-toggle-status.active {
-    background:#14532d;
+    background:rgba(16,185,129,.15);
     color:#86efac
 }
 
@@ -1008,10 +1055,13 @@ body.ppv-dark #ppv-global-header,
     border-top:3px solid var(--pp-vip-platinum)
 }
 
+/* ── Save Button ── */
 .ppv-vip-actions {
     display:flex;
     align-items:center;
-    gap:16px
+    gap:16px;
+    margin-top:8px;
+    position:relative
 }
 
 .ppv-vip-actions .ppv-btn-primary {
@@ -1019,27 +1069,53 @@ body.ppv-dark #ppv-global-header,
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:8px;
-    padding:14px 24px;
-    background:var(--pp-primary);
+    gap:10px;
+    padding:15px 28px;
+    background:linear-gradient(135deg,var(--pp-primary),#0284c7);
     color:#fff;
     border:none;
-    border-radius:var(--radius-sm);
+    border-radius:14px;
     font-size:1rem;
     font-weight:600;
     cursor:pointer;
-    transition:var(--transition)
+    transition:all .3s cubic-bezier(.4,0,.2,1);
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 4px 15px rgba(0,168,204,.3)
+}
+
+.ppv-vip-actions .ppv-btn-primary::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+    transform:translateX(-100%);
+    transition:transform .5s ease
+}
+
+.ppv-vip-actions .ppv-btn-primary:hover::before {
+    transform:translateX(100%)
 }
 
 .ppv-vip-actions .ppv-btn-primary:hover {
-    background:var(--pp-primary-dark);
-    transform:translateY(-1px)
+    transform:translateY(-2px);
+    box-shadow:0 8px 25px rgba(0,168,204,.4)
+}
+
+.ppv-vip-actions .ppv-btn-primary:active {
+    transform:translateY(0) scale(.98);
+    box-shadow:0 2px 8px rgba(0,168,204,.3)
 }
 
 .ppv-vip-actions .ppv-btn-primary:disabled {
-    opacity:.6;
+    opacity:.5;
     cursor:not-allowed;
-    transform:none
+    transform:none;
+    box-shadow:none
+}
+
+.ppv-vip-actions .ppv-btn-primary.ppv-save-success {
+    animation:ppv-save-success .4s ease
 }
 
 #ppv-vip-status {
@@ -1084,126 +1160,225 @@ body.ppv-dark #ppv-global-header,
 }
 
 .ppv-vip-extended {
-    max-width:700px
+    max-width:720px
 }
 
+/* ── VIP Cards with Animated Gradient Borders ── */
 .ppv-vip-card {
-    background:var(--color-surface);
-    border:1px solid var(--color-border);
-    border-radius:var(--radius);
-    margin-bottom:16px;
+    position:relative;
+    border-radius:16px;
+    margin-bottom:20px;
     overflow:hidden;
-    transition:var(--transition)
+    transition:all .3s cubic-bezier(.4,0,.2,1);
+    background:var(--color-surface);
+    border:1px solid var(--color-border)
+}
+
+/* Animated gradient border (shown when card is active) */
+.ppv-vip-card::before {
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius:18px;
+    padding:2px;
+    background:conic-gradient(from var(--ppv-border-angle,0deg),var(--card-color-1,#cd7f32),var(--card-color-2,#f59e0b),var(--card-color-3,#fbbf24),var(--card-color-1,#cd7f32));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    opacity:0;
+    transition:opacity .4s ease;
+    animation:ppv-border-rotate 4s linear infinite;
+    pointer-events:none;
+    z-index:1
+}
+
+.ppv-vip-card.ppv-card-active::before {
+    opacity:1
+}
+
+/* Card type specific gradient colors */
+.ppv-vip-card[data-bonus-type="fix"] {
+    --card-color-1:#0ea5e9;
+    --card-color-2:#06b6d4;
+    --card-color-3:#22d3ee
+}
+
+.ppv-vip-card[data-bonus-type="streak"] {
+    --card-color-1:#f97316;
+    --card-color-2:#ef4444;
+    --card-color-3:#f59e0b
 }
 
 .ppv-vip-card:hover {
-    box-shadow:var(--shadow-sm)
+    transform:translateY(-2px);
+    box-shadow:0 8px 30px rgba(0,0,0,.12)
 }
 
+/* Mouse spotlight effect */
+.ppv-vip-card .ppv-card-spotlight {
+    position:absolute;
+    inset:0;
+    border-radius:16px;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .3s ease;
+    z-index:0;
+    background:radial-gradient(350px circle at var(--mouse-x,50%) var(--mouse-y,50%),rgba(255,255,255,.06),transparent 60%)
+}
+
+.ppv-vip-card:hover .ppv-card-spotlight {
+    opacity:1
+}
+
+/* Card header */
 .ppv-vip-card-header {
     display:flex;
     align-items:center;
-    gap:12px;
-    padding:16px 20px;
-    background:var(--color-bg-secondary);
-    border-bottom:1px solid var(--color-border)
+    gap:14px;
+    padding:18px 22px;
+    background:linear-gradient(135deg,var(--color-bg-secondary),var(--color-surface));
+    border-bottom:1px solid rgba(255,255,255,.05);
+    position:relative;
+    z-index:2
 }
 
 .ppv-card-title {
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:14px;
     flex:1
 }
 
 .ppv-card-title>i {
-    font-size:1.5rem;
-    color:var(--pp-primary);
-    width:36px;
-    height:36px;
+    font-size:1.4rem;
+    width:40px;
+    height:40px;
     display:flex;
     align-items:center;
     justify-content:center;
-    background:rgba(0,168,204,.1);
-    border-radius:var(--radius-sm)
+    border-radius:12px;
+    transition:all .3s ease
+}
+
+.ppv-vip-card[data-bonus-type="fix"] .ppv-card-title>i {
+    color:#0ea5e9;
+    background:rgba(14,165,233,.12)
+}
+
+.ppv-vip-card[data-bonus-type="streak"] .ppv-card-title>i {
+    color:#f97316;
+    background:rgba(249,115,22,.12)
 }
 
 .ppv-card-title>div {
     display:flex;
     flex-direction:column;
-    gap:2px
+    gap:3px
 }
 
 .ppv-card-title strong {
     font-size:1rem;
+    font-weight:600;
     color:var(--color-text)
 }
 
 .ppv-card-title small {
     font-size:.8rem;
-    color:var(--color-text-secondary)
+    color:var(--color-text-secondary);
+    line-height:1.3
 }
 
+/* Card body */
 .ppv-vip-card-body {
-    padding:16px 20px;
-    transition:opacity .2s ease
+    padding:20px 22px;
+    transition:all .3s ease;
+    position:relative;
+    z-index:2
 }
 
+/* ── Level Inputs Grid ── */
 .ppv-vip-levels-row {
-    display:flex;
-    gap:12px
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px
 }
 
 .ppv-vip-level-input {
-    flex:1;
     display:flex;
     flex-direction:column;
     gap:6px
 }
 
 .ppv-vip-level-input>label {
-    font-size:.8rem;
-    font-weight:600;
-    color:var(--color-text-secondary);
+    font-size:.7rem;
+    font-weight:700;
     text-transform:uppercase;
-    letter-spacing:.5px
+    letter-spacing:.8px;
+    text-align:center;
+    padding:3px 0
 }
 
 .ppv-vip-level-input.bronze>label {
-    color:var(--pp-vip-bronze)
+    color:#cd7f32
 }
 
 .ppv-vip-level-input.silver>label {
-    color:var(--pp-vip-silver-dark)
+    color:#94a3b8
 }
 
 .ppv-vip-level-input.gold>label {
-    color:var(--pp-vip-gold-dark)
+    color:#f59e0b
 }
 
 .ppv-vip-level-input.platinum>label {
-    color:var(--pp-vip-platinum-dark)
+    color:#a0b2c6
 }
 
+/* Modern input groups with colored top borders */
 .ppv-input-group {
     display:flex;
     align-items:center;
-    gap:4px;
+    gap:2px;
     background:var(--color-bg-secondary);
     border:1px solid var(--color-border);
-    border-radius:var(--radius-sm);
-    padding:2px
+    border-radius:12px;
+    padding:2px;
+    transition:all .25s ease;
+    position:relative;
+    overflow:hidden
+}
+
+.ppv-vip-level-input.bronze .ppv-input-group {
+    border-top:2px solid #cd7f32
+}
+
+.ppv-vip-level-input.silver .ppv-input-group {
+    border-top:2px solid #94a3b8
+}
+
+.ppv-vip-level-input.gold .ppv-input-group {
+    border-top:2px solid #f59e0b
+}
+
+.ppv-vip-level-input.platinum .ppv-input-group {
+    border-top:2px solid #a0b2c6
+}
+
+.ppv-input-group:focus-within {
+    border-color:var(--pp-primary);
+    box-shadow:0 0 0 3px rgba(0,168,204,.1)
 }
 
 .ppv-input-group input {
-    width:60px;
-    padding:8px;
+    width:50px;
+    padding:10px 4px;
     border:none;
     background:0 0;
-    font-size:1rem;
-    font-weight:600;
+    font-size:1.05rem;
+    font-weight:700;
     text-align:center;
-    color:var(--color-text)
+    color:var(--color-text);
+    font-variant-numeric:tabular-nums
 }
 
 .ppv-input-group input:focus {
@@ -1211,58 +1386,69 @@ body.ppv-dark #ppv-global-header,
 }
 
 .ppv-input-group span {
-    font-size:.8rem;
+    font-size:.75rem;
     color:var(--color-text-secondary);
-    padding:0 6px;
+    padding:0 4px;
     white-space:nowrap
 }
 
+/* ── Streak Config ── */
 .ppv-streak-config {
     display:flex;
     align-items:center;
-    gap:16px;
+    gap:12px;
     margin-bottom:16px;
-    flex-wrap:wrap
+    flex-wrap:wrap;
+    padding:12px 16px;
+    background:var(--color-bg-secondary);
+    border-radius:12px;
+    border:1px solid var(--color-border)
 }
 
 .ppv-streak-count {
     display:flex;
     align-items:center;
     gap:8px;
-    font-size:.95rem;
+    font-size:.9rem;
+    font-weight:500;
     color:var(--color-text)
 }
 
 .ppv-streak-count input {
-    width:60px;
+    width:56px;
     padding:8px;
     border:1px solid var(--color-border);
-    border-radius:var(--radius-sm);
+    border-radius:10px;
     font-size:1rem;
-    font-weight:600;
+    font-weight:700;
     text-align:center;
     background:var(--color-surface);
-    color:var(--color-text)
+    color:var(--color-text);
+    transition:all .25s ease
 }
 
 .ppv-streak-count input:focus {
     outline:0;
-    border-color:var(--pp-primary)
+    border-color:var(--pp-primary);
+    box-shadow:0 0 0 3px rgba(0,168,204,.1)
 }
 
 .ppv-streak-type select {
-    padding:10px 16px;
+    padding:9px 14px;
     border:1px solid var(--color-border);
-    border-radius:var(--radius-sm);
-    font-size:.95rem;
+    border-radius:10px;
+    font-size:.9rem;
+    font-weight:500;
     background:var(--color-surface);
     color:var(--color-text);
-    cursor:pointer
+    cursor:pointer;
+    transition:all .25s ease
 }
 
 .ppv-streak-type select:focus {
     outline:0;
-    border-color:var(--pp-primary)
+    border-color:var(--pp-primary);
+    box-shadow:0 0 0 3px rgba(0,168,204,.1)
 }
 
 .ppv-streak-fixed-inputs {
@@ -1273,12 +1459,23 @@ body.ppv-dark #ppv-global-header,
     display:none;
     margin-top:12px;
     padding:10px 14px;
-    background:rgba(239,68,68,.1);
-    border:1px solid rgba(239,68,68,.3);
-    border-radius:var(--radius-sm);
+    background:rgba(239,68,68,.08);
+    border:1px solid rgba(239,68,68,.2);
+    border-radius:10px;
     color:var(--color-error);
     font-size:.85rem;
     font-weight:500
+}
+
+/* ── Confetti Canvas ── */
+#ppv-confetti-canvas {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    z-index:99999
 }
 
 .ppv-vip-preview-extended {
@@ -1412,11 +1609,11 @@ body.ppv-dark #ppv-global-header,
 @media (max-width:600px) {
     .ppv-vip-extended {
         max-width:100%;
-        margin:12px
+        margin:8px
     }
 
     .ppv-vip-levels-row {
-        flex-direction:column
+        grid-template-columns:repeat(2,1fr)
     }
 
     .ppv-streak-config {
@@ -1434,7 +1631,12 @@ body.ppv-dark #ppv-global-header,
 
     .ppv-vip-card-header {
         flex-wrap:wrap;
-        gap:10px
+        gap:10px;
+        padding:14px 16px
+    }
+
+    .ppv-vip-card-body {
+        padding:16px
     }
 
     .ppv-card-title {
@@ -1442,6 +1644,9 @@ body.ppv-dark #ppv-global-header,
         width:100%
     }
 
+    .ppv-vip-card:hover {
+        transform:none
+    }
 }
 
 .ppv-handler-redemption-modal {
