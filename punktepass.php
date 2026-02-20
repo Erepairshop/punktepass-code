@@ -622,6 +622,7 @@ $whitelist = [
     'ppv-layout',       // Page structure, scroll, header
     'ppv-components',   // Shared UI components
     'ppv-bottom-nav',   // Bottom navigation bar
+    'ppv-qr',           // QR Center page
     'ppv-theme-light',  // Legacy theme (being phased out)
     'ppv-handler',      // Handler theme (light/dark)
     'ppv-handler-light',

@@ -948,6 +948,7 @@ class PPV_QR {
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-qr.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
 <?php endif; ?>
@@ -1067,6 +1068,9 @@ class PPV_QR {
     // ============================================================
     public static function render_qr_center() {
         global $wpdb;
+
+        // 🎨 Enqueue QR Center CSS
+        wp_enqueue_style('ppv-qr', PPV_PLUGIN_URL . 'assets/css/ppv-qr.css', ['ppv-components'], PPV_VERSION);
 
         // ⛔ PERMISSION CHECK: Only handlers and scanners can access
         if (!class_exists('PPV_Permissions')) {
