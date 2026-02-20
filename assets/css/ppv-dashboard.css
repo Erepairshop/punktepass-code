@@ -570,21 +570,24 @@
     transform: rotate(180deg);
 }
 
-/* Store Details (collapsed by default) */
+/* Store Details (collapsed by default)
+   Override ppv-theme-light.css max-height:0/overflow:hidden approach */
 .ppv-store-details {
-    display: none;
-    padding: 0 16px 16px;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0;
+    padding: 0 16px;
     border-top: 1px solid var(--pp-border, rgba(0, 0, 0, 0.04));
+    transition: max-height 0.4s cubic-bezier(0.34, 1.2, 0.64, 1),
+                opacity 0.3s ease,
+                padding 0.3s ease;
 }
 
 .ppv-store-card-enhanced.expanded .ppv-store-details {
-    display: block;
-    animation: ppv-slide-down 0.3s ease;
-}
-
-@keyframes ppv-slide-down {
-    from { opacity: 0; max-height: 0; }
-    to   { opacity: 1; max-height: 2000px; }
+    max-height: 2000px !important;
+    overflow: visible !important;
+    opacity: 1;
+    padding: 0 16px 16px;
 }
 
 /* Gallery thumbnails */

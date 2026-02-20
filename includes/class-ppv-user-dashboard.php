@@ -1087,11 +1087,12 @@ private static function get_today_hours($opening_hours) {
         self::render_global_header();
         $global_header = ob_get_clean();
 
-        // ─── Bottom nav context (JS data only, HTML comes from render_dashboard) ───
+        // ─── Bottom nav (context + HTML, rendered OUTSIDE .ppv-standalone-wrap) ───
         $bottom_nav_context = '';
         if (class_exists('PPV_Bottom_Nav')) {
             ob_start();
             PPV_Bottom_Nav::inject_context();
+            echo PPV_Bottom_Nav::render_nav();
             $bottom_nav_context = ob_get_clean();
         }
 
@@ -1140,6 +1141,10 @@ private static function get_today_hours($opening_hours) {
     #ppv-dashboard-root{position:static!important;overflow:visible!important;height:auto!important;display:block!important}
     .ppv-dashboard-netto{overflow:visible!important;padding-top:0!important;padding-bottom:100px!important}
     .ppv-dashboard-inner{padding:16px!important}
+    /* Prevent transform from creating new containing block for position:fixed children */
+    .ppv-store-card-enhanced,.ppv-bottom-nav .nav-item{-webkit-transform:none!important;transform:none!important;will-change:auto!important}
+    .ppv-store-card-enhanced:hover{transform:none!important}
+    .ppv-store-card-enhanced.expanded .ppv-store-details{max-height:2000px!important;overflow:visible!important;opacity:1!important}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
@@ -1169,7 +1174,9 @@ private static function get_today_hours($opening_hours) {
 public static function render_dashboard() {
     echo '<script>document.body.classList.add("ppv-user-dashboard");</script>';
 
-    return '<div id="ppv-dashboard-root"></div>' . do_shortcode('[ppv_bottom_nav]');
+    // Bottom nav is rendered separately outside .ppv-standalone-wrap
+    // to avoid transform-based containing blocks breaking position:fixed
+    return '<div id="ppv-dashboard-root"></div>';
 }
 
     public static function register_routes() {
