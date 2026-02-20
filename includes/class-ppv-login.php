@@ -56,7 +56,7 @@ class PPV_Login {
         $page_html = self::render_landing_page([]);
 
         // CSS version
-        $css_ver = class_exists('PPV_Core') ? PPV_Core::asset_version($plugin_dir . 'assets/css/ppv-login-light.css') : $version;
+        $css_ver = class_exists('PPV_Core') ? PPV_Core::asset_version($plugin_dir . 'assets/css/ppv-login.css') : $version;
 
         header('Content-Type: text/html; charset=utf-8');
         ?>
@@ -64,7 +64,7 @@ class PPV_Login {
 <html lang="<?php echo esc_attr($lang); ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Login - PunktePass</title>
@@ -74,19 +74,7 @@ class PPV_Login {
     <link rel="preconnect" href="https://accounts.google.com" crossorigin>
     <link rel="preload" href="<?php echo esc_url($plugin_url); ?>assets/img/logo.webp?v=2" as="image" type="image/webp">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
-    <style id="ppv-critical-css">
-        :root{--pp-primary:#0066FF;--ppv-bg:#F8F9FB;--ppv-card-glass:rgba(255,255,255,0.85);--ppv-text:#1A1A1A;--ppv-border-glass:rgba(255,255,255,0.3);--safe-area-top:env(safe-area-inset-top,0px)}
-        html,body{margin:0;padding:0;height:100%;width:100%;background:linear-gradient(135deg,#F8F9FB 0%,#E6F0FF 100%)}
-        .ppv-landing-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100%;height:100dvh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
-        .ppv-landing-header{position:sticky;top:0;z-index:100;background:var(--ppv-card-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--ppv-border-glass);padding:10px 0;padding-top:calc(10px + var(--safe-area-top));flex-shrink:0}
-        .ppv-header-content{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-        .ppv-lang-switcher{display:flex;gap:4px;background:var(--ppv-bg);border:1px solid #E5E7EB;border-radius:8px;padding:4px}
-        .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
-        .ppv-lang-btn.active{background:var(--pp-primary);color:white}
-        .ppv-login-card{background:var(--ppv-card-glass);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--ppv-border-glass);padding:28px}
-        @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
-    </style>
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-login-light.css?ver=<?php echo esc_attr($css_ver); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-login.css?ver=<?php echo esc_attr($css_ver); ?>">
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?ver=<?php echo esc_attr($version); ?>"></script>
 </head>
@@ -320,397 +308,221 @@ public static function check_already_logged_in() {
     
 public static function render_landing_page($atts) {
         self::ensure_session();
-        
-         
-        
+
         ob_start();
         ?>
 
-        <div class="ppv-landing-container">
+        <div class="lo-page">
             <!-- Header -->
-            <header class="ppv-landing-header">
-                <div class="ppv-header-content">
-                    <div class="ppv-logo-section">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="ppv-logo" fetchpriority="high">
-                        <h1>PunktePass</h1>
+            <header class="lo-header">
+                <div class="lo-header-inner">
+                    <a href="/" class="lo-brand">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" fetchpriority="high">
+                        <span>PunktePass</span>
+                    </a>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <!-- iOS App Store Link (header) -->
+                        <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="lo-header-app" id="ppv-ios-header-link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                            <span>App Store</span>
+                        </a>
+                        <!-- Android PWA Install Button (header) -->
+                        <button type="button" class="lo-header-app" id="ppv-android-header-link" style="display:none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
+                            <span><?php echo PPV_Lang::t('header_install_app', 'App installieren'); ?></span>
+                        </button>
+                        <!-- Android APK Download (header fallback) -->
+                        <a href="https://punktepass.de/wp-content/plugins/punktepass/assets/app/punktepass.apk" class="lo-header-app" id="ppv-android-header-apk" style="display:none;" download>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
+                            <span><?php echo PPV_Lang::t('login_download_apk', 'APK herunterladen'); ?></span>
+                        </a>
+                        <!-- Language Switcher -->
+                        <?php if (class_exists('PPV_Lang_Switcher')): ?>
+                            <?php echo PPV_Lang_Switcher::render(); ?>
+                        <?php endif; ?>
                     </div>
-                    <p class="ppv-slogan"><?php echo PPV_Lang::t('landing_slogan'); ?></p>
-                    <!-- iOS App Store Link (compact, header) -->
-                    <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="ppv-header-app-link" id="ppv-ios-header-link">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                        <span>App Store</span>
-                    </a>
-                    <!-- Android PWA Install Button (compact, header) -->
-                    <button type="button" class="ppv-header-app-link ppv-android-header-btn" id="ppv-android-header-link" style="display:none;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 11.48V7.66h-2.08v3.82h2.08zm-5.92 0V7.66H9.6v3.82h2.08zm3.84-7.8L16.88 2l-.88-.88-1.68 1.68A6.24 6.24 0 0 0 12 2.4c-.8 0-1.56.12-2.32.4L8 1.12 7.12 2l1.36 1.68A6.2 6.2 0 0 0 6 8.4v.48h12v-.48c0-1.84-.8-3.52-2.08-4.72h-.4zM6 20.16c0 .72.56 1.28 1.28 1.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96c.72 0 1.28-.56 1.28-1.28V9.28H6v10.88zm-2.4-10.4c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6zm16.8 0c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6z"/></svg>
-                        <span><?php echo PPV_Lang::t('header_install_app', 'App installieren'); ?></span>
-                    </button>
-                    <!-- Android APK Download (header, fallback when PWA not available) -->
-                    <a href="https://punktepass.de/wp-content/plugins/punktepass/assets/app/punktepass.apk" class="ppv-header-app-link ppv-android-header-btn" id="ppv-android-header-apk" style="display:none;" download>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 11.48V7.66h-2.08v3.82h2.08zm-5.92 0V7.66H9.6v3.82h2.08zm3.84-7.8L16.88 2l-.88-.88-1.68 1.68A6.24 6.24 0 0 0 12 2.4c-.8 0-1.56.12-2.32.4L8 1.12 7.12 2l1.36 1.68A6.2 6.2 0 0 0 6 8.4v.48h12v-.48c0-1.84-.8-3.52-2.08-4.72h-.4zM6 20.16c0 .72.56 1.28 1.28 1.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96c.72 0 1.28-.56 1.28-1.28V9.28H6v10.88zm-2.4-10.4c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6zm16.8 0c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6z"/></svg>
-                        <span><?php echo PPV_Lang::t('login_download_apk', 'APK herunterladen'); ?></span>
-                    </a>
-
-                    <!-- Language Switcher -->
-                    <?php if (class_exists('PPV_Lang_Switcher')): ?>
-                        <?php echo PPV_Lang_Switcher::render(); ?>
-                    <?php endif; ?>
                 </div>
             </header>
 
-            <!-- 📱 App Download Modal -->
-            <div id="ppv-app-download-modal" class="ppv-app-modal" style="display:none;">
-                <div class="ppv-app-modal-overlay"></div>
-                <div class="ppv-app-modal-content">
-                    <button type="button" class="ppv-app-modal-close" id="ppv-app-modal-close" aria-label="Close">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+            <!-- App Download Modal -->
+            <div id="ppv-app-download-modal" class="lo-modal" style="display:none;">
+                <div class="lo-modal-overlay ppv-app-modal-overlay"></div>
+                <div class="lo-modal-content">
+                    <button type="button" class="lo-modal-close" id="ppv-app-modal-close" aria-label="Close">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
-
-                    <div class="ppv-app-modal-header">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="ppv-app-modal-logo">
-                        <h2><?php echo PPV_Lang::t('app_download_title', 'Töltsd le az appot'); ?></h2>
-                        <p><?php echo PPV_Lang::t('app_download_subtitle', 'Gyűjts pontokat egyszerűen mobilodról'); ?></p>
-                    </div>
-
-                    <div class="ppv-app-modal-buttons">
-                        <!-- iOS App Store Button -->
-                        <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="ppv-app-platform-btn ppv-app-ios-btn" id="ppv-modal-ios-btn">
-                            <div class="ppv-app-btn-icon">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                                </svg>
-                            </div>
-                            <div class="ppv-app-btn-text">
-                                <span class="ppv-app-btn-label"><?php echo PPV_Lang::t('app_download_available', 'Elérhető itt'); ?></span>
-                                <span class="ppv-app-btn-name">App Store</span>
+                    <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="lo-modal-logo">
+                    <h2><?php echo PPV_Lang::t('app_download_title', 'App herunterladen'); ?></h2>
+                    <p><?php echo PPV_Lang::t('app_download_subtitle', 'Sammle Punkte einfach von deinem Handy'); ?></p>
+                    <div class="lo-modal-buttons">
+                        <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="lo-modal-platform" id="ppv-modal-ios-btn">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                            <div class="lo-modal-platform-text">
+                                <span class="lo-modal-platform-label"><?php echo PPV_Lang::t('app_download_available', 'Verfügbar im'); ?></span>
+                                <span class="lo-modal-platform-name">App Store</span>
                             </div>
                         </a>
-
-                        <!-- Android Button (PWA or APK) -->
-                        <button type="button" class="ppv-app-platform-btn ppv-app-android-btn" id="ppv-modal-android-btn">
-                            <div class="ppv-app-btn-icon">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M17.6 11.48V7.66h-2.08v3.82h2.08zm-5.92 0V7.66H9.6v3.82h2.08zm3.84-7.8L16.88 2l-.88-.88-1.68 1.68A6.24 6.24 0 0 0 12 2.4c-.8 0-1.56.12-2.32.4L8 1.12 7.12 2l1.36 1.68A6.2 6.2 0 0 0 6 8.4v.48h12v-.48c0-1.84-.8-3.52-2.08-4.72h-.4zM6 20.16c0 .72.56 1.28 1.28 1.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96c.72 0 1.28-.56 1.28-1.28V9.28H6v10.88zm-2.4-10.4c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6zm16.8 0c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6z"/>
-                                </svg>
-                            </div>
-                            <div class="ppv-app-btn-text">
-                                <span class="ppv-app-btn-label"><?php echo PPV_Lang::t('app_download_available', 'Elérhető itt'); ?></span>
-                                <span class="ppv-app-btn-name">Android</span>
+                        <button type="button" class="lo-modal-platform" id="ppv-modal-android-btn">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
+                            <div class="lo-modal-platform-text">
+                                <span class="lo-modal-platform-label"><?php echo PPV_Lang::t('app_download_available', 'Verfügbar im'); ?></span>
+                                <span class="lo-modal-platform-name">Android</span>
                             </div>
                         </button>
                     </div>
-
-                    <button type="button" class="ppv-app-modal-dismiss" id="ppv-app-modal-dismiss">
-                        <?php echo PPV_Lang::t('app_download_dont_show', 'Ne mutasd többet'); ?>
-                    </button>
+                    <button type="button" class="lo-modal-dismiss" id="ppv-app-modal-dismiss"><?php echo PPV_Lang::t('app_download_dont_show', 'Nicht mehr anzeigen'); ?></button>
                 </div>
             </div>
 
-            <!-- Hero Section -->
-            <div class="ppv-hero-section">
-                <!-- Animated Background -->
-                <div class="ppv-hero-bg">
-                    <div class="ppv-bg-shape ppv-shape-1"></div>
-                    <div class="ppv-bg-shape ppv-shape-2"></div>
-                    <div class="ppv-bg-shape ppv-shape-3"></div>
-                </div>
-                
-                <div class="ppv-hero-content">
-                    <!-- Left: Features -->
-                    <div class="ppv-features-section">
-                        <div class="ppv-features-grid">
-                            <!-- Feature 1: QR Code -->
-                            <div class="ppv-feature-card">
-                                <div class="ppv-feature-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="7" height="7"/>
-                                        <rect x="14" y="3" width="7" height="7"/>
-                                        <rect x="14" y="14" width="7" height="7"/>
-                                        <rect x="3" y="14" width="7" height="7"/>
-                                    </svg>
-                                </div>
-                                <h3><?php echo PPV_Lang::t('landing_feature_qr_title'); ?></h3>
-                                <p><?php echo PPV_Lang::t('landing_feature_qr_desc'); ?></p>
-                            </div>
-                            
-                            <!-- Feature 2: Collect Points -->
-                            <div class="ppv-feature-card">
-                                <div class="ppv-feature-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="8" r="6"/>
-                                        <polyline points="8 12 10 14 12 16 14 14 16 12"/>
-                                        <path d="M12 14v8"/>
-                                    </svg>
-                                </div>
-                                <h3><?php echo PPV_Lang::t('landing_feature_collect_title'); ?></h3>
-                                <p><?php echo PPV_Lang::t('landing_feature_collect_desc'); ?></p>
-                            </div>
-                            
-                            <!-- Feature 3: Get Rewards -->
-                            <div class="ppv-feature-card">
-                                <div class="ppv-feature-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/>
-                                        <path d="M12 3v9"/>
-                                        <path d="m16 7-4-4-4 4"/>
-                                        <rect x="4" y="12" width="16" height="2"/>
-                                    </svg>
-                                </div>
-                                <h3><?php echo PPV_Lang::t('landing_feature_rewards_title'); ?></h3>
-                                <p><?php echo PPV_Lang::t('landing_feature_rewards_desc'); ?></p>
-                            </div>
-                            
-                            <!-- Feature 4: Local Offers -->
-                            <div class="ppv-feature-card">
-                                <div class="ppv-feature-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                        <circle cx="12" cy="10" r="3"/>
-                                    </svg>
-                                </div>
-                                <h3><?php echo PPV_Lang::t('landing_feature_local_title'); ?></h3>
-                                <p><?php echo PPV_Lang::t('landing_feature_local_desc'); ?></p>
+            <!-- Main Content -->
+            <main class="lo-main">
+                <div class="lo-card">
+                    <div class="lo-card-body">
+                        <?php
+                        // Check for referral
+                        $referral = class_exists('PPV_Referral_Handler') ? PPV_Referral_Handler::get_referral_data() : null;
+                        if ($referral):
+                            $store_name = esc_html($referral['store_name'] ?? 'einem Shop');
+                        ?>
+                        <div class="lo-referral">
+                            <div class="lo-referral-icon">🎁</div>
+                            <div class="lo-referral-text">
+                                <strong><?php echo PPV_Lang::t('referral_welcome_title') ?: 'Du wurdest eingeladen!'; ?></strong>
+                                <p><?php echo sprintf(PPV_Lang::t('referral_welcome_desc') ?: 'Melde dich an und erhalte Bonuspunkte bei %s', $store_name); ?></p>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Right: Login Card -->
-                    <div class="ppv-login-section">
-                        <div class="ppv-login-card">
-                            <?php
-                            // Check for referral
-                            $referral = class_exists('PPV_Referral_Handler') ? PPV_Referral_Handler::get_referral_data() : null;
-                            if ($referral):
-                                $store_name = esc_html($referral['store_name'] ?? 'einem Shop');
-                            ?>
-                            <!-- Referral Welcome Banner -->
-                            <div class="ppv-referral-welcome-banner">
-                                <div class="referral-icon">🎁</div>
-                                <div class="referral-text">
-                                    <strong><?php echo PPV_Lang::t('referral_welcome_title') ?: 'Du wurdest eingeladen!'; ?></strong>
-                                    <p><?php echo sprintf(PPV_Lang::t('referral_welcome_desc') ?: 'Melde dich an und erhalte Bonuspunkte bei %s', $store_name); ?></p>
-                                </div>
+                        <?php endif; ?>
+
+                        <div class="lo-welcome">
+                            <h2><?php echo PPV_Lang::t('login_welcome'); ?></h2>
+                            <p><?php echo PPV_Lang::t('login_welcome_desc'); ?></p>
+                        </div>
+
+                        <!-- Social Login -->
+                        <div class="lo-social-row">
+                            <button type="button" id="ppv-google-login-btn" class="lo-social-btn">
+                                <svg width="20" height="20" viewBox="0 0 48 48">
+                                    <path d="M47.532 24.5528C47.532 22.9214 47.3997 21.2811 47.1175 19.6761H24.48V28.9181H37.4434C36.9055 31.8988 35.177 34.5356 32.6461 36.2111V42.2078H40.3801C44.9217 38.0278 47.532 31.8547 47.532 24.5528Z" fill="#4285F4"/>
+                                    <path d="M24.48 48.0016C30.9529 48.0016 36.4116 45.8764 40.3888 42.2078L32.6549 36.2111C30.5031 37.675 27.7252 38.5039 24.4888 38.5039C18.2275 38.5039 12.9187 34.2798 11.0139 28.6006H3.03296V34.7825C7.10718 42.8868 15.4056 48.0016 24.48 48.0016Z" fill="#34A853"/>
+                                    <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04"/>
+                                    <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335"/>
+                                </svg>
+                                <span>Google</span>
+                            </button>
+                            <button type="button" id="ppv-facebook-login-btn" class="lo-social-btn lo-fb">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971H15.83c-1.49 0-1.955.93-1.955 1.886v2.264h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" fill="#FFFFFF"/>
+                                </svg>
+                                <span>Facebook</span>
+                            </button>
+                            <button type="button" id="ppv-apple-login-btn" class="lo-social-btn lo-apple">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                                </svg>
+                                <span>Apple</span>
+                            </button>
+                        </div>
+
+                        <div class="lo-divider"><?php echo PPV_Lang::t('login_or_email'); ?></div>
+
+                        <!-- Login Form -->
+                        <form id="ppv-login-form" class="lo-form" autocomplete="off">
+                            <div class="lo-input-group">
+                                <label for="ppv-email"><i class="ri-mail-line"></i><?php echo PPV_Lang::t('login_email_label'); ?></label>
+                                <input type="text" inputmode="email" id="ppv-email" name="email" class="lo-input" placeholder="<?php echo PPV_Lang::t('login_email_placeholder'); ?>" autocomplete="username" required>
                             </div>
-                            <?php endif; ?>
-
-                            <!-- Welcome Text -->
-                            <div class="ppv-login-welcome">
-                                <h2><?php echo PPV_Lang::t('login_welcome'); ?></h2>
-                                <p><?php echo PPV_Lang::t('login_welcome_desc'); ?></p>
-                            </div>
-                            
-                            <!-- Social Login Buttons -->
-                            <div class="ppv-social-login-grid">
-                                <!-- Google Login Button -->
-                                <button type="button" id="ppv-google-login-btn" class="ppv-social-btn ppv-google-btn">
-                                    <svg width="20" height="20" viewBox="0 0 48 48">
-                                        <path d="M47.532 24.5528C47.532 22.9214 47.3997 21.2811 47.1175 19.6761H24.48V28.9181H37.4434C36.9055 31.8988 35.177 34.5356 32.6461 36.2111V42.2078H40.3801C44.9217 38.0278 47.532 31.8547 47.532 24.5528Z" fill="#4285F4"/>
-                                        <path d="M24.48 48.0016C30.9529 48.0016 36.4116 45.8764 40.3888 42.2078L32.6549 36.2111C30.5031 37.675 27.7252 38.5039 24.4888 38.5039C18.2275 38.5039 12.9187 34.2798 11.0139 28.6006H3.03296V34.7825C7.10718 42.8868 15.4056 48.0016 24.48 48.0016Z" fill="#34A853"/>
-                                        <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04"/>
-                                        <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335"/>
-                                    </svg>
-                                    <span>Google</span>
-                                </button>
-
-                                <!-- Facebook Login Button -->
-                                <button type="button" id="ppv-facebook-login-btn" class="ppv-social-btn ppv-facebook-btn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971H15.83c-1.49 0-1.955.93-1.955 1.886v2.264h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" fill="#FFFFFF"/>
-                                    </svg>
-                                    <span>Facebook</span>
-                                </button>
-
-                                <!-- TikTok Login Button - DISABLED
-                                <button type="button" id="ppv-tiktok-login-btn" class="ppv-social-btn ppv-tiktok-btn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#000000"/>
-                                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#EE1D52"/>
-                                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#69C9D0"/>
-                                    </svg>
-                                    <span>TikTok</span>
-                                </button>
-                                -->
-
-                                <!-- Apple Login Button -->
-                                <button type="button" id="ppv-apple-login-btn" class="ppv-social-btn ppv-apple-btn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                                    </svg>
-                                    <span>Apple</span>
-                                </button>
-                            </div>
-
-                            <!-- Divider -->
-                            <div class="ppv-login-divider">
-                                <span><?php echo PPV_Lang::t('login_or_email'); ?></span>
-                            </div>
-                            
-                            <!-- Login Form -->
-                            <form id="ppv-login-form" class="ppv-login-form" autocomplete="off">
-                                <div class="ppv-form-group">
-                                    <label for="ppv-email">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                            <polyline points="22,6 12,13 2,6"/>
-                                        </svg>
-                                        <?php echo PPV_Lang::t('login_email_label'); ?>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        inputmode="email"
-                                        id="ppv-email"
-                                        name="email"
-                                        placeholder="<?php echo PPV_Lang::t('login_email_placeholder'); ?>"
-                                        autocomplete="username"
-                                        required
-                                    >
-                                </div>
-                                
-                                <div class="ppv-form-group">
-                                    <label for="ppv-password">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                        </svg>
-                                        <?php echo PPV_Lang::t('login_password_label'); ?>
-                                    </label>
-                                    <div class="ppv-password-wrapper">
-                                        <input 
-                                            type="password" 
-                                            id="ppv-password" 
-                                            name="password" 
-                                            placeholder="<?php echo PPV_Lang::t('login_password_placeholder'); ?>"
-                                            autocomplete="current-password"
-                                            required
-                                        >
-                                        <button type="button" class="ppv-password-toggle" aria-label="<?php echo PPV_Lang::t('login_show_password'); ?>">
-                                            <svg class="ppv-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                                <circle cx="12" cy="12" r="3"/>
-                                            </svg>
-                                            <svg class="ppv-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                                                <line x1="1" y1="1" x2="23" y2="23"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div class="ppv-form-footer">
-                                    <label class="ppv-checkbox">
-                                        <input type="checkbox" name="remember" id="ppv-remember" checked>
-                                        <span><?php echo PPV_Lang::t('login_remember_me'); ?></span>
-                                    </label>
-                                    <a href="/passwort-vergessen" class="ppv-forgot-link"><?php echo PPV_Lang::t('login_forgot_password'); ?></a>
-                                </div>
-                                
-                                <button type="submit" class="ppv-submit-btn" id="ppv-submit-btn">
-                                    <span class="ppv-btn-text"><?php echo PPV_Lang::t('login_button'); ?></span>
-                                    <span class="ppv-btn-loader" style="display:none;">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <circle cx="12" cy="12" r="10" opacity="0.25"/>
-                                            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round">
-                                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
-                                            </path>
-                                        </svg>
-                                    </span>
-                                </button>
-                            </form>
-                            
-                            <!-- Alert Box -->
-                            <div id="ppv-login-alert" class="ppv-alert" style="display:none;"></div>
-                            
-                            <!-- Register Link -->
-                            <div class="ppv-register-link">
-                                <p><?php echo PPV_Lang::t('login_no_account'); ?> <a href="/signup"><?php echo PPV_Lang::t('login_register_now'); ?></a></p>
-                            </div>
-
-                            <!-- Demo Link -->
-                            <div class="ppv-demo-link" style="text-align: center; margin: 16px 0;">
-                                <a href="/demo"
-                                   target="_blank"
-                                   style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);"
-                                   onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(99, 102, 241, 0.4)';"
-                                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(99, 102, 241, 0.3)';">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polygon points="10 8 16 12 10 16 10 8" fill="currentColor"></polygon>
-                                    </svg>
-                                    <?php echo PPV_Lang::t('login_demo_button', 'So funktioniert PunktePass'); ?>
-                                </a>
-                            </div>
-
-                            <!-- Repair Form System CTA -->
-                            <div style="text-align:center;margin:16px 0;">
-                                <a href="/formular"
-                                   style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:linear-gradient(135deg,#10b981,#059669);color:white;border-radius:12px;text-decoration:none;font-weight:600;font-size:14px;transition:all .3s ease;box-shadow:0 4px 15px rgba(16,185,129,0.3);"
-                                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(16,185,129,0.4)';"
-                                   onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(16,185,129,0.3)';">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="12" y1="18" x2="12" y2="12"></line>
-                                        <line x1="9" y1="15" x2="15" y2="15"></line>
-                                    </svg>
-                                    <?php echo PPV_Lang::t('login_repair_form_cta', 'Reparatur-Formularsystem – Jetzt registrieren'); ?>
-                                </a>
-                            </div>
-
-                            <!-- App Download Section -->
-                            <div class="ppv-app-download">
-                                <p class="ppv-download-title"><?php echo PPV_Lang::t('login_download_app', 'App letöltése'); ?></p>
-                                <div class="ppv-download-buttons">
-                                    <!-- Android PWA Install (shown on Chrome when beforeinstallprompt fires) -->
-                                    <button type="button" id="ppv-pwa-install-btn" class="ppv-download-btn ppv-android-btn" style="display:none;">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
-                                        <span>Android</span>
+                            <div class="lo-input-group">
+                                <label for="ppv-password"><i class="ri-lock-line"></i><?php echo PPV_Lang::t('login_password_label'); ?></label>
+                                <div class="lo-input-wrap lo-input-wrap--pw">
+                                    <input type="password" id="ppv-password" name="password" class="lo-input" placeholder="<?php echo PPV_Lang::t('login_password_placeholder'); ?>" autocomplete="current-password" required>
+                                    <button type="button" class="lo-pw-toggle ppv-password-toggle" aria-label="<?php echo PPV_Lang::t('login_show_password'); ?>">
+                                        <svg class="ppv-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <svg class="ppv-eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                                     </button>
-                                    <!-- Android non-Chrome: opens in Chrome via intent -->
-                                    <a href="intent://punktepass.de/login#Intent;scheme=https;package=com.android.chrome;end" id="ppv-android-chrome-link" class="ppv-download-btn ppv-android-btn" style="display:none;">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
-                                        <span><?php echo PPV_Lang::t('login_open_in_chrome', 'Megnyitás Chrome-ban'); ?></span>
-                                    </a>
-                                    <!-- Android APK Download (fallback when PWA not available) -->
-                                    <a href="https://punktepass.de/wp-content/plugins/punktepass/assets/app/punktepass.apk" id="ppv-android-apk-link" class="ppv-download-btn ppv-android-btn" style="display:none;" download>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
-                                        <span><?php echo PPV_Lang::t('login_download_apk', 'APK letöltése'); ?></span>
-                                    </a>
-                                    <!-- iOS App Store -->
-                                    <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="ppv-download-btn ppv-ios-btn">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                                        <span>iOS</span>
-                                    </a>
                                 </div>
                             </div>
+                            <div class="lo-form-footer">
+                                <label class="lo-check">
+                                    <input type="checkbox" name="remember" id="ppv-remember" checked>
+                                    <span><?php echo PPV_Lang::t('login_remember_me'); ?></span>
+                                </label>
+                                <a href="/passwort-vergessen" class="lo-forgot"><?php echo PPV_Lang::t('login_forgot_password'); ?></a>
+                            </div>
+                            <button type="submit" class="lo-submit" id="ppv-submit-btn">
+                                <span class="ppv-btn-text"><?php echo PPV_Lang::t('login_button'); ?></span>
+                                <span class="ppv-btn-loader" style="display:none;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>
+                                </span>
+                            </button>
+                        </form>
+
+                        <!-- Alert -->
+                        <div id="ppv-login-alert" class="lo-alert" style="display:none;"></div>
+
+                        <!-- Register Link -->
+                        <div class="lo-register-link">
+                            <?php echo PPV_Lang::t('login_no_account'); ?> <a href="/signup"><?php echo PPV_Lang::t('login_register_now'); ?></a>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- PWA Install Banner (auto-popup on Chrome Android) -->
-            <div id="ppv-pwa-banner" class="ppv-pwa-banner" style="display:none;">
-                <div class="ppv-pwa-banner-content">
-                    <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/pwa-icon-192.png" alt="PunktePass" class="ppv-pwa-banner-icon">
-                    <div class="ppv-pwa-banner-text">
-                        <strong><?php echo PPV_Lang::t('login_pwa_banner_title', 'PunktePass App telepítése'); ?></strong>
-                        <p><?php echo PPV_Lang::t('login_pwa_banner_desc', 'Telepítsd az appot a gyorsabb hozzáféréshez!'); ?></p>
+
+                <!-- CTA Links -->
+                <div class="lo-cta-section">
+                    <a href="/demo" target="_blank" class="lo-cta-btn lo-cta-demo">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
+                        <?php echo PPV_Lang::t('login_demo_button', 'So funktioniert PunktePass'); ?>
+                    </a>
+                    <a href="/formular" class="lo-cta-btn lo-cta-repair">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        <?php echo PPV_Lang::t('login_repair_form_cta', 'Reparatur-Formularsystem'); ?>
+                    </a>
+                </div>
+
+                <!-- App Download Section -->
+                <div class="lo-app-section">
+                    <p class="lo-app-title"><?php echo PPV_Lang::t('login_download_app', 'App herunterladen'); ?></p>
+                    <div class="lo-app-buttons">
+                        <button type="button" id="ppv-pwa-install-btn" class="lo-app-btn" style="display:none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
+                            <span>Android</span>
+                        </button>
+                        <a href="intent://punktepass.de/login#Intent;scheme=https;package=com.android.chrome;end" id="ppv-android-chrome-link" class="lo-app-btn" style="display:none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
+                            <span><?php echo PPV_Lang::t('login_open_in_chrome', 'In Chrome öffnen'); ?></span>
+                        </a>
+                        <a href="https://punktepass.de/wp-content/plugins/punktepass/assets/app/punktepass.apk" id="ppv-android-apk-link" class="lo-app-btn" style="display:none;" download>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
+                            <span><?php echo PPV_Lang::t('login_download_apk', 'APK herunterladen'); ?></span>
+                        </a>
+                        <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="lo-app-btn lo-ios">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                            <span>iOS</span>
+                        </a>
                     </div>
-                    <button type="button" id="ppv-pwa-banner-install" class="ppv-pwa-banner-btn"><?php echo PPV_Lang::t('login_pwa_banner_install', 'Telepítés'); ?></button>
-                    <button type="button" id="ppv-pwa-banner-close" class="ppv-pwa-banner-close">&times;</button>
+                </div>
+            </main>
+
+            <!-- PWA Install Banner -->
+            <div id="ppv-pwa-banner" class="lo-pwa-banner" style="display:none;">
+                <div class="lo-pwa-inner">
+                    <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/pwa-icon-192.png" alt="PunktePass" class="lo-pwa-icon">
+                    <div class="lo-pwa-text">
+                        <strong><?php echo PPV_Lang::t('login_pwa_banner_title', 'PunktePass App installieren'); ?></strong>
+                        <p><?php echo PPV_Lang::t('login_pwa_banner_desc', 'Installiere die App für schnelleren Zugriff!'); ?></p>
+                    </div>
+                    <button type="button" id="ppv-pwa-banner-install" class="lo-pwa-install"><?php echo PPV_Lang::t('login_pwa_banner_install', 'Installieren'); ?></button>
+                    <button type="button" id="ppv-pwa-banner-close" class="lo-pwa-close">&times;</button>
                 </div>
             </div>
 
             <!-- Footer -->
-            <footer class="ppv-landing-footer">
+            <footer class="lo-footer">
                 <p><?php echo PPV_Lang::t('landing_footer_copyright'); ?></p>
-                <div class="ppv-footer-links">
+                <div class="lo-footer-links">
                     <a href="/datenschutz"><?php echo PPV_Lang::t('landing_footer_privacy'); ?></a>
-                    <span>•</span>
+                    <span>&middot;</span>
                     <a href="/agb"><?php echo PPV_Lang::t('landing_footer_terms'); ?></a>
-                    <span>•</span>
+                    <span>&middot;</span>
                     <a href="/impressum"><?php echo PPV_Lang::t('landing_footer_imprint'); ?></a>
                 </div>
             </footer>
@@ -729,7 +541,6 @@ public static function render_landing_page($atts) {
             nonce: '<?php echo wp_create_nonce('ppv_login_nonce'); ?>',
             google_client_id: '<?php echo defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com'); ?>',
             facebook_app_id: '<?php echo defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', '32519769227670976'); ?>',
-            // tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'); ?>', // TikTok disabled
             apple_client_id: '<?php echo defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', ''); ?>',
             apple_redirect_uri: '<?php echo home_url('/login'); ?>',
             redirect_url: '<?php echo home_url('/user_dashboard'); ?>',
@@ -755,25 +566,19 @@ public static function render_landing_page($atts) {
 
         <!-- Service Worker Cache Clear (Login Page) -->
         <script>
-        // ✅ CSAK cache törlés, NEM SW re-registration!
-        // Ha újra regisztráljuk a SW-t query paraméterrel, az conflict-ot okoz a dashboard SW-vel
-        // és page refresh-t triggerel a clients.claim() miatt
         if ('caches' in window) {
           window.addEventListener('load', async () => {
             try {
-              // DELETE all caches to ensure fresh content after login
               const cacheNames = await caches.keys();
               for (const name of cacheNames) {
                 await caches.delete(name);
               }
-              console.log('🧹 [Login] All caches cleared');
+              console.log('[Login] All caches cleared');
             } catch (err) {
-              console.error('❌ [Login] Cache clear error:', err);
+              console.error('[Login] Cache clear error:', err);
             }
           });
         }
-
-        // SW registration happens in class-ppv-pwa.php (global, no conflict)
         </script>
 
         <!-- PWA Install Button Handler -->
@@ -788,10 +593,9 @@ public static function render_landing_page($atts) {
             const bannerInstall = document.getElementById('ppv-pwa-banner-install');
             const bannerClose = document.getElementById('ppv-pwa-banner-close');
             const androidHeaderBtn = document.getElementById('ppv-android-header-link');
-            const pwaInstallHint = <?php echo json_encode(PPV_Lang::t('login_pwa_install_hint', 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.')); ?>;
+            const pwaInstallHint = <?php echo json_encode(PPV_Lang::t('login_pwa_install_hint', 'Öffne das Browsermenü und wähle "Zum Startbildschirm hinzufügen".')); ?>;
             let pwaPromptReceived = false;
 
-            // Detect device & browser
             const isAndroid = /Android/i.test(navigator.userAgent);
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
             const isChrome = /Chrome/i.test(navigator.userAgent) && !/Edge|OPR|Opera/i.test(navigator.userAgent);
@@ -799,23 +603,19 @@ public static function render_landing_page($atts) {
             const bannerDismissed = localStorage.getItem('ppv_pwa_banner_dismissed');
             const iosHeaderLink = document.getElementById('ppv-ios-header-link');
 
-            // On iOS: show App Store link in header
             if (isIOS && !isStandalone && iosHeaderLink) {
                 iosHeaderLink.style.display = 'inline-flex';
             }
 
-            // On Android Chrome: always show header install button (even after uninstall)
             if (isAndroid && isChrome && !isStandalone && androidHeaderBtn) {
                 androidHeaderBtn.style.display = 'inline-flex';
             }
 
-            // On Android non-Chrome: show APK download link directly (header + download section)
             if (isAndroid && !isChrome && !isStandalone) {
                 if (apkLink) apkLink.style.display = 'inline-flex';
                 if (apkHeaderLink) apkHeaderLink.style.display = 'inline-flex';
             }
 
-            // On Android Chrome: if PWA prompt doesn't fire in 3s, show APK as fallback
             if (isAndroid && isChrome && !isStandalone) {
                 setTimeout(() => {
                     if (!pwaPromptReceived) {
@@ -826,37 +626,30 @@ public static function render_landing_page($atts) {
                 }, 3000);
             }
 
-            // Listen for install prompt (only fires in Chrome/Chromium)
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
                 pwaPromptReceived = true;
-                // Hide APK links if PWA prompt is available
                 if (apkLink) apkLink.style.display = 'none';
                 if (apkHeaderLink) apkHeaderLink.style.display = 'none';
 
-                // Show install button in download section
                 if (installBtn && isAndroid && !isStandalone) {
                     installBtn.style.display = 'inline-flex';
                     if (chromeLink) chromeLink.style.display = 'none';
                 }
 
-                // AUTO-SHOW BANNER on Android Chrome (if not dismissed)
                 if (isAndroid && !isStandalone && !bannerDismissed && pwaBanner) {
                     setTimeout(() => {
                         pwaBanner.style.display = 'flex';
-                    }, 1500); // Show after 1.5s for better UX
+                    }, 1500);
                 }
             });
 
-            // Handle Android header button click
             if (androidHeaderBtn) {
                 androidHeaderBtn.addEventListener('click', async () => {
                     if (deferredPrompt) {
-                        // Direct install if prompt available
                         deferredPrompt.prompt();
                         const { outcome } = await deferredPrompt.userChoice;
-                        console.log('PWA install outcome:', outcome);
                         deferredPrompt = null;
                         if (outcome === 'accepted') {
                             androidHeaderBtn.style.display = 'none';
@@ -864,13 +657,11 @@ public static function render_landing_page($atts) {
                             if (pwaBanner) pwaBanner.style.display = 'none';
                         }
                     } else {
-                        // Show manual install hint if no prompt available
                         alert(pwaInstallHint);
                     }
                 });
             }
 
-            // Handle install button click (in download section)
             if (installBtn) {
                 installBtn.addEventListener('click', async () => {
                     if (!deferredPrompt) {
@@ -879,27 +670,23 @@ public static function render_landing_page($atts) {
                     }
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
-                    console.log('PWA install outcome:', outcome);
                     deferredPrompt = null;
                     installBtn.style.display = 'none';
                     if (pwaBanner) pwaBanner.style.display = 'none';
                 });
             }
 
-            // Handle banner install button
             if (bannerInstall) {
                 bannerInstall.addEventListener('click', async () => {
                     if (!deferredPrompt) return;
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
-                    console.log('PWA install outcome:', outcome);
                     deferredPrompt = null;
                     if (pwaBanner) pwaBanner.style.display = 'none';
                     if (installBtn) installBtn.style.display = 'none';
                 });
             }
 
-            // Handle banner close
             if (bannerClose) {
                 bannerClose.addEventListener('click', () => {
                     if (pwaBanner) pwaBanner.style.display = 'none';
@@ -907,7 +694,6 @@ public static function render_landing_page($atts) {
                 });
             }
 
-            // Hide everything if already installed
             window.addEventListener('appinstalled', () => {
                 if (installBtn) installBtn.style.display = 'none';
                 if (chromeLink) chromeLink.style.display = 'none';
@@ -917,57 +703,39 @@ public static function render_landing_page($atts) {
             });
         })();
 
-        // ========================================
-        // 📱 APP DOWNLOAD MODAL HANDLER
-        // ========================================
+        // App Download Modal Handler
         (function() {
             const modal = document.getElementById('ppv-app-download-modal');
             const closeBtn = document.getElementById('ppv-app-modal-close');
             const dismissBtn = document.getElementById('ppv-app-modal-dismiss');
             const androidBtn = document.getElementById('ppv-modal-android-btn');
-            const overlay = modal?.querySelector('.ppv-app-modal-overlay');
+            const overlay = modal?.querySelector('.lo-modal-overlay');
 
             const isAndroid = /Android/i.test(navigator.userAgent);
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-            const isDesktop = !isAndroid && !isIOS;
 
             const modalDismissed = localStorage.getItem('ppv_app_modal_dismissed');
 
-            // Show modal on page load if:
-            // 1. Not already dismissed
-            // 2. Not running in standalone mode (app installed)
-            // 3. Is mobile device (Android or iOS)
             if (modal && !modalDismissed && !isStandalone && (isAndroid || isIOS)) {
                 setTimeout(() => {
                     modal.style.display = 'flex';
-                    setTimeout(() => modal.classList.add('ppv-app-modal-visible'), 50);
-                }, 1000); // Show after 1 second
+                }, 1000);
             }
 
-            // Close modal function
             function closeModal() {
-                modal?.classList.remove('ppv-app-modal-visible');
-                setTimeout(() => {
-                    if (modal) modal.style.display = 'none';
-                }, 300);
+                if (modal) modal.style.display = 'none';
             }
 
-            // Close button
             closeBtn?.addEventListener('click', closeModal);
-
-            // Overlay click
             overlay?.addEventListener('click', closeModal);
 
-            // Dismiss button (don't show again)
             dismissBtn?.addEventListener('click', () => {
                 localStorage.setItem('ppv_app_modal_dismissed', 'true');
                 closeModal();
             });
 
-            // Android button click
             androidBtn?.addEventListener('click', async () => {
-                // Try PWA install first
                 if (window.deferredPrompt) {
                     try {
                         await window.deferredPrompt.prompt();
@@ -980,13 +748,11 @@ public static function render_landing_page($atts) {
                         console.error('PWA install error:', err);
                     }
                 } else {
-                    // Fallback to APK download
                     window.location.href = '<?php echo PPV_PLUGIN_URL; ?>assets/app/punktepass.apk';
                     closeModal();
                 }
             });
 
-            // Make deferredPrompt available globally for modal
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 window.deferredPrompt = e;
