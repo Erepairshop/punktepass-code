@@ -1118,8 +1118,7 @@ private static function get_today_hours($opening_hours) {
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <!-- ppv-theme-light.css + handler-light.css DISABLED – replaced by modular CSS -->
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-dashboard.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>
@@ -1134,17 +1133,8 @@ private static function get_today_hours($opening_hours) {
     window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
-    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
-    /* Override handler-light.css fixed app-shell for standalone page */
-    #ppv-dashboard-root{position:static!important;overflow:visible!important;height:auto!important;display:block!important}
-    .ppv-dashboard-netto{overflow:visible!important;padding-top:0!important;padding-bottom:100px!important}
-    .ppv-dashboard-inner{padding:16px!important}
-    /* Prevent transform from creating new containing block for position:fixed children */
-    .ppv-store-card-enhanced,.ppv-bottom-nav .nav-item{-webkit-transform:none!important;transform:none!important;will-change:auto!important}
-    .ppv-store-card-enhanced:hover{transform:none!important}
-    .ppv-store-card-enhanced.expanded .ppv-store-details{max-height:2000px!important;overflow:visible!important;opacity:1!important}
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:16px 0 100px 0;min-height:100vh;padding-top:env(safe-area-inset-top,0)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
