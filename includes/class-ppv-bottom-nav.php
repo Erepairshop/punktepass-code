@@ -32,7 +32,7 @@ class PPV_Bottom_Nav {
         wp_enqueue_style(
             'ppv-bottom-nav',
             plugins_url('assets/css/ppv-bottom-nav.css', dirname(__FILE__)),
-            ['ppv-handler-light', 'ppv-theme-light'],
+            ['ppv-handler'],
             filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/ppv-bottom-nav.css')
         );
 

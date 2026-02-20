@@ -429,13 +429,18 @@ add_action('wp_enqueue_scripts', function() {
     wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', ['remixicons'], PPV_VERSION);
     wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], PPV_VERSION);
 
-    // 🔹 HANDLER-LIGHT.CSS - Always load globally (contains shared UI components)
+    // 🔹 HANDLER.CSS – Replaces handler-light.css + ppv-theme-light.css (modular)
     wp_enqueue_style(
-        'ppv-handler-light',
-        PPV_PLUGIN_URL . 'assets/css/handler-light.css',
-        ['ppv-core'],
+        'ppv-handler',
+        PPV_PLUGIN_URL . 'assets/css/ppv-handler.css',
+        ['ppv-core', 'ppv-components'],
         PPV_VERSION
     );
+
+    // 🔹 Register legacy handles as aliases so dependencies don't break
+    // (ppv-bottom-nav.css and other files may depend on these handles)
+    wp_register_style('ppv-handler-light', false);
+    wp_register_style('ppv-theme-light', false);
 
     // 🔹 HANDLER SESSION = HANDLER DARK THEME (optional override)
     if (ppv_is_handler_session()) {
@@ -444,17 +449,14 @@ add_action('wp_enqueue_scripts', function() {
             wp_enqueue_style(
                 'ppv-handler-dark',
                 PPV_PLUGIN_URL . 'assets/css/handler-dark.css',
-                ['ppv-handler-light'],
+                ['ppv-handler'],
                 PPV_VERSION
             );
         }
     }
 
-    // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
-    wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', ['ppv-core'], PPV_VERSION);
-
-    // 🔹 LAYOUT loads LAST – scroll model must override legacy CSS
-    wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-handler-light', 'ppv-theme-light'], PPV_VERSION);
+    // 🔹 LAYOUT loads LAST – scroll model must override handler CSS
+    wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-handler'], PPV_VERSION);
 }, 100);
 
 /**
@@ -702,8 +704,7 @@ foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
 // 🎨 PWA META TAGS + CRITICAL CSS PRELOAD
 // ========================================
 add_action('wp_head', function () { ?>
-    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-theme-light.css?ver=<?php echo PPV_VERSION; ?>" as="style">
-    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/handler-light.css?ver=<?php echo PPV_VERSION; ?>" as="style">
+    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-handler.css?ver=<?php echo PPV_VERSION; ?>" as="style">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#fafdff">
     <meta name="apple-mobile-web-app-capable" content="yes">

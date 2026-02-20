@@ -55,8 +55,8 @@ class PPV_VIP_Settings {
 
         // CSS
         wp_enqueue_style(
-            'ppv-handler-light',
-            PPV_PLUGIN_URL . 'assets/css/handler-light.css',
+            'ppv-handler',
+            PPV_PLUGIN_URL . 'assets/css/ppv-handler.css',
             [],
             time()
         );

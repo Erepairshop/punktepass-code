@@ -212,7 +212,7 @@ class PPV_Performance {
         }
 
         // For main theme CSS, use preload + onload pattern
-        if (in_array($handle, ['ppv-theme-light', 'ppv-handler-light', 'ppv-bottom-nav'])) {
+        if (in_array($handle, ['ppv-handler', 'ppv-bottom-nav'])) {
             // Preload the CSS
             $preload = sprintf(
                 '<link rel="preload" href="%s" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n" .
