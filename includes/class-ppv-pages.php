@@ -265,7 +265,7 @@ public static function force_visible() {
         }
 
         // 🧹 Minden PPV CSS törlése (kivéve whitelist)
-        $whitelist = ['ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
+        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -273,13 +273,18 @@ public static function force_visible() {
             }
         }
 
-        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
-        // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
+        // 🔹 New modular CSS architecture
+        $v = defined('PPV_VERSION') ? PPV_VERSION : time();
+        wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', [], $v);
+        wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], $v);
+        wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
+
+        // 🔹 Legacy theme (still needed during migration)
         wp_enqueue_style(
             'ppv-theme-light',
             PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-            [],
-            defined('PPV_VERSION') ? PPV_VERSION : time()
+            ['ppv-core'],
+            $v
         );
 
         // 🔹 Globális JS

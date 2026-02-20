@@ -1,0 +1,287 @@
+/**
+ * PunktePass Core – Design Tokens & Reset
+ * ========================================
+ * Central source of truth for all CSS variables,
+ * typography, reset rules, and dark mode overrides.
+ *
+ * Loaded on EVERY page. Keep this lean.
+ */
+
+/* ── Google Fonts ────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
+/* ── Light Mode Tokens ───────────────────── */
+:root {
+    /* Primary */
+    --pp-primary: #0ea5e9;
+    --pp-primary-dark: #0284c7;
+    --pp-primary-darker: #0369a1;
+    --pp-primary-light: #38bdf8;
+    --pp-primary-lighter: #7dd3fc;
+    --pp-primary-glow: rgba(14, 165, 233, 0.35);
+
+    /* Secondary */
+    --pp-secondary: #10b981;
+    --pp-secondary-dark: #059669;
+    --pp-secondary-light: #34d399;
+    --pp-secondary-glow: rgba(16, 185, 129, 0.30);
+
+    /* Accent */
+    --pp-accent: #8b5cf6;
+    --pp-accent-dark: #7c3aed;
+    --pp-accent-light: #a78bfa;
+    --pp-accent-glow: rgba(139, 92, 246, 0.30);
+
+    /* Semantic */
+    --pp-success: #22c55e;
+    --pp-success-light: #4ade80;
+    --pp-warning: #f59e0b;
+    --pp-warning-light: #fbbf24;
+    --pp-danger: #ef4444;
+    --pp-danger-light: #f87171;
+    --pp-info: #3b82f6;
+
+    /* Backgrounds */
+    --pp-bg: #f8fafc;
+    --pp-bg-2: #f1f5f9;
+    --pp-bg-3: #e2e8f0;
+    --pp-bg-warm: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e8f4f8 100%);
+
+    /* Surfaces */
+    --pp-surface: #ffffff;
+    --pp-surface-soft: rgba(255, 255, 255, 0.85);
+    --pp-surface-glass: rgba(255, 255, 255, 0.72);
+    --pp-surface-elevated: #ffffff;
+
+    /* Text */
+    --pp-text: #0f172a;
+    --pp-text-2: #334155;
+    --pp-text-3: #64748b;
+    --pp-text-muted: #94a3b8;
+    --pp-text-inverse: #ffffff;
+
+    /* Header */
+    --pp-header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --pp-header-dark: #0a0f1a;
+
+    /* Borders */
+    --pp-border: rgba(14, 165, 233, 0.12);
+    --pp-border-soft: rgba(14, 165, 233, 0.08);
+    --pp-border-strong: rgba(14, 165, 233, 0.25);
+    --pp-border-glass: rgba(255, 255, 255, 0.18);
+
+    /* Shadows */
+    --pp-shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+    --pp-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
+    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.10), 0 6px 16px rgba(0,0,0,0.06);
+    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
+    --pp-shadow-glow: 0 0 24px var(--pp-primary-glow);
+    --pp-shadow-glow-lg: 0 0 40px var(--pp-primary-glow);
+    --pp-shadow-inner: inset 0 2px 4px rgba(0,0,0,0.04);
+
+    /* Radii */
+    --pp-r-xs: 8px;
+    --pp-r-sm: 12px;
+    --pp-r-md: 16px;
+    --pp-r-lg: 20px;
+    --pp-r-xl: 28px;
+    --pp-r-2xl: 36px;
+    --pp-r-full: 9999px;
+
+    /* Transitions */
+    --pp-trans: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --pp-trans-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --pp-trans-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    --pp-trans-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --pp-trans-spring: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Glass */
+    --pp-glass: blur(16px) saturate(180%);
+    --pp-glass-heavy: blur(24px) saturate(200%);
+    --pp-glass-light: blur(8px) saturate(150%);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    --gradient-secondary: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --gradient-accent: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    --gradient-premium: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 50%, #ec4899 100%);
+    --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+
+    /* Layout */
+    --pp-header-height: 64px;
+    --pp-nav-height: 72px;
+    --pp-max-width: 900px;
+
+    /* Fonts */
+    --pp-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --pp-font-display: 'Poppins', 'Inter', sans-serif;
+    --pp-font-mono: 'SF Mono', 'Fira Code', monospace;
+
+    /* VIP tiers */
+    --pp-vip-bronze: #CD7F32;
+    --pp-vip-silver: #C0C0C0;
+    --pp-vip-silver-dark: #808080;
+    --pp-vip-gold: #FFD700;
+    --pp-vip-gold-dark: #DAA520;
+    --pp-vip-platinum: #A0B2C6;
+    --pp-vip-platinum-dark: #6B7280;
+
+    /* ── Backward compat aliases (handler-light naming) ── */
+    --color-secondary: var(--pp-secondary);
+    --color-accent: var(--pp-accent);
+    --color-success: var(--pp-success);
+    --color-warning: var(--pp-warning);
+    --color-error: var(--pp-danger);
+    --color-bg: var(--pp-bg);
+    --color-bg-secondary: var(--pp-bg-2);
+    --color-surface: var(--pp-surface);
+    --color-text: var(--pp-text);
+    --color-text-secondary: var(--pp-text-2);
+    --color-text-muted: var(--pp-text-muted);
+    --color-border: var(--pp-border);
+    --color-header-bg: #0f172a;
+    --shadow-sm: var(--pp-shadow-sm);
+    --shadow-md: var(--pp-shadow-md);
+    --radius: var(--pp-r-md);
+    --radius-md: 14px;
+    --radius-sm: var(--pp-r-sm);
+    --transition: var(--pp-trans);
+    --font-sans: var(--pp-font);
+    --font-display: var(--pp-font-display);
+    --header-height: var(--pp-header-height);
+    --bottom-nav-height: var(--pp-nav-height);
+}
+
+/* ── Dark Mode Tokens ────────────────────── */
+.ppv-dark,
+[data-theme="dark"] {
+    --pp-primary: #00d4ff;
+    --pp-primary-dark: #00a8cc;
+    --pp-primary-darker: #0088a8;
+    --pp-primary-light: #4de5ff;
+    --pp-primary-lighter: #99f0ff;
+    --pp-primary-glow: rgba(0, 212, 255, 0.40);
+
+    --pp-secondary: #00d9a3;
+    --pp-secondary-dark: #00a878;
+    --pp-secondary-light: #70ffce;
+    --pp-secondary-glow: rgba(0, 217, 163, 0.35);
+
+    --pp-accent: #a855f7;
+    --pp-accent-dark: #8b5cf6;
+    --pp-accent-light: #d8b4fe;
+    --pp-accent-glow: rgba(168, 85, 247, 0.35);
+
+    --pp-success: #22c55e;
+    --pp-success-light: #4ade80;
+    --pp-warning: #fbbf24;
+    --pp-warning-light: #fcd34d;
+    --pp-danger: #f87171;
+    --pp-danger-light: #fca5a5;
+    --pp-info: #38bdf8;
+
+    --pp-bg: #0a0f1a;
+    --pp-bg-2: #0f172a;
+    --pp-bg-3: #1a2744;
+    --pp-bg-warm: linear-gradient(180deg, #0a0f1a 0%, #0f172a 50%, #141e33 100%);
+
+    --pp-surface: #141e33;
+    --pp-surface-soft: #1a2744;
+    --pp-surface-glass: rgba(20, 30, 51, 0.88);
+    --pp-surface-elevated: #1e3048;
+
+    --pp-text: #f1f5f9;
+    --pp-text-2: #e2e8f0;
+    --pp-text-3: #94a3b8;
+    --pp-text-muted: #64748b;
+    --pp-text-inverse: #0a0f1a;
+
+    --pp-header-bg: linear-gradient(135deg, #070c14 0%, #0a0f1a 100%);
+    --pp-header-dark: #030508;
+
+    --pp-border: rgba(0, 212, 255, 0.28);
+    --pp-border-soft: rgba(0, 212, 255, 0.14);
+    --pp-border-strong: rgba(0, 212, 255, 0.50);
+    --pp-border-glass: rgba(0, 212, 255, 0.20);
+
+    --pp-shadow-xs: 0 1px 3px rgba(0,0,0,0.35);
+    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.50);
+    --pp-shadow: 0 4px 16px rgba(0,0,0,0.60);
+    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.55);
+    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.70);
+    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.75);
+    --pp-shadow-glow: 0 0 24px rgba(0,212,255,0.40);
+    --pp-shadow-glow-lg: 0 0 48px rgba(0,212,255,0.50);
+    --pp-shadow-inner: inset 0 2px 4px rgba(0,0,0,0.25);
+
+    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+    --gradient-secondary: linear-gradient(135deg, #00d9a3 0%, #00a878 100%);
+    --gradient-accent: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+    --gradient-card: linear-gradient(145deg, #1a2744 0%, #141e33 100%);
+    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0,212,255,0.25), transparent);
+}
+
+/* ── Reset ───────────────────────────────── */
+*,
+::after,
+::before {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ── Base Typography ─────────────────────── */
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--pp-font);
+    background: var(--pp-bg);
+    color: var(--pp-text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+}
+
+a {
+    color: var(--pp-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--pp-primary-dark);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ── Accessibility: Reduced Motion ───────── */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::after,
+    ::before {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ── Mobile adjustments ──────────────────── */
+@media (max-width: 480px) {
+    :root {
+        --pp-header-height: 56px;
+        --pp-nav-height: 64px;
+    }
+}

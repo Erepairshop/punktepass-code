@@ -1,367 +1,395 @@
 /**
- * PunktePass – Bottom Nav (Dark / Light Auto)
+ * PunktePass – Bottom Navigation
+ * ================================
+ * Fixed bottom nav bar with role-based items.
+ * Uses ppv-core.css variables for consistency.
+ *
+ * Includes: Support modal, Feedback modal, star ratings.
  */
 
+/* ── Main Navigation Bar ─────────────────── */
 .ppv-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 10px 0 12px 0;
-  height: auto !important;
-  min-height: 70px;
-  border-top: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.96);
-  backdrop-filter: blur(12px);
-  z-index: 9999;
-  transition: background 0.3s ease;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px 0 12px 0;
+    height: auto !important;
+    min-height: var(--pp-nav-height, 70px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    transition: background 0.3s ease;
 }
 
+/* Safe area for notched devices */
+@supports (padding: max(0px)) {
+    .ppv-bottom-nav {
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+}
+
+/* ── Nav Items ───────────────────────────── */
 .ppv-bottom-nav .nav-item {
-  flex: 1;
-  text-align: center;
-  text-decoration: none;
-  color: #667eea;
-  font-size: 22px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 1px;
-  transition: all 0.25s ease;
-  cursor: pointer;
-  min-width: 0;
+    flex: 1;
+    text-align: center;
+    text-decoration: none;
+    color: var(--pp-text-muted);
+    font-size: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .ppv-bottom-nav .nav-item i {
-  font-size: 22px;
-  transition: transform 0.25s ease;
+    font-size: 22px;
+    transition: transform 0.25s ease;
 }
 
-/* Labels - always visible, smaller size */
+/* Labels */
 .ppv-bottom-nav.ppv-nav-labeled .nav-item span {
-  display: block;
-  font-size: 9px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  line-height: 1;
-  opacity: 0.7;
+    display: block;
+    font-size: 9px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1;
+    opacity: 0.7;
 }
 
-/* Active label - more prominent */
 .ppv-bottom-nav.ppv-nav-labeled .nav-item.active span {
-  font-weight: 600;
-  opacity: 1;
+    font-weight: 600;
+    opacity: 1;
 }
 
 /* Hover */
 .ppv-bottom-nav .nav-item:hover {
-  color: #764ba2;
+    color: var(--pp-primary);
 }
 
 /* Active */
 .ppv-bottom-nav .nav-item.active {
-  color: #764ba2;
+    color: var(--pp-primary);
 }
 
-/* Active with label - subtle highlight instead of scale */
 .ppv-bottom-nav.ppv-nav-labeled .nav-item.active {
-  color: #764ba2;
-  transform: none;
+    color: var(--pp-primary);
+    transform: none;
 }
 
 .ppv-bottom-nav.ppv-nav-labeled .nav-item.active i {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 /* Touch feedback */
 .ppv-bottom-nav .nav-item.touch {
-  transform: scale(0.95);
-  opacity: 0.8;
+    transform: scale(0.95);
+    opacity: 0.8;
 }
 
-/* Dark Mode - .ppv-dark */
-body.ppv-dark .ppv-bottom-nav {
-  background: rgba(10,18,28,0.95);
-  border-top-color: rgba(102,126,234,0.2);
-}
-body.ppv-dark .ppv-bottom-nav .nav-item {
-  color: #667eea;
-}
-body.ppv-dark .ppv-bottom-nav .nav-item.active {
-  color: #00eaff;
-}
-body.ppv-dark .ppv-bottom-nav.ppv-nav-labeled .nav-item.active {
-  text-shadow: none;
-}
-body.ppv-dark .ppv-bottom-nav .nav-item:hover {
-  color: #00eaff;
-}
-
-/* Dark Mode - .ppv-theme-dark */
-body.ppv-theme-dark .ppv-bottom-nav {
-  background: rgba(10,20,35,0.96);
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
-body.ppv-theme-dark .ppv-bottom-nav .nav-item {
-  color: #cbd5e1;
-}
-body.ppv-theme-dark .ppv-bottom-nav .nav-item.active {
-  color: #33bfff;
-}
-body.ppv-theme-dark .ppv-bottom-nav .nav-item.active i {
-  color: #33bfff;
-}
-
-/* Safe area */
-@supports(padding:max(0px)) {
-  .ppv-bottom-nav {
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-  }
-}
-
-/* SPA Loading Indicator */
-body.ppv-spa-loading::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
-  background-size: 200% 100%;
-  animation: spa-loading 0.8s ease-in-out infinite;
-  z-index: 99999;
-}
-
-@keyframes spa-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Navigating state for nav items */
+/* Navigating state */
 .ppv-bottom-nav .nav-item.navigating {
-  opacity: 0.6;
-  pointer-events: none;
+    opacity: 0.6;
+    pointer-events: none;
 }
 
-/* Support Modal */
+/* ── Dark Mode ───────────────────────────── */
+body.ppv-dark .ppv-bottom-nav,
+[data-theme="dark"] .ppv-bottom-nav {
+    background: rgba(10, 18, 28, 0.95);
+    border-top-color: var(--pp-border);
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item,
+[data-theme="dark"] .ppv-bottom-nav .nav-item {
+    color: var(--pp-text-muted);
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item.active,
+body.ppv-dark .ppv-bottom-nav .nav-item:hover,
+[data-theme="dark"] .ppv-bottom-nav .nav-item.active,
+[data-theme="dark"] .ppv-bottom-nav .nav-item:hover {
+    color: var(--pp-primary);
+}
+
+/* Legacy .ppv-theme-dark support */
+body.ppv-theme-dark .ppv-bottom-nav {
+    background: rgba(10, 20, 35, 0.96);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+body.ppv-theme-dark .ppv-bottom-nav .nav-item {
+    color: #cbd5e1;
+}
+
+body.ppv-theme-dark .ppv-bottom-nav .nav-item.active {
+    color: var(--pp-primary);
+}
+
+/* ── SPA Loading Indicator ───────────────── */
+body.ppv-spa-loading::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--gradient-primary);
+    background-size: 200% 100%;
+    animation: ppv-spa-loading 0.8s ease-in-out infinite;
+    z-index: 99999;
+}
+
+@keyframes ppv-spa-loading {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════
+   SUPPORT MODAL
+   ═══════════════════════════════════════════ */
 #ppv-support-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  z-index: 10000;
-  align-items: center;
-  justify-content: center;
-  overflow-y: auto;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
 }
 
 #ppv-support-modal.show {
-  display: flex;
+    display: flex;
 }
 
 #ppv-support-modal .modal-content {
-  background: var(--pp-bg-primary, #1a1a2e);
-  padding: 24px;
-  border-radius: 15px;
-  max-width: 450px;
-  width: 90%;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  margin: 20px auto;
+    background: var(--pp-surface);
+    padding: 24px;
+    border-radius: var(--pp-r-md);
+    max-width: 450px;
+    width: 90%;
+    box-shadow: var(--pp-shadow-xl);
+    margin: 20px auto;
 }
 
 #ppv-support-modal .modal-title {
-  margin: 0 0 12px 0;
-  color: var(--pp-text-primary, #fff);
+    margin: 0 0 12px 0;
+    color: var(--pp-text);
 }
 
 #ppv-support-modal .modal-description {
-  color: var(--pp-text-secondary, #999);
-  font-size: 14px;
-  margin-bottom: 16px;
+    color: var(--pp-text-3);
+    font-size: 14px;
+    margin-bottom: 16px;
 }
 
 #ppv-support-modal input,
 #ppv-support-modal textarea,
 #ppv-support-modal select {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--pp-border, #333);
-  background: var(--pp-bg-secondary, #0f0f1e);
-  color: var(--pp-text-primary, #fff);
-  margin-bottom: 12px;
-  box-sizing: border-box;
+    width: 100%;
+    padding: 12px;
+    border-radius: var(--pp-r-sm);
+    border: 1px solid var(--pp-border);
+    background: var(--pp-bg-2);
+    color: var(--pp-text);
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+#ppv-support-modal input:focus,
+#ppv-support-modal textarea:focus,
+#ppv-support-modal select:focus {
+    outline: 0;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px var(--pp-primary-glow);
 }
 
 #ppv-support-modal textarea {
-  resize: vertical;
+    resize: vertical;
 }
 
 #ppv-support-modal .modal-msg {
-  display: none;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-size: 14px;
+    display: none;
+    padding: 10px;
+    border-radius: var(--pp-r-sm);
+    margin-bottom: 12px;
+    font-size: 14px;
 }
 
 #ppv-support-modal .modal-msg.error {
-  background: rgba(255,82,82,0.2);
-  color: #ff5252;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--pp-danger);
 }
 
 #ppv-support-modal .modal-msg.success {
-  background: rgba(76,175,80,0.2);
-  color: #4caf50;
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--pp-success);
 }
 
 #ppv-support-modal .modal-actions {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 #ppv-support-modal .btn-send {
-  flex: 1;
-  padding: 12px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
+    flex: 1;
+    padding: 12px;
+    background: var(--gradient-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+#ppv-support-modal .btn-send:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--pp-shadow-glow);
 }
 
 #ppv-support-modal .btn-cancel {
-  flex: 1;
-  padding: 12px;
-  background: transparent;
-  color: var(--pp-text-secondary, #999);
-  border: 1px solid var(--pp-border, #333);
-  border-radius: 8px;
-  cursor: pointer;
+    flex: 1;
+    padding: 12px;
+    background: transparent;
+    color: var(--pp-text-3);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    cursor: pointer;
+    transition: var(--pp-trans);
 }
 
-/* ========================================
-   FEEDBACK MODAL - Success/Error Messages
-   ======================================== */
+#ppv-support-modal .btn-cancel:hover {
+    background: var(--pp-bg-2);
+}
 
-/* Success view - bright and visible */
+/* ═══════════════════════════════════════════
+   FEEDBACK MODAL
+   ═══════════════════════════════════════════ */
 .ppv-feedback-success {
-  text-align: center;
-  padding: 30px 20px;
+    text-align: center;
+    padding: 30px 20px;
 }
 
 .ppv-feedback-success i {
-  font-size: 64px;
-  color: #4ade80;
-  margin-bottom: 16px;
-  display: block;
+    font-size: 64px;
+    color: var(--pp-success);
+    margin-bottom: 16px;
+    display: block;
 }
 
 .ppv-feedback-success h4 {
-  color: #ffffff;
-  font-size: 22px;
-  margin: 0 0 8px 0;
+    color: var(--pp-text);
+    font-size: 22px;
+    margin: 0 0 8px 0;
 }
 
 .ppv-feedback-success p {
-  color: #e0e0e0;
-  font-size: 15px;
-  margin: 0;
+    color: var(--pp-text-3);
+    font-size: 15px;
+    margin: 0;
 }
 
-/* Error/Success message box - BRIGHT colors */
+/* Feedback messages */
 #ppv-feedback-msg,
 .ppv-feedback-message {
-  padding: 12px 16px !important;
-  border-radius: 10px !important;
-  margin-bottom: 12px !important;
-  font-size: 14px !important;
-  display: none;
-  text-align: center !important;
-  font-weight: 500 !important;
-  line-height: 1.5 !important;
+    padding: 12px 16px;
+    border-radius: var(--pp-r-sm);
+    margin-bottom: 12px;
+    font-size: 14px;
+    display: none;
+    text-align: center;
+    font-weight: 500;
+    line-height: 1.5;
 }
 
 #ppv-feedback-msg.show,
 .ppv-feedback-message.show {
-  display: block !important;
+    display: block;
 }
 
 #ppv-feedback-msg.error,
 .ppv-feedback-message.error {
-  background: rgba(255, 100, 100, 0.25) !important;
-  border: 1px solid #ff6b6b !important;
-  color: #ffcccc !important;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--pp-danger-light);
+    color: var(--pp-danger);
 }
 
 #ppv-feedback-msg.success,
 .ppv-feedback-message.success {
-  background: rgba(74, 222, 128, 0.25) !important;
-  border: 1px solid #4ade80 !important;
-  color: #bbf7d0 !important;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid var(--pp-success-light);
+    color: var(--pp-success);
 }
 
-/* Star buttons - ensure clickability */
+/* ── Star Rating ─────────────────────────── */
 .ppv-feedback-stars {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
 }
 
 .ppv-star {
-  background: transparent;
-  border: none;
-  font-size: 36px;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 8px;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+    background: transparent;
+    border: none;
+    font-size: 36px;
+    color: var(--pp-text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 8px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .ppv-star:hover,
 .ppv-star:focus {
-  color: #ffc107;
-  transform: scale(1.15);
-  outline: none;
+    color: var(--pp-warning);
+    transform: scale(1.15);
+    outline: none;
 }
 
 .ppv-star.active {
-  color: #ffc107;
-  transform: scale(1.1);
+    color: var(--pp-warning);
+    transform: scale(1.1);
 }
 
 .ppv-star.active i::before {
-  content: "\f186";
+    content: "\f186";
 }
 
-/* Category buttons - ensure clickability */
+/* Category buttons */
 .ppv-feedback-cat {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
 }
 
-/* Rating section visibility */
+/* Rating section */
 #ppv-feedback-rating-section {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 #ppv-feedback-rating-section p {
-  color: #e0e0e0;
-  font-size: 15px;
-  margin: 0 0 12px 0;
+    color: var(--pp-text-3);
+    font-size: 15px;
+    margin: 0 0 12px 0;
 }

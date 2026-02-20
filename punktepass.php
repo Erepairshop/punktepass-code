@@ -612,7 +612,11 @@ add_action('wp_enqueue_scripts', function() {
     if (empty($wp_styles->queue)) return;
     
 $whitelist = [
-    'ppv-theme-light',  // Single unified theme CSS (contains both light/dark styles)
+    'ppv-core',         // Design tokens, reset, typography
+    'ppv-layout',       // Page structure, scroll, header
+    'ppv-components',   // Shared UI components
+    'ppv-bottom-nav',   // Bottom navigation bar
+    'ppv-theme-light',  // Legacy theme (being phased out)
     'ppv-handler',      // Handler theme (light/dark)
     'ppv-handler-light',
     'ppv-handler-dark',
