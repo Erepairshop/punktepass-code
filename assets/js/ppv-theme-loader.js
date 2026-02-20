@@ -30,14 +30,53 @@
   // 🔹 LOAD CSS (Always use LIGHT CSS - contains all dark mode styles via body.ppv-dark)
   // ============================================================
   function loadThemeCSS(theme, forceReload = false) {
-    // Theme switching via body classes only – ppv-handler.css handles all styles
-    // NO dynamic CSS injection needed (ppv-theme-light.css is fully replaced by ppv-handler.css)
+    // ALWAYS use light CSS - it contains both light and dark styles via body.ppv-dark selectors
+    const cssPath = 'ppv-theme-light.css';
+
+    // Check if theme CSS is already loaded (by PHP or previous JS call)
+    // ppv-handler.css also contains all theme styles, so skip if that's loaded
+    const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
+    let lightCSSLoaded = false;
+
+    existingLinks.forEach(link => {
+      if (link.href && (link.href.includes(cssPath) || link.href.includes('ppv-handler.css'))) {
+        lightCSSLoaded = true;
+      }
+    });
+
+    // Update body classes and data-theme attribute for theme switching
     document.documentElement.setAttribute('data-theme', theme);
     if (document.body) {
       document.body.classList.remove('ppv-light', 'ppv-dark');
       document.body.classList.add(`ppv-${theme}`);
       log('INFO', `✅ Theme applied via body class: ppv-${theme}`);
     }
+
+    // If light CSS already loaded, we're done (classes are updated above)
+    if (lightCSSLoaded) {
+      log('DEBUG', '⏩ Light CSS already loaded, theme switched via body class');
+      return;
+    }
+
+    // Load light CSS if not already loaded
+    const id = 'ppv-theme-css';
+    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-light.css?v=${Date.now()}`;
+
+    // Remove any old JS-loaded CSS
+    document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
+
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onload = () => {
+      log('INFO', '✅ Light CSS loaded (contains all theme styles)');
+    };
+    link.onerror = () => {
+      log('ERROR', '❌ Light CSS failed to load:', href);
+    };
+
+    document.head.appendChild(link);
   }
 
   // ============================================================

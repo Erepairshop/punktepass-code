@@ -279,8 +279,13 @@ public static function force_visible() {
         wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], $v);
         wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
 
-        // 🔹 Legacy theme REMOVED – ppv-handler.css replaces ppv-theme-light.css + handler-light.css
-        // wp_enqueue_style('ppv-theme-light');
+        // 🔹 Legacy theme (still needed during migration)
+        wp_enqueue_style(
+            'ppv-theme-light',
+            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+            ['ppv-core'],
+            $v
+        );
 
         // 🔹 Globális JS
         wp_enqueue_script(

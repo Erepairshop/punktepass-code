@@ -35,8 +35,13 @@ class PPV_Account_Delete {
         //     null
         // );
 
-        // 🔹 Legacy theme REMOVED – ppv-handler.css replaces ppv-theme-light.css
-        // wp_enqueue_style('ppv-theme-light');
+        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+        wp_enqueue_style(
+            'ppv-theme-light',
+            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+            [],
+            defined('PPV_VERSION') ? PPV_VERSION : time()
+        );
     }
 
     /** ============================================================
