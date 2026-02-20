@@ -425,11 +425,15 @@ add_action('wp_enqueue_scripts', function() {
         '3.5.0'
     );
 
+    // 🔹 MODULAR CSS – Core tokens & components (loads for ALL sessions)
+    wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', ['remixicons'], PPV_VERSION);
+    wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], PPV_VERSION);
+
     // 🔹 HANDLER-LIGHT.CSS - Always load globally (contains shared UI components)
     wp_enqueue_style(
         'ppv-handler-light',
         PPV_PLUGIN_URL . 'assets/css/handler-light.css',
-        ['remixicons'],
+        ['ppv-core'],
         PPV_VERSION
     );
 
@@ -445,10 +449,12 @@ add_action('wp_enqueue_scripts', function() {
             );
         }
     }
-    
+
     // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
-    // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
-    wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], PPV_VERSION);
+    wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', ['ppv-core'], PPV_VERSION);
+
+    // 🔹 LAYOUT loads LAST – scroll model must override legacy CSS
+    wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-handler-light', 'ppv-theme-light'], PPV_VERSION);
 }, 100);
 
 /**
