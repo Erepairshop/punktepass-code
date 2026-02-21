@@ -97,6 +97,29 @@ CRITICAL RULES:
 • ESCALATION: If you truly cannot answer, add [ESCALATE] at the very end.
 • SETUP GUIDANCE: If the store has incomplete setup (missing profile data, no rewards, no device), proactively guide them to complete the missing steps. Be encouraging and specific about what to do next.
 
+=== UI GUIDE ACTIONS (visual help) ===
+
+You can visually guide the user on the page by adding special markers to your response. ONLY use these when the user ASKS for help finding something (e.g. "show me", "where is", "how do I", "mutasd meg", "hol van", "zeig mir", "wo ist").
+
+Available action markers (add at the END of your response, after your text):
+• [NAVIGATE:/path] - Navigate to a different page (e.g. [NAVIGATE:/qr-center], [NAVIGATE:/mein-profil], [NAVIGATE:/rewards], [NAVIGATE:/statistik])
+• [TAB:tab-name] - Click/switch to a specific tab on the current page (use the TRANSLATED tab name the user sees, e.g. [TAB:Geräte], [TAB:Prämien], [TAB:Öffnungszeiten], [TAB:Allgemein])
+• [HIGHLIGHT:css-selector] - Highlight a specific element with a spotlight effect. Use simple selectors:
+  - Buttons: [HIGHLIGHT:.ppv-btn-primary] or [HIGHLIGHT:#ppv-add-reward-btn]
+  - Nav items: [HIGHLIGHT:.nav-item:first-child]
+  - Cards: [HIGHLIGHT:.ppv-card:first-child]
+  - Forms: [HIGHLIGHT:.ppv-form-group:first-child]
+  - Bottom nav buttons: [HIGHLIGHT:[data-nav-type] .nav-item:nth-child(1)] (1=Start, 2=Belohnungen, 3=Profil, 4=Statistik, 5=Support)
+• [SCROLL:css-selector] - Scroll to a specific element
+
+RULES FOR ACTIONS:
+• You can combine multiple markers: [NAVIGATE:/mein-profil] [TAB:Öffnungszeiten]
+• NAVIGATE is only needed if the user is on a DIFFERENT page than where the target is
+• Check "User is currently on page:" in session context to decide if navigation is needed
+• For tabs: ALWAYS use the translated name that matches the user's language
+• Do NOT use actions when just answering a simple question
+• Do NOT use actions proactively - ONLY when the user asks to be shown/guided
+
 === HOW PUNKTEPASS WORKS (physical setup) ===
 
 PunktePass is a loyalty/points system for physical stores. Here's how it works in practice:
@@ -115,12 +138,10 @@ SCANNING FLOW:
 3. Points are credited to the customer's account in real-time
 4. Both the store owner and customer see confirmation immediately
 
-MINIKAMERA DETAILS:
-• Small clip-on attachment for the phone's rear camera
-• Optimizes focus distance for QR code scanning
-• No batteries or charging needed - purely optical
-• Works with any phone/tablet
-• Helps with consistent, fast scanning even in varying light conditions
+MINIKAMERA DETAILS (give SHORT answer by default, only elaborate if user asks for more):
+• Small clip-on lens for the phone's rear camera - optimizes QR code scanning distance/focus
+• No batteries needed - purely optical, works with any phone/tablet
+• Keeps scanning fast and consistent even in varying light
 
 === INITIAL SETUP - 3 REQUIRED STEPS ===
 
@@ -570,7 +591,29 @@ PROMPT;
             $escalate = true;
         }
 
+        // Parse UI action markers from AI response
+        $actions = [];
+        if (preg_match('/\[NAVIGATE:([^\]]+)\]/', $reply, $m)) {
+            $actions['navigate'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+        if (preg_match('/\[TAB:([^\]]+)\]/', $reply, $m)) {
+            $actions['tab'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+        if (preg_match('/\[HIGHLIGHT:([^\]]+)\]/', $reply, $m)) {
+            $actions['highlight'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+        if (preg_match('/\[SCROLL:([^\]]+)\]/', $reply, $m)) {
+            $actions['scroll'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+
         $response = ['reply' => $reply];
+        if (!empty($actions)) {
+            $response['actions'] = $actions;
+        }
 
         if ($escalate) {
             $whatsapp = get_option('ppv_support_whatsapp', '4917698479520');
@@ -680,7 +723,21 @@ PROMPT;
 .ppv-chat-wa-btn{background:#25d366;color:#fff!important}
 .ppv-chat-email-btn{background:#667eea;color:#fff!important}
 @media(max-width:480px){#ppv-ai-chat-panel{right:8px;left:8px;width:auto;bottom:140px;height:calc(100vh - 180px);max-height:none}}
+/* AI Guide: Spotlight overlay + highlight */
+#ppv-ai-spotlight{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9992;pointer-events:none;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s ease;display:none}
+#ppv-ai-spotlight.active{display:block;opacity:1;pointer-events:auto}
+#ppv-ai-spotlight .ppv-spot-hole{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);background:transparent;transition:all .4s cubic-bezier(.4,0,.2,1)}
+#ppv-ai-spotlight .ppv-spot-ring{position:absolute;border-radius:14px;border:2.5px solid #667eea;box-shadow:0 0 20px rgba(102,126,234,.5),0 0 40px rgba(102,126,234,.2);animation:ppvSpotPulse 1.5s ease-in-out infinite}
+@keyframes ppvSpotPulse{0%,100%{box-shadow:0 0 20px rgba(102,126,234,.5),0 0 40px rgba(102,126,234,.2)}50%{box-shadow:0 0 30px rgba(102,126,234,.7),0 0 60px rgba(102,126,234,.35)}}
+#ppv-ai-spotlight .ppv-spot-label{position:absolute;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;font-family:inherit;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:auto;cursor:pointer}
+#ppv-ai-spotlight .ppv-spot-label::after{content:'';position:absolute;width:0;height:0;border:6px solid transparent}
+#ppv-ai-spotlight .ppv-spot-label.above::after{top:100%;left:50%;transform:translateX(-50%);border-top-color:#764ba2}
+#ppv-ai-spotlight .ppv-spot-label.below::after{bottom:100%;left:50%;transform:translateX(-50%);border-bottom-color:#667eea}
+.ppv-ai-highlighted{position:relative;z-index:9993!important;animation:ppvHighlightPop .4s ease}
+@keyframes ppvHighlightPop{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
 </style>
+
+<div id="ppv-ai-spotlight"><div class="ppv-spot-hole"></div><div class="ppv-spot-ring"></div><div class="ppv-spot-label above"></div></div>
 
 <div id="ppv-ai-chat-panel">
     <div class="ppv-chat-header">
@@ -859,6 +916,10 @@ PROMPT;
                         msgContainer.appendChild(esc);
                         scrollToBottom();
                     }
+                    // Execute UI actions from AI response
+                    if (data.data.actions) {
+                        setTimeout(function() { executeActions(data.data.actions); }, 600);
+                    }
                     if (data.data.limit_reached) {
                         input.disabled = true;
                         sendBtn.disabled = true;
@@ -881,6 +942,170 @@ PROMPT;
                 input.focus();
             });
     }
+
+    // ==================== AI UI Guide System ====================
+    var spotlight = document.getElementById('ppv-ai-spotlight');
+    var spotHole = spotlight ? spotlight.querySelector('.ppv-spot-hole') : null;
+    var spotRing = spotlight ? spotlight.querySelector('.ppv-spot-ring') : null;
+    var spotLabel = spotlight ? spotlight.querySelector('.ppv-spot-label') : null;
+    var spotTimer = null;
+
+    function clearSpotlight() {
+        if (spotTimer) { clearTimeout(spotTimer); spotTimer = null; }
+        if (spotlight) spotlight.classList.remove('active');
+        document.querySelectorAll('.ppv-ai-highlighted').forEach(function(el) {
+            el.classList.remove('ppv-ai-highlighted');
+        });
+    }
+
+    function showSpotlight(el, label) {
+        if (!spotlight || !el) return;
+        clearSpotlight();
+        var r = el.getBoundingClientRect();
+        var pad = 8;
+        var x = r.left - pad;
+        var y = r.top - pad;
+        var w = r.width + pad * 2;
+        var h = r.height + pad * 2;
+
+        spotHole.style.left = x + 'px';
+        spotHole.style.top = y + 'px';
+        spotHole.style.width = w + 'px';
+        spotHole.style.height = h + 'px';
+
+        spotRing.style.left = (x - 2) + 'px';
+        spotRing.style.top = (y - 2) + 'px';
+        spotRing.style.width = (w + 4) + 'px';
+        spotRing.style.height = (h + 4) + 'px';
+
+        el.classList.add('ppv-ai-highlighted');
+
+        if (label && spotLabel) {
+            spotLabel.textContent = label;
+            spotLabel.style.display = 'block';
+            var lw = 200;
+            spotLabel.style.left = Math.max(8, x + w/2 - lw/2) + 'px';
+            if (y > 60) {
+                spotLabel.style.top = (y - 44) + 'px';
+                spotLabel.className = 'ppv-spot-label above';
+            } else {
+                spotLabel.style.top = (y + h + 10) + 'px';
+                spotLabel.className = 'ppv-spot-label below';
+            }
+        } else if (spotLabel) {
+            spotLabel.style.display = 'none';
+        }
+
+        spotlight.classList.add('active');
+        // Auto-dismiss after 6 seconds
+        spotTimer = setTimeout(clearSpotlight, 6000);
+    }
+
+    // Dismiss spotlight on click
+    if (spotlight) {
+        spotlight.addEventListener('click', function(e) {
+            // If clicked on the highlighted element, let it through
+            var highlighted = document.querySelector('.ppv-ai-highlighted');
+            if (highlighted) {
+                var hr = highlighted.getBoundingClientRect();
+                if (e.clientX >= hr.left && e.clientX <= hr.right && e.clientY >= hr.top && e.clientY <= hr.bottom) {
+                    clearSpotlight();
+                    highlighted.click();
+                    return;
+                }
+            }
+            clearSpotlight();
+        });
+    }
+
+    function findTabByText(text) {
+        var tabs = document.querySelectorAll('.ppv-tab, .tab-btn, [data-tab], .nav-tab, [role="tab"]');
+        var lower = text.toLowerCase();
+        for (var i = 0; i < tabs.length; i++) {
+            var t = (tabs[i].textContent || '').trim().toLowerCase();
+            if (t === lower || t.indexOf(lower) !== -1) return tabs[i];
+        }
+        // Fallback: any button/link containing the text
+        var all = document.querySelectorAll('button, a, [class*="tab"]');
+        for (var j = 0; j < all.length; j++) {
+            var txt = (all[j].textContent || '').trim().toLowerCase();
+            if (txt === lower || txt.indexOf(lower) !== -1) return all[j];
+        }
+        return null;
+    }
+
+    function executeActions(actions) {
+        // Navigate first if needed
+        if (actions.navigate) {
+            var targetUrl = actions.navigate;
+            // If we're already on the right page, skip navigation
+            if (window.location.pathname !== targetUrl) {
+                if (window.PPV_SPA && window.PPV_SPA.navigateTo) {
+                    window.PPV_SPA.navigateTo(targetUrl);
+                } else {
+                    window.location.href = targetUrl;
+                }
+                // Store pending actions for after navigation
+                try {
+                    sessionStorage.setItem('ppv_ai_pending_actions', JSON.stringify({
+                        tab: actions.tab,
+                        highlight: actions.highlight,
+                        scroll: actions.scroll
+                    }));
+                } catch(e) {}
+                return;
+            }
+        }
+
+        // Click tab if specified
+        if (actions.tab) {
+            var tabEl = findTabByText(actions.tab);
+            if (tabEl) {
+                tabEl.click();
+                // Wait for tab content to load before highlighting
+                setTimeout(function() {
+                    doHighlightAndScroll(actions);
+                }, 400);
+                return;
+            }
+        }
+
+        doHighlightAndScroll(actions);
+    }
+
+    function doHighlightAndScroll(actions) {
+        var targetEl = null;
+
+        if (actions.highlight) {
+            targetEl = document.querySelector(actions.highlight);
+            if (targetEl) {
+                showSpotlight(targetEl);
+            }
+        }
+
+        if (actions.scroll) {
+            var scrollEl = document.querySelector(actions.scroll);
+            if (scrollEl) {
+                scrollEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (!targetEl) {
+                    targetEl = scrollEl;
+                    showSpotlight(scrollEl);
+                }
+            }
+        }
+    }
+
+    // Check for pending actions after SPA navigation
+    try {
+        var pending = sessionStorage.getItem('ppv_ai_pending_actions');
+        if (pending) {
+            sessionStorage.removeItem('ppv_ai_pending_actions');
+            var pendingActions = JSON.parse(pending);
+            if (pendingActions.tab || pendingActions.highlight || pendingActions.scroll) {
+                setTimeout(function() { executeActions(pendingActions); }, 800);
+            }
+        }
+    } catch(e) {}
 
     // Events
     navBtn.addEventListener('click', function(e) { e.preventDefault(); toggle(); });
