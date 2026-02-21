@@ -389,7 +389,7 @@
 
     // ─── AI MODE ───────────────────────────────────────────
     if (config.mode === 'ai') {
-        var brands = [
+        var defaultBrands = [
             { id: 'Apple',   icon: '\uD83C\uDF4E', label: 'Apple' },
             { id: 'Samsung', icon: '\uD83D\uDCF1', label: 'Samsung' },
             { id: 'Huawei',  icon: '\uD83D\uDCF2', label: 'Huawei' },
@@ -397,6 +397,9 @@
             { id: 'Google',  icon: 'G', label: 'Google' },
             { id: 'Other',   icon: '\u2699', label: lang.step1_model }
         ];
+        var defaultChips = lang.step2_chips || [];
+        var brands = defaultBrands;
+        var storeConfig = null;
 
         var state = { step: 1, brand: '', model: '', problem: '', result: null };
 
@@ -409,6 +412,86 @@
         // Panel
         var aiPanel = document.createElement('div');
         aiPanel.id = W + '-panel';
+
+        // Load custom config from server (async, non-blocking)
+        (function loadStoreConfig() {
+            var fd = new FormData();
+            fd.append('action', 'ppv_shop_widget_config');
+            fd.append('store_slug', config.store);
+            fetch(AJAX_URL, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success && data.data) {
+                        storeConfig = data.data;
+                        // Override brands if custom ones provided
+                        if (storeConfig.brands && storeConfig.brands.length > 0) {
+                            var brandIcons = {Apple:'\uD83C\uDF4E',Samsung:'\uD83D\uDCF1',Huawei:'\uD83D\uDCF2',Xiaomi:'\u2B50',Google:'G',Sony:'\uD83C\uDFAE',OnePlus:'1+',LG:'\uD83D\uDCFA',Nokia:'N'};
+                            var newBrands = [];
+                            for (var i = 0; i < storeConfig.brands.length; i++) {
+                                var b = storeConfig.brands[i];
+                                var bid = typeof b === 'string' ? b : (b.id || b.label || b);
+                                var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
+                                var bicon = (typeof b === 'object' && b.icon) ? b.icon : (brandIcons[bid] || '\u2699');
+                                newBrands.push({ id: bid, icon: bicon, label: blabel });
+                            }
+                            // Always add "Other" at the end
+                            newBrands.push({ id: 'Other', icon: '\u2699', label: lang.step1_model });
+                            // Re-render brand grid
+                            var brandContainer = aiPanel.querySelector('.' + W + '-brands');
+                            if (brandContainer) {
+                                var html = '';
+                                for (var j = 0; j < newBrands.length; j++) {
+                                    html += '<button type="button" class="' + W + '-brand" data-brand="' + newBrands[j].id + '">' +
+                                        '<span class="' + W + '-brand-icon">' + newBrands[j].icon + '</span>' + newBrands[j].label + '</button>';
+                                }
+                                brandContainer.innerHTML = html;
+                                // Re-bind click events
+                                var newBrandBtns = brandContainer.querySelectorAll('.' + W + '-brand');
+                                for (var k = 0; k < newBrandBtns.length; k++) {
+                                    newBrandBtns[k].addEventListener('click', function() {
+                                        state.brand = this.getAttribute('data-brand');
+                                        var all = brandContainer.querySelectorAll('.' + W + '-brand');
+                                        for (var x = 0; x < all.length; x++) all[x].classList.remove('sel');
+                                        this.classList.add('sel');
+                                        var n1 = aiPanel.querySelector('#' + W + '-next1');
+                                        if (n1) n1.disabled = false;
+                                    });
+                                }
+                            }
+                        }
+                        // Override chips if custom ones provided
+                        if (storeConfig.chips && storeConfig.chips.length > 0) {
+                            var chipsContainer = aiPanel.querySelector('.' + W + '-chips');
+                            if (chipsContainer) {
+                                var chipHtml = '';
+                                for (var ci = 0; ci < storeConfig.chips.length; ci++) {
+                                    var c = storeConfig.chips[ci];
+                                    chipHtml += '<button type="button" class="' + W + '-chip" data-chip="' + c + '">' + c + '</button>';
+                                }
+                                chipsContainer.innerHTML = chipHtml;
+                                // Re-bind chip events
+                                var newChips = chipsContainer.querySelectorAll('.' + W + '-chip');
+                                var pTA = aiPanel.querySelector('#' + W + '-problem');
+                                for (var cl = 0; cl < newChips.length; cl++) {
+                                    newChips[cl].addEventListener('click', function() {
+                                        this.classList.toggle('sel');
+                                        var selected = chipsContainer.querySelectorAll('.' + W + '-chip.sel');
+                                        var parts = [];
+                                        for (var p = 0; p < selected.length; p++) parts.push(selected[p].getAttribute('data-chip'));
+                                        if (pTA && (pTA.value.trim().length < 5 || pTA.value === state._lastChipText)) {
+                                            pTA.value = parts.join(', ');
+                                            state._lastChipText = pTA.value;
+                                        }
+                                        var aBtn = aiPanel.querySelector('#' + W + '-analyze');
+                                        if (aBtn) aBtn.disabled = (pTA ? pTA.value.trim().length < 5 : true);
+                                    });
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(function() { /* silent fail – use defaults */ });
+        })();
 
         var brandGrid = '';
         for (var bi = 0; bi < brands.length; bi++) {

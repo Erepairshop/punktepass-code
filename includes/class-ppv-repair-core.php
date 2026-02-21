@@ -65,6 +65,18 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_shop_widget_diagnose', [__CLASS__, 'ajax_shop_widget_diagnose']);
         add_action('wp_ajax_nopriv_ppv_shop_widget_diagnose', [__CLASS__, 'ajax_shop_widget_diagnose']);
 
+        // AJAX: AI widget configuration chat (admin)
+        add_action('wp_ajax_ppv_widget_ai_chat', [__CLASS__, 'ajax_widget_ai_chat']);
+        add_action('wp_ajax_nopriv_ppv_widget_ai_chat', [__CLASS__, 'ajax_widget_ai_chat']);
+
+        // AJAX: AI widget knowledge file upload (admin)
+        add_action('wp_ajax_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
+        add_action('wp_ajax_nopriv_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
+
+        // AJAX: Public widget config endpoint (CORS, for custom brands/chips)
+        add_action('wp_ajax_ppv_shop_widget_config', [__CLASS__, 'ajax_shop_widget_config']);
+        add_action('wp_ajax_nopriv_ppv_shop_widget_config', [__CLASS__, 'ajax_shop_widget_config']);
+
         // AJAX: Nominatim address proxy (public, avoids CORS)
         add_action('wp_ajax_ppv_repair_nominatim', [__CLASS__, 'ajax_nominatim_proxy']);
         add_action('wp_ajax_nopriv_ppv_repair_nominatim', [__CLASS__, 'ajax_nominatim_proxy']);
@@ -1050,6 +1062,23 @@ class PPV_Repair_Core {
             }
             update_option('ppv_repair_migration_version', '3.1');
         }
+
+        // v3.2: AI Widget configuration fields
+        if (version_compare($version, '3.2', '<')) {
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+            $ai_cols = [
+                'widget_ai_config'         => "LONGTEXT NULL",
+                'widget_ai_knowledge'      => "LONGTEXT NULL",
+                'widget_setup_complete'     => "TINYINT(1) DEFAULT 0",
+            ];
+            foreach ($ai_cols as $col => $def) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$stores_table} LIKE '{$col}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN {$col} {$def}");
+                }
+            }
+            update_option('ppv_repair_migration_version', '3.2');
+        }
     }
 
     /** ============================================================
@@ -1525,7 +1554,7 @@ class PPV_Repair_Core {
         // Look up store
         global $wpdb;
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, name, repair_company_name, repair_service_type, repair_color, store_slug
+            "SELECT id, name, repair_company_name, repair_service_type, repair_color, store_slug, widget_ai_knowledge, widget_ai_config
              FROM {$wpdb->prefix}ppv_stores
              WHERE store_slug = %s AND repair_enabled = 1",
             $store_slug
@@ -1576,6 +1605,32 @@ IMPORTANT:
 - Be honest if unsure, give wider range
 - The price is an ESTIMATE, mention they should contact the shop for exact quote";
 
+        // Inject store's own knowledge base (uploaded price lists, services, etc.)
+        $knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null;
+        if ($knowledge) {
+            if (!empty($knowledge['services'])) {
+                $system .= "\n\nSTORE-SPECIFIC PRICE LIST (use these instead of generic prices):";
+                foreach ($knowledge['services'] as $svc) {
+                    $line = "\n• " . ($svc['name'] ?? '');
+                    if (!empty($svc['price'])) $line .= " – " . $svc['price'];
+                    if (!empty($svc['time'])) $line .= " (" . $svc['time'] . ")";
+                    $system .= $line;
+                }
+            }
+            if (!empty($knowledge['notes'])) {
+                $system .= "\n\nADDITIONAL STORE INFO:\n" . $knowledge['notes'];
+            }
+            if (!empty($knowledge['specialties'])) {
+                $system .= "\n\nSTORE SPECIALTIES: " . implode(', ', $knowledge['specialties']);
+            }
+            if (!empty($knowledge['warranty'])) {
+                $system .= "\n\nWARRANTY: " . $knowledge['warranty'];
+            }
+            if (!empty($knowledge['payment_methods'])) {
+                $system .= "\n\nACCEPTED PAYMENT: " . implode(', ', $knowledge['payment_methods']);
+            }
+        }
+
         $device_info = '';
         if ($brand) $device_info .= "Brand: {$brand}\n";
         if ($model) $device_info .= "Model: {$model}\n";
@@ -1622,6 +1677,440 @@ IMPORTANT:
             'device'        => trim("{$brand} {$model}"),
             'store_name'    => $store_name,
             'form_url'      => home_url("/formular/{$store->store_slug}"),
+        ]);
+    }
+
+    /** ============================================================
+     * AJAX: Public widget config endpoint (returns custom brands, chips, greeting etc.)
+     * ============================================================ */
+    public static function ajax_shop_widget_config() {
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: POST');
+        header('Access-Control-Allow-Headers: Content-Type');
+
+        $store_slug = sanitize_text_field($_POST['store_slug'] ?? '');
+        if (empty($store_slug)) wp_send_json_error(['message' => 'Store not specified']);
+
+        global $wpdb;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT widget_ai_config, widget_ai_knowledge, repair_custom_brands, repair_custom_problems
+             FROM {$wpdb->prefix}ppv_stores
+             WHERE store_slug = %s AND repair_enabled = 1",
+            $store_slug
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store not found']);
+
+        $config = !empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : [];
+        $knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : [];
+
+        // Build custom brands from knowledge or store settings
+        $brands = [];
+        if (!empty($config['brands'])) {
+            $brands = $config['brands'];
+        } elseif (!empty($store->repair_custom_brands)) {
+            $raw = array_filter(array_map('trim', explode("\n", $store->repair_custom_brands)));
+            foreach ($raw as $b) $brands[] = ['id' => $b, 'label' => $b];
+        }
+
+        // Custom problem chips
+        $chips = [];
+        if (!empty($config['chips'])) {
+            $chips = $config['chips'];
+        } elseif (!empty($store->repair_custom_problems)) {
+            $chips = array_filter(array_map('trim', explode("\n", $store->repair_custom_problems)));
+        }
+
+        wp_send_json_success([
+            'brands'       => $brands,
+            'chips'        => $chips,
+            'greeting'     => $config['greeting'] ?? '',
+            'services'     => $knowledge['services'] ?? [],
+            'ai_tone'      => $config['ai_tone'] ?? 'professional',
+            'opening_hours' => $config['opening_hours'] ?? '',
+            'turnaround'   => $config['turnaround'] ?? '',
+        ]);
+    }
+
+    /** ============================================================
+     * AJAX: AI Widget Configuration Chat (admin)
+     * AI helps store owner configure their widget
+     * ============================================================ */
+    public static function ajax_widget_ai_chat() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $message = sanitize_textarea_field($_POST['message'] ?? '');
+        $history = json_decode(stripslashes($_POST['history'] ?? '[]'), true);
+        if (!is_array($history)) $history = [];
+
+        global $wpdb;
+        $stores_table = $wpdb->prefix . 'ppv_stores';
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, name, repair_company_name, repair_service_type, repair_color, store_slug,
+                    widget_ai_config, widget_ai_knowledge, widget_setup_complete, repair_premium
+             FROM {$stores_table} WHERE id = %d",
+            $store_id
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
+        if (!PPV_AI_Engine::is_available()) wp_send_json_error(['message' => 'AI nicht verfügbar']);
+
+        $current_config = !empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : [];
+        $current_knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : [];
+        $store_name = $store->repair_company_name ?: $store->name;
+
+        $system = self::get_widget_ai_system_prompt($store_name, $current_config, $current_knowledge, (bool) $store->widget_setup_complete);
+
+        // Build messages for AI
+        $messages = [];
+        $recent = array_slice($history, -10);
+        foreach ($recent as $m) {
+            if (!empty($m['role']) && !empty($m['content'])) {
+                $messages[] = [
+                    'role'    => $m['role'] === 'user' ? 'user' : 'assistant',
+                    'content' => sanitize_textarea_field($m['content']),
+                ];
+            }
+        }
+        $messages[] = ['role' => 'user', 'content' => $message];
+
+        $result = PPV_AI_Engine::chat_with_history($system, $messages);
+        if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
+
+        $ai_text = $result['text'];
+        $actions_applied = [];
+
+        // Parse and apply action markers from AI response
+        // [SET:key=value] pattern
+        if (preg_match_all('/\[SET:(\w+)=(.+?)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $key = strtolower(trim($match[1]));
+                $val = trim($match[2]);
+                $current_config[$key] = $val;
+                $actions_applied[] = $key;
+                $ai_text = str_replace($match[0], '', $ai_text);
+            }
+        }
+
+        // [SET_BRANDS:Brand1,Brand2,...] – replace full brand list
+        if (preg_match('/\[SET_BRANDS:(.+?)\]/i', $ai_text, $m)) {
+            $brandList = array_filter(array_map('trim', explode(',', $m[1])));
+            $current_config['brands'] = array_map(function($b) {
+                $icons = ['Apple'=>"\xF0\x9F\x8D\x8E",'Samsung'=>"\xF0\x9F\x93\xB1",'Huawei'=>"\xF0\x9F\x93\xB2",'Xiaomi'=>"\xE2\xAD\x90",'Google'=>'G','Sony'=>"\xF0\x9F\x8E\xAE",'OnePlus'=>'1+','LG'=>"\xF0\x9F\x93\xBA",'Nokia'=>'N'];
+                return ['id' => $b, 'label' => $b, 'icon' => $icons[$b] ?? "\xE2\x9A\x99"];
+            }, $brandList);
+            $actions_applied[] = 'brands';
+            $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
+        // [SET_CHIPS:chip1,chip2,...] – replace problem chips
+        if (preg_match('/\[SET_CHIPS:(.+?)\]/i', $ai_text, $m)) {
+            $current_config['chips'] = array_filter(array_map('trim', explode(',', $m[1])));
+            $actions_applied[] = 'chips';
+            $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
+        // [ADD_SERVICE:name|price|time] – add a service to knowledge
+        if (preg_match_all('/\[ADD_SERVICE:(.+?)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
+            if (!isset($current_knowledge['services'])) $current_knowledge['services'] = [];
+            foreach ($matches as $match) {
+                $parts = array_map('trim', explode('|', $match[1]));
+                $svc = ['name' => $parts[0] ?? ''];
+                if (!empty($parts[1])) $svc['price'] = $parts[1];
+                if (!empty($parts[2])) $svc['time'] = $parts[2];
+                // Check if service already exists, update if so
+                $found = false;
+                foreach ($current_knowledge['services'] as $i => $existing) {
+                    if (strcasecmp($existing['name'], $svc['name']) === 0) {
+                        $current_knowledge['services'][$i] = $svc;
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) $current_knowledge['services'][] = $svc;
+                $ai_text = str_replace($match[0], '', $ai_text);
+            }
+            $actions_applied[] = 'services';
+        }
+
+        // [SET_SERVICES:JSON] – replace all services at once
+        if (preg_match('/\[SET_SERVICES:(\[.+?\])\]/is', $ai_text, $m)) {
+            $services = json_decode($m[1], true);
+            if (is_array($services)) {
+                $current_knowledge['services'] = $services;
+                $actions_applied[] = 'services';
+            }
+            $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
+        // [SET_KNOWLEDGE:key=value] – set knowledge fields
+        if (preg_match_all('/\[SET_KNOWLEDGE:(\w+)=(.+?)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $key = strtolower(trim($match[1]));
+                $val = trim($match[2]);
+                // For array-type fields, split by comma
+                if (in_array($key, ['specialties', 'payment_methods'])) {
+                    $current_knowledge[$key] = array_filter(array_map('trim', explode(',', $val)));
+                } else {
+                    $current_knowledge[$key] = $val;
+                }
+                $actions_applied[] = $key;
+                $ai_text = str_replace($match[0], '', $ai_text);
+            }
+        }
+
+        // [SETUP_COMPLETE] – mark setup as done
+        if (preg_match('/\[SETUP_COMPLETE\]/i', $ai_text, $m)) {
+            $wpdb->update($stores_table, ['widget_setup_complete' => 1], ['id' => $store_id]);
+            $actions_applied[] = 'setup_complete';
+            $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
+        // Save updated config and knowledge
+        if (!empty($actions_applied)) {
+            $wpdb->update($stores_table, [
+                'widget_ai_config'    => wp_json_encode($current_config),
+                'widget_ai_knowledge' => wp_json_encode($current_knowledge),
+            ], ['id' => $store_id]);
+        }
+
+        wp_send_json_success([
+            'message'         => trim($ai_text),
+            'actions_applied' => $actions_applied,
+            'config'          => $current_config,
+            'knowledge'       => $current_knowledge,
+            'setup_complete'  => (bool) ($wpdb->get_var($wpdb->prepare("SELECT widget_setup_complete FROM {$stores_table} WHERE id = %d", $store_id))),
+        ]);
+    }
+
+    /**
+     * System prompt for AI widget configuration assistant
+     */
+    private static function get_widget_ai_system_prompt($store_name, $config, $knowledge, $setup_complete) {
+        $config_json = wp_json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $knowledge_json = wp_json_encode($knowledge, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+        return "Du bist der KI-Assistent für die Widget-Konfiguration von \"{$store_name}\" auf PunktePass.
+Du hilfst dem Shop-Besitzer, sein Reparatur-Widget für seine Website optimal einzurichten.
+
+AKTUELLER STATUS:
+- Setup abgeschlossen: " . ($setup_complete ? 'Ja' : 'Nein') . "
+- Aktuelle Config: {$config_json}
+- Aktuelles Wissen: {$knowledge_json}
+
+DU KANNST FOLGENDES KONFIGURIEREN (nutze die Action-Marker):
+
+1. WIDGET-MODUS:
+   [SET:mode=float] – Schwebender Button (Standard)
+   [SET:mode=ai] – KI-Diagnose Widget mit 4-Schritt-Wizard
+   [SET:mode=inline] – Inline-Banner auf der Seite
+   [SET:mode=button] – Einfacher Button
+
+2. WIDGET-AUSSEHEN:
+   [SET:color=#hex] – Primärfarbe (z.B. #667eea)
+   [SET:position=bottom-right] oder [SET:position=bottom-left]
+   [SET:lang=de] – Sprache (de/en/hu/ro/it)
+   [SET:text=Beliebiger Text] – Button-Beschriftung
+   [SET:greeting=Willkommen!] – Begrüßungstext im Widget
+
+3. GERÄTE-MARKEN (für KI-Diagnose Step 1):
+   [SET_BRANDS:Apple,Samsung,Huawei,Xiaomi,Google,OnePlus]
+   Anpassen je nach Shop-Spezialisierung
+
+4. PROBLEM-CHIPS (für KI-Diagnose Step 2 Schnellauswahl):
+   [SET_CHIPS:Display kaputt,Akku schwach,Lädt nicht,Wasserschaden,Kamera defekt,Kein Ton]
+
+5. PREISLISTE / SERVICES (was der Shop anbietet + Preise):
+   [ADD_SERVICE:Display Reparatur iPhone|80-150 EUR|1-2 Stunden]
+   [ADD_SERVICE:Akku Tausch Samsung|40-70 EUR|30 Min]
+   Oder alle auf einmal:
+   [SET_SERVICES:[{\"name\":\"Display iPhone\",\"price\":\"80-150 EUR\",\"time\":\"1-2h\"}]]
+
+6. SHOP-WISSEN (wird bei Diagnosen verwendet):
+   [SET_KNOWLEDGE:warranty=6 Monate Garantie auf alle Reparaturen]
+   [SET_KNOWLEDGE:specialties=Apple Spezialist,Wasserschaden Experte]
+   [SET_KNOWLEDGE:payment_methods=Bar,EC-Karte,PayPal,Überweisung]
+   [SET_KNOWLEDGE:notes=Wir verwenden nur Original-Ersatzteile]
+   [SET_KNOWLEDGE:turnaround=Die meisten Reparaturen am selben Tag]
+   [SET_KNOWLEDGE:opening_hours=Mo-Fr 10-18, Sa 10-14]
+
+7. KI-PERSÖNLICHKEIT:
+   [SET:ai_tone=professional] – Professionell (Standard)
+   [SET:ai_tone=friendly] – Freundlich und locker
+   [SET:ai_tone=expert] – Technisch versiert
+
+8. SETUP ABSCHLIESSEN:
+   [SETUP_COMPLETE] – Wenn alles konfiguriert ist
+
+REGELN:
+- Antworte IMMER auf Deutsch
+- Frage den Besitzer Schritt für Schritt nach seinen Wünschen
+- Wenn er eine Preisliste/Text einfügt, parse sie und nutze [ADD_SERVICE:...] für jeden Eintrag
+- Erkläre kurz was du geändert hast nach jeder Aktion
+- Schlage Verbesserungen vor basierend auf dem Service-Typ
+- Wenn der User ein Bild/Datei erwähnt, sage ihm er soll den Upload-Button nutzen
+- Action-Marker werden automatisch verarbeitet und NICHT dem User angezeigt
+- Verwende IMMER die Action-Marker wenn du etwas ändern sollst
+- Setze [SETUP_COMPLETE] erst wenn mindestens Modus, Farbe und ein paar Services konfiguriert sind
+- Maximal 3-4 Sätze pro Antwort, sei prägnant";
+    }
+
+    /** ============================================================
+     * AJAX: Upload file for AI widget knowledge base (admin)
+     * Parses CSV/text files and extracts service/price data
+     * ============================================================ */
+    public static function ajax_widget_ai_upload() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+        if (empty($_FILES['file'])) wp_send_json_error(['message' => 'Keine Datei']);
+
+        $file = $_FILES['file'];
+        $allowed_types = [
+            'text/csv', 'text/plain', 'application/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'image/jpeg', 'image/png', 'image/webp',
+            'application/pdf',
+        ];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed_ext = ['csv', 'txt', 'xlsx', 'xls', 'jpg', 'jpeg', 'png', 'webp', 'pdf'];
+        if (!in_array($ext, $allowed_ext)) wp_send_json_error(['message' => 'Erlaubte Dateitypen: CSV, TXT, Excel, Bilder, PDF']);
+        if ($file['size'] > 5 * 1024 * 1024) wp_send_json_error(['message' => 'Max 5MB']);
+
+        // Read file content for text-based files
+        $file_content = '';
+        $file_type = 'text';
+        if (in_array($ext, ['csv', 'txt'])) {
+            $file_content = file_get_contents($file['tmp_name']);
+            $file_type = 'text';
+        } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+            // Save image, will be used for reference
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            $upload = wp_handle_upload($file, ['test_form' => false]);
+            if (isset($upload['error'])) wp_send_json_error(['message' => $upload['error']]);
+            $file_content = 'Image uploaded: ' . $upload['url'];
+            $file_type = 'image';
+        } elseif ($ext === 'pdf') {
+            $file_content = '[PDF-Datei: ' . $file['name'] . '] Inhalt kann nicht automatisch gelesen werden. Bitte beschreiben Sie den Inhalt.';
+            $file_type = 'pdf';
+        } else {
+            $file_content = '[Datei: ' . $file['name'] . '] Format nicht direkt lesbar.';
+            $file_type = 'other';
+        }
+
+        // For text/CSV files, try to parse as price list
+        $parsed_services = [];
+        if ($file_type === 'text' && !empty($file_content)) {
+            $lines = explode("\n", $file_content);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line) || $line[0] === '#') continue;
+
+                // Try CSV format: name;price;time or name,price,time
+                $sep = strpos($line, ';') !== false ? ';' : ',';
+                $parts = array_map('trim', explode($sep, $line));
+
+                if (count($parts) >= 2) {
+                    $svc = ['name' => $parts[0]];
+                    // Check if second part looks like a price
+                    if (preg_match('/\d/', $parts[1])) {
+                        $svc['price'] = $parts[1];
+                    }
+                    if (!empty($parts[2])) {
+                        $svc['time'] = $parts[2];
+                    }
+                    if (!empty($svc['name'])) {
+                        $parsed_services[] = $svc;
+                    }
+                } elseif (preg_match('/^(.+?)\s*[-–:]\s*(\d[\d\s.,€EUR]+.*)$/iu', $line, $m)) {
+                    // Try free-text format: "Service Name – 80 EUR" or "Service Name: 80-120 EUR"
+                    $parsed_services[] = ['name' => trim($m[1]), 'price' => trim($m[2])];
+                }
+            }
+        }
+
+        // If we got AI, let AI also parse the file content for better understanding
+        $ai_summary = '';
+        if ($file_type === 'text' && !empty($file_content)) {
+            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
+            if (PPV_AI_Engine::is_available()) {
+                $parse_prompt = "Parse this price list / service list. Extract each service with name, price range, and estimated time.
+Return ONLY in this format, one per line:
+SERVICE_NAME|PRICE|TIME
+
+Example:
+Display iPhone 13|89-129 EUR|1-2 Stunden
+Akku Samsung Galaxy|49 EUR|30 Min
+
+File content:
+" . mb_substr($file_content, 0, 3000);
+
+                $parse_result = PPV_AI_Engine::chat(
+                    'You are a data extraction assistant. Parse the input into structured service data. Return ONLY the formatted lines, nothing else.',
+                    $parse_prompt,
+                    'de'
+                );
+                if (!is_wp_error($parse_result) && !empty($parse_result['text'])) {
+                    $ai_lines = explode("\n", $parse_result['text']);
+                    $ai_services = [];
+                    foreach ($ai_lines as $al) {
+                        $al = trim($al);
+                        if (empty($al)) continue;
+                        $parts = array_map('trim', explode('|', $al));
+                        if (count($parts) >= 1 && !empty($parts[0])) {
+                            $svc = ['name' => $parts[0]];
+                            if (!empty($parts[1])) $svc['price'] = $parts[1];
+                            if (!empty($parts[2])) $svc['time'] = $parts[2];
+                            $ai_services[] = $svc;
+                        }
+                    }
+                    // Use AI-parsed if it found more services
+                    if (count($ai_services) > count($parsed_services)) {
+                        $parsed_services = $ai_services;
+                    }
+                    $ai_summary = $parse_result['text'];
+                }
+            }
+        }
+
+        // Update knowledge base if we parsed services
+        if (!empty($parsed_services)) {
+            global $wpdb;
+            $knowledge_raw = $wpdb->get_var($wpdb->prepare(
+                "SELECT widget_ai_knowledge FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                $store_id
+            ));
+            $knowledge = !empty($knowledge_raw) ? json_decode($knowledge_raw, true) : [];
+            if (!isset($knowledge['services'])) $knowledge['services'] = [];
+
+            // Merge new services (update existing by name, add new)
+            foreach ($parsed_services as $new_svc) {
+                $found = false;
+                foreach ($knowledge['services'] as $i => $existing) {
+                    if (strcasecmp($existing['name'], $new_svc['name']) === 0) {
+                        $knowledge['services'][$i] = $new_svc;
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) $knowledge['services'][] = $new_svc;
+            }
+
+            $wpdb->update($wpdb->prefix . 'ppv_stores', [
+                'widget_ai_knowledge' => wp_json_encode($knowledge),
+            ], ['id' => $store_id]);
+        }
+
+        wp_send_json_success([
+            'file_name'       => $file['name'],
+            'file_type'       => $file_type,
+            'parsed_services' => $parsed_services,
+            'service_count'   => count($parsed_services),
+            'file_content'    => $file_type === 'text' ? mb_substr($file_content, 0, 2000) : '',
+            'ai_summary'      => $ai_summary,
         ]);
     }
 
@@ -3734,6 +4223,9 @@ IMPORTANT:
             'repair_google_review_url' => "VARCHAR(500) NULL",
             'repair_feedback_email_enabled' => "TINYINT(1) DEFAULT 0",
             'repair_warranty_text' => "TEXT NULL",
+            'widget_ai_config' => "LONGTEXT NULL",
+            'widget_ai_knowledge' => "LONGTEXT NULL",
+            'widget_setup_complete' => "TINYINT(1) DEFAULT 0",
         ];
 
         foreach ($required_columns as $col => $definition) {
