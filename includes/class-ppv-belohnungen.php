@@ -264,7 +264,7 @@ class PPV_Belohnungen {
 
     private static function render_standalone_page() {
         $plugin_url = PPV_PLUGIN_URL;
-        $version    = PPV_VERSION;
+        $version    = PPV_Core::asset_version();
         $site_url   = get_site_url();
 
         $lang = self::get_lang();
@@ -330,8 +330,8 @@ class PPV_Belohnungen {
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <!-- ppv-theme-light.css + handler-light.css DISABLED – replaced by modular CSS -->
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-belohnungen.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
@@ -343,9 +343,8 @@ class PPV_Belohnungen {
     window.ppv_lang = <?php echo wp_json_encode($global_strings); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
-    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden;overscroll-behavior:none;overscroll-behavior-y:none}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0;min-height:100vh;min-height:100dvh;padding-top:env(safe-area-inset-top,0)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">

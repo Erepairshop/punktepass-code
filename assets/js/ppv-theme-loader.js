@@ -41,7 +41,8 @@
 
     const standaloneCSS = [
       'ppv-dashboard.css', 'ppv-statistik.css', 'ppv-profile.css',
-      'ppv-rewards.css', 'ppv-handler.css', 'ppv-my-points.css'
+      'ppv-rewards.css', 'ppv-handler.css', 'ppv-my-points.css',
+      'ppv-belohnungen.css'
     ];
 
     existingLinks.forEach(link => {
