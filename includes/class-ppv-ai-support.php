@@ -1134,8 +1134,15 @@ PROMPT;
         }
     } catch(e) {}
 
-    // Events
-    navBtn.addEventListener('click', function(e) { e.preventDefault(); toggle(); });
+    // Events - direct listener + document-level fallback for robustness
+    navBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(); });
+    // Fallback: document-level delegation ensures chat works even after SPA navigation
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#ppv-ai-support-nav-btn') && !e.defaultPrevented) {
+            e.preventDefault();
+            toggle();
+        }
+    });
     closeBtn.addEventListener('click', toggle);
     sendBtn.addEventListener('click', sendMessage);
 
