@@ -2460,23 +2460,23 @@ echo '</div></div>
 
                 <!-- AI Widget Konfiguration -->
                 <div style="margin-top:32px;border-top:2px solid #e2e8f0;padding-top:24px">
-                    <h4 style="margin:0 0 4px"><i class="ri-robot-line"></i> KI-Assistent – Widget einrichten</h4>
+                    <h4 style="margin:0 0 4px"><i class="ri-robot-line"></i> ' . esc_html(PPV_Lang::t('wai_title')) . '</h4>
                     <p style="font-size:13px;color:#64748b;margin:0 0 16px">
-                        Lassen Sie die KI Ihr Widget konfigurieren: Preisliste hochladen, Marken anpassen, Services eintragen und mehr.
+                        ' . esc_html(PPV_Lang::t('wai_desc')) . '
                     </p>
 
                     ' . (!empty($store->widget_setup_complete) ?
                         '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;margin-bottom:16px;font-size:13px;color:#166534">
-                            <i class="ri-checkbox-circle-fill" style="font-size:18px"></i> Widget-Setup abgeschlossen
+                            <i class="ri-checkbox-circle-fill" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_done')) . '
                         </div>' :
                         '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fffbeb;border:1.5px solid #fed7aa;border-radius:10px;margin-bottom:16px;font-size:13px;color:#92400e">
-                            <i class="ri-information-line" style="font-size:18px"></i> Widget-Setup noch nicht abgeschlossen – die KI hilft Ihnen dabei
+                            <i class="ri-information-line" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_pending')) . '
                         </div>') . '
 
                     <!-- Services overview (if any) -->
                     <div id="ra-wai-services" style="margin-bottom:16px;display:none">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Gespeicherte Services</span>
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' . esc_html(PPV_Lang::t('wai_services_label')) . '</span>
                             <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8"></span>
                         </div>
                         <div id="ra-wai-service-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -2486,8 +2486,8 @@ echo '</div></div>
                     <div id="ra-wai-upload-area" style="border:2px dashed #e2e8f0;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;cursor:pointer;transition:all .2s;background:#fafbfc">
                         <input type="file" id="ra-wai-file" accept=".csv,.txt,.xlsx,.xls,.jpg,.jpeg,.png,.webp,.pdf" style="display:none">
                         <i class="ri-upload-cloud-line" style="font-size:28px;color:#94a3b8"></i>
-                        <p style="font-size:13px;color:#64748b;margin:6px 0 2px;font-weight:600">Preisliste / Datei hochladen</p>
-                        <p style="font-size:11px;color:#94a3b8;margin:0">CSV, TXT, Excel, Bilder, PDF (max 5MB)</p>
+                        <p style="font-size:13px;color:#64748b;margin:6px 0 2px;font-weight:600">' . esc_html(PPV_Lang::t('wai_upload_title')) . '</p>
+                        <p style="font-size:11px;color:#94a3b8;margin:0">' . esc_html(PPV_Lang::t('wai_upload_hint')) . '</p>
                     </div>
                     <div id="ra-wai-upload-status" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px"></div>
 
@@ -2495,16 +2495,16 @@ echo '</div></div>
                     <div id="ra-wai-chat" style="border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff">
                         <div id="ra-wai-messages" style="height:280px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px">
                             <div class="ra-wai-msg bot" style="background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#334155;max-width:85%;line-height:1.5">
-                                Hallo! Ich helfe Ihnen, Ihr Reparatur-Widget optimal einzurichten. Was möchten Sie konfigurieren?<br><br>
-                                Sie können mir z.B. sagen:<br>
-                                • <b>Preisliste eintragen</b> (oder eine CSV hochladen)<br>
-                                • <b>Marken anpassen</b> (welche Geräte Sie reparieren)<br>
-                                • <b>Widget-Farbe/Modus ändern</b><br>
-                                • <b>Garantie & Infos eintragen</b>
+                                ' . esc_html(PPV_Lang::t('wai_chat_welcome')) . '<br><br>
+                                ' . esc_html(PPV_Lang::t('wai_chat_options_intro')) . '<br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_prices')) . '</b><br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_brands')) . '</b><br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_design')) . '</b><br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_info')) . '</b>
                             </div>
                         </div>
                         <div style="border-top:1.5px solid #e2e8f0;display:flex;align-items:end;gap:8px;padding:10px 12px;background:#fafbfc">
-                            <textarea id="ra-wai-input" rows="1" placeholder="Nachricht eingeben..." style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;min-height:36px;max-height:100px;transition:border-color .2s;line-height:1.4"></textarea>
+                            <textarea id="ra-wai-input" rows="1" placeholder="' . esc_attr(PPV_Lang::t('wai_input_placeholder')) . '" style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;min-height:36px;max-height:100px;transition:border-color .2s;line-height:1.4"></textarea>
                             <button type="button" id="ra-wai-send" style="background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');border:none;color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s">
                                 <i class="ri-send-plane-fill" style="font-size:16px"></i>
                             </button>
@@ -2513,10 +2513,10 @@ echo '</div></div>
 
                     <!-- Quick action chips -->
                     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
-                        <button type="button" class="ra-wai-chip" data-msg="Bitte richte mir den KI-Diagnose Modus ein" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">KI-Modus einrichten</button>
-                        <button type="button" class="ra-wai-chip" data-msg="Zeig mir welche Marken aktuell konfiguriert sind und hilf mir sie anzupassen" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">Marken anpassen</button>
-                        <button type="button" class="ra-wai-chip" data-msg="Ich möchte meine Preisliste eintragen. Frag mich Service für Service ab." style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">Preisliste eingeben</button>
-                        <button type="button" class="ra-wai-chip" data-msg="Welche Einstellungen kann ich noch vornehmen?" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">Alle Optionen</button>
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_ai_mode_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_ai_mode')) . '</button>
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_brands_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_brands')) . '</button>
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_prices_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_prices')) . '</button>
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_options_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_options')) . '</button>
                     </div>
                 </div>
 
@@ -5220,6 +5220,24 @@ echo '</div></div>
         var waiUploadStatus = document.getElementById("ra-wai-upload-status");
         var waiServicesDiv = document.getElementById("ra-wai-services");
         var waiServiceList = document.getElementById("ra-wai-service-list");
+
+        // Translated strings from PHP
+        var waiT = ' . wp_json_encode([
+            'setup_done'       => PPV_Lang::t('wai_js_setup_done'),
+            'settings_updated' => PPV_Lang::t('wai_js_settings_updated'),
+            'error_prefix'     => PPV_Lang::t('wai_js_error_prefix'),
+            'error_unknown'    => PPV_Lang::t('wai_js_error_unknown'),
+            'conn_error'       => PPV_Lang::t('wai_js_connection_error'),
+            'uploading'        => PPV_Lang::t('wai_js_uploading'),
+            'upload_success'   => PPV_Lang::t('wai_js_upload_success'),
+            'upload_bot_msg'   => PPV_Lang::t('wai_js_upload_bot_msg'),
+            'upload_saved'     => PPV_Lang::t('wai_js_upload_saved'),
+            'upload_image_msg' => PPV_Lang::t('wai_js_upload_image_msg'),
+            'upload_error'     => PPV_Lang::t('wai_js_upload_error'),
+            'conn_error_short' => PPV_Lang::t('wai_js_connection_error_short'),
+            'service'          => PPV_Lang::t('wai_js_service'),
+            'services'         => PPV_Lang::t('wai_js_services'),
+        ]) . ';
         var waiServiceCount = document.getElementById("ra-wai-service-count");
         var waiStatus = document.getElementById("ra-wai-status");
 
@@ -5239,7 +5257,7 @@ echo '</div></div>
         function renderServices(services) {
             if (!services || !services.length) { waiServicesDiv.style.display = "none"; return; }
             waiServicesDiv.style.display = "";
-            waiServiceCount.textContent = services.length + " Service" + (services.length > 1 ? "s" : "");
+            waiServiceCount.textContent = services.length + " " + (services.length > 1 ? waiT.services : waiT.service);
             var html = "";
             for (var i = 0; i < services.length; i++) {
                 var s = services[i];
@@ -5351,26 +5369,26 @@ echo '</div></div>
                                 waiStatus.style.background = "#f0fdf4";
                                 waiStatus.style.borderColor = "#bbf7d0";
                                 waiStatus.style.color = "#166534";
-                                waiStatus.innerHTML = \'<i class="ri-checkbox-circle-fill" style="font-size:18px"></i> Widget-Setup abgeschlossen\';
+                                waiStatus.innerHTML = \'<i class="ri-checkbox-circle-fill" style="font-size:18px"></i> \' + waiT.setup_done;
                             }
 
                             // Show a subtle notification for config changes
                             var notif = document.createElement("div");
                             notif.style.cssText = "background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 12px;font-size:12px;color:#166534;text-align:center;margin-top:4px";
-                            notif.innerHTML = \'<i class="ri-check-line"></i> \' + acts.length + " Einstellung" + (acts.length > 1 ? "en" : "") + " aktualisiert";
+                            notif.innerHTML = \'<i class="ri-check-line"></i> \' + acts.length + " " + waiT.settings_updated;
                             waiMessages.appendChild(notif);
                             waiMessages.scrollTop = waiMessages.scrollHeight;
                             setTimeout(function() { notif.style.opacity = "0"; setTimeout(function() { notif.remove(); }, 300); }, 3000);
                         }
                     } else {
-                        addMessage("bot", "Fehler: " + (data.data && data.data.message ? data.data.message : "Unbekannter Fehler"));
+                        addMessage("bot", waiT.error_prefix + ": " + (data.data && data.data.message ? data.data.message : waiT.error_unknown));
                     }
                 })
                 .catch(function() {
                     removeTyping();
                     sending = false;
                     waiSend.style.opacity = "1";
-                    addMessage("bot", "Verbindungsfehler. Bitte versuchen Sie es erneut.");
+                    addMessage("bot", waiT.conn_error);
                 });
         }
 
@@ -5422,7 +5440,7 @@ echo '</div></div>
             waiUploadStatus.style.background = "#eff6ff";
             waiUploadStatus.style.border = "1.5px solid #bfdbfe";
             waiUploadStatus.style.color = "#1e40af";
-            waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line" style="animation:ra-wai-dot 1s infinite"></i> Datei wird hochgeladen und analysiert...\';
+            waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line" style="animation:ra-wai-dot 1s infinite"></i> \' + waiT.uploading;
 
             var fd = new FormData();
             fd.append("action", "ppv_widget_ai_upload");
@@ -5437,33 +5455,34 @@ echo '</div></div>
                         waiUploadStatus.style.background = "#f0fdf4";
                         waiUploadStatus.style.borderColor = "#bbf7d0";
                         waiUploadStatus.style.color = "#166534";
-                        waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' hochgeladen – \' + d.service_count + \' Services erkannt\';
+
+                        if (d.file_type === "image" || d.file_type === "pdf" || d.file_type === "other") {
+                            // Non-text file: uploaded but no auto-parse possible
+                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_saved;
+                            addMessage("bot", waiT.upload_image_msg.replace(\'%s\', escH(d.file_name)));
+                        } else {
+                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_success.replace(\'%d\', d.service_count);
+                            addMessage("bot", waiT.upload_bot_msg.replace(\'%s\', escH(d.file_name)).replace(\'%d\', d.service_count));
+                        }
 
                         // Update services display
                         if (d.parsed_services && d.parsed_services.length) {
                             renderServices(d.parsed_services);
                         }
 
-                        // Tell the AI about the upload
-                        var uploadMsg = "Ich habe die Datei \\"" + d.file_name + "\\" hochgeladen. " + d.service_count + " Services wurden erkannt.";
-                        if (d.file_content) {
-                            uploadMsg += " Hier ist ein Auszug: " + d.file_content.substring(0, 500);
-                        }
-                        addMessage("bot", "Datei \\"" + escH(d.file_name) + "\\" wurde analysiert. " + d.service_count + " Services erkannt und gespeichert!");
-
                         setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
                     } else {
                         waiUploadStatus.style.background = "#fef2f2";
                         waiUploadStatus.style.borderColor = "#fecaca";
                         waiUploadStatus.style.color = "#991b1b";
-                        waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + (data.data && data.data.message ? escH(data.data.message) : "Upload fehlgeschlagen");
+                        waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + (data.data && data.data.message ? escH(data.data.message) : waiT.upload_error);
                     }
                 })
                 .catch(function() {
                     waiUploadStatus.style.background = "#fef2f2";
                     waiUploadStatus.style.borderColor = "#fecaca";
                     waiUploadStatus.style.color = "#991b1b";
-                    waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> Verbindungsfehler\';
+                    waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + waiT.conn_error_short;
                 });
         }
     })();

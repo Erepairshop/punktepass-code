@@ -1761,7 +1761,8 @@ IMPORTANT:
         $current_knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : [];
         $store_name = $store->repair_company_name ?: $store->name;
 
-        $system = self::get_widget_ai_system_prompt($store_name, $current_config, $current_knowledge, (bool) $store->widget_setup_complete);
+        $active_lang = class_exists('PPV_Lang') ? PPV_Lang::$active : 'de';
+        $system = self::get_widget_ai_system_prompt($store_name, $current_config, $current_knowledge, (bool) $store->widget_setup_complete, $active_lang);
 
         // Build messages for AI
         $messages = [];
@@ -1888,73 +1889,85 @@ IMPORTANT:
     /**
      * System prompt for AI widget configuration assistant
      */
-    private static function get_widget_ai_system_prompt($store_name, $config, $knowledge, $setup_complete) {
+    private static function get_widget_ai_system_prompt($store_name, $config, $knowledge, $setup_complete, $lang = 'de') {
         $config_json = wp_json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         $knowledge_json = wp_json_encode($knowledge, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-        return "Du bist der KI-Assistent für die Widget-Konfiguration von \"{$store_name}\" auf PunktePass.
-Du hilfst dem Shop-Besitzer, sein Reparatur-Widget für seine Website optimal einzurichten.
+        $lang_names = ['de' => 'German', 'en' => 'English', 'hu' => 'Hungarian', 'ro' => 'Romanian', 'it' => 'Italian'];
+        $lang_name = $lang_names[$lang] ?? 'German';
+        $lang_labels = [
+            'de' => ['yes' => 'Ja', 'no' => 'Nein'],
+            'en' => ['yes' => 'Yes', 'no' => 'No'],
+            'hu' => ['yes' => 'Igen', 'no' => 'Nem'],
+            'ro' => ['yes' => 'Da', 'no' => 'Nu'],
+            'it' => ['yes' => 'Sì', 'no' => 'No'],
+        ];
+        $yn = $lang_labels[$lang] ?? $lang_labels['de'];
 
-AKTUELLER STATUS:
-- Setup abgeschlossen: " . ($setup_complete ? 'Ja' : 'Nein') . "
-- Aktuelle Config: {$config_json}
-- Aktuelles Wissen: {$knowledge_json}
+        return "You are the AI assistant for widget configuration of \"{$store_name}\" on PunktePass.
+You help the shop owner set up their repair widget for their website.
+RESPOND ONLY IN {$lang_name}.
 
-DU KANNST FOLGENDES KONFIGURIEREN (nutze die Action-Marker):
+CURRENT STATUS:
+- Setup complete: " . ($setup_complete ? $yn['yes'] : $yn['no']) . "
+- Current config: {$config_json}
+- Current knowledge: {$knowledge_json}
 
-1. WIDGET-MODUS:
-   [SET:mode=float] – Schwebender Button (Standard)
-   [SET:mode=ai] – KI-Diagnose Widget mit 4-Schritt-Wizard
-   [SET:mode=inline] – Inline-Banner auf der Seite
-   [SET:mode=button] – Einfacher Button
+YOU CAN CONFIGURE THE FOLLOWING (use action markers):
 
-2. WIDGET-AUSSEHEN:
-   [SET:color=#hex] – Primärfarbe (z.B. #667eea)
-   [SET:position=bottom-right] oder [SET:position=bottom-left]
-   [SET:lang=de] – Sprache (de/en/hu/ro/it)
-   [SET:text=Beliebiger Text] – Button-Beschriftung
-   [SET:greeting=Willkommen!] – Begrüßungstext im Widget
+1. WIDGET MODE:
+   [SET:mode=float] – Floating button (default)
+   [SET:mode=ai] – AI diagnosis widget with 4-step wizard
+   [SET:mode=inline] – Inline banner on page
+   [SET:mode=button] – Simple button
 
-3. GERÄTE-MARKEN (für KI-Diagnose Step 1):
+2. WIDGET APPEARANCE:
+   [SET:color=#hex] – Primary color (e.g. #667eea)
+   [SET:position=bottom-right] or [SET:position=bottom-left]
+   [SET:lang=de] – Language (de/en/hu/ro/it)
+   [SET:text=Custom Text] – Button label
+   [SET:greeting=Welcome!] – Greeting text in widget
+
+3. DEVICE BRANDS (for AI diagnosis step 1):
    [SET_BRANDS:Apple,Samsung,Huawei,Xiaomi,Google,OnePlus]
-   Anpassen je nach Shop-Spezialisierung
+   Customize based on shop specialization
 
-4. PROBLEM-CHIPS (für KI-Diagnose Step 2 Schnellauswahl):
-   [SET_CHIPS:Display kaputt,Akku schwach,Lädt nicht,Wasserschaden,Kamera defekt,Kein Ton]
+4. PROBLEM CHIPS (for AI diagnosis step 2 quick-select):
+   [SET_CHIPS:Broken display,Weak battery,Not charging,Water damage,Camera broken,No sound]
 
-5. PREISLISTE / SERVICES (was der Shop anbietet + Preise):
-   [ADD_SERVICE:Display Reparatur iPhone|80-150 EUR|1-2 Stunden]
-   [ADD_SERVICE:Akku Tausch Samsung|40-70 EUR|30 Min]
-   Oder alle auf einmal:
+5. PRICE LIST / SERVICES (what the shop offers + prices):
+   [ADD_SERVICE:Display Repair iPhone|80-150 EUR|1-2 hours]
+   [ADD_SERVICE:Battery Replacement Samsung|40-70 EUR|30 min]
+   Or all at once:
    [SET_SERVICES:[{\"name\":\"Display iPhone\",\"price\":\"80-150 EUR\",\"time\":\"1-2h\"}]]
 
-6. SHOP-WISSEN (wird bei Diagnosen verwendet):
-   [SET_KNOWLEDGE:warranty=6 Monate Garantie auf alle Reparaturen]
-   [SET_KNOWLEDGE:specialties=Apple Spezialist,Wasserschaden Experte]
-   [SET_KNOWLEDGE:payment_methods=Bar,EC-Karte,PayPal,Überweisung]
-   [SET_KNOWLEDGE:notes=Wir verwenden nur Original-Ersatzteile]
-   [SET_KNOWLEDGE:turnaround=Die meisten Reparaturen am selben Tag]
-   [SET_KNOWLEDGE:opening_hours=Mo-Fr 10-18, Sa 10-14]
+6. SHOP KNOWLEDGE (used during diagnoses):
+   [SET_KNOWLEDGE:warranty=6 months warranty on all repairs]
+   [SET_KNOWLEDGE:specialties=Apple specialist,Water damage expert]
+   [SET_KNOWLEDGE:payment_methods=Cash,Card,PayPal,Transfer]
+   [SET_KNOWLEDGE:notes=We use only original parts]
+   [SET_KNOWLEDGE:turnaround=Most repairs same day]
+   [SET_KNOWLEDGE:opening_hours=Mon-Fri 10-18, Sat 10-14]
 
-7. KI-PERSÖNLICHKEIT:
-   [SET:ai_tone=professional] – Professionell (Standard)
-   [SET:ai_tone=friendly] – Freundlich und locker
-   [SET:ai_tone=expert] – Technisch versiert
+7. AI PERSONALITY:
+   [SET:ai_tone=professional] – Professional (default)
+   [SET:ai_tone=friendly] – Friendly and casual
+   [SET:ai_tone=expert] – Technically proficient
 
-8. SETUP ABSCHLIESSEN:
-   [SETUP_COMPLETE] – Wenn alles konfiguriert ist
+8. COMPLETE SETUP:
+   [SETUP_COMPLETE] – When everything is configured
 
-REGELN:
-- Antworte IMMER auf Deutsch
-- Frage den Besitzer Schritt für Schritt nach seinen Wünschen
-- Wenn er eine Preisliste/Text einfügt, parse sie und nutze [ADD_SERVICE:...] für jeden Eintrag
-- Erkläre kurz was du geändert hast nach jeder Aktion
-- Schlage Verbesserungen vor basierend auf dem Service-Typ
-- Wenn der User ein Bild/Datei erwähnt, sage ihm er soll den Upload-Button nutzen
-- Action-Marker werden automatisch verarbeitet und NICHT dem User angezeigt
-- Verwende IMMER die Action-Marker wenn du etwas ändern sollst
-- Setze [SETUP_COMPLETE] erst wenn mindestens Modus, Farbe und ein paar Services konfiguriert sind
-- Maximal 3-4 Sätze pro Antwort, sei prägnant";
+RULES:
+- ALWAYS respond in {$lang_name}
+- Ask the owner step by step what they want
+- When they paste a price list/text, parse it and use [ADD_SERVICE:...] for each entry
+- Briefly explain what you changed after each action
+- Suggest improvements based on the service type
+- If the user mentions an image/file, tell them to use the upload button
+- Action markers are processed automatically and NOT shown to the user
+- ALWAYS use action markers when you need to change something
+- Only set [SETUP_COMPLETE] when at least mode, color and a few services are configured
+- Maximum 3-4 sentences per response, be concise";
     }
 
     /** ============================================================
@@ -1987,17 +2000,17 @@ REGELN:
             $file_content = file_get_contents($file['tmp_name']);
             $file_type = 'text';
         } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            // Save image, will be used for reference
+            // Save image for reference
             require_once(ABSPATH . 'wp-admin/includes/file.php');
             $upload = wp_handle_upload($file, ['test_form' => false]);
             if (isset($upload['error'])) wp_send_json_error(['message' => $upload['error']]);
-            $file_content = 'Image uploaded: ' . $upload['url'];
+            $file_content = 'image_url:' . $upload['url'];
             $file_type = 'image';
         } elseif ($ext === 'pdf') {
-            $file_content = '[PDF-Datei: ' . $file['name'] . '] Inhalt kann nicht automatisch gelesen werden. Bitte beschreiben Sie den Inhalt.';
+            $file_content = '';
             $file_type = 'pdf';
         } else {
-            $file_content = '[Datei: ' . $file['name'] . '] Format nicht direkt lesbar.';
+            $file_content = '';
             $file_type = 'other';
         }
 
