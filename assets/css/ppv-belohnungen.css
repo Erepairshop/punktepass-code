@@ -396,6 +396,10 @@ body.ppv-dark .ppv-rewards-v3 {
    ═══════════════════════════════════════════ */
 
 .ppv-rw-progress-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
     animation: fadeSlideUp .5s ease-out .1s both;
 }
 
@@ -494,6 +498,7 @@ body.ppv-dark .ppv-rewards-v3 {
    ═══════════════════════════════════════════ */
 
 .ppv-rw-filter {
+    margin-bottom: 16px;
     animation: fadeSlideUp .5s ease-out .2s both;
 }
 
