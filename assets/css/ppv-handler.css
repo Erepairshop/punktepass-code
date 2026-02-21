@@ -108,60 +108,39 @@ body {
     min-height:calc(100vh - var(--header-height) - var(--bottom-nav-height))
 }
 
+/* ═══════════════════════════════════════════
+   GLOBAL COMPACT HEADER
+   ═══════════════════════════════════════════ */
 #ppv-global-header {
-    position:fixed;
+    position:sticky;
     top:0;
     left:0;
     right:0;
-    height:var(--header-height);
-    z-index:1000;
+    z-index:99999;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:0 16px;
-    background:var(--color-header-bg);
-    backdrop-filter:blur(12px);
-    border-bottom:1px solid rgba(0,0,0,.08)
+    flex-wrap:nowrap;
+    overflow:hidden;
+    height:64px;
+    padding:8px 14px;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(0,150,255,.25);
+    box-shadow:0 2px 12px rgba(0,150,255,.08)
 }
 
-/* Light mode header */
-body.ppv-light #ppv-global-header,
-[data-theme=light] #ppv-global-header {
-    background:#ffffff;
-    border-bottom:1px solid rgba(0,0,0,.08)
-}
-
-body.ppv-light #ppv-global-header .ppv-user-email {
-    color:var(--color-text)
-}
-
-body.ppv-light #ppv-global-header .ppv-nav-btn {
-    border:1px solid rgba(0,0,0,.1);
-    background:rgba(0,0,0,.04);
-    color:var(--color-text)
-}
-
-body.ppv-light #ppv-global-header .ppv-nav-btn:hover {
-    background:rgba(14,165,233,.1);
-    border-color:var(--pp-primary);
-    color:var(--pp-primary)
-}
-
-body.ppv-light #ppv-global-header .ppv-stat-mini {
-    background:rgba(14,165,233,.08);
-    color:var(--pp-primary-dark)
-}
-
-/* Dark mode header */
-body.ppv-dark #ppv-global-header,
-[data-theme=dark] #ppv-global-header {
-    background:linear-gradient(135deg,#0f172a,#1e293b);
-    border-bottom:1px solid rgba(255,255,255,.1)
-}
-
-#ppv-global-header.ppv-handler-mode {
-    background:linear-gradient(135deg,#0f172a,#1e293b);
-    border-bottom:1px solid rgba(59,130,246,.3)
+/* Decorative gradient top line */
+#ppv-global-header::before {
+    content:'';
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:2px;
+    background:linear-gradient(90deg,transparent,#3b82f6,#00bfff,transparent);
+    opacity:.65
 }
 
 #ppv-global-header .ppv-header-left {
@@ -171,40 +150,60 @@ body.ppv-dark #ppv-global-header,
 }
 
 #ppv-global-header .ppv-header-logo-tiny {
-    width:44px;
-    height:44px;
-    border-radius:8px;
-    object-fit:contain
+    display:none
 }
 
 #ppv-global-header .ppv-user-email {
+    max-width:120px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
     font-size:13px;
     font-weight:600;
-    color:rgba(255,255,255,.9)
+    color:#003049
 }
 
-#ppv-global-header .ppv-header-nav {
+#ppv-global-header .ppv-header-nav,
+#ppv-global-header .ppv-header-settings {
     display:flex;
-    gap:8px
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:6px;
+    margin-left:auto
 }
 
-#ppv-global-header .ppv-nav-btn {
+#ppv-global-header .ppv-nav-btn,
+#ppv-global-header .ppv-theme-btn-mini {
     width:40px;
     height:40px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,.15);
-    background:rgba(255,255,255,.08);
-    color:#fff;
+    min-width:40px;
+    min-height:40px;
+    padding:0;
+    border-radius:12px;
+    border:1px solid rgba(0,0,0,.1);
+    background:rgba(0,0,0,.04);
+    color:#003049;
+    font-weight:600;
     display:flex;
     align-items:center;
     justify-content:center;
     cursor:pointer;
-    transition:var(--transition)
+    transition:all .2s ease
 }
 
-#ppv-global-header .ppv-nav-btn:hover {
-    background:rgba(0,168,204,.2);
-    border-color:var(--pp-primary)
+#ppv-global-header .ppv-nav-btn i,
+#ppv-global-header .ppv-theme-btn-mini i {
+    font-size:18px;
+    margin:0;
+    line-height:1
+}
+
+#ppv-global-header .ppv-nav-btn:hover,
+#ppv-global-header .ppv-theme-btn-mini:hover {
+    background:rgba(0,150,255,.12);
+    border-color:#00bfff;
+    color:#0088cc;
+    transform:translateY(-1px)
 }
 
 #ppv-global-header .ppv-stat-mini {
@@ -212,11 +211,49 @@ body.ppv-dark #ppv-global-header,
     align-items:center;
     gap:6px;
     padding:6px 12px;
-    background:rgba(0,168,204,.15);
+    background:rgba(14,165,233,.08);
     border-radius:8px;
-    color:var(--pp-primary-light);
+    color:var(--pp-primary-dark,#0369a1);
     font-size:12px;
     font-weight:600
+}
+
+/* Dark mode header */
+body.ppv-dark #ppv-global-header,
+[data-theme=dark] #ppv-global-header {
+    background:linear-gradient(135deg,rgba(10,14,20,.95),rgba(21,27,35,.95));
+    backdrop-filter:blur(16px) saturate(180%);
+    -webkit-backdrop-filter:blur(16px) saturate(180%);
+    border-bottom:1px solid rgba(0,212,255,.25);
+    box-shadow:0 4px 20px rgba(0,0,0,.5),0 0 30px rgba(0,212,255,.1),inset 0 1px 0 rgba(0,212,255,.1)
+}
+
+body.ppv-dark #ppv-global-header::before {
+    background:linear-gradient(90deg,transparent,#00d4ff,#a855f7,#00d4ff,transparent);
+    opacity:.8
+}
+
+body.ppv-dark #ppv-global-header .ppv-user-email {
+    color:rgba(240,246,252,.9)
+}
+
+body.ppv-dark #ppv-global-header .ppv-nav-btn,
+body.ppv-dark #ppv-global-header .ppv-theme-btn-mini {
+    background:rgba(0,212,255,.1);
+    border:1px solid rgba(0,212,255,.2);
+    color:#f0f6fc
+}
+
+body.ppv-dark #ppv-global-header .ppv-nav-btn:hover,
+body.ppv-dark #ppv-global-header .ppv-theme-btn-mini:hover {
+    background:rgba(0,212,255,.2);
+    border-color:rgba(0,212,255,.4);
+    color:#00d4ff;
+    box-shadow:0 0 15px rgba(0,212,255,.25)
+}
+
+body.ppv-dark #ppv-global-header .ppv-nav-btn i {
+    color:#00d4ff
 }
 
 
@@ -543,17 +580,27 @@ body.ppv-dark #ppv-global-header,
     }
 
     #ppv-global-header {
-        padding:0 12px
+        height:58px;
+        padding:6px 10px
     }
 
-    #ppv-global-header .ppv-header-logo-tiny {
+    #ppv-global-header .ppv-nav-btn,
+    #ppv-global-header .ppv-theme-btn-mini {
         width:36px;
-        height:36px
+        height:36px;
+        min-width:36px;
+        min-height:36px;
+        border-radius:10px
     }
 
-    #ppv-global-header .ppv-nav-btn {
-        width:36px;
-        height:36px
+    #ppv-global-header .ppv-nav-btn i,
+    #ppv-global-header .ppv-theme-btn-mini i {
+        font-size:16px
+    }
+
+    #ppv-global-header .ppv-user-email {
+        max-width:90px;
+        font-size:12px
     }
 
     .ppv-card {
