@@ -36,6 +36,39 @@ function ppv_log($msg) {
     }
 }
 
+/**
+ * Disable all WP/LiteSpeed CSS/JS optimization for standalone pages.
+ * Call this BEFORE rendering any standalone HTML page.
+ */
+function ppv_disable_wp_optimization() {
+    // Standard cache plugin constants
+    if (!defined('DONOTCACHEPAGE'))   define('DONOTCACHEPAGE', true);
+    if (!defined('DONOTMINIFY'))      define('DONOTMINIFY', true);
+    if (!defined('DONOTCDN'))         define('DONOTCDN', true);
+    if (!defined('LSCACHE_NO_CACHE')) define('LSCACHE_NO_CACHE', true);
+
+    // LiteSpeed specific: disable CSS/JS combining and minification
+    if (defined('LSCWP_V')) {
+        do_action('litespeed_control_set_nocache', 'standalone page');
+        do_action('litespeed_conf_force', array(
+            'optm-css_min'  => false,
+            'optm-js_min'   => false,
+            'optm-css_comb' => false,
+            'optm-js_comb'  => false,
+        ));
+    }
+
+    // Kill any output buffers that caching plugins may have started
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    // HTTP header to block LiteSpeed edge caching
+    if (!headers_sent()) {
+        header('X-LiteSpeed-Cache-Control: no-cache');
+    }
+}
+
 // ========================================
 // 📡 ABLY REAL-TIME CONFIG
 // ========================================

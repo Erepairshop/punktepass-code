@@ -205,6 +205,8 @@ class PPV_Rewards {
         $path = rtrim($path, '/');
         if ($path !== '/rewards') return;
 
+        ppv_disable_wp_optimization();
+
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
         }

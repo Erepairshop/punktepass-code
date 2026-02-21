@@ -1023,6 +1023,8 @@ private static function get_today_hours($opening_hours) {
         $path = rtrim($path, '/');
         if ($path !== '/user_dashboard') return;
 
+        ppv_disable_wp_optimization();
+
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
         }

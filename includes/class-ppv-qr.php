@@ -729,6 +729,9 @@ class PPV_QR {
         $path = rtrim($path, '/');
         if ($path !== '/qr-center') return;
 
+        // ── Disable ALL WP/LiteSpeed optimization for standalone page ──
+        ppv_disable_wp_optimization();
+
         // Start session
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();

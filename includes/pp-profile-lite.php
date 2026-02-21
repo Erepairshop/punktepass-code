@@ -306,6 +306,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             $path = rtrim($path, '/');
             if ($path !== '/mein-profil') return;
 
+            ppv_disable_wp_optimization();
+
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 @session_start();
             }
