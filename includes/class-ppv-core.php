@@ -602,9 +602,9 @@ class PPV_Core {
     if (function_exists('ppv_is_handler_session') && ppv_is_handler_session()) {
         return;
     }
-        
+
         // 🧹 Minden korábbi PPV CSS eltávolítása (kivéve whitelistet)
-        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-qr', 'ppv-dashboard', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler', 'ppv-handler-dark'];
+        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-qr', 'ppv-dashboard', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler', 'ppv-handler-dark', 'ppv-statistik', 'ppv-rewards', 'ppv-profile'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -618,14 +618,32 @@ class PPV_Core {
         wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], $v);
         wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
 
-        // 🔹 Legacy theme (still needed during migration, loaded AFTER new CSS)
-        wp_register_style(
-            'ppv-theme-light',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-            ['ppv-core'],
-            PPV_VERSION
-        );
-        wp_enqueue_style('ppv-theme-light');
+        // 🔹 Detect user dashboard page → use ppv-dashboard.css instead of theme-light
+        $is_user_dashboard = false;
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = rtrim($path, '/');
+        if ($path === '/user_dashboard') {
+            $is_user_dashboard = true;
+        } elseif (is_singular()) {
+            global $post;
+            if ($post && has_shortcode($post->post_content, 'ppv_user_dashboard')) {
+                $is_user_dashboard = true;
+            }
+        }
+
+        if ($is_user_dashboard) {
+            // ✅ User dashboard – saját CSS, ppv-theme-light nem kell
+            wp_enqueue_style('ppv-dashboard', PPV_PLUGIN_URL . 'assets/css/ppv-dashboard.css', ['ppv-core'], $v);
+        } else {
+            // 🔹 Legacy theme (still needed for other pages during migration)
+            wp_register_style(
+                'ppv-theme-light',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+                ['ppv-core'],
+                $v
+            );
+            wp_enqueue_style('ppv-theme-light');
+        }
 
         // 🔹 Theme váltó JS (globálisan minden oldalra)
         wp_enqueue_script(
