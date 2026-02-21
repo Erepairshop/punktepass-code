@@ -345,7 +345,7 @@ class PPV_Belohnungen {
     </script>
     <style>
     html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden;overscroll-behavior:none;overscroll-behavior-y:none}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:12px 0 90px 0;min-height:100vh;min-height:100dvh}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0;min-height:100vh;min-height:100dvh}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
