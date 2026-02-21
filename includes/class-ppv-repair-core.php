@@ -1846,8 +1846,8 @@ IMPORTANT:
             $ai_text = str_replace($m[0], '', $ai_text);
         }
 
-        // [SET_KNOWLEDGE:key=value] – set knowledge fields
-        if (preg_match_all('/\[SET_KNOWLEDGE:(\w+)=(.+?)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
+        // [SET_KNOWLEDGE:key=value] – set knowledge fields (value can contain commas)
+        if (preg_match_all('/\[SET_KNOWLEDGE:(\w+)=([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $key = strtolower(trim($match[1]));
                 $val = trim($match[2]);
@@ -1868,6 +1868,12 @@ IMPORTANT:
             $actions_applied[] = 'setup_complete';
             $ai_text = str_replace($m[0], '', $ai_text);
         }
+
+        // Safety catch-all: strip any remaining action markers the AI may have output
+        // This prevents [SET:...], [SET_BRANDS:...], [SET_KNOWLEDGE:...] etc. from being shown to user
+        $ai_text = preg_replace('/\[(SET|SET_BRANDS|SET_CHIPS|ADD_SERVICE|SET_SERVICES|SET_KNOWLEDGE|SETUP_COMPLETE)[^\]]*\]/i', '', $ai_text);
+        // Clean up leftover whitespace from removed markers
+        $ai_text = preg_replace('/\n{3,}/', "\n\n", trim($ai_text));
 
         // Save updated config and knowledge
         if (!empty($actions_applied)) {
