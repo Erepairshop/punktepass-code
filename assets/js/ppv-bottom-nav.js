@@ -202,7 +202,10 @@
         detail: { url, path: targetPath }
       }));
 
-      // Scroll to top
+      // Scroll to top and clear saved scroll position (prevents ppv-spa-loader.js from restoring old scroll)
+      sessionStorage.removeItem('scroll_' + targetPath);
+      // Also try with trailing slash variant
+      sessionStorage.removeItem('scroll_' + targetPath + '/');
       window.scrollTo({ top: 0, behavior: 'instant' });
 
       const duration = Math.round(performance.now() - startTime);

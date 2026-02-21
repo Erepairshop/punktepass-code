@@ -724,7 +724,7 @@ PROMPT;
 .ppv-chat-email-btn{background:#667eea;color:#fff!important}
 @media(max-width:480px){#ppv-ai-chat-panel{right:8px;left:8px;width:auto;bottom:140px;height:calc(100vh - 180px);max-height:none}}
 /* AI Guide: Spotlight overlay + highlight */
-#ppv-ai-spotlight{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9992;pointer-events:none;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s ease;display:none}
+#ppv-ai-spotlight{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9990;pointer-events:none;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s ease;display:none}
 #ppv-ai-spotlight.active{display:block;opacity:1;pointer-events:auto}
 #ppv-ai-spotlight .ppv-spot-hole{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);background:transparent;transition:all .4s cubic-bezier(.4,0,.2,1)}
 #ppv-ai-spotlight .ppv-spot-ring{position:absolute;border-radius:14px;border:2.5px solid #667eea;box-shadow:0 0 20px rgba(102,126,234,.5),0 0 40px rgba(102,126,234,.2);animation:ppvSpotPulse 1.5s ease-in-out infinite}
@@ -785,6 +785,14 @@ PROMPT;
             history.forEach(function(h) {
                 addMessage(h.content, h.role === 'user' ? 'user' : 'bot', true);
             });
+        }
+    } catch(e) {}
+
+    // Re-open chat after AI-triggered navigation
+    try {
+        if (sessionStorage.getItem('ppv_ai_chat_keep_open')) {
+            sessionStorage.removeItem('ppv_ai_chat_keep_open');
+            setTimeout(function() { if (!isOpen) toggle(); }, 400);
         }
     } catch(e) {}
 
@@ -1001,9 +1009,23 @@ PROMPT;
         spotTimer = setTimeout(clearSpotlight, 6000);
     }
 
-    // Dismiss spotlight on click
+    // Dismiss spotlight on click - but let bottom nav and chat panel clicks through
     if (spotlight) {
         spotlight.addEventListener('click', function(e) {
+            // Let bottom nav clicks pass through
+            var bottomNav = document.querySelector('.ppv-bottom-nav');
+            if (bottomNav) {
+                var bnr = bottomNav.getBoundingClientRect();
+                if (e.clientY >= bnr.top) {
+                    clearSpotlight();
+                    // Find and click the actual element under the spotlight
+                    spotlight.style.pointerEvents = 'none';
+                    var under = document.elementFromPoint(e.clientX, e.clientY);
+                    spotlight.style.pointerEvents = '';
+                    if (under) under.click();
+                    return;
+                }
+            }
             // If clicked on the highlighted element, let it through
             var highlighted = document.querySelector('.ppv-ai-highlighted');
             if (highlighted) {
@@ -1040,19 +1062,24 @@ PROMPT;
             var targetUrl = actions.navigate;
             // If we're already on the right page, skip navigation
             if (window.location.pathname !== targetUrl) {
-                if (window.PPV_SPA && window.PPV_SPA.navigateTo) {
-                    window.PPV_SPA.navigateTo(targetUrl);
-                } else {
-                    window.location.href = targetUrl;
-                }
-                // Store pending actions for after navigation
+                // Keep chat open after navigation
                 try {
+                    sessionStorage.setItem('ppv_ai_chat_keep_open', '1');
                     sessionStorage.setItem('ppv_ai_pending_actions', JSON.stringify({
                         tab: actions.tab,
                         highlight: actions.highlight,
                         scroll: actions.scroll
                     }));
                 } catch(e) {}
+                if (window.PPV_SPA && window.PPV_SPA.navigateTo) {
+                    window.PPV_SPA.navigateTo(targetUrl);
+                    // SPA: chat panel survives, just re-ensure it's open
+                    setTimeout(function() {
+                        if (!isOpen) toggle();
+                    }, 500);
+                } else {
+                    window.location.href = targetUrl;
+                }
                 return;
             }
         }
