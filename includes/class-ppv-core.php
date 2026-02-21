@@ -613,9 +613,10 @@ class PPV_Core {
         }
 
         // 🔹 New modular CSS architecture
-        wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', [], PPV_VERSION);
-        wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], PPV_VERSION);
-        wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], PPV_VERSION);
+        $v = self::asset_version();
+        wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', [], $v);
+        wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], $v);
+        wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
 
         // 🔹 Legacy theme (still needed during migration, loaded AFTER new CSS)
         wp_register_style(

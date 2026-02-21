@@ -419,7 +419,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-global-init-lock',
         PPV_PLUGIN_URL . 'assets/js/ppv-global-init-lock.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true  // In footer
     );
 }, 1);  // Priority: 1 = LEGELŐBB! Minden más előtt
@@ -431,7 +431,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-debug',
         PPV_PLUGIN_URL . 'assets/js/ppv-debug.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         false  // In header - needed before other scripts
     );
 
@@ -509,15 +509,16 @@ add_action('wp_enqueue_scripts', function() {
     );
 
     // 🔹 MODULAR CSS – Core tokens & components (loads for ALL sessions)
-    wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', ['remixicons'], PPV_VERSION);
-    wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], PPV_VERSION);
+    $v = PPV_Core::asset_version();
+    wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', ['remixicons'], $v);
+    wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
 
     // 🔹 HANDLER.CSS – Replaces handler-light.css + ppv-theme-light.css (modular)
     wp_enqueue_style(
         'ppv-handler',
         PPV_PLUGIN_URL . 'assets/css/ppv-handler.css',
         ['ppv-core', 'ppv-components'],
-        PPV_VERSION
+        $v
     );
 
     // 🔹 Register legacy handles as aliases so dependencies don't break
@@ -533,13 +534,13 @@ add_action('wp_enqueue_scripts', function() {
                 'ppv-handler-dark',
                 PPV_PLUGIN_URL . 'assets/css/handler-dark.css',
                 ['ppv-handler'],
-                PPV_VERSION
+                $v
             );
         }
     }
 
     // 🔹 LAYOUT loads LAST – scroll model must override handler CSS
-    wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-handler'], PPV_VERSION);
+    wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-handler'], $v);
 }, 100);
 
 /**
@@ -570,7 +571,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-firebase-messaging',
         PPV_PLUGIN_URL . 'assets/js/ppv-firebase-messaging.js',
         ['firebase-app', 'firebase-messaging'],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true
     );
 
@@ -579,7 +580,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-push-bridge',
         PPV_PLUGIN_URL . 'assets/js/ppv-push-bridge.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true
     );
 
@@ -637,7 +638,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-theme-loader',
         PPV_PLUGIN_URL . 'assets/js/ppv-theme-loader.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true
     );
 
@@ -787,7 +788,7 @@ foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
 // 🎨 PWA META TAGS + CRITICAL CSS PRELOAD
 // ========================================
 add_action('wp_head', function () { ?>
-    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-handler.css?ver=<?php echo PPV_VERSION; ?>" as="style">
+    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-handler.css?ver=<?php echo PPV_Core::asset_version(); ?>" as="style">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#fafdff">
     <meta name="apple-mobile-web-app-capable" content="yes">

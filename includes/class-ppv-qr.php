@@ -758,7 +758,7 @@ class PPV_QR {
         global $wpdb;
 
         $plugin_url = PPV_PLUGIN_URL;
-        $version    = PPV_VERSION;
+        $version    = PPV_Core::asset_version();
         $site_url   = get_site_url();
         $js_version = '6.5.1';
 
@@ -1072,7 +1072,7 @@ class PPV_QR {
         global $wpdb;
 
         // 🎨 Enqueue QR Center CSS
-        wp_enqueue_style('ppv-qr', PPV_PLUGIN_URL . 'assets/css/ppv-qr.css', ['ppv-components'], PPV_VERSION);
+        wp_enqueue_style('ppv-qr', PPV_PLUGIN_URL . 'assets/css/ppv-qr.css', ['ppv-components'], PPV_Core::asset_version());
 
         // ⛔ PERMISSION CHECK: Only handlers and scanners can access
         if (!class_exists('PPV_Permissions')) {
