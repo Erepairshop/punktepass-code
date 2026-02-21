@@ -1284,5 +1284,12 @@ return [
     'wai_js_services'                  => 'servizi',
     'wai_js_brand'                     => 'marca',
     'wai_js_brands'                    => 'marchi',
-    'wai_brands_label'                 => 'Marchi salvati',
+    'wai_brands_label'                 => 'Marchi',
+    'wai_chips_label'                  => 'Chip problemi',
+    'wai_brand_add_ph'                 => 'es. Apple, Samsung...',
+    'wai_chip_add_ph'                  => 'es. Schermo rotto...',
+    'wai_svc_name_ph'                  => 'Nome servizio',
+    'wai_svc_price_ph'                 => 'Prezzo (es. 80€)',
+    'wai_svc_time_ph'                  => 'Durata',
+    'wai_add'                          => 'Aggiungi',
 ];

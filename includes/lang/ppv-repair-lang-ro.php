@@ -1284,5 +1284,12 @@ return [
     'wai_js_services'                  => 'servicii',
     'wai_js_brand'                     => 'marcă',
     'wai_js_brands'                    => 'mărci',
-    'wai_brands_label'                 => 'Mărci salvate',
+    'wai_brands_label'                 => 'Mărci',
+    'wai_chips_label'                  => 'Chip-uri probleme',
+    'wai_brand_add_ph'                 => 'ex. Apple, Samsung...',
+    'wai_chip_add_ph'                  => 'ex. Ecran spart...',
+    'wai_svc_name_ph'                  => 'Nume serviciu',
+    'wai_svc_price_ph'                 => 'Preț (ex. 80€)',
+    'wai_svc_time_ph'                  => 'Durată',
+    'wai_add'                          => 'Adaugă',
 ];

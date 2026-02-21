@@ -2473,23 +2473,52 @@ echo '</div></div>
                             <i class="ri-information-line" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_pending')) . '
                         </div>') . '
 
-                    <!-- Brands overview (if any) -->
-                    <div id="ra-wai-brands" style="margin-bottom:12px;display:none">
+                    <!-- ═══ VISUAL EDITOR ═══ -->
+                    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:16px">
+
+                    <!-- Brands editor -->
+                    <div style="margin-bottom:16px">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' . esc_html(PPV_Lang::t('wai_brands_label')) . '</span>
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-smartphone-line"></i> ' . esc_html(PPV_Lang::t('wai_brands_label')) . '</span>
                             <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8"></span>
                         </div>
-                        <div id="ra-wai-brand-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                        <div id="ra-wai-brand-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+                        <div style="display:flex;gap:6px">
+                            <input type="text" id="ra-wai-brand-input" placeholder="' . esc_attr(PPV_Lang::t('wai_brand_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        </div>
                     </div>
 
-                    <!-- Services overview (if any) -->
-                    <div id="ra-wai-services" style="margin-bottom:16px;display:none">
+                    <!-- Chips editor -->
+                    <div style="margin-bottom:16px">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' . esc_html(PPV_Lang::t('wai_services_label')) . '</span>
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-price-tag-3-line"></i> ' . esc_html(PPV_Lang::t('wai_chips_label')) . '</span>
+                            <span id="ra-wai-chip-count" style="font-size:11px;color:#94a3b8"></span>
+                        </div>
+                        <div id="ra-wai-chip-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+                        <div style="display:flex;gap:6px">
+                            <input type="text" id="ra-wai-chip-input" placeholder="' . esc_attr(PPV_Lang::t('wai_chip_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <button type="button" id="ra-wai-chip-add" style="background:#8b5cf6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        </div>
+                    </div>
+
+                    <!-- Services editor -->
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('wai_services_label')) . '</span>
                             <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8"></span>
                         </div>
-                        <div id="ra-wai-service-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                        <div id="ra-wai-service-list" style="margin-bottom:8px"></div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            <input type="text" id="ra-wai-svc-name" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_name_ph')) . '" style="flex:2;min-width:120px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <input type="text" id="ra-wai-svc-price" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_price_ph')) . '" style="flex:1;min-width:80px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <input type="text" id="ra-wai-svc-time" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_time_ph')) . '" style="flex:1;min-width:60px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <button type="button" id="ra-wai-svc-add" style="background:#10b981;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        </div>
                     </div>
+
+                    </div>
+                    <!-- ═══ END VISUAL EDITOR ═══ -->
 
                     <!-- File upload area -->
                     <div id="ra-wai-upload-area" style="border:2px dashed #e2e8f0;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;cursor:pointer;transition:all .2s;background:#fafbfc">
@@ -5253,6 +5282,8 @@ echo '</div></div>
             'brands'           => PPV_Lang::t('wai_js_brands'),
         ]) . ';
         var waiServiceCount = document.getElementById("ra-wai-service-count");
+        var waiChipCount = document.getElementById("ra-wai-chip-count");
+        var waiChipList = document.getElementById("ra-wai-chip-list");
         var waiStatus = document.getElementById("ra-wai-status");
 
         if (!waiInput || !waiSend) return;
@@ -5262,49 +5293,152 @@ echo '</div></div>
         var chatHistory = [];
         var sending = false;
 
-        // Load existing config+knowledge to show brands and services
+        // Local data stores
+        var currentBrands = [];
+        var currentChips = [];
+        var currentServices = [];
+
+        // Load existing config+knowledge
         var existingConfig = ' . wp_json_encode(!empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : null) . ';
         var existingKnowledge = ' . wp_json_encode(!empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null) . ';
-        if (existingConfig && existingConfig.brands && existingConfig.brands.length > 0) {
-            renderBrands(existingConfig.brands);
-        }
-        if (existingKnowledge && existingKnowledge.services && existingKnowledge.services.length > 0) {
-            renderServices(existingKnowledge.services);
+        if (existingConfig && existingConfig.brands) currentBrands = existingConfig.brands;
+        if (existingConfig && existingConfig.chips) currentChips = existingConfig.chips;
+        if (existingKnowledge && existingKnowledge.services) currentServices = existingKnowledge.services;
+        renderBrands(); renderChips(); renderServices();
+
+        function escH(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+        // ─── Save helper ───
+        function editorSave(field, data, btn) {
+            if (btn) { btn.disabled = true; btn.style.opacity = ".5"; }
+            var fd = new FormData();
+            fd.append("action", "ppv_widget_editor_save");
+            fd.append("nonce", nonce);
+            fd.append("field", field);
+            fd.append("data", JSON.stringify(data));
+            fetch(ajaxUrl, { method: "POST", body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(resp) {
+                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
+                })
+                .catch(function() {
+                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
+                });
         }
 
-        function renderBrands(brands) {
-            if (!brands || !brands.length) { waiBrandsDiv.style.display = "none"; return; }
-            waiBrandsDiv.style.display = "";
-            waiBrandCount.textContent = brands.length + " " + (brands.length > 1 ? waiT.brands : waiT.brand);
+        // ─── BRANDS ───
+        function renderBrands(brandsOverride) {
+            if (brandsOverride) currentBrands = brandsOverride;
+            waiBrandCount.textContent = currentBrands.length + " " + (currentBrands.length !== 1 ? waiT.brands : waiT.brand);
             var html = "";
-            for (var i = 0; i < brands.length; i++) {
-                var b = brands[i];
+            for (var i = 0; i < currentBrands.length; i++) {
+                var b = currentBrands[i];
                 var label = typeof b === "string" ? b : (b.label || b.id || b);
                 var icon = (typeof b === "object" && b.icon) ? b.icon : "";
-                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1e40af">\' +
+                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1e40af;cursor:default">\' +
                     (icon ? \'<span>\' + icon + \'</span> \' : \'\') +
-                    \'<b>\' + escH(label) + \'</b></span>\';
+                    \'<b>\' + escH(label) + \'</b>\' +
+                    \' <span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;margin-left:2px" title="Entfernen">&times;</span>\' +
+                    \'</span>\';
             }
             waiBrandList.innerHTML = html;
         }
+        waiBrandList.addEventListener("click", function(e) {
+            var del = e.target.closest(".ra-wai-del[data-type=brand]");
+            if (!del) return;
+            currentBrands.splice(parseInt(del.dataset.idx), 1);
+            renderBrands();
+            editorSave("brands", currentBrands);
+        });
+        document.getElementById("ra-wai-brand-add").addEventListener("click", function() {
+            var inp = document.getElementById("ra-wai-brand-input");
+            var val = inp.value.trim();
+            if (!val) return;
+            currentBrands.push({ id: val, label: val });
+            inp.value = "";
+            renderBrands();
+            editorSave("brands", currentBrands, this);
+        });
+        document.getElementById("ra-wai-brand-input").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-brand-add").click(); }
+        });
 
-        function renderServices(services) {
-            if (!services || !services.length) { waiServicesDiv.style.display = "none"; return; }
-            waiServicesDiv.style.display = "";
-            waiServiceCount.textContent = services.length + " " + (services.length > 1 ? waiT.services : waiT.service);
+        // ─── CHIPS ───
+        function renderChips(chipsOverride) {
+            if (chipsOverride) currentChips = chipsOverride;
+            if (waiChipCount) waiChipCount.textContent = currentChips.length + " " + (currentChips.length !== 1 ? "chips" : "chip");
             var html = "";
-            for (var i = 0; i < services.length; i++) {
-                var s = services[i];
-                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;color:#475569">\' +
-                    \'<b>\' + escH(s.name) + \'</b>\' +
-                    (s.price ? \' <span style="color:#94a3b8">·</span> \' + escH(s.price) : \'\') +
-                    (s.time ? \' <span style="color:#94a3b8">·</span> <span style="color:#94a3b8">\' + escH(s.time) + \'</span>\' : \'\') +
+            for (var i = 0; i < currentChips.length; i++) {
+                var c = typeof currentChips[i] === "string" ? currentChips[i] : (currentChips[i].label || currentChips[i]);
+                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#f3e8ff;border-radius:8px;font-size:12px;color:#7c3aed;cursor:default">\' +
+                    escH(c) +
+                    \' <span class="ra-wai-del" data-type="chip" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;margin-left:2px" title="Entfernen">&times;</span>\' +
                     \'</span>\';
+            }
+            if (waiChipList) waiChipList.innerHTML = html;
+        }
+        if (waiChipList) waiChipList.addEventListener("click", function(e) {
+            var del = e.target.closest(".ra-wai-del[data-type=chip]");
+            if (!del) return;
+            currentChips.splice(parseInt(del.dataset.idx), 1);
+            renderChips();
+            editorSave("chips", currentChips);
+        });
+        var chipAddBtn = document.getElementById("ra-wai-chip-add");
+        if (chipAddBtn) chipAddBtn.addEventListener("click", function() {
+            var inp = document.getElementById("ra-wai-chip-input");
+            var val = inp.value.trim();
+            if (!val) return;
+            currentChips.push(val);
+            inp.value = "";
+            renderChips();
+            editorSave("chips", currentChips, this);
+        });
+        var chipInput = document.getElementById("ra-wai-chip-input");
+        if (chipInput) chipInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-chip-add").click(); }
+        });
+
+        // ─── SERVICES ───
+        function renderServices(servicesOverride) {
+            if (servicesOverride) currentServices = servicesOverride;
+            waiServiceCount.textContent = currentServices.length + " " + (currentServices.length !== 1 ? waiT.services : waiT.service);
+            var html = "";
+            for (var i = 0; i < currentServices.length; i++) {
+                var s = currentServices[i];
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;color:#475569;margin-bottom:4px">\' +
+                    \'<b style="flex:1">\' + escH(s.name) + \'</b>\' +
+                    (s.price ? \'<span style="color:#059669;font-weight:600">\' + escH(s.price) + \'</span>\' : \'\') +
+                    (s.time ? \'<span style="color:#94a3b8">\' + escH(s.time) + \'</span>\' : \'\') +
+                    \'<span class="ra-wai-del" data-type="svc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\' +
+                    \'</div>\';
             }
             waiServiceList.innerHTML = html;
         }
-
-        function escH(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+        waiServiceList.addEventListener("click", function(e) {
+            var del = e.target.closest(".ra-wai-del[data-type=svc]");
+            if (!del) return;
+            currentServices.splice(parseInt(del.dataset.idx), 1);
+            renderServices();
+            editorSave("services", currentServices);
+        });
+        document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
+            var nameInp = document.getElementById("ra-wai-svc-name");
+            var priceInp = document.getElementById("ra-wai-svc-price");
+            var timeInp = document.getElementById("ra-wai-svc-time");
+            var name = nameInp.value.trim();
+            if (!name) return;
+            var svc = { name: name };
+            if (priceInp.value.trim()) svc.price = priceInp.value.trim();
+            if (timeInp.value.trim()) svc.time = timeInp.value.trim();
+            currentServices.push(svc);
+            nameInp.value = ""; priceInp.value = ""; timeInp.value = "";
+            renderServices();
+            editorSave("services", currentServices, this);
+        });
+        document.getElementById("ra-wai-svc-name").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); }
+        });
 
         function addMessage(role, text) {
             var div = document.createElement("div");
@@ -5396,6 +5530,11 @@ echo '</div></div>
                             // Update brands display
                             if (acts.indexOf("brands") >= 0 && cfg.brands) {
                                 renderBrands(cfg.brands);
+                            }
+
+                            // Update chips display
+                            if (acts.indexOf("chips") >= 0 && cfg.chips) {
+                                renderChips(cfg.chips);
                             }
 
                             // Update services display

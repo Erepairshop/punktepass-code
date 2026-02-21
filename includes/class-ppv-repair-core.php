@@ -73,6 +73,9 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
         add_action('wp_ajax_nopriv_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
 
+        // AJAX: Widget visual editor save (admin)
+        add_action('wp_ajax_ppv_widget_editor_save', [__CLASS__, 'ajax_widget_editor_save']);
+
         // AJAX: Public widget config endpoint (CORS, for custom brands/chips)
         add_action('wp_ajax_ppv_shop_widget_config', [__CLASS__, 'ajax_shop_widget_config']);
         add_action('wp_ajax_nopriv_ppv_shop_widget_config', [__CLASS__, 'ajax_shop_widget_config']);
@@ -1570,6 +1573,10 @@ class PPV_Repair_Core {
         $lang_names = ['de' => 'German', 'hu' => 'Hungarian', 'ro' => 'Romanian', 'en' => 'English', 'it' => 'Italian'];
         $lang_name  = $lang_names[$lang] ?? 'German';
 
+        // Inject store's own knowledge base
+        $knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null;
+        $has_store_prices = ($knowledge && !empty($knowledge['services']));
+
         // Custom system prompt with price estimation
         $system = "You are a friendly repair diagnostic assistant for \"{$store_name}\".
 Service type: {$service_type}
@@ -1579,7 +1586,7 @@ RESPOND ONLY IN {$lang_name}. Use plain text only (no markdown, no bold, no head
 The customer describes their device problem. Provide:
 1. A short diagnosis (1-2 sentences about likely issue)
 2. Possible causes (2-3 bullet points with •)
-3. A price estimate range in EUR (be realistic for {$service_type} repairs)
+3. A price estimate range in EUR
 4. A quick tip
 
 FORMAT your response EXACTLY like this (keep the labels in {$lang_name}):
@@ -1588,9 +1595,24 @@ CAUSES:
 • [cause 1]
 • [cause 2]
 PRICE: [min]–[max] EUR
-TIP: [one helpful sentence]
+TIP: [one helpful sentence]";
 
-PRICE GUIDELINES for common repairs:
+        // Build pricing section
+        if ($has_store_prices) {
+            $system .= "\n\nSTORE PRICE LIST – USE ONLY THESE PRICES (do NOT invent prices):";
+            foreach ($knowledge['services'] as $svc) {
+                $line = "\n• " . ($svc['name'] ?? '');
+                if (!empty($svc['price'])) $line .= " – " . $svc['price'];
+                if (!empty($svc['time'])) $line .= " (" . $svc['time'] . ")";
+                $system .= $line;
+            }
+            $system .= "\n\nCRITICAL PRICING RULES:
+- ONLY use prices from the store's price list above
+- Match the customer's problem to the closest service in the list
+- If no matching service exists, write PRICE: Auf Anfrage (or equivalent in {$lang_name})
+- NEVER make up or estimate prices that are not in the list";
+        } else {
+            $system .= "\n\nPRICE GUIDELINES for common repairs:
 • Display replacement: 80–250 EUR depending on device
 • Battery replacement: 40–90 EUR
 • Charging port: 50–120 EUR
@@ -1598,25 +1620,15 @@ PRICE GUIDELINES for common repairs:
 • Camera repair: 60–150 EUR
 • Software issues: 30–60 EUR
 • Back glass: 60–150 EUR
-Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei lower).
+Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei lower).";
+        }
 
-IMPORTANT:
+        $system .= "\n\nIMPORTANT:
 - Always give a price range, never a single number
 - Be honest if unsure, give wider range
 - The price is an ESTIMATE, mention they should contact the shop for exact quote";
 
-        // Inject store's own knowledge base (uploaded price lists, services, etc.)
-        $knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null;
         if ($knowledge) {
-            if (!empty($knowledge['services'])) {
-                $system .= "\n\nSTORE-SPECIFIC PRICE LIST (use these instead of generic prices):";
-                foreach ($knowledge['services'] as $svc) {
-                    $line = "\n• " . ($svc['name'] ?? '');
-                    if (!empty($svc['price'])) $line .= " – " . $svc['price'];
-                    if (!empty($svc['time'])) $line .= " (" . $svc['time'] . ")";
-                    $system .= $line;
-                }
-            }
             if (!empty($knowledge['notes'])) {
                 $system .= "\n\nADDITIONAL STORE INFO:\n" . $knowledge['notes'];
             }
@@ -1892,6 +1904,59 @@ IMPORTANT:
             'knowledge'       => $current_knowledge,
             'setup_complete'  => (bool) ($wpdb->get_var($wpdb->prepare("SELECT widget_setup_complete FROM {$stores_table} WHERE id = %d", $store_id))),
         ]);
+    }
+
+    /** ============================================================
+     * AJAX: Widget visual editor save (admin)
+     * Saves brands, chips, services directly from the visual editor
+     * ============================================================ */
+    public static function ajax_widget_editor_save() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        global $wpdb;
+        $stores_table = $wpdb->prefix . 'ppv_stores';
+        $store = $wpdb->get_row($wpdb->prepare("SELECT widget_ai_config, widget_ai_knowledge FROM {$stores_table} WHERE id = %d", $store_id));
+        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+        $current_config = !empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : [];
+        $current_knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : [];
+
+        $field = sanitize_text_field($_POST['field'] ?? '');
+        $data_raw = wp_unslash($_POST['data'] ?? '');
+        $data = json_decode($data_raw, true);
+
+        if ($field === 'brands' && is_array($data)) {
+            $icons = ['Apple'=>"\xF0\x9F\x8D\x8E",'Samsung'=>"\xF0\x9F\x93\xB1",'Huawei'=>"\xF0\x9F\x93\xB2",'Xiaomi'=>"\xE2\xAD\x90",'Google'=>'G','Sony'=>"\xF0\x9F\x8E\xAE",'OnePlus'=>'1+','LG'=>"\xF0\x9F\x93\xBA",'Nokia'=>'N','Motorola'=>'M','OPPO'=>'O','Realme'=>'R','Honor'=>'H','Nothing'=>'N','ZTE'=>'Z'];
+            $current_config['brands'] = array_map(function($b) use ($icons) {
+                $name = is_string($b) ? trim($b) : (trim($b['label'] ?? $b['id'] ?? ''));
+                return ['id' => $name, 'label' => $name, 'icon' => $icons[$name] ?? "\xE2\x9A\x99"];
+            }, array_filter($data));
+            $wpdb->update($stores_table, ['widget_ai_config' => wp_json_encode($current_config)], ['id' => $store_id]);
+            wp_send_json_success(['saved' => 'brands', 'count' => count($current_config['brands'])]);
+
+        } elseif ($field === 'chips' && is_array($data)) {
+            $current_config['chips'] = array_values(array_filter(array_map('trim', $data)));
+            $wpdb->update($stores_table, ['widget_ai_config' => wp_json_encode($current_config)], ['id' => $store_id]);
+            wp_send_json_success(['saved' => 'chips', 'count' => count($current_config['chips'])]);
+
+        } elseif ($field === 'services' && is_array($data)) {
+            $services = [];
+            foreach ($data as $svc) {
+                if (empty($svc['name'])) continue;
+                $s = ['name' => trim($svc['name'])];
+                if (!empty($svc['price'])) $s['price'] = trim($svc['price']);
+                if (!empty($svc['time'])) $s['time'] = trim($svc['time']);
+                $services[] = $s;
+            }
+            $current_knowledge['services'] = $services;
+            $wpdb->update($stores_table, ['widget_ai_knowledge' => wp_json_encode($current_knowledge)], ['id' => $store_id]);
+            wp_send_json_success(['saved' => 'services', 'count' => count($services)]);
+
+        } else {
+            wp_send_json_error(['message' => 'Invalid field']);
+        }
     }
 
     /**

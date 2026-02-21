@@ -1284,5 +1284,12 @@ return [
     'wai_js_services'                  => 'Services',
     'wai_js_brand'                     => 'Marke',
     'wai_js_brands'                    => 'Marken',
-    'wai_brands_label'                 => 'Gespeicherte Marken',
+    'wai_brands_label'                 => 'Marken',
+    'wai_chips_label'                  => 'Problem-Chips',
+    'wai_brand_add_ph'                 => 'z.B. Apple, Samsung...',
+    'wai_chip_add_ph'                  => 'z.B. Display kaputt...',
+    'wai_svc_name_ph'                  => 'Service Name',
+    'wai_svc_price_ph'                 => 'Preis (z.B. 80€)',
+    'wai_svc_time_ph'                  => 'Dauer',
+    'wai_add'                          => 'Hinzufügen',
 ];

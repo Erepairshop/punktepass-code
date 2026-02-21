@@ -1284,5 +1284,12 @@ return [
     'wai_js_services'                  => 'szolgáltatás',
     'wai_js_brand'                     => 'márka',
     'wai_js_brands'                    => 'márka',
-    'wai_brands_label'                 => 'Mentett márkák',
+    'wai_brands_label'                 => 'Márkák',
+    'wai_chips_label'                  => 'Probléma chipek',
+    'wai_brand_add_ph'                 => 'pl. Apple, Samsung...',
+    'wai_chip_add_ph'                  => 'pl. Törött kijelző...',
+    'wai_svc_name_ph'                  => 'Szolgáltatás neve',
+    'wai_svc_price_ph'                 => 'Ár (pl. 80€)',
+    'wai_svc_time_ph'                  => 'Idő',
+    'wai_add'                          => 'Hozzáadás',
 ];

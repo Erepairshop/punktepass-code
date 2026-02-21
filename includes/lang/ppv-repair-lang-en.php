@@ -1284,5 +1284,12 @@ return [
     'wai_js_services'                  => 'services',
     'wai_js_brand'                     => 'brand',
     'wai_js_brands'                    => 'brands',
-    'wai_brands_label'                 => 'Saved brands',
+    'wai_brands_label'                 => 'Brands',
+    'wai_chips_label'                  => 'Problem chips',
+    'wai_brand_add_ph'                 => 'e.g. Apple, Samsung...',
+    'wai_chip_add_ph'                  => 'e.g. Broken display...',
+    'wai_svc_name_ph'                  => 'Service name',
+    'wai_svc_price_ph'                 => 'Price (e.g. 80€)',
+    'wai_svc_time_ph'                  => 'Duration',
+    'wai_add'                          => 'Add',
 ];
