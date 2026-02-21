@@ -51,17 +51,26 @@ select, input, button, textarea {
 }
 
 /* ═══════════════════════════════════════════
-   DASHBOARD WRAPPER (was in handler-light.css)
+   DASHBOARD LAYOUT
    ═══════════════════════════════════════════ */
 
+#ppv-dashboard-root {
+    width: 100%;
+    background: var(--pp-bg-warm, linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e8f4f8 100%));
+    position: relative;
+    min-height: 100vh;
+}
+
 .ppv-dashboard-netto {
-    padding: 16px 0;
-    background: linear-gradient(180deg, var(--pp-bg, #f8fafc), var(--pp-bg-2, #f1f5f9));
+    padding: 16px 0 110px;
+    background: radial-gradient(ellipse at top, rgba(14,165,233,.03) 0%, transparent 50%),
+                linear-gradient(180deg, var(--pp-bg, #f8fafc) 0%, var(--pp-bg-2, #f1f5f9) 100%);
     min-height: 100vh;
 }
 
 .ppv-dashboard-inner {
     max-width: 900px;
+    width: 100%;
     margin: 0 auto;
     padding: 0 16px;
 }

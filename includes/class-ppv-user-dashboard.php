@@ -1136,9 +1136,14 @@ private static function get_today_hours($opening_hours) {
     window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:16px 0 100px 0;min-height:100vh;padding-top:env(safe-area-inset-top,0)}
+    html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-x:hidden}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0;min-height:100vh;min-height:100dvh;padding-top:env(safe-area-inset-top,0)}
     </style>
+    <script>
+    /* Reset scroll position for fresh dashboard loads */
+    sessionStorage.removeItem('scroll_' + location.pathname);
+    window.scrollTo(0, 0);
+    </script>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
 <?php echo $global_header; ?>
