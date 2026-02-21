@@ -266,8 +266,11 @@ body {
     background:rgba(0,0,0,.04)
 }
 #ppv-global-header .ppv-lang-icon {
+    position:static !important;
     color:#0369a1 !important;
-    font-size:15px
+    font-size:15px;
+    pointer-events:none;
+    flex-shrink:0
 }
 #ppv-global-header .ppv-lang-select {
     -webkit-appearance:none;
@@ -280,7 +283,7 @@ body {
     font-weight:700 !important;
     letter-spacing:.5px;
     cursor:pointer;
-    padding:4px 2px !important;
+    padding:4px 2px 4px 4px !important;
     min-width:0;
     outline:none
 }

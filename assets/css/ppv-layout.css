@@ -286,8 +286,11 @@ body {
 }
 
 #ppv-global-header .ppv-lang-icon {
+    position: static !important;
     color: rgba(255, 255, 255, 0.4);
     font-size: 15px;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
 #ppv-global-header .ppv-lang-select {
@@ -589,7 +592,10 @@ body.ppv-light #ppv-global-header .ppv-theme-btn-mini:hover {
 }
 
 body.ppv-light #ppv-global-header .ppv-lang-icon {
+    position: static !important;
     color: #0369a1;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
 body.ppv-light #ppv-global-header .ppv-lang-select {
