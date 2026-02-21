@@ -240,11 +240,12 @@ class PPV_My_Points {
             $global_header = ob_get_clean();
         }
 
-        // ─── Bottom nav context ───
+        // ─── Bottom nav (context + HTML, rendered OUTSIDE .ppv-standalone-wrap) ───
         $bottom_nav_context = '';
         if (class_exists('PPV_Bottom_Nav')) {
             ob_start();
             PPV_Bottom_Nav::inject_context();
+            echo PPV_Bottom_Nav::render_nav();
             $bottom_nav_context = ob_get_clean();
         }
 
