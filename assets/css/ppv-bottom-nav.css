@@ -18,18 +18,18 @@
     display: flex !important;
     justify-content: space-around;
     align-items: center;
-    padding: 8px 4px !important;
+    padding: 4px 4px !important;
     height: auto !important;
-    min-height: 64px !important;
-    background: rgba(255, 255, 255, 0.82) !important;
+    min-height: 48px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
     border: 1px solid rgba(255, 255, 255, 0.45) !important;
     border-top: none !important;
-    border-radius: 20px !important;
+    border-radius: 18px !important;
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.08),
-        0 2px 8px rgba(0, 0, 0, 0.04),
+        0 6px 24px rgba(0, 0, 0, 0.07),
+        0 2px 6px rgba(0, 0, 0, 0.03),
         inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
     z-index: 9999 !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -65,20 +65,21 @@
     flex-direction: column !important;
     justify-content: center;
     align-items: center;
-    gap: 2px !important;
-    padding: 6px 4px !important;
-    border-radius: 14px !important;
+    gap: 1px !important;
+    padding: 4px 2px !important;
+    border-radius: 12px !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     min-width: 0;
-    font-size: 10px !important;
+    min-height: 40px;
+    font-size: 9px !important;
     font-weight: 600 !important;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
 }
 
 .ppv-bottom-nav .nav-item i {
-    font-size: 22px !important;
+    font-size: 20px !important;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     z-index: 1;
@@ -87,13 +88,13 @@
 /* ── Labels ──────────────────────────────── */
 .ppv-bottom-nav.ppv-nav-labeled .nav-item span {
     display: block;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
-    line-height: 1.2;
+    line-height: 1.1;
     opacity: 0;
     transform: translateY(-2px);
     transition: all 0.25s ease;
@@ -119,8 +120,8 @@
 }
 
 .ppv-bottom-nav .nav-item.active i {
-    transform: scale(1.15) translateY(-1px) !important;
-    filter: drop-shadow(0 2px 8px var(--pp-primary-glow, rgba(14, 165, 233, 0.35)));
+    transform: scale(1.12) !important;
+    filter: drop-shadow(0 2px 6px var(--pp-primary-glow, rgba(14, 165, 233, 0.35)));
 }
 
 /* Active dot indicator under icon */
