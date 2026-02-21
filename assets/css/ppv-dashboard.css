@@ -20,20 +20,97 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body, html {
+    min-height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--pp-text, #0f172a);
+    background: var(--pp-bg, #f8fafc);
+    -webkit-overflow-scrolling: touch;
+}
+
+body.ppv-user-dashboard {
+    overflow-y: auto;
+    background: var(--pp-bg-warm, linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e8f4f8 100%));
+}
+
+a { color: var(--pp-primary, #0ea5e9); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    color: var(--pp-text, #0f172a);
+    line-height: 1.3;
+}
+
+p { color: var(--pp-text-2, #334155); }
+
+select, input, button, textarea {
+    font-family: inherit;
+    font-size: inherit;
+}
+
 /* ═══════════════════════════════════════════
-   DASHBOARD WRAPPER (was in handler-light.css)
+   DASHBOARD LAYOUT
    ═══════════════════════════════════════════ */
 
+#ppv-dashboard-root {
+    width: 100%;
+    background: var(--pp-bg-warm, linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e8f4f8 100%));
+    position: relative;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
 .ppv-dashboard-netto {
-    padding: 16px 0;
-    background: linear-gradient(180deg, var(--pp-bg, #f8fafc), var(--pp-bg-2, #f1f5f9));
-    min-height: 100vh;
+    padding-bottom: 80px;
+    background: radial-gradient(ellipse at top, rgba(14,165,233,.03) 0%, transparent 50%),
+                linear-gradient(180deg, var(--pp-bg, #f8fafc) 0%, var(--pp-bg-2, #f1f5f9) 100%);
+    contain: layout style;
 }
 
 .ppv-dashboard-inner {
     max-width: 900px;
+    width: 100%;
     margin: 0 auto;
-    padding: 0 16px;
+    padding: 16px;
+    animation: appFadeIn .6s cubic-bezier(.4, 0, .2, 1);
+}
+
+.ppv-dashboard-inner > * {
+    animation: staggerFadeIn .5s cubic-bezier(.4, 0, .2, 1) both;
+}
+.ppv-dashboard-inner > :first-child  { animation-delay: 50ms; }
+.ppv-dashboard-inner > :nth-child(2) { animation-delay: .1s; }
+.ppv-dashboard-inner > :nth-child(3) { animation-delay: .15s; }
+.ppv-dashboard-inner > :nth-child(4) { animation-delay: .2s; }
+.ppv-dashboard-inner > :nth-child(5) { animation-delay: .25s; }
+
+@keyframes appFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes staggerFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ═══════════════════════════════════════════
@@ -68,10 +145,7 @@
 }
 
 #ppv-global-header .ppv-header-logo-tiny {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    object-fit: contain;
+    display: none !important;
 }
 
 #ppv-global-header .ppv-user-email {
@@ -244,27 +318,45 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.ppv-qr-overlay.show {
+    opacity: 1;
+    visibility: visible;
 }
 
 .ppv-user-qr {
     position: fixed;
-    bottom: 0;
+    top: 0;
     left: 0;
     right: 0;
+    bottom: 0;
+    width: 88vw;
+    max-width: 340px;
+    height: fit-content;
     max-height: 90vh;
     overflow-y: auto;
+    margin: auto;
     background: var(--pp-surface, #fff);
-    border-radius: 24px 24px 0 0;
+    border: 1px solid var(--pp-border, rgba(14,165,233,.12));
+    border-radius: 20px;
     padding: 24px 20px;
-    padding-bottom: max(24px, env(safe-area-inset-bottom));
     z-index: 10001;
-    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
-    animation: ppv-sheet-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 20px 48px rgba(0,0,0,.12), 0 0 60px rgba(14,165,233,.1);
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.92);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes ppv-sheet-up {
-    from { transform: translateY(100%); opacity: 0; }
-    to   { transform: translateY(0); opacity: 1; }
+.ppv-user-qr.show {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
 }
 
 .ppv-qr-close {

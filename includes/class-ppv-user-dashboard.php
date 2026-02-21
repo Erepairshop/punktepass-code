@@ -1042,7 +1042,7 @@ private static function get_today_hours($opening_hours) {
 
     private static function render_standalone_page() {
         $plugin_url = PPV_PLUGIN_URL;
-        $version    = PPV_VERSION;
+        $version    = PPV_Core::asset_version();
         $site_url   = get_site_url();
 
         // ─── Language ───
@@ -1136,8 +1136,8 @@ private static function get_today_hours($opening_hours) {
     window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:16px 0 100px 0;min-height:100vh;padding-top:env(safe-area-inset-top,0)}
+    html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden;overscroll-behavior:none;overscroll-behavior-y:none}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0;min-height:100vh;min-height:100dvh;padding-top:env(safe-area-inset-top,0)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">

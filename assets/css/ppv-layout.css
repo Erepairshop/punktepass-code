@@ -286,8 +286,11 @@ body {
 }
 
 #ppv-global-header .ppv-lang-icon {
+    position: static !important;
     color: rgba(255, 255, 255, 0.4);
     font-size: 15px;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
 #ppv-global-header .ppv-lang-select {
@@ -542,11 +545,11 @@ body {
 /* ── Light Mode Header ──────────────────── */
 body.ppv-light #ppv-global-header,
 [data-theme="light"] #ppv-global-header {
-    background: rgba(255, 255, 255, 0.92) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(24px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 120, 255, 0.18) !important;
+    box-shadow: 0 2px 12px rgba(0, 120, 255, 0.08) !important;
 }
 
 body.ppv-light #ppv-global-header .ppv-user-email {
@@ -554,20 +557,21 @@ body.ppv-light #ppv-global-header .ppv-user-email {
 }
 
 body.ppv-light #ppv-global-header .ppv-nav-btn {
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    background: rgba(0, 0, 0, 0.03) !important;
-    color: var(--pp-text-2, #334155) !important;
+    border: 1px solid rgba(14, 165, 233, 0.2) !important;
+    background: rgba(14, 165, 233, 0.06) !important;
+    color: #0369a1 !important;
 }
 
 body.ppv-light #ppv-global-header .ppv-nav-btn:hover {
-    background: rgba(14, 165, 233, 0.08) !important;
-    border-color: rgba(14, 165, 233, 0.2) !important;
-    color: var(--pp-primary, #0ea5e9) !important;
+    background: rgba(14, 165, 233, 0.14) !important;
+    border-color: rgba(14, 165, 233, 0.35) !important;
+    color: #0284c7 !important;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
 }
 
 body.ppv-light #ppv-global-header .ppv-stat-mini {
     background: rgba(14, 165, 233, 0.06) !important;
-    border: 1px solid rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(14, 165, 233, 0.15);
     color: var(--pp-primary-dark, #0284c7);
 }
 
@@ -576,23 +580,26 @@ body.ppv-light #ppv-global-header .ppv-stat-mini i {
 }
 
 body.ppv-light #ppv-global-header .ppv-theme-btn-mini {
-    background: rgba(0, 0, 0, 0.03) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    color: var(--pp-text-3, #64748b) !important;
+    background: rgba(14, 165, 233, 0.06) !important;
+    border: 1px solid rgba(14, 165, 233, 0.2) !important;
+    color: #0369a1 !important;
 }
 
 body.ppv-light #ppv-global-header .ppv-theme-btn-mini:hover {
-    background: rgba(251, 191, 36, 0.08) !important;
-    border-color: rgba(251, 191, 36, 0.2) !important;
+    background: rgba(251, 191, 36, 0.12) !important;
+    border-color: rgba(251, 191, 36, 0.3) !important;
     color: #d97706 !important;
 }
 
 body.ppv-light #ppv-global-header .ppv-lang-icon {
-    color: var(--pp-text-3, #64748b);
+    position: static !important;
+    color: #0369a1;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
 body.ppv-light #ppv-global-header .ppv-lang-select {
-    color: var(--pp-text-2, #334155) !important;
+    color: #0369a1 !important;
 }
 
 body.ppv-light #ppv-global-header .ppv-lang-select option {
@@ -607,7 +614,7 @@ body.ppv-light #ppv-global-header .ppv-header-avatar {
 }
 
 body.ppv-light #ppv-global-header .ppv-lang-wrap:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: rgba(14, 165, 233, 0.06);
 }
 
 /* ── Dark Mode Layout Overrides ──────────── */

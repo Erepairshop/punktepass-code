@@ -965,8 +965,8 @@ class PPV_QR {
     window.ppv_vip = <?php echo wp_json_encode($vip_data); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important;touch-action:pan-y pan-x}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 16px 90px 16px;min-height:100vh;padding-top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px)}
+    html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden;overscroll-behavior:none;overscroll-behavior-y:none;touch-action:pan-y pan-x}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh;min-height:100dvh;padding-top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">

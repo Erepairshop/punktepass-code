@@ -265,7 +265,7 @@ public static function force_visible() {
         }
 
         // 🧹 Minden PPV CSS törlése (kivéve whitelist)
-        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-qr', 'ppv-dashboard', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler', 'ppv-handler-dark'];
+        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-qr', 'ppv-dashboard', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler', 'ppv-handler-dark', 'ppv-statistik', 'ppv-rewards', 'ppv-profile'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -274,18 +274,36 @@ public static function force_visible() {
         }
 
         // 🔹 New modular CSS architecture
-        $v = defined('PPV_VERSION') ? PPV_VERSION : time();
+        $v = class_exists('PPV_Core') ? PPV_Core::asset_version() : (defined('PPV_VERSION') ? PPV_VERSION : time());
         wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', [], $v);
         wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], $v);
         wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
 
-        // 🔹 Legacy theme (still needed during migration)
-        wp_enqueue_style(
-            'ppv-theme-light',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-            ['ppv-core'],
-            $v
-        );
+        // 🔹 Detect user dashboard page → use ppv-dashboard.css instead of theme-light
+        $is_user_dashboard = false;
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = rtrim($path, '/');
+        if ($path === '/user_dashboard') {
+            $is_user_dashboard = true;
+        } elseif (is_singular()) {
+            global $post;
+            if ($post && has_shortcode($post->post_content, 'ppv_user_dashboard')) {
+                $is_user_dashboard = true;
+            }
+        }
+
+        if ($is_user_dashboard) {
+            // ✅ User dashboard – saját CSS, ppv-theme-light nem kell
+            wp_enqueue_style('ppv-dashboard', PPV_PLUGIN_URL . 'assets/css/ppv-dashboard.css', ['ppv-core'], $v);
+        } else {
+            // 🔹 Legacy theme (still needed for other pages during migration)
+            wp_enqueue_style(
+                'ppv-theme-light',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+                ['ppv-core'],
+                $v
+            );
+        }
 
         // 🔹 Globális JS
         wp_enqueue_script(
