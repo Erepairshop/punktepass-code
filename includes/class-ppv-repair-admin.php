@@ -2473,6 +2473,15 @@ echo '</div></div>
                             <i class="ri-information-line" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_pending')) . '
                         </div>') . '
 
+                    <!-- Brands overview (if any) -->
+                    <div id="ra-wai-brands" style="margin-bottom:12px;display:none">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' . esc_html(PPV_Lang::t('wai_brands_label')) . '</span>
+                            <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8"></span>
+                        </div>
+                        <div id="ra-wai-brand-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                    </div>
+
                     <!-- Services overview (if any) -->
                     <div id="ra-wai-services" style="margin-bottom:16px;display:none">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -5220,6 +5229,9 @@ echo '</div></div>
         var waiUploadStatus = document.getElementById("ra-wai-upload-status");
         var waiServicesDiv = document.getElementById("ra-wai-services");
         var waiServiceList = document.getElementById("ra-wai-service-list");
+        var waiBrandsDiv = document.getElementById("ra-wai-brands");
+        var waiBrandList = document.getElementById("ra-wai-brand-list");
+        var waiBrandCount = document.getElementById("ra-wai-brand-count");
 
         // Translated strings from PHP
         var waiT = ' . wp_json_encode([
@@ -5237,6 +5249,8 @@ echo '</div></div>
             'conn_error_short' => PPV_Lang::t('wai_js_connection_error_short'),
             'service'          => PPV_Lang::t('wai_js_service'),
             'services'         => PPV_Lang::t('wai_js_services'),
+            'brand'            => PPV_Lang::t('wai_js_brand'),
+            'brands'           => PPV_Lang::t('wai_js_brands'),
         ]) . ';
         var waiServiceCount = document.getElementById("ra-wai-service-count");
         var waiStatus = document.getElementById("ra-wai-status");
@@ -5248,10 +5262,30 @@ echo '</div></div>
         var chatHistory = [];
         var sending = false;
 
-        // Load existing knowledge to show services
+        // Load existing config+knowledge to show brands and services
+        var existingConfig = ' . wp_json_encode(!empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : null) . ';
         var existingKnowledge = ' . wp_json_encode(!empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null) . ';
+        if (existingConfig && existingConfig.brands && existingConfig.brands.length > 0) {
+            renderBrands(existingConfig.brands);
+        }
         if (existingKnowledge && existingKnowledge.services && existingKnowledge.services.length > 0) {
             renderServices(existingKnowledge.services);
+        }
+
+        function renderBrands(brands) {
+            if (!brands || !brands.length) { waiBrandsDiv.style.display = "none"; return; }
+            waiBrandsDiv.style.display = "";
+            waiBrandCount.textContent = brands.length + " " + (brands.length > 1 ? waiT.brands : waiT.brand);
+            var html = "";
+            for (var i = 0; i < brands.length; i++) {
+                var b = brands[i];
+                var label = typeof b === "string" ? b : (b.label || b.id || b);
+                var icon = (typeof b === "object" && b.icon) ? b.icon : "";
+                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1e40af">\' +
+                    (icon ? \'<span>\' + icon + \'</span> \' : \'\') +
+                    \'<b>\' + escH(label) + \'</b></span>\';
+            }
+            waiBrandList.innerHTML = html;
         }
 
         function renderServices(services) {
@@ -5357,6 +5391,11 @@ echo '</div></div>
                             if (acts.indexOf("text") >= 0 && wText && cfg.text) {
                                 wText.value = cfg.text;
                                 wText.dispatchEvent(new Event("input"));
+                            }
+
+                            // Update brands display
+                            if (acts.indexOf("brands") >= 0 && cfg.brands) {
+                                renderBrands(cfg.brands);
                             }
 
                             // Update services display

@@ -1282,4 +1282,7 @@ return [
     'wai_js_connection_error_short'    => 'Connection error',
     'wai_js_service'                   => 'service',
     'wai_js_services'                  => 'services',
+    'wai_js_brand'                     => 'brand',
+    'wai_js_brands'                    => 'brands',
+    'wai_brands_label'                 => 'Saved brands',
 ];

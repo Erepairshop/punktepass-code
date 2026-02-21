@@ -1784,8 +1784,10 @@ IMPORTANT:
         $actions_applied = [];
 
         // Parse and apply action markers from AI response
+        // Note: all regexes use 's' flag (DOTALL) so . matches newlines too
+
         // [SET:key=value] pattern
-        if (preg_match_all('/\[SET:(\w+)=(.+?)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
+        if (preg_match_all('/\[SET:(\w+)=([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $key = strtolower(trim($match[1]));
                 $val = trim($match[2]);
@@ -1796,10 +1798,10 @@ IMPORTANT:
         }
 
         // [SET_BRANDS:Brand1,Brand2,...] – replace full brand list
-        if (preg_match('/\[SET_BRANDS:(.+?)\]/i', $ai_text, $m)) {
-            $brandList = array_filter(array_map('trim', explode(',', $m[1])));
+        if (preg_match('/\[SET_BRANDS:([^\]]+)\]/is', $ai_text, $m)) {
+            $brandList = array_filter(array_map('trim', preg_split('/[,\n]+/', $m[1])));
             $current_config['brands'] = array_map(function($b) {
-                $icons = ['Apple'=>"\xF0\x9F\x8D\x8E",'Samsung'=>"\xF0\x9F\x93\xB1",'Huawei'=>"\xF0\x9F\x93\xB2",'Xiaomi'=>"\xE2\xAD\x90",'Google'=>'G','Sony'=>"\xF0\x9F\x8E\xAE",'OnePlus'=>'1+','LG'=>"\xF0\x9F\x93\xBA",'Nokia'=>'N'];
+                $icons = ['Apple'=>"\xF0\x9F\x8D\x8E",'Samsung'=>"\xF0\x9F\x93\xB1",'Huawei'=>"\xF0\x9F\x93\xB2",'Xiaomi'=>"\xE2\xAD\x90",'Google'=>'G','Sony'=>"\xF0\x9F\x8E\xAE",'OnePlus'=>'1+','LG'=>"\xF0\x9F\x93\xBA",'Nokia'=>'N','Motorola'=>'M','OPPO'=>'O','Realme'=>'R','Honor'=>'H','Nothing'=>'N','ZTE'=>'Z'];
                 return ['id' => $b, 'label' => $b, 'icon' => $icons[$b] ?? "\xE2\x9A\x99"];
             }, $brandList);
             $actions_applied[] = 'brands';
@@ -1807,14 +1809,14 @@ IMPORTANT:
         }
 
         // [SET_CHIPS:chip1,chip2,...] – replace problem chips
-        if (preg_match('/\[SET_CHIPS:(.+?)\]/i', $ai_text, $m)) {
-            $current_config['chips'] = array_filter(array_map('trim', explode(',', $m[1])));
+        if (preg_match('/\[SET_CHIPS:([^\]]+)\]/is', $ai_text, $m)) {
+            $current_config['chips'] = array_filter(array_map('trim', preg_split('/[,\n]+/', $m[1])));
             $actions_applied[] = 'chips';
             $ai_text = str_replace($m[0], '', $ai_text);
         }
 
         // [ADD_SERVICE:name|price|time] – add a service to knowledge
-        if (preg_match_all('/\[ADD_SERVICE:(.+?)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
+        if (preg_match_all('/\[ADD_SERVICE:([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
             if (!isset($current_knowledge['services'])) $current_knowledge['services'] = [];
             foreach ($matches as $match) {
                 $parts = array_map('trim', explode('|', $match[1]));
@@ -1870,8 +1872,8 @@ IMPORTANT:
         }
 
         // Safety catch-all: strip any remaining action markers the AI may have output
-        // This prevents [SET:...], [SET_BRANDS:...], [SET_KNOWLEDGE:...] etc. from being shown to user
-        $ai_text = preg_replace('/\[(SET|SET_BRANDS|SET_CHIPS|ADD_SERVICE|SET_SERVICES|SET_KNOWLEDGE|SETUP_COMPLETE)[^\]]*\]/i', '', $ai_text);
+        // Handles multiline markers too with 's' flag
+        $ai_text = preg_replace('/\[(SET|SET_BRANDS|SET_CHIPS|ADD_SERVICE|SET_SERVICES|SET_KNOWLEDGE|SETUP_COMPLETE)[^\]]*\]/is', '', $ai_text);
         // Clean up leftover whitespace from removed markers
         $ai_text = preg_replace('/\n{3,}/', "\n\n", trim($ai_text));
 

@@ -1282,4 +1282,7 @@ return [
     'wai_js_connection_error_short'    => 'Kapcsolódási hiba',
     'wai_js_service'                   => 'szolgáltatás',
     'wai_js_services'                  => 'szolgáltatás',
+    'wai_js_brand'                     => 'márka',
+    'wai_js_brands'                    => 'márka',
+    'wai_brands_label'                 => 'Mentett márkák',
 ];

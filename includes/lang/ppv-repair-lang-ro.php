@@ -1282,4 +1282,7 @@ return [
     'wai_js_connection_error_short'    => 'Eroare de conexiune',
     'wai_js_service'                   => 'serviciu',
     'wai_js_services'                  => 'servicii',
+    'wai_js_brand'                     => 'marcă',
+    'wai_js_brands'                    => 'mărci',
+    'wai_brands_label'                 => 'Mărci salvate',
 ];
