@@ -4,7 +4,7 @@
  * 1. Fixed point bonus per level
  * 2. Every Xth scan bonus (streak)
  *
- * Version: 2.2
+ * Version: 3.0 – Modern redesign with animated borders, spotlight, confetti
  */
 
 (function() {
@@ -50,6 +50,91 @@
         // Filiale selector
         const filialeSelect = document.getElementById('ppv-vip-filiale');
         let currentFilialeId = filialeSelect?.value || 'all';
+
+        // ═══════════════════════════════════════════════════════════
+        // MOUSE SPOTLIGHT EFFECT
+        // ═══════════════════════════════════════════════════════════
+
+        const vipCards = wrapper.querySelectorAll('.ppv-vip-card');
+        vipCards.forEach(function(card) {
+            card.addEventListener('mousemove', function(e) {
+                var rect = card.getBoundingClientRect();
+                var x = e.clientX - rect.left;
+                var y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', x + 'px');
+                card.style.setProperty('--mouse-y', y + 'px');
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // CONFETTI EFFECT
+        // ═══════════════════════════════════════════════════════════
+
+        function launchConfetti() {
+            var canvas = document.getElementById('ppv-confetti-canvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            var particles = [];
+            var colors = ['#fbbf24', '#f59e0b', '#0ea5e9', '#10b981', '#8b5cf6', '#ef4444', '#cd7f32', '#e5e7eb'];
+
+            for (var i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+                    y: canvas.height * 0.7,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: -Math.random() * 16 - 4,
+                    size: Math.random() * 6 + 3,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 10,
+                    gravity: 0.3,
+                    opacity: 1,
+                    shape: Math.random() > 0.5 ? 'rect' : 'circle'
+                });
+            }
+
+            var frame = 0;
+            var maxFrames = 90;
+
+            function animate() {
+                if (frame >= maxFrames) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    return;
+                }
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(function(p) {
+                    p.x += p.vx;
+                    p.vy += p.gravity;
+                    p.y += p.vy;
+                    p.vx *= 0.99;
+                    p.rotation += p.rotationSpeed;
+                    p.opacity = Math.max(0, 1 - (frame / maxFrames));
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.globalAlpha = p.opacity;
+                    ctx.fillStyle = p.color;
+
+                    if (p.shape === 'rect') {
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                });
+
+                frame++;
+                requestAnimationFrame(animate);
+            }
+            requestAnimationFrame(animate);
+        }
 
         // ═══════════════════════════════════════════════════════════
         // LOAD SETTINGS
@@ -113,7 +198,7 @@
         // ═══════════════════════════════════════════════════════════
 
         function updateCardStates() {
-            // Update card body opacity based on toggle state
+            // Update card body opacity + animated border based on toggle state
             const cards = [
                 { toggle: fixEnabled, card: fixEnabled?.closest('.ppv-vip-card') },
                 { toggle: streakEnabled, card: streakEnabled?.closest('.ppv-vip-card') },
@@ -123,9 +208,12 @@
                 if (toggle && card) {
                     const body = card.querySelector('.ppv-vip-card-body');
                     if (body) {
-                        body.style.opacity = toggle.checked ? '1' : '0.5';
+                        body.style.opacity = toggle.checked ? '1' : '0.4';
                         body.style.pointerEvents = toggle.checked ? 'auto' : 'none';
                     }
+                    // Toggle animated gradient border
+                    card.classList.toggle('ppv-card-active', toggle.checked);
+
                     // Update status text
                     const wrapper = toggle.closest('.ppv-toggle-wrapper');
                     if (wrapper) {
@@ -142,7 +230,7 @@
         function updateStreakTypeVisibility() {
             if (streakFixedInputs && streakType) {
                 const isFixed = streakType.value === 'fixed';
-                streakFixedInputs.style.display = isFixed ? 'flex' : 'none';
+                streakFixedInputs.style.display = isFixed ? 'grid' : 'none';
             }
         }
 
@@ -310,6 +398,11 @@
                 saveBtn.innerHTML = '<i class="ri-save-line"></i> ' + (T.save_btn || 'Save');
 
                 if (data.success) {
+                    // Success animation + confetti
+                    saveBtn.classList.add('ppv-save-success');
+                    setTimeout(function() { saveBtn.classList.remove('ppv-save-success'); }, 500);
+                    launchConfetti();
+
                     statusEl.innerHTML = '<span class="ppv-success">' + (T.saved || 'Saved!') + '</span>';
                     setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
                 } else {

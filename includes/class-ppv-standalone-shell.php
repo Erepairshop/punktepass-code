@@ -160,8 +160,15 @@ class PPV_Standalone_Shell {
     <link rel="icon" href="<?php echo $plugin_url; ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo $plugin_url; ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-core.css?v=<?php echo $version; ?>">
+    <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-layout.css?v=<?php echo $version; ?>">
+    <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-components.css?v=<?php echo $version; ?>">
+    <?php if ($is_handler): ?>
+    <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-handler.css?v=<?php echo $version; ?>">
+    <?php else: ?>
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-theme-light.css?v=<?php echo $version; ?>">
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/handler-light.css?v=<?php echo $version; ?>">
+    <?php endif; ?>
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-bottom-nav.css?v=<?php echo $version; ?>">
     <?php if ($is_dark): ?>
     <link rel="stylesheet" href="<?php echo $plugin_url; ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo $version; ?>">

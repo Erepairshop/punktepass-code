@@ -729,6 +729,9 @@ class PPV_QR {
         $path = rtrim($path, '/');
         if ($path !== '/qr-center') return;
 
+        // ── Disable ALL WP/LiteSpeed optimization for standalone page ──
+        ppv_disable_wp_optimization();
+
         // Start session
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
@@ -755,7 +758,7 @@ class PPV_QR {
         global $wpdb;
 
         $plugin_url = PPV_PLUGIN_URL;
-        $version    = PPV_VERSION;
+        $version    = PPV_Core::asset_version();
         $site_url   = get_site_url();
         $js_version = '6.5.1';
 
@@ -934,6 +937,7 @@ class PPV_QR {
 <html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
 <head>
     <meta charset="UTF-8">
+    <?php ppv_standalone_cleanup_head(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -942,9 +946,12 @@ class PPV_QR {
     <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-handler.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-qr.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
 <?php endif; ?>
@@ -958,9 +965,8 @@ class PPV_QR {
     window.ppv_vip = <?php echo wp_json_encode($vip_data); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
-    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important;touch-action:pan-y pan-x}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 16px 90px 16px;min-height:100vh;padding-top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
@@ -1064,6 +1070,9 @@ class PPV_QR {
     // ============================================================
     public static function render_qr_center() {
         global $wpdb;
+
+        // 🎨 Enqueue QR Center CSS
+        wp_enqueue_style('ppv-qr', PPV_PLUGIN_URL . 'assets/css/ppv-qr.css', ['ppv-components'], PPV_Core::asset_version());
 
         // ⛔ PERMISSION CHECK: Only handlers and scanners can access
         if (!class_exists('PPV_Permissions')) {

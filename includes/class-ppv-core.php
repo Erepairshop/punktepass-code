@@ -604,7 +604,7 @@ class PPV_Core {
     }
         
         // 🧹 Minden korábbi PPV CSS eltávolítása (kivéve whitelistet)
-        $whitelist = ['ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
+        $whitelist = ['ppv-core', 'ppv-layout', 'ppv-components', 'ppv-bottom-nav', 'ppv-qr', 'ppv-dashboard', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler', 'ppv-handler-dark'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -612,12 +612,17 @@ class PPV_Core {
             }
         }
 
-        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
-        // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
+        // 🔹 New modular CSS architecture
+        $v = self::asset_version();
+        wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', [], $v);
+        wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-core'], $v);
+        wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
+
+        // 🔹 Legacy theme (still needed during migration, loaded AFTER new CSS)
         wp_register_style(
             'ppv-theme-light',
             PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-            [],
+            ['ppv-core'],
             PPV_VERSION
         );
         wp_enqueue_style('ppv-theme-light');

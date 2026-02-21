@@ -24,9 +24,8 @@ if (isset($_POST['save_dev_mode']) && check_admin_referer('ppv_dev_settings', 'p
 
 // Force Version Bump (clear all caches)
 if (isset($_POST['force_refresh']) && check_admin_referer('ppv_dev_settings', 'ppv_dev_nonce')) {
-    // Increment plugin version
-    $current_version = get_option('ppv_force_version', PPV_VERSION);
-    $new_version = $current_version . '.' . time();
+    // Clean timestamp-based version (not appending to avoid infinite growth)
+    $new_version = PPV_VERSION . '.' . time();
     update_option('ppv_force_version', $new_version);
 
     // Clear WordPress object cache
@@ -35,7 +34,7 @@ if (isset($_POST['force_refresh']) && check_admin_referer('ppv_dev_settings', 'p
     // Clear transients
     delete_transient('ppv_stats_cache');
 
-    $success_message = '✅ Cache törölve! A felhasználók friss fájlokat kapnak a következő látogatáskor.';
+    $success_message = '✅ Cache törölve! Új verzió: ' . $new_version . ' — A felhasználók friss fájlokat kapnak.';
     ppv_log("🔄 [Dev Settings] Force refresh triggered. New version: {$new_version}");
 }
 

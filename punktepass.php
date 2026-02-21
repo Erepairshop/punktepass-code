@@ -36,6 +36,89 @@ function ppv_log($msg) {
     }
 }
 
+/**
+ * Disable all WP/LiteSpeed CSS/JS optimization for standalone pages.
+ * Call this BEFORE rendering any standalone HTML page.
+ */
+function ppv_disable_wp_optimization() {
+    // Standard cache plugin constants
+    if (!defined('DONOTCACHEPAGE'))   define('DONOTCACHEPAGE', true);
+    if (!defined('DONOTMINIFY'))      define('DONOTMINIFY', true);
+    if (!defined('DONOTCDN'))         define('DONOTCDN', true);
+    if (!defined('LSCACHE_NO_CACHE')) define('LSCACHE_NO_CACHE', true);
+
+    // LiteSpeed specific: disable CSS/JS combining and minification
+    if (defined('LSCWP_V')) {
+        do_action('litespeed_control_set_nocache', 'standalone page');
+        do_action('litespeed_conf_force', 'optm-css_min', false);
+        do_action('litespeed_conf_force', 'optm-js_min', false);
+        do_action('litespeed_conf_force', 'optm-css_comb', false);
+        do_action('litespeed_conf_force', 'optm-js_comb', false);
+    }
+
+    // Kill any output buffers that caching plugins may have started
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    // HTTP header to block LiteSpeed edge caching
+    if (!headers_sent()) {
+        header('X-LiteSpeed-Cache-Control: no-cache');
+    }
+}
+
+/**
+ * Inline JS + CSS to strip any WP/LiteSpeed injected resources from standalone pages.
+ * Put this in <head> BEFORE any <link> tags. Uses MutationObserver to catch
+ * dynamically injected CSS/JS as soon as they appear.
+ */
+function ppv_standalone_cleanup_head() {
+    ?>
+    <script data-ppv="cleanup">
+    (function(){
+        var pluginBase = '/wp-content/plugins/punktepass/assets/';
+        var allowed = ['remixicon','ppv-','Inter','Poppins','jquery'];
+        function isAllowed(url){
+            if(!url) return false;
+            for(var i=0;i<allowed.length;i++){if(url.indexOf(allowed[i])!==-1)return true;}
+            return false;
+        }
+        function clean(){
+            document.querySelectorAll('link[rel="stylesheet"],style[data-litespeed]').forEach(function(el){
+                var href=el.getAttribute('href')||'';
+                if(el.hasAttribute('data-litespeed')){el.remove();return;}
+                if(href && !isAllowed(href)){el.remove();}
+            });
+            document.querySelectorAll('script[src]').forEach(function(el){
+                var src=el.getAttribute('src')||'';
+                if(src && !isAllowed(src) && !el.hasAttribute('data-ppv')){
+                    if(src.indexOf('/wp-content/cache/')!==-1||src.indexOf('/wp-includes/')!==-1){el.remove();}
+                }
+            });
+        }
+        var obs=new MutationObserver(function(muts){
+            muts.forEach(function(m){
+                m.addedNodes.forEach(function(n){
+                    if(n.nodeType!==1)return;
+                    if(n.tagName==='LINK'&&n.rel==='stylesheet'){
+                        var h=n.getAttribute('href')||'';
+                        if(h&&!isAllowed(h)){n.remove();}
+                    }
+                    if(n.tagName==='STYLE'&&n.hasAttribute('data-litespeed')){n.remove();}
+                    if(n.tagName==='SCRIPT'){
+                        var s=n.getAttribute('src')||'';
+                        if(s&&(s.indexOf('/wp-content/cache/')!==-1||s.indexOf('/wp-includes/')!==-1)){n.remove();}
+                    }
+                });
+            });
+        });
+        obs.observe(document.documentElement,{childList:true,subtree:true});
+        document.addEventListener('DOMContentLoaded',function(){clean();setTimeout(clean,500);setTimeout(function(){obs.disconnect();},3000);});
+    })();
+    </script>
+    <?php
+}
+
 // ========================================
 // 📡 ABLY REAL-TIME CONFIG
 // ========================================
@@ -336,7 +419,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-global-init-lock',
         PPV_PLUGIN_URL . 'assets/js/ppv-global-init-lock.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true  // In footer
     );
 }, 1);  // Priority: 1 = LEGELŐBB! Minden más előtt
@@ -348,7 +431,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-debug',
         PPV_PLUGIN_URL . 'assets/js/ppv-debug.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         false  // In header - needed before other scripts
     );
 
@@ -425,13 +508,23 @@ add_action('wp_enqueue_scripts', function() {
         '3.5.0'
     );
 
-    // 🔹 HANDLER-LIGHT.CSS - Always load globally (contains shared UI components)
+    // 🔹 MODULAR CSS – Core tokens & components (loads for ALL sessions)
+    $v = PPV_Core::asset_version();
+    wp_enqueue_style('ppv-core', PPV_PLUGIN_URL . 'assets/css/ppv-core.css', ['remixicons'], $v);
+    wp_enqueue_style('ppv-components', PPV_PLUGIN_URL . 'assets/css/ppv-components.css', ['ppv-core'], $v);
+
+    // 🔹 HANDLER.CSS – Replaces handler-light.css + ppv-theme-light.css (modular)
     wp_enqueue_style(
-        'ppv-handler-light',
-        PPV_PLUGIN_URL . 'assets/css/handler-light.css',
-        ['remixicons'],
-        PPV_VERSION
+        'ppv-handler',
+        PPV_PLUGIN_URL . 'assets/css/ppv-handler.css',
+        ['ppv-core', 'ppv-components'],
+        $v
     );
+
+    // 🔹 Register legacy handles as aliases so dependencies don't break
+    // (ppv-bottom-nav.css and other files may depend on these handles)
+    wp_register_style('ppv-handler-light', false);
+    wp_register_style('ppv-theme-light', false);
 
     // 🔹 HANDLER SESSION = HANDLER DARK THEME (optional override)
     if (ppv_is_handler_session()) {
@@ -440,15 +533,14 @@ add_action('wp_enqueue_scripts', function() {
             wp_enqueue_style(
                 'ppv-handler-dark',
                 PPV_PLUGIN_URL . 'assets/css/handler-dark.css',
-                ['ppv-handler-light'],
-                PPV_VERSION
+                ['ppv-handler'],
+                $v
             );
         }
     }
-    
-    // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
-    // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
-    wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], PPV_VERSION);
+
+    // 🔹 LAYOUT loads LAST – scroll model must override handler CSS
+    wp_enqueue_style('ppv-layout', PPV_PLUGIN_URL . 'assets/css/ppv-layout.css', ['ppv-handler'], $v);
 }, 100);
 
 /**
@@ -479,7 +571,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-firebase-messaging',
         PPV_PLUGIN_URL . 'assets/js/ppv-firebase-messaging.js',
         ['firebase-app', 'firebase-messaging'],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true
     );
 
@@ -488,7 +580,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-push-bridge',
         PPV_PLUGIN_URL . 'assets/js/ppv-push-bridge.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true
     );
 
@@ -546,7 +638,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-theme-loader',
         PPV_PLUGIN_URL . 'assets/js/ppv-theme-loader.js',
         [],
-        PPV_VERSION,
+        PPV_Core::asset_version(),
         true
     );
 
@@ -612,7 +704,13 @@ add_action('wp_enqueue_scripts', function() {
     if (empty($wp_styles->queue)) return;
     
 $whitelist = [
-    'ppv-theme-light',  // Single unified theme CSS (contains both light/dark styles)
+    'ppv-core',         // Design tokens, reset, typography
+    'ppv-layout',       // Page structure, scroll, header
+    'ppv-components',   // Shared UI components
+    'ppv-bottom-nav',   // Bottom navigation bar
+    'ppv-qr',           // QR Center page
+    'ppv-dashboard',    // User Dashboard page
+    'ppv-theme-light',  // Legacy theme (being phased out)
     'ppv-handler',      // Handler theme (light/dark)
     'ppv-handler-light',
     'ppv-handler-dark',
@@ -690,8 +788,7 @@ foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
 // 🎨 PWA META TAGS + CRITICAL CSS PRELOAD
 // ========================================
 add_action('wp_head', function () { ?>
-    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-theme-light.css?ver=<?php echo PPV_VERSION; ?>" as="style">
-    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/handler-light.css?ver=<?php echo PPV_VERSION; ?>" as="style">
+    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-handler.css?ver=<?php echo PPV_Core::asset_version(); ?>" as="style">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#fafdff">
     <meta name="apple-mobile-web-app-capable" content="yes">

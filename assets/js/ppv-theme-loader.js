@@ -33,12 +33,13 @@
     // ALWAYS use light CSS - it contains both light and dark styles via body.ppv-dark selectors
     const cssPath = 'ppv-theme-light.css';
 
-    // Check if light CSS is already loaded (by PHP wp_enqueue_style or previous JS call)
+    // Check if theme CSS is already loaded (by PHP or previous JS call)
+    // ppv-handler.css also contains all theme styles, so skip if that's loaded
     const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
     let lightCSSLoaded = false;
 
     existingLinks.forEach(link => {
-      if (link.href && link.href.includes(cssPath)) {
+      if (link.href && (link.href.includes(cssPath) || link.href.includes('ppv-handler.css'))) {
         lightCSSLoaded = true;
       }
     });

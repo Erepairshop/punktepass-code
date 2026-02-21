@@ -16,7 +16,7 @@ class PPV_Bottom_Nav {
 
     public static function hooks() {
         add_shortcode('ppv_bottom_nav', [__CLASS__, 'render_nav']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 99);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 101);
         add_action('wp_footer', [__CLASS__, 'inject_context'], 1);
     }
 
@@ -32,7 +32,7 @@ class PPV_Bottom_Nav {
         wp_enqueue_style(
             'ppv-bottom-nav',
             plugins_url('assets/css/ppv-bottom-nav.css', dirname(__FILE__)),
-            [],
+            ['ppv-handler'],
             filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/ppv-bottom-nav.css')
         );
 

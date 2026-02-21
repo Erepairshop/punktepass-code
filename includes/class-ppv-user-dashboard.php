@@ -1023,6 +1023,8 @@ private static function get_today_hours($opening_hours) {
         $path = rtrim($path, '/');
         if ($path !== '/user_dashboard') return;
 
+        ppv_disable_wp_optimization();
+
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
         }
@@ -1087,11 +1089,12 @@ private static function get_today_hours($opening_hours) {
         self::render_global_header();
         $global_header = ob_get_clean();
 
-        // ─── Bottom nav context ───
+        // ─── Bottom nav (context + HTML, rendered OUTSIDE .ppv-standalone-wrap) ───
         $bottom_nav_context = '';
         if (class_exists('PPV_Bottom_Nav')) {
             ob_start();
             PPV_Bottom_Nav::inject_context();
+            echo PPV_Bottom_Nav::render_nav();
             $bottom_nav_context = ob_get_clean();
         }
 
@@ -1106,6 +1109,7 @@ private static function get_today_hours($opening_hours) {
 <html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
 <head>
     <meta charset="UTF-8">
+    <?php ppv_standalone_cleanup_head(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1114,9 +1118,12 @@ private static function get_today_hours($opening_hours) {
     <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
+    <!-- ppv-theme-light.css + handler-light.css DISABLED – replaced by modular CSS -->
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-dashboard.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
 <?php endif; ?>
@@ -1129,9 +1136,8 @@ private static function get_today_hours($opening_hours) {
     window.ppv_lang = <?php echo wp_json_encode($strings); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
-    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:16px 0 100px 0;min-height:100vh;padding-top:env(safe-area-inset-top,0)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
@@ -1161,7 +1167,9 @@ private static function get_today_hours($opening_hours) {
 public static function render_dashboard() {
     echo '<script>document.body.classList.add("ppv-user-dashboard");</script>';
 
-    return '<div id="ppv-dashboard-root"></div>' . do_shortcode('[ppv_bottom_nav]');
+    // Bottom nav is rendered separately outside .ppv-standalone-wrap
+    // to avoid transform-based containing blocks breaking position:fixed
+    return '<div id="ppv-dashboard-root"></div>';
 }
 
     public static function register_routes() {

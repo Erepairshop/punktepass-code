@@ -1886,8 +1886,7 @@ async function initUserDashboard() {
           const toggleBtn = card.querySelector('.ppv-toggle-btn');
 
           if (details && toggleBtn) {
-            details.classList.toggle('expanded');
-            toggleBtn.classList.toggle('active');
+            card.classList.toggle('expanded');
           }
         }
         return;
@@ -2376,31 +2375,7 @@ async function initUserDashboard() {
             </div>
           </div>
         </div>
-        <style>
-        .ppv-store-rating-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:99999;align-items:flex-end;justify-content:center}
-        .ppv-store-rating-modal.show{display:flex}
-        .ppv-store-rating-content{background:linear-gradient(145deg,#1a1a2e,#16213e);width:100%;max-width:400px;border-radius:20px 20px 0 0;overflow:hidden;animation:ppvSlideUp .3s ease}
-        @keyframes ppvSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-        .ppv-store-rating-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(0,217,255,0.2)}
-        .ppv-store-rating-header h3{color:#00d9ff;font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
-        .ppv-store-rating-close{background:none;border:none;color:#888;font-size:28px;cursor:pointer;line-height:1}
-        .ppv-store-rating-body{padding:20px}
-        .ppv-store-rating-name{color:#fff;font-size:16px;font-weight:600;text-align:center;margin:0 0 8px 0}
-        .ppv-store-rating-question{color:#aaa;text-align:center;margin:0 0 20px 0;font-size:14px}
-        .ppv-store-rating-stars{display:flex;justify-content:center;gap:8px;margin-bottom:20px}
-        .ppv-store-star{background:transparent;border:none;font-size:36px;color:#444;cursor:pointer;transition:all .2s;padding:4px}
-        .ppv-store-star:hover,.ppv-store-star.active{color:#ffc107;transform:scale(1.15)}
-        .ppv-store-star.active i::before{content:"\\f186"}
-        .ppv-store-rating-msg{display:none;padding:10px;border-radius:8px;margin-bottom:15px;text-align:center;font-size:14px}
-        .ppv-store-rating-msg.show{display:block}
-        .ppv-store-rating-msg.error{background:rgba(255,100,100,0.2);color:#ffcccc}
-        .ppv-store-rating-submit{width:100%;background:linear-gradient(135deg,#00d9ff,#00b8d9);border:none;border-radius:10px;padding:14px;color:#000;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
-        .ppv-store-rating-success{text-align:center;padding:40px 20px}
-        .ppv-store-rating-success i{font-size:60px;color:#4ade80}
-        .ppv-store-rating-success p{color:#fff;font-size:16px;margin:15px 0 0 0}
-        .ppv-action-btn.ppv-rate{background:linear-gradient(135deg,rgba(255,193,7,0.15),rgba(255,152,0,0.15))!important;border:1px solid rgba(255,193,7,0.3)!important;color:#d97706!important}
-        .ppv-action-btn.ppv-rate:hover{background:linear-gradient(135deg,rgba(255,193,7,0.25),rgba(255,152,0,0.25))!important}
-        </style>
+        <!-- Rating modal styles in ppv-dashboard.css -->
       `;
       document.body.insertAdjacentHTML('beforeend', modalHTML);
       modal = document.getElementById('ppv-store-rating-modal');

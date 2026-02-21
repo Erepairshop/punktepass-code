@@ -55,8 +55,8 @@ class PPV_VIP_Settings {
 
         // CSS
         wp_enqueue_style(
-            'ppv-handler-light',
-            PPV_PLUGIN_URL . 'assets/css/handler-light.css',
+            'ppv-handler',
+            PPV_PLUGIN_URL . 'assets/css/ppv-handler.css',
             [],
             time()
         );
@@ -599,6 +599,7 @@ class PPV_VIP_Settings {
                      1. FIXED POINT BONUS CARD
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="fix">
+                    <div class="ppv-card-spotlight"></div>
                     <div class="ppv-vip-card-header">
                         <div class="ppv-toggle-wrapper">
                             <label class="ppv-toggle-switch">
@@ -658,6 +659,7 @@ class PPV_VIP_Settings {
                      2. STREAK BONUS CARD (Every Xth scan)
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="streak">
+                    <div class="ppv-card-spotlight"></div>
                     <div class="ppv-vip-card-header">
                         <div class="ppv-toggle-wrapper">
                             <label class="ppv-toggle-switch">
@@ -739,6 +741,9 @@ class PPV_VIP_Settings {
                 </div>
             </div>
         </div>
+
+        <!-- Confetti canvas for save animation -->
+        <canvas id="ppv-confetti-canvas"></canvas>
 
         <script>
         window.ppv_vip_translations = <?php echo wp_json_encode($T); ?>;
