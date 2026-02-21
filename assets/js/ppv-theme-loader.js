@@ -40,9 +40,9 @@
     let lightCSSLoaded = false;
 
     const standaloneCSS = [
-      'ppv-dashboard.css', 'ppv-statistik.css', 'ppv-profile.css',
-      'ppv-rewards.css', 'ppv-handler.css', 'ppv-my-points.css',
-      'ppv-belohnungen.css', 'ppv-user-settings.css'
+      'ppv-global-header.css', 'ppv-dashboard.css', 'ppv-statistik.css',
+      'ppv-profile.css', 'ppv-rewards.css', 'ppv-handler.css',
+      'ppv-my-points.css', 'ppv-belohnungen.css', 'ppv-user-settings.css'
     ];
 
     existingLinks.forEach(link => {
