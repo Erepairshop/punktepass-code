@@ -110,6 +110,7 @@ body {
 
 /* ═══════════════════════════════════════════
    GLOBAL HEADER (unified – from ppv-theme-light.css)
+   Scoped to #ppv-global-header to override ppv-layout.css
    ═══════════════════════════════════════════ */
 
 #ppv-global-header {
@@ -122,7 +123,8 @@ body {
     align-items: center !important;
 }
 
-#ppv-global-header.ppv-compact-header {
+#ppv-global-header.ppv-compact-header,
+#ppv-global-header.ppv-handler-mode {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -139,25 +141,25 @@ body {
     display: none !important;
 }
 
-.ppv-header-left,
-.ppv-header-stats {
+#ppv-global-header .ppv-header-left,
+#ppv-global-header .ppv-header-stats {
     display: flex !important;
     align-items: center !important;
     flex-wrap: nowrap !important;
     gap: 8px !important;
 }
 
-.ppv-header-left {
+#ppv-global-header .ppv-header-left {
     gap: 12px !important;
 }
 
-.ppv-header-avatar-link {
+#ppv-global-header .ppv-header-avatar-link {
     display: flex !important;
     align-items: center !important;
     text-decoration: none !important;
 }
 
-.ppv-header-avatar {
+#ppv-global-header .ppv-header-avatar {
     width: 48px !important;
     height: 48px !important;
     border-radius: 50% !important;
@@ -166,7 +168,7 @@ body {
     transition: all .2s ease !important;
 }
 
-.ppv-header-avatar:hover {
+#ppv-global-header .ppv-header-avatar:hover {
     border-color: #00e6ff !important;
     transform: scale(1.05) !important;
     box-shadow: 0 0 12px rgba(0,230,255,.4) !important;
@@ -177,20 +179,13 @@ body {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-}
-
-.ppv-user-email {
-    max-width: 140px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     color: #fff !important;
 }
 
-.ppv-header-nav,
-.ppv-header-settings {
+#ppv-global-header .ppv-header-nav,
+#ppv-global-header .ppv-header-settings {
     display: flex !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
@@ -198,13 +193,13 @@ body {
     margin-left: auto !important;
 }
 
-.ppv-header-settings {
+#ppv-global-header .ppv-header-settings {
     padding: 0 !important;
 }
 
-.ppv-lang-mini,
-.ppv-nav-btn,
-.ppv-theme-btn-mini {
+#ppv-global-header .ppv-lang-mini,
+#ppv-global-header .ppv-nav-btn,
+#ppv-global-header .ppv-theme-btn-mini {
     width: 40px !important;
     height: 40px !important;
     min-width: 40px !important;
@@ -222,27 +217,27 @@ body {
     text-decoration: none;
 }
 
-.ppv-nav-btn i,
-.ppv-theme-btn-mini i {
+#ppv-global-header .ppv-nav-btn i,
+#ppv-global-header .ppv-theme-btn-mini i {
     font-size: 18px !important;
     margin: 0 !important;
     line-height: 1 !important;
 }
 
-.ppv-lang-mini:hover,
-.ppv-nav-btn:hover,
-.ppv-theme-btn-mini:hover {
+#ppv-global-header .ppv-lang-mini:hover,
+#ppv-global-header .ppv-nav-btn:hover,
+#ppv-global-header .ppv-theme-btn-mini:hover {
     background: rgba(0,230,255,.12) !important;
     border-color: rgba(0,230,255,.3) !important;
     transform: translateY(-2px) !important;
     color: #00eaff !important;
 }
 
-.ppv-lang-mini {
+#ppv-global-header .ppv-lang-mini {
     padding: 0 !important;
 }
 
-.ppv-lang-mini select,
+#ppv-global-header .ppv-lang-mini select,
 #ppv-lang-select-global {
     width: 100% !important;
     height: 100% !important;
@@ -258,7 +253,7 @@ body {
     appearance: none !important;
 }
 
-.ppv-theme-btn-mini {
+#ppv-global-header .ppv-theme-btn-mini {
     width: 38px !important;
     height: 38px !important;
     border-radius: 10px !important;
@@ -266,41 +261,43 @@ body {
     border: 1px solid rgba(0,230,255,.25) !important;
 }
 
-.ppv-theme-btn-mini i {
+#ppv-global-header .ppv-theme-btn-mini i {
     font-size: 20px !important;
     color: #00e6ff !important;
     transition: .2s ease;
 }
 
-.ppv-theme-btn-mini:hover {
+#ppv-global-header .ppv-theme-btn-mini:hover {
     background: rgba(0,230,255,.2) !important;
     border-color: #00e6ff !important;
 }
 
-.ppv-theme-btn-mini:hover i {
+#ppv-global-header .ppv-theme-btn-mini:hover i {
     color: #0ff !important;
 }
 
 @media (max-width: 480px) {
-    .ppv-user-email {
+    #ppv-global-header .ppv-user-email {
         max-width: 90px !important;
         font-size: 12px !important;
     }
-    .ppv-lang-mini,
-    .ppv-nav-btn,
-    .ppv-theme-btn-mini {
+    #ppv-global-header .ppv-lang-mini,
+    #ppv-global-header .ppv-nav-btn,
+    #ppv-global-header .ppv-theme-btn-mini {
         width: 36px !important;
         height: 36px !important;
         border-radius: 10px !important;
     }
-    .ppv-nav-btn i,
-    .ppv-theme-btn-mini i {
+    #ppv-global-header .ppv-nav-btn i,
+    #ppv-global-header .ppv-theme-btn-mini i {
         font-size: 16px !important;
     }
 }
 
 /* Light mode header */
-body.ppv-light #ppv-global-header.ppv-compact-header {
+body.ppv-light #ppv-global-header,
+body.ppv-light #ppv-global-header.ppv-compact-header,
+body.ppv-light #ppv-global-header.ppv-handler-mode {
     background: rgba(255,255,255,.92) !important;
     backdrop-filter: blur(14px) !important;
     border-bottom: 1px solid rgba(0,150,255,.25) !important;
@@ -308,7 +305,7 @@ body.ppv-light #ppv-global-header.ppv-compact-header {
     color: #001825 !important;
 }
 
-body.ppv-light #ppv-global-header.ppv-compact-header::before {
+body.ppv-light #ppv-global-header::before {
     content: '';
     position: absolute;
     top: 0;
@@ -319,101 +316,107 @@ body.ppv-light #ppv-global-header.ppv-compact-header::before {
     opacity: .65;
 }
 
-body.ppv-light .ppv-user-email {
+body.ppv-light #ppv-global-header .ppv-user-email {
     color: #003049 !important;
     font-weight: 600;
 }
 
-body.ppv-light .ppv-nav-btn {
+body.ppv-light #ppv-global-header .ppv-nav-btn {
     background: rgba(0,0,0,.04) !important;
     border-color: rgba(0,0,0,.1) !important;
     color: #003049 !important;
 }
 
-body.ppv-light .ppv-nav-btn:hover {
+body.ppv-light #ppv-global-header .ppv-nav-btn:hover {
     background: rgba(0,150,255,.12) !important;
     border-color: #00bfff !important;
     color: #08c !important;
     transform: translateY(-1px);
 }
 
-body.ppv-light .ppv-nav-btn i {
+body.ppv-light #ppv-global-header .ppv-nav-btn i {
     font-size: 17px !important;
 }
 
-body.ppv-light .ppv-lang-mini,
-body.ppv-light .ppv-theme-btn-mini {
+body.ppv-light #ppv-global-header .ppv-lang-mini,
+body.ppv-light #ppv-global-header .ppv-theme-btn-mini {
     background: rgba(0,0,0,.05) !important;
     border: 1px solid rgba(0,0,0,.1) !important;
     color: #003049 !important;
 }
 
-body.ppv-light .ppv-lang-mini:hover,
-body.ppv-light .ppv-theme-btn-mini:hover {
+body.ppv-light #ppv-global-header .ppv-lang-mini:hover,
+body.ppv-light #ppv-global-header .ppv-theme-btn-mini:hover {
     background: rgba(0,150,255,.1) !important;
     border-color: #00bfff !important;
     color: #07a !important;
 }
 
-body.ppv-light .ppv-theme-btn-mini i {
+body.ppv-light #ppv-global-header .ppv-theme-btn-mini i {
     color: #07a !important;
     font-size: 20px !important;
 }
 
-body.ppv-light .ppv-theme-btn-mini {
+body.ppv-light #ppv-global-header .ppv-theme-btn-mini {
     box-shadow: 0 0 6px rgba(0,180,255,.25);
 }
 
+body.ppv-light #ppv-global-header .ppv-header-avatar {
+    border-color: rgba(0,150,255,.4) !important;
+}
+
 /* Dark mode header */
-body.ppv-dark #ppv-global-header.ppv-compact-header {
+body.ppv-dark #ppv-global-header,
+body.ppv-dark #ppv-global-header.ppv-compact-header,
+body.ppv-dark #ppv-global-header.ppv-handler-mode {
     background: linear-gradient(135deg, rgba(10,14,20,.95), rgba(21,27,35,.95)) !important;
     backdrop-filter: blur(16px) saturate(180%) !important;
     border-bottom: 1px solid rgba(0,212,255,.25) !important;
     box-shadow: 0 4px 20px rgba(0,0,0,.5), 0 0 30px rgba(0,212,255,.1), inset 0 1px 0 rgba(0,212,255,.1) !important;
 }
 
-body.ppv-dark #ppv-global-header.ppv-compact-header::before {
+body.ppv-dark #ppv-global-header::before {
     background: linear-gradient(90deg, transparent, #00d4ff, #a855f7, #00d4ff, transparent) !important;
     opacity: .8;
 }
 
-body.ppv-dark .ppv-user-email {
+body.ppv-dark #ppv-global-header .ppv-user-email {
     color: rgba(240,246,252,.9) !important;
 }
 
-body.ppv-dark .ppv-nav-btn {
+body.ppv-dark #ppv-global-header .ppv-nav-btn {
     background: rgba(0,212,255,.1) !important;
     border: 1px solid rgba(0,212,255,.2) !important;
     color: #f0f6fc !important;
 }
 
-body.ppv-dark .ppv-nav-btn:hover {
+body.ppv-dark #ppv-global-header .ppv-nav-btn:hover {
     background: rgba(0,212,255,.2) !important;
     border-color: rgba(0,212,255,.4) !important;
     color: #00d4ff !important;
     box-shadow: 0 0 15px rgba(0,212,255,.25) !important;
 }
 
-body.ppv-dark .ppv-nav-btn i {
+body.ppv-dark #ppv-global-header .ppv-nav-btn i {
     color: #00d4ff !important;
 }
 
-body.ppv-dark .ppv-theme-btn-mini {
+body.ppv-dark #ppv-global-header .ppv-theme-btn-mini {
     background: rgba(168,85,247,.12) !important;
     border: 1px solid rgba(168,85,247,.25) !important;
 }
 
-body.ppv-dark .ppv-theme-btn-mini:hover {
+body.ppv-dark #ppv-global-header .ppv-theme-btn-mini:hover {
     background: rgba(168,85,247,.22) !important;
     box-shadow: 0 0 15px rgba(168,85,247,.35) !important;
 }
 
-body.ppv-dark .ppv-theme-btn-mini i {
+body.ppv-dark #ppv-global-header .ppv-theme-btn-mini i {
     color: #a855f7 !important;
     text-shadow: 0 0 8px rgba(168,85,247,.5);
 }
 
-body.ppv-dark .ppv-lang-mini {
+body.ppv-dark #ppv-global-header .ppv-lang-mini {
     background: rgba(0,212,255,.08) !important;
     border: 1px solid rgba(0,212,255,.15) !important;
     color: #f0f6fc !important;
