@@ -34,13 +34,28 @@
     const cssPath = 'ppv-theme-light.css';
 
     // Check if theme CSS is already loaded (by PHP or previous JS call)
-    // ppv-handler.css also contains all theme styles, so skip if that's loaded
+    // Standalone pages with dedicated CSS (ppv-dashboard, ppv-statistik, ppv-profile,
+    // ppv-rewards, ppv-handler) don't need ppv-theme-light.css at all
     const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
     let lightCSSLoaded = false;
 
+    const standaloneCSS = [
+      'ppv-dashboard.css', 'ppv-statistik.css', 'ppv-profile.css',
+      'ppv-rewards.css', 'ppv-handler.css'
+    ];
+
     existingLinks.forEach(link => {
-      if (link.href && (link.href.includes(cssPath) || link.href.includes('ppv-handler.css'))) {
+      if (!link.href) return;
+      if (link.href.includes(cssPath)) {
         lightCSSLoaded = true;
+        return;
+      }
+      // Standalone pages with dedicated CSS → theme-light not needed
+      for (const css of standaloneCSS) {
+        if (link.href.includes(css)) {
+          lightCSSLoaded = true;
+          return;
+        }
       }
     });
 
