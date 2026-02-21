@@ -69,6 +69,58 @@ function ppv_disable_wp_optimization() {
     }
 }
 
+/**
+ * Inline JS + CSS to strip any WP/LiteSpeed injected resources from standalone pages.
+ * Put this in <head> BEFORE any <link> tags. Uses MutationObserver to catch
+ * dynamically injected CSS/JS as soon as they appear.
+ */
+function ppv_standalone_cleanup_head() {
+    ?>
+    <script data-ppv="cleanup">
+    (function(){
+        var pluginBase = '/wp-content/plugins/punktepass/assets/';
+        var allowed = ['remixicon','ppv-','Inter','Poppins','jquery'];
+        function isAllowed(url){
+            if(!url) return false;
+            for(var i=0;i<allowed.length;i++){if(url.indexOf(allowed[i])!==-1)return true;}
+            return false;
+        }
+        function clean(){
+            document.querySelectorAll('link[rel="stylesheet"],style[data-litespeed]').forEach(function(el){
+                var href=el.getAttribute('href')||'';
+                if(el.hasAttribute('data-litespeed')){el.remove();return;}
+                if(href && !isAllowed(href)){el.remove();}
+            });
+            document.querySelectorAll('script[src]').forEach(function(el){
+                var src=el.getAttribute('src')||'';
+                if(src && !isAllowed(src) && !el.hasAttribute('data-ppv')){
+                    if(src.indexOf('/wp-content/cache/')!==-1||src.indexOf('/wp-includes/')!==-1){el.remove();}
+                }
+            });
+        }
+        var obs=new MutationObserver(function(muts){
+            muts.forEach(function(m){
+                m.addedNodes.forEach(function(n){
+                    if(n.nodeType!==1)return;
+                    if(n.tagName==='LINK'&&n.rel==='stylesheet'){
+                        var h=n.getAttribute('href')||'';
+                        if(h&&!isAllowed(h)){n.remove();}
+                    }
+                    if(n.tagName==='STYLE'&&n.hasAttribute('data-litespeed')){n.remove();}
+                    if(n.tagName==='SCRIPT'){
+                        var s=n.getAttribute('src')||'';
+                        if(s&&(s.indexOf('/wp-content/cache/')!==-1||s.indexOf('/wp-includes/')!==-1)){n.remove();}
+                    }
+                });
+            });
+        });
+        obs.observe(document.documentElement,{childList:true,subtree:true});
+        document.addEventListener('DOMContentLoaded',function(){clean();setTimeout(clean,500);setTimeout(function(){obs.disconnect();},3000);});
+    })();
+    </script>
+    <?php
+}
+
 // ========================================
 // 📡 ABLY REAL-TIME CONFIG
 // ========================================

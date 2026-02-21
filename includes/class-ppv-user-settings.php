@@ -192,6 +192,7 @@ class PPV_User_Settings {
 <html lang="<?php echo esc_attr($lang); ?>" data-theme="<?php echo $is_dark ? 'dark' : 'light'; ?>">
 <head>
     <meta charset="UTF-8">
+    <?php ppv_standalone_cleanup_head(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
