@@ -1042,7 +1042,7 @@ private static function get_today_hours($opening_hours) {
 
     private static function render_standalone_page() {
         $plugin_url = PPV_PLUGIN_URL;
-        $version    = PPV_VERSION;
+        $version    = PPV_Core::asset_version();
         $site_url   = get_site_url();
 
         // ─── Language ───
