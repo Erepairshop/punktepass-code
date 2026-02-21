@@ -145,10 +145,7 @@ select, input, button, textarea {
 }
 
 #ppv-global-header .ppv-header-logo-tiny {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    object-fit: contain;
+    display: none !important;
 }
 
 #ppv-global-header .ppv-user-email {

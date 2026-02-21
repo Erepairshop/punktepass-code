@@ -1022,10 +1022,7 @@ select, input, button, textarea {
 }
 
 #ppv-global-header .ppv-header-logo-tiny {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    object-fit: contain;
+    display: none !important;
 }
 
 #ppv-global-header .ppv-user-email {
