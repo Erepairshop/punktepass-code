@@ -1903,6 +1903,11 @@ IMPORTANT:
 
         $lang_names = ['de' => 'German', 'en' => 'English', 'hu' => 'Hungarian', 'ro' => 'Romanian', 'it' => 'Italian'];
         $lang_name = $lang_names[$lang] ?? 'German';
+
+        // Widget language (what customers see) may differ from admin chat language
+        $widget_lang = $config['lang'] ?? 'de';
+        $widget_lang_name = $lang_names[$widget_lang] ?? 'German';
+
         $lang_labels = [
             'de' => ['yes' => 'Ja', 'no' => 'Nein'],
             'en' => ['yes' => 'Yes', 'no' => 'No'],
@@ -1936,11 +1941,11 @@ YOU CAN CONFIGURE THE FOLLOWING (use action markers):
    [SET:text=Custom Text] – Button label
    [SET:greeting=Welcome!] – Greeting text in widget
 
-3. DEVICE BRANDS (for AI diagnosis step 1):
+3. DEVICE BRANDS (for AI diagnosis step 1, brand names are universal):
    [SET_BRANDS:Apple,Samsung,Huawei,Xiaomi,Google,OnePlus]
    Customize based on shop specialization
 
-4. PROBLEM CHIPS (for AI diagnosis step 2 quick-select):
+4. PROBLEM CHIPS (for AI diagnosis step 2 quick-select, MUST be in {$widget_lang_name}):
    [SET_CHIPS:Broken display,Weak battery,Not charging,Water damage,Camera broken,No sound]
 
 5. PRICE LIST / SERVICES (what the shop offers + prices):
@@ -1965,8 +1970,20 @@ YOU CAN CONFIGURE THE FOLLOWING (use action markers):
 8. COMPLETE SETUP:
    [SETUP_COMPLETE] – When everything is configured
 
+IMPORTANT – WIDGET LANGUAGE vs ADMIN LANGUAGE:
+- You chat with the admin in {$lang_name} (their language)
+- The widget language (what CUSTOMERS see) is: {$widget_lang_name} (lang={$widget_lang})
+- ALL content saved via action markers MUST be in {$widget_lang_name}:
+  → [SET_BRANDS:...] brand names in {$widget_lang_name}
+  → [SET_CHIPS:...] problem descriptions in {$widget_lang_name}
+  → [ADD_SERVICE:...] service names in {$widget_lang_name}
+  → [SET_KNOWLEDGE:...] knowledge texts in {$widget_lang_name}
+  → [SET:greeting=...] greeting text in {$widget_lang_name}
+- Only your conversation text is in {$lang_name}
+
 RULES:
 - ALWAYS respond in {$lang_name}
+- ALL action marker VALUES must be in {$widget_lang_name} (the widget language customers see)
 - Ask the owner step by step what they want
 - When they paste a price list/text, parse it and use [ADD_SERVICE:...] for each entry
 - Briefly explain what you changed after each action
