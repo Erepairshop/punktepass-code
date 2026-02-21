@@ -12,9 +12,9 @@
    ═══════════════════════════════════════════ */
 .ppv-bottom-nav {
     position: fixed !important;
-    bottom: 12px !important;
-    left: 12px !important;
-    right: 12px !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
     display: flex !important;
     justify-content: space-around;
     align-items: center;
@@ -38,9 +38,7 @@
 /* Safe area for notched devices */
 @supports (padding: max(0px)) {
     .ppv-bottom-nav {
-        bottom: max(12px, env(safe-area-inset-bottom)) !important;
-        left: max(12px, env(safe-area-inset-left)) !important;
-        right: max(12px, env(safe-area-inset-right)) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     }
 }
 
