@@ -95,6 +95,66 @@ CRITICAL RULES:
 • Do NOT speculate or suggest workarounds that don't exist.
 • Do NOT repeat the question. Just answer.
 • ESCALATION: If you truly cannot answer, add [ESCALATE] at the very end.
+• SETUP GUIDANCE: If the store has incomplete setup (missing profile data, no rewards, no device), proactively guide them to complete the missing steps. Be encouraging and specific about what to do next.
+
+=== HOW PUNKTEPASS WORKS (physical setup) ===
+
+PunktePass is a loyalty/points system for physical stores. Here's how it works in practice:
+
+PHYSICAL SETUP:
+• The store places a dedicated phone/tablet at the cash register (e.g. next to the till)
+• The phone's BACK CAMERA faces the customer
+• A "PunktePass MiniKamera" (small clip-on camera attachment) is attached to the phone's back camera to optimize QR code scanning
+• The MiniKamera is a small, lightweight lens attachment that clips onto the phone - it helps focus on QR codes at the right distance and angle
+• Customers show their QR code (from their phone or printed card) and the store's device scans it automatically
+• Points are awarded instantly after a successful scan
+
+SCANNING FLOW:
+1. Customer opens their PunktePass app or shows their QR code card
+2. Store's device (with MiniKamera) reads the QR code via the back camera
+3. Points are credited to the customer's account in real-time
+4. Both the store owner and customer see confirmation immediately
+
+MINIKAMERA DETAILS:
+• Small clip-on attachment for the phone's rear camera
+• Optimizes focus distance for QR code scanning
+• No batteries or charging needed - purely optical
+• Works with any phone/tablet
+• Helps with consistent, fast scanning even in varying light conditions
+
+=== INITIAL SETUP - 3 REQUIRED STEPS ===
+
+For the store to start operating (scanning QR codes, awarding points), these 3 things MUST be completed:
+
+STEP 1 - STORE PROFILE (Profil page → /mein-profil):
+• Store name (what customers see)
+• Company name (for invoices)
+• Country
+• Address (street + number), PLZ, city
+• GPS coordinates (use the "Geocode" button to auto-detect from address, or click on the map)
+• Opening hours (all 7 days: Monday-Sunday, open/close times)
+• Timezone
+→ Go to: Profil (3rd button in bottom nav) → Allgemein tab for basic info, Öffnungszeiten tab for hours
+
+STEP 2 - CREATE FIRST REWARD (Prämien in QR Center or /rewards):
+• Every store needs at least one reward so customers have something to collect points for
+• Set: reward name, required points, type (% discount / fixed discount / free product), value
+• Example: "Free Coffee" - 100 points - Free Product
+→ Go to: Start (1st button) → Prämien tab → "+ Neue Prämie" button
+→ OR: Belohnungen (2nd button) → same page
+
+STEP 3 - REGISTER A DEVICE (Geräte tab in QR Center):
+• The store needs at least one registered device (the phone/tablet at the cash register)
+• Open QR Center on the device you want to register → Geräte tab → it will prompt to register
+• The device gets a unique fingerprint for security
+• Admin email confirmation required for new devices
+→ Go to: Start (1st button) → Geräte tab
+
+CHECKING SETUP STATUS:
+• If a step is missing, guide the user to the correct page and tab
+• Profile: check if store has name + address + coordinates + hours + timezone
+• Reward: check if at least 1 reward exists
+• Device: check if at least 1 active device is registered
 
 === BOTTOM NAVIGATION (fixed bar at the bottom of the screen) ===
 
@@ -195,8 +255,6 @@ Einstellungen tab features:
 • Timezone selector (Berlin/Budapest/Bucharest)
 • Email change: new email, confirm, Change button
 • Password change: current, new, confirm, Change button
-• Onboarding reset button (trial only)
-
 === STATISTICS (/statistik) ===
 
 5 TABS:
@@ -466,6 +524,33 @@ PROMPT;
             $extra_context .= "User is currently on page: {$current_url}\n";
             $extra_context .= "If the answer is on THIS page, say so (e.g. 'Du bist schon auf der richtigen Seite, klick oben auf den X Tab').\n";
         }
+
+        // Add setup status for trial stores so AI can guide them
+        if ($context !== 'repair' && class_exists('PPV_Session')) {
+            $sess_store = PPV_Session::current_store();
+            if (!empty($sess_store) && ($sess_store->subscription_status ?? '') === 'trial') {
+                $extra_context .= "\nSTORE STATUS: Trial subscription (new store, may need setup help)\n";
+                $missing = [];
+                if (empty($sess_store->name) || empty($sess_store->address) || empty($sess_store->city)) $missing[] = 'profile data (name/address/city)';
+                $has_c = !empty($sess_store->latitude) && floatval($sess_store->latitude) != 0;
+                if (!$has_c) $missing[] = 'GPS coordinates';
+                $has_h = !empty($sess_store->opening_hours) && $sess_store->opening_hours !== '[]' && $sess_store->opening_hours !== '{}';
+                if (!$has_h) $missing[] = 'opening hours';
+                global $wpdb;
+                $rc = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d", $sess_store->id));
+                if ($rc === 0) $missing[] = 'first reward (no rewards created yet)';
+                $pid = $sess_store->parent_store_id ?: $sess_store->id;
+                $dc = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE store_id = %d AND status = 'active'", $pid));
+                if ($dc === 0) $missing[] = 'device registration (no active devices)';
+                if (!empty($missing)) {
+                    $extra_context .= "INCOMPLETE SETUP STEPS: " . implode(', ', $missing) . "\n";
+                    $extra_context .= "Guide the user to complete these missing steps. Be specific about which page and tab to go to.\n";
+                } else {
+                    $extra_context .= "SETUP STATUS: All 3 required steps are complete (profile, reward, device). Store is ready to operate!\n";
+                }
+            }
+        }
+
         $system_prompt .= $extra_context;
 
         $result = PPV_AI_Engine::chat_with_history(
@@ -513,7 +598,50 @@ PROMPT;
             $lang = PPV_Lang::current();
         }
 
-        $labels = self::get_labels($lang);
+        // Detect trial store for auto-open (replaces onboarding wizard)
+        $is_trial = false;
+        $setup_missing = [];
+        if (class_exists('PPV_Session')) {
+            $store = PPV_Session::current_store();
+            if (!empty($store)) {
+                $is_trial = (($store->subscription_status ?? '') === 'trial');
+                if ($is_trial) {
+                    // Check which setup steps are incomplete
+                    if (empty($store->name) || empty($store->address) || empty($store->city)) {
+                        $setup_missing[] = 'profile';
+                    }
+                    $has_coords = !empty($store->latitude) && !empty($store->longitude)
+                        && floatval($store->latitude) != 0 && floatval($store->longitude) != 0;
+                    if (!$has_coords) {
+                        $setup_missing[] = 'coordinates';
+                    }
+                    $has_hours = !empty($store->opening_hours) && $store->opening_hours !== '[]' && $store->opening_hours !== '{}';
+                    if (!$has_hours) {
+                        $setup_missing[] = 'hours';
+                    }
+                    // Check rewards
+                    global $wpdb;
+                    $reward_count = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d",
+                        $store->id
+                    ));
+                    if ($reward_count === 0) {
+                        $setup_missing[] = 'reward';
+                    }
+                    // Check devices
+                    $parent_id = $store->parent_store_id ?: $store->id;
+                    $device_count = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE store_id = %d AND status = 'active'",
+                        $parent_id
+                    ));
+                    if ($device_count === 0) {
+                        $setup_missing[] = 'device';
+                    }
+                }
+            }
+        }
+
+        $labels = self::get_labels($lang, $is_trial && !empty($setup_missing));
         ?>
 
 <style>
@@ -582,6 +710,8 @@ PROMPT;
     var msgContainer = document.getElementById('ppv-ai-chat-messages');
     var ajaxUrl = '<?php echo esc_js(admin_url("admin-ajax.php")); ?>';
     var lang = '<?php echo esc_js($lang); ?>';
+    var isTrial = <?php echo $is_trial && !empty($setup_missing) ? 'true' : 'false'; ?>;
+    var setupMissing = <?php echo wp_json_encode($setup_missing); ?>;
     var isOpen = false;
     var isSending = false;
     var history = [];
@@ -600,6 +730,21 @@ PROMPT;
             });
         }
     } catch(e) {}
+
+    // Auto-open for trial stores with incomplete setup (replaces onboarding wizard)
+    if (isTrial && !hasHistory) {
+        var autoOpenKey = 'ppv_ai_setup_shown_' + window.location.pathname;
+        try {
+            if (!sessionStorage.getItem(autoOpenKey)) {
+                sessionStorage.setItem(autoOpenKey, '1');
+                setTimeout(function() {
+                    if (!isOpen) toggle();
+                }, 1200);
+            }
+        } catch(e) {
+            setTimeout(function() { if (!isOpen) toggle(); }, 1200);
+        }
+    }
 
     // Show quick question chips if no previous chat
     var chips = <?php echo wp_json_encode($labels['chips'] ?? []); ?>;
@@ -762,7 +907,64 @@ PROMPT;
     /**
      * Get UI labels for the chat widget
      */
-    private static function get_labels($lang) {
+    private static function get_labels($lang, $is_setup_mode = false) {
+        // Setup mode: trial stores with incomplete setup get focused labels
+        if ($is_setup_mode) {
+            $setup_labels = [
+                'de' => [
+                    'title'             => 'PunktePass Einrichtung',
+                    'status'            => 'Ich helfe dir beim Start!',
+                    'welcome'           => 'Willkommen bei PunktePass! Ich bin dein Assistent und helfe dir, alles einzurichten. Frag mich einfach, was du als Nächstes tun sollst!',
+                    'placeholder'       => 'Frage zur Einrichtung...',
+                    'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
+                    'limit_placeholder' => 'Chat-Limit erreicht',
+                    'wa_prefill'        => 'Hallo, ich brauche Hilfe bei der PunktePass-Einrichtung',
+                    'chips'             => ['Was muss ich einrichten?', 'Wie funktioniert das Scannen?', 'Erste Prämie erstellen', 'Was ist die MiniKamera?'],
+                ],
+                'hu' => [
+                    'title'             => 'PunktePass Beállítás',
+                    'status'            => 'Segítek az indulásban!',
+                    'welcome'           => 'Üdvözöllek a PunktePass-ban! Én vagyok az asszisztensed, segítek mindent beállítani. Kérdezz bátran, mit kell következőnek csinálnod!',
+                    'placeholder'       => 'Kérdés a beállításról...',
+                    'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
+                    'limit_placeholder' => 'Chat limit elérve',
+                    'wa_prefill'        => 'Szia, segítségre van szükségem a PunktePass beállításával',
+                    'chips'             => ['Mit kell beállítanom?', 'Hogyan működik a szkennelés?', 'Első jutalom létrehozása', 'Mi az a MiniKamera?'],
+                ],
+                'ro' => [
+                    'title'             => 'Configurare PunktePass',
+                    'status'            => 'Te ajut să începi!',
+                    'welcome'           => 'Bine ai venit la PunktePass! Sunt asistentul tău și te ajut să configurezi totul. Întreabă-mă ce trebuie să faci în continuare!',
+                    'placeholder'       => 'Întrebare despre configurare...',
+                    'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
+                    'limit_placeholder' => 'Limită chat atinsă',
+                    'wa_prefill'        => 'Bună, am nevoie de ajutor cu configurarea PunktePass',
+                    'chips'             => ['Ce trebuie să configurez?', 'Cum funcționează scanarea?', 'Creare prima recompensă', 'Ce este MiniCamera?'],
+                ],
+                'en' => [
+                    'title'             => 'PunktePass Setup',
+                    'status'            => 'I\'ll help you get started!',
+                    'welcome'           => 'Welcome to PunktePass! I\'m your assistant and I\'ll help you set everything up. Just ask me what to do next!',
+                    'placeholder'       => 'Ask about setup...',
+                    'error'             => 'Sorry, something went wrong. Please try again.',
+                    'limit_placeholder' => 'Chat limit reached',
+                    'wa_prefill'        => 'Hello, I need help setting up PunktePass',
+                    'chips'             => ['What do I need to set up?', 'How does scanning work?', 'Create first reward', 'What is the MiniKamera?'],
+                ],
+                'it' => [
+                    'title'             => 'Configurazione PunktePass',
+                    'status'            => 'Ti aiuto a iniziare!',
+                    'welcome'           => 'Benvenuto in PunktePass! Sono il tuo assistente e ti aiuterò a configurare tutto. Chiedimi cosa fare!',
+                    'placeholder'       => 'Domanda sulla configurazione...',
+                    'error'             => 'Spiacente, si è verificato un errore. Riprova.',
+                    'limit_placeholder' => 'Limite chat raggiunto',
+                    'wa_prefill'        => 'Ciao, ho bisogno di aiuto per configurare PunktePass',
+                    'chips'             => ['Cosa devo configurare?', 'Come funziona la scansione?', 'Creare primo premio', 'Cos\'è la MiniKamera?'],
+                ],
+            ];
+            return $setup_labels[$lang] ?? $setup_labels['de'];
+        }
+
         $labels = [
             'de' => [
                 'title'             => 'PunktePass Assistent',
