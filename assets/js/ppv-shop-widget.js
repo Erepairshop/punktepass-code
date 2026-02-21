@@ -63,7 +63,7 @@
             step2_chips: ['Display kaputt', 'Akku schwach', 'L\u00e4dt nicht', 'Wasserschaden', 'Kamera defekt', 'Kein Ton'],
             step3_title: 'Analyse l\u00e4uft...', step3_wait: 'KI analysiert Ihr Problem',
             step4_title: 'Diagnose', step4_price: 'Gesch\u00e4tzte Kosten',
-            step4_cta: 'Reparatur beauftragen', step4_hint: '* Unverbindliche Sch\u00e4tzung',
+            step4_cta: 'Reparatur anfragen', step4_hint: '* Unverbindliche Sch\u00e4tzung',
             back: 'Zur\u00fcck', next: 'Weiter', analyze: 'Analysieren'
         },
         en: {
@@ -289,6 +289,15 @@
             'text-align:center;text-decoration:none;transition:all .2s;box-shadow:0 4px 16px ' + config.color + '30;margin-top:auto}' +
         '.' + W + '-result-cta:hover{opacity:.9;transform:translateY(-1px)}' +
 
+        /* AI mode iframe (embedded form) */
+        '#' + W + '-ai-iframe-wrap{display:none;flex:1;flex-direction:column;overflow:hidden}' +
+        '#' + W + '-ai-iframe-wrap.active{display:flex}' +
+        '#' + W + '-ai-iframe{flex:1;border:none;width:100%;background:#f8fafc}' +
+        '#' + W + '-ai-back-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0;cursor:pointer}' +
+        '#' + W + '-ai-back-bar:hover{background:#f1f5f9}' +
+        '#' + W + '-ai-back-bar svg{width:16px;height:16px;color:#64748b}' +
+        '#' + W + '-ai-back-bar span{font-size:13px;font-weight:600;color:#64748b}' +
+
         /* Mobile */
         '@media(max-width:480px){' +
             '#' + W + '-panel{width:calc(100vw - 16px);' + (isLeft ? 'left:8px' : 'right:8px') + ';bottom:72px;height:calc(100vh - 100px)}' +
@@ -461,6 +470,13 @@
                 '</div>' +
 
             '</div>' +
+            '<div id="' + W + '-ai-iframe-wrap">' +
+                '<div id="' + W + '-ai-back-bar">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>' +
+                    '<span>' + lang.back + '</span>' +
+                '</div>' +
+                '<iframe id="' + W + '-ai-iframe" src="about:blank" loading="lazy"></iframe>' +
+            '</div>' +
             '<div id="' + W + '-ftr">' + buildFooter() + '</div>';
         document.body.appendChild(aiPanel);
 
@@ -601,15 +617,24 @@
                     '<p class="' + W + '-result-price-hint">' + lang.step4_hint + '</p></div>';
             }
 
-            // CTA
+            // CTA – opens form inside the same panel
             var formUrl = data.form_url || FORM_URL;
-            var params = '?brand=' + encodeURIComponent(state.brand === 'Other' ? '' : state.brand) +
+            var params = '?embed=1&brand=' + encodeURIComponent(state.brand === 'Other' ? '' : state.brand) +
                 '&model=' + encodeURIComponent(state.model) +
                 '&problem=' + encodeURIComponent(state.problem);
-            html += '<a class="' + W + '-result-cta" href="' + formUrl + params + '" target="_blank" rel="noopener">' +
-                lang.step4_cta + ' \u2192</a>';
+            state._formEmbedUrl = formUrl + params;
+            html += '<button type="button" class="' + W + '-result-cta" id="' + W + '-open-form">' +
+                lang.step4_cta + ' \u2192</button>';
 
             resultDiv.innerHTML = html;
+
+            // Wire CTA to show embedded form
+            var openFormBtn = resultDiv.querySelector('#' + W + '-open-form');
+            if (openFormBtn) {
+                openFormBtn.addEventListener('click', function() {
+                    showEmbeddedForm(state._formEmbedUrl);
+                });
+            }
         }
 
         function renderError(msg) {
@@ -620,13 +645,16 @@
                     '<p class="' + W + '-result-text">' + escHTML(msg) + '</p>' +
                 '</div>' +
                 '<div class="' + W + '-btns">' +
-                    '<button type="button" class="' + W + '-btn-back" onclick="this.closest(\'[data-step]\')||(void 0)">' + lang.back + '</button>' +
-                    '<a class="' + W + '-result-cta" href="' + FORM_URL + '" target="_blank" rel="noopener" style="flex:2;border-radius:10px;padding:12px;font-size:14px">' +
-                        lang.step4_cta + '</a>' +
+                    '<button type="button" class="' + W + '-btn-back">' + lang.back + '</button>' +
+                    '<button type="button" class="' + W + '-result-cta" style="flex:2;border-radius:10px;padding:12px;font-size:14px">' +
+                        lang.step4_cta + '</button>' +
                 '</div>';
             // Wire back button
             var backBtn = resultDiv.querySelector('.' + W + '-btn-back');
             if (backBtn) backBtn.addEventListener('click', function() { goToStep(2); });
+            // Wire CTA to open form in panel
+            var errCta = resultDiv.querySelector('.' + W + '-result-cta');
+            if (errCta) errCta.addEventListener('click', function() { showEmbeddedForm(FORM_URL + '?embed=1'); });
         }
 
         function parseDiagnosis(text) {
@@ -649,6 +677,30 @@
             d.textContent = s;
             return d.innerHTML;
         }
+
+        // ─── Embedded form in panel ─────────────────────────
+        var aiBody = aiPanel.querySelector('#' + W + '-ai-body');
+        var progressBar = aiPanel.querySelector('#' + W + '-progress');
+        var iframeWrap = aiPanel.querySelector('#' + W + '-ai-iframe-wrap');
+        var aiIframe = aiPanel.querySelector('#' + W + '-ai-iframe');
+        var aiBackBar = aiPanel.querySelector('#' + W + '-ai-back-bar');
+
+        function showEmbeddedForm(url) {
+            aiBody.style.display = 'none';
+            progressBar.style.display = 'none';
+            iframeWrap.classList.add('active');
+            aiIframe.src = url;
+        }
+
+        function hideEmbeddedForm() {
+            iframeWrap.classList.remove('active');
+            aiBody.style.display = '';
+            progressBar.style.display = '';
+        }
+
+        aiBackBar.addEventListener('click', function() {
+            hideEmbeddedForm();
+        });
 
         // Open/close
         aiFab.addEventListener('click', function(e) {
