@@ -400,6 +400,7 @@
         var defaultChips = lang.step2_chips || [];
         var brands = defaultBrands;
         var storeConfig = null;
+        var brandModelsMap = {};
 
         var state = { step: 1, brand: '', model: '', problem: '', result: null };
 
@@ -426,13 +427,16 @@
                         // Override brands if custom ones provided
                         if (storeConfig.brands && storeConfig.brands.length > 0) {
                             var brandIcons = {Apple:'\uD83C\uDF4E',Samsung:'\uD83D\uDCF1',Huawei:'\uD83D\uDCF2',Xiaomi:'\u2B50',Google:'G',Sony:'\uD83C\uDFAE',OnePlus:'1+',LG:'\uD83D\uDCFA',Nokia:'N'};
+                            brandModelsMap = {};
                             var newBrands = [];
                             for (var i = 0; i < storeConfig.brands.length; i++) {
                                 var b = storeConfig.brands[i];
                                 var bid = typeof b === 'string' ? b : (b.id || b.label || b);
                                 var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
                                 var bicon = (typeof b === 'object' && b.icon) ? b.icon : (brandIcons[bid] || '\u2699');
+                                var bmodels = (typeof b === 'object' && b.models) ? b.models : [];
                                 newBrands.push({ id: bid, icon: bicon, label: blabel });
+                                if (bmodels.length > 0) brandModelsMap[bid] = bmodels;
                             }
                             // Always add "Other" at the end
                             newBrands.push({ id: 'Other', icon: '\u2699', label: lang.step1_model });
@@ -445,7 +449,7 @@
                                         '<span class="' + W + '-brand-icon">' + newBrands[j].icon + '</span>' + newBrands[j].label + '</button>';
                                 }
                                 brandContainer.innerHTML = html;
-                                // Re-bind click events
+                                // Re-bind click events with model suggestions
                                 var newBrandBtns = brandContainer.querySelectorAll('.' + W + '-brand');
                                 for (var k = 0; k < newBrandBtns.length; k++) {
                                     newBrandBtns[k].addEventListener('click', function() {
@@ -455,6 +459,8 @@
                                         this.classList.add('sel');
                                         var n1 = aiPanel.querySelector('#' + W + '-next1');
                                         if (n1) n1.disabled = false;
+                                        // Show model suggestions
+                                        showModelSuggestions(state.brand);
                                     });
                                 }
                             }
@@ -602,12 +608,48 @@
                 for (var x = 0; x < brandBtns.length; x++) brandBtns[x].classList.remove('sel');
                 this.classList.add('sel');
                 updateNext1();
+                showModelSuggestions(state.brand);
             });
         }
 
         modelInput.addEventListener('input', function() {
             state.model = this.value.trim();
         });
+
+        // Model suggestion chips (shown after brand selection)
+        function showModelSuggestions(brand) {
+            var existingDiv = aiPanel.querySelector('#' + W + '-model-suggestions');
+            if (existingDiv) existingDiv.remove();
+            if (!brand || brand === 'Other' || !brandModelsMap || !brandModelsMap[brand]) return;
+            var models = brandModelsMap[brand];
+            if (!models.length) return;
+            var div = document.createElement('div');
+            div.id = W + '-model-suggestions';
+            div.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px;';
+            for (var mi = 0; mi < models.length; mi++) {
+                var chip = document.createElement('button');
+                chip.type = 'button';
+                chip.textContent = models[mi];
+                chip.setAttribute('data-model', models[mi]);
+                chip.style.cssText = 'padding:4px 10px;border:1.5px solid ' + config.color + '33;background:#fff;border-radius:16px;font-size:11px;color:#334155;cursor:pointer;transition:all .2s;';
+                chip.addEventListener('click', function() {
+                    modelInput.value = this.getAttribute('data-model');
+                    state.model = modelInput.value;
+                    // highlight selected
+                    var allMC = div.querySelectorAll('button');
+                    for (var mx = 0; mx < allMC.length; mx++) {
+                        allMC[mx].style.background = '#fff';
+                        allMC[mx].style.color = '#334155';
+                        allMC[mx].style.borderColor = config.color + '33';
+                    }
+                    this.style.background = config.color;
+                    this.style.color = '#fff';
+                    this.style.borderColor = config.color;
+                });
+                div.appendChild(chip);
+            }
+            modelInput.parentNode.insertBefore(div, modelInput.nextSibling);
+        }
 
         // Problem chips
         for (var cii = 0; cii < chipBtns.length; cii++) {

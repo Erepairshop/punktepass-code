@@ -5280,6 +5280,9 @@ echo '</div></div>
             'services'         => PPV_Lang::t('wai_js_services'),
             'brand'            => PPV_Lang::t('wai_js_brand'),
             'brands'           => PPV_Lang::t('wai_js_brands'),
+            'model_count'      => PPV_Lang::t('wai_model_count'),
+            'model_add_ph'     => PPV_Lang::t('wai_model_add_ph'),
+            'ai_expand_hint'   => PPV_Lang::t('wai_ai_expand_hint'),
         ]) . ';
         var waiServiceCount = document.getElementById("ra-wai-service-count");
         var waiChipCount = document.getElementById("ra-wai-chip-count");
@@ -5326,36 +5329,163 @@ echo '</div></div>
                 });
         }
 
-        // ─── BRANDS ───
+        // ─── BRANDS + MODELS ───
+        var expandedBrand = -1;
         function renderBrands(brandsOverride) {
             if (brandsOverride) currentBrands = brandsOverride;
             waiBrandCount.textContent = currentBrands.length + " " + (currentBrands.length !== 1 ? waiT.brands : waiT.brand);
             var html = "";
             for (var i = 0; i < currentBrands.length; i++) {
                 var b = currentBrands[i];
-                var label = typeof b === "string" ? b : (b.label || b.id || b);
-                var icon = (typeof b === "object" && b.icon) ? b.icon : "";
-                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1e40af;cursor:default">\' +
-                    (icon ? \'<span>\' + icon + \'</span> \' : \'\') +
-                    \'<b>\' + escH(label) + \'</b>\' +
-                    \' <span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;margin-left:2px" title="Entfernen">&times;</span>\' +
-                    \'</span>\';
+                if (typeof b === "string") { b = { id: b, label: b }; currentBrands[i] = b; }
+                var label = b.label || b.id || "";
+                var icon = b.icon || "";
+                var models = b.models || [];
+                var isOpen = expandedBrand === i;
+
+                html += \'<div style="width:100%;margin-bottom:4px">\';
+                // Brand header row
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:\' + (isOpen ? \'#dbeafe\' : \'#eff6ff\') + \';border-radius:8px;font-size:12px;color:#1e40af;cursor:pointer" data-brand-toggle="\' + i + \'">\';
+                html += (icon ? \'<span>\' + icon + \'</span> \' : \'\');
+                html += \'<b style="flex:1">\' + escH(label) + \'</b>\';
+                html += \'<span style="color:#94a3b8;font-size:11px">\' + models.length + \' \' + waiT.model_count + \'</span>\';
+                html += \' <i class="ri-arrow-\' + (isOpen ? \'up\' : \'down\') + \'-s-line" style="color:#94a3b8;font-size:14px"></i>\';
+                html += \' <span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\';
+                html += \'</div>\';
+
+                // Expanded models panel
+                if (isOpen) {
+                    html += \'<div style="padding:8px 10px 4px 28px;background:#f0f7ff;border-radius:0 0 8px 8px;margin-top:-2px">\';
+                    // Model chips
+                    if (models.length > 0) {
+                        html += \'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">\';
+                        for (var m = 0; m < models.length; m++) {
+                            html += \'<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;color:#1e40af">\' +
+                                escH(models[m]) +
+                                \' <span class="ra-wai-del" data-type="model" data-brand="\' + i + \'" data-midx="\' + m + \'" style="cursor:pointer;opacity:.4;font-size:12px">&times;</span>\' +
+                                \'</span>\';
+                        }
+                        html += \'</div>\';
+                    }
+                    // Add model row + AI expand
+                    html += \'<div style="display:flex;gap:4px;align-items:center">\';
+                    html += \'<input type="text" class="ra-wai-model-input" data-brand="\' + i + \'" placeholder="\' + escH(waiT.model_add_ph) + \'" style="flex:1;padding:5px 8px;border:1.5px solid #dbeafe;border-radius:6px;font-size:11px;outline:none;min-width:0">\';
+                    html += \'<button type="button" class="ra-wai-model-add" data-brand="\' + i + \'" style="background:#3b82f6;border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i></button>\';
+                    html += \'<button type="button" class="ra-wai-model-ai" data-brand="\' + i + \'" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="\' + escH(waiT.ai_expand_hint) + \'"><i class="ri-magic-line"></i> AI</button>\';
+                    html += \'</div>\';
+                    html += \'</div>\';
+                }
+                html += \'</div>\';
             }
             waiBrandList.innerHTML = html;
         }
+
+        // Toggle brand expand
         waiBrandList.addEventListener("click", function(e) {
+            // Delete brand
             var del = e.target.closest(".ra-wai-del[data-type=brand]");
-            if (!del) return;
-            currentBrands.splice(parseInt(del.dataset.idx), 1);
-            renderBrands();
-            editorSave("brands", currentBrands);
+            if (del) {
+                e.stopPropagation();
+                currentBrands.splice(parseInt(del.dataset.idx), 1);
+                expandedBrand = -1;
+                renderBrands();
+                editorSave("brands", currentBrands);
+                return;
+            }
+            // Delete model
+            var mdel = e.target.closest(".ra-wai-del[data-type=model]");
+            if (mdel) {
+                e.stopPropagation();
+                var bi = parseInt(mdel.dataset.brand);
+                var mi = parseInt(mdel.dataset.midx);
+                if (currentBrands[bi] && currentBrands[bi].models) {
+                    currentBrands[bi].models.splice(mi, 1);
+                    renderBrands();
+                    editorSave("brands", currentBrands);
+                }
+                return;
+            }
+            // Add model button
+            var addBtn = e.target.closest(".ra-wai-model-add");
+            if (addBtn) {
+                e.stopPropagation();
+                var bi2 = parseInt(addBtn.dataset.brand);
+                var inp = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi2 + \'"]\');
+                var val = inp ? inp.value.trim() : "";
+                if (!val) return;
+                if (!currentBrands[bi2].models) currentBrands[bi2].models = [];
+                // Support comma-separated
+                var parts = val.split(",");
+                for (var pi = 0; pi < parts.length; pi++) {
+                    var pv = parts[pi].trim();
+                    if (pv && currentBrands[bi2].models.indexOf(pv) < 0) currentBrands[bi2].models.push(pv);
+                }
+                renderBrands();
+                editorSave("brands", currentBrands, addBtn);
+                return;
+            }
+            // AI expand button
+            var aiBtn = e.target.closest(".ra-wai-model-ai");
+            if (aiBtn) {
+                e.stopPropagation();
+                var bi3 = parseInt(aiBtn.dataset.brand);
+                var brandName = currentBrands[bi3].label || currentBrands[bi3].id;
+                var inp2 = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi3 + \'"]\');
+                var hint = inp2 ? inp2.value.trim() : "";
+                aiBtn.disabled = true;
+                aiBtn.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i>\';
+                var fd = new FormData();
+                fd.append("action", "ppv_widget_editor_save");
+                fd.append("nonce", nonce);
+                fd.append("field", "ai_expand_models");
+                fd.append("data", JSON.stringify({ brand: brandName, hint: hint, existing: currentBrands[bi3].models || [] }));
+                fetch(ajaxUrl, { method: "POST", body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(resp) {
+                        aiBtn.disabled = false;
+                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
+                        if (resp.success && resp.data.models) {
+                            if (!currentBrands[bi3].models) currentBrands[bi3].models = [];
+                            var newModels = resp.data.models;
+                            for (var nm = 0; nm < newModels.length; nm++) {
+                                if (currentBrands[bi3].models.indexOf(newModels[nm]) < 0) {
+                                    currentBrands[bi3].models.push(newModels[nm]);
+                                }
+                            }
+                            renderBrands();
+                            editorSave("brands", currentBrands);
+                        }
+                    })
+                    .catch(function() {
+                        aiBtn.disabled = false;
+                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
+                    });
+                return;
+            }
+            // Toggle brand expand
+            var toggle = e.target.closest("[data-brand-toggle]");
+            if (toggle) {
+                var idx = parseInt(toggle.dataset.brandToggle);
+                expandedBrand = expandedBrand === idx ? -1 : idx;
+                renderBrands();
+            }
+        });
+        // Enter key in model input
+        waiBrandList.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && e.target.classList.contains("ra-wai-model-input")) {
+                e.preventDefault();
+                var bi4 = e.target.dataset.brand;
+                var addBtn2 = waiBrandList.querySelector(\'.ra-wai-model-add[data-brand="\' + bi4 + \'"]\');
+                if (addBtn2) addBtn2.click();
+            }
         });
         document.getElementById("ra-wai-brand-add").addEventListener("click", function() {
             var inp = document.getElementById("ra-wai-brand-input");
             var val = inp.value.trim();
             if (!val) return;
-            currentBrands.push({ id: val, label: val });
+            currentBrands.push({ id: val, label: val, models: [] });
             inp.value = "";
+            expandedBrand = currentBrands.length - 1;
             renderBrands();
             editorSave("brands", currentBrands, this);
         });

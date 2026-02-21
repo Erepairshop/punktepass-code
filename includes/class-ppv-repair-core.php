@@ -1954,6 +1954,44 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $wpdb->update($stores_table, ['widget_ai_knowledge' => wp_json_encode($current_knowledge)], ['id' => $store_id]);
             wp_send_json_success(['saved' => 'services', 'count' => count($services)]);
 
+        } elseif ($field === 'ai_expand_models' && is_array($data)) {
+            // AI-assisted model expansion
+            $brand = sanitize_text_field($data['brand'] ?? '');
+            $hint = sanitize_text_field($data['hint'] ?? '');
+            $existing = is_array($data['existing'] ?? null) ? $data['existing'] : [];
+            if (!$brand) wp_send_json_error(['message' => 'Brand required']);
+
+            $prompt_text = "Brand: {$brand}";
+            if ($hint) $prompt_text .= "\nHint: {$hint}";
+            if ($existing) $prompt_text .= "\nAlready have: " . implode(', ', $existing);
+
+            $system = "You are a phone/device model database. Given a brand name (and optional hint like 'iPhone 13 series' or 'Galaxy S24'), return a JSON array of model names.
+
+RULES:
+- Return ONLY a JSON array of strings, nothing else
+- Include the most common/popular models for that brand
+- If the hint mentions a series (e.g. 'iPhone 13 series'), list ALL variants (mini, Pro, Pro Max, etc.)
+- If no hint, list the most popular recent models (last 3-4 years)
+- Do NOT include models already in the 'Already have' list
+- Maximum 20 models per response
+- Use short names: 'iPhone 14 Pro' not 'Apple iPhone 14 Pro'
+
+Example output: [\"iPhone 13\",\"iPhone 13 mini\",\"iPhone 13 Pro\",\"iPhone 13 Pro Max\"]";
+
+            $result = PPV_AI_Engine::chat($system, $prompt_text, 'en');
+            if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
+
+            $text = trim($result['text']);
+            // Extract JSON array from response
+            if (preg_match('/\[.*\]/s', $text, $match)) {
+                $models = json_decode($match[0], true);
+                if (is_array($models)) {
+                    $models = array_values(array_filter(array_map('trim', $models)));
+                    wp_send_json_success(['models' => $models]);
+                }
+            }
+            wp_send_json_error(['message' => 'AI response parse error']);
+
         } else {
             wp_send_json_error(['message' => 'Invalid field']);
         }

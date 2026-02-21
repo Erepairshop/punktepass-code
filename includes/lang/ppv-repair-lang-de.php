@@ -1292,4 +1292,7 @@ return [
     'wai_svc_price_ph'                 => 'Preis (z.B. 80€)',
     'wai_svc_time_ph'                  => 'Dauer',
     'wai_add'                          => 'Hinzufügen',
+    'wai_model_count'                  => 'Modelle',
+    'wai_model_add_ph'                 => 'z.B. iPhone 14, Galaxy S24...',
+    'wai_ai_expand_hint'               => 'AI generiert Modelle automatisch',
 ];

@@ -1292,4 +1292,7 @@ return [
     'wai_svc_price_ph'                 => 'Ár (pl. 80€)',
     'wai_svc_time_ph'                  => 'Idő',
     'wai_add'                          => 'Hozzáadás',
+    'wai_model_count'                  => 'modell',
+    'wai_model_add_ph'                 => 'pl. iPhone 14, Galaxy S24...',
+    'wai_ai_expand_hint'               => 'AI automatikusan generálja a modelleket',
 ];

@@ -1292,4 +1292,7 @@ return [
     'wai_svc_price_ph'                 => 'Preț (ex. 80€)',
     'wai_svc_time_ph'                  => 'Durată',
     'wai_add'                          => 'Adaugă',
+    'wai_model_count'                  => 'modele',
+    'wai_model_add_ph'                 => 'ex. iPhone 14, Galaxy S24...',
+    'wai_ai_expand_hint'               => 'AI generează modele automat',
 ];
