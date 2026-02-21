@@ -1,0 +1,624 @@
+/* ═══════════════════════════════════════════════════════════
+   PPV-REWARDS.CSS – Einlösungen / Rewards Dashboard
+   Standalone replacement for ppv-theme-light.css on /rewards
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ──────────────────────────── */
+@keyframes ppvFadeIn {
+    from { opacity: 0; transform: translateY(8px) }
+    to { opacity: 1; transform: translateY(0) }
+}
+
+@keyframes ppvSpin {
+    to { transform: rotate(360deg) }
+}
+
+@keyframes ppvCardFadeOut {
+    to { opacity: 0; transform: translateX(-20px); height: 0; padding: 0; margin: 0; border: 0; overflow: hidden }
+}
+
+/* ═══════════════════════════════════════════
+   REWARDS ADMIN CONTAINER
+   ═══════════════════════════════════════════ */
+.ppv-einloesungen-admin {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: 100px;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Header ─────────────────────────────── */
+.ppv-ea-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.ppv-ea-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--pp-text, #1e293b);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ppv-ea-header h1 i {
+    color: var(--pp-primary, #0ea5e9);
+}
+
+.ppv-ea-store-name {
+    font-size: 14px;
+    color: var(--pp-text-muted, #64748b);
+    margin-top: 4px;
+    display: block;
+}
+
+.ppv-ea-refresh-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: var(--pp-surface, #f8fafc);
+    color: var(--pp-text-muted, #64748b);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all .2s ease;
+}
+
+.ppv-ea-refresh-btn:hover {
+    background: var(--pp-primary-light, #e0f2fe);
+    color: var(--pp-primary, #0ea5e9);
+}
+
+.ppv-ea-refresh-btn.spinning i {
+    animation: ppvSpin 1s linear infinite;
+}
+
+/* ── Stats Grid ─────────────────────────── */
+.ppv-ea-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.ppv-ea-stat-card {
+    background: var(--pp-surface, #fff);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    transition: all .2s ease;
+}
+
+.ppv-ea-stat-card:hover {
+    border-color: var(--pp-primary-light, #7dd3fc);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, .1);
+}
+
+.ppv-ea-stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--pp-text, #1e293b);
+    line-height: 1.2;
+}
+
+.ppv-ea-stat-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--pp-text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-top: 4px;
+}
+
+.ppv-ea-stat-wert .ppv-ea-stat-value {
+    color: var(--pp-success, #22c55e);
+    font-size: 22px;
+}
+
+/* ── Tabs ────────────────────────────────── */
+.ppv-ea-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--pp-surface, #f1f5f9);
+    padding: 6px;
+    border-radius: 14px;
+}
+
+.ppv-ea-tab {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    color: var(--pp-text-muted, #64748b);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all .2s ease;
+}
+
+.ppv-ea-tab:hover {
+    color: var(--pp-text, #1e293b);
+    background: rgba(255, 255, 255, .5);
+}
+
+.ppv-ea-tab.active {
+    background: #fff;
+    color: var(--pp-primary, #0ea5e9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+}
+
+.ppv-ea-tab-badge {
+    background: var(--pp-warning, #f59e0b);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* ── Tab Content ─────────────────────────── */
+.ppv-ea-tab-content {
+    display: none;
+}
+
+.ppv-ea-tab-content.active {
+    display: block;
+    animation: ppvFadeIn .3s ease;
+}
+
+/* ── Filter Bar ──────────────────────────── */
+.ppv-ea-filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.ppv-ea-filter-select,
+.ppv-ea-filter-date {
+    flex: 1;
+    min-width: 140px;
+    padding: 12px 16px;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--pp-surface, #fff);
+    color: var(--pp-text, #1e293b);
+    transition: all .2s ease;
+}
+
+.ppv-ea-filter-select:focus,
+.ppv-ea-filter-date:focus {
+    outline: none;
+    border-color: var(--pp-primary, #0ea5e9);
+    box-shadow: 0 0 0 3px var(--pp-primary-glow, rgba(14, 165, 233, .15));
+}
+
+/* ── List & Cards ────────────────────────── */
+.ppv-ea-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ppv-ea-card {
+    background: var(--pp-surface, #fff);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all .2s ease;
+}
+
+.ppv-ea-card:hover {
+    border-color: var(--pp-primary-light, #7dd3fc);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .06);
+}
+
+.ppv-ea-card-pending { border-left: 4px solid var(--pp-warning, #f59e0b) }
+.ppv-ea-card-approved { border-left: 4px solid var(--pp-success, #22c55e) }
+.ppv-ea-card-cancelled { border-left: 4px solid var(--pp-error, #ef4444); opacity: .7 }
+
+.ppv-ea-card-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex: 1;
+}
+
+.ppv-ea-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.ppv-ea-card-icon.pending { background: rgba(245, 158, 11, .15); color: var(--pp-warning, #f59e0b) }
+.ppv-ea-card-icon.approved { background: rgba(34, 197, 94, .15); color: var(--pp-success, #22c55e) }
+.ppv-ea-card-icon.cancelled { background: rgba(239, 68, 68, .15); color: var(--pp-error, #ef4444) }
+
+.ppv-ea-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.ppv-ea-card-user {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--pp-text, #1e293b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ppv-ea-card-reward {
+    font-size: 14px;
+    color: var(--pp-text-muted, #64748b);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ppv-ea-card-reward i {
+    color: var(--pp-primary, #0ea5e9);
+}
+
+.ppv-ea-card-meta {
+    font-size: 12px;
+    color: var(--pp-text-lighter, #94a3b8);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ppv-ea-card-points {
+    background: rgba(14, 165, 233, .1);
+    color: var(--pp-primary-dark, #0284c7);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.ppv-ea-card-beleg {
+    color: var(--pp-text-lighter, #94a3b8);
+}
+
+/* ── Action Buttons ──────────────────────── */
+.ppv-ea-card-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.ppv-ea-btn-approve,
+.ppv-ea-btn-reject {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all .2s ease;
+}
+
+.ppv-ea-btn-approve {
+    background: rgba(34, 197, 94, .15);
+    color: var(--pp-success, #22c55e);
+}
+
+.ppv-ea-btn-approve:hover {
+    background: var(--pp-success, #22c55e);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.ppv-ea-btn-reject {
+    background: rgba(239, 68, 68, .15);
+    color: var(--pp-error, #ef4444);
+}
+
+.ppv-ea-btn-reject:hover {
+    background: var(--pp-error, #ef4444);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.ppv-ea-btn-approve:disabled,
+.ppv-ea-btn-reject:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.ppv-ea-card-fade-out {
+    animation: ppvCardFadeOut .3s ease forwards;
+}
+
+/* ── Loading / Empty / Error States ──────── */
+.ppv-ea-loading,
+.ppv-ea-empty,
+.ppv-ea-error {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--pp-text-muted, #64748b);
+}
+
+.ppv-ea-loading i,
+.ppv-ea-empty i,
+.ppv-ea-error i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.ppv-ea-empty i { color: var(--pp-success, #22c55e) }
+.ppv-ea-error i { color: var(--pp-error, #ef4444) }
+
+.ppv-ea-loading p,
+.ppv-ea-empty p,
+.ppv-ea-error p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════
+   RECEIPTS
+   ═══════════════════════════════════════════ */
+.ppv-ea-receipt-generators {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.ppv-ea-receipt-generators .ppv-ea-receipt-generator {
+    flex: 1;
+    min-width: 280px;
+}
+
+.ppv-ea-receipt-generator {
+    background: var(--pp-surface, #fff);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    margin-bottom: 20px;
+}
+
+.ppv-ea-receipt-generator h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--pp-text, #1e293b);
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-ea-receipt-generator h3 i {
+    color: var(--pp-primary, #0ea5e9);
+}
+
+.ppv-ea-receipt-form {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ppv-ea-date-range-form {
+    flex-direction: column;
+}
+
+.ppv-ea-date-range {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ppv-ea-date-separator {
+    font-size: 14px;
+    color: var(--pp-text-muted, #64748b);
+    font-weight: 500;
+}
+
+.ppv-ea-date-range-form .ppv-ea-btn-primary {
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
+.ppv-ea-select {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 16px;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--pp-bg, #f8fafc);
+    color: var(--pp-text, #1e293b);
+}
+
+.ppv-ea-btn-primary {
+    padding: 12px 24px;
+    background: var(--pp-primary, #0ea5e9);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .2s ease;
+}
+
+.ppv-ea-btn-primary:hover {
+    background: var(--pp-primary-dark, #0284c7);
+    transform: translateY(-2px);
+}
+
+.ppv-ea-btn-primary:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Receipt Cards ───────────────────────── */
+.ppv-ea-receipts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ppv-ea-receipt-card {
+    background: var(--pp-surface, #fff);
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ppv-ea-receipt-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ppv-ea-receipt-user {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pp-text, #1e293b);
+}
+
+.ppv-ea-receipt-reward {
+    font-size: 13px;
+    color: var(--pp-text-muted, #64748b);
+}
+
+.ppv-ea-receipt-date {
+    font-size: 12px;
+    color: var(--pp-text-lighter, #94a3b8);
+}
+
+.ppv-ea-receipt-download {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(14, 165, 233, .1);
+    color: var(--pp-primary, #0ea5e9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all .2s ease;
+    text-decoration: none;
+}
+
+.ppv-ea-receipt-download:hover {
+    background: var(--pp-primary, #0ea5e9);
+    color: #fff;
+}
+
+.ppv-ea-receipt-generate {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--pp-warning-bg, #fef3c7);
+    color: var(--pp-warning, #f59e0b);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.ppv-ea-receipt-generate:hover {
+    background: var(--pp-warning, #f59e0b);
+    color: #fff;
+}
+
+/* ═══════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════ */
+.ppv-ea-toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 14px 24px;
+    background: var(--pp-text, #1e293b);
+    color: #fff;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 9999;
+    opacity: 0;
+    transition: all .3s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+
+.ppv-ea-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.ppv-ea-toast-success { background: var(--pp-success, #22c55e) }
+.ppv-ea-toast-error { background: var(--pp-error, #ef4444) }
+.ppv-ea-toast-info { background: var(--pp-primary, #0ea5e9) }
+
+/* ═══════════════════════════════════════════
+   MOBILE (max-width: 640px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+    .ppv-einloesungen-admin { padding: 12px }
+    .ppv-ea-header h1 { font-size: 20px }
+    .ppv-ea-stats { grid-template-columns: repeat(2, 1fr) }
+    .ppv-ea-stat-value { font-size: 24px }
+    .ppv-ea-tabs { flex-wrap: wrap }
+    .ppv-ea-tab { flex: 1 1 auto; min-width: calc(50% - 4px); padding: 10px 12px; font-size: 13px }
+    .ppv-ea-card { flex-direction: column; align-items: stretch; gap: 14px }
+    .ppv-ea-card-actions { justify-content: flex-end }
+    .ppv-ea-receipt-form { flex-direction: column }
+    .ppv-ea-btn-primary { justify-content: center }
+}
