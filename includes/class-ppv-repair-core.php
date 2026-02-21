@@ -61,6 +61,10 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
         add_action('wp_ajax_nopriv_ppv_repair_ai_analyze', [__CLASS__, 'ajax_ai_analyze']);
 
+        // AJAX: Shop widget AI diagnosis (public, CORS)
+        add_action('wp_ajax_ppv_shop_widget_diagnose', [__CLASS__, 'ajax_shop_widget_diagnose']);
+        add_action('wp_ajax_nopriv_ppv_shop_widget_diagnose', [__CLASS__, 'ajax_shop_widget_diagnose']);
+
         // AJAX: Nominatim address proxy (public, avoids CORS)
         add_action('wp_ajax_ppv_repair_nominatim', [__CLASS__, 'ajax_nominatim_proxy']);
         add_action('wp_ajax_nopriv_ppv_repair_nominatim', [__CLASS__, 'ajax_nominatim_proxy']);
@@ -1487,6 +1491,138 @@ class PPV_Repair_Core {
         }
 
         wp_send_json_success($result);
+    }
+
+    /**
+     * AJAX: Shop Widget AI Diagnosis (public, CORS-enabled)
+     * 4-step flow: Device → Problem → AI Diagnosis + Price Estimate → Form link
+     */
+    public static function ajax_shop_widget_diagnose() {
+        // CORS headers for cross-origin widget requests
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: POST');
+        header('Access-Control-Allow-Headers: Content-Type');
+
+        // Rate limit: 5 requests per IP per 10 minutes
+        $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '');
+        $rate_key = 'ppv_sw_diag_' . md5($ip);
+        $count = intval(get_transient($rate_key));
+        if ($count >= 5) {
+            wp_send_json_error(['message' => 'Too many requests. Please try again in a few minutes.']);
+        }
+        set_transient($rate_key, $count + 1, 600);
+
+        $store_slug = sanitize_text_field($_POST['store_slug'] ?? '');
+        $brand      = sanitize_text_field($_POST['device_brand'] ?? '');
+        $model      = sanitize_text_field($_POST['device_model'] ?? '');
+        $problem    = sanitize_textarea_field($_POST['problem'] ?? '');
+        $lang       = sanitize_text_field($_POST['lang'] ?? 'de');
+
+        if (!in_array($lang, ['de', 'hu', 'ro', 'en', 'it'], true)) $lang = 'de';
+        if (empty($store_slug)) wp_send_json_error(['message' => 'Store not specified']);
+        if (empty($problem) || mb_strlen($problem) < 5) wp_send_json_error(['message' => 'Description too short']);
+
+        // Look up store
+        global $wpdb;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, name, repair_company_name, repair_service_type, repair_color, store_slug
+             FROM {$wpdb->prefix}ppv_stores
+             WHERE store_slug = %s AND repair_enabled = 1",
+            $store_slug
+        ));
+        if (!$store) wp_send_json_error(['message' => 'Store not found']);
+
+        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
+        if (!PPV_AI_Engine::is_available()) wp_send_json_error(['message' => 'AI temporarily unavailable']);
+
+        $service_type = $store->repair_service_type ?: 'Allgemein';
+        $store_name   = $store->repair_company_name ?: $store->name;
+
+        $lang_names = ['de' => 'German', 'hu' => 'Hungarian', 'ro' => 'Romanian', 'en' => 'English', 'it' => 'Italian'];
+        $lang_name  = $lang_names[$lang] ?? 'German';
+
+        // Custom system prompt with price estimation
+        $system = "You are a friendly repair diagnostic assistant for \"{$store_name}\".
+Service type: {$service_type}
+
+RESPOND ONLY IN {$lang_name}. Use plain text only (no markdown, no bold, no headers).
+
+The customer describes their device problem. Provide:
+1. A short diagnosis (1-2 sentences about likely issue)
+2. Possible causes (2-3 bullet points with •)
+3. A price estimate range in EUR (be realistic for {$service_type} repairs)
+4. A quick tip
+
+FORMAT your response EXACTLY like this (keep the labels in {$lang_name}):
+DIAGNOSIS: [1-2 sentences]
+CAUSES:
+• [cause 1]
+• [cause 2]
+PRICE: [min]–[max] EUR
+TIP: [one helpful sentence]
+
+PRICE GUIDELINES for common repairs:
+• Display replacement: 80–250 EUR depending on device
+• Battery replacement: 40–90 EUR
+• Charging port: 50–120 EUR
+• Water damage: 80–200 EUR
+• Camera repair: 60–150 EUR
+• Software issues: 30–60 EUR
+• Back glass: 60–150 EUR
+Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei lower).
+
+IMPORTANT:
+- Always give a price range, never a single number
+- Be honest if unsure, give wider range
+- The price is an ESTIMATE, mention they should contact the shop for exact quote";
+
+        $device_info = '';
+        if ($brand) $device_info .= "Brand: {$brand}\n";
+        if ($model) $device_info .= "Model: {$model}\n";
+        $user_msg = trim($device_info . "Problem: {$problem}");
+
+        $result = PPV_AI_Engine::chat($system, $user_msg, $lang);
+        if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
+
+        // Parse structured response
+        $text = $result['text'];
+        $diagnosis = $text;
+        $price_range = '';
+
+        // Extract price line
+        if (preg_match('/PRICE:\s*(.+)/i', $text, $pm)) {
+            $price_range = trim($pm[1]);
+        }
+        // Also try localized labels
+        if (!$price_range && preg_match('/(?:PREIS|ÁR|PREȚ|PREZZO|PRICE):\s*(.+)/iu', $text, $pm)) {
+            $price_range = trim($pm[1]);
+        }
+
+        // Try to get historical price data from completed repairs
+        $hist_prices = null;
+        if ($brand) {
+            $similar = $wpdb->get_results($wpdb->prepare(
+                "SELECT final_cost FROM {$wpdb->prefix}ppv_repairs
+                 WHERE store_id = %d AND device_brand = %s
+                 AND status IN ('done','delivered') AND final_cost > 0
+                 AND created_at > DATE_SUB(NOW(), INTERVAL 90 DAY)
+                 ORDER BY created_at DESC LIMIT 20",
+                $store->id, $brand
+            ));
+            if (count($similar) >= 3) {
+                $prices = array_map(function($r) { return floatval($r->final_cost); }, $similar);
+                $hist_prices = ['min' => round(min($prices)), 'max' => round(max($prices)), 'count' => count($similar)];
+            }
+        }
+
+        wp_send_json_success([
+            'diagnosis'     => $text,
+            'price_range'   => $price_range,
+            'hist_prices'   => $hist_prices,
+            'device'        => trim("{$brand} {$model}"),
+            'store_name'    => $store_name,
+            'form_url'      => home_url("/formular/{$store->store_slug}"),
+        ]);
     }
 
     /** AJAX: Lookup customer by email (for form autofill) */

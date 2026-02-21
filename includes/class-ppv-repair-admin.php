@@ -2381,6 +2381,7 @@ echo '</div></div>
                         <label>Widget-Modus</label>
                         <select name="widget_mode" id="ra-widget-mode" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
                             <option value="float">Floating Button (empfohlen)</option>
+                            <option value="ai">KI-Diagnose Widget (empfohlen)</option>
                             <option value="inline">Inline Banner</option>
                             <option value="button">Einfacher Button</option>
                         </select>
