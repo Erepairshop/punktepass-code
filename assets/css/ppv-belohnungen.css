@@ -156,10 +156,9 @@ select, input, button, textarea {
 .ppv-standalone-wrap {
     max-width: 768px;
     margin: 0 auto;
-    padding: 0 0 90px 0;
+    padding: 12px 0 90px 0;
     min-height: 100vh;
     min-height: 100dvh;
-    padding-top: env(safe-area-inset-top, 0);
 }
 
 /* ═══════════════════════════════════════════
