@@ -367,11 +367,12 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 $global_header = ob_get_clean();
             }
 
-            // ─── Bottom nav context ───
+            // ─── Bottom nav context + HTML ───
             $bottom_nav_context = '';
             if (class_exists('PPV_Bottom_Nav')) {
                 ob_start();
                 PPV_Bottom_Nav::inject_context();
+                echo PPV_Bottom_Nav::render_nav();
                 $bottom_nav_context = ob_get_clean();
             }
 
@@ -399,7 +400,6 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-handler.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-profile.css?v=<?php echo esc_attr($version); ?>">
