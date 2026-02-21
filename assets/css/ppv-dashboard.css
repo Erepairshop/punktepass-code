@@ -114,122 +114,219 @@ select, input, button, textarea {
 }
 
 /* ═══════════════════════════════════════════
-   GLOBAL HEADER (was in handler-light.css)
+   GLOBAL HEADER (unified – from ppv-theme-light.css)
    ═══════════════════════════════════════════ */
 
 #ppv-global-header {
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--pp-header-height, 64px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    background: #0f172a;
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 99999 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+    align-items: center !important;
 }
 
-#ppv-global-header.ppv-handler-mode {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-#ppv-global-header .ppv-header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+#ppv-global-header.ppv-compact-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    height: 58px !important;
+    padding: 6px 10px !important;
+    overflow: hidden !important;
+    background: var(--pp-header-bg) !important;
+    border-bottom: 1px solid rgba(14,165,233,.2);
+    box-shadow: 0 2px 12px rgba(0,0,0,.15);
 }
 
 #ppv-global-header .ppv-header-logo-tiny {
     display: none !important;
 }
 
+.ppv-header-left, .ppv-header-stats {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+}
+
+.ppv-header-left { gap: 12px !important; }
+
+.ppv-header-avatar-link {
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+}
+
+.ppv-header-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid rgba(0,230,255,.6) !important;
+    transition: all .2s ease !important;
+}
+
+.ppv-header-avatar:hover {
+    border-color: #00e6ff !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 12px rgba(0,230,255,.4) !important;
+}
+
 #ppv-global-header .ppv-user-email {
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    max-width: 120px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }
 
-#ppv-global-header .ppv-header-nav {
-    display: flex;
-    gap: 8px;
+.ppv-user-email {
+    max-width: 140px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
 }
 
-#ppv-global-header .ppv-nav-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.ppv-header-nav, .ppv-header-settings {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-left: auto !important;
+}
+
+.ppv-header-settings { padding: 0 !important; }
+
+.ppv-lang-mini, .ppv-nav-btn, .ppv-theme-btn-mini {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,.05) !important;
+    border: 1px solid rgba(255,255,255,.1) !important;
+    color: #fff !important;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all .2s ease !important;
     text-decoration: none;
 }
 
-#ppv-global-header .ppv-nav-btn:hover {
-    background: rgba(14, 165, 233, 0.2);
-    border-color: var(--pp-primary);
+.ppv-nav-btn i, .ppv-theme-btn-mini i {
+    font-size: 18px !important;
+    margin: 0 !important;
+    line-height: 1 !important;
 }
 
-#ppv-global-header .ppv-stat-mini {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: rgba(14, 165, 233, 0.15);
-    border-radius: 8px;
-    color: var(--pp-primary-light, #38bdf8);
-    font-size: 12px;
-    font-weight: 600;
+.ppv-lang-mini:hover, .ppv-nav-btn:hover, .ppv-theme-btn-mini:hover {
+    background: rgba(0,230,255,.12) !important;
+    border-color: rgba(0,230,255,.3) !important;
+    transform: translateY(-2px) !important;
+    color: #00eaff !important;
+}
+
+.ppv-lang-mini { padding: 0 !important; }
+
+.ppv-lang-mini select, #ppv-lang-select-global {
+    width: 100% !important; height: 100% !important;
+    padding: 0 !important; margin: 0 !important;
+    background: 0 0 !important; color: #fff !important;
+    border: none !important; font-size: 15px !important;
+    font-weight: 700 !important; text-align: center !important;
+    cursor: pointer !important; appearance: none !important;
+}
+
+.ppv-theme-btn-mini {
+    width: 38px !important; height: 38px !important;
+    border-radius: 10px !important;
+    background: rgba(0,230,255,.08) !important;
+    border: 1px solid rgba(0,230,255,.25) !important;
+}
+
+.ppv-theme-btn-mini i {
+    font-size: 20px !important;
+    color: #00e6ff !important;
+    transition: .2s ease;
+}
+
+.ppv-theme-btn-mini:hover {
+    background: rgba(0,230,255,.2) !important;
+    border-color: #00e6ff !important;
+}
+
+.ppv-theme-btn-mini:hover i { color: #0ff !important; }
+
+@media (max-width: 480px) {
+    .ppv-dashboard-inner { padding: 0 12px; }
+    .ppv-user-email { max-width: 90px !important; font-size: 12px !important; }
+    .ppv-lang-mini, .ppv-nav-btn, .ppv-theme-btn-mini {
+        width: 36px !important; height: 36px !important; border-radius: 10px !important;
+    }
+    .ppv-nav-btn i, .ppv-theme-btn-mini i { font-size: 16px !important; }
+}
+
+body.ppv-light #ppv-global-header.ppv-compact-header {
+    background: rgba(255,255,255,.92) !important;
+    backdrop-filter: blur(14px) !important;
+    border-bottom: 1px solid rgba(0,150,255,.25) !important;
+    box-shadow: 0 2px 12px rgba(0,150,255,.08) !important;
+    color: #001825 !important;
+}
+
+body.ppv-light #ppv-global-header.ppv-compact-header::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, #00bfff, transparent) !important;
+    opacity: .65;
+}
+
+body.ppv-light .ppv-user-email { color: #003049 !important; font-weight: 600; }
+body.ppv-light .ppv-nav-btn { background: rgba(0,0,0,.04) !important; border-color: rgba(0,0,0,.1) !important; color: #003049 !important; }
+body.ppv-light .ppv-nav-btn:hover { background: rgba(0,150,255,.12) !important; border-color: #00bfff !important; color: #08c !important; transform: translateY(-1px); }
+body.ppv-light .ppv-nav-btn i { font-size: 17px !important; }
+body.ppv-light .ppv-lang-mini, body.ppv-light .ppv-theme-btn-mini { background: rgba(0,0,0,.05) !important; border: 1px solid rgba(0,0,0,.1) !important; color: #003049 !important; }
+body.ppv-light .ppv-lang-mini:hover, body.ppv-light .ppv-theme-btn-mini:hover { background: rgba(0,150,255,.1) !important; border-color: #00bfff !important; color: #07a !important; }
+body.ppv-light .ppv-theme-btn-mini i { color: #07a !important; font-size: 20px !important; }
+body.ppv-light .ppv-theme-btn-mini { box-shadow: 0 0 6px rgba(0,180,255,.25); }
+
+body.ppv-dark #ppv-global-header.ppv-compact-header {
+    background: linear-gradient(135deg, rgba(10,14,20,.95), rgba(21,27,35,.95)) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(0,212,255,.25) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,.5), 0 0 30px rgba(0,212,255,.1), inset 0 1px 0 rgba(0,212,255,.1) !important;
+}
+
+body.ppv-dark #ppv-global-header.ppv-compact-header::before {
+    background: linear-gradient(90deg, transparent, #00d4ff, #a855f7, #00d4ff, transparent) !important;
+    opacity: .8;
+}
+
+body.ppv-dark .ppv-user-email { color: rgba(240,246,252,.9) !important; }
+body.ppv-dark .ppv-nav-btn { background: rgba(0,212,255,.1) !important; border: 1px solid rgba(0,212,255,.2) !important; color: #f0f6fc !important; }
+body.ppv-dark .ppv-nav-btn:hover { background: rgba(0,212,255,.2) !important; border-color: rgba(0,212,255,.4) !important; color: #00d4ff !important; box-shadow: 0 0 15px rgba(0,212,255,.25) !important; }
+body.ppv-dark .ppv-nav-btn i { color: #00d4ff !important; }
+body.ppv-dark .ppv-theme-btn-mini { background: rgba(168,85,247,.12) !important; border: 1px solid rgba(168,85,247,.25) !important; }
+body.ppv-dark .ppv-theme-btn-mini:hover { background: rgba(168,85,247,.22) !important; box-shadow: 0 0 15px rgba(168,85,247,.35) !important; }
+body.ppv-dark .ppv-theme-btn-mini i { color: #a855f7 !important; text-shadow: 0 0 8px rgba(168,85,247,.5); }
+body.ppv-dark .ppv-lang-mini { background: rgba(0,212,255,.08) !important; border: 1px solid rgba(0,212,255,.15) !important; color: #f0f6fc !important; }
+
+@supports (padding-top: env(safe-area-inset-top)) {
+    #ppv-global-header { padding-top: env(safe-area-inset-top); }
 }
 
 /* ═══════════════════════════════════════════
-   SCROLLBAR (was in handler-light.css)
+   SCROLLBAR
    ═══════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-    .ppv-dashboard-netto::-webkit-scrollbar {
-        width: 0;
-        display: none;
-    }
-    .ppv-dashboard-netto {
-        scrollbar-width: none;
-    }
-}
-
-/* ═══════════════════════════════════════════
-   RESPONSIVE (was in handler-light.css)
-   ═══════════════════════════════════════════ */
-
-@media (max-width: 480px) {
-    .ppv-dashboard-inner {
-        padding: 0 12px;
-    }
-    #ppv-global-header {
-        padding: 0 12px;
-    }
-    #ppv-global-header .ppv-header-logo-tiny {
-        width: 36px;
-        height: 36px;
-    }
-    #ppv-global-header .ppv-nav-btn {
-        width: 36px;
-        height: 36px;
-    }
-}
-
-@supports (padding-top: env(safe-area-inset-top)) {
-    #ppv-global-header {
-        padding-top: env(safe-area-inset-top);
-    }
+    .ppv-dashboard-netto::-webkit-scrollbar { width: 0; display: none; }
+    .ppv-dashboard-netto { scrollbar-width: none; }
 }
 
 /* ═══════════════════════════════════════════
