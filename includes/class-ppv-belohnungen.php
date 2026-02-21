@@ -329,9 +329,8 @@ class PPV_Belohnungen {
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
-    <!-- ppv-theme-light.css + handler-light.css DISABLED – replaced by modular CSS -->
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-global-header.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-belohnungen.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>
@@ -345,7 +344,7 @@ class PPV_Belohnungen {
     </script>
     <style>
     html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-y:auto;overflow-x:hidden;overscroll-behavior:none;overscroll-behavior-y:none}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:12px 0 90px 0;min-height:100vh;min-height:100dvh}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0;min-height:100vh;min-height:100dvh}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">

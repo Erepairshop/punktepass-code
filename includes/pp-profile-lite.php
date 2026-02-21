@@ -367,11 +367,12 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 $global_header = ob_get_clean();
             }
 
-            // ─── Bottom nav context ───
+            // ─── Bottom nav context + HTML ───
             $bottom_nav_context = '';
             if (class_exists('PPV_Bottom_Nav')) {
                 ob_start();
                 PPV_Bottom_Nav::inject_context();
+                echo PPV_Bottom_Nav::render_nav();
                 $bottom_nav_context = ob_get_clean();
             }
 
@@ -399,8 +400,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-global-header.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-handler.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-profile.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
@@ -416,7 +417,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
     <style>
     html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7);overflow-y:auto!important;overflow-x:hidden!important;height:auto!important}
     .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
-    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    .ppv-standalone-wrap{padding-top:calc(var(--pp-header-height, 64px) + env(safe-area-inset-top, 0px) + 12px)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
@@ -2018,27 +2019,6 @@ if (!empty($store->gallery)) {
                 </div>
 
                 <hr>
-
-                <?php
-                // Only show onboarding reset for trial subscription handlers
-                if (($store->subscription_status ?? '') === 'trial'):
-                ?>
-                <!-- ============================================================
-                     ONBOARDING RESET (TRIAL ONLY)
-                     ============================================================ -->
-                <h3 data-i18n="onboarding_section"><?php echo esc_html(PPV_Lang::t('onboarding_section')); ?></h3>
-
-                <div class="ppv-form-group">
-                    <p class="ppv-help" data-i18n="onboarding_reset_help" style="margin-bottom: 12px;">
-                        <?php echo esc_html(PPV_Lang::t('onboarding_reset_help')); ?>
-                    </p>
-                    <button type="button" id="ppv-reset-onboarding-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
-                        🔄 <span data-i18n="onboarding_reset_btn"><?php echo esc_html(PPV_Lang::t('onboarding_reset_btn')); ?></span>
-                    </button>
-                </div>
-
-                <hr>
-                <?php endif; ?>
 
                 <!-- ============================================================
                      ACCOUNT SETTINGS - EMAIL & PASSWORD CHANGE

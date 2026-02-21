@@ -351,7 +351,7 @@ $core_modules = [
     'includes/class-ppv-invoices.php',
     'includes/class-ppv-receipts.php',
     'includes/class-ppv-expense-receipt.php',
-    'includes/class-ppv-onboarding.php',
+    // 'includes/class-ppv-onboarding.php', // Removed: replaced by AI assistant auto-guidance for trial stores
     'includes/admin/class-ppv-admin-handlers.php',
     'includes/class-ppv-legal.php',
     'includes/class-ppv-user-level.php',

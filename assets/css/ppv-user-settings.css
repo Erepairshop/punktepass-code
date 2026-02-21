@@ -636,3 +636,163 @@
         grid-template-columns: 100px 1fr;
     }
 }
+
+/* ========================================
+   DARK MODE – Settings Page Content
+   ======================================== */
+
+body.ppv-dark .ppv-settings-wrapper {
+    background: #0f172a;
+}
+
+body.ppv-dark .ppv-header-bar {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.ppv-dark .ppv-header-bar h2 {
+    color: #f0f6fc;
+}
+
+body.ppv-dark .ppv-header-bar h2 i {
+    color: #00d4ff;
+}
+
+body.ppv-dark .ppv-avatar-block {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.ppv-dark .ppv-avatar-block img {
+    border-color: #00d4ff;
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-section,
+body.ppv-dark .ppv-settings-wrapper .ppv-form .ppv-section {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-section h3,
+body.ppv-dark .ppv-settings-wrapper .ppv-form .ppv-section h3 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-section > label:not(.ppv-checkbox),
+body.ppv-dark .ppv-settings-wrapper .ppv-form > .ppv-section > label:not(.ppv-checkbox) {
+    color: #cbd5e1 !important;
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-section input[type="text"],
+body.ppv-dark .ppv-settings-wrapper .ppv-section input[type="email"],
+body.ppv-dark .ppv-settings-wrapper .ppv-section input[type="password"],
+body.ppv-dark .ppv-settings-wrapper .ppv-section input[type="date"],
+body.ppv-dark .ppv-settings-wrapper .ppv-section input[type="tel"],
+body.ppv-dark .ppv-settings-wrapper .ppv-form input[type="text"],
+body.ppv-dark .ppv-settings-wrapper .ppv-form input[type="email"],
+body.ppv-dark .ppv-settings-wrapper .ppv-form input[type="password"],
+body.ppv-dark .ppv-settings-wrapper .ppv-form input[type="date"],
+body.ppv-dark .ppv-settings-wrapper .ppv-form input[type="tel"] {
+    color: #f0f6fc !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    border-color: rgba(0, 212, 255, 0.2) !important;
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-section input:focus,
+body.ppv-dark .ppv-settings-wrapper .ppv-form input:focus {
+    border-color: #00d4ff !important;
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-section input::placeholder {
+    color: #64748b;
+}
+
+body.ppv-dark .ppv-section select,
+body.ppv-dark .ppv-phone-prefix-select {
+    color: #f0f6fc;
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(0, 212, 255, 0.2);
+}
+
+body.ppv-dark .ppv-section select:focus,
+body.ppv-dark .ppv-phone-prefix-select:focus {
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-checkbox,
+body.ppv-dark .ppv-settings-wrapper .ppv-section .ppv-checkbox {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border-color: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-checkbox:hover,
+body.ppv-dark .ppv-settings-wrapper .ppv-section .ppv-checkbox:hover {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border-color: rgba(0, 212, 255, 0.3) !important;
+}
+
+body.ppv-dark .ppv-settings-wrapper .ppv-checkbox span,
+body.ppv-dark .ppv-settings-wrapper .ppv-section .ppv-checkbox span {
+    color: #cbd5e1 !important;
+}
+
+body.ppv-dark .ppv-actions {
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(12px);
+    border-top-color: rgba(0, 212, 255, 0.15);
+}
+
+body.ppv-dark .ppv-modal-content {
+    background: #1e293b;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+body.ppv-dark .ppv-modal h3 {
+    color: #f0f6fc;
+}
+
+body.ppv-dark .ppv-modal label {
+    color: #cbd5e1;
+}
+
+body.ppv-dark .ppv-modal input[type="password"] {
+    color: #f0f6fc;
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(0, 212, 255, 0.2);
+}
+
+body.ppv-dark .ppv-modal input[type="password"]:focus {
+    border-color: #00d4ff;
+}
+
+body.ppv-dark .ppv-modal-close {
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+}
+
+body.ppv-dark .ppv-modal-close:hover {
+    background: #EF4444;
+    color: #ffffff;
+}
+
+body.ppv-dark .ppv-toast {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.ppv-dark .muted {
+    color: #94a3b8;
+}
+
+body.ppv-dark .ppv-field-hint {
+    color: #64748b;
+}
+
+body.ppv-dark .ppv-whatsapp-phone-field {
+    background: rgba(0, 212, 255, 0.05);
+    border-color: rgba(0, 212, 255, 0.15);
+}

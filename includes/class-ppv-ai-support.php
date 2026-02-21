@@ -95,6 +95,87 @@ CRITICAL RULES:
 • Do NOT speculate or suggest workarounds that don't exist.
 • Do NOT repeat the question. Just answer.
 • ESCALATION: If you truly cannot answer, add [ESCALATE] at the very end.
+• SETUP GUIDANCE: If the store has incomplete setup (missing profile data, no rewards, no device), proactively guide them to complete the missing steps. Be encouraging and specific about what to do next.
+
+=== UI GUIDE ACTIONS (visual help) ===
+
+You can visually guide the user on the page by adding special markers to your response. ONLY use these when the user ASKS for help finding something (e.g. "show me", "where is", "how do I", "mutasd meg", "hol van", "zeig mir", "wo ist").
+
+Available action markers (add at the END of your response, after your text):
+• [NAVIGATE:/path] - Navigate to a different page (e.g. [NAVIGATE:/qr-center], [NAVIGATE:/mein-profil], [NAVIGATE:/rewards], [NAVIGATE:/statistik])
+• [TAB:tab-name] - Click/switch to a specific tab on the current page (use the TRANSLATED tab name the user sees, e.g. [TAB:Geräte], [TAB:Prämien], [TAB:Öffnungszeiten], [TAB:Allgemein])
+• [HIGHLIGHT:css-selector] - Highlight a specific element with a spotlight effect. Use simple selectors:
+  - Buttons: [HIGHLIGHT:.ppv-btn-primary] or [HIGHLIGHT:#ppv-add-reward-btn]
+  - Nav items: [HIGHLIGHT:.nav-item:first-child]
+  - Cards: [HIGHLIGHT:.ppv-card:first-child]
+  - Forms: [HIGHLIGHT:.ppv-form-group:first-child]
+  - Bottom nav buttons: [HIGHLIGHT:[data-nav-type] .nav-item:nth-child(1)] (1=Start, 2=Belohnungen, 3=Profil, 4=Statistik, 5=Support)
+• [SCROLL:css-selector] - Scroll to a specific element
+
+RULES FOR ACTIONS:
+• You can combine multiple markers: [NAVIGATE:/mein-profil] [TAB:Öffnungszeiten]
+• NAVIGATE is only needed if the user is on a DIFFERENT page than where the target is
+• Check "User is currently on page:" in session context to decide if navigation is needed
+• For tabs: ALWAYS use the translated name that matches the user's language
+• Do NOT use actions when just answering a simple question
+• Do NOT use actions proactively - ONLY when the user asks to be shown/guided
+
+=== HOW PUNKTEPASS WORKS (physical setup) ===
+
+PunktePass is a loyalty/points system for physical stores. Here's how it works in practice:
+
+PHYSICAL SETUP:
+• The store places a dedicated phone/tablet at the cash register (e.g. next to the till)
+• The phone's BACK CAMERA faces the customer
+• A "PunktePass MiniKamera" (small clip-on camera attachment) is attached to the phone's back camera to optimize QR code scanning
+• The MiniKamera is a small, lightweight lens attachment that clips onto the phone - it helps focus on QR codes at the right distance and angle
+• Customers show their QR code (from their phone or printed card) and the store's device scans it automatically
+• Points are awarded instantly after a successful scan
+
+SCANNING FLOW:
+1. Customer opens their PunktePass app or shows their QR code card
+2. Store's device (with MiniKamera) reads the QR code via the back camera
+3. Points are credited to the customer's account in real-time
+4. Both the store owner and customer see confirmation immediately
+
+MINIKAMERA DETAILS (give SHORT answer by default, only elaborate if user asks for more):
+• Small clip-on lens for the phone's rear camera - optimizes QR code scanning distance/focus
+• No batteries needed - purely optical, works with any phone/tablet
+• Keeps scanning fast and consistent even in varying light
+
+=== INITIAL SETUP - 3 REQUIRED STEPS ===
+
+For the store to start operating (scanning QR codes, awarding points), these 3 things MUST be completed:
+
+STEP 1 - STORE PROFILE (Profil page → /mein-profil):
+• Store name (what customers see)
+• Company name (for invoices)
+• Country
+• Address (street + number), PLZ, city
+• GPS coordinates (use the "Geocode" button to auto-detect from address, or click on the map)
+• Opening hours (all 7 days: Monday-Sunday, open/close times)
+• Timezone
+→ Go to: Profil (3rd button in bottom nav) → Allgemein tab for basic info, Öffnungszeiten tab for hours
+
+STEP 2 - CREATE FIRST REWARD (Prämien in QR Center or /rewards):
+• Every store needs at least one reward so customers have something to collect points for
+• Set: reward name, required points, type (% discount / fixed discount / free product), value
+• Example: "Free Coffee" - 100 points - Free Product
+→ Go to: Start (1st button) → Prämien tab → "+ Neue Prämie" button
+→ OR: Belohnungen (2nd button) → same page
+
+STEP 3 - REGISTER A DEVICE (Geräte tab in QR Center):
+• The store needs at least one registered device (the phone/tablet at the cash register)
+• Open QR Center on the device you want to register → Geräte tab → it will prompt to register
+• The device gets a unique fingerprint for security
+• Admin email confirmation required for new devices
+→ Go to: Start (1st button) → Geräte tab
+
+CHECKING SETUP STATUS:
+• If a step is missing, guide the user to the correct page and tab
+• Profile: check if store has name + address + coordinates + hours + timezone
+• Reward: check if at least 1 reward exists
+• Device: check if at least 1 active device is registered
 
 === BOTTOM NAVIGATION (fixed bar at the bottom of the screen) ===
 
@@ -195,8 +276,6 @@ Einstellungen tab features:
 • Timezone selector (Berlin/Budapest/Bucharest)
 • Email change: new email, confirm, Change button
 • Password change: current, new, confirm, Change button
-• Onboarding reset button (trial only)
-
 === STATISTICS (/statistik) ===
 
 5 TABS:
@@ -466,6 +545,33 @@ PROMPT;
             $extra_context .= "User is currently on page: {$current_url}\n";
             $extra_context .= "If the answer is on THIS page, say so (e.g. 'Du bist schon auf der richtigen Seite, klick oben auf den X Tab').\n";
         }
+
+        // Add setup status for trial stores so AI can guide them
+        if ($context !== 'repair' && class_exists('PPV_Session')) {
+            $sess_store = PPV_Session::current_store();
+            if (!empty($sess_store) && ($sess_store->subscription_status ?? '') === 'trial') {
+                $extra_context .= "\nSTORE STATUS: Trial subscription (new store, may need setup help)\n";
+                $missing = [];
+                if (empty($sess_store->name) || empty($sess_store->address) || empty($sess_store->city)) $missing[] = 'profile data (name/address/city)';
+                $has_c = !empty($sess_store->latitude) && floatval($sess_store->latitude) != 0;
+                if (!$has_c) $missing[] = 'GPS coordinates';
+                $has_h = !empty($sess_store->opening_hours) && $sess_store->opening_hours !== '[]' && $sess_store->opening_hours !== '{}';
+                if (!$has_h) $missing[] = 'opening hours';
+                global $wpdb;
+                $rc = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d", $sess_store->id));
+                if ($rc === 0) $missing[] = 'first reward (no rewards created yet)';
+                $pid = $sess_store->parent_store_id ?: $sess_store->id;
+                $dc = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE store_id = %d AND status = 'active'", $pid));
+                if ($dc === 0) $missing[] = 'device registration (no active devices)';
+                if (!empty($missing)) {
+                    $extra_context .= "INCOMPLETE SETUP STEPS: " . implode(', ', $missing) . "\n";
+                    $extra_context .= "Guide the user to complete these missing steps. Be specific about which page and tab to go to.\n";
+                } else {
+                    $extra_context .= "SETUP STATUS: All 3 required steps are complete (profile, reward, device). Store is ready to operate!\n";
+                }
+            }
+        }
+
         $system_prompt .= $extra_context;
 
         $result = PPV_AI_Engine::chat_with_history(
@@ -485,7 +591,29 @@ PROMPT;
             $escalate = true;
         }
 
+        // Parse UI action markers from AI response
+        $actions = [];
+        if (preg_match('/\[NAVIGATE:([^\]]+)\]/', $reply, $m)) {
+            $actions['navigate'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+        if (preg_match('/\[TAB:([^\]]+)\]/', $reply, $m)) {
+            $actions['tab'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+        if (preg_match('/\[HIGHLIGHT:([^\]]+)\]/', $reply, $m)) {
+            $actions['highlight'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+        if (preg_match('/\[SCROLL:([^\]]+)\]/', $reply, $m)) {
+            $actions['scroll'] = sanitize_text_field(trim($m[1]));
+            $reply = trim(str_replace($m[0], '', $reply));
+        }
+
         $response = ['reply' => $reply];
+        if (!empty($actions)) {
+            $response['actions'] = $actions;
+        }
 
         if ($escalate) {
             $whatsapp = get_option('ppv_support_whatsapp', '4917698479520');
@@ -513,7 +641,50 @@ PROMPT;
             $lang = PPV_Lang::current();
         }
 
-        $labels = self::get_labels($lang);
+        // Detect trial store for auto-open (replaces onboarding wizard)
+        $is_trial = false;
+        $setup_missing = [];
+        if (class_exists('PPV_Session')) {
+            $store = PPV_Session::current_store();
+            if (!empty($store)) {
+                $is_trial = (($store->subscription_status ?? '') === 'trial');
+                if ($is_trial) {
+                    // Check which setup steps are incomplete
+                    if (empty($store->name) || empty($store->address) || empty($store->city)) {
+                        $setup_missing[] = 'profile';
+                    }
+                    $has_coords = !empty($store->latitude) && !empty($store->longitude)
+                        && floatval($store->latitude) != 0 && floatval($store->longitude) != 0;
+                    if (!$has_coords) {
+                        $setup_missing[] = 'coordinates';
+                    }
+                    $has_hours = !empty($store->opening_hours) && $store->opening_hours !== '[]' && $store->opening_hours !== '{}';
+                    if (!$has_hours) {
+                        $setup_missing[] = 'hours';
+                    }
+                    // Check rewards
+                    global $wpdb;
+                    $reward_count = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d",
+                        $store->id
+                    ));
+                    if ($reward_count === 0) {
+                        $setup_missing[] = 'reward';
+                    }
+                    // Check devices
+                    $parent_id = $store->parent_store_id ?: $store->id;
+                    $device_count = (int) $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE store_id = %d AND status = 'active'",
+                        $parent_id
+                    ));
+                    if ($device_count === 0) {
+                        $setup_missing[] = 'device';
+                    }
+                }
+            }
+        }
+
+        $labels = self::get_labels($lang, $is_trial && !empty($setup_missing));
         ?>
 
 <style>
@@ -552,7 +723,21 @@ PROMPT;
 .ppv-chat-wa-btn{background:#25d366;color:#fff!important}
 .ppv-chat-email-btn{background:#667eea;color:#fff!important}
 @media(max-width:480px){#ppv-ai-chat-panel{right:8px;left:8px;width:auto;bottom:140px;height:calc(100vh - 180px);max-height:none}}
+/* AI Guide: Spotlight overlay + highlight */
+#ppv-ai-spotlight{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9990;pointer-events:none;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s ease;display:none}
+#ppv-ai-spotlight.active{display:block;opacity:1;pointer-events:auto}
+#ppv-ai-spotlight .ppv-spot-hole{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);background:transparent;transition:all .4s cubic-bezier(.4,0,.2,1)}
+#ppv-ai-spotlight .ppv-spot-ring{position:absolute;border-radius:14px;border:2.5px solid #667eea;box-shadow:0 0 20px rgba(102,126,234,.5),0 0 40px rgba(102,126,234,.2);animation:ppvSpotPulse 1.5s ease-in-out infinite}
+@keyframes ppvSpotPulse{0%,100%{box-shadow:0 0 20px rgba(102,126,234,.5),0 0 40px rgba(102,126,234,.2)}50%{box-shadow:0 0 30px rgba(102,126,234,.7),0 0 60px rgba(102,126,234,.35)}}
+#ppv-ai-spotlight .ppv-spot-label{position:absolute;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;font-family:inherit;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:auto;cursor:pointer}
+#ppv-ai-spotlight .ppv-spot-label::after{content:'';position:absolute;width:0;height:0;border:6px solid transparent}
+#ppv-ai-spotlight .ppv-spot-label.above::after{top:100%;left:50%;transform:translateX(-50%);border-top-color:#764ba2}
+#ppv-ai-spotlight .ppv-spot-label.below::after{bottom:100%;left:50%;transform:translateX(-50%);border-bottom-color:#667eea}
+.ppv-ai-highlighted{position:relative;z-index:9993!important;animation:ppvHighlightPop .4s ease}
+@keyframes ppvHighlightPop{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
 </style>
+
+<div id="ppv-ai-spotlight"><div class="ppv-spot-hole"></div><div class="ppv-spot-ring"></div><div class="ppv-spot-label above"></div></div>
 
 <div id="ppv-ai-chat-panel">
     <div class="ppv-chat-header">
@@ -582,6 +767,8 @@ PROMPT;
     var msgContainer = document.getElementById('ppv-ai-chat-messages');
     var ajaxUrl = '<?php echo esc_js(admin_url("admin-ajax.php")); ?>';
     var lang = '<?php echo esc_js($lang); ?>';
+    var isTrial = <?php echo $is_trial && !empty($setup_missing) ? 'true' : 'false'; ?>;
+    var setupMissing = <?php echo wp_json_encode($setup_missing); ?>;
     var isOpen = false;
     var isSending = false;
     var history = [];
@@ -600,6 +787,29 @@ PROMPT;
             });
         }
     } catch(e) {}
+
+    // Re-open chat after AI-triggered navigation
+    try {
+        if (sessionStorage.getItem('ppv_ai_chat_keep_open')) {
+            sessionStorage.removeItem('ppv_ai_chat_keep_open');
+            setTimeout(function() { if (!isOpen) toggle(); }, 400);
+        }
+    } catch(e) {}
+
+    // Auto-open for trial stores with incomplete setup (replaces onboarding wizard)
+    if (isTrial && !hasHistory) {
+        var autoOpenKey = 'ppv_ai_setup_shown_' + window.location.pathname;
+        try {
+            if (!sessionStorage.getItem(autoOpenKey)) {
+                sessionStorage.setItem(autoOpenKey, '1');
+                setTimeout(function() {
+                    if (!isOpen) toggle();
+                }, 1200);
+            }
+        } catch(e) {
+            setTimeout(function() { if (!isOpen) toggle(); }, 1200);
+        }
+    }
 
     // Show quick question chips if no previous chat
     var chips = <?php echo wp_json_encode($labels['chips'] ?? []); ?>;
@@ -714,6 +924,10 @@ PROMPT;
                         msgContainer.appendChild(esc);
                         scrollToBottom();
                     }
+                    // Execute UI actions from AI response
+                    if (data.data.actions) {
+                        setTimeout(function() { executeActions(data.data.actions); }, 600);
+                    }
                     if (data.data.limit_reached) {
                         input.disabled = true;
                         sendBtn.disabled = true;
@@ -737,8 +951,198 @@ PROMPT;
             });
     }
 
-    // Events
-    navBtn.addEventListener('click', function(e) { e.preventDefault(); toggle(); });
+    // ==================== AI UI Guide System ====================
+    var spotlight = document.getElementById('ppv-ai-spotlight');
+    var spotHole = spotlight ? spotlight.querySelector('.ppv-spot-hole') : null;
+    var spotRing = spotlight ? spotlight.querySelector('.ppv-spot-ring') : null;
+    var spotLabel = spotlight ? spotlight.querySelector('.ppv-spot-label') : null;
+    var spotTimer = null;
+
+    function clearSpotlight() {
+        if (spotTimer) { clearTimeout(spotTimer); spotTimer = null; }
+        if (spotlight) spotlight.classList.remove('active');
+        document.querySelectorAll('.ppv-ai-highlighted').forEach(function(el) {
+            el.classList.remove('ppv-ai-highlighted');
+        });
+    }
+
+    function showSpotlight(el, label) {
+        if (!spotlight || !el) return;
+        clearSpotlight();
+        var r = el.getBoundingClientRect();
+        var pad = 8;
+        var x = r.left - pad;
+        var y = r.top - pad;
+        var w = r.width + pad * 2;
+        var h = r.height + pad * 2;
+
+        spotHole.style.left = x + 'px';
+        spotHole.style.top = y + 'px';
+        spotHole.style.width = w + 'px';
+        spotHole.style.height = h + 'px';
+
+        spotRing.style.left = (x - 2) + 'px';
+        spotRing.style.top = (y - 2) + 'px';
+        spotRing.style.width = (w + 4) + 'px';
+        spotRing.style.height = (h + 4) + 'px';
+
+        el.classList.add('ppv-ai-highlighted');
+
+        if (label && spotLabel) {
+            spotLabel.textContent = label;
+            spotLabel.style.display = 'block';
+            var lw = 200;
+            spotLabel.style.left = Math.max(8, x + w/2 - lw/2) + 'px';
+            if (y > 60) {
+                spotLabel.style.top = (y - 44) + 'px';
+                spotLabel.className = 'ppv-spot-label above';
+            } else {
+                spotLabel.style.top = (y + h + 10) + 'px';
+                spotLabel.className = 'ppv-spot-label below';
+            }
+        } else if (spotLabel) {
+            spotLabel.style.display = 'none';
+        }
+
+        spotlight.classList.add('active');
+        // Auto-dismiss after 6 seconds
+        spotTimer = setTimeout(clearSpotlight, 6000);
+    }
+
+    // Dismiss spotlight on click - but let bottom nav and chat panel clicks through
+    if (spotlight) {
+        spotlight.addEventListener('click', function(e) {
+            // Let bottom nav clicks pass through
+            var bottomNav = document.querySelector('.ppv-bottom-nav');
+            if (bottomNav) {
+                var bnr = bottomNav.getBoundingClientRect();
+                if (e.clientY >= bnr.top) {
+                    clearSpotlight();
+                    // Find and click the actual element under the spotlight
+                    spotlight.style.pointerEvents = 'none';
+                    var under = document.elementFromPoint(e.clientX, e.clientY);
+                    spotlight.style.pointerEvents = '';
+                    if (under) under.click();
+                    return;
+                }
+            }
+            // If clicked on the highlighted element, let it through
+            var highlighted = document.querySelector('.ppv-ai-highlighted');
+            if (highlighted) {
+                var hr = highlighted.getBoundingClientRect();
+                if (e.clientX >= hr.left && e.clientX <= hr.right && e.clientY >= hr.top && e.clientY <= hr.bottom) {
+                    clearSpotlight();
+                    highlighted.click();
+                    return;
+                }
+            }
+            clearSpotlight();
+        });
+    }
+
+    function findTabByText(text) {
+        var tabs = document.querySelectorAll('.ppv-tab, .tab-btn, [data-tab], .nav-tab, [role="tab"]');
+        var lower = text.toLowerCase();
+        for (var i = 0; i < tabs.length; i++) {
+            var t = (tabs[i].textContent || '').trim().toLowerCase();
+            if (t === lower || t.indexOf(lower) !== -1) return tabs[i];
+        }
+        // Fallback: any button/link containing the text
+        var all = document.querySelectorAll('button, a, [class*="tab"]');
+        for (var j = 0; j < all.length; j++) {
+            var txt = (all[j].textContent || '').trim().toLowerCase();
+            if (txt === lower || txt.indexOf(lower) !== -1) return all[j];
+        }
+        return null;
+    }
+
+    function executeActions(actions) {
+        // Navigate first if needed
+        if (actions.navigate) {
+            var targetUrl = actions.navigate;
+            // If we're already on the right page, skip navigation
+            if (window.location.pathname !== targetUrl) {
+                // Keep chat open after navigation
+                try {
+                    sessionStorage.setItem('ppv_ai_chat_keep_open', '1');
+                    sessionStorage.setItem('ppv_ai_pending_actions', JSON.stringify({
+                        tab: actions.tab,
+                        highlight: actions.highlight,
+                        scroll: actions.scroll
+                    }));
+                } catch(e) {}
+                if (window.PPV_SPA && window.PPV_SPA.navigateTo) {
+                    window.PPV_SPA.navigateTo(targetUrl);
+                    // SPA: chat panel survives, just re-ensure it's open
+                    setTimeout(function() {
+                        if (!isOpen) toggle();
+                    }, 500);
+                } else {
+                    window.location.href = targetUrl;
+                }
+                return;
+            }
+        }
+
+        // Click tab if specified
+        if (actions.tab) {
+            var tabEl = findTabByText(actions.tab);
+            if (tabEl) {
+                tabEl.click();
+                // Wait for tab content to load before highlighting
+                setTimeout(function() {
+                    doHighlightAndScroll(actions);
+                }, 400);
+                return;
+            }
+        }
+
+        doHighlightAndScroll(actions);
+    }
+
+    function doHighlightAndScroll(actions) {
+        var targetEl = null;
+
+        if (actions.highlight) {
+            targetEl = document.querySelector(actions.highlight);
+            if (targetEl) {
+                showSpotlight(targetEl);
+            }
+        }
+
+        if (actions.scroll) {
+            var scrollEl = document.querySelector(actions.scroll);
+            if (scrollEl) {
+                scrollEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (!targetEl) {
+                    targetEl = scrollEl;
+                    showSpotlight(scrollEl);
+                }
+            }
+        }
+    }
+
+    // Check for pending actions after SPA navigation
+    try {
+        var pending = sessionStorage.getItem('ppv_ai_pending_actions');
+        if (pending) {
+            sessionStorage.removeItem('ppv_ai_pending_actions');
+            var pendingActions = JSON.parse(pending);
+            if (pendingActions.tab || pendingActions.highlight || pendingActions.scroll) {
+                setTimeout(function() { executeActions(pendingActions); }, 800);
+            }
+        }
+    } catch(e) {}
+
+    // Events - direct listener + document-level fallback for robustness
+    navBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(); });
+    // Fallback: document-level delegation ensures chat works even after SPA navigation
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#ppv-ai-support-nav-btn') && !e.defaultPrevented) {
+            e.preventDefault();
+            toggle();
+        }
+    });
     closeBtn.addEventListener('click', toggle);
     sendBtn.addEventListener('click', sendMessage);
 
@@ -762,7 +1166,64 @@ PROMPT;
     /**
      * Get UI labels for the chat widget
      */
-    private static function get_labels($lang) {
+    private static function get_labels($lang, $is_setup_mode = false) {
+        // Setup mode: trial stores with incomplete setup get focused labels
+        if ($is_setup_mode) {
+            $setup_labels = [
+                'de' => [
+                    'title'             => 'PunktePass Einrichtung',
+                    'status'            => 'Ich helfe dir beim Start!',
+                    'welcome'           => 'Willkommen bei PunktePass! Ich bin dein Assistent und helfe dir, alles einzurichten. Frag mich einfach, was du als Nächstes tun sollst!',
+                    'placeholder'       => 'Frage zur Einrichtung...',
+                    'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
+                    'limit_placeholder' => 'Chat-Limit erreicht',
+                    'wa_prefill'        => 'Hallo, ich brauche Hilfe bei der PunktePass-Einrichtung',
+                    'chips'             => ['Was muss ich einrichten?', 'Wie funktioniert das Scannen?', 'Erste Prämie erstellen', 'Was ist die MiniKamera?'],
+                ],
+                'hu' => [
+                    'title'             => 'PunktePass Beállítás',
+                    'status'            => 'Segítek az indulásban!',
+                    'welcome'           => 'Üdvözöllek a PunktePass-ban! Én vagyok az asszisztensed, segítek mindent beállítani. Kérdezz bátran, mit kell következőnek csinálnod!',
+                    'placeholder'       => 'Kérdés a beállításról...',
+                    'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
+                    'limit_placeholder' => 'Chat limit elérve',
+                    'wa_prefill'        => 'Szia, segítségre van szükségem a PunktePass beállításával',
+                    'chips'             => ['Mit kell beállítanom?', 'Hogyan működik a szkennelés?', 'Első jutalom létrehozása', 'Mi az a MiniKamera?'],
+                ],
+                'ro' => [
+                    'title'             => 'Configurare PunktePass',
+                    'status'            => 'Te ajut să începi!',
+                    'welcome'           => 'Bine ai venit la PunktePass! Sunt asistentul tău și te ajut să configurezi totul. Întreabă-mă ce trebuie să faci în continuare!',
+                    'placeholder'       => 'Întrebare despre configurare...',
+                    'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
+                    'limit_placeholder' => 'Limită chat atinsă',
+                    'wa_prefill'        => 'Bună, am nevoie de ajutor cu configurarea PunktePass',
+                    'chips'             => ['Ce trebuie să configurez?', 'Cum funcționează scanarea?', 'Creare prima recompensă', 'Ce este MiniCamera?'],
+                ],
+                'en' => [
+                    'title'             => 'PunktePass Setup',
+                    'status'            => 'I\'ll help you get started!',
+                    'welcome'           => 'Welcome to PunktePass! I\'m your assistant and I\'ll help you set everything up. Just ask me what to do next!',
+                    'placeholder'       => 'Ask about setup...',
+                    'error'             => 'Sorry, something went wrong. Please try again.',
+                    'limit_placeholder' => 'Chat limit reached',
+                    'wa_prefill'        => 'Hello, I need help setting up PunktePass',
+                    'chips'             => ['What do I need to set up?', 'How does scanning work?', 'Create first reward', 'What is the MiniKamera?'],
+                ],
+                'it' => [
+                    'title'             => 'Configurazione PunktePass',
+                    'status'            => 'Ti aiuto a iniziare!',
+                    'welcome'           => 'Benvenuto in PunktePass! Sono il tuo assistente e ti aiuterò a configurare tutto. Chiedimi cosa fare!',
+                    'placeholder'       => 'Domanda sulla configurazione...',
+                    'error'             => 'Spiacente, si è verificato un errore. Riprova.',
+                    'limit_placeholder' => 'Limite chat raggiunto',
+                    'wa_prefill'        => 'Ciao, ho bisogno di aiuto per configurare PunktePass',
+                    'chips'             => ['Cosa devo configurare?', 'Come funziona la scansione?', 'Creare primo premio', 'Cos\'è la MiniKamera?'],
+                ],
+            ];
+            return $setup_labels[$lang] ?? $setup_labels['de'];
+        }
+
         $labels = [
             'de' => [
                 'title'             => 'PunktePass Assistent',

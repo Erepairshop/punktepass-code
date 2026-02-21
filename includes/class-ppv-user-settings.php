@@ -130,7 +130,7 @@ class PPV_User_Settings {
 
     private static function render_standalone_settings() {
         $plugin_url = PPV_PLUGIN_URL;
-        $version    = PPV_VERSION;
+        $version    = PPV_Core::asset_version();
         $site_url   = get_site_url();
 
         // Language
@@ -171,11 +171,12 @@ class PPV_User_Settings {
             $global_header = ob_get_clean();
         }
 
-        // Bottom nav context
+        // Bottom nav context + HTML
         $bottom_nav_context = '';
         if (class_exists('PPV_Bottom_Nav')) {
             ob_start();
             PPV_Bottom_Nav::inject_context();
+            echo PPV_Bottom_Nav::render_nav();
             $bottom_nav_context = ob_get_clean();
         }
 
@@ -203,10 +204,9 @@ class PPV_User_Settings {
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-core.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-layout.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-components.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-light.css?v=<?php echo esc_attr($version); ?>">
-    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/handler-light.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-global-header.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-handler.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-user-settings.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>

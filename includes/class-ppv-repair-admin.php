@@ -1502,6 +1502,7 @@ a:hover{color:#5a67d8}
             <button type="button" class="ra-settings-tab" data-panel="punktepass"><i class="ri-star-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_pp')) . '</button>
             <button type="button" class="ra-settings-tab" data-panel="abo"><i class="ri-vip-crown-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_abo')) . '</button>
             <button type="button" class="ra-settings-tab" data-panel="filialen"><i class="ri-building-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_tab_filialen')) . '</button>
+            <button type="button" class="ra-settings-tab" data-panel="widget"><i class="ri-code-s-slash-line"></i> Widget</button>
         </div>
 
         <form id="ra-settings-form">
@@ -2367,6 +2368,95 @@ echo '</div></div>
 
         echo '
             </div><!-- END PANEL: filialen -->
+
+            <!-- ==================== PANEL: Widget ==================== -->
+            <div class="ra-settings-panel" data-panel="widget">
+                <h4><i class="ri-code-s-slash-line"></i> Widget / Embed Code</h4>
+                <p style="font-size:13px;color:#64748b;margin:0 0 20px">
+                    Betten Sie Ihr Reparaturformular auf Ihrer Website ein. Kunden können direkt von Ihrer Seite eine Reparatur beauftragen.
+                </p>
+
+                <div class="ra-settings-grid" style="grid-template-columns:1fr 1fr;gap:16px">
+                    <div class="field">
+                        <label>Widget-Modus</label>
+                        <select name="widget_mode" id="ra-widget-mode" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+                            <option value="float">Floating Button (empfohlen)</option>
+                            <option value="inline">Inline Banner</option>
+                            <option value="button">Einfacher Button</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Position</label>
+                        <select name="widget_position" id="ra-widget-position" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+                            <option value="bottom-right">Unten rechts</option>
+                            <option value="bottom-left">Unten links</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Farbe</label>
+                        <input type="color" name="widget_color" id="ra-widget-color" value="' . $store_color . '" style="width:100%;height:42px;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px;cursor:pointer">
+                    </div>
+                    <div class="field">
+                        <label>Sprache</label>
+                        <select name="widget_lang" id="ra-widget-lang" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+                            <option value="de">Deutsch</option>
+                            <option value="en">English</option>
+                            <option value="hu">Magyar</option>
+                            <option value="ro">Română</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+                    <div class="field" id="ra-widget-text-wrap">
+                        <label>Button-Text (optional)</label>
+                        <input type="text" name="widget_text" id="ra-widget-text" placeholder="Reparatur anfragen" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+                    </div>
+                    <div class="field" id="ra-widget-target-wrap" style="display:none">
+                        <label>CSS-Selector (inline/button)</label>
+                        <input type="text" name="widget_target" id="ra-widget-target" placeholder="#mein-widget" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+                    </div>
+                </div>
+
+                <h4 style="margin-top:28px"><i class="ri-eye-line"></i> Vorschau</h4>
+                <div id="ra-widget-preview" style="border:2px dashed #e2e8f0;border-radius:12px;padding:24px;min-height:100px;background:#fafbfc;position:relative;overflow:hidden">
+                    <div id="ra-widget-preview-float" style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-radius:50px;color:#fff;font-size:14px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.15);cursor:default;width:fit-content;margin-left:auto;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                        <span id="ra-widget-preview-text">Reparatur anfragen</span>
+                    </div>
+                    <div id="ra-widget-preview-inline" style="display:none;max-width:400px;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
+                        <div id="ra-widget-preview-inline-hdr" style="padding:20px 24px;color:#fff;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
+                            <div style="font-size:18px;font-weight:700">Reparatur einreichen</div>
+                            <div style="font-size:13px;opacity:.85;margin-top:4px">Füllen Sie das Formular aus und wir melden uns.</div>
+                        </div>
+                        <div style="padding:16px 24px">
+                            <div id="ra-widget-preview-inline-cta" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;text-align:center;color:#fff;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">Formular öffnen →</div>
+                        </div>
+                        <div style="padding:10px 24px;border-top:1px solid #f1f5f9;text-align:center;font-size:11px;color:#94a3b8">Powered by <b style="color:#64748b">PunktePass</b></div>
+                    </div>
+                    <div id="ra-widget-preview-button" style="display:none">
+                        <div id="ra-widget-preview-btn" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:default;box-shadow:0 4px 16px rgba(102,126,234,.3);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                            <span id="ra-widget-preview-btn-text">Reparatur anfragen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top:28px"><i class="ri-clipboard-line"></i> Embed Code</h4>
+                <div style="position:relative">
+                    <pre id="ra-widget-code" style="background:#1e293b;color:#e2e8f0;padding:16px 20px;border-radius:12px;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:0"></pre>
+                    <button type="button" id="ra-widget-copy" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,.12);border:none;color:#e2e8f0;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s">
+                        <i class="ri-file-copy-line"></i> Kopieren
+                    </button>
+                </div>
+                <p style="font-size:12px;color:#94a3b8;margin:8px 0 0">Fügen Sie diesen Code auf Ihrer Website ein, z.B. vor dem &lt;/body&gt; Tag.</p>
+
+                <h4 style="margin-top:28px"><i class="ri-link"></i> Direkter Link</h4>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input type="text" readonly id="ra-widget-direct-link" value="' . esc_attr($form_url) . '" style="flex:1;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc;color:#475569">
+                    <button type="button" id="ra-widget-copy-link" style="background:#667eea;border:none;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:background .2s">
+                        <i class="ri-file-copy-line"></i> Kopieren
+                    </button>
+                </div>
+            </div><!-- END PANEL: widget -->
 
             <!-- Save button visible on all panels -->
             <div class="ra-settings-save" style="padding:20px 24px;background:#f8fafc;border-top:1px solid #e2e8f0">
@@ -4939,6 +5029,122 @@ echo '</div></div>
     if (savedSettingsTab) {
         switchSettingsTab(savedSettingsTab);
     }
+
+    /* ===== Widget Embed Tab ===== */
+    (function(){
+        var wMode = document.getElementById("ra-widget-mode");
+        var wPos = document.getElementById("ra-widget-position");
+        var wColor = document.getElementById("ra-widget-color");
+        var wLang = document.getElementById("ra-widget-lang");
+        var wText = document.getElementById("ra-widget-text");
+        var wTarget = document.getElementById("ra-widget-target");
+        var wTargetWrap = document.getElementById("ra-widget-target-wrap");
+        var wTextWrap = document.getElementById("ra-widget-text-wrap");
+        var wCode = document.getElementById("ra-widget-code");
+        var wCopy = document.getElementById("ra-widget-copy");
+        var wCopyLink = document.getElementById("ra-widget-copy-link");
+        var wDirectLink = document.getElementById("ra-widget-direct-link");
+        var previewFloat = document.getElementById("ra-widget-preview-float");
+        var previewInline = document.getElementById("ra-widget-preview-inline");
+        var previewButton = document.getElementById("ra-widget-preview-button");
+        var previewText = document.getElementById("ra-widget-preview-text");
+        var previewBtnText = document.getElementById("ra-widget-preview-btn-text");
+        var storeSlug = ' . wp_json_encode($store_slug) . ';
+        var baseUrl = ' . wp_json_encode(home_url()) . ';
+
+        if (!wMode || !wCode) return;
+
+        var defaultTexts = {de:"Reparatur anfragen",en:"Request repair",hu:"Javítás kérése",ro:"Solicită reparație",it:"Richiedi riparazione"};
+
+        function darkenHex(hex, pct) {
+            var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+            r=Math.round(r*(1-pct)); g=Math.round(g*(1-pct)); b=Math.round(b*(1-pct));
+            return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+        }
+
+        function updateWidget() {
+            var mode = wMode.value;
+            var color = wColor.value;
+            var lang = wLang.value;
+            var text = wText.value.trim();
+            var target = wTarget.value.trim();
+            var pos = wPos.value;
+            var color2 = darkenHex(color, 0.25);
+            var grad = "linear-gradient(135deg," + color + "," + color2 + ")";
+            var displayText = text || defaultTexts[lang] || defaultTexts.de;
+
+            // Toggle visibility of fields
+            wTargetWrap.style.display = (mode === "inline" || mode === "button") ? "" : "none";
+            wTextWrap.style.display = (mode === "float" || mode === "button") ? "" : "none";
+            wPos.parentNode.style.display = (mode === "float") ? "" : "none";
+
+            // Update preview
+            previewFloat.style.display = mode === "float" ? "flex" : "none";
+            previewInline.style.display = mode === "inline" ? "" : "none";
+            previewButton.style.display = mode === "button" ? "" : "none";
+
+            previewFloat.style.background = grad;
+            previewFloat.style.marginLeft = pos === "bottom-left" ? "0" : "auto";
+            previewFloat.style.marginRight = pos === "bottom-left" ? "auto" : "0";
+            previewText.textContent = displayText;
+            previewBtnText.textContent = displayText;
+
+            var inlineHdr = document.getElementById("ra-widget-preview-inline-hdr");
+            var inlineCta = document.getElementById("ra-widget-preview-inline-cta");
+            var previewBtn = document.getElementById("ra-widget-preview-btn");
+            if (inlineHdr) inlineHdr.style.background = grad;
+            if (inlineCta) inlineCta.style.background = grad;
+            if (previewBtn) previewBtn.style.background = grad;
+
+            // Generate embed code
+            var attrs = \'data-store="\' + storeSlug + \'"\';
+            if (mode !== "float") attrs += \' data-mode="\' + mode + \'"\';
+            if (lang !== "de") attrs += \' data-lang="\' + lang + \'"\';
+            if (color !== "#667eea") attrs += \' data-color="\' + color + \'"\';
+            if (mode === "float" && pos !== "bottom-right") attrs += \' data-position="\' + pos + \'"\';
+            if (text) attrs += \' data-text="\' + text.replace(/"/g, "&quot;") + \'"\';
+            if ((mode === "inline" || mode === "button") && target) attrs += \' data-target="\' + target.replace(/"/g, "&quot;") + \'"\';
+
+            var code = \'<script src="\' + baseUrl + \'/formular/shop-widget.js" \' + attrs + \'><\' + \'/script>\';
+            if (mode === "inline") {
+                code = \'<div id="mein-reparatur-widget"></div>\\n\' + code.replace(\'data-target="\' + target.replace(/"/g, "&quot;") + \'"\', \'data-target="#mein-reparatur-widget"\');
+                if (!target) code = \'<div id="mein-reparatur-widget"></div>\\n<script src="\' + baseUrl + \'/formular/shop-widget.js" \' + attrs + \' data-target="#mein-reparatur-widget"><\' + \'/script>\';
+            }
+            if (mode === "button" && !target) {
+                code = \'<div id="mein-reparatur-btn"></div>\\n<script src="\' + baseUrl + \'/formular/shop-widget.js" \' + attrs + \' data-target="#mein-reparatur-btn"><\' + \'/script>\';
+            }
+
+            wCode.textContent = code;
+        }
+
+        wMode.addEventListener("change", updateWidget);
+        wPos.addEventListener("change", updateWidget);
+        wColor.addEventListener("input", updateWidget);
+        wLang.addEventListener("change", updateWidget);
+        wText.addEventListener("input", updateWidget);
+        wTarget.addEventListener("input", updateWidget);
+        updateWidget();
+
+        // Copy embed code
+        if (wCopy) {
+            wCopy.addEventListener("click", function() {
+                navigator.clipboard.writeText(wCode.textContent).then(function() {
+                    wCopy.innerHTML = \'<i class="ri-check-line"></i> Kopiert!\';
+                    setTimeout(function() { wCopy.innerHTML = \'<i class="ri-file-copy-line"></i> Kopieren\'; }, 2000);
+                });
+            });
+        }
+
+        // Copy direct link
+        if (wCopyLink) {
+            wCopyLink.addEventListener("click", function() {
+                navigator.clipboard.writeText(wDirectLink.value).then(function() {
+                    wCopyLink.innerHTML = \'<i class="ri-check-line"></i> Kopiert!\';
+                    setTimeout(function() { wCopyLink.innerHTML = \'<i class="ri-file-copy-line"></i> Kopieren\'; }, 2000);
+                });
+            });
+        }
+    })();
 
     /* ===== Tab Switching ===== */
     var invoicesLoaded=false;

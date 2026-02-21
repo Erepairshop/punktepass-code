@@ -145,7 +145,7 @@ class PPV_Bottom_Nav {
             <nav class="ppv-bottom-nav ppv-nav-labeled" data-nav-type="scanner">
                 <a href="/qr-center" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_scanner')); ?>"><i class="ri-qr-scan-2-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_scanner')); ?></span></a>
                 <a href="/mein-profil" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_profile')); ?>"><i class="ri-user-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_profile')); ?></span></a>
-                <a href="#" class="nav-item" id="ppv-ai-support-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_support') ?: 'Support'); ?>"><i class="ri-sparkling-2-fill"></i><span><?php echo esc_html(PPV_Lang::t('nav_support') ?: 'Support'); ?></span></a>
+                <a href="javascript:void(0)" class="nav-item" id="ppv-ai-support-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_support') ?: 'Support'); ?>"><i class="ri-sparkling-2-fill"></i><span><?php echo esc_html(PPV_Lang::t('nav_support') ?: 'Support'); ?></span></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_feedback')); ?>"><i class="ri-feedback-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_feedback')); ?></span></a>
             </nav>
             <?php if (class_exists('PPV_AI_Support')) { PPV_AI_Support::render_widget(); } ?>
@@ -158,7 +158,7 @@ class PPV_Bottom_Nav {
                 <a href="/rewards" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_rewards')); ?>"><i class="ri-coupon-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_rewards')); ?></span></a>
                 <a href="/mein-profil" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_profile')); ?>"><i class="ri-user-3-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_profile')); ?></span></a>
                 <a href="/statistik" class="nav-item" data-spa="true" title="<?php echo esc_attr(PPV_Lang::t('nav_statistics')); ?>"><i class="ri-bar-chart-line"></i><span><?php echo esc_html(PPV_Lang::t('nav_statistics')); ?></span></a>
-                <a href="#" class="nav-item" id="ppv-ai-support-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_support') ?: 'Support'); ?>"><i class="ri-sparkling-2-fill"></i><span><?php echo esc_html(PPV_Lang::t('nav_support') ?: 'Support'); ?></span></a>
+                <a href="javascript:void(0)" class="nav-item" id="ppv-ai-support-nav-btn" title="<?php echo esc_attr(PPV_Lang::t('nav_support') ?: 'Support'); ?>"><i class="ri-sparkling-2-fill"></i><span><?php echo esc_html(PPV_Lang::t('nav_support') ?: 'Support'); ?></span></a>
             </nav>
             <?php if (class_exists('PPV_AI_Support')) { PPV_AI_Support::render_widget(); } ?>
         <?php

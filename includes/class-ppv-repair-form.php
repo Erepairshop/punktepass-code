@@ -89,6 +89,9 @@ class PPV_Repair_Form {
         $nonce = wp_create_nonce('ppv_repair_form');
         $ajax_url = admin_url('admin-ajax.php');
 
+        // Embed mode: strip header/hero for iframe embedding
+        $is_embed = !empty($_GET['embed']);
+
         // Prefill from query params (for "Nochmal Anliegen" button)
         $pf_name    = esc_attr($_GET['name'] ?? '');
         $pf_email   = esc_attr($_GET['email'] ?? '');
@@ -171,9 +174,33 @@ class PPV_Repair_Form {
     .rf-sug-main{font-weight:500;color:#0f172a}
     .rf-sug-sub{font-size:12px;color:#94a3b8;margin-top:2px}
 
+    <?php if ($is_embed): ?>
+    /* Embed mode: compact layout for iframe */
+    .repair-header{display:none!important}
+    .repair-lang{display:none!important}
+    .repair-page{padding-top:8px!important}
+    .ppv-repair-body{background:#fff!important}
+    .repair-form-wrap{margin-top:0!important;border-radius:0!important;box-shadow:none!important}
+    <?php endif; ?>
     </style>
 </head>
-<body class="ppv-repair-body">
+<body class="ppv-repair-body<?php echo $is_embed ? ' ppv-embed-mode' : ''; ?>"><?php if ($is_embed): ?>
+<script>
+// Notify parent widget about form events (height changes, submission)
+(function(){
+    function postMsg(type, data) {
+        try { window.parent.postMessage({source:'ppv-repair-form', type:type, data:data||{}}, '*'); } catch(e){}
+    }
+    // Report height for auto-resize
+    var ro = new ResizeObserver(function(entries) {
+        postMsg('resize', {height: document.body.scrollHeight});
+    });
+    ro.observe(document.body);
+    // Report form submission
+    document.addEventListener('ppv:repair-submitted', function() { postMsg('submitted'); });
+})();
+</script>
+<?php endif; ?>
 
 <div class="repair-page">
     <!-- Hero Header -->

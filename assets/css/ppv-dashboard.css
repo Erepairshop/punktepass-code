@@ -114,122 +114,12 @@ select, input, button, textarea {
 }
 
 /* ═══════════════════════════════════════════
-   GLOBAL HEADER (was in handler-light.css)
-   ═══════════════════════════════════════════ */
-
-#ppv-global-header {
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--pp-header-height, 64px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    background: #0f172a;
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#ppv-global-header.ppv-handler-mode {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-#ppv-global-header .ppv-header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-#ppv-global-header .ppv-header-logo-tiny {
-    display: none !important;
-}
-
-#ppv-global-header .ppv-user-email {
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-#ppv-global-header .ppv-header-nav {
-    display: flex;
-    gap: 8px;
-}
-
-#ppv-global-header .ppv-nav-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-}
-
-#ppv-global-header .ppv-nav-btn:hover {
-    background: rgba(14, 165, 233, 0.2);
-    border-color: var(--pp-primary);
-}
-
-#ppv-global-header .ppv-stat-mini {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: rgba(14, 165, 233, 0.15);
-    border-radius: 8px;
-    color: var(--pp-primary-light, #38bdf8);
-    font-size: 12px;
-    font-weight: 600;
-}
-
-/* ═══════════════════════════════════════════
-   SCROLLBAR (was in handler-light.css)
+   SCROLLBAR
    ═══════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-    .ppv-dashboard-netto::-webkit-scrollbar {
-        width: 0;
-        display: none;
-    }
-    .ppv-dashboard-netto {
-        scrollbar-width: none;
-    }
-}
-
-/* ═══════════════════════════════════════════
-   RESPONSIVE (was in handler-light.css)
-   ═══════════════════════════════════════════ */
-
-@media (max-width: 480px) {
-    .ppv-dashboard-inner {
-        padding: 0 12px;
-    }
-    #ppv-global-header {
-        padding: 0 12px;
-    }
-    #ppv-global-header .ppv-header-logo-tiny {
-        width: 36px;
-        height: 36px;
-    }
-    #ppv-global-header .ppv-nav-btn {
-        width: 36px;
-        height: 36px;
-    }
-}
-
-@supports (padding-top: env(safe-area-inset-top)) {
-    #ppv-global-header {
-        padding-top: env(safe-area-inset-top);
-    }
+    .ppv-dashboard-netto::-webkit-scrollbar { width: 0; display: none; }
+    .ppv-dashboard-netto { scrollbar-width: none; }
 }
 
 /* ═══════════════════════════════════════════

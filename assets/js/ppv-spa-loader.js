@@ -69,8 +69,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 200);
   });
 
+  // Scroll-restore: only on full page load (not after SPA navigation)
+  // ppv-bottom-nav.js clears scroll keys on SPA nav, so this only fires on back/refresh
   const scrollPos = sessionStorage.getItem("scroll_" + location.pathname);
-  if (scrollPos) setTimeout(() => window.scrollTo(0, scrollPos), 100);
+  if (scrollPos && !window.PPV_NAV_STATE?.isNavigating) {
+    setTimeout(() => window.scrollTo(0, parseInt(scrollPos, 10)), 100);
+  }
 
   // ✅ Offline / online toast
   window.addEventListener("offline", () => showToast("Offline-Modus aktiv", "warn"));

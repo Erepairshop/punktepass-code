@@ -281,6 +281,18 @@ class PPV_Repair_Core {
             exit;
         }
 
+        // /formular/shop-widget.js → Shop-specific embed widget (public, CORS enabled)
+        if ($path === '/formular/shop-widget.js') {
+            $widget_file = PPV_PLUGIN_DIR . 'assets/js/ppv-shop-widget.js';
+            if (file_exists($widget_file)) {
+                header('Content-Type: application/javascript; charset=UTF-8');
+                header('Access-Control-Allow-Origin: *');
+                header('Cache-Control: public, max-age=3600');
+                readfile($widget_file);
+            }
+            exit;
+        }
+
         // /formular/widget-demo → Widget test/demo page
         if ($path === '/formular/widget-demo') {
             require_once PPV_PLUGIN_DIR . 'includes/class-ppv-widget-demo.php';
