@@ -50,12 +50,10 @@ function ppv_disable_wp_optimization() {
     // LiteSpeed specific: disable CSS/JS combining and minification
     if (defined('LSCWP_V')) {
         do_action('litespeed_control_set_nocache', 'standalone page');
-        do_action('litespeed_conf_force', array(
-            'optm-css_min'  => false,
-            'optm-js_min'   => false,
-            'optm-css_comb' => false,
-            'optm-js_comb'  => false,
-        ));
+        do_action('litespeed_conf_force', 'optm-css_min', false);
+        do_action('litespeed_conf_force', 'optm-js_min', false);
+        do_action('litespeed_conf_force', 'optm-css_comb', false);
+        do_action('litespeed_conf_force', 'optm-js_comb', false);
     }
 
     // Kill any output buffers that caching plugins may have started
