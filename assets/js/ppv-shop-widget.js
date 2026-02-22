@@ -808,12 +808,20 @@
             var matchedTierService = null;
             if (qTiers.length > 0 && tServices.length > 0 && state.brand) {
                 // Find best matching tiered service for this device+problem
+                // Score each service by how many of its name words appear in the search terms
                 var searchTerms = ((state.brand || '') + ' ' + (state.model || '') + ' ' + (state.problem || '')).toLowerCase();
+                var bestScore = 0;
                 for (var ts = 0; ts < tServices.length; ts++) {
                     var svcName = (tServices[ts].name || '').toLowerCase();
-                    if (svcName && searchTerms.indexOf(svcName.split(' ')[0]) >= 0) {
+                    if (!svcName) continue;
+                    var words = svcName.split(/\s+/);
+                    var score = 0;
+                    for (var wi = 0; wi < words.length; wi++) {
+                        if (words[wi] && searchTerms.indexOf(words[wi]) >= 0) score++;
+                    }
+                    if (score > bestScore) {
+                        bestScore = score;
                         matchedTierService = tServices[ts];
-                        break;
                     }
                 }
                 // If no specific match, show first tiered service as example
