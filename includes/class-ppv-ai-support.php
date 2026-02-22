@@ -576,7 +576,8 @@ PROMPT;
 
         $result = PPV_AI_Engine::chat_with_history(
             $system_prompt,
-            $messages
+            $messages,
+            ['model' => PPV_AI_Engine::MODEL_FAST]
         );
 
         if (is_wp_error($result)) {

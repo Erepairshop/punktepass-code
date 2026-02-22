@@ -1817,7 +1817,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         }
         $messages[] = ['role' => 'user', 'content' => $message];
 
-        $result = PPV_AI_Engine::chat_with_history($system, $messages);
+        $result = PPV_AI_Engine::chat_with_history($system, $messages, ['model' => PPV_AI_Engine::MODEL_FAST]);
         if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
 
         $ai_text = $result['text'];
@@ -2094,7 +2094,7 @@ RULES:
 
 Example output: [\"iPhone 13\",\"iPhone 13 mini\",\"iPhone 13 Pro\",\"iPhone 13 Pro Max\"]";
 
-            $result = PPV_AI_Engine::chat($system, $prompt_text, 'en');
+            $result = PPV_AI_Engine::chat($system, $prompt_text, 'en', ['model' => PPV_AI_Engine::MODEL_FAST]);
             if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
 
             $text = trim($result['text']);
@@ -2347,7 +2347,8 @@ File content:
                 $parse_result = PPV_AI_Engine::chat(
                     'You are a data extraction assistant. Parse the input into structured service data. Return ONLY the formatted lines, nothing else.',
                     $parse_prompt,
-                    'de'
+                    'de',
+                    ['model' => PPV_AI_Engine::MODEL_FAST]
                 );
                 if (!is_wp_error($parse_result) && !empty($parse_result['text'])) {
                     $ai_lines = explode("\n", $parse_result['text']);
