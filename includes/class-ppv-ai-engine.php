@@ -99,6 +99,10 @@ class PPV_AI_Engine {
      * Call Anthropic Claude API
      */
     private static function call_anthropic($system, $messages, $model, $max_tokens) {
+        if (!defined('ANTHROPIC_API_KEY') || empty(ANTHROPIC_API_KEY)) {
+            return new WP_Error('ai_not_configured', 'Anthropic API key not configured');
+        }
+
         $body = [
             'model'      => $model,
             'max_tokens' => $max_tokens,

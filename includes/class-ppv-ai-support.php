@@ -577,7 +577,7 @@ PROMPT;
         $result = PPV_AI_Engine::chat_with_history(
             $system_prompt,
             $messages,
-            ['model' => PPV_AI_Engine::MODEL_FAST]
+            ['model' => 'gpt-4o-mini']
         );
 
         if (is_wp_error($result)) {
