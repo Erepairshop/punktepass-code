@@ -2382,7 +2382,6 @@ echo '</div></div>
                         <select name="widget_mode" id="ra-widget-mode" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
                             <option value="catalog">Katalog / Preisliste (empfohlen)</option>
                             <option value="float">Floating Button</option>
-                            <option value="ai">KI-Diagnose Widget</option>
                             <option value="inline">Inline Banner</option>
                             <option value="button">Einfacher Button</option>
                         </select>
@@ -2459,11 +2458,11 @@ echo '</div></div>
                     </button>
                 </div>
 
-                <!-- AI Widget Konfiguration -->
+                <!-- Katalog Konfiguration -->
                 <div style="margin-top:32px;border-top:2px solid #e2e8f0;padding-top:24px">
-                    <h4 style="margin:0 0 4px"><i class="ri-robot-line"></i> ' . esc_html(PPV_Lang::t('wai_title')) . '</h4>
+                    <h4 style="margin:0 0 4px"><i class="ri-list-settings-line"></i> Katalog-Daten konfigurieren</h4>
                     <p style="font-size:13px;color:#64748b;margin:0 0 16px">
-                        ' . esc_html(PPV_Lang::t('wai_desc')) . '
+                        Fügen Sie Ihre Marken, Services und Preise hinzu. Diese Daten werden im Katalog-Widget angezeigt.
                     </p>
 
                     ' . (!empty($store->widget_setup_complete) ?
@@ -2541,33 +2540,6 @@ echo '</div></div>
                     </div>
                     <div id="ra-wai-upload-status" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px"></div>
 
-                    <!-- AI Chat -->
-                    <div id="ra-wai-chat" style="border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff">
-                        <div id="ra-wai-messages" style="height:280px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px">
-                            <div class="ra-wai-msg bot" style="background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#334155;max-width:85%;line-height:1.5">
-                                ' . esc_html(PPV_Lang::t('wai_chat_welcome')) . '<br><br>
-                                ' . esc_html(PPV_Lang::t('wai_chat_options_intro')) . '<br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_prices')) . '</b><br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_brands')) . '</b><br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_design')) . '</b><br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_info')) . '</b>
-                            </div>
-                        </div>
-                        <div style="border-top:1.5px solid #e2e8f0;display:flex;align-items:end;gap:8px;padding:10px 12px;background:#fafbfc">
-                            <textarea id="ra-wai-input" rows="1" placeholder="' . esc_attr(PPV_Lang::t('wai_input_placeholder')) . '" style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;min-height:36px;max-height:100px;transition:border-color .2s;line-height:1.4"></textarea>
-                            <button type="button" id="ra-wai-send" style="background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');border:none;color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s">
-                                <i class="ri-send-plane-fill" style="font-size:16px"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Quick action chips -->
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_ai_mode_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_ai_mode')) . '</button>
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_brands_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_brands')) . '</button>
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_prices_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_prices')) . '</button>
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_options_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_options')) . '</button>
-                    </div>
                 </div>
 
             </div><!-- END PANEL: widget -->
@@ -5261,32 +5233,20 @@ echo '</div></div>
         }
     })();
 
-    /* ===== Widget AI Configuration Chat ===== */
+    /* ===== Widget Configuration Editor ===== */
     (function(){
-        var waiInput = document.getElementById("ra-wai-input");
-        var waiSend = document.getElementById("ra-wai-send");
-        var waiMessages = document.getElementById("ra-wai-messages");
         var waiFile = document.getElementById("ra-wai-file");
         var waiUploadArea = document.getElementById("ra-wai-upload-area");
         var waiUploadStatus = document.getElementById("ra-wai-upload-status");
-        var waiServicesDiv = document.getElementById("ra-wai-services");
         var waiServiceList = document.getElementById("ra-wai-service-list");
-        var waiBrandsDiv = document.getElementById("ra-wai-brands");
         var waiBrandList = document.getElementById("ra-wai-brand-list");
         var waiBrandCount = document.getElementById("ra-wai-brand-count");
 
         // Translated strings from PHP
         var waiT = ' . wp_json_encode([
-            'setup_done'       => PPV_Lang::t('wai_js_setup_done'),
-            'settings_updated' => PPV_Lang::t('wai_js_settings_updated'),
-            'error_prefix'     => PPV_Lang::t('wai_js_error_prefix'),
-            'error_unknown'    => PPV_Lang::t('wai_js_error_unknown'),
-            'conn_error'       => PPV_Lang::t('wai_js_connection_error'),
             'uploading'        => PPV_Lang::t('wai_js_uploading'),
             'upload_success'   => PPV_Lang::t('wai_js_upload_success'),
-            'upload_bot_msg'   => PPV_Lang::t('wai_js_upload_bot_msg'),
             'upload_saved'     => PPV_Lang::t('wai_js_upload_saved'),
-            'upload_image_msg' => PPV_Lang::t('wai_js_upload_image_msg'),
             'upload_error'     => PPV_Lang::t('wai_js_upload_error'),
             'conn_error_short' => PPV_Lang::t('wai_js_connection_error_short'),
             'service'          => PPV_Lang::t('wai_js_service'),
@@ -5302,12 +5262,10 @@ echo '</div></div>
         var waiChipList = document.getElementById("ra-wai-chip-list");
         var waiStatus = document.getElementById("ra-wai-status");
 
-        if (!waiInput || !waiSend) return;
+        if (!waiServiceList || !waiBrandList) return;
 
         var ajaxUrl = ' . wp_json_encode($ajax_url) . ';
         var nonce = ' . wp_json_encode($nonce) . ';
-        var chatHistory = [];
-        var sending = false;
 
         // Local data stores
         var currentBrands = [];
@@ -5714,175 +5672,6 @@ echo '</div></div>
             }
         });
 
-        function addMessage(role, text) {
-            var div = document.createElement("div");
-            div.className = "ra-wai-msg " + role;
-            var isBot = role === "bot";
-            div.style.cssText = isBot ?
-                "background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#334155;max-width:85%;line-height:1.5" :
-                "background:linear-gradient(135deg,#667eea,#4338ca);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;color:#fff;max-width:85%;align-self:flex-end;line-height:1.5";
-            div.innerHTML = text.replace(/\n/g, "<br>");
-            waiMessages.appendChild(div);
-            waiMessages.scrollTop = waiMessages.scrollHeight;
-            return div;
-        }
-
-        function showTyping() {
-            var div = document.createElement("div");
-            div.id = "ra-wai-typing";
-            div.style.cssText = "background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#94a3b8;max-width:85%;line-height:1.5";
-            div.innerHTML = \'<span style="display:inline-flex;gap:4px"><span style="animation:ra-wai-dot 1s infinite">·</span><span style="animation:ra-wai-dot 1s .2s infinite">·</span><span style="animation:ra-wai-dot 1s .4s infinite">·</span></span>\';
-            waiMessages.appendChild(div);
-            waiMessages.scrollTop = waiMessages.scrollHeight;
-        }
-
-        function removeTyping() {
-            var t = document.getElementById("ra-wai-typing");
-            if (t) t.remove();
-        }
-
-        // Add typing animation CSS
-        var dotStyle = document.createElement("style");
-        dotStyle.textContent = "@keyframes ra-wai-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}";
-        document.head.appendChild(dotStyle);
-
-        function sendMessage(text) {
-            if (sending || !text.trim()) return;
-            sending = true;
-            waiSend.style.opacity = "0.5";
-
-            addMessage("user", text);
-            chatHistory.push({role: "user", content: text});
-            waiInput.value = "";
-            waiInput.style.height = "36px";
-            showTyping();
-
-            var fd = new FormData();
-            fd.append("action", "ppv_widget_ai_chat");
-            fd.append("nonce", nonce);
-            fd.append("message", text);
-            fd.append("history", JSON.stringify(chatHistory));
-
-            fetch(ajaxUrl, {method: "POST", body: fd})
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    removeTyping();
-                    sending = false;
-                    waiSend.style.opacity = "1";
-
-                    if (data.success) {
-                        addMessage("bot", data.data.message);
-                        chatHistory.push({role: "assistant", content: data.data.message});
-
-                        // Update UI based on applied actions
-                        if (data.data.actions_applied && data.data.actions_applied.length > 0) {
-                            var acts = data.data.actions_applied;
-                            // Update widget controls if mode/color/lang changed
-                            var wMode = document.getElementById("ra-widget-mode");
-                            var wColor = document.getElementById("ra-widget-color");
-                            var wLang = document.getElementById("ra-widget-lang");
-                            var wText = document.getElementById("ra-widget-text");
-                            var cfg = data.data.config || {};
-
-                            if (acts.indexOf("mode") >= 0 && wMode && cfg.mode) {
-                                wMode.value = cfg.mode;
-                                wMode.dispatchEvent(new Event("change"));
-                            }
-                            if (acts.indexOf("color") >= 0 && wColor && cfg.color) {
-                                wColor.value = cfg.color;
-                                wColor.dispatchEvent(new Event("input"));
-                            }
-                            if (acts.indexOf("lang") >= 0 && wLang && cfg.lang) {
-                                wLang.value = cfg.lang;
-                                wLang.dispatchEvent(new Event("change"));
-                            }
-                            if (acts.indexOf("text") >= 0 && wText && cfg.text) {
-                                wText.value = cfg.text;
-                                wText.dispatchEvent(new Event("input"));
-                            }
-
-                            // Update brands display
-                            if (acts.indexOf("brands") >= 0 && cfg.brands) {
-                                renderBrands(cfg.brands);
-                            }
-
-                            // Update chips display
-                            if (acts.indexOf("chips") >= 0 && cfg.chips) {
-                                renderChips(cfg.chips);
-                            }
-
-                            // Update services display
-                            if (acts.indexOf("services") >= 0 && data.data.knowledge && data.data.knowledge.services) {
-                                renderServices(data.data.knowledge.services);
-                            }
-
-                            // Update quality tiers display
-                            if (acts.indexOf("quality_tiers") >= 0 && cfg.quality_tiers) {
-                                renderQualityTiers(cfg.quality_tiers);
-                            }
-
-                            // Update tiered services display
-                            if (acts.indexOf("tiered_services") >= 0 && data.data.knowledge && data.data.knowledge.tiered_services) {
-                                renderTieredServices(data.data.knowledge.tiered_services);
-                            }
-
-                            // Update custom sections display
-                            if (acts.indexOf("custom_sections") >= 0 && cfg.custom_sections) {
-                                renderCustomSections(cfg.custom_sections);
-                            }
-
-                            // Update setup status
-                            if (acts.indexOf("setup_complete") >= 0 && waiStatus) {
-                                waiStatus.style.background = "#f0fdf4";
-                                waiStatus.style.borderColor = "#bbf7d0";
-                                waiStatus.style.color = "#166534";
-                                waiStatus.innerHTML = \'<i class="ri-checkbox-circle-fill" style="font-size:18px"></i> \' + waiT.setup_done;
-                            }
-
-                            // Show a subtle notification for config changes
-                            var notif = document.createElement("div");
-                            notif.style.cssText = "background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 12px;font-size:12px;color:#166534;text-align:center;margin-top:4px";
-                            notif.innerHTML = \'<i class="ri-check-line"></i> \' + acts.length + " " + waiT.settings_updated;
-                            waiMessages.appendChild(notif);
-                            waiMessages.scrollTop = waiMessages.scrollHeight;
-                            setTimeout(function() { notif.style.opacity = "0"; setTimeout(function() { notif.remove(); }, 300); }, 3000);
-                        }
-                    } else {
-                        addMessage("bot", waiT.error_prefix + ": " + (data.data && data.data.message ? data.data.message : waiT.error_unknown));
-                    }
-                })
-                .catch(function() {
-                    removeTyping();
-                    sending = false;
-                    waiSend.style.opacity = "1";
-                    addMessage("bot", waiT.conn_error);
-                });
-        }
-
-        // Send button
-        waiSend.addEventListener("click", function() { sendMessage(waiInput.value); });
-
-        // Enter to send (Shift+Enter for new line)
-        waiInput.addEventListener("keydown", function(e) {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage(waiInput.value);
-            }
-        });
-
-        // Auto-resize textarea
-        waiInput.addEventListener("input", function() {
-            this.style.height = "36px";
-            this.style.height = Math.min(this.scrollHeight, 100) + "px";
-        });
-
-        // Quick action chips
-        document.querySelectorAll(".ra-wai-chip").forEach(function(chip) {
-            chip.addEventListener("click", function() {
-                sendMessage(this.getAttribute("data-msg"));
-            });
-        });
-
         // File upload
         if (waiUploadArea && waiFile) {
             waiUploadArea.addEventListener("click", function() { waiFile.click(); });
@@ -5907,7 +5696,7 @@ echo '</div></div>
             waiUploadStatus.style.background = "#eff6ff";
             waiUploadStatus.style.border = "1.5px solid #bfdbfe";
             waiUploadStatus.style.color = "#1e40af";
-            waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line" style="animation:ra-wai-dot 1s infinite"></i> \' + waiT.uploading;
+            waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i> \' + waiT.uploading;
 
             var fd = new FormData();
             fd.append("action", "ppv_widget_ai_upload");
@@ -5924,12 +5713,9 @@ echo '</div></div>
                         waiUploadStatus.style.color = "#166534";
 
                         if (d.file_type === "image" || d.file_type === "pdf" || d.file_type === "other") {
-                            // Non-text file: uploaded but no auto-parse possible
                             waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_saved;
-                            addMessage("bot", waiT.upload_image_msg.replace(\'%s\', escH(d.file_name)));
                         } else {
                             waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_success.replace(\'%d\', d.service_count);
-                            addMessage("bot", waiT.upload_bot_msg.replace(\'%s\', escH(d.file_name)).replace(\'%d\', d.service_count));
                         }
 
                         // Update services display
