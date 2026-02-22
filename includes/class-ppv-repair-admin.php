@@ -2371,175 +2371,231 @@ echo '</div></div>
 
             <!-- ==================== PANEL: Widget ==================== -->
             <div class="ra-settings-panel" data-panel="widget">
-                <h4><i class="ri-code-s-slash-line"></i> Widget / Embed Code</h4>
-                <p style="font-size:13px;color:#64748b;margin:0 0 20px">
-                    Betten Sie Ihr Reparaturformular auf Ihrer Website ein. Kunden können direkt von Ihrer Seite eine Reparatur beauftragen.
-                </p>
 
-                <div class="ra-settings-grid" style="grid-template-columns:1fr 1fr;gap:16px">
-                    <div class="field">
-                        <label>Widget-Modus</label>
-                        <select name="widget_mode" id="ra-widget-mode" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                            <option value="catalog">Katalog / Preisliste (empfohlen)</option>
-                            <option value="float">Floating Button</option>
-                            <option value="inline">Inline Banner</option>
-                            <option value="button">Einfacher Button</option>
-                        </select>
+                <!-- ── Section 1: Widget-Typ & Embed ── -->
+                <div style="margin-bottom:28px">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-code-s-slash-line" style="color:#fff;font-size:18px"></i></div>
+                        <div>
+                            <h4 style="margin:0;font-size:16px">Website-Widget</h4>
+                            <p style="margin:0;font-size:12px;color:#94a3b8">Reparatur-Widget auf Ihrer Website einbetten</p>
+                        </div>
                     </div>
-                    <div class="field">
-                        <label>Position</label>
-                        <select name="widget_position" id="ra-widget-position" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                            <option value="bottom-right">Unten rechts</option>
-                            <option value="bottom-left">Unten links</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Farbe</label>
-                        <input type="color" name="widget_color" id="ra-widget-color" value="' . $store_color . '" style="width:100%;height:42px;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px;cursor:pointer">
-                    </div>
-                    <div class="field">
-                        <label>Sprache</label>
-                        <select name="widget_lang" id="ra-widget-lang" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                            <option value="de">Deutsch</option>
-                            <option value="en">English</option>
-                            <option value="hu">Magyar</option>
-                            <option value="ro">Română</option>
-                            <option value="it">Italiano</option>
-                        </select>
-                    </div>
-                    <div class="field" id="ra-widget-text-wrap">
-                        <label>Button-Text (optional)</label>
-                        <input type="text" name="widget_text" id="ra-widget-text" placeholder="Reparatur anfragen" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                    </div>
-                    <div class="field" id="ra-widget-target-wrap" style="display:none">
-                        <label>CSS-Selector (inline/button)</label>
-                        <input type="text" name="widget_target" id="ra-widget-target" placeholder="#mein-widget" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                    </div>
-                </div>
 
-                <h4 style="margin-top:28px"><i class="ri-eye-line"></i> Vorschau</h4>
-                <div id="ra-widget-preview" style="border:2px dashed #e2e8f0;border-radius:12px;padding:24px;min-height:100px;background:#fafbfc;position:relative;overflow:hidden">
-                    <div id="ra-widget-preview-float" style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-radius:50px;color:#fff;font-size:14px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.15);cursor:default;width:fit-content;margin-left:auto;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                        <span id="ra-widget-preview-text">Reparatur anfragen</span>
-                    </div>
-                    <div id="ra-widget-preview-inline" style="display:none;max-width:400px;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
-                        <div id="ra-widget-preview-inline-hdr" style="padding:20px 24px;color:#fff;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
-                            <div style="font-size:18px;font-weight:700">Reparatur einreichen</div>
-                            <div style="font-size:13px;opacity:.85;margin-top:4px">Füllen Sie das Formular aus und wir melden uns.</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Widget-Modus</label>
+                            <select name="widget_mode" id="ra-widget-mode" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none;transition:border-color .2s">
+                                <option value="catalog">Katalog / Preisliste</option>
+                                <option value="float">Floating Button</option>
+                                <option value="inline">Inline Banner</option>
+                                <option value="button">Einfacher Button</option>
+                            </select>
                         </div>
-                        <div style="padding:16px 24px">
-                            <div id="ra-widget-preview-inline-cta" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;text-align:center;color:#fff;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">Formular öffnen →</div>
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Position</label>
+                            <select name="widget_position" id="ra-widget-position" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none">
+                                <option value="bottom-right">Unten rechts</option>
+                                <option value="bottom-left">Unten links</option>
+                            </select>
                         </div>
-                        <div style="padding:10px 24px;border-top:1px solid #f1f5f9;text-align:center;font-size:11px;color:#94a3b8">Powered by <b style="color:#64748b">PunktePass</b></div>
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Farbe</label>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="color" name="widget_color" id="ra-widget-color" value="' . $store_color . '" style="width:42px;height:42px;border:1.5px solid #e2e8f0;border-radius:10px;padding:3px;cursor:pointer;flex-shrink:0">
+                                <span id="ra-widget-color-hex" style="font-size:12px;font-family:monospace;color:#94a3b8">' . $store_color . '</span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Sprache</label>
+                            <select name="widget_lang" id="ra-widget-lang" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none">
+                                <option value="de">Deutsch</option>
+                                <option value="en">English</option>
+                                <option value="hu">Magyar</option>
+                                <option value="ro">Romana</option>
+                                <option value="it">Italiano</option>
+                            </select>
+                        </div>
+                        <div class="field" id="ra-widget-text-wrap">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Button-Text</label>
+                            <input type="text" name="widget_text" id="ra-widget-text" placeholder="Reparatur anfragen" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
+                        </div>
+                        <div class="field" id="ra-widget-target-wrap" style="display:none">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">CSS-Selector</label>
+                            <input type="text" name="widget_target" id="ra-widget-target" placeholder="#mein-widget" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
+                        </div>
                     </div>
-                    <div id="ra-widget-preview-button" style="display:none">
-                        <div id="ra-widget-preview-btn" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:default;box-shadow:0 4px 16px rgba(102,126,234,.3);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
+
+                    <!-- Vorschau -->
+                    <div style="margin-top:16px;border:2px dashed #e2e8f0;border-radius:14px;padding:20px;min-height:80px;background:repeating-linear-gradient(45deg,#fafbfc,#fafbfc 10px,#f8fafc 10px,#f8fafc 20px);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+                        <div id="ra-widget-preview-float" style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-radius:50px;color:#fff;font-size:14px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.15);cursor:default;width:fit-content;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                            <span id="ra-widget-preview-btn-text">Reparatur anfragen</span>
+                            <span id="ra-widget-preview-text">Reparatur anfragen</span>
+                        </div>
+                        <div id="ra-widget-preview-inline" style="display:none;max-width:400px;width:100%;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
+                            <div id="ra-widget-preview-inline-hdr" style="padding:20px 24px;color:#fff;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">
+                                <div style="font-size:18px;font-weight:700">Reparatur einreichen</div>
+                                <div style="font-size:13px;opacity:.85;margin-top:4px">Formular ausfullen - wir melden uns.</div>
+                            </div>
+                            <div style="padding:16px 24px">
+                                <div id="ra-widget-preview-inline-cta" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;text-align:center;color:#fff;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">Formular offnen</div>
+                            </div>
+                        </div>
+                        <div id="ra-widget-preview-button" style="display:none">
+                            <div id="ra-widget-preview-btn" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:default;box-shadow:0 4px 16px rgba(102,126,234,.3);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                                <span id="ra-widget-preview-btn-text">Reparatur anfragen</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Embed Code + Direct Link kompakt -->
+                    <div style="margin-top:16px;display:grid;gap:12px">
+                        <div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:12px;font-weight:700;color:#475569"><i class="ri-code-s-slash-line" style="margin-right:4px"></i> Embed Code</span>
+                                <button type="button" id="ra-widget-copy" style="background:#1e293b;border:none;color:#e2e8f0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-file-copy-line"></i> Kopieren</button>
+                            </div>
+                            <pre id="ra-widget-code" style="background:#1e293b;color:#e2e8f0;padding:14px 16px;border-radius:10px;font-size:11px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:0"></pre>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px"><i class="ri-link" style="margin-right:4px"></i> Direkter Link</span>
+                            <div style="display:flex;gap:6px;align-items:center">
+                                <input type="text" readonly id="ra-widget-direct-link" value="' . esc_attr($form_url) . '" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#475569;font-family:monospace">
+                                <button type="button" id="ra-widget-copy-link" style="background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');border:none;color:#fff;padding:9px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px"><i class="ri-file-copy-line"></i> Link</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <h4 style="margin-top:28px"><i class="ri-clipboard-line"></i> Embed Code</h4>
-                <div style="position:relative">
-                    <pre id="ra-widget-code" style="background:#1e293b;color:#e2e8f0;padding:16px 20px;border-radius:12px;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:0"></pre>
-                    <button type="button" id="ra-widget-copy" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,.12);border:none;color:#e2e8f0;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s">
-                        <i class="ri-file-copy-line"></i> Kopieren
-                    </button>
-                </div>
-                <p style="font-size:12px;color:#94a3b8;margin:8px 0 0">Fügen Sie diesen Code auf Ihrer Website ein, z.B. vor dem &lt;/body&gt; Tag.</p>
-
-                <h4 style="margin-top:28px"><i class="ri-link"></i> Direkter Link</h4>
-                <div style="display:flex;gap:8px;align-items:center">
-                    <input type="text" readonly id="ra-widget-direct-link" value="' . esc_attr($form_url) . '" style="flex:1;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc;color:#475569">
-                    <button type="button" id="ra-widget-copy-link" style="background:#667eea;border:none;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:background .2s">
-                        <i class="ri-file-copy-line"></i> Kopieren
-                    </button>
-                </div>
-
-                <!-- Katalog Konfiguration -->
-                <div style="margin-top:32px;border-top:2px solid #e2e8f0;padding-top:24px">
-                    <h4 style="margin:0 0 4px"><i class="ri-list-settings-line"></i> Katalog-Daten konfigurieren</h4>
-                    <p style="font-size:13px;color:#64748b;margin:0 0 16px">
-                        Fügen Sie Ihre Marken, Services und Preise hinzu. Diese Daten werden im Katalog-Widget angezeigt.
-                    </p>
-
-                    ' . (!empty($store->widget_setup_complete) ?
-                        '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;margin-bottom:16px;font-size:13px;color:#166534">
-                            <i class="ri-checkbox-circle-fill" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_done')) . '
-                        </div>' :
-                        '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fffbeb;border:1.5px solid #fed7aa;border-radius:10px;margin-bottom:16px;font-size:13px;color:#92400e">
-                            <i class="ri-information-line" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_pending')) . '
-                        </div>') . '
-
-                    <!-- ═══ VISUAL EDITOR ═══ -->
-                    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:16px">
-
-                    <!-- Brands editor -->
-                    <div style="margin-bottom:16px">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-smartphone-line"></i> ' . esc_html(PPV_Lang::t('wai_brands_label')) . '</span>
-                            <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8"></span>
+                <!-- ── Section 2: Katalog-Daten ── -->
+                <div style="border-top:2px solid #f1f5f9;padding-top:24px;margin-bottom:20px">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-list-settings-line" style="color:#fff;font-size:18px"></i></div>
+                        <div style="flex:1">
+                            <h4 style="margin:0;font-size:16px">Katalog-Daten</h4>
+                            <p style="margin:0;font-size:12px;color:#94a3b8">Services, Preise und Marken fur Ihr Widget</p>
                         </div>
-                        <div id="ra-wai-brand-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
-                        <div style="display:flex;gap:6px">
-                            <input type="text" id="ra-wai-brand-input" placeholder="' . esc_attr(PPV_Lang::t('wai_brand_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
-                        </div>
+                        <span id="ra-wai-total-badge" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0"></span>
                     </div>
 
-                    <!-- Chips editor -->
-                    <div style="margin-bottom:16px">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-price-tag-3-line"></i> ' . esc_html(PPV_Lang::t('wai_chips_label')) . '</span>
-                            <span id="ra-wai-chip-count" style="font-size:11px;color:#94a3b8"></span>
-                        </div>
-                        <div id="ra-wai-chip-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
-                        <div style="display:flex;gap:6px">
-                            <input type="text" id="ra-wai-chip-input" placeholder="' . esc_attr(PPV_Lang::t('wai_chip_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <button type="button" id="ra-wai-chip-add" style="background:#8b5cf6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
-                        </div>
+                    <!-- Inner Tab Navigation -->
+                    <div id="ra-cat-tabs" style="display:flex;gap:4px;padding:4px;background:#f1f5f9;border-radius:10px;margin-bottom:16px">
+                        <button type="button" class="ra-cat-tab active" data-cat-tab="services" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.08)"><i class="ri-tools-line"></i> Services</button>
+                        <button type="button" class="ra-cat-tab" data-cat-tab="brands" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-smartphone-line"></i> Marken</button>
+                        <button type="button" class="ra-cat-tab" data-cat-tab="import" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-upload-cloud-line"></i> Import</button>
                     </div>
 
-                    <!-- Services editor -->
-                    <div>
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('wai_services_label')) . '</span>
-                            <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8"></span>
+                    <!-- TAB: Services -->
+                    <div id="ra-cat-panel-services" class="ra-cat-panel">
+                        <!-- Add service form -->
+                        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">
+                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Service hinzufugen</div>
+                            <div style="display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:8px;align-items:end">
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Kategorie</label>
+                                    <input type="text" id="ra-wai-svc-cat" placeholder="z.B. Display" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s" list="ra-wai-cat-list">
+                                    <datalist id="ra-wai-cat-list"></datalist>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Bezeichnung *</label>
+                                    <input type="text" id="ra-wai-svc-name" placeholder="iPhone 15 Display Reparatur" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Preis</label>
+                                    <input type="text" id="ra-wai-svc-price" placeholder="89 EUR" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Dauer</label>
+                                    <div style="display:flex;gap:4px">
+                                        <input type="text" id="ra-wai-svc-time" placeholder="1 Std" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                        <button type="button" id="ra-wai-svc-add" style="background:#10b981;border:none;color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s"><i class="ri-add-line" style="font-size:16px"></i></button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Service list -->
                         <div id="ra-wai-service-list" style="margin-bottom:8px"></div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap">
-                            <input type="text" id="ra-wai-svc-cat" placeholder="Kategorie (z.B. Display)" style="flex:1;min-width:100px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none" list="ra-wai-cat-list">
-                            <datalist id="ra-wai-cat-list"></datalist>
-                            <input type="text" id="ra-wai-svc-name" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_name_ph')) . '" style="flex:2;min-width:120px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <input type="text" id="ra-wai-svc-price" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_price_ph')) . '" style="flex:1;min-width:80px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <input type="text" id="ra-wai-svc-time" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_time_ph')) . '" style="flex:1;min-width:60px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <button type="button" id="ra-wai-svc-add" style="background:#10b981;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        <div id="ra-wai-service-empty" style="display:none;text-align:center;padding:32px 16px;color:#94a3b8">
+                            <i class="ri-inbox-line" style="font-size:36px;display:block;margin-bottom:8px;opacity:.5"></i>
+                            <div style="font-size:13px;font-weight:600">Noch keine Services</div>
+                            <div style="font-size:12px;margin-top:4px">Fugen Sie oben Services hinzu oder importieren Sie eine CSV-Datei</div>
+                        </div>
+                        <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8;display:block;text-align:right"></span>
+                    </div>
+
+                    <!-- TAB: Brands -->
+                    <div id="ra-cat-panel-brands" class="ra-cat-panel" style="display:none">
+                        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">
+                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Marke hinzufugen</div>
+                            <div style="display:flex;gap:8px">
+                                <input type="text" id="ra-wai-brand-input" placeholder="z.B. Apple, Samsung, Huawei..." style="flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;transition:border-color .2s">
+                                <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-add-line"></i> Hinzufugen</button>
+                            </div>
+                        </div>
+                        <div id="ra-wai-brand-list" style="margin-bottom:8px"></div>
+                        <div id="ra-wai-brand-empty" style="display:none;text-align:center;padding:32px 16px;color:#94a3b8">
+                            <i class="ri-smartphone-line" style="font-size:36px;display:block;margin-bottom:8px;opacity:.5"></i>
+                            <div style="font-size:13px;font-weight:600">Noch keine Marken</div>
+                            <div style="font-size:12px;margin-top:4px">Fugen Sie oben Marken hinzu (z.B. Apple, Samsung)</div>
+                        </div>
+                        <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8;display:block;text-align:right"></span>
+                    </div>
+
+                    <!-- TAB: Import -->
+                    <div id="ra-cat-panel-import" class="ra-cat-panel" style="display:none">
+                        <!-- CSV Format Info -->
+                        <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1.5px solid #bfdbfe;border-radius:12px;padding:16px;margin-bottom:16px">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                                <i class="ri-information-line" style="font-size:18px;color:#3b82f6"></i>
+                                <span style="font-size:13px;font-weight:700;color:#1e40af">CSV-Format</span>
+                            </div>
+                            <div style="font-size:12px;color:#475569;line-height:1.6">
+                                Ihre Datei sollte pro Zeile einen Service enthalten:<br>
+                                <code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:11px;color:#1e40af;border:1px solid #dbeafe">Bezeichnung;Preis;Dauer;Kategorie</code><br>
+                                <span style="color:#94a3b8">Trennzeichen: Semikolon (;) oder Komma (,)</span>
+                            </div>
+                            <div style="margin-top:10px;background:#fff;border-radius:8px;padding:10px 12px;font-family:monospace;font-size:11px;color:#475569;line-height:1.8;border:1px solid #dbeafe">
+                                iPhone 15 Display;89 EUR;1 Std;Display<br>
+                                Samsung S24 Akku;59 EUR;45 Min;Akku<br>
+                                Wasserschaden Diagnose;29 EUR;30 Min;Sonstiges
+                            </div>
+                        </div>
+
+                        <!-- Upload area -->
+                        <div id="ra-wai-upload-area" style="border:2px dashed #d1d5db;border-radius:14px;padding:32px 16px;text-align:center;cursor:pointer;transition:all .25s;background:#fafbfc">
+                            <input type="file" id="ra-wai-file" accept=".csv,.txt,.xlsx,.xls" style="display:none">
+                            <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#eff6ff,#dbeafe);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+                                <i class="ri-upload-cloud-2-line" style="font-size:28px;color:#3b82f6"></i>
+                            </div>
+                            <p style="font-size:14px;color:#475569;margin:0 0 4px;font-weight:600">Preisliste hochladen</p>
+                            <p style="font-size:12px;color:#94a3b8;margin:0">CSV, TXT oder Excel - Drag & Drop oder klicken</p>
+                        </div>
+                        <div id="ra-wai-upload-status" style="display:none;padding:12px 16px;border-radius:10px;font-size:13px;margin-top:12px"></div>
+
+                        <!-- CSV Preview -->
+                        <div id="ra-csv-preview" style="display:none;margin-top:16px">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                                <span style="font-size:13px;font-weight:700;color:#475569"><i class="ri-file-list-3-line" style="margin-right:4px"></i> Vorschau</span>
+                                <div style="display:flex;gap:6px">
+                                    <button type="button" id="ra-csv-cancel" style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Abbrechen</button>
+                                    <button type="button" id="ra-csv-import" style="background:#10b981;border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ri-check-line"></i> <span id="ra-csv-import-count">0</span> Services importieren</button>
+                                </div>
+                            </div>
+                            <div id="ra-csv-table" style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;max-height:300px;overflow-y:auto"></div>
+                        </div>
+
+                        <!-- Export -->
+                        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9">
+                            <button type="button" id="ra-csv-export" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#475569;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s"><i class="ri-download-2-line"></i> Aktuelle Services als CSV exportieren</button>
                         </div>
                     </div>
 
-                    <!-- Quality tiers (AI-managed) -->
+                    <!-- Quality tiers -->
                     <div id="ra-wai-tiers-section" style="display:none;margin-top:12px"></div>
-
-                    <!-- Tiered services (AI-managed) -->
                     <div id="ra-wai-tiered-svc-section" style="display:none;margin-top:8px"></div>
-
-                    <!-- Custom sections (AI-managed) -->
                     <div id="ra-wai-sections-section" style="display:none;margin-top:8px"></div>
-
-                    </div>
-                    <!-- ═══ END VISUAL EDITOR ═══ -->
-
-                    <!-- File upload area -->
-                    <div id="ra-wai-upload-area" style="border:2px dashed #e2e8f0;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;cursor:pointer;transition:all .2s;background:#fafbfc">
-                        <input type="file" id="ra-wai-file" accept=".csv,.txt,.xlsx,.xls,.jpg,.jpeg,.png,.webp,.pdf" style="display:none">
-                        <i class="ri-upload-cloud-line" style="font-size:28px;color:#94a3b8"></i>
-                        <p style="font-size:13px;color:#64748b;margin:6px 0 2px;font-weight:600">' . esc_html(PPV_Lang::t('wai_upload_title')) . '</p>
-                        <p style="font-size:11px;color:#94a3b8;margin:0">' . esc_html(PPV_Lang::t('wai_upload_hint')) . '</p>
-                    </div>
-                    <div id="ra-wai-upload-status" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px"></div>
-
                 </div>
 
             </div><!-- END PANEL: widget -->
@@ -5116,7 +5172,7 @@ echo '</div></div>
         switchSettingsTab(savedSettingsTab);
     }
 
-    /* ===== Widget Embed Tab ===== */
+    /* ===== Widget Panel (Embed + Catalog Editor + CSV Import) ===== */
     (function(){
         var wMode = document.getElementById("ra-widget-mode");
         var wPos = document.getElementById("ra-widget-position");
@@ -5130,6 +5186,7 @@ echo '</div></div>
         var wCopy = document.getElementById("ra-widget-copy");
         var wCopyLink = document.getElementById("ra-widget-copy-link");
         var wDirectLink = document.getElementById("ra-widget-direct-link");
+        var wColorHex = document.getElementById("ra-widget-color-hex");
         var previewFloat = document.getElementById("ra-widget-preview-float");
         var previewInline = document.getElementById("ra-widget-preview-inline");
         var previewButton = document.getElementById("ra-widget-preview-button");
@@ -5140,7 +5197,8 @@ echo '</div></div>
 
         if (!wMode || !wCode) return;
 
-        var defaultTexts = {de:"Reparatur anfragen",en:"Request repair",hu:"Javítás kérése",ro:"Solicită reparație",it:"Richiedi riparazione"};
+        var defaultTexts = {de:"Reparatur anfragen",en:"Request repair",hu:"Javitas kerese",ro:"Solicita reparatie",it:"Richiedi riparazione"};
+        var catalogTexts = {de:"Preisliste",en:"Price list",hu:"Arlista",ro:"Lista de preturi",it:"Listino prezzi"};
 
         function darkenHex(hex, pct) {
             var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
@@ -5157,22 +5215,21 @@ echo '</div></div>
             var pos = wPos.value;
             var color2 = darkenHex(color, 0.25);
             var grad = "linear-gradient(135deg," + color + "," + color2 + ")";
-            var displayText = text || defaultTexts[lang] || defaultTexts.de;
+            var displayText = text || (mode === "catalog" ? (catalogTexts[lang] || catalogTexts.de) : (defaultTexts[lang] || defaultTexts.de));
+
+            if (wColorHex) wColorHex.textContent = color;
 
             // Toggle visibility of fields
             wTargetWrap.style.display = (mode === "inline" || mode === "button") ? "" : "none";
             wTextWrap.style.display = (mode === "float" || mode === "button" || mode === "catalog") ? "" : "none";
-            wPos.parentNode.style.display = (mode === "float" || mode === "catalog") ? "" : "none";
+            wPos.parentNode.parentNode.style.display = (mode === "float" || mode === "catalog") ? "" : "none";
 
             // Update preview
             previewFloat.style.display = (mode === "float" || mode === "catalog") ? "flex" : "none";
             previewInline.style.display = mode === "inline" ? "" : "none";
             previewButton.style.display = mode === "button" ? "" : "none";
-            if (mode === "catalog") { previewText.textContent = text || {"de":"Preisliste","en":"Price list","hu":"\u00c1rlista","ro":"Lista de pre\u021buri","it":"Listino prezzi"}[lang] || "Preisliste"; }
 
             previewFloat.style.background = grad;
-            previewFloat.style.marginLeft = pos === "bottom-left" ? "0" : "auto";
-            previewFloat.style.marginRight = pos === "bottom-left" ? "auto" : "0";
             previewText.textContent = displayText;
             previewBtnText.textContent = displayText;
 
@@ -5227,69 +5284,46 @@ echo '</div></div>
             wCopyLink.addEventListener("click", function() {
                 navigator.clipboard.writeText(wDirectLink.value).then(function() {
                     wCopyLink.innerHTML = \'<i class="ri-check-line"></i> Kopiert!\';
-                    setTimeout(function() { wCopyLink.innerHTML = \'<i class="ri-file-copy-line"></i> Kopieren\'; }, 2000);
+                    setTimeout(function() { wCopyLink.innerHTML = \'<i class="ri-file-copy-line"></i> Link\'; }, 2000);
                 });
             });
         }
-    })();
 
-    /* ===== Widget Configuration Editor ===== */
-    (function(){
+        /* ── Catalog Editor ── */
         var waiFile = document.getElementById("ra-wai-file");
         var waiUploadArea = document.getElementById("ra-wai-upload-area");
         var waiUploadStatus = document.getElementById("ra-wai-upload-status");
         var waiServiceList = document.getElementById("ra-wai-service-list");
+        var waiServiceEmpty = document.getElementById("ra-wai-service-empty");
         var waiBrandList = document.getElementById("ra-wai-brand-list");
+        var waiBrandEmpty = document.getElementById("ra-wai-brand-empty");
         var waiBrandCount = document.getElementById("ra-wai-brand-count");
-
-        // Translated strings from PHP
-        var waiT = ' . wp_json_encode([
-            'uploading'        => PPV_Lang::t('wai_js_uploading'),
-            'upload_success'   => PPV_Lang::t('wai_js_upload_success'),
-            'upload_saved'     => PPV_Lang::t('wai_js_upload_saved'),
-            'upload_error'     => PPV_Lang::t('wai_js_upload_error'),
-            'conn_error_short' => PPV_Lang::t('wai_js_connection_error_short'),
-            'service'          => PPV_Lang::t('wai_js_service'),
-            'services'         => PPV_Lang::t('wai_js_services'),
-            'brand'            => PPV_Lang::t('wai_js_brand'),
-            'brands'           => PPV_Lang::t('wai_js_brands'),
-            'model_count'      => PPV_Lang::t('wai_model_count'),
-            'model_add_ph'     => PPV_Lang::t('wai_model_add_ph'),
-            'ai_expand_hint'   => PPV_Lang::t('wai_ai_expand_hint'),
-        ]) . ';
         var waiServiceCount = document.getElementById("ra-wai-service-count");
-        var waiChipCount = document.getElementById("ra-wai-chip-count");
-        var waiChipList = document.getElementById("ra-wai-chip-list");
-        var waiStatus = document.getElementById("ra-wai-status");
-
-        if (!waiServiceList || !waiBrandList) return;
+        var totalBadge = document.getElementById("ra-wai-total-badge");
 
         var ajaxUrl = ' . wp_json_encode($ajax_url) . ';
         var nonce = ' . wp_json_encode($nonce) . ';
 
-        // Local data stores
+        // Data stores
         var currentBrands = [];
-        var currentChips = [];
         var currentServices = [];
-        var currentQualityTiers = [];
-        var currentTieredServices = [];
-        var currentCustomSections = [];
 
-        // Load existing config+knowledge
+        // Load existing data
         var existingConfig = ' . wp_json_encode(!empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : null) . ';
         var existingKnowledge = ' . wp_json_encode(!empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null) . ';
         if (existingConfig && existingConfig.brands) currentBrands = existingConfig.brands;
-        if (existingConfig && existingConfig.chips) currentChips = existingConfig.chips;
-        if (existingConfig && existingConfig.quality_tiers) currentQualityTiers = existingConfig.quality_tiers;
-        if (existingConfig && existingConfig.custom_sections) currentCustomSections = existingConfig.custom_sections;
         if (existingKnowledge && existingKnowledge.services) currentServices = existingKnowledge.services;
-        if (existingKnowledge && existingKnowledge.tiered_services) currentTieredServices = existingKnowledge.tiered_services;
-        renderBrands(); renderChips(); renderServices();
-        renderQualityTiers(); renderTieredServices(); renderCustomSections();
 
         function escH(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
-        // ─── Save helper ───
+        function updateTotalBadge() {
+            var n = currentServices.length;
+            if (totalBadge) totalBadge.textContent = n + " Service" + (n !== 1 ? "s" : "") + " + " + currentBrands.length + " Marken";
+            if (waiServiceEmpty) waiServiceEmpty.style.display = currentServices.length === 0 ? "" : "none";
+            if (waiBrandEmpty) waiBrandEmpty.style.display = currentBrands.length === 0 ? "" : "none";
+        }
+
+        // Save helper with micro-feedback
         function editorSave(field, data, btn) {
             if (btn) { btn.disabled = true; btn.style.opacity = ".5"; }
             var fd = new FormData();
@@ -5299,19 +5333,31 @@ echo '</div></div>
             fd.append("data", JSON.stringify(data));
             fetch(ajaxUrl, { method: "POST", body: fd })
                 .then(function(r) { return r.json(); })
-                .then(function(resp) {
-                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
-                })
-                .catch(function() {
-                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
-                });
+                .then(function() { if (btn) { btn.disabled = false; btn.style.opacity = "1"; } })
+                .catch(function() { if (btn) { btn.disabled = false; btn.style.opacity = "1"; } });
         }
 
-        // ─── BRANDS + MODELS ───
+        // ── Catalog inner tabs ──
+        document.querySelectorAll(".ra-cat-tab").forEach(function(tab) {
+            tab.addEventListener("click", function() {
+                document.querySelectorAll(".ra-cat-tab").forEach(function(t) {
+                    t.style.background = "transparent"; t.style.color = "#64748b"; t.style.boxShadow = "none";
+                    t.classList.remove("active");
+                });
+                this.style.background = "#fff"; this.style.color = "#0f172a"; this.style.boxShadow = "0 1px 3px rgba(0,0,0,.08)";
+                this.classList.add("active");
+                var panel = this.dataset.catTab;
+                document.querySelectorAll(".ra-cat-panel").forEach(function(p) { p.style.display = "none"; });
+                var target = document.getElementById("ra-cat-panel-" + panel);
+                if (target) target.style.display = "";
+            });
+        });
+
+        // ── BRANDS ──
         var expandedBrand = -1;
-        function renderBrands(brandsOverride) {
-            if (brandsOverride) currentBrands = brandsOverride;
-            waiBrandCount.textContent = currentBrands.length + " " + (currentBrands.length !== 1 ? waiT.brands : waiT.brand);
+        function renderBrands(override) {
+            if (override) currentBrands = override;
+            if (waiBrandCount) waiBrandCount.textContent = currentBrands.length + " Marke" + (currentBrands.length !== 1 ? "n" : "");
             var html = "";
             for (var i = 0; i < currentBrands.length; i++) {
                 var b = currentBrands[i];
@@ -5320,424 +5366,268 @@ echo '</div></div>
                 var icon = b.icon || "";
                 var models = b.models || [];
                 var isOpen = expandedBrand === i;
-
-                html += \'<div style="width:100%;margin-bottom:4px">\';
-                // Brand header row
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:\' + (isOpen ? \'#dbeafe\' : \'#eff6ff\') + \';border-radius:8px;font-size:12px;color:#1e40af;cursor:pointer" data-brand-toggle="\' + i + \'">\';
-                html += (icon ? \'<span>\' + icon + \'</span> \' : \'\');
+                html += \'<div style="margin-bottom:4px">\';
+                html += \'<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:\' + (isOpen ? \'#dbeafe\' : \'#fff\') + \';border:1.5px solid \' + (isOpen ? \'#93c5fd\' : \'#e2e8f0\') + \';border-radius:10px;font-size:13px;color:#1e40af;cursor:pointer;transition:all .15s" data-brand-toggle="\' + i + \'">\';
+                if (icon) html += \'<span style="font-size:16px">\' + icon + \'</span>\';
                 html += \'<b style="flex:1">\' + escH(label) + \'</b>\';
-                html += \'<span style="color:#94a3b8;font-size:11px">\' + models.length + \' \' + waiT.model_count + \'</span>\';
-                html += \' <i class="ri-arrow-\' + (isOpen ? \'up\' : \'down\') + \'-s-line" style="color:#94a3b8;font-size:14px"></i>\';
-                html += \' <span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\';
+                html += \'<span style="background:#eff6ff;padding:2px 8px;border-radius:12px;font-size:11px;color:#3b82f6;font-weight:600">\' + models.length + \'</span>\';
+                html += \'<i class="ri-arrow-\' + (isOpen ? \'up\' : \'down\') + \'-s-line" style="color:#94a3b8;font-size:16px"></i>\';
+                html += \'<span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;color:#ef4444;opacity:.4;font-size:16px;transition:opacity .15s" title="Entfernen"><i class="ri-delete-bin-line"></i></span>\';
                 html += \'</div>\';
-
-                // Expanded models panel
                 if (isOpen) {
-                    html += \'<div style="padding:8px 10px 4px 28px;background:#f0f7ff;border-radius:0 0 8px 8px;margin-top:-2px">\';
-                    // Model chips
+                    html += \'<div style="padding:10px 12px 8px 20px;background:#f8fafc;border:1.5px solid #e2e8f0;border-top:0;border-radius:0 0 10px 10px;margin-top:-2px">\';
                     if (models.length > 0) {
                         html += \'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">\';
                         for (var m = 0; m < models.length; m++) {
-                            html += \'<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;color:#1e40af">\' +
+                            html += \'<span style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;background:#fff;border:1px solid #dbeafe;border-radius:8px;font-size:12px;color:#1e40af">\' +
                                 escH(models[m]) +
-                                \' <span class="ra-wai-del" data-type="model" data-brand="\' + i + \'" data-midx="\' + m + \'" style="cursor:pointer;opacity:.4;font-size:12px">&times;</span>\' +
-                                \'</span>\';
+                                \' <span class="ra-wai-del" data-type="model" data-brand="\' + i + \'" data-midx="\' + m + \'" style="cursor:pointer;opacity:.4;font-size:13px;color:#ef4444">&times;</span></span>\';
                         }
                         html += \'</div>\';
                     }
-                    // Add model row + AI expand
                     html += \'<div style="display:flex;gap:4px;align-items:center">\';
-                    html += \'<input type="text" class="ra-wai-model-input" data-brand="\' + i + \'" placeholder="\' + escH(waiT.model_add_ph) + \'" style="flex:1;padding:5px 8px;border:1.5px solid #dbeafe;border-radius:6px;font-size:11px;outline:none;min-width:0">\';
-                    html += \'<button type="button" class="ra-wai-model-add" data-brand="\' + i + \'" style="background:#3b82f6;border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i></button>\';
-                    html += \'<button type="button" class="ra-wai-model-ai" data-brand="\' + i + \'" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="\' + escH(waiT.ai_expand_hint) + \'"><i class="ri-magic-line"></i> AI</button>\';
-                    html += \'</div>\';
-                    html += \'</div>\';
+                    html += \'<input type="text" class="ra-wai-model-input" data-brand="\' + i + \'" placeholder="Modell hinzufugen (z.B. iPhone 15, Galaxy S24)" style="flex:1;padding:7px 10px;border:1.5px solid #dbeafe;border-radius:8px;font-size:12px;outline:none;min-width:0">\';
+                    html += \'<button type="button" class="ra-wai-model-add" data-brand="\' + i + \'" style="background:#3b82f6;border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-add-line" style="font-size:14px"></i></button>\';
+                    html += \'</div></div>\';
                 }
                 html += \'</div>\';
             }
             waiBrandList.innerHTML = html;
+            updateTotalBadge();
         }
 
-        // Toggle brand expand
         waiBrandList.addEventListener("click", function(e) {
-            // Delete brand
             var del = e.target.closest(".ra-wai-del[data-type=brand]");
-            if (del) {
-                e.stopPropagation();
-                currentBrands.splice(parseInt(del.dataset.idx), 1);
-                expandedBrand = -1;
-                renderBrands();
-                editorSave("brands", currentBrands);
-                return;
-            }
-            // Delete model
+            if (del) { e.stopPropagation(); currentBrands.splice(parseInt(del.dataset.idx), 1); expandedBrand = -1; renderBrands(); editorSave("brands", currentBrands); return; }
             var mdel = e.target.closest(".ra-wai-del[data-type=model]");
-            if (mdel) {
-                e.stopPropagation();
-                var bi = parseInt(mdel.dataset.brand);
-                var mi = parseInt(mdel.dataset.midx);
-                if (currentBrands[bi] && currentBrands[bi].models) {
-                    currentBrands[bi].models.splice(mi, 1);
-                    renderBrands();
-                    editorSave("brands", currentBrands);
-                }
-                return;
-            }
-            // Add model button
+            if (mdel) { e.stopPropagation(); var bi = parseInt(mdel.dataset.brand), mi = parseInt(mdel.dataset.midx); if (currentBrands[bi] && currentBrands[bi].models) { currentBrands[bi].models.splice(mi, 1); renderBrands(); editorSave("brands", currentBrands); } return; }
             var addBtn = e.target.closest(".ra-wai-model-add");
             if (addBtn) {
-                e.stopPropagation();
-                var bi2 = parseInt(addBtn.dataset.brand);
+                e.stopPropagation(); var bi2 = parseInt(addBtn.dataset.brand);
                 var inp = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi2 + \'"]\');
-                var val = inp ? inp.value.trim() : "";
-                if (!val) return;
+                var val = inp ? inp.value.trim() : ""; if (!val) return;
                 if (!currentBrands[bi2].models) currentBrands[bi2].models = [];
-                // Support comma-separated
-                var parts = val.split(",");
-                for (var pi = 0; pi < parts.length; pi++) {
-                    var pv = parts[pi].trim();
-                    if (pv && currentBrands[bi2].models.indexOf(pv) < 0) currentBrands[bi2].models.push(pv);
-                }
-                renderBrands();
-                editorSave("brands", currentBrands, addBtn);
-                return;
+                val.split(",").forEach(function(p) { p = p.trim(); if (p && currentBrands[bi2].models.indexOf(p) < 0) currentBrands[bi2].models.push(p); });
+                renderBrands(); editorSave("brands", currentBrands, addBtn); return;
             }
-            // AI expand button
-            var aiBtn = e.target.closest(".ra-wai-model-ai");
-            if (aiBtn) {
-                e.stopPropagation();
-                var bi3 = parseInt(aiBtn.dataset.brand);
-                var brandName = currentBrands[bi3].label || currentBrands[bi3].id;
-                var inp2 = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi3 + \'"]\');
-                var hint = inp2 ? inp2.value.trim() : "";
-                aiBtn.disabled = true;
-                aiBtn.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i>\';
-                var fd = new FormData();
-                fd.append("action", "ppv_widget_editor_save");
-                fd.append("nonce", nonce);
-                fd.append("field", "ai_expand_models");
-                fd.append("data", JSON.stringify({ brand: brandName, hint: hint, existing: currentBrands[bi3].models || [] }));
-                fetch(ajaxUrl, { method: "POST", body: fd })
-                    .then(function(r) { return r.json(); })
-                    .then(function(resp) {
-                        aiBtn.disabled = false;
-                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
-                        if (resp.success && resp.data.models) {
-                            if (!currentBrands[bi3].models) currentBrands[bi3].models = [];
-                            var newModels = resp.data.models;
-                            for (var nm = 0; nm < newModels.length; nm++) {
-                                if (currentBrands[bi3].models.indexOf(newModels[nm]) < 0) {
-                                    currentBrands[bi3].models.push(newModels[nm]);
-                                }
-                            }
-                            renderBrands();
-                            editorSave("brands", currentBrands);
-                        }
-                    })
-                    .catch(function() {
-                        aiBtn.disabled = false;
-                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
-                    });
-                return;
-            }
-            // Toggle brand expand
             var toggle = e.target.closest("[data-brand-toggle]");
-            if (toggle) {
-                var idx = parseInt(toggle.dataset.brandToggle);
-                expandedBrand = expandedBrand === idx ? -1 : idx;
-                renderBrands();
-            }
+            if (toggle) { var idx = parseInt(toggle.dataset.brandToggle); expandedBrand = expandedBrand === idx ? -1 : idx; renderBrands(); }
         });
-        // Enter key in model input
         waiBrandList.addEventListener("keydown", function(e) {
             if (e.key === "Enter" && e.target.classList.contains("ra-wai-model-input")) {
-                e.preventDefault();
-                var bi4 = e.target.dataset.brand;
-                var addBtn2 = waiBrandList.querySelector(\'.ra-wai-model-add[data-brand="\' + bi4 + \'"]\');
+                e.preventDefault(); var addBtn2 = waiBrandList.querySelector(\'.ra-wai-model-add[data-brand="\' + e.target.dataset.brand + \'"]\');
                 if (addBtn2) addBtn2.click();
             }
         });
         document.getElementById("ra-wai-brand-add").addEventListener("click", function() {
-            var inp = document.getElementById("ra-wai-brand-input");
-            var val = inp.value.trim();
-            if (!val) return;
-            currentBrands.push({ id: val, label: val, models: [] });
-            inp.value = "";
-            expandedBrand = currentBrands.length - 1;
-            renderBrands();
-            editorSave("brands", currentBrands, this);
+            var inp = document.getElementById("ra-wai-brand-input"); var val = inp.value.trim(); if (!val) return;
+            // Support comma-separated brand names
+            val.split(",").forEach(function(v) { v = v.trim(); if (v) currentBrands.push({ id: v, label: v, models: [] }); });
+            inp.value = ""; expandedBrand = currentBrands.length - 1; renderBrands(); editorSave("brands", currentBrands, this);
         });
         document.getElementById("ra-wai-brand-input").addEventListener("keydown", function(e) {
             if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-brand-add").click(); }
         });
 
-        // ─── CHIPS ───
-        function renderChips(chipsOverride) {
-            if (chipsOverride) currentChips = chipsOverride;
-            if (waiChipCount) waiChipCount.textContent = currentChips.length + " " + (currentChips.length !== 1 ? "chips" : "chip");
-            var html = "";
-            for (var i = 0; i < currentChips.length; i++) {
-                var c = typeof currentChips[i] === "string" ? currentChips[i] : (currentChips[i].label || currentChips[i]);
-                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#f3e8ff;border-radius:8px;font-size:12px;color:#7c3aed;cursor:default">\' +
-                    escH(c) +
-                    \' <span class="ra-wai-del" data-type="chip" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;margin-left:2px" title="Entfernen">&times;</span>\' +
-                    \'</span>\';
-            }
-            if (waiChipList) waiChipList.innerHTML = html;
-        }
-        if (waiChipList) waiChipList.addEventListener("click", function(e) {
-            var del = e.target.closest(".ra-wai-del[data-type=chip]");
-            if (!del) return;
-            currentChips.splice(parseInt(del.dataset.idx), 1);
-            renderChips();
-            editorSave("chips", currentChips);
-        });
-        var chipAddBtn = document.getElementById("ra-wai-chip-add");
-        if (chipAddBtn) chipAddBtn.addEventListener("click", function() {
-            var inp = document.getElementById("ra-wai-chip-input");
-            var val = inp.value.trim();
-            if (!val) return;
-            currentChips.push(val);
-            inp.value = "";
-            renderChips();
-            editorSave("chips", currentChips, this);
-        });
-        var chipInput = document.getElementById("ra-wai-chip-input");
-        if (chipInput) chipInput.addEventListener("keydown", function(e) {
-            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-chip-add").click(); }
-        });
-
-        // ─── SERVICES ───
+        // ── SERVICES ──
         function updateCatDatalist() {
-            var dl = document.getElementById("ra-wai-cat-list");
-            if (!dl) return;
-            var cats = {};
-            for (var ci = 0; ci < currentServices.length; ci++) {
-                if (currentServices[ci].category) cats[currentServices[ci].category] = 1;
-            }
-            dl.innerHTML = "";
-            for (var c in cats) {
-                var opt = document.createElement("option");
-                opt.value = c;
-                dl.appendChild(opt);
-            }
+            var dl = document.getElementById("ra-wai-cat-list"); if (!dl) return;
+            var cats = {}; currentServices.forEach(function(s) { if (s.category) cats[s.category] = 1; });
+            dl.innerHTML = ""; for (var c in cats) { var opt = document.createElement("option"); opt.value = c; dl.appendChild(opt); }
         }
-        function renderServices(servicesOverride) {
-            if (servicesOverride) currentServices = servicesOverride;
-            waiServiceCount.textContent = currentServices.length + " " + (currentServices.length !== 1 ? waiT.services : waiT.service);
-            // Group by category
-            var groups = {};
-            var order = [];
-            for (var i = 0; i < currentServices.length; i++) {
-                var s = currentServices[i];
+        function renderServices(override) {
+            if (override) currentServices = override;
+            if (waiServiceCount) waiServiceCount.textContent = currentServices.length + " Service" + (currentServices.length !== 1 ? "s" : "");
+            var groups = {}, order = [];
+            currentServices.forEach(function(s, i) {
                 var cat = s.category || "Allgemein";
                 if (!groups[cat]) { groups[cat] = []; order.push(cat); }
                 groups[cat].push({ svc: s, idx: i });
-            }
+            });
             var html = "";
-            for (var gi = 0; gi < order.length; gi++) {
-                var catName = order[gi];
+            order.forEach(function(catName) {
                 var items = groups[catName];
-                html += \'<div style="margin-bottom:6px">\' +
-                    \'<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:1px solid #e2e8f0;margin-bottom:4px">\' + escH(catName) + \' (\' + items.length + \')</div>\';
-                for (var si = 0; si < items.length; si++) {
-                    var s = items[si].svc;
-                    var idx = items[si].idx;
-                    html += \'<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;color:#475569;margin-bottom:3px">\' +
-                        \'<b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\' + escH(s.name) + \'</b>\' +
-                        (s.price ? \'<span style="color:#059669;font-weight:600;white-space:nowrap">\' + escH(s.price) + \'</span>\' : \'\') +
-                        (s.time ? \'<span style="color:#94a3b8;white-space:nowrap">\' + escH(s.time) + \'</span>\' : \'\') +
-                        \'<span class="ra-wai-del" data-type="svc" data-idx="\' + idx + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\' +
-                        \'</div>\';
-                }
+                html += \'<div style="margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px;padding:6px 0;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px">\' + escH(catName) + \'</span><span style="background:#f1f5f9;padding:1px 8px;border-radius:10px;font-size:11px;color:#64748b;font-weight:600">\' + items.length + \'</span></div>\';
+                items.forEach(function(item) {
+                    var s = item.svc, idx = item.idx;
+                    html += \'<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid #f1f5f9;border-radius:10px;font-size:13px;color:#475569;margin-bottom:3px;transition:border-color .15s" onmouseover="this.style.borderColor=\'#cbd5e1\'" onmouseout="this.style.borderColor=\'#f1f5f9\'">\' +
+                        \'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">\' + escH(s.name) + \'</span>\' +
+                        (s.price ? \'<span style="color:#059669;font-weight:700;white-space:nowrap;font-size:12px">\' + escH(s.price) + \'</span>\' : \'\') +
+                        (s.time ? \'<span style="color:#94a3b8;white-space:nowrap;font-size:11px"><i class="ri-time-line" style="font-size:12px;vertical-align:-1px"></i> \' + escH(s.time) + \'</span>\' : \'\') +
+                        \'<span class="ra-wai-del" data-type="svc" data-idx="\' + idx + \'" style="cursor:pointer;color:#ef4444;opacity:.3;font-size:15px;transition:opacity .15s" title="Entfernen"><i class="ri-close-line"></i></span></div>\';
+                });
                 html += \'</div>\';
-            }
+            });
             waiServiceList.innerHTML = html;
             updateCatDatalist();
+            updateTotalBadge();
         }
         waiServiceList.addEventListener("click", function(e) {
             var del = e.target.closest(".ra-wai-del[data-type=svc]");
-            if (!del) return;
-            currentServices.splice(parseInt(del.dataset.idx), 1);
-            renderServices();
-            editorSave("services", currentServices);
+            if (!del) return; currentServices.splice(parseInt(del.dataset.idx), 1); renderServices(); editorSave("services", currentServices);
         });
         document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
-            var catInp = document.getElementById("ra-wai-svc-cat");
-            var nameInp = document.getElementById("ra-wai-svc-name");
-            var priceInp = document.getElementById("ra-wai-svc-price");
-            var timeInp = document.getElementById("ra-wai-svc-time");
-            var name = nameInp.value.trim();
-            if (!name) return;
+            var catInp = document.getElementById("ra-wai-svc-cat"), nameInp = document.getElementById("ra-wai-svc-name");
+            var priceInp = document.getElementById("ra-wai-svc-price"), timeInp = document.getElementById("ra-wai-svc-time");
+            var name = nameInp.value.trim(); if (!name) { nameInp.style.borderColor = "#ef4444"; setTimeout(function(){ nameInp.style.borderColor = "#e2e8f0"; }, 1500); return; }
             var svc = { name: name };
             if (catInp && catInp.value.trim()) svc.category = catInp.value.trim();
             if (priceInp.value.trim()) svc.price = priceInp.value.trim();
             if (timeInp.value.trim()) svc.time = timeInp.value.trim();
             currentServices.push(svc);
             nameInp.value = ""; priceInp.value = ""; timeInp.value = "";
-            // Keep category for quick batch adding
-            renderServices();
-            editorSave("services", currentServices, this);
-            nameInp.focus();
+            renderServices(); editorSave("services", currentServices, this); nameInp.focus();
         });
         document.getElementById("ra-wai-svc-name").addEventListener("keydown", function(e) {
             if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); }
         });
+        // Also Enter on price/time fields
+        ["ra-wai-svc-price","ra-wai-svc-time"].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); } });
+        });
 
-        // ─── Quality Tiers ───
-        function renderQualityTiers(data) {
-            if (data) currentQualityTiers = data;
-            var container = document.getElementById("ra-wai-tiers-section");
-            if (!container) return;
-            if (currentQualityTiers.length === 0) { container.style.display = "none"; return; }
-            container.style.display = "";
-            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-medal-line" style="color:#f59e0b"></i> Qualitätsstufen</div>\';
-            for (var i = 0; i < currentQualityTiers.length; i++) {
-                var t = currentQualityTiers[i];
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
-                    \'<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:\' + (t.badge_color || "#667eea") + \';color:#fff;font-size:10px;font-weight:700">\' + escH(t.label || t.id) + \'</span>\' +
-                    \'<span style="flex:1;color:#475569">\' + escH(t.description || "") + \'</span>\' +
-                    \'<span class="ra-wai-del-tier" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
-            }
-            container.innerHTML = html;
-        }
+        // ── CSV IMPORT with Preview ──
+        var csvPreview = document.getElementById("ra-csv-preview");
+        var csvTable = document.getElementById("ra-csv-table");
+        var csvImportBtn = document.getElementById("ra-csv-import");
+        var csvCancelBtn = document.getElementById("ra-csv-cancel");
+        var csvImportCount = document.getElementById("ra-csv-import-count");
+        var pendingCsvServices = [];
 
-        // ─── Tiered Services ───
-        function renderTieredServices(data) {
-            if (data) currentTieredServices = data;
-            var container = document.getElementById("ra-wai-tiered-svc-section");
-            if (!container) return;
-            if (currentTieredServices.length === 0) { container.style.display = "none"; return; }
-            container.style.display = "";
-            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-price-tag-3-line" style="color:#059669"></i> Staffelpreise</div>\';
-            for (var i = 0; i < currentTieredServices.length; i++) {
-                var s = currentTieredServices[i];
-                var tierLabels = [];
-                if (s.tiers) {
-                    for (var tid in s.tiers) {
-                        if (s.tiers.hasOwnProperty(tid)) tierLabels.push(tid + ": " + (s.tiers[tid].price || "–"));
-                    }
+        function parseCSVLocal(text) {
+            var lines = text.split("\\n"), results = [];
+            lines.forEach(function(line) {
+                line = line.trim(); if (!line || line[0] === "#") return;
+                var sep = line.indexOf(";") >= 0 ? ";" : ",";
+                var parts = line.split(sep).map(function(p) { return p.trim().replace(/^"|"$/g, ""); });
+                if (parts.length >= 1 && parts[0]) {
+                    var svc = { name: parts[0] };
+                    if (parts[1] && /\\d/.test(parts[1])) svc.price = parts[1];
+                    else if (parts[1]) svc.category = parts[1];
+                    if (parts[2]) svc.time = parts[2];
+                    if (parts[3]) svc.category = parts[3];
+                    results.push(svc);
                 }
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f0fdf4;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
-                    \'<b style="flex:1;color:#475569">\' + escH(s.name) + \'</b>\' +
-                    \'<span style="color:#059669;font-size:11px">\' + escH(tierLabels.join(" | ")) + \'</span>\' +
-                    \'<span class="ra-wai-del-tsvc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
-            }
-            container.innerHTML = html;
+            });
+            return results;
         }
 
-        // ─── Custom Sections ───
-        function renderCustomSections(data) {
-            if (data) currentCustomSections = data;
-            var container = document.getElementById("ra-wai-sections-section");
-            if (!container) return;
-            if (currentCustomSections.length === 0) { container.style.display = "none"; return; }
-            container.style.display = "";
-            var typeIcons = {list:"ri-list-check",steps:"ri-flow-chart",highlight:"ri-flashlight-line",info:"ri-information-line",grid:"ri-layout-grid-line",faq:"ri-question-line"};
-            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-layout-masonry-line" style="color:#667eea"></i> Widget-Sektionen</div>\';
-            for (var i = 0; i < currentCustomSections.length; i++) {
-                var sec = currentCustomSections[i];
-                var ico = typeIcons[sec.type] || "ri-apps-line";
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#eff6ff;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
-                    \'<i class="\' + ico + \'" style="color:#667eea;font-size:14px"></i>\' +
-                    \'<b style="flex:1;color:#475569">\' + escH(sec.title || sec.id) + \'</b>\' +
-                    \'<span style="color:#94a3b8;font-size:10px;text-transform:uppercase">\' + escH(sec.type || "info") + \'</span>\' +
-                    \'<span class="ra-wai-del-sec" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
-            }
-            container.innerHTML = html;
+        function showCsvPreview(services) {
+            pendingCsvServices = services;
+            if (csvImportCount) csvImportCount.textContent = services.length;
+            var html = \'<table style="width:100%;border-collapse:collapse;font-size:12px">\';
+            html += \'<thead><tr style="background:#f8fafc"><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Bezeichnung</th><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Preis</th><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Dauer</th><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Kategorie</th></tr></thead><tbody>\';
+            services.forEach(function(s, i) {
+                html += \'<tr style="border-bottom:1px solid #f1f5f9\' + (i % 2 ? \';background:#fafbfc\' : \'\') + \'"><td style="padding:7px 10px;font-weight:500">\' + escH(s.name) + \'</td><td style="padding:7px 10px;color:#059669;font-weight:600">\' + escH(s.price || \'-\') + \'</td><td style="padding:7px 10px;color:#94a3b8">\' + escH(s.time || \'-\') + \'</td><td style="padding:7px 10px;color:#64748b">\' + escH(s.category || \'-\') + \'</td></tr>\';
+            });
+            html += \'</tbody></table>\';
+            if (csvTable) csvTable.innerHTML = html;
+            if (csvPreview) csvPreview.style.display = "";
         }
 
-        // ─── Delete handlers for tiers/tiered-services/sections ───
-        document.addEventListener("click", function(e) {
-            var delTier = e.target.closest(".ra-wai-del-tier");
-            if (delTier) {
-                currentQualityTiers.splice(parseInt(delTier.dataset.idx), 1);
-                renderQualityTiers();
-                editorSave("quality_tiers", currentQualityTiers);
-                return;
-            }
-            var delTsvc = e.target.closest(".ra-wai-del-tsvc");
-            if (delTsvc) {
-                currentTieredServices.splice(parseInt(delTsvc.dataset.idx), 1);
-                renderTieredServices();
-                editorSave("tiered_services", currentTieredServices);
-                return;
-            }
-            var delSec = e.target.closest(".ra-wai-del-sec");
-            if (delSec) {
-                currentCustomSections.splice(parseInt(delSec.dataset.idx), 1);
-                renderCustomSections();
-                editorSave("custom_sections", currentCustomSections);
-                return;
+        if (csvCancelBtn) csvCancelBtn.addEventListener("click", function() {
+            pendingCsvServices = []; if (csvPreview) csvPreview.style.display = "none";
+        });
+        if (csvImportBtn) csvImportBtn.addEventListener("click", function() {
+            if (!pendingCsvServices.length) return;
+            // Merge into current services
+            pendingCsvServices.forEach(function(ns) {
+                var found = false;
+                currentServices.forEach(function(es, i) { if (es.name.toLowerCase() === ns.name.toLowerCase()) { currentServices[i] = ns; found = true; } });
+                if (!found) currentServices.push(ns);
+            });
+            renderServices(); editorSave("services", currentServices, csvImportBtn);
+            pendingCsvServices = []; if (csvPreview) csvPreview.style.display = "none";
+            // Switch to services tab
+            document.querySelector(\'.ra-cat-tab[data-cat-tab="services"]\').click();
+            if (waiUploadStatus) {
+                waiUploadStatus.style.display = ""; waiUploadStatus.style.background = "#f0fdf4"; waiUploadStatus.style.border = "1.5px solid #bbf7d0"; waiUploadStatus.style.color = "#166534";
+                waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + pendingCsvServices.length + \' Services erfolgreich importiert\';
+                setTimeout(function() { waiUploadStatus.style.display = "none"; }, 4000);
             }
         });
 
-        // File upload
+        // File upload - local CSV parsing (no AI)
         if (waiUploadArea && waiFile) {
             waiUploadArea.addEventListener("click", function() { waiFile.click(); });
-            waiUploadArea.addEventListener("dragover", function(e) { e.preventDefault(); this.style.borderColor = "#667eea"; this.style.background = "#f0f4ff"; });
-            waiUploadArea.addEventListener("dragleave", function() { this.style.borderColor = "#e2e8f0"; this.style.background = "#fafbfc"; });
+            waiUploadArea.addEventListener("dragover", function(e) { e.preventDefault(); this.style.borderColor = "#3b82f6"; this.style.background = "#eff6ff"; });
+            waiUploadArea.addEventListener("dragleave", function() { this.style.borderColor = "#d1d5db"; this.style.background = "#fafbfc"; });
             waiUploadArea.addEventListener("drop", function(e) {
-                e.preventDefault();
-                this.style.borderColor = "#e2e8f0";
-                this.style.background = "#fafbfc";
-                if (e.dataTransfer.files.length) {
-                    waiFile.files = e.dataTransfer.files;
-                    uploadFile(e.dataTransfer.files[0]);
-                }
+                e.preventDefault(); this.style.borderColor = "#d1d5db"; this.style.background = "#fafbfc";
+                if (e.dataTransfer.files.length) { waiFile.files = e.dataTransfer.files; handleFileUpload(e.dataTransfer.files[0]); }
             });
-            waiFile.addEventListener("change", function() {
-                if (this.files.length) uploadFile(this.files[0]);
-            });
+            waiFile.addEventListener("change", function() { if (this.files.length) handleFileUpload(this.files[0]); });
         }
 
-        function uploadFile(file) {
-            waiUploadStatus.style.display = "";
-            waiUploadStatus.style.background = "#eff6ff";
-            waiUploadStatus.style.border = "1.5px solid #bfdbfe";
-            waiUploadStatus.style.color = "#1e40af";
-            waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i> \' + waiT.uploading;
-
-            var fd = new FormData();
-            fd.append("action", "ppv_widget_ai_upload");
-            fd.append("nonce", nonce);
-            fd.append("file", file);
-
-            fetch(ajaxUrl, {method: "POST", body: fd})
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        var d = data.data;
-                        waiUploadStatus.style.background = "#f0fdf4";
-                        waiUploadStatus.style.borderColor = "#bbf7d0";
-                        waiUploadStatus.style.color = "#166534";
-
-                        if (d.file_type === "image" || d.file_type === "pdf" || d.file_type === "other") {
-                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_saved;
-                        } else {
-                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_success.replace(\'%d\', d.service_count);
-                        }
-
-                        // Update services display
-                        if (d.parsed_services && d.parsed_services.length) {
-                            renderServices(d.parsed_services);
-                        }
-
-                        setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+        function handleFileUpload(file) {
+            var ext = file.name.split(".").pop().toLowerCase();
+            if (["csv","txt"].indexOf(ext) >= 0) {
+                // Read locally, parse, show preview
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var text = e.target.result;
+                    var parsed = parseCSVLocal(text);
+                    if (parsed.length > 0) {
+                        showCsvPreview(parsed);
                     } else {
-                        waiUploadStatus.style.background = "#fef2f2";
-                        waiUploadStatus.style.borderColor = "#fecaca";
-                        waiUploadStatus.style.color = "#991b1b";
-                        waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + (data.data && data.data.message ? escH(data.data.message) : waiT.upload_error);
+                        if (waiUploadStatus) {
+                            waiUploadStatus.style.display = ""; waiUploadStatus.style.background = "#fef2f2"; waiUploadStatus.style.border = "1.5px solid #fecaca"; waiUploadStatus.style.color = "#991b1b";
+                            waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> Keine Services in der Datei gefunden. Prufen Sie das Format.\';
+                            setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+                        }
                     }
-                })
-                .catch(function() {
-                    waiUploadStatus.style.background = "#fef2f2";
-                    waiUploadStatus.style.borderColor = "#fecaca";
-                    waiUploadStatus.style.color = "#991b1b";
-                    waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + waiT.conn_error_short;
-                });
+                };
+                reader.readAsText(file);
+            } else {
+                // For Excel files, upload to server
+                if (waiUploadStatus) {
+                    waiUploadStatus.style.display = ""; waiUploadStatus.style.background = "#eff6ff"; waiUploadStatus.style.border = "1.5px solid #bfdbfe"; waiUploadStatus.style.color = "#1e40af";
+                    waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i> Datei wird verarbeitet...\';
+                }
+                var fd = new FormData();
+                fd.append("action", "ppv_widget_ai_upload"); fd.append("nonce", nonce); fd.append("file", file);
+                fetch(ajaxUrl, {method: "POST", body: fd})
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && data.data.parsed_services && data.data.parsed_services.length) {
+                            showCsvPreview(data.data.parsed_services);
+                            if (waiUploadStatus) waiUploadStatus.style.display = "none";
+                        } else {
+                            if (waiUploadStatus) {
+                                waiUploadStatus.style.background = "#fef2f2"; waiUploadStatus.style.borderColor = "#fecaca"; waiUploadStatus.style.color = "#991b1b";
+                                waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + (data.data && data.data.message ? escH(data.data.message) : \'Fehler beim Verarbeiten\');
+                                setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+                            }
+                        }
+                    })
+                    .catch(function() {
+                        if (waiUploadStatus) {
+                            waiUploadStatus.style.background = "#fef2f2"; waiUploadStatus.style.borderColor = "#fecaca"; waiUploadStatus.style.color = "#991b1b";
+                            waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> Verbindungsfehler\';
+                            setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+                        }
+                    });
+            }
         }
+
+        // ── CSV EXPORT ──
+        var csvExportBtn = document.getElementById("ra-csv-export");
+        if (csvExportBtn) csvExportBtn.addEventListener("click", function() {
+            if (!currentServices.length) return;
+            var csv = "Bezeichnung;Preis;Dauer;Kategorie\\n";
+            currentServices.forEach(function(s) {
+                csv += [s.name || "", s.price || "", s.time || "", s.category || ""].join(";") + "\\n";
+            });
+            var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url; a.download = "services-" + storeSlug + ".csv"; a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Init renders
+        renderBrands(); renderServices();
     })();
 
     /* ===== Tab Switching ===== */
