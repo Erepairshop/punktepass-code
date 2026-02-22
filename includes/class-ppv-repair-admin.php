@@ -701,6 +701,8 @@ a:hover{color:#5a67d8}
 .ra-settings-panel h4 i{color:#667eea;font-size:18px}
 .ra-settings-panel h4:not(:first-child){margin-top:28px}
 .ra-svc-row:hover{border-color:#cbd5e1!important}
+.ra-svc-edit-name:hover,.ra-svc-edit-price:hover{background:#f0f9ff}
+.ra-svc-cat-hdr:hover{background:#eff6ff!important;border-color:#bfdbfe!important}
 .ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
 .ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
 
@@ -5431,6 +5433,7 @@ echo '</div></div>
         });
 
         // ── SERVICES ──
+        var openCats = {};
         function updateCatDatalist() {
             var dl = document.getElementById("ra-wai-cat-list"); if (!dl) return;
             var cats = {}; currentServices.forEach(function(s) { if (s.category) cats[s.category] = 1; });
@@ -5448,24 +5451,71 @@ echo '</div></div>
             var html = "";
             order.forEach(function(catName) {
                 var items = groups[catName];
-                html += \'<div style="margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px;padding:6px 0;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px">\' + escH(catName) + \'</span><span style="background:#f1f5f9;padding:1px 8px;border-radius:10px;font-size:11px;color:#64748b;font-weight:600">\' + items.length + \'</span></div>\';
-                items.forEach(function(item) {
-                    var s = item.svc, idx = item.idx;
-                    html += \'<div class="ra-svc-row" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid #f1f5f9;border-radius:10px;font-size:13px;color:#475569;margin-bottom:3px;transition:border-color .15s">\' +
-                        \'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">\' + escH(s.name) + \'</span>\' +
-                        (s.price ? \'<span style="color:#059669;font-weight:700;white-space:nowrap;font-size:12px">\' + escH(s.price) + \'</span>\' : \'\') +
-                        (s.time ? \'<span style="color:#94a3b8;white-space:nowrap;font-size:11px"><i class="ri-time-line" style="font-size:12px;vertical-align:-1px"></i> \' + escH(s.time) + \'</span>\' : \'\') +
-                        \'<span class="ra-wai-del" data-type="svc" data-idx="\' + idx + \'" style="cursor:pointer;color:#ef4444;opacity:.3;font-size:15px;transition:opacity .15s" title="Entfernen"><i class="ri-close-line"></i></span></div>\';
-                });
+                var isOpen = !!openCats[catName];
+                html += \'<div style="margin-bottom:6px">\';
+                html += \'<div class="ra-svc-cat-hdr" data-cat="\' + escH(catName) + \'" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:\' + (isOpen ? \'#eff6ff\' : \'#f8fafc\') + \';border:1.5px solid \' + (isOpen ? \'#bfdbfe\' : \'#e2e8f0\') + \';border-radius:10px;cursor:pointer;transition:all .15s;user-select:none">\';
+                html += \'<i class="ri-arrow-\' + (isOpen ? \'down\' : \'right\') + \'-s-line" style="color:#64748b;font-size:16px;flex-shrink:0"></i>\';
+                html += \'<span style="flex:1;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px">\' + escH(catName) + \'</span>\';
+                html += \'<span style="background:\' + (isOpen ? \'#dbeafe\' : \'#f1f5f9\') + \';padding:2px 10px;border-radius:12px;font-size:11px;color:\' + (isOpen ? \'#2563eb\' : \'#64748b\') + \';font-weight:700">\' + items.length + \'</span>\';
+                html += \'</div>\';
+                if (isOpen) {
+                    html += \'<div style="padding:4px 0 0 0">\';
+                    items.forEach(function(item) {
+                        var s = item.svc, idx = item.idx;
+                        html += \'<div class="ra-svc-row" data-idx="\' + idx + \'" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;border:1px solid #f1f5f9;border-radius:8px;font-size:13px;color:#475569;margin-bottom:2px;transition:border-color .15s">\';
+                        html += \'<span class="ra-svc-edit-name" data-idx="\' + idx + \'" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;cursor:text;padding:2px 4px;border-radius:4px;transition:background .15s" title="Klicken zum Bearbeiten">\' + escH(s.name) + \'</span>\';
+                        html += \'<span class="ra-svc-edit-price" data-idx="\' + idx + \'" style="color:#059669;font-weight:700;white-space:nowrap;font-size:12px;cursor:text;padding:2px 6px;border-radius:4px;transition:background .15s;min-width:40px;text-align:right" title="Klicken zum Bearbeiten">\' + escH(s.price || "-") + \'</span>\';
+                        if (s.time) html += \'<span style="color:#94a3b8;white-space:nowrap;font-size:11px"><i class="ri-time-line" style="font-size:11px;vertical-align:-1px"></i> \' + escH(s.time) + \'</span>\';
+                        html += \'<span class="ra-wai-del" data-type="svc" data-idx="\' + idx + \'" style="cursor:pointer;color:#ef4444;opacity:.3;font-size:14px;transition:opacity .15s;flex-shrink:0" title="Entfernen"><i class="ri-close-line"></i></span>\';
+                        html += \'</div>\';
+                    });
+                    html += \'</div>\';
+                }
                 html += \'</div>\';
             });
             waiServiceList.innerHTML = html;
             updateCatDatalist();
             updateTotalBadge();
         }
+
+        // Inline editing helper
+        function startInlineEdit(el, idx, field) {
+            if (el.querySelector("input")) return;
+            var oldVal = currentServices[idx][field] || "";
+            var w = field === "name" ? "100%" : "80px";
+            var inp = document.createElement("input");
+            inp.type = "text"; inp.value = oldVal;
+            inp.style.cssText = "width:" + w + ";padding:2px 4px;border:1.5px solid #3b82f6;border-radius:4px;font-size:12px;outline:none;font-family:inherit;background:#eff6ff";
+            el.textContent = "";
+            el.appendChild(inp);
+            inp.focus(); inp.select();
+            function commit() {
+                var nv = inp.value.trim();
+                if (field === "name" && !nv) nv = oldVal;
+                currentServices[idx][field] = nv;
+                renderServices();
+                editorSave("services", currentServices);
+            }
+            inp.addEventListener("blur", commit);
+            inp.addEventListener("keydown", function(ev) {
+                if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); }
+                if (ev.key === "Escape") { inp.value = oldVal; inp.blur(); }
+            });
+        }
+
         waiServiceList.addEventListener("click", function(e) {
+            // Delete
             var del = e.target.closest(".ra-wai-del[data-type=svc]");
-            if (!del) return; currentServices.splice(parseInt(del.dataset.idx), 1); renderServices(); editorSave("services", currentServices);
+            if (del) { currentServices.splice(parseInt(del.dataset.idx), 1); renderServices(); editorSave("services", currentServices); return; }
+            // Category toggle
+            var catHdr = e.target.closest(".ra-svc-cat-hdr");
+            if (catHdr) { var cn = catHdr.dataset.cat; openCats[cn] = !openCats[cn]; renderServices(); return; }
+            // Inline edit name
+            var eName = e.target.closest(".ra-svc-edit-name");
+            if (eName) { startInlineEdit(eName, parseInt(eName.dataset.idx), "name"); return; }
+            // Inline edit price
+            var ePrice = e.target.closest(".ra-svc-edit-price");
+            if (ePrice) { startInlineEdit(ePrice, parseInt(ePrice.dataset.idx), "price"); return; }
         });
         document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
             var catInp = document.getElementById("ra-wai-svc-cat"), nameInp = document.getElementById("ra-wai-svc-name");
