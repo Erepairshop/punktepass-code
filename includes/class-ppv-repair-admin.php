@@ -5611,21 +5611,65 @@ echo '</div></div>
             if (!container) return;
             if (currentTieredServices.length === 0) { container.style.display = "none"; return; }
             container.style.display = "";
-            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-price-tag-3-line" style="color:#059669"></i> Staffelpreise</div>\';
+            // Count total models across all services
+            var totalModels = 0;
+            for (var ci = 0; ci < currentTieredServices.length; ci++) {
+                var cs = currentTieredServices[ci];
+                if (cs.models) { for (var mk in cs.models) { if (cs.models.hasOwnProperty(mk)) totalModels++; } }
+                else if (cs.tiers) totalModels++;
+            }
+            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-price-tag-3-line" style="color:#059669"></i> Staffelpreise (\' + totalModels + \' Modelle)</div>\';
             for (var i = 0; i < currentTieredServices.length; i++) {
                 var s = currentTieredServices[i];
-                var tierLabels = [];
-                if (s.tiers) {
-                    for (var tid in s.tiers) {
-                        if (s.tiers.hasOwnProperty(tid)) tierLabels.push(tid + ": " + (s.tiers[tid].price || "–"));
+                // Service group header (collapsible)
+                html += \'<div style="margin-bottom:6px">\' +
+                    \'<div class="ra-wai-tsvc-header" data-idx="\' + i + \'" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#059669;border-radius:8px;font-size:12px;cursor:pointer;user-select:none">\' +
+                    \'<i class="ri-arrow-right-s-line ra-wai-tsvc-arrow" style="color:#fff;transition:transform .2s"></i>\' +
+                    \'<b style="flex:1;color:#fff">\' + escH(s.name) + \'</b>\' +
+                    \'<span class="ra-wai-del-tsvc" data-idx="\' + i + \'" style="cursor:pointer;color:#fff;opacity:.7;font-size:14px" title="Service entfernen">&times;</span></div>\';
+                // Model rows (collapsed by default)
+                html += \'<div class="ra-wai-tsvc-body" data-idx="\' + i + \'" style="display:none;padding:4px 0 0 8px">\';
+                if (s.models && typeof s.models === "object") {
+                    // New format: models map
+                    for (var mKey in s.models) {
+                        if (!s.models.hasOwnProperty(mKey)) continue;
+                        var mTiers = s.models[mKey];
+                        var mParts = [];
+                        for (var tid in mTiers) {
+                            if (mTiers.hasOwnProperty(tid)) mParts.push(tid + ": " + (mTiers[tid].price || "–"));
+                        }
+                        html += \'<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f0fdf4;border-radius:6px;font-size:11px;margin-bottom:2px">\' +
+                            \'<span style="flex:1;color:#475569;font-weight:600">\' + escH(mKey) + \'</span>\' +
+                            \'<span style="color:#059669;font-size:10px">\' + escH(mParts.join(" | ")) + \'</span>\' +
+                            \'<span class="ra-wai-del-tsvc-model" data-svc="\' + i + \'" data-model="\' + escH(mKey) + \'" style="cursor:pointer;opacity:.4;font-size:12px" title="Modell entfernen">&times;</span></div>\';
                     }
+                } else if (s.tiers) {
+                    // Legacy flat format
+                    var tierLabels = [];
+                    for (var tid2 in s.tiers) {
+                        if (s.tiers.hasOwnProperty(tid2)) tierLabels.push(tid2 + ": " + (s.tiers[tid2].price || "–"));
+                    }
+                    html += \'<div style="padding:4px 8px;background:#f0fdf4;border-radius:6px;font-size:11px;color:#059669">\' + escH(tierLabels.join(" | ")) + \'</div>\';
                 }
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f0fdf4;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
-                    \'<b style="flex:1;color:#475569">\' + escH(s.name) + \'</b>\' +
-                    \'<span style="color:#059669;font-size:11px">\' + escH(tierLabels.join(" | ")) + \'</span>\' +
-                    \'<span class="ra-wai-del-tsvc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
+                html += \'</div></div>\';
             }
             container.innerHTML = html;
+            // Toggle collapse on header click
+            container.querySelectorAll(".ra-wai-tsvc-header").forEach(function(hdr) {
+                hdr.addEventListener("click", function(e) {
+                    if (e.target.closest(".ra-wai-del-tsvc")) return;
+                    var idx = this.dataset.idx;
+                    var body = container.querySelector(\'.ra-wai-tsvc-body[data-idx="\' + idx + \'"]\');
+                    var arrow = this.querySelector(".ra-wai-tsvc-arrow");
+                    if (body.style.display === "none") {
+                        body.style.display = "";
+                        if (arrow) arrow.style.transform = "rotate(90deg)";
+                    } else {
+                        body.style.display = "none";
+                        if (arrow) arrow.style.transform = "";
+                    }
+                });
+            });
         }
 
         // ─── Custom Sections ───
@@ -5656,6 +5700,18 @@ echo '</div></div>
                 currentQualityTiers.splice(parseInt(delTier.dataset.idx), 1);
                 renderQualityTiers();
                 editorSave("quality_tiers", currentQualityTiers);
+                return;
+            }
+            var delTsvcModel = e.target.closest(".ra-wai-del-tsvc-model");
+            if (delTsvcModel) {
+                var si = parseInt(delTsvcModel.dataset.svc);
+                var mName = delTsvcModel.dataset.model;
+                if (currentTieredServices[si] && currentTieredServices[si].models) {
+                    delete currentTieredServices[si].models[mName];
+                    if (Object.keys(currentTieredServices[si].models).length === 0) currentTieredServices.splice(si, 1);
+                }
+                renderTieredServices();
+                editorSave("tiered_services", currentTieredServices);
                 return;
             }
             var delTsvc = e.target.closest(".ra-wai-del-tsvc");

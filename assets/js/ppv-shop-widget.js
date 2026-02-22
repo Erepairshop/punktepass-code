@@ -805,37 +805,57 @@
             // Quality tiers + tiered pricing
             var qTiers = (storeConfig && storeConfig.quality_tiers) ? storeConfig.quality_tiers : [];
             var tServices = (storeConfig && storeConfig.tiered_services) ? storeConfig.tiered_services : [];
-            var matchedTierService = null;
+            var matchedTierData = null; // will hold the tier prices to display
             if (qTiers.length > 0 && tServices.length > 0 && state.brand) {
-                // Find best matching tiered service for this device+problem
-                // Score each service by how many of its name words appear in the search terms
-                var searchTerms = ((state.brand || '') + ' ' + (state.model || '') + ' ' + (state.problem || '')).toLowerCase();
-                var bestScore = 0;
+                var problemTerms = ((state.problem || '') + ' ' + (state.brand || '') + ' ' + (state.model || '')).toLowerCase();
+                var deviceModel = ((state.brand || '') + ' ' + (state.model || '')).toLowerCase().trim();
+                var bestSvcScore = 0;
+                var matchedSvc = null;
+                // Step 1: find best matching service type by name vs problem+device
                 for (var ts = 0; ts < tServices.length; ts++) {
                     var svcName = (tServices[ts].name || '').toLowerCase();
                     if (!svcName) continue;
                     var words = svcName.split(/\s+/);
                     var score = 0;
                     for (var wi = 0; wi < words.length; wi++) {
-                        if (words[wi] && searchTerms.indexOf(words[wi]) >= 0) score++;
+                        if (words[wi] && problemTerms.indexOf(words[wi]) >= 0) score++;
                     }
-                    if (score > bestScore) {
-                        bestScore = score;
-                        matchedTierService = tServices[ts];
+                    if (score > bestSvcScore) {
+                        bestSvcScore = score;
+                        matchedSvc = tServices[ts];
                     }
                 }
-                // If no specific match, show first tiered service as example
-                if (!matchedTierService && tServices.length > 0) matchedTierService = tServices[0];
+                if (!matchedSvc && tServices.length > 0) matchedSvc = tServices[0];
+                // Step 2: if service has models map, find best matching model
+                if (matchedSvc && matchedSvc.models && typeof matchedSvc.models === 'object') {
+                    var bestModelScore = 0;
+                    for (var modelKey in matchedSvc.models) {
+                        if (!matchedSvc.models.hasOwnProperty(modelKey)) continue;
+                        var mk = modelKey.toLowerCase();
+                        var mWords = mk.split(/\s+/);
+                        var mScore = 0;
+                        for (var mw = 0; mw < mWords.length; mw++) {
+                            if (mWords[mw] && deviceModel.indexOf(mWords[mw]) >= 0) mScore++;
+                        }
+                        if (mScore > bestModelScore) {
+                            bestModelScore = mScore;
+                            matchedTierData = matchedSvc.models[modelKey];
+                        }
+                    }
+                } else if (matchedSvc && matchedSvc.tiers) {
+                    // Legacy flat format: { name, tiers: { tierId: {price,time} } }
+                    matchedTierData = matchedSvc.tiers;
+                }
             }
 
-            if (qTiers.length > 0 && matchedTierService && matchedTierService.tiers) {
+            if (qTiers.length > 0 && matchedTierData) {
                 // Show quality tier cards
                 html += '<div class="' + W + '-result-section">' +
                     '<p class="' + W + '-result-label">' + lang.step4_price + '</p>' +
                     '<div class="' + W + '-tiers">';
                 for (var ti = 0; ti < qTiers.length; ti++) {
                     var tier = qTiers[ti];
-                    var tierData = matchedTierService.tiers[tier.id] || {};
+                    var tierData = matchedTierData[tier.id] || {};
                     var badgeColor = tier.badge_color || config.color;
                     html += '<div class="' + W + '-tier" data-tier="' + (tier.id || '') + '">' +
                         '<span class="' + W + '-tier-badge" style="background:' + badgeColor + '">' + escHTML(tier.label || tier.id) + '</span>' +

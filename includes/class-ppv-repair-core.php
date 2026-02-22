@@ -1640,15 +1640,24 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             }
             $system .= "\n\nTIERED PRICES (use these when available):";
             foreach ($tiered_services as $tsvc) {
-                $line = "\n• " . ($tsvc['name'] ?? '');
-                if (!empty($tsvc['tiers'])) {
+                $svc_name = $tsvc['name'] ?? '';
+                if (!empty($tsvc['models']) && is_array($tsvc['models'])) {
+                    // New format: service type with per-model prices
+                    foreach ($tsvc['models'] as $model_name => $model_tiers) {
+                        $parts = [];
+                        foreach ($model_tiers as $tid => $tdata) {
+                            $parts[] = $tid . ": " . ($tdata['price'] ?? '–');
+                        }
+                        $system .= "\n• " . $svc_name . " – " . $model_name . " → " . implode(' | ', $parts);
+                    }
+                } elseif (!empty($tsvc['tiers'])) {
+                    // Legacy flat format
                     $parts = [];
                     foreach ($tsvc['tiers'] as $tid => $tdata) {
                         $parts[] = $tid . ": " . ($tdata['price'] ?? '–');
                     }
-                    $line .= " → " . implode(' | ', $parts);
+                    $system .= "\n• " . $svc_name . " → " . implode(' | ', $parts);
                 }
-                $system .= $line;
             }
             $system .= "\n\nWhen giving PRICE estimates, mention BOTH quality options if tiered prices exist for the service.";
         }
@@ -2224,10 +2233,13 @@ Use action markers to apply changes. You can combine multiple markers in one res
 7. QUALITY TIERS (e.g. Standard vs Premium quality levels):
    First define the tiers:
    [SET_TIERS:[{\"id\":\"standard\",\"label\":\"Standard\",\"description\":\"Nachbau-Teile\",\"badge_color\":\"#3b82f6\"},{\"id\":\"premium\",\"label\":\"Premium\",\"description\":\"Original-Teile\",\"badge_color\":\"#f59e0b\"}]]
-   Then set tiered pricing for services:
-   [SET_SERVICE_TIERS:[{\"name\":\"Display iPhone 14\",\"tiers\":{\"standard\":{\"price\":\"89 EUR\",\"time\":\"1h\"},\"premium\":{\"price\":\"149 EUR\",\"time\":\"1h\"}}},{\"name\":\"Akku Samsung Galaxy\",\"tiers\":{\"standard\":{\"price\":\"39 EUR\",\"time\":\"30min\"},\"premium\":{\"price\":\"59 EUR\",\"time\":\"30min\"}}}]]
+   Then set tiered pricing – group by SERVICE TYPE with per-model prices:
+   [SET_SERVICE_TIERS:[{\"name\":\"Display Austausch\",\"models\":{\"iPhone 8\":{\"standard\":{\"price\":\"60 EUR\"},\"premium\":{\"price\":\"129 EUR\"}},\"iPhone 14\":{\"standard\":{\"price\":\"150 EUR\"},\"premium\":{\"price\":\"279 EUR\"}}}}]]
+   → Each service type (Display, Akku, etc.) has a \"models\" object with per-model tier prices
    → Tiers can have any id/label: \"economy\", \"standard\", \"premium\", \"original\", etc.
-   → The widget will show ALL tiers side by side so the customer can choose.
+   → The widget will show the correct tiers for the customer's specific device model
+   → When adding new models to an existing service, include ALL existing models too (full replace)
+   → IMPORTANT: Group models under service type, do NOT create separate entries per model
 
 ═══ SHOP KNOWLEDGE (AI uses this during diagnoses) ═══
 
