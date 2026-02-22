@@ -2520,8 +2520,22 @@ echo '</div></div>
                     <!-- Quality tiers (AI-managed) -->
                     <div id="ra-wai-tiers-section" style="display:none;margin-top:12px"></div>
 
-                    <!-- Tiered services (AI-managed) -->
+                    <!-- Tiered services with manual editor -->
                     <div id="ra-wai-tiered-svc-section" style="display:none;margin-top:8px"></div>
+                    <div id="ra-wai-tsvc-editor" style="margin-top:8px;padding:10px;background:#f0fdf4;border-radius:10px;border:1.5px solid #bbf7d0">
+                        <div style="font-size:11px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px"><i class="ri-add-circle-line"></i> Modell-Preis hinzufügen</div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+                            <select id="ra-wai-tsvc-svctype" style="flex:2;min-width:130px;padding:7px 10px;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;outline:none;background:#fff">
+                                <option value="">Service wählen…</option>
+                            </select>
+                            <input type="text" id="ra-wai-tsvc-svcnew" placeholder="oder neuer Service" style="flex:2;min-width:110px;padding:7px 10px;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;outline:none;display:none">
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+                            <input type="text" id="ra-wai-tsvc-model" placeholder="Modell (z.B. iPhone 14)" style="flex:2;min-width:130px;padding:7px 10px;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;outline:none">
+                        </div>
+                        <div id="ra-wai-tsvc-tierprices" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"></div>
+                        <button type="button" id="ra-wai-tsvc-add" style="background:#059669;border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;width:100%"><i class="ri-add-line"></i> Hinzufügen</button>
+                    </div>
 
                     <!-- Custom sections (AI-managed) -->
                     <div id="ra-wai-sections-section" style="display:none;margin-top:8px"></div>
@@ -5602,6 +5616,7 @@ echo '</div></div>
                     \'<span class="ra-wai-del-tier" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
             }
             container.innerHTML = html;
+            if (typeof updateTsvcEditor === "function") updateTsvcEditor();
         }
 
         // ─── Tiered Services ───
@@ -5670,7 +5685,94 @@ echo '</div></div>
                     }
                 });
             });
+            if (typeof updateTsvcEditor === "function") updateTsvcEditor();
         }
+
+        // ─── Tiered Service Manual Editor ───
+        function updateTsvcEditor() {
+            var sel = document.getElementById("ra-wai-tsvc-svctype");
+            var newInp = document.getElementById("ra-wai-tsvc-svcnew");
+            var tierBox = document.getElementById("ra-wai-tsvc-tierprices");
+            if (!sel || !tierBox) return;
+            // Populate service type dropdown
+            var prev = sel.value;
+            sel.innerHTML = \'<option value="">Service wählen…</option>\';
+            for (var si = 0; si < currentTieredServices.length; si++) {
+                sel.innerHTML += \'<option value="\' + si + \'">\' + escH(currentTieredServices[si].name) + \'</option>\';
+            }
+            sel.innerHTML += \'<option value="__new">+ Neuer Service…</option>\';
+            if (prev) sel.value = prev;
+            // Build price inputs per quality tier
+            var html = "";
+            for (var ti = 0; ti < currentQualityTiers.length; ti++) {
+                var t = currentQualityTiers[ti];
+                html += \'<input type="text" data-tier="\' + escH(t.id) + \'" placeholder="\' + escH(t.label || t.id) + \' Preis" style="flex:1;min-width:80px;padding:7px 10px;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;outline:none">\';
+            }
+            if (!html) html = \'<span style="font-size:11px;color:#94a3b8">Erst Qualitätsstufen definieren (per Chat)</span>\';
+            tierBox.innerHTML = html;
+            // Show/hide editor based on quality tiers existing
+            var editor = document.getElementById("ra-wai-tsvc-editor");
+            if (editor) editor.style.display = currentQualityTiers.length > 0 ? "" : "none";
+        }
+        document.getElementById("ra-wai-tsvc-svctype").addEventListener("change", function() {
+            var newInp = document.getElementById("ra-wai-tsvc-svcnew");
+            if (this.value === "__new") {
+                newInp.style.display = "";
+                newInp.focus();
+            } else {
+                newInp.style.display = "none";
+                newInp.value = "";
+            }
+        });
+        document.getElementById("ra-wai-tsvc-add").addEventListener("click", function() {
+            var sel = document.getElementById("ra-wai-tsvc-svctype");
+            var newInp = document.getElementById("ra-wai-tsvc-svcnew");
+            var modelInp = document.getElementById("ra-wai-tsvc-model");
+            var modelName = modelInp.value.trim();
+            if (!modelName) { modelInp.focus(); return; }
+            // Determine service index
+            var svcIdx = -1;
+            var svcName = "";
+            if (sel.value === "__new") {
+                svcName = newInp.value.trim();
+                if (!svcName) { newInp.focus(); return; }
+                // Create new service entry
+                currentTieredServices.push({ name: svcName, models: {} });
+                svcIdx = currentTieredServices.length - 1;
+            } else if (sel.value !== "") {
+                svcIdx = parseInt(sel.value);
+            } else {
+                sel.focus(); return;
+            }
+            if (svcIdx < 0 || !currentTieredServices[svcIdx]) return;
+            // Ensure models object
+            if (!currentTieredServices[svcIdx].models) currentTieredServices[svcIdx].models = {};
+            // Collect tier prices
+            var tierPrices = {};
+            var tierInputs = document.getElementById("ra-wai-tsvc-tierprices").querySelectorAll("input[data-tier]");
+            var anyPrice = false;
+            for (var pi = 0; pi < tierInputs.length; pi++) {
+                var tid = tierInputs[pi].dataset.tier;
+                var pv = tierInputs[pi].value.trim();
+                if (pv) {
+                    tierPrices[tid] = { price: pv };
+                    anyPrice = true;
+                }
+            }
+            if (!anyPrice) { if (tierInputs[0]) tierInputs[0].focus(); return; }
+            // Add model
+            currentTieredServices[svcIdx].models[modelName] = tierPrices;
+            // Clear form
+            modelInp.value = "";
+            for (var ci = 0; ci < tierInputs.length; ci++) tierInputs[ci].value = "";
+            newInp.value = ""; newInp.style.display = "none";
+            // Re-render & save
+            renderTieredServices();
+            updateTsvcEditor();
+            editorSave("tiered_services", currentTieredServices);
+        });
+        // Initialize editor on load
+        updateTsvcEditor();
 
         // ─── Custom Sections ───
         function renderCustomSections(data) {
