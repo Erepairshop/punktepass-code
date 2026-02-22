@@ -1979,7 +1979,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             }
         }
 
-        // [SET_SERVICE_TIERS:JSON] – set tiered pricing for services
+        // [SET_SERVICE_TIERS:JSON] – set tiered pricing for services (full replace)
         if (preg_match('/\[SET_SERVICE_TIERS:(\[.+?\])\]/is', $ai_text, $m)) {
             $tiered_services = json_decode($m[1], true);
             if (is_array($tiered_services)) {
@@ -1987,6 +1987,38 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
                 $actions_applied[] = 'tiered_services';
             }
             $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
+        // [ADD_SERVICE_TIER:JSON] – add/update a SINGLE tiered service (incremental, no need to repeat all)
+        if (preg_match_all('/\[ADD_SERVICE_TIER:(\{.+?\})\]\s*/is', $ai_text, $matches, PREG_SET_ORDER)) {
+            if (!isset($current_knowledge['tiered_services'])) $current_knowledge['tiered_services'] = [];
+            foreach ($matches as $match) {
+                $new_svc = json_decode($match[1], true);
+                if (is_array($new_svc) && !empty($new_svc['name'])) {
+                    // Check if service with same name exists → merge models
+                    $found = false;
+                    foreach ($current_knowledge['tiered_services'] as $i => $existing) {
+                        if (strcasecmp($existing['name'], $new_svc['name']) === 0) {
+                            // Merge new models into existing service
+                            if (!empty($new_svc['models']) && is_array($new_svc['models'])) {
+                                if (!isset($current_knowledge['tiered_services'][$i]['models'])) {
+                                    $current_knowledge['tiered_services'][$i]['models'] = [];
+                                }
+                                foreach ($new_svc['models'] as $model_name => $tiers) {
+                                    $current_knowledge['tiered_services'][$i]['models'][$model_name] = $tiers;
+                                }
+                            }
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $current_knowledge['tiered_services'][] = $new_svc;
+                    }
+                }
+                $ai_text = str_replace($match[0], '', $ai_text);
+            }
+            $actions_applied[] = 'tiered_services';
         }
 
         // Safety catch-all: strip ALL remaining action markers (handles nested JSON via bracket counting)
@@ -2233,12 +2265,18 @@ Use action markers to apply changes. You can combine multiple markers in one res
 7. QUALITY TIERS (e.g. Standard vs Premium quality levels):
    First define the tiers:
    [SET_TIERS:[{\"id\":\"standard\",\"label\":\"Standard\",\"description\":\"Nachbau-Teile\",\"badge_color\":\"#3b82f6\"},{\"id\":\"premium\",\"label\":\"Premium\",\"description\":\"Original-Teile\",\"badge_color\":\"#f59e0b\"}]]
-   Then set tiered pricing – group by SERVICE TYPE with per-model prices:
+
+   ADD a single service with tiered pricing (PREFERRED – no need to repeat existing services):
+   [ADD_SERVICE_TIER:{\"name\":\"Lederbuchse Reparatur\",\"models\":{\"Kurze Lederhose\":{\"standard\":{\"price\":\"45 EUR\"},\"premium\":{\"price\":\"80 EUR\"}},\"Lange Lederhose\":{\"standard\":{\"price\":\"65 EUR\"},\"premium\":{\"price\":\"120 EUR\"}}}}]
+   → Adds a NEW service or MERGES models into an existing service with the same name
+   → You only need to specify the ONE service you're adding – existing services stay untouched
+   → Use this when the owner tells you about a new service or new model prices
+
+   REPLACE ALL tiered services at once (only when starting fresh):
    [SET_SERVICE_TIERS:[{\"name\":\"Display Austausch\",\"models\":{\"iPhone 8\":{\"standard\":{\"price\":\"60 EUR\"},\"premium\":{\"price\":\"129 EUR\"}},\"iPhone 14\":{\"standard\":{\"price\":\"150 EUR\"},\"premium\":{\"price\":\"279 EUR\"}}}}]]
-   → Each service type (Display, Akku, etc.) has a \"models\" object with per-model tier prices
+   → Replaces ALL tiered services – only use this when setting up from scratch
+   → Each service type has a \"models\" object with per-model tier prices
    → Tiers can have any id/label: \"economy\", \"standard\", \"premium\", \"original\", etc.
-   → The widget will show the correct tiers for the customer's specific device model
-   → When adding new models to an existing service, include ALL existing models too (full replace)
    → IMPORTANT: Group models under service type, do NOT create separate entries per model
 
 ═══ SHOP KNOWLEDGE (AI uses this during diagnoses) ═══
@@ -2281,7 +2319,7 @@ IMPORTANT – WIDGET LANGUAGE vs ADMIN LANGUAGE:
 - ALL content saved via action markers MUST be in {$widget_lang_name}:
   → [SET_BRANDS:...] brand names in {$widget_lang_name}
   → [SET_CHIPS:...] problem descriptions in {$widget_lang_name}
-  → [ADD_SERVICE:...] / [SET_SERVICE_TIERS:...] service names in {$widget_lang_name}
+  → [ADD_SERVICE:...] / [ADD_SERVICE_TIER:...] / [SET_SERVICE_TIERS:...] service names in {$widget_lang_name}
   → [SET_KNOWLEDGE:...] knowledge texts in {$widget_lang_name}
   → [ADD_SECTION:...] section titles and content in {$widget_lang_name}
   → [SET:greeting=...] greeting text in {$widget_lang_name}
@@ -2291,10 +2329,18 @@ RULES:
 - ALWAYS respond in {$lang_name}
 - ALL action marker VALUES must be in {$widget_lang_name} (the widget language customers see)
 - You have FULL AUTHORIZATION – whatever the shop owner asks, configure it
-- If the owner asks for quality tiers → use SET_TIERS + SET_SERVICE_TIERS
+- ⚠️ CRITICAL: You MUST include action markers in EVERY response where the owner asks to change, add, or configure something!
+  → If they say \"add Lederbuchse repair\" → you MUST include [ADD_SERVICE_TIER:...] or [ADD_SERVICE:...]
+  → If they say \"change the button text\" → you MUST include [SET:text=New Text]
+  → If they give you prices → you MUST include the corresponding marker to save them
+  → NEVER just acknowledge a change in text without the marker – the change will NOT be saved without it!
+- If the owner mentions a NEW service with prices per model → use [ADD_SERVICE_TIER:{...}] (adds just that one service)
+- If the owner mentions a simple service with one price → use [ADD_SERVICE:name|price|time]
+- If the owner asks to change widget button text → use [SET:text=New Button Text]
+- If the owner asks for quality tiers → use SET_TIERS + ADD_SERVICE_TIER or SET_SERVICE_TIERS
 - If the owner asks for custom info sections → use ADD_SECTION with appropriate type
 - If the owner describes something you can represent with existing markers → use them
-- When they paste a price list/text, parse it and use [ADD_SERVICE:...] or [SET_SERVICE_TIERS:...] for each entry
+- When they paste a price list/text, parse it and use [ADD_SERVICE:...] or [ADD_SERVICE_TIER:...] for each entry
 - Briefly explain what you changed after each action
 - Suggest improvements based on the service type
 - If the user mentions an image/file, tell them to use the upload button
