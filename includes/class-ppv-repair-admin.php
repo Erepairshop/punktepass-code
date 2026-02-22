@@ -700,6 +700,7 @@ a:hover{color:#5a67d8}
 .ra-settings-panel h4{font-size:15px;font-weight:700;color:#0f172a;margin:0 0 16px 0;padding-bottom:12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
 .ra-settings-panel h4 i{color:#667eea;font-size:18px}
 .ra-settings-panel h4:not(:first-child){margin-top:28px}
+.ra-svc-row:hover{border-color:#cbd5e1!important}
 .ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
 .ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
 
@@ -5450,7 +5451,7 @@ echo '</div></div>
                 html += \'<div style="margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px;padding:6px 0;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px">\' + escH(catName) + \'</span><span style="background:#f1f5f9;padding:1px 8px;border-radius:10px;font-size:11px;color:#64748b;font-weight:600">\' + items.length + \'</span></div>\';
                 items.forEach(function(item) {
                     var s = item.svc, idx = item.idx;
-                    html += \'<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid #f1f5f9;border-radius:10px;font-size:13px;color:#475569;margin-bottom:3px;transition:border-color .15s" onmouseover="this.style.borderColor=\'#cbd5e1\'" onmouseout="this.style.borderColor=\'#f1f5f9\'">\' +
+                    html += \'<div class="ra-svc-row" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid #f1f5f9;border-radius:10px;font-size:13px;color:#475569;margin-bottom:3px;transition:border-color .15s">\' +
                         \'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">\' + escH(s.name) + \'</span>\' +
                         (s.price ? \'<span style="color:#059669;font-weight:700;white-space:nowrap;font-size:12px">\' + escH(s.price) + \'</span>\' : \'\') +
                         (s.time ? \'<span style="color:#94a3b8;white-space:nowrap;font-size:11px"><i class="ri-time-line" style="font-size:12px;vertical-align:-1px"></i> \' + escH(s.time) + \'</span>\' : \'\') +
