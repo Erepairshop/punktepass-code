@@ -70,7 +70,15 @@
             cat_search: 'Service suchen...', cat_hours: '\u00d6ffnungszeiten', cat_open: 'Ge\u00f6ffnet', cat_closed: 'Geschlossen',
             cat_contact: 'Kontakt & Anfahrt', cat_cta: 'Reparatur anfragen', cat_no_results: 'Keine Ergebnisse',
             cat_general: 'Allgemein', cat_from: 'ab', cat_map: 'Route planen', cat_call: 'Anrufen',
-            cat_days: ['Mo','Di','Mi','Do','Fr','Sa','So'], cat_services: 'Leistungen', cat_time: 'Dauer'
+            cat_days: ['Mo','Di','Mi','Do','Fr','Sa','So'], cat_services: 'Leistungen', cat_time: 'Dauer',
+            cat_confirm_title: 'Reparatur gew\u00fcnscht?',
+            cat_confirm_text: 'M\u00f6chten Sie eine Reparatur f\u00fcr diesen Service anfragen?',
+            cat_confirm_yes: 'Ja, Reparatur anfragen',
+            cat_confirm_no: 'Zur\u00fcck',
+            cat_transition_title: 'Formular ausf\u00fcllen',
+            cat_transition_text: 'Bitte f\u00fcllen Sie das folgende Formular aus \u2013 wir melden uns mit einem Termin, wann wir es erledigen k\u00f6nnen.',
+            cat_transition_btn: 'Formular \u00f6ffnen',
+            cat_price_label: 'Preis', cat_time_label: 'Dauer'
         },
         en: {
             fab: 'Request repair', title: 'Submit a repair',
@@ -90,7 +98,15 @@
             cat_search: 'Search service...', cat_hours: 'Opening Hours', cat_open: 'Open', cat_closed: 'Closed',
             cat_contact: 'Contact & Directions', cat_cta: 'Request repair', cat_no_results: 'No results',
             cat_general: 'General', cat_from: 'from', cat_map: 'Get directions', cat_call: 'Call',
-            cat_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], cat_services: 'Services', cat_time: 'Duration'
+            cat_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], cat_services: 'Services', cat_time: 'Duration',
+            cat_confirm_title: 'Request repair?',
+            cat_confirm_text: 'Would you like to request a repair for this service?',
+            cat_confirm_yes: 'Yes, request repair',
+            cat_confirm_no: 'Back',
+            cat_transition_title: 'Fill out the form',
+            cat_transition_text: 'Please fill out the following form \u2013 we will get back to you with an appointment.',
+            cat_transition_btn: 'Open form',
+            cat_price_label: 'Price', cat_time_label: 'Duration'
         },
         hu: {
             fab: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', title: 'Jav\u00edt\u00e1s bek\u00fcld\u00e9se',
@@ -110,7 +126,15 @@
             cat_search: 'Keres\u00e9s...', cat_hours: 'Nyitvatart\u00e1s', cat_open: 'Nyitva', cat_closed: 'Z\u00e1rva',
             cat_contact: 'Kapcsolat & Megk\u00f6zel\u00edt\u00e9s', cat_cta: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', cat_no_results: 'Nincs tal\u00e1lat',
             cat_general: '\u00c1ltal\u00e1nos', cat_from: '-t\u00f3l', cat_map: '\u00datvonaltervez\u00e9s', cat_call: 'H\u00edv\u00e1s',
-            cat_days: ['H\u00e9','Ke','Sze','Cs','P\u00e9','Szo','Vas'], cat_services: 'Szolg\u00e1ltat\u00e1sok', cat_time: 'Id\u0151tartam'
+            cat_days: ['H\u00e9','Ke','Sze','Cs','P\u00e9','Szo','Vas'], cat_services: 'Szolg\u00e1ltat\u00e1sok', cat_time: 'Id\u0151tartam',
+            cat_confirm_title: 'Jav\u00edt\u00e1st szeretn\u00e9?',
+            cat_confirm_text: 'Szeretn\u00e9 megrendelni ezt a jav\u00edt\u00e1st?',
+            cat_confirm_yes: 'Igen, jav\u00edt\u00e1st k\u00e9rek',
+            cat_confirm_no: 'Vissza',
+            cat_transition_title: '\u0170rlap kit\u00f6lt\u00e9se',
+            cat_transition_text: 'K\u00e9rj\u00fck t\u00f6ltse ki a k\u00f6vetkez\u0151 \u0171rlapot \u2013 jelentkez\u00fcnk egy id\u0151ponttal, amikor el tudjuk v\u00e9gezni.',
+            cat_transition_btn: '\u0170rlap megnyit\u00e1sa',
+            cat_price_label: '\u00c1r', cat_time_label: 'Id\u0151tartam'
         },
         ro: {
             fab: 'Solicit\u0103 repara\u021bie', title: 'Trimite repara\u021bie',
@@ -130,7 +154,15 @@
             cat_search: 'C\u0103utare serviciu...', cat_hours: 'Program', cat_open: 'Deschis', cat_closed: '\u00cenchis',
             cat_contact: 'Contact & Direc\u021bii', cat_cta: 'Solicit\u0103 repara\u021bie', cat_no_results: 'Niciun rezultat',
             cat_general: 'General', cat_from: 'de la', cat_map: 'Planific\u0103 ruta', cat_call: 'Sun\u0103',
-            cat_days: ['Lu','Ma','Mi','Jo','Vi','S\u00e2','Du'], cat_services: 'Servicii', cat_time: 'Durat\u0103'
+            cat_days: ['Lu','Ma','Mi','Jo','Vi','S\u00e2','Du'], cat_services: 'Servicii', cat_time: 'Durat\u0103',
+            cat_confirm_title: 'Dori\u021bi repara\u021bie?',
+            cat_confirm_text: 'Dori\u021bi s\u0103 solicita\u021bi o repara\u021bie pentru acest serviciu?',
+            cat_confirm_yes: 'Da, solicit repara\u021bie',
+            cat_confirm_no: '\u00cenapoi',
+            cat_transition_title: 'Completa\u021bi formularul',
+            cat_transition_text: 'V\u0103 rug\u0103m completa\u021bi formularul \u2013 v\u0103 vom contacta cu o programare.',
+            cat_transition_btn: 'Deschide formularul',
+            cat_price_label: 'Pre\u021b', cat_time_label: 'Durat\u0103'
         },
         it: {
             fab: 'Richiedi riparazione', title: 'Invia riparazione',
@@ -150,7 +182,15 @@
             cat_search: 'Cerca servizio...', cat_hours: 'Orari di apertura', cat_open: 'Aperto', cat_closed: 'Chiuso',
             cat_contact: 'Contatti & Indicazioni', cat_cta: 'Richiedi riparazione', cat_no_results: 'Nessun risultato',
             cat_general: 'Generale', cat_from: 'da', cat_map: 'Indicazioni', cat_call: 'Chiama',
-            cat_days: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'], cat_services: 'Servizi', cat_time: 'Durata'
+            cat_days: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'], cat_services: 'Servizi', cat_time: 'Durata',
+            cat_confirm_title: 'Richiedi riparazione?',
+            cat_confirm_text: 'Vorresti richiedere una riparazione per questo servizio?',
+            cat_confirm_yes: 'S\u00ec, richiedi riparazione',
+            cat_confirm_no: 'Indietro',
+            cat_transition_title: 'Compila il modulo',
+            cat_transition_text: 'Compila il seguente modulo \u2013 ti contatteremo con un appuntamento.',
+            cat_transition_btn: 'Apri modulo',
+            cat_price_label: 'Prezzo', cat_time_label: 'Durata'
         }
     };
     var lang = t[config.lang] || t.de;
@@ -448,10 +488,43 @@
         'a.' + W + '-cat-contact-row:hover{color:' + config.color + '}' +
         '.' + W + '-cat-contact-icon{width:32px;height:32px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}' +
 
-        /* CTA */
-        '#' + W + '-cat-cta{padding:16px;background:#fff}' +
-        '#' + W + '-cat-cta-btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;background:' + grad + ';color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;text-decoration:none;transition:all .2s;box-shadow:0 4px 16px ' + config.color + '30;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
-        '#' + W + '-cat-cta-btn:hover{opacity:.9;transform:translateY(-1px)}' +
+        /* Clickable service rows */
+        '.' + W + '-cat-row{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '.' + W + '-cat-row:hover{background:#f0f9ff}' +
+        '.' + W + '-cat-row:active{background:#e0f2fe}' +
+
+        /* Confirm overlay */
+        '#' + W + '-cat-confirm{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;background:#fff;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}' +
+        '#' + W + '-cat-confirm.active{display:flex}' +
+        '#' + W + '-cat-confirm-icon{width:72px;height:72px;border-radius:50%;background:' + config.color + '12;display:flex;align-items:center;justify-content:center;margin-bottom:20px}' +
+        '#' + W + '-cat-confirm-icon svg{width:36px;height:36px;color:' + config.color + '}' +
+        '#' + W + '-cat-confirm-svc{font-size:17px;font-weight:700;color:#0f172a;margin:0 0 4px}' +
+        '#' + W + '-cat-confirm-meta{display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 20px;font-size:13px;color:#64748b}' +
+        '#' + W + '-cat-confirm-meta span{display:flex;align-items:center;gap:4px}' +
+        '#' + W + '-cat-confirm-q{font-size:15px;color:#475569;margin:0 0 24px;line-height:1.5}' +
+        '#' + W + '-cat-confirm-yes{display:block;width:100%;max-width:320px;padding:14px;border:none;border-radius:12px;background:' + grad + ';color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px ' + config.color + '30;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-confirm-yes:hover{opacity:.9;transform:translateY(-1px)}' +
+        '#' + W + '-cat-confirm-back{display:block;width:100%;max-width:320px;padding:12px;border:2px solid #e2e8f0;border-radius:12px;background:#fff;color:#64748b;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;margin-top:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-confirm-back:hover{border-color:#cbd5e1;background:#f8fafc}' +
+
+        /* Transition screen */
+        '#' + W + '-cat-transition{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:6;background:#fff;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}' +
+        '#' + W + '-cat-transition.active{display:flex}' +
+        '#' + W + '-cat-transition-icon{width:80px;height:80px;border-radius:50%;background:' + config.color + '12;display:flex;align-items:center;justify-content:center;margin-bottom:20px}' +
+        '#' + W + '-cat-transition-icon svg{width:40px;height:40px;color:' + config.color + '}' +
+        '#' + W + '-cat-transition h3{font-size:20px;font-weight:700;color:#0f172a;margin:0 0 12px}' +
+        '#' + W + '-cat-transition p{font-size:15px;color:#475569;margin:0 0 28px;line-height:1.6;max-width:360px}' +
+        '#' + W + '-cat-transition-btn{display:block;width:100%;max-width:320px;padding:16px;border:none;border-radius:12px;background:' + grad + ';color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px ' + config.color + '30;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-transition-btn:hover{opacity:.9;transform:translateY(-1px)}' +
+
+        /* Embedded form iframe */
+        '#' + W + '-cat-iframe-wrap{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:7;background:#fff;flex-direction:column}' +
+        '#' + W + '-cat-iframe-wrap.active{display:flex}' +
+        '#' + W + '-cat-iframe{flex:1;border:none;width:100%;height:100%;background:#f8fafc}' +
+        '#' + W + '-cat-back-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-back-bar:hover{background:#f1f5f9}' +
+        '#' + W + '-cat-back-bar svg{width:18px;height:18px;color:#64748b}' +
+        '#' + W + '-cat-back-bar span{font-size:14px;font-weight:600;color:#64748b}' +
 
         /* No results */
         '#' + W + '-cat-empty{padding:40px 20px;text-align:center;color:#94a3b8;font-size:14px;display:none}' +
@@ -579,20 +652,45 @@
         var catPanel = document.createElement('div');
         catPanel.id = W + '-panel';
         catPanel.className = 'catalog-panel';
+        var arrowBackSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>';
+        var clipboardSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>';
+
         catPanel.innerHTML =
             '<div id="' + W + '-hdr">' +
                 '<div><div id="' + W + '-hdr-t">' + lang.cat_title + '<span id="' + W + '-cat-count"></span></div>' +
                 '<div id="' + W + '-hdr-s">' + lang.cat_subtitle + '</div></div>' +
                 '<button id="' + W + '-cls" aria-label="' + lang.close + '">&times;</button>' +
             '</div>' +
-            '<div id="' + W + '-cat-search-wrap">' +
-                '<input type="text" id="' + W + '-cat-search" placeholder="' + lang.cat_search + '" autocomplete="off">' +
-            '</div>' +
-            '<div id="' + W + '-cat-body">' +
-                '<div id="' + W + '-cat-loading"><div class="' + W + '-spinner"></div><div style="font-size:14px;color:#64748b">' + lang.cat_title + '...</div></div>' +
-            '</div>' +
-            '<div id="' + W + '-cat-cta">' +
-                '<a id="' + W + '-cat-cta-btn" href="' + FORM_URL + '?embed=1" target="_blank" rel="noopener">' + wrenchSVG + ' ' + lang.cat_cta + ' \u2192</a>' +
+            '<div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden">' +
+                '<div id="' + W + '-cat-search-wrap">' +
+                    '<input type="text" id="' + W + '-cat-search" placeholder="' + lang.cat_search + '" autocomplete="off">' +
+                '</div>' +
+                '<div id="' + W + '-cat-body">' +
+                    '<div id="' + W + '-cat-loading"><div class="' + W + '-spinner"></div><div style="font-size:14px;color:#64748b">' + lang.cat_title + '...</div></div>' +
+                '</div>' +
+                /* Confirm overlay */
+                '<div id="' + W + '-cat-confirm">' +
+                    '<div id="' + W + '-cat-confirm-icon">' + wrenchSVG + '</div>' +
+                    '<div id="' + W + '-cat-confirm-svc"></div>' +
+                    '<div id="' + W + '-cat-confirm-meta"></div>' +
+                    '<p id="' + W + '-cat-confirm-q">' + lang.cat_confirm_text + '</p>' +
+                    '<button type="button" id="' + W + '-cat-confirm-yes">' + lang.cat_confirm_yes + ' \u2192</button>' +
+                    '<button type="button" id="' + W + '-cat-confirm-back">' + lang.cat_confirm_no + '</button>' +
+                '</div>' +
+                /* Transition screen */
+                '<div id="' + W + '-cat-transition">' +
+                    '<div id="' + W + '-cat-transition-icon">' + clipboardSVG + '</div>' +
+                    '<h3>' + lang.cat_transition_title + '</h3>' +
+                    '<p>' + lang.cat_transition_text + '</p>' +
+                    '<button type="button" id="' + W + '-cat-transition-btn">' + lang.cat_transition_btn + ' \u2192</button>' +
+                '</div>' +
+                /* Embedded form iframe */
+                '<div id="' + W + '-cat-iframe-wrap">' +
+                    '<div id="' + W + '-cat-back-bar">' +
+                        arrowBackSVG + '<span>' + lang.cat_confirm_no + '</span>' +
+                    '</div>' +
+                    '<iframe id="' + W + '-cat-iframe" src="about:blank" loading="lazy"></iframe>' +
+                '</div>' +
             '</div>' +
             '<div id="' + W + '-ftr">' + buildFooter() + '</div>';
         document.body.appendChild(catPanel);
@@ -776,7 +874,9 @@
                     '<div class="' + W + '-cat-items">';
                 for (var si = 0; si < items.length; si++) {
                     var svc = items[si];
-                    html += '<div class="' + W + '-cat-row" data-search="' + escH((svc.name || '').toLowerCase() + ' ' + (catName).toLowerCase()) + '">' +
+                    // Find original index in allServices
+                    var origIdx = allServices.indexOf(svc);
+                    html += '<div class="' + W + '-cat-row" data-svc-idx="' + origIdx + '" data-search="' + escH((svc.name || '').toLowerCase() + ' ' + (catName).toLowerCase()) + '">' +
                         '<span class="' + W + '-cat-name">' + escH(svc.name || '') + '</span>' +
                         '<span class="' + W + '-cat-meta">' +
                             (svc.time ? '<span class="' + W + '-cat-time">' + escH(svc.time) + '</span>' : '') +
@@ -825,7 +925,84 @@
                     this.parentElement.classList.toggle('open');
                 });
             }
+
+            // Bind service row clicks → confirm flow
+            var svcRows = catBody.querySelectorAll('.' + W + '-cat-row');
+            for (var ri = 0; ri < svcRows.length; ri++) {
+                svcRows[ri].addEventListener('click', function() {
+                    var svcIdx = parseInt(this.getAttribute('data-svc-idx'));
+                    if (!isNaN(svcIdx) && allServices[svcIdx]) {
+                        showConfirm(allServices[svcIdx]);
+                    }
+                });
+            }
         }
+
+        // ── Confirm / Transition / Form flow ──
+        var confirmEl = catPanel.querySelector('#' + W + '-cat-confirm');
+        var confirmSvc = catPanel.querySelector('#' + W + '-cat-confirm-svc');
+        var confirmMeta = catPanel.querySelector('#' + W + '-cat-confirm-meta');
+        var confirmYes = catPanel.querySelector('#' + W + '-cat-confirm-yes');
+        var confirmBack = catPanel.querySelector('#' + W + '-cat-confirm-back');
+        var transitionEl = catPanel.querySelector('#' + W + '-cat-transition');
+        var transitionBtn = catPanel.querySelector('#' + W + '-cat-transition-btn');
+        var iframeWrapEl = catPanel.querySelector('#' + W + '-cat-iframe-wrap');
+        var iframeEl = catPanel.querySelector('#' + W + '-cat-iframe');
+        var backBarEl = catPanel.querySelector('#' + W + '-cat-back-bar');
+        var selectedSvc = null;
+
+        function showConfirm(svc) {
+            selectedSvc = svc;
+            confirmSvc.textContent = svc.name || '';
+            var metaHTML = '';
+            if (svc.price) metaHTML += '<span>\uD83D\uDCB0 ' + escH(svc.price) + '</span>';
+            if (svc.time) metaHTML += '<span>\u23F1 ' + escH(svc.time) + '</span>';
+            confirmMeta.innerHTML = metaHTML;
+            confirmEl.classList.add('active');
+        }
+
+        function hideConfirm() {
+            confirmEl.classList.remove('active');
+            selectedSvc = null;
+        }
+
+        function showTransition() {
+            confirmEl.classList.remove('active');
+            transitionEl.classList.add('active');
+        }
+
+        function hideTransition() {
+            transitionEl.classList.remove('active');
+        }
+
+        function showForm() {
+            transitionEl.classList.remove('active');
+            var url = FORM_URL + '?embed=1';
+            if (selectedSvc) {
+                if (selectedSvc.name) url += '&problem=' + encodeURIComponent(selectedSvc.name);
+                if (selectedSvc.category) url += '&category=' + encodeURIComponent(selectedSvc.category);
+            }
+            iframeEl.src = url;
+            iframeWrapEl.classList.add('active');
+        }
+
+        function hideForm() {
+            iframeWrapEl.classList.remove('active');
+            iframeEl.src = 'about:blank';
+        }
+
+        function resetFlow() {
+            hideConfirm();
+            hideTransition();
+            hideForm();
+        }
+
+        confirmYes.addEventListener('click', showTransition);
+        confirmBack.addEventListener('click', hideConfirm);
+        transitionBtn.addEventListener('click', showForm);
+        backBarEl.addEventListener('click', function() {
+            resetFlow();
+        });
 
         // Search/filter
         var searchTimer = null;
