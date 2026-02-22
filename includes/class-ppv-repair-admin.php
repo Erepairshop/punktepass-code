@@ -5464,10 +5464,17 @@ echo '</div></div>
                     html += \'<span class="ra-svc-cat-rename" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#a16207;cursor:pointer;transition:all .15s;font-weight:600" title="Kategorie umbenennen"><i class="ri-edit-line" style="font-size:12px"></i> Umbenennen</span>\';
                     html += \'<span class="ra-svc-cat-del" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:11px;color:#dc2626;cursor:pointer;transition:all .15s;font-weight:600" title="Kategorie loschen"><i class="ri-delete-bin-line" style="font-size:12px"></i> Loschen (\' + items.length + \')</span>\';
                     html += \'</div>\';
+                    // Search + select toolbar
+                    html += \'<div style="display:flex;align-items:center;gap:6px;padding:4px 10px;margin-top:2px">\';
+                    html += \'<input type="text" class="ra-svc-cat-filter" data-cat="\' + escH(catName) + \'" placeholder="Suchen..." style="flex:1;padding:4px 8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:11px;outline:none;min-width:0;transition:border-color .2s">\';
+                    html += \'<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#64748b;cursor:pointer;white-space:nowrap;user-select:none"><input type="checkbox" class="ra-svc-cat-selall" data-cat="\' + escH(catName) + \'" style="accent-color:#3b82f6"> Alle</label>\';
+                    html += \'<span class="ra-svc-cat-delsel" data-cat="\' + escH(catName) + \'" style="display:none;padding:3px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;font-size:11px;color:#dc2626;cursor:pointer;font-weight:600;white-space:nowrap"><i class="ri-delete-bin-line" style="font-size:11px"></i> <span class="ra-svc-delsel-count"></span> loschen</span>\';
+                    html += \'</div>\';
                     html += \'<div style="padding:2px 0 0 0">\';
                     items.forEach(function(item) {
                         var s = item.svc, idx = item.idx;
-                        html += \'<div class="ra-svc-row" data-idx="\' + idx + \'" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;border:1px solid #f1f5f9;border-radius:8px;font-size:13px;color:#475569;margin-bottom:2px;transition:border-color .15s">\';
+                        html += \'<div class="ra-svc-row" data-idx="\' + idx + \'" data-cat="\' + escH(catName) + \'" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;border:1px solid #f1f5f9;border-radius:8px;font-size:13px;color:#475569;margin-bottom:2px;transition:border-color .15s">\';
+                        html += \'<input type="checkbox" class="ra-svc-cb" data-idx="\' + idx + \'" data-cat="\' + escH(catName) + \'" style="accent-color:#3b82f6;flex-shrink:0">\';
                         html += \'<span class="ra-svc-edit-name" data-idx="\' + idx + \'" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;cursor:text;padding:2px 4px;border-radius:4px;transition:background .15s" title="Klicken zum Bearbeiten">\' + escH(s.name) + \'</span>\';
                         html += \'<span class="ra-svc-edit-price" data-idx="\' + idx + \'" style="color:#059669;font-weight:700;white-space:nowrap;font-size:12px;cursor:text;padding:2px 6px;border-radius:4px;transition:background .15s;min-width:40px;text-align:right" title="Klicken zum Bearbeiten">\' + escH(s.price || "-") + \'</span>\';
                         html += \'<span class="ra-svc-edit-time" data-idx="\' + idx + \'" style="color:#94a3b8;white-space:nowrap;font-size:11px;cursor:text;padding:2px 6px;border-radius:4px;transition:background .15s;min-width:30px" title="Klicken zum Bearbeiten"><i class="ri-time-line" style="font-size:11px;vertical-align:-1px"></i> \' + escH(s.time || "-") + \'</span>\';
@@ -5592,7 +5599,73 @@ echo '</div></div>
             // Inline edit time
             var eTime = e.target.closest(".ra-svc-edit-time");
             if (eTime) { startInlineEdit(eTime, parseInt(eTime.dataset.idx), "time"); return; }
+            // Delete selected services
+            var delSel = e.target.closest(".ra-svc-cat-delsel");
+            if (delSel) {
+                e.stopPropagation();
+                var dCat = delSel.dataset.cat;
+                var cbs = waiServiceList.querySelectorAll(".ra-svc-cb[data-cat=\"" + dCat + "\"]:checked");
+                if (!cbs.length) return;
+                var idxs = [];
+                cbs.forEach(function(cb) { idxs.push(parseInt(cb.dataset.idx)); });
+                idxs.sort(function(a,b){ return b - a; });
+                idxs.forEach(function(i) { currentServices.splice(i, 1); });
+                renderServices(); editorSave("services", currentServices);
+                return;
+            }
         });
+
+        // Update "delete selected" counter
+        function updateSelCount(cat) {
+            var cbs = waiServiceList.querySelectorAll(".ra-svc-cb[data-cat=\"" + cat + "\"]");
+            var checked = waiServiceList.querySelectorAll(".ra-svc-cb[data-cat=\"" + cat + "\"]:checked");
+            var delBtn = waiServiceList.querySelector(".ra-svc-cat-delsel[data-cat=\"" + cat + "\"]");
+            var selAll = waiServiceList.querySelector(".ra-svc-cat-selall[data-cat=\"" + cat + "\"]");
+            if (delBtn) {
+                delBtn.style.display = checked.length > 0 ? "" : "none";
+                var cntEl = delBtn.querySelector(".ra-svc-delsel-count");
+                if (cntEl) cntEl.textContent = checked.length;
+            }
+            if (selAll) selAll.checked = cbs.length > 0 && cbs.length === checked.length;
+        }
+
+        // Checkbox change + select all + filter (delegated)
+        waiServiceList.addEventListener("change", function(e) {
+            if (e.target.classList.contains("ra-svc-cb")) {
+                updateSelCount(e.target.dataset.cat);
+                return;
+            }
+            if (e.target.classList.contains("ra-svc-cat-selall")) {
+                var cat = e.target.dataset.cat;
+                var checked = e.target.checked;
+                // Only select visible rows (not hidden by filter)
+                var rows = waiServiceList.querySelectorAll(".ra-svc-row[data-cat=\"" + cat + "\"]");
+                rows.forEach(function(row) {
+                    if (row.style.display !== "none") {
+                        var cb = row.querySelector(".ra-svc-cb");
+                        if (cb) cb.checked = checked;
+                    }
+                });
+                updateSelCount(cat);
+                return;
+            }
+        });
+
+        // Category filter (search within category)
+        waiServiceList.addEventListener("input", function(e) {
+            if (!e.target.classList.contains("ra-svc-cat-filter")) return;
+            var cat = e.target.dataset.cat;
+            var val = e.target.value.trim().toLowerCase();
+            var rows = waiServiceList.querySelectorAll(".ra-svc-row[data-cat=\"" + cat + "\"]");
+            rows.forEach(function(row) {
+                var idx = parseInt(row.dataset.idx);
+                var svc = currentServices[idx];
+                if (!svc) { row.style.display = "none"; return; }
+                var text = ((svc.name || "") + " " + (svc.price || "") + " " + (svc.time || "")).toLowerCase();
+                row.style.display = (!val || text.indexOf(val) >= 0) ? "" : "none";
+            });
+        });
+
         document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
             var catInp = document.getElementById("ra-wai-svc-cat"), nameInp = document.getElementById("ra-wai-svc-name");
             var priceInp = document.getElementById("ra-wai-svc-price"), timeInp = document.getElementById("ra-wai-svc-time");
