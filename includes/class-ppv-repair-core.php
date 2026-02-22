@@ -73,8 +73,9 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
         add_action('wp_ajax_nopriv_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
 
-        // AJAX: Widget visual editor save (admin)
+        // AJAX: Widget visual editor save (admin, needs nopriv for session-based auth)
         add_action('wp_ajax_ppv_widget_editor_save', [__CLASS__, 'ajax_widget_editor_save']);
+        add_action('wp_ajax_nopriv_ppv_widget_editor_save', [__CLASS__, 'ajax_widget_editor_save']);
 
         // AJAX: Public widget config endpoint (CORS, for custom brands/chips)
         add_action('wp_ajax_ppv_shop_widget_config', [__CLASS__, 'ajax_shop_widget_config']);
