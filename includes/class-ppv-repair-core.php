@@ -1818,7 +1818,6 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         $messages[] = ['role' => 'user', 'content' => $message];
 
         $result = PPV_AI_Engine::chat_with_history($system, $messages, [
-            'model'      => 'gpt-4o-mini',
             'max_tokens' => 2000,  // Config chat needs more tokens for large JSON markers
         ]);
         if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
