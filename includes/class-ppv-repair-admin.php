@@ -2380,8 +2380,9 @@ echo '</div></div>
                     <div class="field">
                         <label>Widget-Modus</label>
                         <select name="widget_mode" id="ra-widget-mode" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                            <option value="float">Floating Button (empfohlen)</option>
-                            <option value="ai">KI-Diagnose Widget (empfohlen)</option>
+                            <option value="catalog">Katalog / Preisliste (empfohlen)</option>
+                            <option value="float">Floating Button</option>
+                            <option value="ai">KI-Diagnose Widget</option>
                             <option value="inline">Inline Banner</option>
                             <option value="button">Einfacher Button</option>
                         </select>
@@ -2510,6 +2511,8 @@ echo '</div></div>
                         </div>
                         <div id="ra-wai-service-list" style="margin-bottom:8px"></div>
                         <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            <input type="text" id="ra-wai-svc-cat" placeholder="Kategorie (z.B. Display)" style="flex:1;min-width:100px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none" list="ra-wai-cat-list">
+                            <datalist id="ra-wai-cat-list"></datalist>
                             <input type="text" id="ra-wai-svc-name" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_name_ph')) . '" style="flex:2;min-width:120px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
                             <input type="text" id="ra-wai-svc-price" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_price_ph')) . '" style="flex:1;min-width:80px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
                             <input type="text" id="ra-wai-svc-time" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_time_ph')) . '" style="flex:1;min-width:60px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
@@ -5186,13 +5189,14 @@ echo '</div></div>
 
             // Toggle visibility of fields
             wTargetWrap.style.display = (mode === "inline" || mode === "button") ? "" : "none";
-            wTextWrap.style.display = (mode === "float" || mode === "button") ? "" : "none";
-            wPos.parentNode.style.display = (mode === "float") ? "" : "none";
+            wTextWrap.style.display = (mode === "float" || mode === "button" || mode === "catalog") ? "" : "none";
+            wPos.parentNode.style.display = (mode === "float" || mode === "catalog") ? "" : "none";
 
             // Update preview
-            previewFloat.style.display = mode === "float" ? "flex" : "none";
+            previewFloat.style.display = (mode === "float" || mode === "catalog") ? "flex" : "none";
             previewInline.style.display = mode === "inline" ? "" : "none";
             previewButton.style.display = mode === "button" ? "" : "none";
+            if (mode === "catalog") { previewText.textContent = text || {"de":"Preisliste","en":"Price list","hu":"\u00c1rlista","ro":"Lista de pre\u021buri","it":"Listino prezzi"}[lang] || "Preisliste"; }
 
             previewFloat.style.background = grad;
             previewFloat.style.marginLeft = pos === "bottom-left" ? "0" : "auto";
@@ -5209,7 +5213,7 @@ echo '</div></div>
 
             // Generate embed code
             var attrs = \'data-store="\' + storeSlug + \'"\';
-            if (mode !== "float") attrs += \' data-mode="\' + mode + \'"\';
+            attrs += \' data-mode="\' + mode + \'"\';
             if (lang !== "de") attrs += \' data-lang="\' + lang + \'"\';
             if (color !== "#667eea") attrs += \' data-color="\' + color + \'"\';
             if (mode === "float" && pos !== "bottom-right") attrs += \' data-position="\' + pos + \'"\';
@@ -5546,20 +5550,52 @@ echo '</div></div>
         });
 
         // ─── SERVICES ───
+        function updateCatDatalist() {
+            var dl = document.getElementById("ra-wai-cat-list");
+            if (!dl) return;
+            var cats = {};
+            for (var ci = 0; ci < currentServices.length; ci++) {
+                if (currentServices[ci].category) cats[currentServices[ci].category] = 1;
+            }
+            dl.innerHTML = "";
+            for (var c in cats) {
+                var opt = document.createElement("option");
+                opt.value = c;
+                dl.appendChild(opt);
+            }
+        }
         function renderServices(servicesOverride) {
             if (servicesOverride) currentServices = servicesOverride;
             waiServiceCount.textContent = currentServices.length + " " + (currentServices.length !== 1 ? waiT.services : waiT.service);
-            var html = "";
+            // Group by category
+            var groups = {};
+            var order = [];
             for (var i = 0; i < currentServices.length; i++) {
                 var s = currentServices[i];
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;color:#475569;margin-bottom:4px">\' +
-                    \'<b style="flex:1">\' + escH(s.name) + \'</b>\' +
-                    (s.price ? \'<span style="color:#059669;font-weight:600">\' + escH(s.price) + \'</span>\' : \'\') +
-                    (s.time ? \'<span style="color:#94a3b8">\' + escH(s.time) + \'</span>\' : \'\') +
-                    \'<span class="ra-wai-del" data-type="svc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\' +
-                    \'</div>\';
+                var cat = s.category || "Allgemein";
+                if (!groups[cat]) { groups[cat] = []; order.push(cat); }
+                groups[cat].push({ svc: s, idx: i });
+            }
+            var html = "";
+            for (var gi = 0; gi < order.length; gi++) {
+                var catName = order[gi];
+                var items = groups[catName];
+                html += \'<div style="margin-bottom:6px">\' +
+                    \'<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:1px solid #e2e8f0;margin-bottom:4px">\' + escH(catName) + \' (\' + items.length + \')</div>\';
+                for (var si = 0; si < items.length; si++) {
+                    var s = items[si].svc;
+                    var idx = items[si].idx;
+                    html += \'<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;color:#475569;margin-bottom:3px">\' +
+                        \'<b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\' + escH(s.name) + \'</b>\' +
+                        (s.price ? \'<span style="color:#059669;font-weight:600;white-space:nowrap">\' + escH(s.price) + \'</span>\' : \'\') +
+                        (s.time ? \'<span style="color:#94a3b8;white-space:nowrap">\' + escH(s.time) + \'</span>\' : \'\') +
+                        \'<span class="ra-wai-del" data-type="svc" data-idx="\' + idx + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\' +
+                        \'</div>\';
+                }
+                html += \'</div>\';
             }
             waiServiceList.innerHTML = html;
+            updateCatDatalist();
         }
         waiServiceList.addEventListener("click", function(e) {
             var del = e.target.closest(".ra-wai-del[data-type=svc]");
@@ -5569,18 +5605,22 @@ echo '</div></div>
             editorSave("services", currentServices);
         });
         document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
+            var catInp = document.getElementById("ra-wai-svc-cat");
             var nameInp = document.getElementById("ra-wai-svc-name");
             var priceInp = document.getElementById("ra-wai-svc-price");
             var timeInp = document.getElementById("ra-wai-svc-time");
             var name = nameInp.value.trim();
             if (!name) return;
             var svc = { name: name };
+            if (catInp && catInp.value.trim()) svc.category = catInp.value.trim();
             if (priceInp.value.trim()) svc.price = priceInp.value.trim();
             if (timeInp.value.trim()) svc.time = timeInp.value.trim();
             currentServices.push(svc);
             nameInp.value = ""; priceInp.value = ""; timeInp.value = "";
+            // Keep category for quick batch adding
             renderServices();
             editorSave("services", currentServices, this);
+            nameInp.focus();
         });
         document.getElementById("ra-wai-svc-name").addEventListener("keydown", function(e) {
             if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); }

@@ -64,7 +64,13 @@
             step3_title: 'Analyse l\u00e4uft...', step3_wait: 'KI analysiert Ihr Problem',
             step4_title: 'Diagnose', step4_price: 'Gesch\u00e4tzte Kosten',
             step4_cta: 'Reparatur anfragen', step4_hint: '* Unverbindliche Sch\u00e4tzung',
-            back: 'Zur\u00fcck', next: 'Weiter', analyze: 'Analysieren'
+            back: 'Zur\u00fcck', next: 'Weiter', analyze: 'Analysieren',
+            // Catalog mode
+            cat_fab: 'Preisliste', cat_title: 'Unsere Leistungen', cat_subtitle: 'Preise & \u00d6ffnungszeiten',
+            cat_search: 'Service suchen...', cat_hours: '\u00d6ffnungszeiten', cat_open: 'Ge\u00f6ffnet', cat_closed: 'Geschlossen',
+            cat_contact: 'Kontakt & Anfahrt', cat_cta: 'Reparatur anfragen', cat_no_results: 'Keine Ergebnisse',
+            cat_general: 'Allgemein', cat_from: 'ab', cat_map: 'Route planen', cat_call: 'Anrufen',
+            cat_days: ['Mo','Di','Mi','Do','Fr','Sa','So'], cat_services: 'Leistungen', cat_time: 'Dauer'
         },
         en: {
             fab: 'Request repair', title: 'Submit a repair',
@@ -79,7 +85,12 @@
             step3_title: 'Analyzing...', step3_wait: 'AI is analyzing your problem',
             step4_title: 'Diagnosis', step4_price: 'Estimated cost',
             step4_cta: 'Request repair', step4_hint: '* Non-binding estimate',
-            back: 'Back', next: 'Next', analyze: 'Analyze'
+            back: 'Back', next: 'Next', analyze: 'Analyze',
+            cat_fab: 'Price list', cat_title: 'Our Services', cat_subtitle: 'Prices & Opening Hours',
+            cat_search: 'Search service...', cat_hours: 'Opening Hours', cat_open: 'Open', cat_closed: 'Closed',
+            cat_contact: 'Contact & Directions', cat_cta: 'Request repair', cat_no_results: 'No results',
+            cat_general: 'General', cat_from: 'from', cat_map: 'Get directions', cat_call: 'Call',
+            cat_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], cat_services: 'Services', cat_time: 'Duration'
         },
         hu: {
             fab: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', title: 'Jav\u00edt\u00e1s bek\u00fcld\u00e9se',
@@ -94,7 +105,12 @@
             step3_title: 'Elemz\u00e9s...', step3_wait: 'AI elemzi a probl\u00e9m\u00e1t',
             step4_title: 'Diagn\u00f3zis', step4_price: 'Becs\u00fclt k\u00f6lts\u00e9g',
             step4_cta: 'Jav\u00edt\u00e1s megrendel\u00e9se', step4_hint: '* Nem k\u00f6telez\u0151 becsl\u00e9s',
-            back: 'Vissza', next: 'Tov\u00e1bb', analyze: 'Elemz\u00e9s'
+            back: 'Vissza', next: 'Tov\u00e1bb', analyze: 'Elemz\u00e9s',
+            cat_fab: '\u00c1rlista', cat_title: 'Szolg\u00e1ltat\u00e1saink', cat_subtitle: '\u00c1rak & Nyitvatart\u00e1s',
+            cat_search: 'Keres\u00e9s...', cat_hours: 'Nyitvatart\u00e1s', cat_open: 'Nyitva', cat_closed: 'Z\u00e1rva',
+            cat_contact: 'Kapcsolat & Megk\u00f6zel\u00edt\u00e9s', cat_cta: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', cat_no_results: 'Nincs tal\u00e1lat',
+            cat_general: '\u00c1ltal\u00e1nos', cat_from: '-t\u00f3l', cat_map: '\u00datvonaltervez\u00e9s', cat_call: 'H\u00edv\u00e1s',
+            cat_days: ['H\u00e9','Ke','Sze','Cs','P\u00e9','Szo','Vas'], cat_services: 'Szolg\u00e1ltat\u00e1sok', cat_time: 'Id\u0151tartam'
         },
         ro: {
             fab: 'Solicit\u0103 repara\u021bie', title: 'Trimite repara\u021bie',
@@ -109,7 +125,12 @@
             step3_title: 'Se analizeaz\u0103...', step3_wait: 'AI analizeaz\u0103 problema',
             step4_title: 'Diagnostic', step4_price: 'Cost estimat',
             step4_cta: 'Solicit\u0103 repara\u021bie', step4_hint: '* Estimare orientativ\u0103',
-            back: '\u00cenapoi', next: 'Urm\u0103torul', analyze: 'Analizeaz\u0103'
+            back: '\u00cenapoi', next: 'Urm\u0103torul', analyze: 'Analizeaz\u0103',
+            cat_fab: 'List\u0103 pre\u021buri', cat_title: 'Serviciile noastre', cat_subtitle: 'Pre\u021buri & Program',
+            cat_search: 'C\u0103utare serviciu...', cat_hours: 'Program', cat_open: 'Deschis', cat_closed: '\u00cenchis',
+            cat_contact: 'Contact & Direc\u021bii', cat_cta: 'Solicit\u0103 repara\u021bie', cat_no_results: 'Niciun rezultat',
+            cat_general: 'General', cat_from: 'de la', cat_map: 'Planific\u0103 ruta', cat_call: 'Sun\u0103',
+            cat_days: ['Lu','Ma','Mi','Jo','Vi','S\u00e2','Du'], cat_services: 'Servicii', cat_time: 'Durat\u0103'
         },
         it: {
             fab: 'Richiedi riparazione', title: 'Invia riparazione',
@@ -124,11 +145,16 @@
             step3_title: 'Analisi in corso...', step3_wait: 'AI sta analizzando il problema',
             step4_title: 'Diagnosi', step4_price: 'Costo stimato',
             step4_cta: 'Richiedi riparazione', step4_hint: '* Stima non vincolante',
-            back: 'Indietro', next: 'Avanti', analyze: 'Analizza'
+            back: 'Indietro', next: 'Avanti', analyze: 'Analizza',
+            cat_fab: 'Listino prezzi', cat_title: 'I nostri servizi', cat_subtitle: 'Prezzi & Orari',
+            cat_search: 'Cerca servizio...', cat_hours: 'Orari di apertura', cat_open: 'Aperto', cat_closed: 'Chiuso',
+            cat_contact: 'Contatti & Indicazioni', cat_cta: 'Richiedi riparazione', cat_no_results: 'Nessun risultato',
+            cat_general: 'Generale', cat_from: 'da', cat_map: 'Indicazioni', cat_call: 'Chiama',
+            cat_days: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'], cat_services: 'Servizi', cat_time: 'Durata'
         }
     };
     var lang = t[config.lang] || t.de;
-    var fabText = config.text || (config.mode === 'ai' ? lang.ai_fab : lang.fab);
+    var fabText = config.text || (config.mode === 'ai' ? lang.ai_fab : config.mode === 'catalog' ? lang.cat_fab : lang.fab);
 
     var W = 'ppv-sw'; // CSS prefix
     var isLeft = config.position === 'bottom-left';
@@ -360,6 +386,88 @@
             '.' + W + '-brands{grid-template-columns:repeat(3,1fr);gap:12px}' +
             '.' + W + '-brand{padding:16px 12px;font-size:14px}' +
             '.' + W + '-brand-icon{font-size:28px}' +
+        '}' +
+
+        /* ─── CATALOG MODE STYLES ──────────────────────────── */
+        '#' + W + '-cat-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#f8fafc}' +
+        '#' + W + '-cat-body *{box-sizing:border-box}' +
+
+        /* Search */
+        '#' + W + '-cat-search-wrap{padding:12px 16px;background:#fff;border-bottom:1px solid #f1f5f9;position:sticky;top:0;z-index:2}' +
+        '#' + W + '-cat-search{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2394a3b8\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'8\'/%3E%3Cline x1=\'21\' y1=\'21\' x2=\'16.65\' y2=\'16.65\'/%3E%3C/svg%3E") 12px center no-repeat;transition:border-color .2s,background-color .2s;color:#0f172a}' +
+        '#' + W + '-cat-search:focus{border-color:' + config.color + ';background-color:#fff}' +
+        '#' + W + '-cat-search::placeholder{color:#94a3b8}' +
+
+        /* Service count badge in header */
+        '#' + W + '-cat-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:rgba(255,255,255,.25);font-size:11px;font-weight:700;margin-left:8px}' +
+
+        /* Category sections */
+        '.' + W + '-cat-section{border-bottom:1px solid #f1f5f9}' +
+        '.' + W + '-cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:#fff;transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}' +
+        '.' + W + '-cat-hdr:hover{background:#f8fafc}' +
+        '.' + W + '-cat-hdr:active{background:#f1f5f9}' +
+        '.' + W + '-cat-hdr-left{display:flex;align-items:center;gap:10px;min-width:0}' +
+        '.' + W + '-cat-hdr-icon{width:32px;height:32px;border-radius:8px;background:' + config.color + '12;color:' + config.color + ';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}' +
+        '.' + W + '-cat-hdr-name{font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+        '.' + W + '-cat-hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}' +
+        '.' + W + '-cat-hdr-cnt{font-size:11px;font-weight:600;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:10px}' +
+        '.' + W + '-cat-hdr-arrow{width:20px;height:20px;color:#94a3b8;transition:transform .25s ease;flex-shrink:0}' +
+        '.' + W + '-cat-section.open .' + W + '-cat-hdr-arrow{transform:rotate(180deg)}' +
+
+        /* Category items container */
+        '.' + W + '-cat-items{max-height:0;overflow:hidden;transition:max-height .3s ease;background:#fafbfc}' +
+        '.' + W + '-cat-section.open .' + W + '-cat-items{max-height:9999px}' +
+
+        /* Service rows */
+        '.' + W + '-cat-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 10px 58px;border-top:1px solid #f1f5f9;gap:8px;min-height:44px}' +
+        '.' + W + '-cat-row:first-child{border-top:none}' +
+        '.' + W + '-cat-name{flex:1;min-width:0;font-size:13px;color:#334155;line-height:1.3;overflow:hidden;text-overflow:ellipsis}' +
+        '.' + W + '-cat-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}' +
+        '.' + W + '-cat-time{font-size:11px;color:#94a3b8;white-space:nowrap}' +
+        '.' + W + '-cat-price{font-size:13px;font-weight:700;color:' + config.color + ';white-space:nowrap;background:' + config.color + '10;padding:3px 10px;border-radius:6px}' +
+
+        /* Hours section */
+        '#' + W + '-cat-hours{padding:16px;background:#fff;border-bottom:1px solid #f1f5f9}' +
+        '#' + W + '-cat-hours-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px}' +
+        '.' + W + '-cat-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}' +
+        '.' + W + '-cat-badge-open{background:#dcfce7;color:#166534}' +
+        '.' + W + '-cat-badge-closed{background:#fee2e2;color:#991b1b}' +
+        '.' + W + '-cat-badge-dot{width:6px;height:6px;border-radius:50%;display:inline-block}' +
+        '.' + W + '-cat-badge-open .' + W + '-cat-badge-dot{background:#22c55e}' +
+        '.' + W + '-cat-badge-closed .' + W + '-cat-badge-dot{background:#ef4444}' +
+        '.' + W + '-cat-day{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#475569}' +
+        '.' + W + '-cat-day-name{font-weight:600;color:#64748b;min-width:40px}' +
+        '.' + W + '-cat-day-time{color:#334155}' +
+        '.' + W + '-cat-day.today{font-weight:700;color:' + config.color + '}' +
+        '.' + W + '-cat-day.today .' + W + '-cat-day-name{color:' + config.color + '}' +
+
+        /* Contact section */
+        '#' + W + '-cat-contact{padding:16px;background:#fff;border-bottom:1px solid #f1f5f9}' +
+        '#' + W + '-cat-contact-title{font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px}' +
+        '.' + W + '-cat-contact-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:#475569;text-decoration:none}' +
+        'a.' + W + '-cat-contact-row:hover{color:' + config.color + '}' +
+        '.' + W + '-cat-contact-icon{width:32px;height:32px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}' +
+
+        /* CTA */
+        '#' + W + '-cat-cta{padding:16px;background:#fff}' +
+        '#' + W + '-cat-cta-btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;background:' + grad + ';color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;text-decoration:none;transition:all .2s;box-shadow:0 4px 16px ' + config.color + '30;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-cta-btn:hover{opacity:.9;transform:translateY(-1px)}' +
+
+        /* No results */
+        '#' + W + '-cat-empty{padding:40px 20px;text-align:center;color:#94a3b8;font-size:14px;display:none}' +
+        '#' + W + '-cat-empty svg{width:48px;height:48px;margin:0 auto 12px;color:#cbd5e1}' +
+
+        /* Loading */
+        '#' + W + '-cat-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px}' +
+        '#' + W + '-cat-loading .' + W + '-spinner{width:40px;height:40px}' +
+
+        /* Desktop panel for catalog – right side sheet */
+        '@media(min-width:769px){' +
+            '#' + W + '-panel.catalog-panel{top:0;left:auto;right:0;bottom:0;width:420px;max-width:100%;border-radius:0;box-shadow:-4px 0 24px rgba(0,0,0,.12);transform:translateX(100%)}' +
+            '#' + W + '-panel.catalog-panel.open{transform:translateX(0)}' +
+        '}' +
+        '@media(max-width:768px){' +
+            '#' + W + '-cat-row{padding-left:16px}' +
         '}';
     document.head.appendChild(style);
 
@@ -454,6 +562,333 @@
             '</div>' +
             '<div id="' + W + '-inline-ftr">' + buildFooter() + '</div>';
         container.appendChild(inline);
+    }
+
+    // ─── CATALOG MODE ────────────────────────────────────────
+    if (config.mode === 'catalog') {
+        var listSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+        var chevronSVG = '<svg class="' + W + '-cat-hdr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+
+        // Create FAB
+        var catFab = document.createElement('button');
+        catFab.id = W + '-fab';
+        catFab.innerHTML = listSVG + '<span>' + fabText + '</span>';
+        document.body.appendChild(catFab);
+
+        // Create Panel (fullscreen mobile, side-sheet desktop)
+        var catPanel = document.createElement('div');
+        catPanel.id = W + '-panel';
+        catPanel.className = 'catalog-panel';
+        catPanel.innerHTML =
+            '<div id="' + W + '-hdr">' +
+                '<div><div id="' + W + '-hdr-t">' + lang.cat_title + '<span id="' + W + '-cat-count"></span></div>' +
+                '<div id="' + W + '-hdr-s">' + lang.cat_subtitle + '</div></div>' +
+                '<button id="' + W + '-cls" aria-label="' + lang.close + '">&times;</button>' +
+            '</div>' +
+            '<div id="' + W + '-cat-search-wrap">' +
+                '<input type="text" id="' + W + '-cat-search" placeholder="' + lang.cat_search + '" autocomplete="off">' +
+            '</div>' +
+            '<div id="' + W + '-cat-body">' +
+                '<div id="' + W + '-cat-loading"><div class="' + W + '-spinner"></div><div style="font-size:14px;color:#64748b">' + lang.cat_title + '...</div></div>' +
+            '</div>' +
+            '<div id="' + W + '-cat-cta">' +
+                '<a id="' + W + '-cat-cta-btn" href="' + FORM_URL + '?embed=1" target="_blank" rel="noopener">' + wrenchSVG + ' ' + lang.cat_cta + ' \u2192</a>' +
+            '</div>' +
+            '<div id="' + W + '-ftr">' + buildFooter() + '</div>';
+        document.body.appendChild(catPanel);
+
+        var catOpen = false;
+        var catLoaded = false;
+        var catScrollY = 0;
+        var allServices = [];
+        var catBody = catPanel.querySelector('#' + W + '-cat-body');
+        var searchInput = catPanel.querySelector('#' + W + '-cat-search');
+
+        function catLock() {
+            catScrollY = window.pageYOffset;
+            document.body.classList.add(W + '-noscroll');
+            document.body.style.top = '-' + catScrollY + 'px';
+        }
+        function catUnlock() {
+            document.body.classList.remove(W + '-noscroll');
+            document.body.style.top = '';
+            window.scrollTo(0, catScrollY);
+        }
+
+        catFab.addEventListener('click', function(e) {
+            e.preventDefault();
+            catOpen = !catOpen;
+            catPanel.classList.toggle('open', catOpen);
+            if (catOpen) {
+                catLock();
+                if (!catLoaded) { catLoaded = true; loadCatalog(); }
+            } else { catUnlock(); }
+        });
+
+        catPanel.querySelector('#' + W + '-cls').addEventListener('click', function() {
+            catOpen = false;
+            catPanel.classList.remove('open');
+            catUnlock();
+        });
+
+        // Category icon mapping
+        var catIcons = {
+            'display': '\uD83D\uDCF1', 'akku': '\uD83D\uDD0B', 'batterie': '\uD83D\uDD0B', 'battery': '\uD83D\uDD0B',
+            'kamera': '\uD83D\uDCF7', 'camera': '\uD83D\uDCF7', 'wasser': '\uD83D\uDCA7', 'water': '\uD83D\uDCA7',
+            'ladebuchse': '\uD83D\uDD0C', 'charging': '\uD83D\uDD0C', 'lautsprecher': '\uD83D\uDD0A', 'speaker': '\uD83D\uDD0A',
+            'software': '\uD83D\uDCBB', 'glas': '\uD83D\uDD0D', 'backcover': '\uD83D\uDEE1', 'r\u00fcckseite': '\uD83D\uDEE1',
+            'konsole': '\uD83C\uDFAE', 'console': '\uD83C\uDFAE', 'laptop': '\uD83D\uDCBB', 'tablet': '\uD83D\uDCF2',
+            'daten': '\uD83D\uDCBE', 'data': '\uD83D\uDCBE', 'platine': '\u2699\uFE0F', 'board': '\u2699\uFE0F',
+            'default': '\uD83D\uDD27'
+        };
+
+        function getCatIcon(catName) {
+            var lower = (catName || '').toLowerCase();
+            for (var key in catIcons) {
+                if (key !== 'default' && lower.indexOf(key) !== -1) return catIcons[key];
+            }
+            return catIcons['default'];
+        }
+
+        function escH(s) {
+            var d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // Check if store is currently open
+        function isStoreOpen(hours) {
+            if (!hours) return null;
+            var now = new Date();
+            var dayMap = ['so','mo','di','mi','do','fr','sa'];
+            var todayKey = dayMap[now.getDay()];
+            var day = hours[todayKey];
+            if (!day || day.closed) return false;
+            var currentMin = now.getHours() * 60 + now.getMinutes();
+            var fromParts = (day.von || '').split(':');
+            var toParts = (day.bis || '').split(':');
+            if (fromParts.length < 2 || toParts.length < 2) return null;
+            var fromMin = parseInt(fromParts[0]) * 60 + parseInt(fromParts[1]);
+            var toMin = parseInt(toParts[0]) * 60 + parseInt(toParts[1]);
+            return currentMin >= fromMin && currentMin <= toMin;
+        }
+
+        // Build opening hours HTML
+        function buildHoursHTML(hours) {
+            if (!hours) return '';
+            var dayKeys = ['mo','di','mi','do','fr','sa','so'];
+            var dayNames = lang.cat_days || ['Mo','Di','Mi','Do','Fr','Sa','So'];
+            var now = new Date();
+            var todayIdx = (now.getDay() + 6) % 7; // Monday=0
+            var html = '';
+            for (var i = 0; i < dayKeys.length; i++) {
+                var d = hours[dayKeys[i]];
+                var isClosed = !d || d.closed || (!d.von && !d.bis);
+                var timeStr = isClosed ? lang.cat_closed : (d.von + ' \u2013 ' + d.bis);
+                var cls = W + '-cat-day' + (i === todayIdx ? ' today' : '');
+                html += '<div class="' + cls + '">' +
+                    '<span class="' + W + '-cat-day-name">' + dayNames[i] + '</span>' +
+                    '<span class="' + W + '-cat-day-time">' + (isClosed ? '<span style="color:#94a3b8">' + timeStr + '</span>' : timeStr) + '</span>' +
+                '</div>';
+            }
+            return html;
+        }
+
+        // Build contact HTML
+        function buildContactHTML(data) {
+            var html = '';
+            if (data.store_address) {
+                var mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.store_address);
+                if (data.store_lat && data.store_lng) {
+                    mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + data.store_lat + ',' + data.store_lng;
+                }
+                html += '<a class="' + W + '-cat-contact-row" href="' + mapUrl + '" target="_blank" rel="noopener">' +
+                    '<span class="' + W + '-cat-contact-icon">\uD83D\uDCCD</span>' +
+                    '<span>' + escH(data.store_address) + '</span></a>';
+            }
+            if (data.store_phone) {
+                html += '<a class="' + W + '-cat-contact-row" href="tel:' + escH(data.store_phone) + '">' +
+                    '<span class="' + W + '-cat-contact-icon">\uD83D\uDCDE</span>' +
+                    '<span>' + escH(data.store_phone) + '</span></a>';
+            }
+            if (data.store_whatsapp) {
+                var waNum = data.store_whatsapp.replace(/[^0-9]/g, '');
+                html += '<a class="' + W + '-cat-contact-row" href="https://wa.me/' + waNum + '" target="_blank" rel="noopener">' +
+                    '<span class="' + W + '-cat-contact-icon">\uD83D\uDCAC</span>' +
+                    '<span>WhatsApp</span></a>';
+            }
+            if (data.store_website) {
+                html += '<a class="' + W + '-cat-contact-row" href="' + escH(data.store_website) + '" target="_blank" rel="noopener">' +
+                    '<span class="' + W + '-cat-contact-icon">\uD83C\uDF10</span>' +
+                    '<span>' + escH(data.store_website.replace(/^https?:\/\//, '')) + '</span></a>';
+            }
+            return html;
+        }
+
+        // Group services by category
+        function groupServices(services) {
+            var groups = {};
+            var order = [];
+            for (var i = 0; i < services.length; i++) {
+                var svc = services[i];
+                var cat = svc.category || lang.cat_general;
+                if (!groups[cat]) { groups[cat] = []; order.push(cat); }
+                groups[cat].push(svc);
+            }
+            return { groups: groups, order: order };
+        }
+
+        // Render catalog content
+        function renderCatalog(data) {
+            allServices = data.services || [];
+            var grouped = groupServices(allServices);
+            var totalCount = allServices.length;
+
+            // Update header count
+            var countBadge = catPanel.querySelector('#' + W + '-cat-count');
+            if (countBadge) countBadge.textContent = totalCount;
+
+            // Update header with store name if available
+            if (data.store_name) {
+                var hdrTitle = catPanel.querySelector('#' + W + '-hdr-t');
+                if (hdrTitle) hdrTitle.innerHTML = escH(data.store_name) + '<span id="' + W + '-cat-count">' + totalCount + '</span>';
+            }
+
+            var html = '';
+
+            // Service categories
+            html += '<div id="' + W + '-cat-sections">';
+            for (var ci = 0; ci < grouped.order.length; ci++) {
+                var catName = grouped.order[ci];
+                var items = grouped.groups[catName];
+                var isFirst = ci === 0;
+                html += '<div class="' + W + '-cat-section' + (isFirst ? ' open' : '') + '" data-cat="' + escH(catName) + '">' +
+                    '<div class="' + W + '-cat-hdr">' +
+                        '<div class="' + W + '-cat-hdr-left">' +
+                            '<span class="' + W + '-cat-hdr-icon">' + getCatIcon(catName) + '</span>' +
+                            '<span class="' + W + '-cat-hdr-name">' + escH(catName) + '</span>' +
+                        '</div>' +
+                        '<div class="' + W + '-cat-hdr-right">' +
+                            '<span class="' + W + '-cat-hdr-cnt">' + items.length + '</span>' +
+                            chevronSVG +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="' + W + '-cat-items">';
+                for (var si = 0; si < items.length; si++) {
+                    var svc = items[si];
+                    html += '<div class="' + W + '-cat-row" data-search="' + escH((svc.name || '').toLowerCase() + ' ' + (catName).toLowerCase()) + '">' +
+                        '<span class="' + W + '-cat-name">' + escH(svc.name || '') + '</span>' +
+                        '<span class="' + W + '-cat-meta">' +
+                            (svc.time ? '<span class="' + W + '-cat-time">' + escH(svc.time) + '</span>' : '') +
+                            (svc.price ? '<span class="' + W + '-cat-price">' + escH(svc.price) + '</span>' : '') +
+                        '</span>' +
+                    '</div>';
+                }
+                html += '</div></div>';
+            }
+            html += '</div>';
+
+            // No results placeholder
+            html += '<div id="' + W + '-cat-empty">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+                '<div>' + lang.cat_no_results + '</div></div>';
+
+            // Opening hours
+            if (data.store_hours) {
+                var openStatus = isStoreOpen(data.store_hours);
+                var badgeCls = openStatus === true ? W + '-cat-badge-open' : W + '-cat-badge-closed';
+                var badgeText = openStatus === true ? lang.cat_open : lang.cat_closed;
+                html += '<div id="' + W + '-cat-hours">' +
+                    '<div id="' + W + '-cat-hours-title">' +
+                        '\uD83D\uDD52 ' + lang.cat_hours +
+                        (openStatus !== null ? ' <span class="' + W + '-cat-badge ' + badgeCls + '"><span class="' + W + '-cat-badge-dot"></span> ' + badgeText + '</span>' : '') +
+                    '</div>' +
+                    buildHoursHTML(data.store_hours) +
+                '</div>';
+            }
+
+            // Contact
+            var contactHTML = buildContactHTML(data);
+            if (contactHTML) {
+                html += '<div id="' + W + '-cat-contact">' +
+                    '<div id="' + W + '-cat-contact-title">\uD83D\uDCCD ' + lang.cat_contact + '</div>' +
+                    contactHTML +
+                '</div>';
+            }
+
+            catBody.innerHTML = html;
+
+            // Bind accordion toggles
+            var sections = catBody.querySelectorAll('.' + W + '-cat-hdr');
+            for (var hi = 0; hi < sections.length; hi++) {
+                sections[hi].addEventListener('click', function() {
+                    this.parentElement.classList.toggle('open');
+                });
+            }
+        }
+
+        // Search/filter
+        var searchTimer = null;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            var val = this.value.trim().toLowerCase();
+            searchTimer = setTimeout(function() {
+                var sectionsEl = catBody.querySelectorAll('.' + W + '-cat-section');
+                var emptyEl = catBody.querySelector('#' + W + '-cat-empty');
+                var hoursEl = catBody.querySelector('#' + W + '-cat-hours');
+                var contactEl = catBody.querySelector('#' + W + '-cat-contact');
+                var anyVisible = false;
+
+                for (var si = 0; si < sectionsEl.length; si++) {
+                    var sec = sectionsEl[si];
+                    var rows = sec.querySelectorAll('.' + W + '-cat-row');
+                    var visibleInSection = 0;
+                    for (var ri = 0; ri < rows.length; ri++) {
+                        var searchData = rows[ri].getAttribute('data-search') || '';
+                        var match = !val || searchData.indexOf(val) !== -1;
+                        rows[ri].style.display = match ? '' : 'none';
+                        if (match) visibleInSection++;
+                    }
+                    sec.style.display = visibleInSection > 0 ? '' : 'none';
+                    if (visibleInSection > 0) {
+                        anyVisible = true;
+                        // Update count badge
+                        var cnt = sec.querySelector('.' + W + '-cat-hdr-cnt');
+                        if (cnt) cnt.textContent = visibleInSection;
+                        // Auto-expand on search
+                        if (val) sec.classList.add('open');
+                    }
+                }
+
+                if (emptyEl) emptyEl.style.display = anyVisible ? 'none' : 'block';
+                // Hide hours/contact during search
+                if (hoursEl) hoursEl.style.display = val ? 'none' : '';
+                if (contactEl) contactEl.style.display = val ? 'none' : '';
+            }, 150);
+        });
+
+        // Load catalog data from server
+        function loadCatalog() {
+            var fd = new FormData();
+            fd.append('action', 'ppv_shop_widget_config');
+            fd.append('store_slug', config.store);
+            fetch(AJAX_URL, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(resp) {
+                    if (resp.success && resp.data) {
+                        renderCatalog(resp.data);
+                    } else {
+                        catBody.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#94a3b8">' +
+                            '<div style="font-size:32px;margin-bottom:8px">\u26A0\uFE0F</div>' +
+                            '<div>Store not found</div></div>';
+                    }
+                })
+                .catch(function() {
+                    catBody.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#94a3b8">' +
+                        '<div style="font-size:32px;margin-bottom:8px">\u26A0\uFE0F</div>' +
+                        '<div>Connection error</div></div>';
+                });
+        }
     }
 
     // ─── AI MODE ───────────────────────────────────────────

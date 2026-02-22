@@ -59,7 +59,7 @@ body{font-family:Inter,-apple-system,sans-serif;background:#f8fafc;color:#0f172a
     <a href="/formular/admin/partners">&larr;</a>
     <span class="demo-title"><i class="ri-eye-line"></i> Widget Demo</span>
     <div style="flex:1"></div>
-    <div class="demo-ctrl"><label>Modus</label><select id="d-mode"><option value="float"<?php echo $mode==='float'?' selected':''; ?>>Float</option><option value="inline"<?php echo $mode==='inline'?' selected':''; ?>>Inline</option></select></div>
+    <div class="demo-ctrl"><label>Modus</label><select id="d-mode"><option value="catalog"<?php echo $mode==='catalog'?' selected':''; ?>>Katalog</option><option value="float"<?php echo $mode==='float'?' selected':''; ?>>Float</option><option value="inline"<?php echo $mode==='inline'?' selected':''; ?>>Inline</option></select></div>
     <div class="demo-ctrl"><label>Sprache</label><select id="d-lang"><option value="de"<?php echo $lang==='de'?' selected':''; ?>>DE</option><option value="en"<?php echo $lang==='en'?' selected':''; ?>>EN</option></select></div>
     <div class="demo-ctrl"><label>Position</label><select id="d-pos"><option value="bottom-right"<?php echo $pos==='bottom-right'?' selected':''; ?>>Rechts</option><option value="bottom-left"<?php echo $pos==='bottom-left'?' selected':''; ?>>Links</option></select></div>
     <div class="demo-ctrl"><label>Farbe</label><input type="color" id="d-color" value="<?php echo esc_attr($color); ?>"></div>

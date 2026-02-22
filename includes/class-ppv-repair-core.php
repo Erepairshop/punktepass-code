@@ -1730,7 +1730,9 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
 
         global $wpdb;
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT widget_ai_config, widget_ai_knowledge, repair_custom_brands, repair_custom_problems
+            "SELECT widget_ai_config, widget_ai_knowledge, repair_custom_brands, repair_custom_problems,
+                    name, repair_company_name, address, plz, city, country, phone, whatsapp,
+                    website, logo, opening_hours, latitude, longitude, repair_color, store_slug
              FROM {$wpdb->prefix}ppv_stores
              WHERE store_slug = %s AND repair_enabled = 1",
             $store_slug
@@ -1757,6 +1759,13 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $chips = array_filter(array_map('trim', explode("\n", $store->repair_custom_problems)));
         }
 
+        // Store opening hours (from DB field, JSON format)
+        $store_hours = !empty($store->opening_hours) ? json_decode($store->opening_hours, true) : null;
+
+        // Store info for catalog mode
+        $store_name = $store->repair_company_name ?: $store->name;
+        $store_addr = trim(($store->address ?: '') . ', ' . ($store->plz ?: '') . ' ' . ($store->city ?: ''), ', ');
+
         wp_send_json_success([
             'brands'           => $brands,
             'chips'            => $chips,
@@ -1768,6 +1777,16 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             'quality_tiers'    => $config['quality_tiers'] ?? [],
             'tiered_services'  => $knowledge['tiered_services'] ?? [],
             'custom_sections'  => $config['custom_sections'] ?? [],
+            // Store info for catalog widget
+            'store_name'       => $store_name,
+            'store_address'    => $store_addr,
+            'store_phone'      => $store->phone ?: '',
+            'store_whatsapp'   => $store->whatsapp ?: '',
+            'store_website'    => $store->website ?: '',
+            'store_logo'       => $store->logo ?: '',
+            'store_hours'      => $store_hours,
+            'store_lat'        => $store->latitude ? (float) $store->latitude : null,
+            'store_lng'        => $store->longitude ? (float) $store->longitude : null,
         ]);
     }
 
@@ -2048,6 +2067,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             foreach ($data as $svc) {
                 if (empty($svc['name'])) continue;
                 $s = ['name' => trim($svc['name'])];
+                if (!empty($svc['category'])) $s['category'] = trim($svc['category']);
                 if (!empty($svc['price'])) $s['price'] = trim($svc['price']);
                 if (!empty($svc['time'])) $s['time'] = trim($svc['time']);
                 $services[] = $s;
