@@ -932,7 +932,7 @@
     </script>
 
 <!-- PunktePass Repair Widget -->
-<script src="https://punktepass.de/formular/shop-widget.js" data-store="erepairshop" data-position="bottom-left"></script>
+<script src="https://punktepass.de/formular/shop-widget.js" data-store="erepairshop" data-mode="ai" data-position="bottom-left"></script>
 
 </body>
 </html>

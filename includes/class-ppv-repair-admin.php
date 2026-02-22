@@ -2381,6 +2381,7 @@ echo '</div></div>
                         <label>Widget-Modus</label>
                         <select name="widget_mode" id="ra-widget-mode" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
                             <option value="float">Floating Button (empfohlen)</option>
+                            <option value="ai">KI-Diagnose Widget (empfohlen)</option>
                             <option value="inline">Inline Banner</option>
                             <option value="button">Einfacher Button</option>
                         </select>
@@ -2456,6 +2457,116 @@ echo '</div></div>
                         <i class="ri-file-copy-line"></i> Kopieren
                     </button>
                 </div>
+
+                <!-- AI Widget Konfiguration -->
+                <div style="margin-top:32px;border-top:2px solid #e2e8f0;padding-top:24px">
+                    <h4 style="margin:0 0 4px"><i class="ri-robot-line"></i> ' . esc_html(PPV_Lang::t('wai_title')) . '</h4>
+                    <p style="font-size:13px;color:#64748b;margin:0 0 16px">
+                        ' . esc_html(PPV_Lang::t('wai_desc')) . '
+                    </p>
+
+                    ' . (!empty($store->widget_setup_complete) ?
+                        '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;margin-bottom:16px;font-size:13px;color:#166534">
+                            <i class="ri-checkbox-circle-fill" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_done')) . '
+                        </div>' :
+                        '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fffbeb;border:1.5px solid #fed7aa;border-radius:10px;margin-bottom:16px;font-size:13px;color:#92400e">
+                            <i class="ri-information-line" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_pending')) . '
+                        </div>') . '
+
+                    <!-- ═══ VISUAL EDITOR ═══ -->
+                    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:16px">
+
+                    <!-- Brands editor -->
+                    <div style="margin-bottom:16px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-smartphone-line"></i> ' . esc_html(PPV_Lang::t('wai_brands_label')) . '</span>
+                            <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8"></span>
+                        </div>
+                        <div id="ra-wai-brand-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+                        <div style="display:flex;gap:6px">
+                            <input type="text" id="ra-wai-brand-input" placeholder="' . esc_attr(PPV_Lang::t('wai_brand_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        </div>
+                    </div>
+
+                    <!-- Chips editor -->
+                    <div style="margin-bottom:16px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-price-tag-3-line"></i> ' . esc_html(PPV_Lang::t('wai_chips_label')) . '</span>
+                            <span id="ra-wai-chip-count" style="font-size:11px;color:#94a3b8"></span>
+                        </div>
+                        <div id="ra-wai-chip-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+                        <div style="display:flex;gap:6px">
+                            <input type="text" id="ra-wai-chip-input" placeholder="' . esc_attr(PPV_Lang::t('wai_chip_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <button type="button" id="ra-wai-chip-add" style="background:#8b5cf6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        </div>
+                    </div>
+
+                    <!-- Services editor -->
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('wai_services_label')) . '</span>
+                            <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8"></span>
+                        </div>
+                        <div id="ra-wai-service-list" style="margin-bottom:8px"></div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            <input type="text" id="ra-wai-svc-name" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_name_ph')) . '" style="flex:2;min-width:120px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <input type="text" id="ra-wai-svc-price" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_price_ph')) . '" style="flex:1;min-width:80px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <input type="text" id="ra-wai-svc-time" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_time_ph')) . '" style="flex:1;min-width:60px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
+                            <button type="button" id="ra-wai-svc-add" style="background:#10b981;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        </div>
+                    </div>
+
+                    <!-- Quality tiers (AI-managed) -->
+                    <div id="ra-wai-tiers-section" style="display:none;margin-top:12px"></div>
+
+                    <!-- Tiered services (AI-managed) -->
+                    <div id="ra-wai-tiered-svc-section" style="display:none;margin-top:8px"></div>
+
+                    <!-- Custom sections (AI-managed) -->
+                    <div id="ra-wai-sections-section" style="display:none;margin-top:8px"></div>
+
+                    </div>
+                    <!-- ═══ END VISUAL EDITOR ═══ -->
+
+                    <!-- File upload area -->
+                    <div id="ra-wai-upload-area" style="border:2px dashed #e2e8f0;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;cursor:pointer;transition:all .2s;background:#fafbfc">
+                        <input type="file" id="ra-wai-file" accept=".csv,.txt,.xlsx,.xls,.jpg,.jpeg,.png,.webp,.pdf" style="display:none">
+                        <i class="ri-upload-cloud-line" style="font-size:28px;color:#94a3b8"></i>
+                        <p style="font-size:13px;color:#64748b;margin:6px 0 2px;font-weight:600">' . esc_html(PPV_Lang::t('wai_upload_title')) . '</p>
+                        <p style="font-size:11px;color:#94a3b8;margin:0">' . esc_html(PPV_Lang::t('wai_upload_hint')) . '</p>
+                    </div>
+                    <div id="ra-wai-upload-status" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px"></div>
+
+                    <!-- AI Chat -->
+                    <div id="ra-wai-chat" style="border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff">
+                        <div id="ra-wai-messages" style="height:280px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px">
+                            <div class="ra-wai-msg bot" style="background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#334155;max-width:85%;line-height:1.5">
+                                ' . esc_html(PPV_Lang::t('wai_chat_welcome')) . '<br><br>
+                                ' . esc_html(PPV_Lang::t('wai_chat_options_intro')) . '<br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_prices')) . '</b><br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_brands')) . '</b><br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_design')) . '</b><br>
+                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_info')) . '</b>
+                            </div>
+                        </div>
+                        <div style="border-top:1.5px solid #e2e8f0;display:flex;align-items:end;gap:8px;padding:10px 12px;background:#fafbfc">
+                            <textarea id="ra-wai-input" rows="1" placeholder="' . esc_attr(PPV_Lang::t('wai_input_placeholder')) . '" style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;min-height:36px;max-height:100px;transition:border-color .2s;line-height:1.4"></textarea>
+                            <button type="button" id="ra-wai-send" style="background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');border:none;color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s">
+                                <i class="ri-send-plane-fill" style="font-size:16px"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick action chips -->
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_ai_mode_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_ai_mode')) . '</button>
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_brands_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_brands')) . '</button>
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_prices_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_prices')) . '</button>
+                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_options_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_options')) . '</button>
+                    </div>
+                </div>
+
             </div><!-- END PANEL: widget -->
 
             <!-- Save button visible on all panels -->
@@ -5143,6 +5254,663 @@ echo '</div></div>
                     setTimeout(function() { wCopyLink.innerHTML = \'<i class="ri-file-copy-line"></i> Kopieren\'; }, 2000);
                 });
             });
+        }
+    })();
+
+    /* ===== Widget AI Configuration Chat ===== */
+    (function(){
+        var waiInput = document.getElementById("ra-wai-input");
+        var waiSend = document.getElementById("ra-wai-send");
+        var waiMessages = document.getElementById("ra-wai-messages");
+        var waiFile = document.getElementById("ra-wai-file");
+        var waiUploadArea = document.getElementById("ra-wai-upload-area");
+        var waiUploadStatus = document.getElementById("ra-wai-upload-status");
+        var waiServicesDiv = document.getElementById("ra-wai-services");
+        var waiServiceList = document.getElementById("ra-wai-service-list");
+        var waiBrandsDiv = document.getElementById("ra-wai-brands");
+        var waiBrandList = document.getElementById("ra-wai-brand-list");
+        var waiBrandCount = document.getElementById("ra-wai-brand-count");
+
+        // Translated strings from PHP
+        var waiT = ' . wp_json_encode([
+            'setup_done'       => PPV_Lang::t('wai_js_setup_done'),
+            'settings_updated' => PPV_Lang::t('wai_js_settings_updated'),
+            'error_prefix'     => PPV_Lang::t('wai_js_error_prefix'),
+            'error_unknown'    => PPV_Lang::t('wai_js_error_unknown'),
+            'conn_error'       => PPV_Lang::t('wai_js_connection_error'),
+            'uploading'        => PPV_Lang::t('wai_js_uploading'),
+            'upload_success'   => PPV_Lang::t('wai_js_upload_success'),
+            'upload_bot_msg'   => PPV_Lang::t('wai_js_upload_bot_msg'),
+            'upload_saved'     => PPV_Lang::t('wai_js_upload_saved'),
+            'upload_image_msg' => PPV_Lang::t('wai_js_upload_image_msg'),
+            'upload_error'     => PPV_Lang::t('wai_js_upload_error'),
+            'conn_error_short' => PPV_Lang::t('wai_js_connection_error_short'),
+            'service'          => PPV_Lang::t('wai_js_service'),
+            'services'         => PPV_Lang::t('wai_js_services'),
+            'brand'            => PPV_Lang::t('wai_js_brand'),
+            'brands'           => PPV_Lang::t('wai_js_brands'),
+            'model_count'      => PPV_Lang::t('wai_model_count'),
+            'model_add_ph'     => PPV_Lang::t('wai_model_add_ph'),
+            'ai_expand_hint'   => PPV_Lang::t('wai_ai_expand_hint'),
+        ]) . ';
+        var waiServiceCount = document.getElementById("ra-wai-service-count");
+        var waiChipCount = document.getElementById("ra-wai-chip-count");
+        var waiChipList = document.getElementById("ra-wai-chip-list");
+        var waiStatus = document.getElementById("ra-wai-status");
+
+        if (!waiInput || !waiSend) return;
+
+        var ajaxUrl = ' . wp_json_encode($ajax_url) . ';
+        var nonce = ' . wp_json_encode($nonce) . ';
+        var chatHistory = [];
+        var sending = false;
+
+        // Local data stores
+        var currentBrands = [];
+        var currentChips = [];
+        var currentServices = [];
+        var currentQualityTiers = [];
+        var currentTieredServices = [];
+        var currentCustomSections = [];
+
+        // Load existing config+knowledge
+        var existingConfig = ' . wp_json_encode(!empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : null) . ';
+        var existingKnowledge = ' . wp_json_encode(!empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null) . ';
+        if (existingConfig && existingConfig.brands) currentBrands = existingConfig.brands;
+        if (existingConfig && existingConfig.chips) currentChips = existingConfig.chips;
+        if (existingConfig && existingConfig.quality_tiers) currentQualityTiers = existingConfig.quality_tiers;
+        if (existingConfig && existingConfig.custom_sections) currentCustomSections = existingConfig.custom_sections;
+        if (existingKnowledge && existingKnowledge.services) currentServices = existingKnowledge.services;
+        if (existingKnowledge && existingKnowledge.tiered_services) currentTieredServices = existingKnowledge.tiered_services;
+        renderBrands(); renderChips(); renderServices();
+        renderQualityTiers(); renderTieredServices(); renderCustomSections();
+
+        function escH(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+        // ─── Save helper ───
+        function editorSave(field, data, btn) {
+            if (btn) { btn.disabled = true; btn.style.opacity = ".5"; }
+            var fd = new FormData();
+            fd.append("action", "ppv_widget_editor_save");
+            fd.append("nonce", nonce);
+            fd.append("field", field);
+            fd.append("data", JSON.stringify(data));
+            fetch(ajaxUrl, { method: "POST", body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(resp) {
+                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
+                })
+                .catch(function() {
+                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
+                });
+        }
+
+        // ─── BRANDS + MODELS ───
+        var expandedBrand = -1;
+        function renderBrands(brandsOverride) {
+            if (brandsOverride) currentBrands = brandsOverride;
+            waiBrandCount.textContent = currentBrands.length + " " + (currentBrands.length !== 1 ? waiT.brands : waiT.brand);
+            var html = "";
+            for (var i = 0; i < currentBrands.length; i++) {
+                var b = currentBrands[i];
+                if (typeof b === "string") { b = { id: b, label: b }; currentBrands[i] = b; }
+                var label = b.label || b.id || "";
+                var icon = b.icon || "";
+                var models = b.models || [];
+                var isOpen = expandedBrand === i;
+
+                html += \'<div style="width:100%;margin-bottom:4px">\';
+                // Brand header row
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:\' + (isOpen ? \'#dbeafe\' : \'#eff6ff\') + \';border-radius:8px;font-size:12px;color:#1e40af;cursor:pointer" data-brand-toggle="\' + i + \'">\';
+                html += (icon ? \'<span>\' + icon + \'</span> \' : \'\');
+                html += \'<b style="flex:1">\' + escH(label) + \'</b>\';
+                html += \'<span style="color:#94a3b8;font-size:11px">\' + models.length + \' \' + waiT.model_count + \'</span>\';
+                html += \' <i class="ri-arrow-\' + (isOpen ? \'up\' : \'down\') + \'-s-line" style="color:#94a3b8;font-size:14px"></i>\';
+                html += \' <span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\';
+                html += \'</div>\';
+
+                // Expanded models panel
+                if (isOpen) {
+                    html += \'<div style="padding:8px 10px 4px 28px;background:#f0f7ff;border-radius:0 0 8px 8px;margin-top:-2px">\';
+                    // Model chips
+                    if (models.length > 0) {
+                        html += \'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">\';
+                        for (var m = 0; m < models.length; m++) {
+                            html += \'<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;color:#1e40af">\' +
+                                escH(models[m]) +
+                                \' <span class="ra-wai-del" data-type="model" data-brand="\' + i + \'" data-midx="\' + m + \'" style="cursor:pointer;opacity:.4;font-size:12px">&times;</span>\' +
+                                \'</span>\';
+                        }
+                        html += \'</div>\';
+                    }
+                    // Add model row + AI expand
+                    html += \'<div style="display:flex;gap:4px;align-items:center">\';
+                    html += \'<input type="text" class="ra-wai-model-input" data-brand="\' + i + \'" placeholder="\' + escH(waiT.model_add_ph) + \'" style="flex:1;padding:5px 8px;border:1.5px solid #dbeafe;border-radius:6px;font-size:11px;outline:none;min-width:0">\';
+                    html += \'<button type="button" class="ra-wai-model-add" data-brand="\' + i + \'" style="background:#3b82f6;border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i></button>\';
+                    html += \'<button type="button" class="ra-wai-model-ai" data-brand="\' + i + \'" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="\' + escH(waiT.ai_expand_hint) + \'"><i class="ri-magic-line"></i> AI</button>\';
+                    html += \'</div>\';
+                    html += \'</div>\';
+                }
+                html += \'</div>\';
+            }
+            waiBrandList.innerHTML = html;
+        }
+
+        // Toggle brand expand
+        waiBrandList.addEventListener("click", function(e) {
+            // Delete brand
+            var del = e.target.closest(".ra-wai-del[data-type=brand]");
+            if (del) {
+                e.stopPropagation();
+                currentBrands.splice(parseInt(del.dataset.idx), 1);
+                expandedBrand = -1;
+                renderBrands();
+                editorSave("brands", currentBrands);
+                return;
+            }
+            // Delete model
+            var mdel = e.target.closest(".ra-wai-del[data-type=model]");
+            if (mdel) {
+                e.stopPropagation();
+                var bi = parseInt(mdel.dataset.brand);
+                var mi = parseInt(mdel.dataset.midx);
+                if (currentBrands[bi] && currentBrands[bi].models) {
+                    currentBrands[bi].models.splice(mi, 1);
+                    renderBrands();
+                    editorSave("brands", currentBrands);
+                }
+                return;
+            }
+            // Add model button
+            var addBtn = e.target.closest(".ra-wai-model-add");
+            if (addBtn) {
+                e.stopPropagation();
+                var bi2 = parseInt(addBtn.dataset.brand);
+                var inp = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi2 + \'"]\');
+                var val = inp ? inp.value.trim() : "";
+                if (!val) return;
+                if (!currentBrands[bi2].models) currentBrands[bi2].models = [];
+                // Support comma-separated
+                var parts = val.split(",");
+                for (var pi = 0; pi < parts.length; pi++) {
+                    var pv = parts[pi].trim();
+                    if (pv && currentBrands[bi2].models.indexOf(pv) < 0) currentBrands[bi2].models.push(pv);
+                }
+                renderBrands();
+                editorSave("brands", currentBrands, addBtn);
+                return;
+            }
+            // AI expand button
+            var aiBtn = e.target.closest(".ra-wai-model-ai");
+            if (aiBtn) {
+                e.stopPropagation();
+                var bi3 = parseInt(aiBtn.dataset.brand);
+                var brandName = currentBrands[bi3].label || currentBrands[bi3].id;
+                var inp2 = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi3 + \'"]\');
+                var hint = inp2 ? inp2.value.trim() : "";
+                aiBtn.disabled = true;
+                aiBtn.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i>\';
+                var fd = new FormData();
+                fd.append("action", "ppv_widget_editor_save");
+                fd.append("nonce", nonce);
+                fd.append("field", "ai_expand_models");
+                fd.append("data", JSON.stringify({ brand: brandName, hint: hint, existing: currentBrands[bi3].models || [] }));
+                fetch(ajaxUrl, { method: "POST", body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(resp) {
+                        aiBtn.disabled = false;
+                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
+                        if (resp.success && resp.data.models) {
+                            if (!currentBrands[bi3].models) currentBrands[bi3].models = [];
+                            var newModels = resp.data.models;
+                            for (var nm = 0; nm < newModels.length; nm++) {
+                                if (currentBrands[bi3].models.indexOf(newModels[nm]) < 0) {
+                                    currentBrands[bi3].models.push(newModels[nm]);
+                                }
+                            }
+                            renderBrands();
+                            editorSave("brands", currentBrands);
+                        }
+                    })
+                    .catch(function() {
+                        aiBtn.disabled = false;
+                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
+                    });
+                return;
+            }
+            // Toggle brand expand
+            var toggle = e.target.closest("[data-brand-toggle]");
+            if (toggle) {
+                var idx = parseInt(toggle.dataset.brandToggle);
+                expandedBrand = expandedBrand === idx ? -1 : idx;
+                renderBrands();
+            }
+        });
+        // Enter key in model input
+        waiBrandList.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && e.target.classList.contains("ra-wai-model-input")) {
+                e.preventDefault();
+                var bi4 = e.target.dataset.brand;
+                var addBtn2 = waiBrandList.querySelector(\'.ra-wai-model-add[data-brand="\' + bi4 + \'"]\');
+                if (addBtn2) addBtn2.click();
+            }
+        });
+        document.getElementById("ra-wai-brand-add").addEventListener("click", function() {
+            var inp = document.getElementById("ra-wai-brand-input");
+            var val = inp.value.trim();
+            if (!val) return;
+            currentBrands.push({ id: val, label: val, models: [] });
+            inp.value = "";
+            expandedBrand = currentBrands.length - 1;
+            renderBrands();
+            editorSave("brands", currentBrands, this);
+        });
+        document.getElementById("ra-wai-brand-input").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-brand-add").click(); }
+        });
+
+        // ─── CHIPS ───
+        function renderChips(chipsOverride) {
+            if (chipsOverride) currentChips = chipsOverride;
+            if (waiChipCount) waiChipCount.textContent = currentChips.length + " " + (currentChips.length !== 1 ? "chips" : "chip");
+            var html = "";
+            for (var i = 0; i < currentChips.length; i++) {
+                var c = typeof currentChips[i] === "string" ? currentChips[i] : (currentChips[i].label || currentChips[i]);
+                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#f3e8ff;border-radius:8px;font-size:12px;color:#7c3aed;cursor:default">\' +
+                    escH(c) +
+                    \' <span class="ra-wai-del" data-type="chip" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;margin-left:2px" title="Entfernen">&times;</span>\' +
+                    \'</span>\';
+            }
+            if (waiChipList) waiChipList.innerHTML = html;
+        }
+        if (waiChipList) waiChipList.addEventListener("click", function(e) {
+            var del = e.target.closest(".ra-wai-del[data-type=chip]");
+            if (!del) return;
+            currentChips.splice(parseInt(del.dataset.idx), 1);
+            renderChips();
+            editorSave("chips", currentChips);
+        });
+        var chipAddBtn = document.getElementById("ra-wai-chip-add");
+        if (chipAddBtn) chipAddBtn.addEventListener("click", function() {
+            var inp = document.getElementById("ra-wai-chip-input");
+            var val = inp.value.trim();
+            if (!val) return;
+            currentChips.push(val);
+            inp.value = "";
+            renderChips();
+            editorSave("chips", currentChips, this);
+        });
+        var chipInput = document.getElementById("ra-wai-chip-input");
+        if (chipInput) chipInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-chip-add").click(); }
+        });
+
+        // ─── SERVICES ───
+        function renderServices(servicesOverride) {
+            if (servicesOverride) currentServices = servicesOverride;
+            waiServiceCount.textContent = currentServices.length + " " + (currentServices.length !== 1 ? waiT.services : waiT.service);
+            var html = "";
+            for (var i = 0; i < currentServices.length; i++) {
+                var s = currentServices[i];
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;color:#475569;margin-bottom:4px">\' +
+                    \'<b style="flex:1">\' + escH(s.name) + \'</b>\' +
+                    (s.price ? \'<span style="color:#059669;font-weight:600">\' + escH(s.price) + \'</span>\' : \'\') +
+                    (s.time ? \'<span style="color:#94a3b8">\' + escH(s.time) + \'</span>\' : \'\') +
+                    \'<span class="ra-wai-del" data-type="svc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\' +
+                    \'</div>\';
+            }
+            waiServiceList.innerHTML = html;
+        }
+        waiServiceList.addEventListener("click", function(e) {
+            var del = e.target.closest(".ra-wai-del[data-type=svc]");
+            if (!del) return;
+            currentServices.splice(parseInt(del.dataset.idx), 1);
+            renderServices();
+            editorSave("services", currentServices);
+        });
+        document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
+            var nameInp = document.getElementById("ra-wai-svc-name");
+            var priceInp = document.getElementById("ra-wai-svc-price");
+            var timeInp = document.getElementById("ra-wai-svc-time");
+            var name = nameInp.value.trim();
+            if (!name) return;
+            var svc = { name: name };
+            if (priceInp.value.trim()) svc.price = priceInp.value.trim();
+            if (timeInp.value.trim()) svc.time = timeInp.value.trim();
+            currentServices.push(svc);
+            nameInp.value = ""; priceInp.value = ""; timeInp.value = "";
+            renderServices();
+            editorSave("services", currentServices, this);
+        });
+        document.getElementById("ra-wai-svc-name").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); }
+        });
+
+        // ─── Quality Tiers ───
+        function renderQualityTiers(data) {
+            if (data) currentQualityTiers = data;
+            var container = document.getElementById("ra-wai-tiers-section");
+            if (!container) return;
+            if (currentQualityTiers.length === 0) { container.style.display = "none"; return; }
+            container.style.display = "";
+            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-medal-line" style="color:#f59e0b"></i> Qualitätsstufen</div>\';
+            for (var i = 0; i < currentQualityTiers.length; i++) {
+                var t = currentQualityTiers[i];
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
+                    \'<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:\' + (t.badge_color || "#667eea") + \';color:#fff;font-size:10px;font-weight:700">\' + escH(t.label || t.id) + \'</span>\' +
+                    \'<span style="flex:1;color:#475569">\' + escH(t.description || "") + \'</span>\' +
+                    \'<span class="ra-wai-del-tier" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
+            }
+            container.innerHTML = html;
+        }
+
+        // ─── Tiered Services ───
+        function renderTieredServices(data) {
+            if (data) currentTieredServices = data;
+            var container = document.getElementById("ra-wai-tiered-svc-section");
+            if (!container) return;
+            if (currentTieredServices.length === 0) { container.style.display = "none"; return; }
+            container.style.display = "";
+            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-price-tag-3-line" style="color:#059669"></i> Staffelpreise</div>\';
+            for (var i = 0; i < currentTieredServices.length; i++) {
+                var s = currentTieredServices[i];
+                var tierLabels = [];
+                if (s.tiers) {
+                    for (var tid in s.tiers) {
+                        if (s.tiers.hasOwnProperty(tid)) tierLabels.push(tid + ": " + (s.tiers[tid].price || "–"));
+                    }
+                }
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f0fdf4;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
+                    \'<b style="flex:1;color:#475569">\' + escH(s.name) + \'</b>\' +
+                    \'<span style="color:#059669;font-size:11px">\' + escH(tierLabels.join(" | ")) + \'</span>\' +
+                    \'<span class="ra-wai-del-tsvc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
+            }
+            container.innerHTML = html;
+        }
+
+        // ─── Custom Sections ───
+        function renderCustomSections(data) {
+            if (data) currentCustomSections = data;
+            var container = document.getElementById("ra-wai-sections-section");
+            if (!container) return;
+            if (currentCustomSections.length === 0) { container.style.display = "none"; return; }
+            container.style.display = "";
+            var typeIcons = {list:"ri-list-check",steps:"ri-flow-chart",highlight:"ri-flashlight-line",info:"ri-information-line",grid:"ri-layout-grid-line",faq:"ri-question-line"};
+            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-layout-masonry-line" style="color:#667eea"></i> Widget-Sektionen</div>\';
+            for (var i = 0; i < currentCustomSections.length; i++) {
+                var sec = currentCustomSections[i];
+                var ico = typeIcons[sec.type] || "ri-apps-line";
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#eff6ff;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
+                    \'<i class="\' + ico + \'" style="color:#667eea;font-size:14px"></i>\' +
+                    \'<b style="flex:1;color:#475569">\' + escH(sec.title || sec.id) + \'</b>\' +
+                    \'<span style="color:#94a3b8;font-size:10px;text-transform:uppercase">\' + escH(sec.type || "info") + \'</span>\' +
+                    \'<span class="ra-wai-del-sec" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
+            }
+            container.innerHTML = html;
+        }
+
+        // ─── Delete handlers for tiers/tiered-services/sections ───
+        document.addEventListener("click", function(e) {
+            var delTier = e.target.closest(".ra-wai-del-tier");
+            if (delTier) {
+                currentQualityTiers.splice(parseInt(delTier.dataset.idx), 1);
+                renderQualityTiers();
+                editorSave("quality_tiers", currentQualityTiers);
+                return;
+            }
+            var delTsvc = e.target.closest(".ra-wai-del-tsvc");
+            if (delTsvc) {
+                currentTieredServices.splice(parseInt(delTsvc.dataset.idx), 1);
+                renderTieredServices();
+                editorSave("tiered_services", currentTieredServices);
+                return;
+            }
+            var delSec = e.target.closest(".ra-wai-del-sec");
+            if (delSec) {
+                currentCustomSections.splice(parseInt(delSec.dataset.idx), 1);
+                renderCustomSections();
+                editorSave("custom_sections", currentCustomSections);
+                return;
+            }
+        });
+
+        function addMessage(role, text) {
+            var div = document.createElement("div");
+            div.className = "ra-wai-msg " + role;
+            var isBot = role === "bot";
+            div.style.cssText = isBot ?
+                "background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#334155;max-width:85%;line-height:1.5" :
+                "background:linear-gradient(135deg,#667eea,#4338ca);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;color:#fff;max-width:85%;align-self:flex-end;line-height:1.5";
+            div.innerHTML = text.replace(/\n/g, "<br>");
+            waiMessages.appendChild(div);
+            waiMessages.scrollTop = waiMessages.scrollHeight;
+            return div;
+        }
+
+        function showTyping() {
+            var div = document.createElement("div");
+            div.id = "ra-wai-typing";
+            div.style.cssText = "background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#94a3b8;max-width:85%;line-height:1.5";
+            div.innerHTML = \'<span style="display:inline-flex;gap:4px"><span style="animation:ra-wai-dot 1s infinite">·</span><span style="animation:ra-wai-dot 1s .2s infinite">·</span><span style="animation:ra-wai-dot 1s .4s infinite">·</span></span>\';
+            waiMessages.appendChild(div);
+            waiMessages.scrollTop = waiMessages.scrollHeight;
+        }
+
+        function removeTyping() {
+            var t = document.getElementById("ra-wai-typing");
+            if (t) t.remove();
+        }
+
+        // Add typing animation CSS
+        var dotStyle = document.createElement("style");
+        dotStyle.textContent = "@keyframes ra-wai-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}";
+        document.head.appendChild(dotStyle);
+
+        function sendMessage(text) {
+            if (sending || !text.trim()) return;
+            sending = true;
+            waiSend.style.opacity = "0.5";
+
+            addMessage("user", text);
+            chatHistory.push({role: "user", content: text});
+            waiInput.value = "";
+            waiInput.style.height = "36px";
+            showTyping();
+
+            var fd = new FormData();
+            fd.append("action", "ppv_widget_ai_chat");
+            fd.append("nonce", nonce);
+            fd.append("message", text);
+            fd.append("history", JSON.stringify(chatHistory));
+
+            fetch(ajaxUrl, {method: "POST", body: fd})
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    removeTyping();
+                    sending = false;
+                    waiSend.style.opacity = "1";
+
+                    if (data.success) {
+                        addMessage("bot", data.data.message);
+                        chatHistory.push({role: "assistant", content: data.data.message});
+
+                        // Update UI based on applied actions
+                        if (data.data.actions_applied && data.data.actions_applied.length > 0) {
+                            var acts = data.data.actions_applied;
+                            // Update widget controls if mode/color/lang changed
+                            var wMode = document.getElementById("ra-widget-mode");
+                            var wColor = document.getElementById("ra-widget-color");
+                            var wLang = document.getElementById("ra-widget-lang");
+                            var wText = document.getElementById("ra-widget-text");
+                            var cfg = data.data.config || {};
+
+                            if (acts.indexOf("mode") >= 0 && wMode && cfg.mode) {
+                                wMode.value = cfg.mode;
+                                wMode.dispatchEvent(new Event("change"));
+                            }
+                            if (acts.indexOf("color") >= 0 && wColor && cfg.color) {
+                                wColor.value = cfg.color;
+                                wColor.dispatchEvent(new Event("input"));
+                            }
+                            if (acts.indexOf("lang") >= 0 && wLang && cfg.lang) {
+                                wLang.value = cfg.lang;
+                                wLang.dispatchEvent(new Event("change"));
+                            }
+                            if (acts.indexOf("text") >= 0 && wText && cfg.text) {
+                                wText.value = cfg.text;
+                                wText.dispatchEvent(new Event("input"));
+                            }
+
+                            // Update brands display
+                            if (acts.indexOf("brands") >= 0 && cfg.brands) {
+                                renderBrands(cfg.brands);
+                            }
+
+                            // Update chips display
+                            if (acts.indexOf("chips") >= 0 && cfg.chips) {
+                                renderChips(cfg.chips);
+                            }
+
+                            // Update services display
+                            if (acts.indexOf("services") >= 0 && data.data.knowledge && data.data.knowledge.services) {
+                                renderServices(data.data.knowledge.services);
+                            }
+
+                            // Update quality tiers display
+                            if (acts.indexOf("quality_tiers") >= 0 && cfg.quality_tiers) {
+                                renderQualityTiers(cfg.quality_tiers);
+                            }
+
+                            // Update tiered services display
+                            if (acts.indexOf("tiered_services") >= 0 && data.data.knowledge && data.data.knowledge.tiered_services) {
+                                renderTieredServices(data.data.knowledge.tiered_services);
+                            }
+
+                            // Update custom sections display
+                            if (acts.indexOf("custom_sections") >= 0 && cfg.custom_sections) {
+                                renderCustomSections(cfg.custom_sections);
+                            }
+
+                            // Update setup status
+                            if (acts.indexOf("setup_complete") >= 0 && waiStatus) {
+                                waiStatus.style.background = "#f0fdf4";
+                                waiStatus.style.borderColor = "#bbf7d0";
+                                waiStatus.style.color = "#166534";
+                                waiStatus.innerHTML = \'<i class="ri-checkbox-circle-fill" style="font-size:18px"></i> \' + waiT.setup_done;
+                            }
+
+                            // Show a subtle notification for config changes
+                            var notif = document.createElement("div");
+                            notif.style.cssText = "background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 12px;font-size:12px;color:#166534;text-align:center;margin-top:4px";
+                            notif.innerHTML = \'<i class="ri-check-line"></i> \' + acts.length + " " + waiT.settings_updated;
+                            waiMessages.appendChild(notif);
+                            waiMessages.scrollTop = waiMessages.scrollHeight;
+                            setTimeout(function() { notif.style.opacity = "0"; setTimeout(function() { notif.remove(); }, 300); }, 3000);
+                        }
+                    } else {
+                        addMessage("bot", waiT.error_prefix + ": " + (data.data && data.data.message ? data.data.message : waiT.error_unknown));
+                    }
+                })
+                .catch(function() {
+                    removeTyping();
+                    sending = false;
+                    waiSend.style.opacity = "1";
+                    addMessage("bot", waiT.conn_error);
+                });
+        }
+
+        // Send button
+        waiSend.addEventListener("click", function() { sendMessage(waiInput.value); });
+
+        // Enter to send (Shift+Enter for new line)
+        waiInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(waiInput.value);
+            }
+        });
+
+        // Auto-resize textarea
+        waiInput.addEventListener("input", function() {
+            this.style.height = "36px";
+            this.style.height = Math.min(this.scrollHeight, 100) + "px";
+        });
+
+        // Quick action chips
+        document.querySelectorAll(".ra-wai-chip").forEach(function(chip) {
+            chip.addEventListener("click", function() {
+                sendMessage(this.getAttribute("data-msg"));
+            });
+        });
+
+        // File upload
+        if (waiUploadArea && waiFile) {
+            waiUploadArea.addEventListener("click", function() { waiFile.click(); });
+            waiUploadArea.addEventListener("dragover", function(e) { e.preventDefault(); this.style.borderColor = "#667eea"; this.style.background = "#f0f4ff"; });
+            waiUploadArea.addEventListener("dragleave", function() { this.style.borderColor = "#e2e8f0"; this.style.background = "#fafbfc"; });
+            waiUploadArea.addEventListener("drop", function(e) {
+                e.preventDefault();
+                this.style.borderColor = "#e2e8f0";
+                this.style.background = "#fafbfc";
+                if (e.dataTransfer.files.length) {
+                    waiFile.files = e.dataTransfer.files;
+                    uploadFile(e.dataTransfer.files[0]);
+                }
+            });
+            waiFile.addEventListener("change", function() {
+                if (this.files.length) uploadFile(this.files[0]);
+            });
+        }
+
+        function uploadFile(file) {
+            waiUploadStatus.style.display = "";
+            waiUploadStatus.style.background = "#eff6ff";
+            waiUploadStatus.style.border = "1.5px solid #bfdbfe";
+            waiUploadStatus.style.color = "#1e40af";
+            waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line" style="animation:ra-wai-dot 1s infinite"></i> \' + waiT.uploading;
+
+            var fd = new FormData();
+            fd.append("action", "ppv_widget_ai_upload");
+            fd.append("nonce", nonce);
+            fd.append("file", file);
+
+            fetch(ajaxUrl, {method: "POST", body: fd})
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        var d = data.data;
+                        waiUploadStatus.style.background = "#f0fdf4";
+                        waiUploadStatus.style.borderColor = "#bbf7d0";
+                        waiUploadStatus.style.color = "#166534";
+
+                        if (d.file_type === "image" || d.file_type === "pdf" || d.file_type === "other") {
+                            // Non-text file: uploaded but no auto-parse possible
+                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_saved;
+                            addMessage("bot", waiT.upload_image_msg.replace(\'%s\', escH(d.file_name)));
+                        } else {
+                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_success.replace(\'%d\', d.service_count);
+                            addMessage("bot", waiT.upload_bot_msg.replace(\'%s\', escH(d.file_name)).replace(\'%d\', d.service_count));
+                        }
+
+                        // Update services display
+                        if (d.parsed_services && d.parsed_services.length) {
+                            renderServices(d.parsed_services);
+                        }
+
+                        setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+                    } else {
+                        waiUploadStatus.style.background = "#fef2f2";
+                        waiUploadStatus.style.borderColor = "#fecaca";
+                        waiUploadStatus.style.color = "#991b1b";
+                        waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + (data.data && data.data.message ? escH(data.data.message) : waiT.upload_error);
+                    }
+                })
+                .catch(function() {
+                    waiUploadStatus.style.background = "#fef2f2";
+                    waiUploadStatus.style.borderColor = "#fecaca";
+                    waiUploadStatus.style.color = "#991b1b";
+                    waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + waiT.conn_error_short;
+                });
         }
     })();
 
@@ -7917,6 +8685,16 @@ echo '</div></div>
         echo '
 </body>
 </html>';
+    }
+
+    /** Darken a hex color by percentage */
+    private static function darken_hex($hex, $pct) {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) !== 6) return '#667eea';
+        $r = max(0, round(hexdec(substr($hex, 0, 2)) * (1 - $pct)));
+        $g = max(0, round(hexdec(substr($hex, 2, 2)) * (1 - $pct)));
+        $b = max(0, round(hexdec(substr($hex, 4, 2)) * (1 - $pct)));
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
     }
 
     /** ============================================================

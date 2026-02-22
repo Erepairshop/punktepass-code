@@ -10,39 +10,58 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_AI_Engine {
 
+    // Anthropic (default – used for customer-facing diagnosis)
     private static $api_url = 'https://api.anthropic.com/v1/messages';
     private static $model = 'claude-haiku-4-5-20251001';
     private static $max_tokens = 500;
+
+    // OpenAI (cheap – used for admin/config tasks)
+    private static $openai_url = 'https://api.openai.com/v1/chat/completions';
+    private static $model_fast = 'gpt-4o-mini';
+
+    /** Model presets – use as $options['model'] value */
+    const MODEL_DEFAULT = 'claude-haiku-4-5-20251001';  // ~$1/$5 per MTok – quality
+    const MODEL_FAST    = 'gpt-4o-mini';                // ~$0.15/$0.60 per MTok – 7x cheaper
 
     /**
      * Check if AI features are available (API key configured)
      */
     public static function is_available() {
-        return defined('ANTHROPIC_API_KEY') && !empty(ANTHROPIC_API_KEY);
+        return (defined('ANTHROPIC_API_KEY') && !empty(ANTHROPIC_API_KEY))
+            || (defined('OPENAI_API_KEY') && !empty(OPENAI_API_KEY));
     }
 
     /**
-     * Send a single message to Claude API
-     *
-     * @param string $system  System prompt
-     * @param string $user    User message
-     * @param string $lang    Response language (de/hu/ro/en/it)
-     * @return array|WP_Error ['text' => string] or WP_Error
+     * Check if OpenAI is available (for cheap model routing)
      */
-    public static function chat($system, $user, $lang = 'de') {
+    private static function openai_available() {
+        return defined('OPENAI_API_KEY') && !empty(OPENAI_API_KEY);
+    }
+
+    /**
+     * Send a single message to AI
+     *
+     * @param string $system   System prompt
+     * @param string $user     User message
+     * @param string $lang     Response language (de/hu/ro/en/it)
+     * @param array  $options  Optional: ['model' => 'gpt-4o-mini', 'max_tokens' => 300]
+     * @return array|WP_Error  ['text' => string] or WP_Error
+     */
+    public static function chat($system, $user, $lang = 'de', $options = []) {
         return self::chat_with_history($system, [
             ['role' => 'user', 'content' => $user]
-        ]);
+        ], $options);
     }
 
     /**
-     * Send messages with conversation history to Claude API
+     * Send messages with conversation history
      *
      * @param string $system    System prompt
      * @param array  $messages  Array of ['role' => 'user'|'assistant', 'content' => string]
+     * @param array  $options   Optional: ['model' => string, 'max_tokens' => int]
      * @return array|WP_Error   ['text' => string] or WP_Error
      */
-    public static function chat_with_history($system, $messages) {
+    public static function chat_with_history($system, $messages, $options = []) {
         if (!self::is_available()) {
             return new WP_Error('ai_not_configured', 'AI API key not configured');
         }
@@ -61,11 +80,34 @@ class PPV_AI_Engine {
             return new WP_Error('empty_message', 'No message provided');
         }
 
+        $model = $options['model'] ?? self::$model;
+        $max_tokens = $options['max_tokens'] ?? self::$max_tokens;
+
+        // Route to OpenAI for gpt-* models
+        if (strpos($model, 'gpt-') === 0 || strpos($model, 'o1') === 0 || strpos($model, 'o3') === 0) {
+            if (self::openai_available()) {
+                return self::call_openai($system, $clean, $model, $max_tokens);
+            }
+            // Fallback to Anthropic if no OpenAI key
+            $model = self::$model;
+        }
+
+        return self::call_anthropic($system, $clean, $model, $max_tokens);
+    }
+
+    /**
+     * Call Anthropic Claude API
+     */
+    private static function call_anthropic($system, $messages, $model, $max_tokens) {
+        if (!defined('ANTHROPIC_API_KEY') || empty(ANTHROPIC_API_KEY)) {
+            return new WP_Error('ai_not_configured', 'Anthropic API key not configured');
+        }
+
         $body = [
-            'model'      => self::$model,
-            'max_tokens' => self::$max_tokens,
+            'model'      => $model,
+            'max_tokens' => $max_tokens,
             'system'     => $system,
-            'messages'   => $clean,
+            'messages'   => $messages,
         ];
 
         $response = wp_remote_post(self::$api_url, [
@@ -91,6 +133,47 @@ class PPV_AI_Engine {
         }
 
         $text = $data['content'][0]['text'] ?? '';
+        return ['text' => trim($text)];
+    }
+
+    /**
+     * Call OpenAI API (GPT-4o-mini, etc.)
+     */
+    private static function call_openai($system, $messages, $model, $max_tokens) {
+        // Convert to OpenAI message format (system as first message)
+        $oai_messages = [['role' => 'system', 'content' => $system]];
+        foreach ($messages as $msg) {
+            $oai_messages[] = ['role' => $msg['role'], 'content' => $msg['content']];
+        }
+
+        $body = [
+            'model'      => $model,
+            'max_tokens' => $max_tokens,
+            'messages'   => $oai_messages,
+        ];
+
+        $response = wp_remote_post(self::$openai_url, [
+            'timeout' => 30,
+            'headers' => [
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . OPENAI_API_KEY,
+            ],
+            'body' => wp_json_encode($body),
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+
+        if ($code !== 200) {
+            $err_msg = $data['error']['message'] ?? 'OpenAI API error (HTTP ' . $code . ')';
+            return new WP_Error('ai_api_error', $err_msg);
+        }
+
+        $text = $data['choices'][0]['message']['content'] ?? '';
         return ['text' => trim($text)];
     }
 
