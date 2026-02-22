@@ -701,7 +701,7 @@ a:hover{color:#5a67d8}
 .ra-settings-panel h4 i{color:#667eea;font-size:18px}
 .ra-settings-panel h4:not(:first-child){margin-top:28px}
 .ra-svc-row:hover{border-color:#cbd5e1!important}
-.ra-svc-edit-name:hover,.ra-svc-edit-price:hover{background:#f0f9ff}
+.ra-svc-edit-name:hover,.ra-svc-edit-price:hover,.ra-svc-edit-time:hover{background:#f0f9ff}
 .ra-svc-cat-hdr:hover{background:#eff6ff!important;border-color:#bfdbfe!important}
 .ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
 .ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
@@ -5465,7 +5465,7 @@ echo '</div></div>
                         html += \'<div class="ra-svc-row" data-idx="\' + idx + \'" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;border:1px solid #f1f5f9;border-radius:8px;font-size:13px;color:#475569;margin-bottom:2px;transition:border-color .15s">\';
                         html += \'<span class="ra-svc-edit-name" data-idx="\' + idx + \'" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;cursor:text;padding:2px 4px;border-radius:4px;transition:background .15s" title="Klicken zum Bearbeiten">\' + escH(s.name) + \'</span>\';
                         html += \'<span class="ra-svc-edit-price" data-idx="\' + idx + \'" style="color:#059669;font-weight:700;white-space:nowrap;font-size:12px;cursor:text;padding:2px 6px;border-radius:4px;transition:background .15s;min-width:40px;text-align:right" title="Klicken zum Bearbeiten">\' + escH(s.price || "-") + \'</span>\';
-                        if (s.time) html += \'<span style="color:#94a3b8;white-space:nowrap;font-size:11px"><i class="ri-time-line" style="font-size:11px;vertical-align:-1px"></i> \' + escH(s.time) + \'</span>\';
+                        html += \'<span class="ra-svc-edit-time" data-idx="\' + idx + \'" style="color:#94a3b8;white-space:nowrap;font-size:11px;cursor:text;padding:2px 6px;border-radius:4px;transition:background .15s;min-width:30px" title="Klicken zum Bearbeiten"><i class="ri-time-line" style="font-size:11px;vertical-align:-1px"></i> \' + escH(s.time || "-") + \'</span>\';
                         html += \'<span class="ra-wai-del" data-type="svc" data-idx="\' + idx + \'" style="cursor:pointer;color:#ef4444;opacity:.3;font-size:14px;transition:opacity .15s;flex-shrink:0" title="Entfernen"><i class="ri-close-line"></i></span>\';
                         html += \'</div>\';
                     });
@@ -5516,6 +5516,9 @@ echo '</div></div>
             // Inline edit price
             var ePrice = e.target.closest(".ra-svc-edit-price");
             if (ePrice) { startInlineEdit(ePrice, parseInt(ePrice.dataset.idx), "price"); return; }
+            // Inline edit time
+            var eTime = e.target.closest(".ra-svc-edit-time");
+            if (eTime) { startInlineEdit(eTime, parseInt(eTime.dataset.idx), "time"); return; }
         });
         document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
             var catInp = document.getElementById("ra-wai-svc-cat"), nameInp = document.getElementById("ra-wai-svc-name");
