@@ -1715,9 +1715,9 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         $config = !empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : [];
         $knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : [];
 
-        // Build custom brands from knowledge or store settings
+        // Build custom brands from config or legacy store settings
         $brands = [];
-        if (!empty($config['brands'])) {
+        if (array_key_exists('brands', $config)) {
             $brands = $config['brands'];
         } elseif (!empty($store->repair_custom_brands)) {
             $raw = array_filter(array_map('trim', explode("\n", $store->repair_custom_brands)));
@@ -1726,7 +1726,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
 
         // Custom problem chips
         $chips = [];
-        if (!empty($config['chips'])) {
+        if (array_key_exists('chips', $config)) {
             $chips = $config['chips'];
         } elseif (!empty($store->repair_custom_problems)) {
             $chips = array_filter(array_map('trim', explode("\n", $store->repair_custom_problems)));
@@ -1933,12 +1933,18 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
                 $name = is_string($b) ? trim($b) : (trim($b['label'] ?? $b['id'] ?? ''));
                 return ['id' => $name, 'label' => $name, 'icon' => $icons[$name] ?? "\xE2\x9A\x99"];
             }, array_filter($data));
-            $wpdb->update($stores_table, ['widget_ai_config' => wp_json_encode($current_config)], ['id' => $store_id]);
+            $wpdb->update($stores_table, [
+                'widget_ai_config' => wp_json_encode($current_config),
+                'repair_custom_brands' => null,
+            ], ['id' => $store_id]);
             wp_send_json_success(['saved' => 'brands', 'count' => count($current_config['brands'])]);
 
         } elseif ($field === 'chips' && is_array($data)) {
             $current_config['chips'] = array_values(array_filter(array_map('trim', $data)));
-            $wpdb->update($stores_table, ['widget_ai_config' => wp_json_encode($current_config)], ['id' => $store_id]);
+            $wpdb->update($stores_table, [
+                'widget_ai_config' => wp_json_encode($current_config),
+                'repair_custom_problems' => null,
+            ], ['id' => $store_id]);
             wp_send_json_success(['saved' => 'chips', 'count' => count($current_config['chips'])]);
 
         } elseif ($field === 'services' && is_array($data)) {
