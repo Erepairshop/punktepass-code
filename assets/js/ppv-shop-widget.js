@@ -302,6 +302,36 @@
             'min-height:52px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
         '.' + W + '-result-cta:hover{opacity:.9;transform:translateY(-1px)}' +
 
+        /* Quality tiers */
+        '.' + W + '-tiers{display:flex;gap:10px;margin:0}' +
+        '.' + W + '-tier{flex:1;border:2px solid #e2e8f0;border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;background:#fff}' +
+        '.' + W + '-tier:hover{border-color:#cbd5e1}' +
+        '.' + W + '-tier.sel{border-color:' + config.color + ';background:' + config.color + '08}' +
+        '.' + W + '-tier-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;margin-bottom:8px}' +
+        '.' + W + '-tier-price{font-size:20px;font-weight:800;color:#0f172a;margin:4px 0}' +
+        '.' + W + '-tier-time{font-size:12px;color:#64748b}' +
+        '.' + W + '-tier-desc{font-size:11px;color:#94a3b8;margin-top:4px}' +
+
+        /* Custom sections */
+        '.' + W + '-custom-section{background:#f8fafc;border-radius:12px;padding:16px}' +
+        '.' + W + '-cs-title{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#334155;margin:0 0 10px}' +
+        '.' + W + '-cs-title i{font-size:16px;color:' + config.color + '}' +
+        '.' + W + '-cs-list{margin:0;padding:0 0 0 18px;font-size:13px;color:#475569;line-height:1.8}' +
+        '.' + W + '-cs-steps{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}' +
+        '.' + W + '-cs-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#475569}' +
+        '.' + W + '-cs-step-num{width:24px;height:24px;border-radius:50%;background:' + grad + ';color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
+        '.' + W + '-cs-highlight{background:' + config.color + '10;border:1.5px solid ' + config.color + '25;border-radius:12px;padding:14px;text-align:center}' +
+        '.' + W + '-cs-highlight-badge{display:inline-block;padding:2px 10px;border-radius:20px;background:' + grad + ';color:#fff;font-size:11px;font-weight:700;margin-bottom:6px}' +
+        '.' + W + '-cs-highlight-text{font-size:14px;font-weight:600;color:#334155;margin:0}' +
+        '.' + W + '-cs-info{font-size:13px;color:#475569;line-height:1.7;margin:0}' +
+        '.' + W + '-cs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}' +
+        '.' + W + '-cs-grid-item{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;font-size:12px;color:#475569;text-align:center}' +
+        '.' + W + '-cs-faq{display:flex;flex-direction:column;gap:6px}' +
+        '.' + W + '-cs-faq-q{font-size:13px;font-weight:600;color:#334155;cursor:pointer;padding:8px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;transition:all .2s}' +
+        '.' + W + '-cs-faq-q:hover{background:#f1f5f9}' +
+        '.' + W + '-cs-faq-a{font-size:13px;color:#475569;padding:4px 10px 10px;display:none;line-height:1.6}' +
+        '.' + W + '-cs-faq-a.open{display:block}' +
+
         /* AI mode iframe (embedded form) – fullscreen inside panel */
         '#' + W + '-ai-iframe-wrap{display:none;flex:1;flex-direction:column;overflow:hidden}' +
         '#' + W + '-ai-iframe-wrap.active{display:flex}' +
@@ -772,13 +802,57 @@
                 '<p class="' + W + '-result-label">' + lang.step4_title + '</p>' +
                 '<p class="' + W + '-result-text">' + escHTML(sections.diagnosis || diag) + '</p></div>';
 
-            // Price
-            var price = data.price_range || sections.price || '';
-            if (price) {
-                html += '<div class="' + W + '-result-price">' +
+            // Quality tiers + tiered pricing
+            var qTiers = (storeConfig && storeConfig.quality_tiers) ? storeConfig.quality_tiers : [];
+            var tServices = (storeConfig && storeConfig.tiered_services) ? storeConfig.tiered_services : [];
+            var matchedTierService = null;
+            if (qTiers.length > 0 && tServices.length > 0 && state.brand) {
+                // Find best matching tiered service for this device+problem
+                var searchTerms = ((state.brand || '') + ' ' + (state.model || '') + ' ' + (state.problem || '')).toLowerCase();
+                for (var ts = 0; ts < tServices.length; ts++) {
+                    var svcName = (tServices[ts].name || '').toLowerCase();
+                    if (svcName && searchTerms.indexOf(svcName.split(' ')[0]) >= 0) {
+                        matchedTierService = tServices[ts];
+                        break;
+                    }
+                }
+                // If no specific match, show first tiered service as example
+                if (!matchedTierService && tServices.length > 0) matchedTierService = tServices[0];
+            }
+
+            if (qTiers.length > 0 && matchedTierService && matchedTierService.tiers) {
+                // Show quality tier cards
+                html += '<div class="' + W + '-result-section">' +
                     '<p class="' + W + '-result-label">' + lang.step4_price + '</p>' +
-                    '<p class="' + W + '-result-price-val">' + escHTML(price) + '</p>' +
-                    '<p class="' + W + '-result-price-hint">' + lang.step4_hint + '</p></div>';
+                    '<div class="' + W + '-tiers">';
+                for (var ti = 0; ti < qTiers.length; ti++) {
+                    var tier = qTiers[ti];
+                    var tierData = matchedTierService.tiers[tier.id] || {};
+                    var badgeColor = tier.badge_color || config.color;
+                    html += '<div class="' + W + '-tier" data-tier="' + (tier.id || '') + '">' +
+                        '<span class="' + W + '-tier-badge" style="background:' + badgeColor + '">' + escHTML(tier.label || tier.id) + '</span>' +
+                        '<div class="' + W + '-tier-price">' + escHTML(tierData.price || '–') + '</div>' +
+                        (tierData.time ? '<div class="' + W + '-tier-time">' + escHTML(tierData.time) + '</div>' : '') +
+                        (tier.description ? '<div class="' + W + '-tier-desc">' + escHTML(tier.description) + '</div>' : '') +
+                        '</div>';
+                }
+                html += '</div>' +
+                    '<p class="' + W + '-result-price-hint" style="text-align:center;margin-top:8px">' + lang.step4_hint + '</p></div>';
+            } else {
+                // Standard single price display
+                var price = data.price_range || sections.price || '';
+                if (price) {
+                    html += '<div class="' + W + '-result-price">' +
+                        '<p class="' + W + '-result-label">' + lang.step4_price + '</p>' +
+                        '<p class="' + W + '-result-price-val">' + escHTML(price) + '</p>' +
+                        '<p class="' + W + '-result-price-hint">' + lang.step4_hint + '</p></div>';
+                }
+            }
+
+            // Custom sections from store config
+            var cSections = (storeConfig && storeConfig.custom_sections) ? storeConfig.custom_sections : [];
+            for (var si = 0; si < cSections.length; si++) {
+                html += renderCustomSection(cSections[si]);
             }
 
             // CTA – opens form inside the same panel
@@ -792,6 +866,25 @@
 
             resultDiv.innerHTML = html;
 
+            // Wire tier selection (visual only – highlights selected tier)
+            var tierBtns = resultDiv.querySelectorAll('.' + W + '-tier');
+            for (var tb = 0; tb < tierBtns.length; tb++) {
+                tierBtns[tb].addEventListener('click', function() {
+                    var allT = resultDiv.querySelectorAll('.' + W + '-tier');
+                    for (var at = 0; at < allT.length; at++) allT[at].classList.remove('sel');
+                    this.classList.add('sel');
+                });
+            }
+
+            // Wire FAQ toggles
+            var faqQs = resultDiv.querySelectorAll('.' + W + '-cs-faq-q');
+            for (var fq = 0; fq < faqQs.length; fq++) {
+                faqQs[fq].addEventListener('click', function() {
+                    var ans = this.nextElementSibling;
+                    if (ans) ans.classList.toggle('open');
+                });
+            }
+
             // Wire CTA to show embedded form
             var openFormBtn = resultDiv.querySelector('#' + W + '-open-form');
             if (openFormBtn) {
@@ -799,6 +892,50 @@
                     showEmbeddedForm(state._formEmbedUrl);
                 });
             }
+        }
+
+        function renderCustomSection(sec) {
+            var type = sec.type || 'info';
+            var iconHtml = sec.icon ? '<i class="' + sec.icon + '"></i>' : '';
+            var h = '<div class="' + W + '-custom-section">';
+            if (sec.title) {
+                h += '<div class="' + W + '-cs-title">' + iconHtml + ' ' + escHTML(sec.title) + '</div>';
+            }
+            if (type === 'list' && sec.items) {
+                h += '<ul class="' + W + '-cs-list">';
+                for (var i = 0; i < sec.items.length; i++) h += '<li>' + escHTML(sec.items[i]) + '</li>';
+                h += '</ul>';
+            } else if (type === 'steps' && sec.items) {
+                h += '<div class="' + W + '-cs-steps">';
+                for (var i = 0; i < sec.items.length; i++) {
+                    h += '<div class="' + W + '-cs-step"><span class="' + W + '-cs-step-num">' + (i + 1) + '</span><span>' + escHTML(sec.items[i]) + '</span></div>';
+                }
+                h += '</div>';
+            } else if (type === 'highlight') {
+                if (sec.badge) h += '<span class="' + W + '-cs-highlight-badge">' + escHTML(sec.badge) + '</span>';
+                h += '<p class="' + W + '-cs-highlight-text">' + escHTML(sec.text || '') + '</p>';
+                h = '<div class="' + W + '-cs-highlight">' + (sec.title ? '<div class="' + W + '-cs-title" style="justify-content:center">' + iconHtml + ' ' + escHTML(sec.title) + '</div>' : '') +
+                    (sec.badge ? '<span class="' + W + '-cs-highlight-badge">' + escHTML(sec.badge) + '</span>' : '') +
+                    '<p class="' + W + '-cs-highlight-text">' + escHTML(sec.text || '') + '</p></div>';
+                return h;
+            } else if (type === 'grid' && sec.items) {
+                h += '<div class="' + W + '-cs-grid">';
+                for (var i = 0; i < sec.items.length; i++) h += '<div class="' + W + '-cs-grid-item">' + escHTML(sec.items[i]) + '</div>';
+                h += '</div>';
+            } else if (type === 'faq' && sec.items) {
+                h += '<div class="' + W + '-cs-faq">';
+                for (var i = 0; i < sec.items.length; i++) {
+                    var item = sec.items[i];
+                    h += '<div class="' + W + '-cs-faq-q">' + escHTML(item.q || '') + '</div>' +
+                         '<div class="' + W + '-cs-faq-a">' + escHTML(item.a || '') + '</div>';
+                }
+                h += '</div>';
+            } else {
+                // info type (default)
+                h += '<p class="' + W + '-cs-info">' + escHTML(sec.text || '') + '</p>';
+            }
+            h += '</div>';
+            return h;
         }
 
         function renderError(msg) {

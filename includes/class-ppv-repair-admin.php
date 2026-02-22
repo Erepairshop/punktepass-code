@@ -2517,6 +2517,15 @@ echo '</div></div>
                         </div>
                     </div>
 
+                    <!-- Quality tiers (AI-managed) -->
+                    <div id="ra-wai-tiers-section" style="display:none;margin-top:12px"></div>
+
+                    <!-- Tiered services (AI-managed) -->
+                    <div id="ra-wai-tiered-svc-section" style="display:none;margin-top:8px"></div>
+
+                    <!-- Custom sections (AI-managed) -->
+                    <div id="ra-wai-sections-section" style="display:none;margin-top:8px"></div>
+
                     </div>
                     <!-- ═══ END VISUAL EDITOR ═══ -->
 
@@ -5300,14 +5309,21 @@ echo '</div></div>
         var currentBrands = [];
         var currentChips = [];
         var currentServices = [];
+        var currentQualityTiers = [];
+        var currentTieredServices = [];
+        var currentCustomSections = [];
 
         // Load existing config+knowledge
         var existingConfig = ' . wp_json_encode(!empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : null) . ';
         var existingKnowledge = ' . wp_json_encode(!empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null) . ';
         if (existingConfig && existingConfig.brands) currentBrands = existingConfig.brands;
         if (existingConfig && existingConfig.chips) currentChips = existingConfig.chips;
+        if (existingConfig && existingConfig.quality_tiers) currentQualityTiers = existingConfig.quality_tiers;
+        if (existingConfig && existingConfig.custom_sections) currentCustomSections = existingConfig.custom_sections;
         if (existingKnowledge && existingKnowledge.services) currentServices = existingKnowledge.services;
+        if (existingKnowledge && existingKnowledge.tiered_services) currentTieredServices = existingKnowledge.tiered_services;
         renderBrands(); renderChips(); renderServices();
+        renderQualityTiers(); renderTieredServices(); renderCustomSections();
 
         function escH(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
@@ -5570,6 +5586,94 @@ echo '</div></div>
             if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); }
         });
 
+        // ─── Quality Tiers ───
+        function renderQualityTiers(data) {
+            if (data) currentQualityTiers = data;
+            var container = document.getElementById("ra-wai-tiers-section");
+            if (!container) return;
+            if (currentQualityTiers.length === 0) { container.style.display = "none"; return; }
+            container.style.display = "";
+            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-medal-line" style="color:#f59e0b"></i> Qualitätsstufen</div>\';
+            for (var i = 0; i < currentQualityTiers.length; i++) {
+                var t = currentQualityTiers[i];
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
+                    \'<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:\' + (t.badge_color || "#667eea") + \';color:#fff;font-size:10px;font-weight:700">\' + escH(t.label || t.id) + \'</span>\' +
+                    \'<span style="flex:1;color:#475569">\' + escH(t.description || "") + \'</span>\' +
+                    \'<span class="ra-wai-del-tier" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
+            }
+            container.innerHTML = html;
+        }
+
+        // ─── Tiered Services ───
+        function renderTieredServices(data) {
+            if (data) currentTieredServices = data;
+            var container = document.getElementById("ra-wai-tiered-svc-section");
+            if (!container) return;
+            if (currentTieredServices.length === 0) { container.style.display = "none"; return; }
+            container.style.display = "";
+            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-price-tag-3-line" style="color:#059669"></i> Staffelpreise</div>\';
+            for (var i = 0; i < currentTieredServices.length; i++) {
+                var s = currentTieredServices[i];
+                var tierLabels = [];
+                if (s.tiers) {
+                    for (var tid in s.tiers) {
+                        if (s.tiers.hasOwnProperty(tid)) tierLabels.push(tid + ": " + (s.tiers[tid].price || "–"));
+                    }
+                }
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f0fdf4;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
+                    \'<b style="flex:1;color:#475569">\' + escH(s.name) + \'</b>\' +
+                    \'<span style="color:#059669;font-size:11px">\' + escH(tierLabels.join(" | ")) + \'</span>\' +
+                    \'<span class="ra-wai-del-tsvc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
+            }
+            container.innerHTML = html;
+        }
+
+        // ─── Custom Sections ───
+        function renderCustomSections(data) {
+            if (data) currentCustomSections = data;
+            var container = document.getElementById("ra-wai-sections-section");
+            if (!container) return;
+            if (currentCustomSections.length === 0) { container.style.display = "none"; return; }
+            container.style.display = "";
+            var typeIcons = {list:"ri-list-check",steps:"ri-flow-chart",highlight:"ri-flashlight-line",info:"ri-information-line",grid:"ri-layout-grid-line",faq:"ri-question-line"};
+            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-layout-masonry-line" style="color:#667eea"></i> Widget-Sektionen</div>\';
+            for (var i = 0; i < currentCustomSections.length; i++) {
+                var sec = currentCustomSections[i];
+                var ico = typeIcons[sec.type] || "ri-apps-line";
+                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#eff6ff;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
+                    \'<i class="\' + ico + \'" style="color:#667eea;font-size:14px"></i>\' +
+                    \'<b style="flex:1;color:#475569">\' + escH(sec.title || sec.id) + \'</b>\' +
+                    \'<span style="color:#94a3b8;font-size:10px;text-transform:uppercase">\' + escH(sec.type || "info") + \'</span>\' +
+                    \'<span class="ra-wai-del-sec" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
+            }
+            container.innerHTML = html;
+        }
+
+        // ─── Delete handlers for tiers/tiered-services/sections ───
+        document.addEventListener("click", function(e) {
+            var delTier = e.target.closest(".ra-wai-del-tier");
+            if (delTier) {
+                currentQualityTiers.splice(parseInt(delTier.dataset.idx), 1);
+                renderQualityTiers();
+                editorSave("quality_tiers", currentQualityTiers);
+                return;
+            }
+            var delTsvc = e.target.closest(".ra-wai-del-tsvc");
+            if (delTsvc) {
+                currentTieredServices.splice(parseInt(delTsvc.dataset.idx), 1);
+                renderTieredServices();
+                editorSave("tiered_services", currentTieredServices);
+                return;
+            }
+            var delSec = e.target.closest(".ra-wai-del-sec");
+            if (delSec) {
+                currentCustomSections.splice(parseInt(delSec.dataset.idx), 1);
+                renderCustomSections();
+                editorSave("custom_sections", currentCustomSections);
+                return;
+            }
+        });
+
         function addMessage(role, text) {
             var div = document.createElement("div");
             div.className = "ra-wai-msg " + role;
@@ -5670,6 +5774,21 @@ echo '</div></div>
                             // Update services display
                             if (acts.indexOf("services") >= 0 && data.data.knowledge && data.data.knowledge.services) {
                                 renderServices(data.data.knowledge.services);
+                            }
+
+                            // Update quality tiers display
+                            if (acts.indexOf("quality_tiers") >= 0 && cfg.quality_tiers) {
+                                renderQualityTiers(cfg.quality_tiers);
+                            }
+
+                            // Update tiered services display
+                            if (acts.indexOf("tiered_services") >= 0 && data.data.knowledge && data.data.knowledge.tiered_services) {
+                                renderTieredServices(data.data.knowledge.tiered_services);
+                            }
+
+                            // Update custom sections display
+                            if (acts.indexOf("custom_sections") >= 0 && cfg.custom_sections) {
+                                renderCustomSections(cfg.custom_sections);
                             }
 
                             // Update setup status

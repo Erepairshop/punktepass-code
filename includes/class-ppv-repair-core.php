@@ -1629,6 +1629,30 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
 - Be honest if unsure, give wider range
 - The price is an ESTIMATE, mention they should contact the shop for exact quote";
 
+        // Quality tiers and tiered pricing
+        $config = !empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : [];
+        $quality_tiers = $config['quality_tiers'] ?? [];
+        $tiered_services = $knowledge['tiered_services'] ?? [];
+        if (!empty($quality_tiers) && !empty($tiered_services)) {
+            $system .= "\n\nQUALITY TIERS – This shop offers multiple quality levels:";
+            foreach ($quality_tiers as $tier) {
+                $system .= "\n• " . ($tier['label'] ?? $tier['id']) . ": " . ($tier['description'] ?? '');
+            }
+            $system .= "\n\nTIERED PRICES (use these when available):";
+            foreach ($tiered_services as $tsvc) {
+                $line = "\n• " . ($tsvc['name'] ?? '');
+                if (!empty($tsvc['tiers'])) {
+                    $parts = [];
+                    foreach ($tsvc['tiers'] as $tid => $tdata) {
+                        $parts[] = $tid . ": " . ($tdata['price'] ?? '–');
+                    }
+                    $line .= " → " . implode(' | ', $parts);
+                }
+                $system .= $line;
+            }
+            $system .= "\n\nWhen giving PRICE estimates, mention BOTH quality options if tiered prices exist for the service.";
+        }
+
         if ($knowledge) {
             if (!empty($knowledge['notes'])) {
                 $system .= "\n\nADDITIONAL STORE INFO:\n" . $knowledge['notes'];
@@ -1734,13 +1758,16 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         }
 
         wp_send_json_success([
-            'brands'       => $brands,
-            'chips'        => $chips,
-            'greeting'     => $config['greeting'] ?? '',
-            'services'     => $knowledge['services'] ?? [],
-            'ai_tone'      => $config['ai_tone'] ?? 'professional',
-            'opening_hours' => $config['opening_hours'] ?? '',
-            'turnaround'   => $config['turnaround'] ?? '',
+            'brands'           => $brands,
+            'chips'            => $chips,
+            'greeting'         => $config['greeting'] ?? '',
+            'services'         => $knowledge['services'] ?? [],
+            'ai_tone'          => $config['ai_tone'] ?? 'professional',
+            'opening_hours'    => $config['opening_hours'] ?? '',
+            'turnaround'       => $config['turnaround'] ?? '',
+            'quality_tiers'    => $config['quality_tiers'] ?? [],
+            'tiered_services'  => $knowledge['tiered_services'] ?? [],
+            'custom_sections'  => $config['custom_sections'] ?? [],
         ]);
     }
 
@@ -1884,9 +1911,76 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $ai_text = str_replace($m[0], '', $ai_text);
         }
 
+        // [SET_TIERS:JSON] – set quality tiers (e.g. Standard/Premium)
+        if (preg_match('/\[SET_TIERS:(\[.+?\])\]/is', $ai_text, $m)) {
+            $tiers = json_decode($m[1], true);
+            if (is_array($tiers)) {
+                $current_config['quality_tiers'] = $tiers;
+                $actions_applied[] = 'quality_tiers';
+            }
+            $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
+        // [ADD_SECTION:JSON] – add a custom section to widget
+        if (preg_match_all('/\[ADD_SECTION:(\{.+?\})\]/is', $ai_text, $matches, PREG_SET_ORDER)) {
+            if (!isset($current_config['custom_sections'])) $current_config['custom_sections'] = [];
+            foreach ($matches as $match) {
+                $section = json_decode($match[1], true);
+                if (is_array($section) && !empty($section['id'])) {
+                    // Replace existing section with same id
+                    $found = false;
+                    foreach ($current_config['custom_sections'] as $i => $existing) {
+                        if (($existing['id'] ?? '') === $section['id']) {
+                            $current_config['custom_sections'][$i] = $section;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) $current_config['custom_sections'][] = $section;
+                }
+                $ai_text = str_replace($match[0], '', $ai_text);
+            }
+            $actions_applied[] = 'custom_sections';
+        }
+
+        // [SET_SECTIONS:JSON] – replace all custom sections
+        if (preg_match('/\[SET_SECTIONS:(\[.+?\])\]/is', $ai_text, $m)) {
+            $sections = json_decode($m[1], true);
+            if (is_array($sections)) {
+                $current_config['custom_sections'] = $sections;
+                $actions_applied[] = 'custom_sections';
+            }
+            $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
+        // [REMOVE_SECTION:id] – remove a custom section by id
+        if (preg_match_all('/\[REMOVE_SECTION:([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
+            if (isset($current_config['custom_sections'])) {
+                foreach ($matches as $match) {
+                    $remove_id = trim($match[1]);
+                    $current_config['custom_sections'] = array_values(array_filter(
+                        $current_config['custom_sections'],
+                        function($s) use ($remove_id) { return ($s['id'] ?? '') !== $remove_id; }
+                    ));
+                    $ai_text = str_replace($match[0], '', $ai_text);
+                }
+                $actions_applied[] = 'custom_sections';
+            }
+        }
+
+        // [SET_SERVICE_TIERS:JSON] – set tiered pricing for services
+        if (preg_match('/\[SET_SERVICE_TIERS:(\[.+?\])\]/is', $ai_text, $m)) {
+            $tiered_services = json_decode($m[1], true);
+            if (is_array($tiered_services)) {
+                $current_knowledge['tiered_services'] = $tiered_services;
+                $actions_applied[] = 'tiered_services';
+            }
+            $ai_text = str_replace($m[0], '', $ai_text);
+        }
+
         // Safety catch-all: strip any remaining action markers the AI may have output
         // Handles multiline markers too with 's' flag
-        $ai_text = preg_replace('/\[(SET|SET_BRANDS|SET_CHIPS|ADD_SERVICE|SET_SERVICES|SET_KNOWLEDGE|SETUP_COMPLETE)[^\]]*\]/is', '', $ai_text);
+        $ai_text = preg_replace('/\[(SET|SET_BRANDS|SET_CHIPS|ADD_SERVICE|SET_SERVICES|SET_KNOWLEDGE|SET_TIERS|ADD_SECTION|SET_SECTIONS|REMOVE_SECTION|SET_SERVICE_TIERS|SETUP_COMPLETE)[^\]]*\]/is', '', $ai_text);
         // Clean up leftover whitespace from removed markers
         $ai_text = preg_replace('/\n{3,}/', "\n\n", trim($ai_text));
 
@@ -1960,6 +2054,21 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $current_knowledge['services'] = $services;
             $wpdb->update($stores_table, ['widget_ai_knowledge' => wp_json_encode($current_knowledge)], ['id' => $store_id]);
             wp_send_json_success(['saved' => 'services', 'count' => count($services)]);
+
+        } elseif ($field === 'quality_tiers' && is_array($data)) {
+            $current_config['quality_tiers'] = $data;
+            $wpdb->update($stores_table, ['widget_ai_config' => wp_json_encode($current_config)], ['id' => $store_id]);
+            wp_send_json_success(['saved' => 'quality_tiers', 'count' => count($data)]);
+
+        } elseif ($field === 'tiered_services' && is_array($data)) {
+            $current_knowledge['tiered_services'] = $data;
+            $wpdb->update($stores_table, ['widget_ai_knowledge' => wp_json_encode($current_knowledge)], ['id' => $store_id]);
+            wp_send_json_success(['saved' => 'tiered_services', 'count' => count($data)]);
+
+        } elseif ($field === 'custom_sections' && is_array($data)) {
+            $current_config['custom_sections'] = $data;
+            $wpdb->update($stores_table, ['widget_ai_config' => wp_json_encode($current_config)], ['id' => $store_id]);
+            wp_send_json_success(['saved' => 'custom_sections', 'count' => count($data)]);
 
         } elseif ($field === 'ai_expand_models' && is_array($data)) {
             // AI-assisted model expansion
@@ -2036,7 +2145,10 @@ CURRENT STATUS:
 - Current config: {$config_json}
 - Current knowledge: {$knowledge_json}
 
-YOU CAN CONFIGURE THE FOLLOWING (use action markers):
+YOU HAVE FULL CONTROL over the widget. The owner trusts you to configure EVERYTHING they ask for.
+Use action markers to apply changes. You can combine multiple markers in one response.
+
+═══ BASIC SETTINGS ═══
 
 1. WIDGET MODE:
    [SET:mode=float] – Floating button (default)
@@ -2053,32 +2165,63 @@ YOU CAN CONFIGURE THE FOLLOWING (use action markers):
 
 3. DEVICE BRANDS (for AI diagnosis step 1, brand names are universal):
    [SET_BRANDS:Apple,Samsung,Huawei,Xiaomi,Google,OnePlus]
-   Customize based on shop specialization
 
 4. PROBLEM CHIPS (for AI diagnosis step 2 quick-select, MUST be in {$widget_lang_name}):
    [SET_CHIPS:Broken display,Weak battery,Not charging,Water damage,Camera broken,No sound]
 
-5. PRICE LIST / SERVICES (what the shop offers + prices):
+5. AI PERSONALITY:
+   [SET:ai_tone=professional] – Professional (default)
+   [SET:ai_tone=friendly] – Friendly and casual
+   [SET:ai_tone=expert] – Technically proficient
+
+═══ SERVICES & PRICING ═══
+
+6. SIMPLE SERVICES (single price per service):
    [ADD_SERVICE:Display Repair iPhone|80-150 EUR|1-2 hours]
-   [ADD_SERVICE:Battery Replacement Samsung|40-70 EUR|30 min]
    Or all at once:
    [SET_SERVICES:[{\"name\":\"Display iPhone\",\"price\":\"80-150 EUR\",\"time\":\"1-2h\"}]]
 
-6. SHOP KNOWLEDGE (used during diagnoses):
+7. QUALITY TIERS (e.g. Standard vs Premium quality levels):
+   First define the tiers:
+   [SET_TIERS:[{\"id\":\"standard\",\"label\":\"Standard\",\"description\":\"Nachbau-Teile\",\"badge_color\":\"#3b82f6\"},{\"id\":\"premium\",\"label\":\"Premium\",\"description\":\"Original-Teile\",\"badge_color\":\"#f59e0b\"}]]
+   Then set tiered pricing for services:
+   [SET_SERVICE_TIERS:[{\"name\":\"Display iPhone 14\",\"tiers\":{\"standard\":{\"price\":\"89 EUR\",\"time\":\"1h\"},\"premium\":{\"price\":\"149 EUR\",\"time\":\"1h\"}}},{\"name\":\"Akku Samsung Galaxy\",\"tiers\":{\"standard\":{\"price\":\"39 EUR\",\"time\":\"30min\"},\"premium\":{\"price\":\"59 EUR\",\"time\":\"30min\"}}}]]
+   → Tiers can have any id/label: \"economy\", \"standard\", \"premium\", \"original\", etc.
+   → The widget will show ALL tiers side by side so the customer can choose.
+
+═══ SHOP KNOWLEDGE (AI uses this during diagnoses) ═══
+
+8. KNOWLEDGE FIELDS:
    [SET_KNOWLEDGE:warranty=6 months warranty on all repairs]
    [SET_KNOWLEDGE:specialties=Apple specialist,Water damage expert]
    [SET_KNOWLEDGE:payment_methods=Cash,Card,PayPal,Transfer]
    [SET_KNOWLEDGE:notes=We use only original parts]
    [SET_KNOWLEDGE:turnaround=Most repairs same day]
    [SET_KNOWLEDGE:opening_hours=Mon-Fri 10-18, Sat 10-14]
+   → You can use ANY key name. Common: warranty, specialties, payment_methods, notes, turnaround, opening_hours, location, appointment_info, pickup_service, express_info
 
-7. AI PERSONALITY:
-   [SET:ai_tone=professional] – Professional (default)
-   [SET:ai_tone=friendly] – Friendly and casual
-   [SET:ai_tone=expert] – Technically proficient
+═══ CUSTOM SECTIONS (flexible widget content) ═══
 
-8. COMPLETE SETUP:
-   [SETUP_COMPLETE] – When everything is configured
+9. ADD CUSTOM SECTIONS to the widget (displayed after diagnosis result):
+   [ADD_SECTION:{\"id\":\"quality-info\",\"title\":\"Unsere Qualitätsstufen\",\"icon\":\"ri-shield-star-line\",\"type\":\"list\",\"items\":[\"Standard: Hochwertige Nachbau-Teile\",\"Premium: Original-Teile vom Hersteller\"]}]
+   [ADD_SECTION:{\"id\":\"process\",\"title\":\"So funktioniert es\",\"icon\":\"ri-flow-chart\",\"type\":\"steps\",\"items\":[\"Gerät abgeben\",\"Kostenlose Diagnose\",\"Reparatur\",\"Abholung\"]}]
+   [ADD_SECTION:{\"id\":\"guarantees\",\"title\":\"Unsere Garantien\",\"icon\":\"ri-shield-check-line\",\"type\":\"list\",\"items\":[\"6 Monate Garantie\",\"Kostenlose Nachbesserung\",\"Keine versteckten Kosten\"]}]
+   [ADD_SECTION:{\"id\":\"express\",\"title\":\"Express Service\",\"icon\":\"ri-flashlight-line\",\"type\":\"highlight\",\"text\":\"Die meisten Reparaturen innerhalb von 1 Stunde!\",\"badge\":\"EXPRESS\"}]
+
+   Section types:
+   - \"list\" → bullet list of items
+   - \"steps\" → numbered process steps
+   - \"highlight\" → colored callout box with text + optional badge
+   - \"info\" → simple text paragraph
+   - \"grid\" → 2-column grid of items (good for features/benefits)
+   - \"faq\" → FAQ accordion with [{\"q\":\"Question\",\"a\":\"Answer\"}] items
+
+   [SET_SECTIONS:[...]] – Replace ALL custom sections at once
+   [REMOVE_SECTION:id] – Remove a section by id
+
+═══ COMPLETE SETUP ═══
+
+10. [SETUP_COMPLETE] – When everything is configured
 
 IMPORTANT – WIDGET LANGUAGE vs ADMIN LANGUAGE:
 - You chat with the admin in {$lang_name} (their language)
@@ -2086,21 +2229,26 @@ IMPORTANT – WIDGET LANGUAGE vs ADMIN LANGUAGE:
 - ALL content saved via action markers MUST be in {$widget_lang_name}:
   → [SET_BRANDS:...] brand names in {$widget_lang_name}
   → [SET_CHIPS:...] problem descriptions in {$widget_lang_name}
-  → [ADD_SERVICE:...] service names in {$widget_lang_name}
+  → [ADD_SERVICE:...] / [SET_SERVICE_TIERS:...] service names in {$widget_lang_name}
   → [SET_KNOWLEDGE:...] knowledge texts in {$widget_lang_name}
+  → [ADD_SECTION:...] section titles and content in {$widget_lang_name}
   → [SET:greeting=...] greeting text in {$widget_lang_name}
 - Only your conversation text is in {$lang_name}
 
 RULES:
 - ALWAYS respond in {$lang_name}
 - ALL action marker VALUES must be in {$widget_lang_name} (the widget language customers see)
-- Ask the owner step by step what they want
-- When they paste a price list/text, parse it and use [ADD_SERVICE:...] for each entry
+- You have FULL AUTHORIZATION – whatever the shop owner asks, configure it
+- If the owner asks for quality tiers → use SET_TIERS + SET_SERVICE_TIERS
+- If the owner asks for custom info sections → use ADD_SECTION with appropriate type
+- If the owner describes something you can represent with existing markers → use them
+- When they paste a price list/text, parse it and use [ADD_SERVICE:...] or [SET_SERVICE_TIERS:...] for each entry
 - Briefly explain what you changed after each action
 - Suggest improvements based on the service type
 - If the user mentions an image/file, tell them to use the upload button
 - Action markers are processed automatically and NOT shown to the user
 - ALWAYS use action markers when you need to change something
+- You can combine multiple markers in a single response
 - Only set [SETUP_COMPLETE] when at least mode, color and a few services are configured
 - Maximum 3-4 sentences per response, be concise";
     }
