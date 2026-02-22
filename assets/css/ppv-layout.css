@@ -379,7 +379,7 @@ body {
     max-width: 768px;
     margin: 0 auto;
     padding: 0;
-    padding-top: calc(var(--pp-header-height, 64px) + env(safe-area-inset-top, 0px) + 12px);
+    padding-top: 12px;
     padding-bottom: calc(var(--pp-nav-height, 72px) + 32px + env(safe-area-inset-bottom, 0px));
     min-height: 100vh;
 }
