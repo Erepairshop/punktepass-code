@@ -5459,7 +5459,12 @@ echo '</div></div>
                 html += \'<span style="background:\' + (isOpen ? \'#dbeafe\' : \'#f1f5f9\') + \';padding:2px 10px;border-radius:12px;font-size:11px;color:\' + (isOpen ? \'#2563eb\' : \'#64748b\') + \';font-weight:700">\' + items.length + \'</span>\';
                 html += \'</div>\';
                 if (isOpen) {
-                    html += \'<div style="padding:4px 0 0 0">\';
+                    html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;margin-top:4px;flex-wrap:wrap">\';
+                    html += \'<span class="ra-svc-cat-time" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0284c7;cursor:pointer;transition:all .15s;font-weight:600" title="Zeit fur alle setzen"><i class="ri-time-line" style="font-size:12px"></i> Alle: Zeit</span>\';
+                    html += \'<span class="ra-svc-cat-rename" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#a16207;cursor:pointer;transition:all .15s;font-weight:600" title="Kategorie umbenennen"><i class="ri-edit-line" style="font-size:12px"></i> Umbenennen</span>\';
+                    html += \'<span class="ra-svc-cat-del" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:11px;color:#dc2626;cursor:pointer;transition:all .15s;font-weight:600" title="Kategorie loschen"><i class="ri-delete-bin-line" style="font-size:12px"></i> Loschen (\' + items.length + \')</span>\';
+                    html += \'</div>\';
+                    html += \'<div style="padding:2px 0 0 0">\';
                     items.forEach(function(item) {
                         var s = item.svc, idx = item.idx;
                         html += \'<div class="ra-svc-row" data-idx="\' + idx + \'" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;border:1px solid #f1f5f9;border-radius:8px;font-size:13px;color:#475569;margin-bottom:2px;transition:border-color .15s">\';
@@ -5507,6 +5512,74 @@ echo '</div></div>
             // Delete
             var del = e.target.closest(".ra-wai-del[data-type=svc]");
             if (del) { currentServices.splice(parseInt(del.dataset.idx), 1); renderServices(); editorSave("services", currentServices); return; }
+            // Bulk time edit for category
+            var catTime = e.target.closest(".ra-svc-cat-time");
+            if (catTime) {
+                e.stopPropagation();
+                if (catTime.querySelector("input")) return;
+                var cat = catTime.dataset.cat;
+                catTime.innerHTML = "";
+                var inp = document.createElement("input");
+                inp.type = "text"; inp.placeholder = "z.B. 1 Std";
+                inp.style.cssText = "width:90px;padding:3px 6px;border:1.5px solid #3b82f6;border-radius:6px;font-size:11px;outline:none;background:#eff6ff;font-family:inherit";
+                catTime.appendChild(inp);
+                inp.focus();
+                function commitBulk() {
+                    var nv = inp.value.trim();
+                    if (nv) {
+                        currentServices.forEach(function(s) { if ((s.category || "Allgemein") === cat) s.time = nv; });
+                        editorSave("services", currentServices);
+                    }
+                    renderServices();
+                }
+                inp.addEventListener("blur", commitBulk);
+                inp.addEventListener("keydown", function(ev) {
+                    if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); }
+                    if (ev.key === "Escape") { renderServices(); }
+                });
+                return;
+            }
+            // Category rename
+            var catRen = e.target.closest(".ra-svc-cat-rename");
+            if (catRen) {
+                e.stopPropagation();
+                if (catRen.querySelector("input")) return;
+                var oldCat = catRen.dataset.cat;
+                catRen.innerHTML = "";
+                var inp2 = document.createElement("input");
+                inp2.type = "text"; inp2.value = oldCat;
+                inp2.style.cssText = "width:140px;padding:3px 6px;border:1.5px solid #f59e0b;border-radius:6px;font-size:11px;outline:none;background:#fefce8;font-family:inherit";
+                catRen.appendChild(inp2);
+                inp2.focus(); inp2.select();
+                function commitRename() {
+                    var nv = inp2.value.trim();
+                    if (nv && nv !== oldCat) {
+                        currentServices.forEach(function(s) { if ((s.category || "Allgemein") === oldCat) s.category = nv; });
+                        openCats[nv] = true; delete openCats[oldCat];
+                        editorSave("services", currentServices);
+                    }
+                    renderServices();
+                }
+                inp2.addEventListener("blur", commitRename);
+                inp2.addEventListener("keydown", function(ev) {
+                    if (ev.key === "Enter") { ev.preventDefault(); inp2.blur(); }
+                    if (ev.key === "Escape") { renderServices(); }
+                });
+                return;
+            }
+            // Category delete (with confirm)
+            var catDel = e.target.closest(".ra-svc-cat-del");
+            if (catDel) {
+                e.stopPropagation();
+                var delCat = catDel.dataset.cat;
+                var cnt = 0;
+                currentServices.forEach(function(s) { if ((s.category || "Allgemein") === delCat) cnt++; });
+                if (!confirm("Kategorie \"" + delCat + "\" mit " + cnt + " Service" + (cnt !== 1 ? "s" : "") + " wirklich loschen?")) return;
+                currentServices = currentServices.filter(function(s) { return (s.category || "Allgemein") !== delCat; });
+                delete openCats[delCat];
+                renderServices(); editorSave("services", currentServices);
+                return;
+            }
             // Category toggle
             var catHdr = e.target.closest(".ra-svc-cat-hdr");
             if (catHdr) { var cn = catHdr.dataset.cat; openCats[cn] = !openCats[cn]; renderServices(); return; }
