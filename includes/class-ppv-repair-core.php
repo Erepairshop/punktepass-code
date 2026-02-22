@@ -1817,7 +1817,10 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         }
         $messages[] = ['role' => 'user', 'content' => $message];
 
-        $result = PPV_AI_Engine::chat_with_history($system, $messages, ['model' => PPV_AI_Engine::MODEL_FAST]);
+        $result = PPV_AI_Engine::chat_with_history($system, $messages, [
+            'model'      => PPV_AI_Engine::MODEL_FAST,
+            'max_tokens' => 2000,  // Config chat needs more tokens for large JSON markers
+        ]);
         if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
 
         $ai_text = $result['text'];
@@ -1978,9 +1981,8 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $ai_text = str_replace($m[0], '', $ai_text);
         }
 
-        // Safety catch-all: strip any remaining action markers the AI may have output
-        // Handles multiline markers too with 's' flag
-        $ai_text = preg_replace('/\[(SET|SET_BRANDS|SET_CHIPS|ADD_SERVICE|SET_SERVICES|SET_KNOWLEDGE|SET_TIERS|ADD_SECTION|SET_SECTIONS|REMOVE_SECTION|SET_SERVICE_TIERS|SETUP_COMPLETE)[^\]]*\]/is', '', $ai_text);
+        // Safety catch-all: strip ALL remaining action markers (handles nested JSON via bracket counting)
+        $ai_text = self::strip_action_markers($ai_text);
         // Clean up leftover whitespace from removed markers
         $ai_text = preg_replace('/\n{3,}/', "\n\n", trim($ai_text));
 
@@ -2111,6 +2113,45 @@ Example output: [\"iPhone 13\",\"iPhone 13 mini\",\"iPhone 13 Pro\",\"iPhone 13 
         } else {
             wp_send_json_error(['message' => 'Invalid field']);
         }
+    }
+
+    /**
+     * Strip all action markers from AI response text, handling nested JSON brackets.
+     * Finds [MARKER_NAME:...] patterns and removes them using bracket-depth counting.
+     * Also strips truncated markers at end of text (from token limit cutoff).
+     */
+    private static function strip_action_markers($text) {
+        $markers = ['SET_SERVICE_TIERS','SET_SERVICES','SET_SECTIONS','SET_TIERS','SET_BRANDS','SET_CHIPS',
+                     'SET_KNOWLEDGE','ADD_SERVICE','ADD_SECTION','REMOVE_SECTION','SET','SETUP_COMPLETE'];
+        foreach ($markers as $name) {
+            $offset = 0;
+            while (($pos = stripos($text, '[' . $name, $offset)) !== false) {
+                // Find the matching closing bracket using depth counting
+                $i = $pos + 1; // skip the opening [
+                $len = strlen($text);
+                $depth = 1;
+                $in_str = false;
+                while ($i < $len && $depth > 0) {
+                    $c = $text[$i];
+                    if ($c === '\\' && $in_str) { $i += 2; continue; }
+                    if ($c === '"') { $in_str = !$in_str; }
+                    elseif (!$in_str) {
+                        if ($c === '[') $depth++;
+                        elseif ($c === ']') $depth--;
+                    }
+                    $i++;
+                }
+                if ($depth === 0) {
+                    // Complete marker – remove it
+                    $text = substr($text, 0, $pos) . substr($text, $i);
+                } else {
+                    // Truncated marker (never closed) – remove from start to end of text
+                    $text = substr($text, 0, $pos);
+                    break;
+                }
+            }
+        }
+        return $text;
     }
 
     /**
