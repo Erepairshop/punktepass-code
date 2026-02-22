@@ -2566,6 +2566,23 @@ echo '</div></div>
                             </div>
                         </div>
 
+                        <!-- AI CSV Tipp -->
+                        <div style="background:linear-gradient(135deg,#faf5ff,#f5f3ff);border:1.5px solid #ddd6fe;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px">
+                            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                <i class="ri-sparkling-2-fill" style="font-size:18px;color:#fff"></i>
+                            </div>
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:4px">Tipp: CSV mit KI erstellen!</div>
+                                <div style="font-size:12px;color:#6b7280;line-height:1.5">
+                                    Keine Lust die CSV-Datei manuell zu erstellen? Lassen Sie <strong style="color:#5b21b6">Claude AI</strong> Ihre Preisliste generieren &ndash; einfach Ihre Services beschreiben und die fertige CSV herunterladen.
+                                </div>
+                                <a href="https://claude.ai" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 14px;background:#7c3aed;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:background .2s" onmouseover="this.style.background=\'#6d28d9\'" onmouseout="this.style.background=\'#7c3aed\'">
+                                    <i class="ri-external-link-line" style="font-size:13px"></i>
+                                    claude.ai &ouml;ffnen
+                                </a>
+                            </div>
+                        </div>
+
                         <!-- Upload area -->
                         <div id="ra-wai-upload-area" style="border:2px dashed #d1d5db;border-radius:14px;padding:32px 16px;text-align:center;cursor:pointer;transition:all .25s;background:#fafbfc">
                             <input type="file" id="ra-wai-file" accept=".csv,.txt,.xlsx,.xls" style="display:none">
