@@ -458,13 +458,17 @@
         '.' + W + '-cat-items{max-height:0;overflow:hidden;transition:max-height .3s ease;background:#fafbfc}' +
         '.' + W + '-cat-section.open .' + W + '-cat-items{max-height:9999px}' +
 
-        /* Service rows */
-        '.' + W + '-cat-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 10px 58px;border-top:1px solid #f1f5f9;gap:8px;min-height:44px}' +
+        /* Service rows – clickable cards */
+        '.' + W + '-cat-row{display:flex;align-items:center;padding:12px 16px 12px 58px;border-top:1px solid #f1f5f9;gap:10px;min-height:52px;cursor:pointer;transition:all .15s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative}' +
         '.' + W + '-cat-row:first-child{border-top:none}' +
-        '.' + W + '-cat-name{flex:1;min-width:0;font-size:13px;color:#334155;line-height:1.3;overflow:hidden;text-overflow:ellipsis}' +
+        '.' + W + '-cat-row:hover{background:#f0f7ff}' +
+        '.' + W + '-cat-row:active{background:#e0efff;transform:scale(.995)}' +
+        '.' + W + '-cat-name{flex:1;min-width:0;font-size:14px;font-weight:500;color:#1e293b;line-height:1.3;overflow:hidden;text-overflow:ellipsis}' +
         '.' + W + '-cat-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}' +
-        '.' + W + '-cat-time{font-size:11px;color:#94a3b8;white-space:nowrap}' +
-        '.' + W + '-cat-price{font-size:13px;font-weight:700;color:' + config.color + ';white-space:nowrap;background:' + config.color + '10;padding:3px 10px;border-radius:6px}' +
+        '.' + W + '-cat-time{font-size:11px;color:#64748b;white-space:nowrap;background:#f1f5f9;padding:2px 8px;border-radius:4px}' +
+        '.' + W + '-cat-price{font-size:14px;font-weight:800;color:' + config.color + ';white-space:nowrap;background:' + config.color + '12;padding:4px 12px;border-radius:8px}' +
+        '.' + W + '-cat-arrow{width:18px;height:18px;color:#94a3b8;flex-shrink:0;transition:transform .2s,color .2s}' +
+        '.' + W + '-cat-row:hover .' + W + '-cat-arrow{color:' + config.color + ';transform:translateX(2px)}' +
 
         /* Hours section */
         '#' + W + '-cat-hours{padding:16px;background:#fff;border-bottom:1px solid #f1f5f9}' +
@@ -487,11 +491,6 @@
         '.' + W + '-cat-contact-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:#475569;text-decoration:none}' +
         'a.' + W + '-cat-contact-row:hover{color:' + config.color + '}' +
         '.' + W + '-cat-contact-icon{width:32px;height:32px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}' +
-
-        /* Clickable service rows */
-        '.' + W + '-cat-row{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
-        '.' + W + '-cat-row:hover{background:#f0f9ff}' +
-        '.' + W + '-cat-row:active{background:#e0f2fe}' +
 
         /* Confirm overlay */
         '#' + W + '-cat-confirm{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;background:#fff;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}' +
@@ -879,9 +878,10 @@
                     html += '<div class="' + W + '-cat-row" data-svc-idx="' + origIdx + '" data-search="' + escH((svc.name || '').toLowerCase() + ' ' + (catName).toLowerCase()) + '">' +
                         '<span class="' + W + '-cat-name">' + escH(svc.name || '') + '</span>' +
                         '<span class="' + W + '-cat-meta">' +
-                            (svc.time ? '<span class="' + W + '-cat-time">' + escH(svc.time) + '</span>' : '') +
+                            (svc.time ? '<span class="' + W + '-cat-time">\u23F1 ' + escH(svc.time) + '</span>' : '') +
                             (svc.price ? '<span class="' + W + '-cat-price">' + escH(svc.price) + '</span>' : '') +
                         '</span>' +
+                        '<svg class="' + W + '-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
                     '</div>';
                 }
                 html += '</div></div>';
