@@ -133,6 +133,17 @@ class PPV_Repair_Core {
             add_action("wp_ajax_nopriv_{$action}", $callback);
         }
 
+        // AJAX: Termine (appointments calendar) actions
+        $termine_actions = [
+            'ppv_repair_termine_list'   => [__CLASS__, 'ajax_termine_list'],
+            'ppv_repair_termine_save'   => [__CLASS__, 'ajax_termine_save'],
+            'ppv_repair_termine_delete' => [__CLASS__, 'ajax_termine_delete'],
+        ];
+        foreach ($termine_actions as $action => $callback) {
+            add_action("wp_ajax_{$action}", $callback);
+            add_action("wp_ajax_nopriv_{$action}", $callback);
+        }
+
         // AJAX: invoice actions (also need nopriv for session-based auth)
         $invoice_actions = [
             'ppv_repair_invoice_pdf'     => ['PPV_Repair_Invoice', 'ajax_download_pdf'],
@@ -1079,6 +1090,39 @@ class PPV_Repair_Core {
                 }
             }
             update_option('ppv_repair_migration_version', '3.2');
+        }
+
+        // v3.3: Termine (appointments) table
+        if (version_compare($version, '3.3', '<')) {
+            $charset = $wpdb->get_charset_collate();
+            $table = $wpdb->prefix . 'ppv_repair_termine';
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                store_id BIGINT(20) UNSIGNED NOT NULL,
+                repair_id BIGINT(20) UNSIGNED NULL,
+                customer_name VARCHAR(255) NOT NULL DEFAULT '',
+                customer_phone VARCHAR(50) NULL,
+                title VARCHAR(255) NOT NULL,
+                termin_date DATE NOT NULL,
+                termin_time TIME NULL,
+                duration INT UNSIGNED DEFAULT 30,
+                termin_type VARCHAR(50) DEFAULT 'general',
+                status VARCHAR(20) DEFAULT 'scheduled',
+                notes TEXT NULL,
+                color VARCHAR(10) NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_store (store_id),
+                KEY idx_store_date (store_id, termin_date),
+                KEY idx_repair (repair_id)
+            ) {$charset};";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            update_option('ppv_repair_migration_version', '3.3');
         }
     }
 
@@ -3662,6 +3706,132 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         }
 
         wp_mail($repair->customer_email, $subject, $body, $headers);
+    }
+
+    /* ============================================================
+     * TERMINE (Appointments Calendar) AJAX Handlers
+     * ============================================================ */
+
+    /** AJAX: List termine for a month */
+    public static function ajax_termine_list() {
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $year  = intval($_POST['year']  ?? date('Y'));
+        $month = intval($_POST['month'] ?? date('n'));
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_termine';
+
+        // Get all termine for the requested month
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-t', strtotime($start));
+
+        $termine = $wpdb->get_results($wpdb->prepare(
+            "SELECT t.*, r.device_brand, r.device_model, r.problem_description
+             FROM {$table} t
+             LEFT JOIN {$wpdb->prefix}ppv_repairs r ON t.repair_id = r.id
+             WHERE t.store_id = %d AND t.termin_date BETWEEN %s AND %s
+             ORDER BY t.termin_date ASC, t.termin_time ASC",
+            $store_id, $start, $end
+        ));
+
+        // Also fetch repairs that have termin_at in this month (from existing system)
+        $repair_termine = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, customer_name, customer_phone, device_brand, device_model,
+                    problem_description, termin_at, status
+             FROM {$wpdb->prefix}ppv_repairs
+             WHERE store_id = %d AND termin_at IS NOT NULL
+               AND DATE(termin_at) BETWEEN %s AND %s
+               AND status NOT IN ('delivered','cancelled')
+             ORDER BY termin_at ASC",
+            $store_id, $start, $end
+        ));
+
+        wp_send_json_success([
+            'termine'        => $termine ?: [],
+            'repair_termine' => $repair_termine ?: [],
+        ]);
+    }
+
+    /** AJAX: Save (create/update) a termin */
+    public static function ajax_termine_save() {
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $id            = intval($_POST['id'] ?? 0);
+        $title         = sanitize_text_field($_POST['title'] ?? '');
+        $customer_name = sanitize_text_field($_POST['customer_name'] ?? '');
+        $customer_phone= sanitize_text_field($_POST['customer_phone'] ?? '');
+        $termin_date   = sanitize_text_field($_POST['termin_date'] ?? '');
+        $termin_time   = sanitize_text_field($_POST['termin_time'] ?? '');
+        $duration      = intval($_POST['duration'] ?? 30);
+        $termin_type   = sanitize_text_field($_POST['termin_type'] ?? 'general');
+        $status        = sanitize_text_field($_POST['status'] ?? 'scheduled');
+        $notes         = sanitize_textarea_field($_POST['notes'] ?? '');
+        $color         = sanitize_text_field($_POST['color'] ?? '');
+        $repair_id     = intval($_POST['repair_id'] ?? 0) ?: null;
+
+        if (empty($title)) wp_send_json_error(['message' => 'Titel erforderlich']);
+        if (empty($termin_date)) wp_send_json_error(['message' => 'Datum erforderlich']);
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_termine';
+
+        $data = [
+            'store_id'       => $store_id,
+            'repair_id'      => $repair_id,
+            'customer_name'  => $customer_name,
+            'customer_phone' => $customer_phone,
+            'title'          => $title,
+            'termin_date'    => $termin_date,
+            'termin_time'    => $termin_time ?: null,
+            'duration'       => $duration,
+            'termin_type'    => $termin_type,
+            'status'         => $status,
+            'notes'          => $notes,
+            'color'          => $color ?: null,
+        ];
+
+        if ($id > 0) {
+            // Update - verify ownership
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT store_id FROM {$table} WHERE id = %d", $id
+            ));
+            if ((int)$existing !== (int)$store_id) {
+                wp_send_json_error(['message' => 'Nicht autorisiert']);
+            }
+            $data['updated_at'] = current_time('mysql');
+            $wpdb->update($table, $data, ['id' => $id]);
+        } else {
+            $wpdb->insert($table, $data);
+            $id = $wpdb->insert_id;
+        }
+
+        wp_send_json_success(['id' => $id, 'message' => 'Gespeichert']);
+    }
+
+    /** AJAX: Delete a termin */
+    public static function ajax_termine_delete() {
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $id = intval($_POST['id'] ?? 0);
+        if (!$id) wp_send_json_error(['message' => 'Ungültige ID']);
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_termine';
+
+        // Verify ownership
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT store_id FROM {$table} WHERE id = %d", $id
+        ));
+        if ((int)$existing !== (int)$store_id) {
+            wp_send_json_error(['message' => 'Nicht autorisiert']);
+        }
+
+        $wpdb->delete($table, ['id' => $id]);
+        wp_send_json_success(['message' => 'Gelöscht']);
     }
 
     /** AJAX: Delete Repair */

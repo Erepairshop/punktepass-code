@@ -1026,6 +1026,81 @@ a:hover{color:#5a67d8}
 .ra-tab:hover:not(.active){color:#0f172a;background:rgba(255,255,255,0.5)}
 .ra-tab-content{display:none}
 .ra-tab-content.active{display:block}
+/* ========== Termine Calendar ========== */
+.ra-cal-wrap{display:grid;grid-template-columns:1fr 340px;grid-template-rows:auto 1fr;gap:0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e5e7eb;overflow:hidden;min-height:560px}
+.ra-cal-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid #f1f5f9;background:#fff}
+.ra-cal-nav{width:36px;height:36px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#374151;transition:all .15s}
+.ra-cal-nav:hover{background:#f8fafc;border-color:#cbd5e1}
+.ra-cal-title{font-size:18px;font-weight:700;color:#0f172a;min-width:180px}
+.ra-cal-today-btn{margin-left:auto}
+.ra-cal-grid{padding:16px 20px;border-right:1px solid #f1f5f9}
+.ra-cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
+.ra-cal-weekend{color:#ef4444}
+.ra-cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ra-cal-day{position:relative;min-height:64px;padding:6px 8px;border-radius:10px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:flex-start}
+.ra-cal-day:hover{background:#f8fafc}
+.ra-cal-day-other{color:#cbd5e1;cursor:default;pointer-events:none}
+.ra-cal-day-num{font-size:13px;font-weight:600;color:#374151;line-height:1}
+.ra-cal-day-other .ra-cal-day-num{color:#cbd5e1}
+.ra-cal-day-today{background:#eff6ff}
+.ra-cal-day-today .ra-cal-day-num{background:#3b82f6;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ra-cal-day-selected{background:#f0f9ff;box-shadow:inset 0 0 0 2px #3b82f6}
+.ra-cal-day-dots{display:flex;gap:3px;margin-top:auto;flex-wrap:wrap}
+.ra-cal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+/* Sidebar */
+.ra-cal-sidebar{padding:20px;background:#fafbfc;overflow-y:auto;max-height:500px}
+.ra-cal-sidebar-title{font-size:16px;font-weight:700;color:#0f172a;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e5e7eb}
+.ra-cal-sidebar-list{display:flex;flex-direction:column;gap:10px}
+.ra-cal-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:40px 16px;color:#94a3b8;font-size:13px;text-align:center}
+.ra-cal-empty i{font-size:32px}
+.ra-cal-item{background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e5e7eb;border-left:4px solid #3b82f6;cursor:pointer;transition:all .15s}
+.ra-cal-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+.ra-cal-item-repair{cursor:default;opacity:.85}
+.ra-cal-item-repair:hover{transform:none;box-shadow:none}
+.ra-cal-item-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.ra-cal-item-time{font-size:13px;font-weight:700;color:#0f172a}
+.ra-cal-item-dur{font-size:11px;color:#94a3b8}
+.ra-cal-item-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;text-transform:uppercase}
+.ra-cal-st-scheduled{background:#dbeafe;color:#1d4ed8}
+.ra-cal-st-confirmed{background:#d1fae5;color:#065f46}
+.ra-cal-st-completed{background:#f3f4f6;color:#6b7280}
+.ra-cal-st-cancelled{background:#fee2e2;color:#991b1b}
+.ra-cal-item-title{font-size:14px;font-weight:600;color:#1e293b}
+.ra-cal-item-meta{font-size:12px;color:#64748b;margin-top:2px;display:flex;align-items:center;gap:4px}
+.ra-cal-item-meta i{font-size:13px}
+.ra-cal-item-badge-repair{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:#fef3c7;color:#92400e}
+/* Modal */
+.ra-cal-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ra-cal-modal-bg.active{display:flex}
+.ra-cal-modal{background:#fff;border-radius:20px;width:95%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.15);animation:ra-modal-in .2s ease}
+@keyframes ra-modal-in{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.ra-cal-modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #f1f5f9}
+.ra-cal-modal-title{font-size:17px;font-weight:700;color:#0f172a}
+.ra-cal-modal-close{width:32px;height:32px;border-radius:8px;border:none;background:#f1f5f9;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#64748b;transition:all .15s}
+.ra-cal-modal-close:hover{background:#e2e8f0;color:#0f172a}
+.ra-cal-modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.ra-cal-field{display:flex;flex-direction:column;gap:4px}
+.ra-cal-field label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
+.ra-cal-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ra-cal-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.ra-cal-colors{display:flex;gap:8px;padding:4px 0}
+.ra-cal-color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;transition:all .15s;border:3px solid transparent}
+.ra-cal-color-dot:hover{transform:scale(1.15)}
+.ra-cal-color-dot.active{border-color:#0f172a;box-shadow:0 0 0 2px #fff,0 0 0 4px #0f172a}
+.ra-cal-modal-footer{display:flex;align-items:center;gap:8px;padding:16px 24px;border-top:1px solid #f1f5f9}
+.ra-btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.ra-btn-danger:hover{background:#fecaca}
+/* Responsive */
+@media(max-width:768px){
+.ra-cal-wrap{grid-template-columns:1fr;min-height:auto}
+.ra-cal-sidebar{border-top:1px solid #f1f5f9;max-height:300px}
+.ra-cal-grid{border-right:none}
+.ra-cal-header{flex-wrap:wrap;padding:14px 16px;gap:8px}
+.ra-cal-title{min-width:auto;font-size:16px}
+.ra-cal-row2{grid-template-columns:1fr}
+.ra-cal-row3{grid-template-columns:1fr}
+.ra-cal-modal{max-height:90vh;overflow-y:auto}
+}
 /* ========== Invoice List ========== */
 .ra-inv-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
 .ra-inv-filters .field{margin:0}
@@ -2661,6 +2736,7 @@ echo '</div></div>
         <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_repairs')) . '</div>
         <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_inv_quote')) . '</div>
         <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_customers')) . '</div>
+        <div class="ra-tab" data-tab="termine"><i class="ri-calendar-schedule-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termine')) . '</div>
         <div class="ra-tab" data-tab="feedback"><i class="ri-feedback-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_feedback')) . '</div>
     </div>';
 
@@ -2873,6 +2949,11 @@ echo '</div></div>
         </div>';
 
         echo '</div>'; // end ra-tab-customers
+
+        // ========== TAB: Termine (Calendar) ==========
+        echo '<div class="ra-tab-content" id="ra-tab-termine">
+        <div id="ra-termine-calendar"></div>
+        </div>'; // end ra-tab-termine
 
         // ========== TAB: Feedback ==========
         echo '<div class="ra-tab-content" id="ra-tab-feedback">
@@ -4126,6 +4207,47 @@ echo '</div></div>
         'cf_vehicle_first_reg' => PPV_Lang::t('repair_vehicle_first_reg_label'),
         'cf_vehicle_tuev' => PPV_Lang::t('repair_vehicle_tuev_label'),
         'cf_condition_kfz' => PPV_Lang::t('repair_fb_condition_kfz'),
+        // Termine (Calendar)
+        'termine_new' => PPV_Lang::t('termine_new'),
+        'termine_edit' => PPV_Lang::t('termine_edit'),
+        'termine_title' => PPV_Lang::t('termine_title'),
+        'termine_title_ph' => PPV_Lang::t('termine_title_ph'),
+        'termine_customer' => PPV_Lang::t('termine_customer'),
+        'termine_customer_ph' => PPV_Lang::t('termine_customer_ph'),
+        'termine_phone' => PPV_Lang::t('termine_phone'),
+        'termine_phone_ph' => PPV_Lang::t('termine_phone_ph'),
+        'termine_date' => PPV_Lang::t('termine_date'),
+        'termine_time' => PPV_Lang::t('termine_time'),
+        'termine_duration' => PPV_Lang::t('termine_duration'),
+        'termine_type' => PPV_Lang::t('termine_type'),
+        'termine_type_general' => PPV_Lang::t('termine_type_general'),
+        'termine_type_repair' => PPV_Lang::t('termine_type_repair'),
+        'termine_type_pickup' => PPV_Lang::t('termine_type_pickup'),
+        'termine_type_consultation' => PPV_Lang::t('termine_type_consultation'),
+        'termine_type_estimate' => PPV_Lang::t('termine_type_estimate'),
+        'termine_status' => PPV_Lang::t('termine_status'),
+        'termine_status_scheduled' => PPV_Lang::t('termine_status_scheduled'),
+        'termine_status_confirmed' => PPV_Lang::t('termine_status_confirmed'),
+        'termine_status_completed' => PPV_Lang::t('termine_status_completed'),
+        'termine_status_cancelled' => PPV_Lang::t('termine_status_cancelled'),
+        'termine_notes' => PPV_Lang::t('termine_notes'),
+        'termine_notes_ph' => PPV_Lang::t('termine_notes_ph'),
+        'termine_color' => PPV_Lang::t('termine_color'),
+        'termine_save' => PPV_Lang::t('termine_save'),
+        'termine_delete' => PPV_Lang::t('termine_delete'),
+        'termine_delete_confirm' => PPV_Lang::t('termine_delete_confirm'),
+        'termine_saved' => PPV_Lang::t('termine_saved'),
+        'termine_deleted' => PPV_Lang::t('termine_deleted'),
+        'termine_today' => PPV_Lang::t('termine_today'),
+        'termine_no_appointments' => PPV_Lang::t('termine_no_appointments'),
+        'termine_from_repair' => PPV_Lang::t('termine_from_repair'),
+        'termine_day_mon' => PPV_Lang::t('termine_day_mon'),
+        'termine_day_tue' => PPV_Lang::t('termine_day_tue'),
+        'termine_day_wed' => PPV_Lang::t('termine_day_wed'),
+        'termine_day_thu' => PPV_Lang::t('termine_day_thu'),
+        'termine_day_fri' => PPV_Lang::t('termine_day_fri'),
+        'termine_day_sat' => PPV_Lang::t('termine_day_sat'),
+        'termine_day_sun' => PPV_Lang::t('termine_day_sun'),
     ], JSON_UNESCAPED_UNICODE) . ';
 
     // Language switcher
@@ -5988,6 +6110,7 @@ echo '</div></div>
     /* ===== Tab Switching ===== */
     var invoicesLoaded=false;
     var customersLoaded=false;
+    var termineLoaded=false;
 
     function switchTab(target){
         document.querySelectorAll(".ra-tab").forEach(function(t){t.classList.remove("active")});
@@ -5998,6 +6121,7 @@ echo '</div></div>
         if(tabContent)tabContent.classList.add("active");
         if(target==="invoices"&&!invoicesLoaded){loadInvoices(1);invoicesLoaded=true;}
         if(target==="customers"&&!customersLoaded){loadCustomers(1);customersLoaded=true;}
+        if(target==="termine"&&!termineLoaded){initTermineCalendar();termineLoaded=true;}
         localStorage.setItem("ra_active_tab",target);
     }
 
@@ -6007,6 +6131,425 @@ echo '</div></div>
             switchTab(target);
         });
     });
+
+    /* ===== Termine (Calendar) ===== */
+    var termineData=[];
+    var repairTermineData=[];
+    var calYear=new Date().getFullYear();
+    var calMonth=new Date().getMonth(); // 0-based
+    var calSelectedDate=null;
+
+    function initTermineCalendar(){
+        var wrap=document.getElementById("ra-termine-calendar");
+        if(!wrap)return;
+        wrap.innerHTML=buildCalendarHTML();
+        bindCalendarEvents();
+        loadTermine();
+    }
+
+    function buildCalendarHTML(){
+        return \'<div class="ra-cal-wrap">\'+
+            \'<div class="ra-cal-header">\'+
+                \'<button class="ra-cal-nav" id="ra-cal-prev"><i class="ri-arrow-left-s-line"></i></button>\'+
+                \'<div class="ra-cal-title" id="ra-cal-title"></div>\'+
+                \'<button class="ra-cal-nav" id="ra-cal-next"><i class="ri-arrow-right-s-line"></i></button>\'+
+                \'<button class="ra-btn ra-btn-sm ra-cal-today-btn" id="ra-cal-today">\'+L.termine_today+\'</button>\'+
+                \'<button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-cal-add"><i class="ri-add-line"></i> \'+L.termine_new+\'</button>\'+
+            \'</div>\'+
+            \'<div class="ra-cal-grid">\'+
+                \'<div class="ra-cal-weekdays">\'+
+                    \'<div>\'+L.termine_day_mon+\'</div>\'+
+                    \'<div>\'+L.termine_day_tue+\'</div>\'+
+                    \'<div>\'+L.termine_day_wed+\'</div>\'+
+                    \'<div>\'+L.termine_day_thu+\'</div>\'+
+                    \'<div>\'+L.termine_day_fri+\'</div>\'+
+                    \'<div class="ra-cal-weekend">\'+L.termine_day_sat+\'</div>\'+
+                    \'<div class="ra-cal-weekend">\'+L.termine_day_sun+\'</div>\'+
+                \'</div>\'+
+                \'<div class="ra-cal-days" id="ra-cal-days"></div>\'+
+            \'</div>\'+
+            \'<div class="ra-cal-sidebar" id="ra-cal-sidebar">\'+
+                \'<div class="ra-cal-sidebar-title" id="ra-cal-sidebar-title"></div>\'+
+                \'<div class="ra-cal-sidebar-list" id="ra-cal-sidebar-list"></div>\'+
+            \'</div>\'+
+        \'</div>\'+
+        \'<div class="ra-cal-modal-bg" id="ra-cal-modal-bg">\'+
+            \'<div class="ra-cal-modal" id="ra-cal-modal">\'+
+                \'<div class="ra-cal-modal-header">\'+
+                    \'<div class="ra-cal-modal-title" id="ra-cal-modal-title">\'+L.termine_new+\'</div>\'+
+                    \'<button class="ra-cal-modal-close" id="ra-cal-modal-close"><i class="ri-close-line"></i></button>\'+
+                \'</div>\'+
+                \'<div class="ra-cal-modal-body">\'+
+                    \'<input type="hidden" id="ra-tm-id">\'+
+                    \'<div class="ra-cal-field"><label>\'+L.termine_title+\'</label><input type="text" id="ra-tm-title" class="ra-input" placeholder="\'+L.termine_title_ph+\'"></div>\'+
+                    \'<div class="ra-cal-row2">\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_customer+\'</label><input type="text" id="ra-tm-customer" class="ra-input" placeholder="\'+L.termine_customer_ph+\'"></div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_phone+\'</label><input type="text" id="ra-tm-phone" class="ra-input" placeholder="\'+L.termine_phone_ph+\'"></div>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-row3">\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_date+\'</label><input type="date" id="ra-tm-date" class="ra-input"></div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_time+\'</label><input type="time" id="ra-tm-time" class="ra-input"></div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_duration+\'</label><input type="number" id="ra-tm-duration" class="ra-input" value="30" min="5" step="5"></div>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-row2">\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_type+\'</label>\'+
+                            \'<select id="ra-tm-type" class="ra-input">\'+
+                                \'<option value="general">\'+L.termine_type_general+\'</option>\'+
+                                \'<option value="repair">\'+L.termine_type_repair+\'</option>\'+
+                                \'<option value="pickup">\'+L.termine_type_pickup+\'</option>\'+
+                                \'<option value="consultation">\'+L.termine_type_consultation+\'</option>\'+
+                                \'<option value="estimate">\'+L.termine_type_estimate+\'</option>\'+
+                            \'</select>\'+
+                        \'</div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_status+\'</label>\'+
+                            \'<select id="ra-tm-status" class="ra-input">\'+
+                                \'<option value="scheduled">\'+L.termine_status_scheduled+\'</option>\'+
+                                \'<option value="confirmed">\'+L.termine_status_confirmed+\'</option>\'+
+                                \'<option value="completed">\'+L.termine_status_completed+\'</option>\'+
+                                \'<option value="cancelled">\'+L.termine_status_cancelled+\'</option>\'+
+                            \'</select>\'+
+                        \'</div>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-field"><label>\'+L.termine_notes+\'</label><textarea id="ra-tm-notes" class="ra-input" rows="2" placeholder="\'+L.termine_notes_ph+\'"></textarea></div>\'+
+                    \'<div class="ra-cal-field"><label>\'+L.termine_color+\'</label>\'+
+                        \'<div class="ra-cal-colors" id="ra-tm-colors">\'+
+                            \'<span class="ra-cal-color-dot active" data-color="" style="background:#3b82f6" title="Standard"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#10b981" style="background:#10b981"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#f59e0b" style="background:#f59e0b"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#ef4444" style="background:#ef4444"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#8b5cf6" style="background:#8b5cf6"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#ec4899" style="background:#ec4899"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#6b7280" style="background:#6b7280"></span>\'+
+                        \'</div>\'+
+                    \'</div>\'+
+                \'</div>\'+
+                \'<div class="ra-cal-modal-footer">\'+
+                    \'<button class="ra-btn ra-btn-danger ra-btn-sm" id="ra-tm-delete" style="display:none"><i class="ri-delete-bin-line"></i> \'+L.termine_delete+\'</button>\'+
+                    \'<div style="flex:1"></div>\'+
+                    \'<button class="ra-btn ra-btn-sm" id="ra-tm-cancel">\'+L.cancel+\'</button>\'+
+                    \'<button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-tm-save"><i class="ri-check-line"></i> \'+L.termine_save+\'</button>\'+
+                \'</div>\'+
+            \'</div>\'+
+        \'</div>\';
+    }
+
+    function bindCalendarEvents(){
+        document.getElementById("ra-cal-prev").addEventListener("click",function(){
+            calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();loadTermine();
+        });
+        document.getElementById("ra-cal-next").addEventListener("click",function(){
+            calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();loadTermine();
+        });
+        document.getElementById("ra-cal-today").addEventListener("click",function(){
+            var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
+            calSelectedDate=fmtDate(now);renderCalendar();loadTermine();
+        });
+        document.getElementById("ra-cal-add").addEventListener("click",function(){openTerminModal(null);});
+        document.getElementById("ra-cal-modal-close").addEventListener("click",closeTerminModal);
+        document.getElementById("ra-cal-modal-bg").addEventListener("click",function(e){
+            if(e.target===this)closeTerminModal();
+        });
+        document.getElementById("ra-tm-cancel").addEventListener("click",closeTerminModal);
+        document.getElementById("ra-tm-save").addEventListener("click",saveTermin);
+        document.getElementById("ra-tm-delete").addEventListener("click",deleteTermin);
+
+        // Color picker
+        document.getElementById("ra-tm-colors").addEventListener("click",function(e){
+            var dot=e.target.closest(".ra-cal-color-dot");
+            if(!dot)return;
+            this.querySelectorAll(".ra-cal-color-dot").forEach(function(d){d.classList.remove("active");});
+            dot.classList.add("active");
+        });
+
+        renderCalendar();
+    }
+
+    var monthNames=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+    function fmtDate(d){
+        var y=d.getFullYear(),m=("0"+(d.getMonth()+1)).slice(-2),dd=("0"+d.getDate()).slice(-2);
+        return y+"-"+m+"-"+dd;
+    }
+
+    function renderCalendar(){
+        var title=document.getElementById("ra-cal-title");
+        title.textContent=monthNames[calMonth]+" "+calYear;
+
+        var daysEl=document.getElementById("ra-cal-days");
+        var firstDay=new Date(calYear,calMonth,1);
+        var lastDay=new Date(calYear,calMonth+1,0);
+        var startDow=(firstDay.getDay()+6)%7; // Monday=0
+        var numDays=lastDay.getDate();
+        var todayStr=fmtDate(new Date());
+
+        var html="";
+        // Previous month padding
+        var prevLast=new Date(calYear,calMonth,0).getDate();
+        for(var i=startDow-1;i>=0;i--){
+            html+=\'<div class="ra-cal-day ra-cal-day-other">\'+(prevLast-i)+\'</div>\';
+        }
+        // Current month
+        for(var d=1;d<=numDays;d++){
+            var dateStr=calYear+"-"+("0"+(calMonth+1)).slice(-2)+"-"+("0"+d).slice(-2);
+            var cls="ra-cal-day";
+            if(dateStr===todayStr)cls+=" ra-cal-day-today";
+            if(dateStr===calSelectedDate)cls+=" ra-cal-day-selected";
+            var dots=getDotsForDate(dateStr);
+            html+=\'<div class="\'+cls+\'" data-date="\'+dateStr+\'">\'+
+                \'<span class="ra-cal-day-num">\'+d+\'</span>\'+
+                (dots?\'<div class="ra-cal-day-dots">\'+dots+\'</div>\':\'\')+
+            \'</div>\';
+        }
+        // Next month padding
+        var totalCells=startDow+numDays;
+        var remaining=totalCells%7===0?0:7-totalCells%7;
+        for(var n=1;n<=remaining;n++){
+            html+=\'<div class="ra-cal-day ra-cal-day-other">\'+n+\'</div>\';
+        }
+
+        daysEl.innerHTML=html;
+
+        // Click on day
+        daysEl.querySelectorAll(".ra-cal-day:not(.ra-cal-day-other)").forEach(function(el){
+            el.addEventListener("click",function(){
+                calSelectedDate=this.getAttribute("data-date");
+                daysEl.querySelectorAll(".ra-cal-day").forEach(function(d){d.classList.remove("ra-cal-day-selected");});
+                this.classList.add("ra-cal-day-selected");
+                renderSidebar();
+            });
+        });
+
+        // Auto-select today if in current month
+        if(!calSelectedDate){
+            var now=new Date();
+            if(now.getFullYear()===calYear&&now.getMonth()===calMonth){
+                calSelectedDate=todayStr;
+            }else{
+                calSelectedDate=calYear+"-"+("0"+(calMonth+1)).slice(-2)+"-01";
+            }
+        }
+        renderSidebar();
+    }
+
+    function getDotsForDate(dateStr){
+        var dots="";
+        var count=0;
+        for(var i=0;i<termineData.length&&count<3;i++){
+            if(termineData[i].termin_date===dateStr){
+                var c=termineData[i].color||"#3b82f6";
+                dots+=\'<span class="ra-cal-dot" style="background:\'+c+\'"></span>\';
+                count++;
+            }
+        }
+        for(var j=0;j<repairTermineData.length&&count<3;j++){
+            var rd=repairTermineData[j].termin_at;
+            if(rd&&rd.substring(0,10)===dateStr){
+                dots+=\'<span class="ra-cal-dot" style="background:#f59e0b"></span>\';
+                count++;
+            }
+        }
+        return dots;
+    }
+
+    function renderSidebar(){
+        var titleEl=document.getElementById("ra-cal-sidebar-title");
+        var listEl=document.getElementById("ra-cal-sidebar-list");
+        if(!calSelectedDate){listEl.innerHTML="";titleEl.textContent="";return;}
+
+        var parts=calSelectedDate.split("-");
+        titleEl.textContent=parseInt(parts[2])+". "+monthNames[parseInt(parts[1])-1]+" "+parts[0];
+
+        var items=[];
+        // Custom termine
+        for(var i=0;i<termineData.length;i++){
+            var t=termineData[i];
+            if(t.termin_date===calSelectedDate){
+                items.push({type:"termin",data:t,time:t.termin_time||"00:00"});
+            }
+        }
+        // Repair termine
+        for(var j=0;j<repairTermineData.length;j++){
+            var r=repairTermineData[j];
+            if(r.termin_at&&r.termin_at.substring(0,10)===calSelectedDate){
+                items.push({type:"repair",data:r,time:r.termin_at.substring(11,16)||"00:00"});
+            }
+        }
+        // Sort by time
+        items.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0;});
+
+        if(items.length===0){
+            listEl.innerHTML=\'<div class="ra-cal-empty"><i class="ri-calendar-line"></i><span>\'+L.termine_no_appointments+\'</span></div>\';
+            return;
+        }
+
+        var html="";
+        for(var k=0;k<items.length;k++){
+            var item=items[k];
+            if(item.type==="termin"){
+                var tm=item.data;
+                var col=tm.color||"#3b82f6";
+                var timeStr=tm.termin_time?tm.termin_time.substring(0,5):"";
+                var dur=tm.duration?tm.duration+"min":"";
+                var statusCls="ra-cal-st-"+(tm.status||"scheduled");
+                html+=\'<div class="ra-cal-item" data-termin-id="\'+tm.id+\'" style="border-left-color:\'+col+\'">\'+
+                    \'<div class="ra-cal-item-top">\'+
+                        (timeStr?\'<span class="ra-cal-item-time">\'+timeStr+\'</span>\':\'\')+
+                        (dur?\'<span class="ra-cal-item-dur">\'+dur+\'</span>\':\'\')+
+                        \'<span class="ra-cal-item-status \'+statusCls+\'">\'+getStatusLabel(tm.status)+\'</span>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-item-title">\'+escH(tm.title)+\'</div>\'+
+                    (tm.customer_name?\'<div class="ra-cal-item-meta"><i class="ri-user-3-line"></i> \'+escH(tm.customer_name)+(tm.customer_phone?\' · \'+escH(tm.customer_phone):\'\')+\'</div>\':\'\')+
+                    (tm.notes?\'<div class="ra-cal-item-meta"><i class="ri-file-text-line"></i> \'+escH(tm.notes)+\'</div>\':\'\')+
+                \'</div>\';
+            }else{
+                var rp=item.data;
+                var rpTime=rp.termin_at?rp.termin_at.substring(11,16):"";
+                var device=((rp.device_brand||"")+" "+(rp.device_model||"")).trim();
+                html+=\'<div class="ra-cal-item ra-cal-item-repair" style="border-left-color:#f59e0b">\'+
+                    \'<div class="ra-cal-item-top">\'+
+                        (rpTime&&rpTime!=="00:00"?\'<span class="ra-cal-item-time">\'+rpTime+\'</span>\':\'\')+
+                        \'<span class="ra-cal-item-badge-repair"><i class="ri-tools-line"></i> \'+L.termine_from_repair+\' #\'+rp.id+\'</span>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-item-title">\'+escH(rp.customer_name)+\'</div>\'+
+                    (device?\'<div class="ra-cal-item-meta"><i class="ri-smartphone-line"></i> \'+escH(device)+\'</div>\':\'\')+
+                \'</div>\';
+            }
+        }
+        listEl.innerHTML=html;
+
+        // Click to edit custom termine
+        listEl.querySelectorAll(".ra-cal-item[data-termin-id]").forEach(function(el){
+            el.addEventListener("click",function(){
+                var tid=parseInt(this.getAttribute("data-termin-id"));
+                var found=null;
+                for(var x=0;x<termineData.length;x++){if(parseInt(termineData[x].id)===tid){found=termineData[x];break;}}
+                if(found)openTerminModal(found);
+            });
+        });
+    }
+
+    function getStatusLabel(s){
+        var map={scheduled:L.termine_status_scheduled,confirmed:L.termine_status_confirmed,completed:L.termine_status_completed,cancelled:L.termine_status_cancelled};
+        return map[s]||s;
+    }
+
+    function getTypeLabel(t){
+        var map={general:L.termine_type_general,repair:L.termine_type_repair,pickup:L.termine_type_pickup,consultation:L.termine_type_consultation,estimate:L.termine_type_estimate};
+        return map[t]||t;
+    }
+
+    function escH(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+
+    function openTerminModal(termin){
+        var modal=document.getElementById("ra-cal-modal-bg");
+        var titleEl=document.getElementById("ra-cal-modal-title");
+        var delBtn=document.getElementById("ra-tm-delete");
+
+        if(termin){
+            titleEl.textContent=L.termine_edit;
+            delBtn.style.display="";
+            document.getElementById("ra-tm-id").value=termin.id;
+            document.getElementById("ra-tm-title").value=termin.title||"";
+            document.getElementById("ra-tm-customer").value=termin.customer_name||"";
+            document.getElementById("ra-tm-phone").value=termin.customer_phone||"";
+            document.getElementById("ra-tm-date").value=termin.termin_date||"";
+            document.getElementById("ra-tm-time").value=termin.termin_time?termin.termin_time.substring(0,5):"";
+            document.getElementById("ra-tm-duration").value=termin.duration||30;
+            document.getElementById("ra-tm-type").value=termin.termin_type||"general";
+            document.getElementById("ra-tm-status").value=termin.status||"scheduled";
+            document.getElementById("ra-tm-notes").value=termin.notes||"";
+            // Set color
+            var selColor=termin.color||"";
+            document.querySelectorAll("#ra-tm-colors .ra-cal-color-dot").forEach(function(d){
+                d.classList.toggle("active",d.getAttribute("data-color")===selColor);
+            });
+        }else{
+            titleEl.textContent=L.termine_new;
+            delBtn.style.display="none";
+            document.getElementById("ra-tm-id").value="";
+            document.getElementById("ra-tm-title").value="";
+            document.getElementById("ra-tm-customer").value="";
+            document.getElementById("ra-tm-phone").value="";
+            document.getElementById("ra-tm-date").value=calSelectedDate||fmtDate(new Date());
+            document.getElementById("ra-tm-time").value="";
+            document.getElementById("ra-tm-duration").value=30;
+            document.getElementById("ra-tm-type").value="general";
+            document.getElementById("ra-tm-status").value="scheduled";
+            document.getElementById("ra-tm-notes").value="";
+            document.querySelectorAll("#ra-tm-colors .ra-cal-color-dot").forEach(function(d){
+                d.classList.toggle("active",d.getAttribute("data-color")==="");
+            });
+        }
+        modal.classList.add("active");
+        setTimeout(function(){document.getElementById("ra-tm-title").focus();},100);
+    }
+
+    function closeTerminModal(){
+        document.getElementById("ra-cal-modal-bg").classList.remove("active");
+    }
+
+    function saveTermin(){
+        var fd=new FormData();
+        fd.append("action","ppv_repair_termine_save");
+        fd.append("nonce",NONCE);
+        var tmId=document.getElementById("ra-tm-id").value;
+        if(tmId)fd.append("id",tmId);
+        fd.append("title",document.getElementById("ra-tm-title").value);
+        fd.append("customer_name",document.getElementById("ra-tm-customer").value);
+        fd.append("customer_phone",document.getElementById("ra-tm-phone").value);
+        fd.append("termin_date",document.getElementById("ra-tm-date").value);
+        fd.append("termin_time",document.getElementById("ra-tm-time").value);
+        fd.append("duration",document.getElementById("ra-tm-duration").value);
+        fd.append("termin_type",document.getElementById("ra-tm-type").value);
+        fd.append("status",document.getElementById("ra-tm-status").value);
+        fd.append("notes",document.getElementById("ra-tm-notes").value);
+        var activeColor=document.querySelector("#ra-tm-colors .ra-cal-color-dot.active");
+        fd.append("color",activeColor?activeColor.getAttribute("data-color"):"");
+
+        fetch(AJAX,{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(resp){
+            if(resp.success){
+                closeTerminModal();
+                toast(L.termine_saved);
+                loadTermine();
+            }else{
+                toast(resp.data&&resp.data.message||L.error);
+            }
+        }).catch(function(){toast(L.connection_error);});
+    }
+
+    function deleteTermin(){
+        if(!confirm(L.termine_delete_confirm))return;
+        var tmId=document.getElementById("ra-tm-id").value;
+        if(!tmId)return;
+        var fd=new FormData();
+        fd.append("action","ppv_repair_termine_delete");
+        fd.append("nonce",NONCE);
+        fd.append("id",tmId);
+        fetch(AJAX,{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(resp){
+            if(resp.success){
+                closeTerminModal();
+                toast(L.termine_deleted);
+                loadTermine();
+            }else{
+                toast(resp.data&&resp.data.message||L.error);
+            }
+        }).catch(function(){toast(L.connection_error);});
+    }
+
+    function loadTermine(){
+        var fd=new FormData();
+        fd.append("action","ppv_repair_termine_list");
+        fd.append("nonce",NONCE);
+        fd.append("year",calYear);
+        fd.append("month",calMonth+1); // 1-based for PHP
+        fetch(AJAX,{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(resp){
+            if(resp.success){
+                termineData=resp.data.termine||[];
+                repairTermineData=resp.data.repair_termine||[];
+                renderCalendar();
+            }
+        }).catch(function(){});
+    }
 
     /* ===== Invoices ===== */
 
