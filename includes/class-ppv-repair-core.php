@@ -1910,7 +1910,13 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $icons = ['Apple'=>"\xF0\x9F\x8D\x8E",'Samsung'=>"\xF0\x9F\x93\xB1",'Huawei'=>"\xF0\x9F\x93\xB2",'Xiaomi'=>"\xE2\xAD\x90",'Google'=>'G','Sony'=>"\xF0\x9F\x8E\xAE",'OnePlus'=>'1+','LG'=>"\xF0\x9F\x93\xBA",'Nokia'=>'N','Motorola'=>'M','OPPO'=>'O','Realme'=>'R','Honor'=>'H','Nothing'=>'N','ZTE'=>'Z'];
             $current_config['brands'] = array_map(function($b) use ($icons) {
                 $name = is_string($b) ? trim($b) : (trim($b['label'] ?? $b['id'] ?? ''));
-                return ['id' => $name, 'label' => $name, 'icon' => $icons[$name] ?? "\xE2\x9A\x99"];
+                $models = [];
+                if (is_array($b) && !empty($b['models']) && is_array($b['models'])) {
+                    $models = array_values(array_filter(array_map('trim', $b['models'])));
+                }
+                $result = ['id' => $name, 'label' => $name, 'icon' => $icons[$name] ?? "\xE2\x9A\x99"];
+                if (!empty($models)) $result['models'] = $models;
+                return $result;
             }, array_filter($data));
             $wpdb->update($stores_table, [
                 'widget_ai_config' => wp_json_encode($current_config),
