@@ -428,7 +428,8 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
         $required_points = intval($store->repair_required_points ?? 4);
         $raw_title = $store->repair_form_title ?? '';
-        $form_title = esc_attr(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
+        $default_titles = ['', 'Reparaturauftrag', 'Szervizmegrendelés', 'Repair Order', 'Comandă de service', 'Ordine di riparazione'];
+        $form_title = esc_attr(in_array($raw_title, $default_titles, true) ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
         $form_subtitle = esc_attr($store->repair_form_subtitle ?? '');
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
         $reward_type = esc_attr($store->repair_reward_type ?? 'discount_fixed');
@@ -700,6 +701,9 @@ a:hover{color:#5a67d8}
 .ra-settings-panel h4{font-size:15px;font-weight:700;color:#0f172a;margin:0 0 16px 0;padding-bottom:12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
 .ra-settings-panel h4 i{color:#667eea;font-size:18px}
 .ra-settings-panel h4:not(:first-child){margin-top:28px}
+.ra-svc-row:hover{border-color:#cbd5e1!important}
+.ra-svc-edit-name:hover,.ra-svc-edit-price:hover,.ra-svc-edit-time:hover{background:#f0f9ff}
+.ra-svc-cat-hdr:hover{background:#eff6ff!important;border-color:#bfdbfe!important}
 .ra-settings-group{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
 .ra-settings-group-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
 
@@ -751,6 +755,7 @@ a:hover{color:#5a67d8}
 .ra-status-done{background:#d1fae5;color:#065f46}
 .ra-status-delivered{background:#e5e7eb;color:#374151}
 .ra-status-cancelled{background:#fecaca;color:#991b1b}
+.ra-status-not-repairable{background:#fed7aa;color:#9a3412}
 /* Card sections */
 .ra-card-section{padding:12px 20px;border-bottom:1px solid #f1f5f9}
 .ra-card-section:last-of-type{border-bottom:none}
@@ -807,6 +812,15 @@ a:hover{color:#5a67d8}
 .ra-btn-invoice-exists:hover{background:#d97706;color:#fff;border-color:#d97706}
 .ra-invoice-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:3px 10px}
 .ra-invoice-badge i{font-size:12px}
+.ra-widget-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:3px 10px}
+.ra-widget-badge i{font-size:12px}
+.ra-termin-needed-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#dc2626;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:5px 12px;cursor:pointer;transition:all .2s;animation:ra-pulse-badge 2s ease-in-out infinite}
+.ra-termin-needed-badge:hover{background:#dc2626;color:#fff;border-color:#dc2626}
+.ra-termin-needed-badge i{font-size:14px}
+@keyframes ra-pulse-badge{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.3)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+.ra-termin-add-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;cursor:pointer;transition:all .2s}
+.ra-termin-add-badge:hover{background:#e0f2fe;color:#0369a1;border-color:#7dd3fc}
+.ra-termin-add-badge i{font-size:12px}
 .ra-btn-delete{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
 .ra-btn-print{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
@@ -1014,6 +1028,94 @@ a:hover{color:#5a67d8}
 .ra-tab:hover:not(.active){color:#0f172a;background:rgba(255,255,255,0.5)}
 .ra-tab-content{display:none}
 .ra-tab-content.active{display:block}
+/* ========== Termine Calendar ========== */
+.ra-cal-wrap{display:grid;grid-template-columns:1fr 340px;grid-template-rows:auto 1fr;gap:0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e5e7eb;overflow:hidden;min-height:560px}
+.ra-cal-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid #f1f5f9;background:#fff}
+.ra-cal-nav{width:36px;height:36px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#374151;transition:all .15s}
+.ra-cal-nav:hover{background:#f8fafc;border-color:#cbd5e1}
+.ra-cal-title{font-size:18px;font-weight:700;color:#0f172a;min-width:180px}
+.ra-cal-today-btn{margin-left:auto}
+.ra-cal-grid{padding:16px 20px;border-right:1px solid #f1f5f9}
+.ra-cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
+.ra-cal-weekend{color:#ef4444}
+.ra-cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ra-cal-day{position:relative;min-height:64px;padding:6px 8px;border-radius:10px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:flex-start}
+.ra-cal-day:hover{background:#f8fafc}
+.ra-cal-day-other{color:#cbd5e1;cursor:default;pointer-events:none}
+.ra-cal-day-num{font-size:13px;font-weight:600;color:#374151;line-height:1}
+.ra-cal-day-other .ra-cal-day-num{color:#cbd5e1}
+.ra-cal-day-today{background:#eff6ff}
+.ra-cal-day-today .ra-cal-day-num{background:#3b82f6;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ra-cal-day-selected{background:#f0f9ff;box-shadow:inset 0 0 0 2px #3b82f6}
+.ra-cal-day-dots{display:flex;gap:3px;margin-top:auto;flex-wrap:wrap}
+.ra-cal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+/* Sidebar */
+.ra-cal-sidebar{padding:20px;background:#fafbfc;overflow-y:auto;max-height:500px}
+.ra-cal-sidebar-title{font-size:16px;font-weight:700;color:#0f172a;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e5e7eb}
+.ra-cal-sidebar-list{display:flex;flex-direction:column;gap:10px}
+.ra-cal-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:40px 16px;color:#94a3b8;font-size:13px;text-align:center}
+.ra-cal-empty i{font-size:32px}
+.ra-cal-item{background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e5e7eb;border-left:4px solid #3b82f6;cursor:pointer;transition:all .15s}
+.ra-cal-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+.ra-cal-item-repair{cursor:default;opacity:.85}
+.ra-cal-item-repair:hover{transform:none;box-shadow:none}
+.ra-cal-item-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.ra-cal-item-time{font-size:13px;font-weight:700;color:#0f172a}
+.ra-cal-item-dur{font-size:11px;color:#94a3b8}
+.ra-cal-item-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;text-transform:uppercase}
+.ra-cal-st-scheduled{background:#dbeafe;color:#1d4ed8}
+.ra-cal-st-confirmed{background:#d1fae5;color:#065f46}
+.ra-cal-st-completed{background:#f3f4f6;color:#6b7280}
+.ra-cal-st-cancelled{background:#fee2e2;color:#991b1b}
+.ra-cal-item-title{font-size:14px;font-weight:600;color:#1e293b}
+.ra-cal-item-meta{font-size:12px;color:#64748b;margin-top:2px;display:flex;align-items:center;gap:4px}
+.ra-cal-item-meta i{font-size:13px}
+.ra-cal-item-badge-repair{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:#fef3c7;color:#92400e}
+/* Modal */
+.ra-cal-modal-bg{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ra-cal-modal-bg.active{display:flex}
+.ra-cal-modal{background:#fff;border-radius:24px;width:95%;max-width:540px;box-shadow:0 25px 80px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.05);animation:ra-modal-in .25s cubic-bezier(.22,1,.36,1)}
+@keyframes ra-modal-in{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.ra-cal-modal-header{display:flex;align-items:center;gap:14px;padding:24px 28px 20px;border-bottom:1px solid #f1f5f9}
+.ra-cal-modal-hdr-icon{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+.ra-cal-modal-hdr-text{flex:1}
+.ra-cal-modal-title{font-size:18px;font-weight:700;color:#0f172a;line-height:1.2}
+.ra-cal-modal-subtitle{font-size:13px;color:#94a3b8;margin-top:2px}
+.ra-cal-modal-close{width:36px;height:36px;border-radius:10px;border:none;background:#f1f5f9;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#64748b;transition:all .15s;flex-shrink:0}
+.ra-cal-modal-close:hover{background:#e2e8f0;color:#0f172a;transform:rotate(90deg)}
+.ra-cal-modal-body{padding:24px 28px;display:flex;flex-direction:column;gap:16px;max-height:60vh;overflow-y:auto}
+.ra-cal-field{display:flex;flex-direction:column;gap:6px}
+.ra-cal-field label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+.ra-cal-field .ra-input{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;color:#1e293b;background:#fafbfc;transition:all .2s ease;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none}
+.ra-cal-field .ra-input:focus{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.12);background:#fff}
+.ra-cal-field .ra-input::placeholder{color:#b0b8c9}
+.ra-cal-field textarea.ra-input{resize:vertical;min-height:56px}
+.ra-cal-field select.ra-input{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer}
+.ra-cal-field select.ra-input:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23667eea%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")}
+.ra-cal-field input[type="date"].ra-input,.ra-cal-field input[type="time"].ra-input{cursor:pointer}
+.ra-cal-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ra-cal-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.ra-cal-colors{display:flex;gap:10px;padding:6px 0}
+.ra-cal-color-dot{width:30px;height:30px;border-radius:50%;cursor:pointer;transition:all .2s cubic-bezier(.22,1,.36,1);border:3px solid transparent;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.ra-cal-color-dot:hover{transform:scale(1.2);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.ra-cal-color-dot.active{border-color:#fff;box-shadow:0 0 0 3px #0f172a,0 4px 12px rgba(0,0,0,.15);transform:scale(1.1)}
+.ra-cal-modal-footer{display:flex;align-items:center;gap:10px;padding:18px 28px;border-top:1px solid #f1f5f9;background:#fafbfc;border-radius:0 0 24px 24px}
+.ra-cal-modal-footer .ra-btn{border-radius:12px;font-weight:600;padding:10px 20px;font-size:13px;transition:all .15s}
+.ra-cal-modal-footer .ra-btn-primary{box-shadow:0 4px 14px rgba(102,126,234,.3)}
+.ra-cal-modal-footer .ra-btn-primary:hover{box-shadow:0 6px 20px rgba(102,126,234,.4);transform:translateY(-1px)}
+.ra-btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:12px}
+.ra-btn-danger:hover{background:#fecaca;transform:translateY(-1px)}
+/* Responsive */
+@media(max-width:768px){
+.ra-cal-wrap{grid-template-columns:1fr;min-height:auto}
+.ra-cal-sidebar{border-top:1px solid #f1f5f9;max-height:300px}
+.ra-cal-grid{border-right:none}
+.ra-cal-header{flex-wrap:wrap;padding:14px 16px;gap:8px}
+.ra-cal-title{min-width:auto;font-size:16px}
+.ra-cal-row2{grid-template-columns:1fr}
+.ra-cal-row3{grid-template-columns:1fr}
+.ra-cal-modal{max-height:90vh;overflow-y:auto}
+}
 /* ========== Invoice List ========== */
 .ra-inv-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
 .ra-inv-filters .field{margin:0}
@@ -2152,6 +2254,10 @@ echo '</div></div>
                         <input type="checkbox" name="notify_delivered" value="1" ' . (in_array('delivered', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
                         <span style="color:#6b7280"><i class="ri-truck-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '
                     </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_not_repairable" value="1" ' . (in_array('not_repairable', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#9a3412"><i class="ri-error-warning-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_not_repairable')) . '
+                    </label>
                 </div>
             </div>
 
@@ -2371,200 +2477,248 @@ echo '</div></div>
 
             <!-- ==================== PANEL: Widget ==================== -->
             <div class="ra-settings-panel" data-panel="widget">
-                <h4><i class="ri-code-s-slash-line"></i> Widget / Embed Code</h4>
-                <p style="font-size:13px;color:#64748b;margin:0 0 20px">
-                    Betten Sie Ihr Reparaturformular auf Ihrer Website ein. Kunden können direkt von Ihrer Seite eine Reparatur beauftragen.
-                </p>
 
-                <div class="ra-settings-grid" style="grid-template-columns:1fr 1fr;gap:16px">
-                    <div class="field">
-                        <label>Widget-Modus</label>
-                        <select name="widget_mode" id="ra-widget-mode" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                            <option value="float">Floating Button (empfohlen)</option>
-                            <option value="ai">KI-Diagnose Widget (empfohlen)</option>
-                            <option value="inline">Inline Banner</option>
-                            <option value="button">Einfacher Button</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Position</label>
-                        <select name="widget_position" id="ra-widget-position" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                            <option value="bottom-right">Unten rechts</option>
-                            <option value="bottom-left">Unten links</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Farbe</label>
-                        <input type="color" name="widget_color" id="ra-widget-color" value="' . $store_color . '" style="width:100%;height:42px;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px;cursor:pointer">
-                    </div>
-                    <div class="field">
-                        <label>Sprache</label>
-                        <select name="widget_lang" id="ra-widget-lang" class="ra-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                            <option value="de">Deutsch</option>
-                            <option value="en">English</option>
-                            <option value="hu">Magyar</option>
-                            <option value="ro">Română</option>
-                            <option value="it">Italiano</option>
-                        </select>
-                    </div>
-                    <div class="field" id="ra-widget-text-wrap">
-                        <label>Button-Text (optional)</label>
-                        <input type="text" name="widget_text" id="ra-widget-text" placeholder="Reparatur anfragen" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                    </div>
-                    <div class="field" id="ra-widget-target-wrap" style="display:none">
-                        <label>CSS-Selector (inline/button)</label>
-                        <input type="text" name="widget_target" id="ra-widget-target" placeholder="#mein-widget" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-                    </div>
-                </div>
-
-                <h4 style="margin-top:28px"><i class="ri-eye-line"></i> Vorschau</h4>
-                <div id="ra-widget-preview" style="border:2px dashed #e2e8f0;border-radius:12px;padding:24px;min-height:100px;background:#fafbfc;position:relative;overflow:hidden">
-                    <div id="ra-widget-preview-float" style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-radius:50px;color:#fff;font-size:14px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.15);cursor:default;width:fit-content;margin-left:auto;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                        <span id="ra-widget-preview-text">Reparatur anfragen</span>
-                    </div>
-                    <div id="ra-widget-preview-inline" style="display:none;max-width:400px;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
-                        <div id="ra-widget-preview-inline-hdr" style="padding:20px 24px;color:#fff;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
-                            <div style="font-size:18px;font-weight:700">Reparatur einreichen</div>
-                            <div style="font-size:13px;opacity:.85;margin-top:4px">Füllen Sie das Formular aus und wir melden uns.</div>
-                        </div>
-                        <div style="padding:16px 24px">
-                            <div id="ra-widget-preview-inline-cta" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;text-align:center;color:#fff;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">Formular öffnen →</div>
-                        </div>
-                        <div style="padding:10px 24px;border-top:1px solid #f1f5f9;text-align:center;font-size:11px;color:#94a3b8">Powered by <b style="color:#64748b">PunktePass</b></div>
-                    </div>
-                    <div id="ra-widget-preview-button" style="display:none">
-                        <div id="ra-widget-preview-btn" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:default;box-shadow:0 4px 16px rgba(102,126,234,.3);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',#4338ca)">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                            <span id="ra-widget-preview-btn-text">Reparatur anfragen</span>
-                        </div>
-                    </div>
-                </div>
-
-                <h4 style="margin-top:28px"><i class="ri-clipboard-line"></i> Embed Code</h4>
-                <div style="position:relative">
-                    <pre id="ra-widget-code" style="background:#1e293b;color:#e2e8f0;padding:16px 20px;border-radius:12px;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:0"></pre>
-                    <button type="button" id="ra-widget-copy" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,.12);border:none;color:#e2e8f0;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s">
-                        <i class="ri-file-copy-line"></i> Kopieren
-                    </button>
-                </div>
-                <p style="font-size:12px;color:#94a3b8;margin:8px 0 0">Fügen Sie diesen Code auf Ihrer Website ein, z.B. vor dem &lt;/body&gt; Tag.</p>
-
-                <h4 style="margin-top:28px"><i class="ri-link"></i> Direkter Link</h4>
-                <div style="display:flex;gap:8px;align-items:center">
-                    <input type="text" readonly id="ra-widget-direct-link" value="' . esc_attr($form_url) . '" style="flex:1;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc;color:#475569">
-                    <button type="button" id="ra-widget-copy-link" style="background:#667eea;border:none;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:background .2s">
-                        <i class="ri-file-copy-line"></i> Kopieren
-                    </button>
-                </div>
-
-                <!-- AI Widget Konfiguration -->
-                <div style="margin-top:32px;border-top:2px solid #e2e8f0;padding-top:24px">
-                    <h4 style="margin:0 0 4px"><i class="ri-robot-line"></i> ' . esc_html(PPV_Lang::t('wai_title')) . '</h4>
-                    <p style="font-size:13px;color:#64748b;margin:0 0 16px">
-                        ' . esc_html(PPV_Lang::t('wai_desc')) . '
-                    </p>
-
-                    ' . (!empty($store->widget_setup_complete) ?
-                        '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;margin-bottom:16px;font-size:13px;color:#166534">
-                            <i class="ri-checkbox-circle-fill" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_done')) . '
-                        </div>' :
-                        '<div id="ra-wai-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fffbeb;border:1.5px solid #fed7aa;border-radius:10px;margin-bottom:16px;font-size:13px;color:#92400e">
-                            <i class="ri-information-line" style="font-size:18px"></i> ' . esc_html(PPV_Lang::t('wai_status_pending')) . '
-                        </div>') . '
-
-                    <!-- ═══ VISUAL EDITOR ═══ -->
-                    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:16px">
-
-                    <!-- Brands editor -->
-                    <div style="margin-bottom:16px">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-smartphone-line"></i> ' . esc_html(PPV_Lang::t('wai_brands_label')) . '</span>
-                            <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8"></span>
-                        </div>
-                        <div id="ra-wai-brand-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
-                        <div style="display:flex;gap:6px">
-                            <input type="text" id="ra-wai-brand-input" placeholder="' . esc_attr(PPV_Lang::t('wai_brand_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                <!-- ── Section 1: Widget-Typ & Embed ── -->
+                <div style="margin-bottom:28px">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-code-s-slash-line" style="color:#fff;font-size:18px"></i></div>
+                        <div>
+                            <h4 style="margin:0;font-size:16px">' . esc_html(PPV_Lang::t('repair_admin_widget_title')) . '</h4>
+                            <p style="margin:0;font-size:12px;color:#94a3b8">' . esc_html(PPV_Lang::t('repair_admin_widget_subtitle')) . '</p>
                         </div>
                     </div>
 
-                    <!-- Chips editor -->
-                    <div style="margin-bottom:16px">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-price-tag-3-line"></i> ' . esc_html(PPV_Lang::t('wai_chips_label')) . '</span>
-                            <span id="ra-wai-chip-count" style="font-size:11px;color:#94a3b8"></span>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_mode')) . '</label>
+                            <select name="widget_mode" id="ra-widget-mode" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none;transition:border-color .2s">
+                                <option value="catalog">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_catalog')) . '</option>
+                                <option value="float">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_float')) . '</option>
+                                <option value="inline">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_inline')) . '</option>
+                                <option value="button">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_button')) . '</option>
+                            </select>
                         </div>
-                        <div id="ra-wai-chip-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
-                        <div style="display:flex;gap:6px">
-                            <input type="text" id="ra-wai-chip-input" placeholder="' . esc_attr(PPV_Lang::t('wai_chip_add_ph')) . '" style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <button type="button" id="ra-wai-chip-add" style="background:#8b5cf6;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_position')) . '</label>
+                            <select name="widget_position" id="ra-widget-position" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none">
+                                <option value="bottom-right">' . esc_html(PPV_Lang::t('repair_admin_widget_pos_br')) . '</option>
+                                <option value="bottom-left">' . esc_html(PPV_Lang::t('repair_admin_widget_pos_bl')) . '</option>
+                            </select>
                         </div>
-                    </div>
-
-                    <!-- Services editor -->
-                    <div>
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('wai_services_label')) . '</span>
-                            <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8"></span>
-                        </div>
-                        <div id="ra-wai-service-list" style="margin-bottom:8px"></div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap">
-                            <input type="text" id="ra-wai-svc-name" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_name_ph')) . '" style="flex:2;min-width:120px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <input type="text" id="ra-wai-svc-price" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_price_ph')) . '" style="flex:1;min-width:80px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <input type="text" id="ra-wai-svc-time" placeholder="' . esc_attr(PPV_Lang::t('wai_svc_time_ph')) . '" style="flex:1;min-width:60px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none">
-                            <button type="button" id="ra-wai-svc-add" style="background:#10b981;border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('wai_add')) . '</button>
-                        </div>
-                    </div>
-
-                    <!-- Quality tiers (AI-managed) -->
-                    <div id="ra-wai-tiers-section" style="display:none;margin-top:12px"></div>
-
-                    <!-- Tiered services (AI-managed) -->
-                    <div id="ra-wai-tiered-svc-section" style="display:none;margin-top:8px"></div>
-
-                    <!-- Custom sections (AI-managed) -->
-                    <div id="ra-wai-sections-section" style="display:none;margin-top:8px"></div>
-
-                    </div>
-                    <!-- ═══ END VISUAL EDITOR ═══ -->
-
-                    <!-- File upload area -->
-                    <div id="ra-wai-upload-area" style="border:2px dashed #e2e8f0;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;cursor:pointer;transition:all .2s;background:#fafbfc">
-                        <input type="file" id="ra-wai-file" accept=".csv,.txt,.xlsx,.xls,.jpg,.jpeg,.png,.webp,.pdf" style="display:none">
-                        <i class="ri-upload-cloud-line" style="font-size:28px;color:#94a3b8"></i>
-                        <p style="font-size:13px;color:#64748b;margin:6px 0 2px;font-weight:600">' . esc_html(PPV_Lang::t('wai_upload_title')) . '</p>
-                        <p style="font-size:11px;color:#94a3b8;margin:0">' . esc_html(PPV_Lang::t('wai_upload_hint')) . '</p>
-                    </div>
-                    <div id="ra-wai-upload-status" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px"></div>
-
-                    <!-- AI Chat -->
-                    <div id="ra-wai-chat" style="border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff">
-                        <div id="ra-wai-messages" style="height:280px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px">
-                            <div class="ra-wai-msg bot" style="background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#334155;max-width:85%;line-height:1.5">
-                                ' . esc_html(PPV_Lang::t('wai_chat_welcome')) . '<br><br>
-                                ' . esc_html(PPV_Lang::t('wai_chat_options_intro')) . '<br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_prices')) . '</b><br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_brands')) . '</b><br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_design')) . '</b><br>
-                                • <b>' . esc_html(PPV_Lang::t('wai_chat_opt_info')) . '</b>
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_color')) . '</label>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="color" name="widget_color" id="ra-widget-color" value="' . $store_color . '" style="width:42px;height:42px;border:1.5px solid #e2e8f0;border-radius:10px;padding:3px;cursor:pointer;flex-shrink:0">
+                                <span id="ra-widget-color-hex" style="font-size:12px;font-family:monospace;color:#94a3b8">' . $store_color . '</span>
                             </div>
                         </div>
-                        <div style="border-top:1.5px solid #e2e8f0;display:flex;align-items:end;gap:8px;padding:10px 12px;background:#fafbfc">
-                            <textarea id="ra-wai-input" rows="1" placeholder="' . esc_attr(PPV_Lang::t('wai_input_placeholder')) . '" style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;min-height:36px;max-height:100px;transition:border-color .2s;line-height:1.4"></textarea>
-                            <button type="button" id="ra-wai-send" style="background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');border:none;color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s">
-                                <i class="ri-send-plane-fill" style="font-size:16px"></i>
-                            </button>
+                        <div class="field">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_language')) . '</label>
+                            <select name="widget_lang" id="ra-widget-lang" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none">
+                                <option value="de">Deutsch</option>
+                                <option value="en">English</option>
+                                <option value="hu">Magyar</option>
+                                <option value="ro">Romana</option>
+                                <option value="it">Italiano</option>
+                            </select>
+                        </div>
+                        <div class="field" id="ra-widget-text-wrap">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_btn_text')) . '</label>
+                            <input type="text" name="widget_text" id="ra-widget-text" placeholder="Reparatur anfragen" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
+                        </div>
+                        <div class="field" id="ra-widget-target-wrap" style="display:none">
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_css_sel')) . '</label>
+                            <input type="text" name="widget_target" id="ra-widget-target" placeholder="#mein-widget" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
                         </div>
                     </div>
 
-                    <!-- Quick action chips -->
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_ai_mode_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_ai_mode')) . '</button>
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_brands_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_brands')) . '</button>
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_prices_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_prices')) . '</button>
-                        <button type="button" class="ra-wai-chip" data-msg="' . esc_attr(PPV_Lang::t('wai_chip_options_msg')) . '" style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#64748b;transition:all .2s">' . esc_html(PPV_Lang::t('wai_chip_options')) . '</button>
+                    <!-- Vorschau -->
+                    <div style="margin-top:16px;border:2px dashed #e2e8f0;border-radius:14px;padding:20px;min-height:80px;background:repeating-linear-gradient(45deg,#fafbfc,#fafbfc 10px,#f8fafc 10px,#f8fafc 20px);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+                        <div id="ra-widget-preview-float" style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-radius:50px;color:#fff;font-size:14px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.15);cursor:default;width:fit-content;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                            <span id="ra-widget-preview-text">Reparatur anfragen</span>
+                        </div>
+                        <div id="ra-widget-preview-inline" style="display:none;max-width:400px;width:100%;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
+                            <div id="ra-widget-preview-inline-hdr" style="padding:20px 24px;color:#fff;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">
+                                <div style="font-size:18px;font-weight:700">Reparatur einreichen</div>
+                                <div style="font-size:13px;opacity:.85;margin-top:4px">Formular ausfullen - wir melden uns.</div>
+                            </div>
+                            <div style="padding:16px 24px">
+                                <div id="ra-widget-preview-inline-cta" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;text-align:center;color:#fff;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">Formular offnen</div>
+                            </div>
+                        </div>
+                        <div id="ra-widget-preview-button" style="display:none">
+                            <div id="ra-widget-preview-btn" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:default;box-shadow:0 4px 16px rgba(102,126,234,.3);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ')">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                                <span id="ra-widget-preview-btn-text">Reparatur anfragen</span>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Embed Code + Direct Link kompakt -->
+                    <div style="margin-top:16px;display:grid;gap:12px">
+                        <div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:12px;font-weight:700;color:#475569"><i class="ri-code-s-slash-line" style="margin-right:4px"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_embed')) . '</span>
+                                <button type="button" id="ra-widget-copy" style="background:#1e293b;border:none;color:#e2e8f0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-file-copy-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_copy')) . '</button>
+                            </div>
+                            <pre id="ra-widget-code" style="background:#1e293b;color:#e2e8f0;padding:14px 16px;border-radius:10px;font-size:11px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:0"></pre>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px"><i class="ri-link" style="margin-right:4px"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_direct_link')) . '</span>
+                            <div style="display:flex;gap:6px;align-items:center">
+                                <input type="text" readonly id="ra-widget-direct-link" value="' . esc_attr($form_url) . '" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#475569;font-family:monospace">
+                                <button type="button" id="ra-widget-copy-link" style="background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');border:none;color:#fff;padding:9px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px"><i class="ri-file-copy-line"></i> Link</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Section 2: Katalog-Daten ── -->
+                <div style="border-top:2px solid #f1f5f9;padding-top:24px;margin-bottom:20px">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-list-settings-line" style="color:#fff;font-size:18px"></i></div>
+                        <div style="flex:1">
+                            <h4 style="margin:0;font-size:16px">' . esc_html(PPV_Lang::t('repair_admin_widget_catalog')) . '</h4>
+                            <p style="margin:0;font-size:12px;color:#94a3b8">' . esc_html(PPV_Lang::t('repair_admin_widget_catalog_sub')) . '</p>
+                        </div>
+                        <span id="ra-wai-total-badge" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0"></span>
+                    </div>
+
+                    <!-- Inner Tab Navigation -->
+                    <div id="ra-cat-tabs" style="display:flex;gap:4px;padding:4px;background:#f1f5f9;border-radius:10px;margin-bottom:16px">
+                        <button type="button" class="ra-cat-tab active" data-cat-tab="services" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.08)"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_tab_services')) . '</button>
+                        <button type="button" class="ra-cat-tab" data-cat-tab="brands" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-smartphone-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_tab_brands')) . '</button>
+                        <button type="button" class="ra-cat-tab" data-cat-tab="import" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-upload-cloud-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_tab_import')) . '</button>
+                    </div>
+
+                    <!-- TAB: Services -->
+                    <div id="ra-cat-panel-services" class="ra-cat-panel">
+                        <!-- Add service form -->
+                        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">
+                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">' . esc_html(PPV_Lang::t('repair_admin_widget_add_service')) . '</div>
+                            <div style="display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:8px;align-items:end">
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_category')) . '</label>
+                                    <input type="text" id="ra-wai-svc-cat" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_category_ph')) . '" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s" list="ra-wai-cat-list">
+                                    <datalist id="ra-wai-cat-list"></datalist>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_name')) . '</label>
+                                    <input type="text" id="ra-wai-svc-name" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_name_ph')) . '" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_price')) . '</label>
+                                    <input type="text" id="ra-wai-svc-price" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_price_ph')) . '" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_duration')) . '</label>
+                                    <div style="display:flex;gap:4px">
+                                        <input type="text" id="ra-wai-svc-time" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_duration_ph')) . '" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                        <button type="button" id="ra-wai-svc-add" style="background:#10b981;border:none;color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s"><i class="ri-add-line" style="font-size:16px"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service list -->
+                        <div id="ra-wai-service-list" style="margin-bottom:8px"></div>
+                        <div id="ra-wai-service-empty" style="display:none;text-align:center;padding:32px 16px;color:#94a3b8">
+                            <i class="ri-inbox-line" style="font-size:36px;display:block;margin-bottom:8px;opacity:.5"></i>
+                            <div style="font-size:13px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_widget_no_services')) . '</div>
+                            <div style="font-size:12px;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_widget_no_svc_hint')) . '</div>
+                        </div>
+                        <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8;display:block;text-align:right"></span>
+                    </div>
+
+                    <!-- TAB: Brands -->
+                    <div id="ra-cat-panel-brands" class="ra-cat-panel" style="display:none">
+                        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">
+                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">' . esc_html(PPV_Lang::t('repair_admin_widget_add_brand')) . '</div>
+                            <div style="display:flex;gap:8px">
+                                <input type="text" id="ra-wai-brand-input" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_brand_ph')) . '" style="flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;transition:border-color .2s">
+                                <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_add_btn')) . '</button>
+                            </div>
+                        </div>
+                        <div id="ra-wai-brand-list" style="margin-bottom:8px"></div>
+                        <div id="ra-wai-brand-empty" style="display:none;text-align:center;padding:32px 16px;color:#94a3b8">
+                            <i class="ri-smartphone-line" style="font-size:36px;display:block;margin-bottom:8px;opacity:.5"></i>
+                            <div style="font-size:13px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_widget_no_brands')) . '</div>
+                            <div style="font-size:12px;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_widget_no_brand_hint')) . '</div>
+                        </div>
+                        <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8;display:block;text-align:right"></span>
+                    </div>
+
+                    <!-- TAB: Import -->
+                    <div id="ra-cat-panel-import" class="ra-cat-panel" style="display:none">
+                        <!-- CSV Format Info -->
+                        <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1.5px solid #bfdbfe;border-radius:12px;padding:16px;margin-bottom:16px">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                                <i class="ri-information-line" style="font-size:18px;color:#3b82f6"></i>
+                                <span style="font-size:13px;font-weight:700;color:#1e40af">' . esc_html(PPV_Lang::t('repair_admin_widget_csv_format')) . '</span>
+                            </div>
+                            <div style="font-size:12px;color:#475569;line-height:1.6">
+                                ' . esc_html(PPV_Lang::t('repair_admin_widget_csv_desc')) . '<br>
+                                <code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:11px;color:#1e40af;border:1px solid #dbeafe">Bezeichnung;Preis;Dauer;Kategorie</code><br>
+                                <span style="color:#94a3b8">' . esc_html(PPV_Lang::t('repair_admin_widget_csv_sep')) . '</span>
+                            </div>
+                            <div style="margin-top:10px;background:#fff;border-radius:8px;padding:10px 12px;font-family:monospace;font-size:11px;color:#475569;line-height:1.8;border:1px solid #dbeafe">
+                                iPhone 15 Display;89 EUR;1 Std;Display<br>
+                                Samsung S24 Akku;59 EUR;45 Min;Akku<br>
+                                Wasserschaden Diagnose;29 EUR;30 Min;Sonstiges
+                            </div>
+                        </div>
+
+                        <!-- AI CSV Tipp -->
+                        <div style="background:linear-gradient(135deg,#faf5ff,#f5f3ff);border:1.5px solid #ddd6fe;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px">
+                            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                <i class="ri-sparkling-2-fill" style="font-size:18px;color:#fff"></i>
+                            </div>
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_widget_ai_title')) . '</div>
+                                <div style="font-size:12px;color:#6b7280;line-height:1.5">
+                                    ' . esc_html(PPV_Lang::t('repair_admin_widget_ai_desc')) . '
+                                </div>
+                                <a href="https://claude.ai" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 14px;background:#7c3aed;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:background .2s" onmouseover="this.style.background=\'#6d28d9\'" onmouseout="this.style.background=\'#7c3aed\'">
+                                    <i class="ri-external-link-line" style="font-size:13px"></i>
+                                    ' . esc_html(PPV_Lang::t('repair_admin_widget_ai_btn')) . '
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Upload area -->
+                        <div id="ra-wai-upload-area" style="border:2px dashed #d1d5db;border-radius:14px;padding:32px 16px;text-align:center;cursor:pointer;transition:all .25s;background:#fafbfc">
+                            <input type="file" id="ra-wai-file" accept=".csv,.txt,.xlsx,.xls" style="display:none">
+                            <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#eff6ff,#dbeafe);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+                                <i class="ri-upload-cloud-2-line" style="font-size:28px;color:#3b82f6"></i>
+                            </div>
+                            <p style="font-size:14px;color:#475569;margin:0 0 4px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_widget_upload')) . '</p>
+                            <p style="font-size:12px;color:#94a3b8;margin:0">' . esc_html(PPV_Lang::t('repair_admin_widget_upload_hint')) . '</p>
+                        </div>
+                        <div id="ra-wai-upload-status" style="display:none;padding:12px 16px;border-radius:10px;font-size:13px;margin-top:12px"></div>
+
+                        <!-- CSV Preview -->
+                        <div id="ra-csv-preview" style="display:none;margin-top:16px">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                                <span style="font-size:13px;font-weight:700;color:#475569"><i class="ri-file-list-3-line" style="margin-right:4px"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_preview')) . '</span>
+                                <div style="display:flex;gap:6px">
+                                    <button type="button" id="ra-csv-cancel" style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">' . esc_html(PPV_Lang::t('repair_admin_widget_cancel')) . '</button>
+                                    <button type="button" id="ra-csv-import" style="background:#10b981;border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ri-check-line"></i> <span id="ra-csv-import-count">0</span> ' . esc_html(PPV_Lang::t('repair_admin_widget_import_btn')) . '</button>
+                                </div>
+                            </div>
+                            <div id="ra-csv-table" style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;max-height:300px;overflow-y:auto"></div>
+                        </div>
+
+                        <!-- Export -->
+                        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9">
+                            <button type="button" id="ra-csv-export" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#475569;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s"><i class="ri-download-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_export')) . '</button>
+                        </div>
+                    </div>
+
+                    <!-- Quality tiers -->
+                    <div id="ra-wai-tiers-section" style="display:none;margin-top:12px"></div>
+                    <div id="ra-wai-tiered-svc-section" style="display:none;margin-top:8px"></div>
+                    <div id="ra-wai-sections-section" style="display:none;margin-top:8px"></div>
                 </div>
 
             </div><!-- END PANEL: widget -->
@@ -2601,6 +2755,7 @@ echo '</div></div>
         <div class="ra-tab active" data-tab="repairs"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_repairs')) . '</div>
         <div class="ra-tab" data-tab="invoices"><i class="ri-file-list-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_inv_quote')) . '</div>
         <div class="ra-tab" data-tab="customers"><i class="ri-user-3-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_customers')) . '</div>
+        <div class="ra-tab" data-tab="termine"><i class="ri-calendar-schedule-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termine')) . '</div>
         <div class="ra-tab" data-tab="feedback"><i class="ri-feedback-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_feedback')) . '</div>
     </div>';
 
@@ -2622,6 +2777,7 @@ echo '</div></div>
                 <option value="done">' . esc_html(PPV_Lang::t('repair_admin_status_done')) . '</option>
                 <option value="delivered">' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '</option>
                 <option value="cancelled">' . esc_html(PPV_Lang::t('repair_admin_status_cancelled')) . '</option>
+                <option value="not_repairable">' . esc_html(PPV_Lang::t('repair_admin_status_not_repairable')) . '</option>
             </select>
         </div>
     </div>';
@@ -2813,6 +2969,11 @@ echo '</div></div>
         </div>';
 
         echo '</div>'; // end ra-tab-customers
+
+        // ========== TAB: Termine (Calendar) ==========
+        echo '<div class="ra-tab-content" id="ra-tab-termine">
+        <div id="ra-termine-calendar"></div>
+        </div>'; // end ra-tab-termine
 
         // ========== TAB: Feedback ==========
         echo '<div class="ra-tab-content" id="ra-tab-feedback">
@@ -3015,6 +3176,51 @@ echo '</div></div>
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-termin-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2;background:#059669" id="ra-termin-submit">
                 <i class="ri-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_confirm')) . '
+            </button>
+        </div>
+    </div>
+</div>';
+
+        // Set Termin Modal (for widget-submitted repairs without appointment)
+        echo '<div class="ra-modal-overlay" id="ra-set-termin-modal">
+    <div class="ra-modal" style="max-width:460px">
+        <h3 id="ra-st-title" style="display:flex;align-items:center;gap:8px;margin:0 0 4px"><i class="ri-calendar-todo-line" style="color:#dc2626"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_needed', 'Termin vereinbaren')) . '</h3>
+        <p id="ra-st-desc" style="font-size:13px;color:#64748b;margin:0 0 16px">' . esc_html(PPV_Lang::t('repair_admin_termin_needed_desc', 'Dieser Auftrag wurde über das Widget eingereicht. Bitte vereinbaren Sie einen Termin mit dem Kunden.')) . '</p>
+
+        <div id="ra-st-customer-info" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_customer_data', 'Kundendaten')) . '</div>
+            <div id="ra-st-name" style="font-size:14px;font-weight:600;color:#1e293b"></div>
+            <div id="ra-st-contact" style="font-size:13px;color:#475569;margin-top:4px"></div>
+            <div id="ra-st-device" style="font-size:13px;color:#475569;margin-top:4px"></div>
+            <div id="ra-st-problem" style="font-size:12px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0"></div>
+        </div>
+
+        <div style="margin-bottom:14px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-calendar-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_date')) . ' *</label>
+            <input type="date" lang="' . esc_attr($lang) . '" id="ra-st-date" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:14px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-time-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_time')) . '</label>
+            <input type="time" id="ra-st-time" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:14px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-chat-1-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_message')) . '</label>
+            <textarea id="ra-st-message" class="ra-input" rows="2" style="width:100%;font-size:13px;padding:10px 12px;resize:vertical" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_termin_message_ph')) . '"></textarea>
+        </div>
+        <div style="margin-bottom:14px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                <input type="checkbox" id="ra-st-send-email" checked style="width:18px;height:18px;cursor:pointer;accent-color:#dc2626">
+                <i class="ri-mail-send-line" style="color:#dc2626"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_send_email')) . '
+            </label>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-st-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+            <button type="button" class="ra-btn ra-btn-danger ra-btn-sm" style="display:none" id="ra-st-delete">
+                <i class="ri-delete-bin-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_delete', 'Termin löschen')) . '
+            </button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2;background:#dc2626" id="ra-st-submit">
+                <i class="ri-calendar-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_confirm')) . '
             </button>
         </div>
     </div>
@@ -3989,6 +4195,13 @@ echo '</div></div>
         'termin_no_date' => PPV_Lang::t('repair_admin_termin_no_date'),
         'no_termin_confirm' => PPV_Lang::t('repair_admin_no_termin_confirm'),
         'no_termin_success' => PPV_Lang::t('repair_admin_no_termin_success'),
+        'termin_needed' => PPV_Lang::t('repair_admin_termin_needed'),
+        'termin_needed_desc' => PPV_Lang::t('repair_admin_termin_needed_desc'),
+        'termin_edit' => PPV_Lang::t('repair_admin_termin_edit', 'Termin ändern'),
+        'termin_edit_desc' => PPV_Lang::t('repair_admin_termin_edit_desc', 'Ändern Sie den bestehenden Termin für diesen Auftrag.'),
+        'termin_delete' => PPV_Lang::t('repair_admin_termin_delete', 'Termin löschen'),
+        'termin_deleted' => PPV_Lang::t('repair_admin_termin_deleted', 'Termin gelöscht'),
+        'termin_add' => PPV_Lang::t('repair_admin_termin_add'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
         'create_inv_btn' => PPV_Lang::t('repair_admin_create_inv_btn'),
@@ -4010,6 +4223,7 @@ echo '</div></div>
         'status_done' => PPV_Lang::t('repair_admin_status_done'),
         'status_delivered' => PPV_Lang::t('repair_admin_status_delivered'),
         'status_cancelled' => PPV_Lang::t('repair_admin_status_cancelled'),
+        'status_not_repairable' => PPV_Lang::t('repair_admin_status_not_repairable'),
         // Custom field labels for print
         'cf_color' => PPV_Lang::t('repair_fb_color'),
         'cf_purchase_date' => PPV_Lang::t('repair_fb_purchase_date'),
@@ -4022,6 +4236,47 @@ echo '</div></div>
         'cf_vehicle_first_reg' => PPV_Lang::t('repair_vehicle_first_reg_label'),
         'cf_vehicle_tuev' => PPV_Lang::t('repair_vehicle_tuev_label'),
         'cf_condition_kfz' => PPV_Lang::t('repair_fb_condition_kfz'),
+        // Termine (Calendar)
+        'termine_new' => PPV_Lang::t('termine_new'),
+        'termine_edit' => PPV_Lang::t('termine_edit'),
+        'termine_title' => PPV_Lang::t('termine_title'),
+        'termine_title_ph' => PPV_Lang::t('termine_title_ph'),
+        'termine_customer' => PPV_Lang::t('termine_customer'),
+        'termine_customer_ph' => PPV_Lang::t('termine_customer_ph'),
+        'termine_phone' => PPV_Lang::t('termine_phone'),
+        'termine_phone_ph' => PPV_Lang::t('termine_phone_ph'),
+        'termine_date' => PPV_Lang::t('termine_date'),
+        'termine_time' => PPV_Lang::t('termine_time'),
+        'termine_duration' => PPV_Lang::t('termine_duration'),
+        'termine_type' => PPV_Lang::t('termine_type'),
+        'termine_type_general' => PPV_Lang::t('termine_type_general'),
+        'termine_type_repair' => PPV_Lang::t('termine_type_repair'),
+        'termine_type_pickup' => PPV_Lang::t('termine_type_pickup'),
+        'termine_type_consultation' => PPV_Lang::t('termine_type_consultation'),
+        'termine_type_estimate' => PPV_Lang::t('termine_type_estimate'),
+        'termine_status' => PPV_Lang::t('termine_status'),
+        'termine_status_scheduled' => PPV_Lang::t('termine_status_scheduled'),
+        'termine_status_confirmed' => PPV_Lang::t('termine_status_confirmed'),
+        'termine_status_completed' => PPV_Lang::t('termine_status_completed'),
+        'termine_status_cancelled' => PPV_Lang::t('termine_status_cancelled'),
+        'termine_notes' => PPV_Lang::t('termine_notes'),
+        'termine_notes_ph' => PPV_Lang::t('termine_notes_ph'),
+        'termine_color' => PPV_Lang::t('termine_color'),
+        'termine_save' => PPV_Lang::t('termine_save'),
+        'termine_delete' => PPV_Lang::t('termine_delete'),
+        'termine_delete_confirm' => PPV_Lang::t('termine_delete_confirm'),
+        'termine_saved' => PPV_Lang::t('termine_saved'),
+        'termine_deleted' => PPV_Lang::t('termine_deleted'),
+        'termine_today' => PPV_Lang::t('termine_today'),
+        'termine_no_appointments' => PPV_Lang::t('termine_no_appointments'),
+        'termine_from_repair' => PPV_Lang::t('termine_from_repair'),
+        'termine_day_mon' => PPV_Lang::t('termine_day_mon'),
+        'termine_day_tue' => PPV_Lang::t('termine_day_tue'),
+        'termine_day_wed' => PPV_Lang::t('termine_day_wed'),
+        'termine_day_thu' => PPV_Lang::t('termine_day_thu'),
+        'termine_day_fri' => PPV_Lang::t('termine_day_fri'),
+        'termine_day_sat' => PPV_Lang::t('termine_day_sat'),
+        'termine_day_sun' => PPV_Lang::t('termine_day_sun'),
     ], JSON_UNESCAPED_UNICODE) . ';
 
     // Language switcher
@@ -4105,7 +4360,8 @@ echo '</div></div>
             waiting_parts:[L.status_waiting,"ra-status-waiting"],
             done:[L.status_done,"ra-status-done"],
             delivered:[L.status_delivered,"ra-status-delivered"],
-            cancelled:[L.status_cancelled,"ra-status-cancelled"]
+            cancelled:[L.status_cancelled,"ra-status-cancelled"],
+            not_repairable:[L.status_not_repairable,"ra-status-not-repairable"]
         };
         card.setAttribute("data-status",status);
         var badge=card.querySelector(".ra-status");
@@ -4283,15 +4539,21 @@ echo '</div></div>
                     var paBtn=card.querySelector(".ra-btn-parts-arrived");
                     if(paBtn)paBtn.remove();
                     // Add termin badge only if termin was set
-                    if(!noTermin){
-                        var body=card.querySelector(".ra-repair-body");
-                        if(body&&tDate){
-                            var tBadge=document.createElement("div");
-                            tBadge.className="ra-termin-badge";
-                            var dParts=tDate.split("-");
-                            tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
-                            body.appendChild(tBadge);
+                    if(!noTermin&&tDate){
+                        var badgesRow=card.querySelector(".ra-card-badges");
+                        if(!badgesRow){
+                            badgesRow=document.createElement("div");
+                            badgesRow.className="ra-card-badges";
+                            var actionsEl=card.querySelector(".ra-repair-actions");
+                            if(actionsEl)card.insertBefore(badgesRow,actionsEl);
                         }
+                        var tBadge=document.createElement("div");
+                        tBadge.className="ra-termin-badge";
+                        tBadge.dataset.repairId=terminRepairId;
+                        tBadge.dataset.terminAt=tDate+(tTime?" "+tTime+":00":" 00:00:00");
+                        var dParts=tDate.split("-");
+                        tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                        badgesRow.appendChild(tBadge);
                     }
                 }
                 terminRepairId=null;
@@ -4303,6 +4565,155 @@ echo '</div></div>
             btn.disabled=false;
             btn.innerHTML=\'<i class="ri-check-line"></i> \'+btnLabel;
             toast(L.connection_error);
+        });
+    });
+
+    /* ===== Set Termin (widget badge click + existing termin edit) ===== */
+    var stModal=document.getElementById("ra-set-termin-modal"),stRepairId=null;
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var badge=e.target.closest(".ra-termin-needed-badge")||e.target.closest(".ra-termin-add-badge")||e.target.closest(".ra-termin-badge");
+        if(!badge)return;
+        var card=badge.closest(".ra-repair-card");
+        if(!card)return;
+        stRepairId=card.dataset.id;
+        // Fill customer info
+        document.getElementById("ra-st-name").textContent=card.dataset.name||"";
+        var contact=[];
+        if(card.dataset.email)contact.push(card.dataset.email);
+        if(card.dataset.phone)contact.push(card.dataset.phone);
+        document.getElementById("ra-st-contact").textContent=contact.join(" \u2022 ");
+        var dev=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
+        document.getElementById("ra-st-device").textContent=dev?("\uD83D\uDCF1 "+dev):"";
+        document.getElementById("ra-st-problem").textContent=card.dataset.problem||"";
+        // Check if editing existing termin
+        var existingTermin=badge.dataset.terminAt||"";
+        var stTitle=document.getElementById("ra-st-title");
+        var stDesc=document.getElementById("ra-st-desc");
+        if(existingTermin){
+            // Editing existing termin - pre-fill with current values
+            stTitle.innerHTML=\'<i class="ri-calendar-check-line" style="color:#059669"></i> \'+(L.termin_edit||"Termin ändern");
+            stDesc.textContent=L.termin_edit_desc||"Ändern Sie den bestehenden Termin für diesen Auftrag.";
+            document.getElementById("ra-st-date").value=existingTermin.substring(0,10);
+            var exTime=existingTermin.substring(11,16);
+            document.getElementById("ra-st-time").value=(exTime&&exTime!=="00:00")?exTime:"10:00";
+        } else {
+            // New termin - default tomorrow 10:00
+            stTitle.innerHTML=\'<i class="ri-calendar-todo-line" style="color:#dc2626"></i> \'+(L.termin_needed||"Termin vereinbaren");
+            stDesc.textContent=L.termin_needed_desc||"Bitte vereinbaren Sie einen Termin mit dem Kunden.";
+            var tmr=new Date();tmr.setDate(tmr.getDate()+1);
+            document.getElementById("ra-st-date").value=tmr.toISOString().split("T")[0];
+            document.getElementById("ra-st-time").value="10:00";
+        }
+        document.getElementById("ra-st-message").value="";
+        document.getElementById("ra-st-send-email").checked=true;
+        // Show/hide delete button based on edit mode
+        document.getElementById("ra-st-delete").style.display=existingTermin?"":"none";
+        stModal.classList.add("show");
+    });
+    document.getElementById("ra-st-cancel").addEventListener("click",function(){stModal.classList.remove("show");stRepairId=null});
+    stModal.addEventListener("click",function(e){if(e.target===stModal){stModal.classList.remove("show");stRepairId=null}});
+    // Delete termin handler
+    document.getElementById("ra-st-delete").addEventListener("click",function(){
+        if(!stRepairId)return;
+        var btn=this;btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_delete_termin");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",stRepairId);
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-delete-bin-line"></i> \'+(L.termin_delete||"Termin löschen");
+            if(data.success){
+                toast(L.termin_deleted||"Termin gelöscht");
+                stModal.classList.remove("show");
+                var card=document.querySelector(\'.ra-repair-card[data-id="\'+stRepairId+\'"]\');
+                if(card){
+                    var tb=card.querySelector(".ra-termin-badge");
+                    if(tb){
+                        // Replace with add-termin badge
+                        tb.className="ra-termin-add-badge";
+                        tb.removeAttribute("data-termin-at");
+                        tb.dataset.repairId=stRepairId;
+                        tb.innerHTML=\'<i class="ri-calendar-todo-line"></i> \'+(L.termin_add||"+ Termin");
+                    }
+                }
+                stRepairId=null;
+            }else{
+                toast(data.data&&data.data.message?data.data.message:(L.error||"Fehler"));
+            }
+        })
+        .catch(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-delete-bin-line"></i> \'+(L.termin_delete||"Termin löschen");
+            toast(L.connection_error||"Verbindungsfehler");
+        });
+    });
+    document.getElementById("ra-st-submit").addEventListener("click",function(){
+        if(!stRepairId)return;
+        var tDate=document.getElementById("ra-st-date").value;
+        if(!tDate){toast(L.termin_no_date||"Bitte Datum wählen");return}
+        var tTime=document.getElementById("ra-st-time").value;
+        var msg=document.getElementById("ra-st-message").value;
+        var sendEmail=document.getElementById("ra-st-send-email").checked;
+        var btn=this;btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_set_termin");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",stRepairId);
+        fd.append("termin_date",tDate);
+        fd.append("termin_time",tTime);
+        fd.append("custom_message",msg);
+        if(sendEmail)fd.append("send_email","1");
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+(L.termin_confirm||"Termin bestätigen");
+            if(data.success){
+                toast(L.termin_success||"Termin gesetzt");
+                stModal.classList.remove("show");
+                // Replace or update badge on card
+                var card=document.querySelector(\'.ra-repair-card[data-id="\'+stRepairId+\'"]\');
+                if(card){
+                    var nb=card.querySelector(".ra-termin-needed-badge")||card.querySelector(".ra-termin-add-badge")||card.querySelector(".ra-termin-badge");
+                    if(nb){
+                        var dParts=tDate.split("-");
+                        nb.className="ra-termin-badge";
+                        nb.style.animation="";
+                        nb.dataset.repairId=stRepairId;
+                        nb.dataset.terminAt=tDate+(tTime?" "+tTime+":00":" 00:00:00");
+                        nb.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                    } else {
+                        // No badge yet, create one in the badges row
+                        var badgesRow=card.querySelector(".ra-card-badges");
+                        if(!badgesRow){
+                            badgesRow=document.createElement("div");
+                            badgesRow.className="ra-card-badges";
+                            var actionsEl=card.querySelector(".ra-repair-actions");
+                            if(actionsEl)card.insertBefore(badgesRow,actionsEl);
+                        }
+                        var dParts=tDate.split("-");
+                        var newBadge=document.createElement("div");
+                        newBadge.className="ra-termin-badge";
+                        newBadge.dataset.repairId=stRepairId;
+                        newBadge.dataset.terminAt=tDate+(tTime?" "+tTime+":00":" 00:00:00");
+                        newBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                        badgesRow.appendChild(newBadge);
+                    }
+                }
+                stRepairId=null;
+            }else{
+                toast(data.data&&data.data.message?data.data.message:(L.error||"Fehler"));
+            }
+        })
+        .catch(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+(L.termin_confirm||"Termin bestätigen");
+            toast(L.connection_error||"Verbindungsfehler");
         });
     });
 
@@ -4585,7 +4996,8 @@ echo '</div></div>
             waiting_parts:[L.status_waiting,"ra-status-waiting"],
             done:[L.status_done,"ra-status-done"],
             delivered:[L.status_delivered,"ra-status-delivered"],
-            cancelled:[L.status_cancelled,"ra-status-cancelled"]
+            cancelled:[L.status_cancelled,"ra-status-cancelled"],
+            not_repairable:[L.status_not_repairable,"ra-status-not-repairable"]
         };
         var st=map[r.status]||["?",""];
         var device=((r.device_brand||"")+" "+(r.device_model||"")).trim();
@@ -4594,8 +5006,8 @@ echo '</div></div>
         var problem=(r.problem_description||"");
         if(problem.length>150)problem=problem.substring(0,150)+"...";
         var fullProblem=r.problem_description||"";
-        var opts=["new","in_progress","waiting_parts","done","delivered","cancelled"];
-        var labels=[L.status_new,L.status_progress,L.status_waiting,L.status_done,L.status_delivered,L.status_cancelled];
+        var opts=["new","in_progress","waiting_parts","done","delivered","cancelled","not_repairable"];
+        var labels=[L.status_new,L.status_progress,L.status_waiting,L.status_done,L.status_delivered,L.status_cancelled,L.status_not_repairable];
         var selectHtml="";
         for(var i=0;i<opts.length;i++){
             selectHtml+=\'<option value="\'+opts[i]+\'" \'+(r.status===opts[i]?"selected":"")+\'>\'+labels[i]+\'</option>\';
@@ -4623,11 +5035,22 @@ echo '</div></div>
                 imeiHtml+pinHtml+musterHtml+accHtml+
             \'</div>\';
         }
+        // Parse custom_fields for source_channel
+        var cf={};try{if(r.custom_fields)cf=JSON.parse(r.custom_fields)}catch(e){}
+        var isWidget=cf.source_channel==="widget";
         // Badges
         var badges="";
+        if(isWidget)badges+=\'<div class="ra-widget-badge"><i class="ri-global-line"></i> Widget</div>\';
         if(invoiceBadgeHtml)badges+=invoiceBadgeHtml;
-        if(r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()){
-            badges+=\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\';
+        if(r.termin_at){
+            var tIsPast=new Date(r.termin_at.replace(/-/g,"/"))<=new Date();
+            badges+=\'<div class="ra-termin-badge\'+(tIsPast?" ra-termin-past":"")+\'" data-repair-id="\'+r.id+\'" data-termin-at="\'+esc(r.termin_at)+\'"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\';
+        } else if(r.status!=="done"&&r.status!=="delivered"&&r.status!=="cancelled"){
+            if(isWidget&&!r.termin_at){
+                badges+=\'<div class="ra-termin-needed-badge" data-repair-id="\'+r.id+\'"><i class="ri-calendar-todo-line"></i> \'+(L.termin_needed||"Termin vereinbaren")+\'</div>\';
+            } else if(!r.termin_at){
+                badges+=\'<div class="ra-termin-add-badge" data-repair-id="\'+r.id+\'"><i class="ri-calendar-todo-line"></i> \'+(L.termin_add||"+ Termin")+\'</div>\';
+            }
         }
         var badgesRow=badges?\'<div class="ra-card-badges">\'+badges+\'</div>\':"";
         // Comments
@@ -5141,7 +5564,7 @@ echo '</div></div>
         switchSettingsTab(savedSettingsTab);
     }
 
-    /* ===== Widget Embed Tab ===== */
+    /* ===== Widget Panel (Embed + Catalog Editor + CSV Import) ===== */
     (function(){
         var wMode = document.getElementById("ra-widget-mode");
         var wPos = document.getElementById("ra-widget-position");
@@ -5155,6 +5578,7 @@ echo '</div></div>
         var wCopy = document.getElementById("ra-widget-copy");
         var wCopyLink = document.getElementById("ra-widget-copy-link");
         var wDirectLink = document.getElementById("ra-widget-direct-link");
+        var wColorHex = document.getElementById("ra-widget-color-hex");
         var previewFloat = document.getElementById("ra-widget-preview-float");
         var previewInline = document.getElementById("ra-widget-preview-inline");
         var previewButton = document.getElementById("ra-widget-preview-button");
@@ -5165,7 +5589,8 @@ echo '</div></div>
 
         if (!wMode || !wCode) return;
 
-        var defaultTexts = {de:"Reparatur anfragen",en:"Request repair",hu:"Javítás kérése",ro:"Solicită reparație",it:"Richiedi riparazione"};
+        var defaultTexts = {de:"Reparatur anfragen",en:"Request repair",hu:"Javitas kerese",ro:"Solicita reparatie",it:"Richiedi riparazione"};
+        var catalogTexts = {de:"Preisliste",en:"Price list",hu:"Arlista",ro:"Lista de preturi",it:"Listino prezzi"};
 
         function darkenHex(hex, pct) {
             var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
@@ -5182,21 +5607,21 @@ echo '</div></div>
             var pos = wPos.value;
             var color2 = darkenHex(color, 0.25);
             var grad = "linear-gradient(135deg," + color + "," + color2 + ")";
-            var displayText = text || defaultTexts[lang] || defaultTexts.de;
+            var displayText = text || (mode === "catalog" ? (catalogTexts[lang] || catalogTexts.de) : (defaultTexts[lang] || defaultTexts.de));
+
+            if (wColorHex) wColorHex.textContent = color;
 
             // Toggle visibility of fields
             wTargetWrap.style.display = (mode === "inline" || mode === "button") ? "" : "none";
-            wTextWrap.style.display = (mode === "float" || mode === "button") ? "" : "none";
-            wPos.parentNode.style.display = (mode === "float") ? "" : "none";
+            wTextWrap.style.display = (mode === "float" || mode === "button" || mode === "catalog") ? "" : "none";
+            wPos.parentNode.parentNode.style.display = (mode === "float" || mode === "catalog") ? "" : "none";
 
             // Update preview
-            previewFloat.style.display = mode === "float" ? "flex" : "none";
+            previewFloat.style.display = (mode === "float" || mode === "catalog") ? "flex" : "none";
             previewInline.style.display = mode === "inline" ? "" : "none";
             previewButton.style.display = mode === "button" ? "" : "none";
 
             previewFloat.style.background = grad;
-            previewFloat.style.marginLeft = pos === "bottom-left" ? "0" : "auto";
-            previewFloat.style.marginRight = pos === "bottom-left" ? "auto" : "0";
             previewText.textContent = displayText;
             previewBtnText.textContent = displayText;
 
@@ -5209,10 +5634,10 @@ echo '</div></div>
 
             // Generate embed code
             var attrs = \'data-store="\' + storeSlug + \'"\';
-            if (mode !== "float") attrs += \' data-mode="\' + mode + \'"\';
+            attrs += \' data-mode="\' + mode + \'"\';
             if (lang !== "de") attrs += \' data-lang="\' + lang + \'"\';
             if (color !== "#667eea") attrs += \' data-color="\' + color + \'"\';
-            if (mode === "float" && pos !== "bottom-right") attrs += \' data-position="\' + pos + \'"\';
+            if ((mode === "float" || mode === "catalog") && pos !== "bottom-right") attrs += \' data-position="\' + pos + \'"\';
             if (text) attrs += \' data-text="\' + text.replace(/"/g, "&quot;") + \'"\';
             if ((mode === "inline" || mode === "button") && target) attrs += \' data-target="\' + target.replace(/"/g, "&quot;") + \'"\';
 
@@ -5251,83 +5676,46 @@ echo '</div></div>
             wCopyLink.addEventListener("click", function() {
                 navigator.clipboard.writeText(wDirectLink.value).then(function() {
                     wCopyLink.innerHTML = \'<i class="ri-check-line"></i> Kopiert!\';
-                    setTimeout(function() { wCopyLink.innerHTML = \'<i class="ri-file-copy-line"></i> Kopieren\'; }, 2000);
+                    setTimeout(function() { wCopyLink.innerHTML = \'<i class="ri-file-copy-line"></i> Link\'; }, 2000);
                 });
             });
         }
-    })();
 
-    /* ===== Widget AI Configuration Chat ===== */
-    (function(){
-        var waiInput = document.getElementById("ra-wai-input");
-        var waiSend = document.getElementById("ra-wai-send");
-        var waiMessages = document.getElementById("ra-wai-messages");
+        /* ── Catalog Editor ── */
         var waiFile = document.getElementById("ra-wai-file");
         var waiUploadArea = document.getElementById("ra-wai-upload-area");
         var waiUploadStatus = document.getElementById("ra-wai-upload-status");
-        var waiServicesDiv = document.getElementById("ra-wai-services");
         var waiServiceList = document.getElementById("ra-wai-service-list");
-        var waiBrandsDiv = document.getElementById("ra-wai-brands");
+        var waiServiceEmpty = document.getElementById("ra-wai-service-empty");
         var waiBrandList = document.getElementById("ra-wai-brand-list");
+        var waiBrandEmpty = document.getElementById("ra-wai-brand-empty");
         var waiBrandCount = document.getElementById("ra-wai-brand-count");
-
-        // Translated strings from PHP
-        var waiT = ' . wp_json_encode([
-            'setup_done'       => PPV_Lang::t('wai_js_setup_done'),
-            'settings_updated' => PPV_Lang::t('wai_js_settings_updated'),
-            'error_prefix'     => PPV_Lang::t('wai_js_error_prefix'),
-            'error_unknown'    => PPV_Lang::t('wai_js_error_unknown'),
-            'conn_error'       => PPV_Lang::t('wai_js_connection_error'),
-            'uploading'        => PPV_Lang::t('wai_js_uploading'),
-            'upload_success'   => PPV_Lang::t('wai_js_upload_success'),
-            'upload_bot_msg'   => PPV_Lang::t('wai_js_upload_bot_msg'),
-            'upload_saved'     => PPV_Lang::t('wai_js_upload_saved'),
-            'upload_image_msg' => PPV_Lang::t('wai_js_upload_image_msg'),
-            'upload_error'     => PPV_Lang::t('wai_js_upload_error'),
-            'conn_error_short' => PPV_Lang::t('wai_js_connection_error_short'),
-            'service'          => PPV_Lang::t('wai_js_service'),
-            'services'         => PPV_Lang::t('wai_js_services'),
-            'brand'            => PPV_Lang::t('wai_js_brand'),
-            'brands'           => PPV_Lang::t('wai_js_brands'),
-            'model_count'      => PPV_Lang::t('wai_model_count'),
-            'model_add_ph'     => PPV_Lang::t('wai_model_add_ph'),
-            'ai_expand_hint'   => PPV_Lang::t('wai_ai_expand_hint'),
-        ]) . ';
         var waiServiceCount = document.getElementById("ra-wai-service-count");
-        var waiChipCount = document.getElementById("ra-wai-chip-count");
-        var waiChipList = document.getElementById("ra-wai-chip-list");
-        var waiStatus = document.getElementById("ra-wai-status");
-
-        if (!waiInput || !waiSend) return;
+        var totalBadge = document.getElementById("ra-wai-total-badge");
 
         var ajaxUrl = ' . wp_json_encode($ajax_url) . ';
         var nonce = ' . wp_json_encode($nonce) . ';
-        var chatHistory = [];
-        var sending = false;
 
-        // Local data stores
+        // Data stores
         var currentBrands = [];
-        var currentChips = [];
         var currentServices = [];
-        var currentQualityTiers = [];
-        var currentTieredServices = [];
-        var currentCustomSections = [];
 
-        // Load existing config+knowledge
+        // Load existing data
         var existingConfig = ' . wp_json_encode(!empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : null) . ';
         var existingKnowledge = ' . wp_json_encode(!empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : null) . ';
         if (existingConfig && existingConfig.brands) currentBrands = existingConfig.brands;
-        if (existingConfig && existingConfig.chips) currentChips = existingConfig.chips;
-        if (existingConfig && existingConfig.quality_tiers) currentQualityTiers = existingConfig.quality_tiers;
-        if (existingConfig && existingConfig.custom_sections) currentCustomSections = existingConfig.custom_sections;
         if (existingKnowledge && existingKnowledge.services) currentServices = existingKnowledge.services;
-        if (existingKnowledge && existingKnowledge.tiered_services) currentTieredServices = existingKnowledge.tiered_services;
-        renderBrands(); renderChips(); renderServices();
-        renderQualityTiers(); renderTieredServices(); renderCustomSections();
 
         function escH(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
-        // ─── Save helper ───
+        function updateTotalBadge() {
+            var n = currentServices.length;
+            if (totalBadge) totalBadge.textContent = n + " Service" + (n !== 1 ? "s" : "") + " + " + currentBrands.length + " Marken";
+            if (waiServiceEmpty) waiServiceEmpty.style.display = currentServices.length === 0 ? "" : "none";
+            if (waiBrandEmpty) waiBrandEmpty.style.display = currentBrands.length === 0 ? "" : "none";
+        }
+
+        // Save helper with micro-feedback
         function editorSave(field, data, btn) {
             if (btn) { btn.disabled = true; btn.style.opacity = ".5"; }
             var fd = new FormData();
@@ -5337,19 +5725,31 @@ echo '</div></div>
             fd.append("data", JSON.stringify(data));
             fetch(ajaxUrl, { method: "POST", body: fd })
                 .then(function(r) { return r.json(); })
-                .then(function(resp) {
-                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
-                })
-                .catch(function() {
-                    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
-                });
+                .then(function() { if (btn) { btn.disabled = false; btn.style.opacity = "1"; } })
+                .catch(function() { if (btn) { btn.disabled = false; btn.style.opacity = "1"; } });
         }
 
-        // ─── BRANDS + MODELS ───
+        // ── Catalog inner tabs ──
+        document.querySelectorAll(".ra-cat-tab").forEach(function(tab) {
+            tab.addEventListener("click", function() {
+                document.querySelectorAll(".ra-cat-tab").forEach(function(t) {
+                    t.style.background = "transparent"; t.style.color = "#64748b"; t.style.boxShadow = "none";
+                    t.classList.remove("active");
+                });
+                this.style.background = "#fff"; this.style.color = "#0f172a"; this.style.boxShadow = "0 1px 3px rgba(0,0,0,.08)";
+                this.classList.add("active");
+                var panel = this.dataset.catTab;
+                document.querySelectorAll(".ra-cat-panel").forEach(function(p) { p.style.display = "none"; });
+                var target = document.getElementById("ra-cat-panel-" + panel);
+                if (target) target.style.display = "";
+            });
+        });
+
+        // ── BRANDS ──
         var expandedBrand = -1;
-        function renderBrands(brandsOverride) {
-            if (brandsOverride) currentBrands = brandsOverride;
-            waiBrandCount.textContent = currentBrands.length + " " + (currentBrands.length !== 1 ? waiT.brands : waiT.brand);
+        function renderBrands(override) {
+            if (override) currentBrands = override;
+            if (waiBrandCount) waiBrandCount.textContent = currentBrands.length + " Marke" + (currentBrands.length !== 1 ? "n" : "");
             var html = "";
             for (var i = 0; i < currentBrands.length; i++) {
                 var b = currentBrands[i];
@@ -5358,565 +5758,471 @@ echo '</div></div>
                 var icon = b.icon || "";
                 var models = b.models || [];
                 var isOpen = expandedBrand === i;
-
-                html += \'<div style="width:100%;margin-bottom:4px">\';
-                // Brand header row
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:\' + (isOpen ? \'#dbeafe\' : \'#eff6ff\') + \';border-radius:8px;font-size:12px;color:#1e40af;cursor:pointer" data-brand-toggle="\' + i + \'">\';
-                html += (icon ? \'<span>\' + icon + \'</span> \' : \'\');
+                html += \'<div style="margin-bottom:4px">\';
+                html += \'<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:\' + (isOpen ? \'#dbeafe\' : \'#fff\') + \';border:1.5px solid \' + (isOpen ? \'#93c5fd\' : \'#e2e8f0\') + \';border-radius:10px;font-size:13px;color:#1e40af;cursor:pointer;transition:all .15s" data-brand-toggle="\' + i + \'">\';
+                if (icon) html += \'<span style="font-size:16px">\' + icon + \'</span>\';
                 html += \'<b style="flex:1">\' + escH(label) + \'</b>\';
-                html += \'<span style="color:#94a3b8;font-size:11px">\' + models.length + \' \' + waiT.model_count + \'</span>\';
-                html += \' <i class="ri-arrow-\' + (isOpen ? \'up\' : \'down\') + \'-s-line" style="color:#94a3b8;font-size:14px"></i>\';
-                html += \' <span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\';
+                html += \'<span style="background:#eff6ff;padding:2px 8px;border-radius:12px;font-size:11px;color:#3b82f6;font-weight:600">\' + models.length + \'</span>\';
+                html += \'<i class="ri-arrow-\' + (isOpen ? \'up\' : \'down\') + \'-s-line" style="color:#94a3b8;font-size:16px"></i>\';
+                html += \'<span class="ra-wai-del" data-type="brand" data-idx="\' + i + \'" style="cursor:pointer;color:#ef4444;opacity:.4;font-size:16px;transition:opacity .15s" title="Entfernen"><i class="ri-delete-bin-line"></i></span>\';
                 html += \'</div>\';
-
-                // Expanded models panel
                 if (isOpen) {
-                    html += \'<div style="padding:8px 10px 4px 28px;background:#f0f7ff;border-radius:0 0 8px 8px;margin-top:-2px">\';
-                    // Model chips
+                    html += \'<div style="padding:10px 12px 8px 20px;background:#f8fafc;border:1.5px solid #e2e8f0;border-top:0;border-radius:0 0 10px 10px;margin-top:-2px">\';
                     if (models.length > 0) {
                         html += \'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">\';
                         for (var m = 0; m < models.length; m++) {
-                            html += \'<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;color:#1e40af">\' +
+                            html += \'<span style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;background:#fff;border:1px solid #dbeafe;border-radius:8px;font-size:12px;color:#1e40af">\' +
                                 escH(models[m]) +
-                                \' <span class="ra-wai-del" data-type="model" data-brand="\' + i + \'" data-midx="\' + m + \'" style="cursor:pointer;opacity:.4;font-size:12px">&times;</span>\' +
-                                \'</span>\';
+                                \' <span class="ra-wai-del" data-type="model" data-brand="\' + i + \'" data-midx="\' + m + \'" style="cursor:pointer;opacity:.4;font-size:13px;color:#ef4444">&times;</span></span>\';
                         }
                         html += \'</div>\';
                     }
-                    // Add model row + AI expand
                     html += \'<div style="display:flex;gap:4px;align-items:center">\';
-                    html += \'<input type="text" class="ra-wai-model-input" data-brand="\' + i + \'" placeholder="\' + escH(waiT.model_add_ph) + \'" style="flex:1;padding:5px 8px;border:1.5px solid #dbeafe;border-radius:6px;font-size:11px;outline:none;min-width:0">\';
-                    html += \'<button type="button" class="ra-wai-model-add" data-brand="\' + i + \'" style="background:#3b82f6;border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap"><i class="ri-add-line"></i></button>\';
-                    html += \'<button type="button" class="ra-wai-model-ai" data-brand="\' + i + \'" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="\' + escH(waiT.ai_expand_hint) + \'"><i class="ri-magic-line"></i> AI</button>\';
-                    html += \'</div>\';
-                    html += \'</div>\';
+                    html += \'<input type="text" class="ra-wai-model-input" data-brand="\' + i + \'" placeholder="Modell hinzufugen (z.B. iPhone 15, Galaxy S24)" style="flex:1;padding:7px 10px;border:1.5px solid #dbeafe;border-radius:8px;font-size:12px;outline:none;min-width:0">\';
+                    html += \'<button type="button" class="ra-wai-model-add" data-brand="\' + i + \'" style="background:#3b82f6;border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-add-line" style="font-size:14px"></i></button>\';
+                    html += \'</div></div>\';
                 }
                 html += \'</div>\';
             }
             waiBrandList.innerHTML = html;
+            updateTotalBadge();
         }
 
-        // Toggle brand expand
         waiBrandList.addEventListener("click", function(e) {
-            // Delete brand
             var del = e.target.closest(".ra-wai-del[data-type=brand]");
-            if (del) {
-                e.stopPropagation();
-                currentBrands.splice(parseInt(del.dataset.idx), 1);
-                expandedBrand = -1;
-                renderBrands();
-                editorSave("brands", currentBrands);
-                return;
-            }
-            // Delete model
+            if (del) { e.stopPropagation(); currentBrands.splice(parseInt(del.dataset.idx), 1); expandedBrand = -1; renderBrands(); editorSave("brands", currentBrands); return; }
             var mdel = e.target.closest(".ra-wai-del[data-type=model]");
-            if (mdel) {
-                e.stopPropagation();
-                var bi = parseInt(mdel.dataset.brand);
-                var mi = parseInt(mdel.dataset.midx);
-                if (currentBrands[bi] && currentBrands[bi].models) {
-                    currentBrands[bi].models.splice(mi, 1);
-                    renderBrands();
-                    editorSave("brands", currentBrands);
-                }
-                return;
-            }
-            // Add model button
+            if (mdel) { e.stopPropagation(); var bi = parseInt(mdel.dataset.brand), mi = parseInt(mdel.dataset.midx); if (currentBrands[bi] && currentBrands[bi].models) { currentBrands[bi].models.splice(mi, 1); renderBrands(); editorSave("brands", currentBrands); } return; }
             var addBtn = e.target.closest(".ra-wai-model-add");
             if (addBtn) {
-                e.stopPropagation();
-                var bi2 = parseInt(addBtn.dataset.brand);
+                e.stopPropagation(); var bi2 = parseInt(addBtn.dataset.brand);
                 var inp = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi2 + \'"]\');
-                var val = inp ? inp.value.trim() : "";
-                if (!val) return;
+                var val = inp ? inp.value.trim() : ""; if (!val) return;
                 if (!currentBrands[bi2].models) currentBrands[bi2].models = [];
-                // Support comma-separated
-                var parts = val.split(",");
-                for (var pi = 0; pi < parts.length; pi++) {
-                    var pv = parts[pi].trim();
-                    if (pv && currentBrands[bi2].models.indexOf(pv) < 0) currentBrands[bi2].models.push(pv);
-                }
-                renderBrands();
-                editorSave("brands", currentBrands, addBtn);
-                return;
+                val.split(",").forEach(function(p) { p = p.trim(); if (p && currentBrands[bi2].models.indexOf(p) < 0) currentBrands[bi2].models.push(p); });
+                renderBrands(); editorSave("brands", currentBrands, addBtn); return;
             }
-            // AI expand button
-            var aiBtn = e.target.closest(".ra-wai-model-ai");
-            if (aiBtn) {
-                e.stopPropagation();
-                var bi3 = parseInt(aiBtn.dataset.brand);
-                var brandName = currentBrands[bi3].label || currentBrands[bi3].id;
-                var inp2 = waiBrandList.querySelector(\'.ra-wai-model-input[data-brand="\' + bi3 + \'"]\');
-                var hint = inp2 ? inp2.value.trim() : "";
-                aiBtn.disabled = true;
-                aiBtn.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i>\';
-                var fd = new FormData();
-                fd.append("action", "ppv_widget_editor_save");
-                fd.append("nonce", nonce);
-                fd.append("field", "ai_expand_models");
-                fd.append("data", JSON.stringify({ brand: brandName, hint: hint, existing: currentBrands[bi3].models || [] }));
-                fetch(ajaxUrl, { method: "POST", body: fd })
-                    .then(function(r) { return r.json(); })
-                    .then(function(resp) {
-                        aiBtn.disabled = false;
-                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
-                        if (resp.success && resp.data.models) {
-                            if (!currentBrands[bi3].models) currentBrands[bi3].models = [];
-                            var newModels = resp.data.models;
-                            for (var nm = 0; nm < newModels.length; nm++) {
-                                if (currentBrands[bi3].models.indexOf(newModels[nm]) < 0) {
-                                    currentBrands[bi3].models.push(newModels[nm]);
-                                }
-                            }
-                            renderBrands();
-                            editorSave("brands", currentBrands);
-                        }
-                    })
-                    .catch(function() {
-                        aiBtn.disabled = false;
-                        aiBtn.innerHTML = \'<i class="ri-magic-line"></i> AI\';
-                    });
-                return;
-            }
-            // Toggle brand expand
             var toggle = e.target.closest("[data-brand-toggle]");
-            if (toggle) {
-                var idx = parseInt(toggle.dataset.brandToggle);
-                expandedBrand = expandedBrand === idx ? -1 : idx;
-                renderBrands();
-            }
+            if (toggle) { var idx = parseInt(toggle.dataset.brandToggle); expandedBrand = expandedBrand === idx ? -1 : idx; renderBrands(); }
         });
-        // Enter key in model input
         waiBrandList.addEventListener("keydown", function(e) {
             if (e.key === "Enter" && e.target.classList.contains("ra-wai-model-input")) {
-                e.preventDefault();
-                var bi4 = e.target.dataset.brand;
-                var addBtn2 = waiBrandList.querySelector(\'.ra-wai-model-add[data-brand="\' + bi4 + \'"]\');
+                e.preventDefault(); var addBtn2 = waiBrandList.querySelector(\'.ra-wai-model-add[data-brand="\' + e.target.dataset.brand + \'"]\');
                 if (addBtn2) addBtn2.click();
             }
         });
         document.getElementById("ra-wai-brand-add").addEventListener("click", function() {
-            var inp = document.getElementById("ra-wai-brand-input");
-            var val = inp.value.trim();
-            if (!val) return;
-            currentBrands.push({ id: val, label: val, models: [] });
-            inp.value = "";
-            expandedBrand = currentBrands.length - 1;
-            renderBrands();
-            editorSave("brands", currentBrands, this);
+            var inp = document.getElementById("ra-wai-brand-input"); var val = inp.value.trim(); if (!val) return;
+            // Support comma-separated brand names
+            val.split(",").forEach(function(v) { v = v.trim(); if (v) currentBrands.push({ id: v, label: v, models: [] }); });
+            inp.value = ""; expandedBrand = currentBrands.length - 1; renderBrands(); editorSave("brands", currentBrands, this);
         });
         document.getElementById("ra-wai-brand-input").addEventListener("keydown", function(e) {
             if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-brand-add").click(); }
         });
 
-        // ─── CHIPS ───
-        function renderChips(chipsOverride) {
-            if (chipsOverride) currentChips = chipsOverride;
-            if (waiChipCount) waiChipCount.textContent = currentChips.length + " " + (currentChips.length !== 1 ? "chips" : "chip");
-            var html = "";
-            for (var i = 0; i < currentChips.length; i++) {
-                var c = typeof currentChips[i] === "string" ? currentChips[i] : (currentChips[i].label || currentChips[i]);
-                html += \'<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#f3e8ff;border-radius:8px;font-size:12px;color:#7c3aed;cursor:default">\' +
-                    escH(c) +
-                    \' <span class="ra-wai-del" data-type="chip" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;margin-left:2px" title="Entfernen">&times;</span>\' +
-                    \'</span>\';
-            }
-            if (waiChipList) waiChipList.innerHTML = html;
+        // ── SERVICES ──
+        var openCats = {};
+        function updateCatDatalist() {
+            var dl = document.getElementById("ra-wai-cat-list"); if (!dl) return;
+            var cats = {}; currentServices.forEach(function(s) { if (s.category) cats[s.category] = 1; });
+            dl.innerHTML = ""; for (var c in cats) { var opt = document.createElement("option"); opt.value = c; dl.appendChild(opt); }
         }
-        if (waiChipList) waiChipList.addEventListener("click", function(e) {
-            var del = e.target.closest(".ra-wai-del[data-type=chip]");
-            if (!del) return;
-            currentChips.splice(parseInt(del.dataset.idx), 1);
-            renderChips();
-            editorSave("chips", currentChips);
-        });
-        var chipAddBtn = document.getElementById("ra-wai-chip-add");
-        if (chipAddBtn) chipAddBtn.addEventListener("click", function() {
-            var inp = document.getElementById("ra-wai-chip-input");
-            var val = inp.value.trim();
-            if (!val) return;
-            currentChips.push(val);
-            inp.value = "";
-            renderChips();
-            editorSave("chips", currentChips, this);
-        });
-        var chipInput = document.getElementById("ra-wai-chip-input");
-        if (chipInput) chipInput.addEventListener("keydown", function(e) {
-            if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-chip-add").click(); }
+        function renderServices(override) {
+            if (override) currentServices = override;
+            if (waiServiceCount) waiServiceCount.textContent = currentServices.length + " Service" + (currentServices.length !== 1 ? "s" : "");
+            var groups = {}, order = [];
+            currentServices.forEach(function(s, i) {
+                var cat = s.category || "Allgemein";
+                if (!groups[cat]) { groups[cat] = []; order.push(cat); }
+                groups[cat].push({ svc: s, idx: i });
+            });
+            var html = "";
+            order.forEach(function(catName) {
+                var items = groups[catName];
+                var isOpen = !!openCats[catName];
+                html += \'<div style="margin-bottom:6px">\';
+                html += \'<div class="ra-svc-cat-hdr" data-cat="\' + escH(catName) + \'" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:\' + (isOpen ? \'#eff6ff\' : \'#f8fafc\') + \';border:1.5px solid \' + (isOpen ? \'#bfdbfe\' : \'#e2e8f0\') + \';border-radius:10px;cursor:pointer;transition:all .15s;user-select:none">\';
+                html += \'<i class="ri-arrow-\' + (isOpen ? \'down\' : \'right\') + \'-s-line" style="color:#64748b;font-size:16px;flex-shrink:0"></i>\';
+                html += \'<span style="flex:1;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px">\' + escH(catName) + \'</span>\';
+                html += \'<span style="background:\' + (isOpen ? \'#dbeafe\' : \'#f1f5f9\') + \';padding:2px 10px;border-radius:12px;font-size:11px;color:\' + (isOpen ? \'#2563eb\' : \'#64748b\') + \';font-weight:700">\' + items.length + \'</span>\';
+                html += \'</div>\';
+                if (isOpen) {
+                    html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;margin-top:4px;flex-wrap:wrap">\';
+                    html += \'<span class="ra-svc-cat-time" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0284c7;cursor:pointer;transition:all .15s;font-weight:600" title="Zeit fur alle setzen"><i class="ri-time-line" style="font-size:12px"></i> Alle: Zeit</span>\';
+                    html += \'<span class="ra-svc-cat-rename" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#a16207;cursor:pointer;transition:all .15s;font-weight:600" title="Kategorie umbenennen"><i class="ri-edit-line" style="font-size:12px"></i> Umbenennen</span>\';
+                    html += \'<span class="ra-svc-cat-del" data-cat="\' + escH(catName) + \'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:11px;color:#dc2626;cursor:pointer;transition:all .15s;font-weight:600" title="Kategorie loschen"><i class="ri-delete-bin-line" style="font-size:12px"></i> Loschen (\' + items.length + \')</span>\';
+                    html += \'</div>\';
+                    // Search + select toolbar
+                    html += \'<div style="display:flex;align-items:center;gap:6px;padding:4px 10px;margin-top:2px">\';
+                    html += \'<input type="text" class="ra-svc-cat-filter" data-cat="\' + escH(catName) + \'" placeholder="Suchen..." style="flex:1;padding:4px 8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:11px;outline:none;min-width:0;transition:border-color .2s">\';
+                    html += \'<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#64748b;cursor:pointer;white-space:nowrap;user-select:none"><input type="checkbox" class="ra-svc-cat-selall" data-cat="\' + escH(catName) + \'" style="accent-color:#3b82f6"> Alle</label>\';
+                    html += \'<span class="ra-svc-cat-delsel" data-cat="\' + escH(catName) + \'" style="display:none;padding:3px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;font-size:11px;color:#dc2626;cursor:pointer;font-weight:600;white-space:nowrap"><i class="ri-delete-bin-line" style="font-size:11px"></i> <span class="ra-svc-delsel-count"></span> loschen</span>\';
+                    html += \'</div>\';
+                    html += \'<div style="padding:2px 0 0 0">\';
+                    items.forEach(function(item) {
+                        var s = item.svc, idx = item.idx;
+                        html += \'<div class="ra-svc-row" data-idx="\' + idx + \'" data-cat="\' + escH(catName) + \'" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;border:1px solid #f1f5f9;border-radius:8px;font-size:13px;color:#475569;margin-bottom:2px;transition:border-color .15s">\';
+                        html += \'<input type="checkbox" class="ra-svc-cb" data-idx="\' + idx + \'" data-cat="\' + escH(catName) + \'" style="accent-color:#3b82f6;flex-shrink:0">\';
+                        html += \'<span class="ra-svc-edit-name" data-idx="\' + idx + \'" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;cursor:text;padding:2px 4px;border-radius:4px;transition:background .15s" title="Klicken zum Bearbeiten">\' + escH(s.name) + \'</span>\';
+                        html += \'<span class="ra-svc-edit-price" data-idx="\' + idx + \'" style="color:#059669;font-weight:700;white-space:nowrap;font-size:12px;cursor:text;padding:2px 6px;border-radius:4px;transition:background .15s;min-width:40px;text-align:right" title="Klicken zum Bearbeiten">\' + escH(s.price || "-") + \'</span>\';
+                        html += \'<span class="ra-svc-edit-time" data-idx="\' + idx + \'" style="color:#94a3b8;white-space:nowrap;font-size:11px;cursor:text;padding:2px 6px;border-radius:4px;transition:background .15s;min-width:30px" title="Klicken zum Bearbeiten"><i class="ri-time-line" style="font-size:11px;vertical-align:-1px"></i> \' + escH(s.time || "-") + \'</span>\';
+                        html += \'<span class="ra-wai-del" data-type="svc" data-idx="\' + idx + \'" style="cursor:pointer;color:#ef4444;opacity:.3;font-size:14px;transition:opacity .15s;flex-shrink:0" title="Entfernen"><i class="ri-close-line"></i></span>\';
+                        html += \'</div>\';
+                    });
+                    html += \'</div>\';
+                }
+                html += \'</div>\';
+            });
+            waiServiceList.innerHTML = html;
+            updateCatDatalist();
+            updateTotalBadge();
+        }
+
+        // Inline editing helper
+        function startInlineEdit(el, idx, field) {
+            if (el.querySelector("input")) return;
+            var oldVal = currentServices[idx][field] || "";
+            var w = field === "name" ? "100%" : "80px";
+            var inp = document.createElement("input");
+            inp.type = "text"; inp.value = oldVal;
+            inp.style.cssText = "width:" + w + ";padding:2px 4px;border:1.5px solid #3b82f6;border-radius:4px;font-size:12px;outline:none;font-family:inherit;background:#eff6ff";
+            el.textContent = "";
+            el.appendChild(inp);
+            inp.focus(); inp.select();
+            function commit() {
+                var nv = inp.value.trim();
+                if (field === "name" && !nv) nv = oldVal;
+                currentServices[idx][field] = nv;
+                renderServices();
+                editorSave("services", currentServices);
+            }
+            inp.addEventListener("blur", commit);
+            inp.addEventListener("keydown", function(ev) {
+                if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); }
+                if (ev.key === "Escape") { inp.value = oldVal; inp.blur(); }
+            });
+        }
+
+        waiServiceList.addEventListener("click", function(e) {
+            // Delete
+            var del = e.target.closest(".ra-wai-del[data-type=svc]");
+            if (del) { currentServices.splice(parseInt(del.dataset.idx), 1); renderServices(); editorSave("services", currentServices); return; }
+            // Bulk time edit for category
+            var catTime = e.target.closest(".ra-svc-cat-time");
+            if (catTime) {
+                e.stopPropagation();
+                if (catTime.querySelector("input")) return;
+                var cat = catTime.dataset.cat;
+                catTime.innerHTML = "";
+                var inp = document.createElement("input");
+                inp.type = "text"; inp.placeholder = "z.B. 1 Std";
+                inp.style.cssText = "width:90px;padding:3px 6px;border:1.5px solid #3b82f6;border-radius:6px;font-size:11px;outline:none;background:#eff6ff;font-family:inherit";
+                catTime.appendChild(inp);
+                inp.focus();
+                function commitBulk() {
+                    var nv = inp.value.trim();
+                    if (nv) {
+                        currentServices.forEach(function(s) { if ((s.category || "Allgemein") === cat) s.time = nv; });
+                        editorSave("services", currentServices);
+                    }
+                    renderServices();
+                }
+                inp.addEventListener("blur", commitBulk);
+                inp.addEventListener("keydown", function(ev) {
+                    if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); }
+                    if (ev.key === "Escape") { renderServices(); }
+                });
+                return;
+            }
+            // Category rename
+            var catRen = e.target.closest(".ra-svc-cat-rename");
+            if (catRen) {
+                e.stopPropagation();
+                if (catRen.querySelector("input")) return;
+                var oldCat = catRen.dataset.cat;
+                catRen.innerHTML = "";
+                var inp2 = document.createElement("input");
+                inp2.type = "text"; inp2.value = oldCat;
+                inp2.style.cssText = "width:140px;padding:3px 6px;border:1.5px solid #f59e0b;border-radius:6px;font-size:11px;outline:none;background:#fefce8;font-family:inherit";
+                catRen.appendChild(inp2);
+                inp2.focus(); inp2.select();
+                function commitRename() {
+                    var nv = inp2.value.trim();
+                    if (nv && nv !== oldCat) {
+                        currentServices.forEach(function(s) { if ((s.category || "Allgemein") === oldCat) s.category = nv; });
+                        openCats[nv] = true; delete openCats[oldCat];
+                        editorSave("services", currentServices);
+                    }
+                    renderServices();
+                }
+                inp2.addEventListener("blur", commitRename);
+                inp2.addEventListener("keydown", function(ev) {
+                    if (ev.key === "Enter") { ev.preventDefault(); inp2.blur(); }
+                    if (ev.key === "Escape") { renderServices(); }
+                });
+                return;
+            }
+            // Category delete (with confirm)
+            var catDel = e.target.closest(".ra-svc-cat-del");
+            if (catDel) {
+                e.stopPropagation();
+                var delCat = catDel.dataset.cat;
+                var cnt = 0;
+                currentServices.forEach(function(s) { if ((s.category || "Allgemein") === delCat) cnt++; });
+                if (!confirm("Kategorie \"" + delCat + "\" mit " + cnt + " Service" + (cnt !== 1 ? "s" : "") + " wirklich loschen?")) return;
+                currentServices = currentServices.filter(function(s) { return (s.category || "Allgemein") !== delCat; });
+                delete openCats[delCat];
+                renderServices(); editorSave("services", currentServices);
+                return;
+            }
+            // Category toggle
+            var catHdr = e.target.closest(".ra-svc-cat-hdr");
+            if (catHdr) { var cn = catHdr.dataset.cat; openCats[cn] = !openCats[cn]; renderServices(); return; }
+            // Inline edit name
+            var eName = e.target.closest(".ra-svc-edit-name");
+            if (eName) { startInlineEdit(eName, parseInt(eName.dataset.idx), "name"); return; }
+            // Inline edit price
+            var ePrice = e.target.closest(".ra-svc-edit-price");
+            if (ePrice) { startInlineEdit(ePrice, parseInt(ePrice.dataset.idx), "price"); return; }
+            // Inline edit time
+            var eTime = e.target.closest(".ra-svc-edit-time");
+            if (eTime) { startInlineEdit(eTime, parseInt(eTime.dataset.idx), "time"); return; }
+            // Delete selected services
+            var delSel = e.target.closest(".ra-svc-cat-delsel");
+            if (delSel) {
+                e.stopPropagation();
+                var dCat = delSel.dataset.cat;
+                var cbs = waiServiceList.querySelectorAll(".ra-svc-cb[data-cat=\"" + dCat + "\"]:checked");
+                if (!cbs.length) return;
+                var idxs = [];
+                cbs.forEach(function(cb) { idxs.push(parseInt(cb.dataset.idx)); });
+                idxs.sort(function(a,b){ return b - a; });
+                idxs.forEach(function(i) { currentServices.splice(i, 1); });
+                renderServices(); editorSave("services", currentServices);
+                return;
+            }
         });
 
-        // ─── SERVICES ───
-        function renderServices(servicesOverride) {
-            if (servicesOverride) currentServices = servicesOverride;
-            waiServiceCount.textContent = currentServices.length + " " + (currentServices.length !== 1 ? waiT.services : waiT.service);
-            var html = "";
-            for (var i = 0; i < currentServices.length; i++) {
-                var s = currentServices[i];
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;color:#475569;margin-bottom:4px">\' +
-                    \'<b style="flex:1">\' + escH(s.name) + \'</b>\' +
-                    (s.price ? \'<span style="color:#059669;font-weight:600">\' + escH(s.price) + \'</span>\' : \'\') +
-                    (s.time ? \'<span style="color:#94a3b8">\' + escH(s.time) + \'</span>\' : \'\') +
-                    \'<span class="ra-wai-del" data-type="svc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span>\' +
-                    \'</div>\';
+        // Update "delete selected" counter
+        function updateSelCount(cat) {
+            var cbs = waiServiceList.querySelectorAll(".ra-svc-cb[data-cat=\"" + cat + "\"]");
+            var checked = waiServiceList.querySelectorAll(".ra-svc-cb[data-cat=\"" + cat + "\"]:checked");
+            var delBtn = waiServiceList.querySelector(".ra-svc-cat-delsel[data-cat=\"" + cat + "\"]");
+            var selAll = waiServiceList.querySelector(".ra-svc-cat-selall[data-cat=\"" + cat + "\"]");
+            if (delBtn) {
+                delBtn.style.display = checked.length > 0 ? "" : "none";
+                var cntEl = delBtn.querySelector(".ra-svc-delsel-count");
+                if (cntEl) cntEl.textContent = checked.length;
             }
-            waiServiceList.innerHTML = html;
+            if (selAll) selAll.checked = cbs.length > 0 && cbs.length === checked.length;
         }
-        waiServiceList.addEventListener("click", function(e) {
-            var del = e.target.closest(".ra-wai-del[data-type=svc]");
-            if (!del) return;
-            currentServices.splice(parseInt(del.dataset.idx), 1);
-            renderServices();
-            editorSave("services", currentServices);
+
+        // Checkbox change + select all + filter (delegated)
+        waiServiceList.addEventListener("change", function(e) {
+            if (e.target.classList.contains("ra-svc-cb")) {
+                updateSelCount(e.target.dataset.cat);
+                return;
+            }
+            if (e.target.classList.contains("ra-svc-cat-selall")) {
+                var cat = e.target.dataset.cat;
+                var checked = e.target.checked;
+                // Only select visible rows (not hidden by filter)
+                var rows = waiServiceList.querySelectorAll(".ra-svc-row[data-cat=\"" + cat + "\"]");
+                rows.forEach(function(row) {
+                    if (row.style.display !== "none") {
+                        var cb = row.querySelector(".ra-svc-cb");
+                        if (cb) cb.checked = checked;
+                    }
+                });
+                updateSelCount(cat);
+                return;
+            }
         });
+
+        // Category filter (search within category)
+        waiServiceList.addEventListener("input", function(e) {
+            if (!e.target.classList.contains("ra-svc-cat-filter")) return;
+            var cat = e.target.dataset.cat;
+            var val = e.target.value.trim().toLowerCase();
+            var rows = waiServiceList.querySelectorAll(".ra-svc-row[data-cat=\"" + cat + "\"]");
+            rows.forEach(function(row) {
+                var idx = parseInt(row.dataset.idx);
+                var svc = currentServices[idx];
+                if (!svc) { row.style.display = "none"; return; }
+                var text = ((svc.name || "") + " " + (svc.price || "") + " " + (svc.time || "")).toLowerCase();
+                row.style.display = (!val || text.indexOf(val) >= 0) ? "" : "none";
+            });
+        });
+
         document.getElementById("ra-wai-svc-add").addEventListener("click", function() {
-            var nameInp = document.getElementById("ra-wai-svc-name");
-            var priceInp = document.getElementById("ra-wai-svc-price");
-            var timeInp = document.getElementById("ra-wai-svc-time");
-            var name = nameInp.value.trim();
-            if (!name) return;
+            var catInp = document.getElementById("ra-wai-svc-cat"), nameInp = document.getElementById("ra-wai-svc-name");
+            var priceInp = document.getElementById("ra-wai-svc-price"), timeInp = document.getElementById("ra-wai-svc-time");
+            var name = nameInp.value.trim(); if (!name) { nameInp.style.borderColor = "#ef4444"; setTimeout(function(){ nameInp.style.borderColor = "#e2e8f0"; }, 1500); return; }
             var svc = { name: name };
+            if (catInp && catInp.value.trim()) svc.category = catInp.value.trim();
             if (priceInp.value.trim()) svc.price = priceInp.value.trim();
             if (timeInp.value.trim()) svc.time = timeInp.value.trim();
             currentServices.push(svc);
             nameInp.value = ""; priceInp.value = ""; timeInp.value = "";
-            renderServices();
-            editorSave("services", currentServices, this);
+            renderServices(); editorSave("services", currentServices, this); nameInp.focus();
         });
         document.getElementById("ra-wai-svc-name").addEventListener("keydown", function(e) {
             if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); }
         });
+        // Also Enter on price/time fields
+        ["ra-wai-svc-price","ra-wai-svc-time"].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); document.getElementById("ra-wai-svc-add").click(); } });
+        });
 
-        // ─── Quality Tiers ───
-        function renderQualityTiers(data) {
-            if (data) currentQualityTiers = data;
-            var container = document.getElementById("ra-wai-tiers-section");
-            if (!container) return;
-            if (currentQualityTiers.length === 0) { container.style.display = "none"; return; }
-            container.style.display = "";
-            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-medal-line" style="color:#f59e0b"></i> Qualitätsstufen</div>\';
-            for (var i = 0; i < currentQualityTiers.length; i++) {
-                var t = currentQualityTiers[i];
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f1f5f9;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
-                    \'<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:\' + (t.badge_color || "#667eea") + \';color:#fff;font-size:10px;font-weight:700">\' + escH(t.label || t.id) + \'</span>\' +
-                    \'<span style="flex:1;color:#475569">\' + escH(t.description || "") + \'</span>\' +
-                    \'<span class="ra-wai-del-tier" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
-            }
-            container.innerHTML = html;
-        }
+        // ── CSV IMPORT with Preview ──
+        var csvPreview = document.getElementById("ra-csv-preview");
+        var csvTable = document.getElementById("ra-csv-table");
+        var csvImportBtn = document.getElementById("ra-csv-import");
+        var csvCancelBtn = document.getElementById("ra-csv-cancel");
+        var csvImportCount = document.getElementById("ra-csv-import-count");
+        var pendingCsvServices = [];
 
-        // ─── Tiered Services ───
-        function renderTieredServices(data) {
-            if (data) currentTieredServices = data;
-            var container = document.getElementById("ra-wai-tiered-svc-section");
-            if (!container) return;
-            if (currentTieredServices.length === 0) { container.style.display = "none"; return; }
-            container.style.display = "";
-            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-price-tag-3-line" style="color:#059669"></i> Staffelpreise</div>\';
-            for (var i = 0; i < currentTieredServices.length; i++) {
-                var s = currentTieredServices[i];
-                var tierLabels = [];
-                if (s.tiers) {
-                    for (var tid in s.tiers) {
-                        if (s.tiers.hasOwnProperty(tid)) tierLabels.push(tid + ": " + (s.tiers[tid].price || "–"));
-                    }
+        function parseCSVLocal(text) {
+            var lines = text.split("\\n"), results = [];
+            lines.forEach(function(line) {
+                line = line.trim(); if (!line || line[0] === "#") return;
+                var sep = line.indexOf(";") >= 0 ? ";" : ",";
+                var parts = line.split(sep).map(function(p) { return p.trim().replace(/^"|"$/g, ""); });
+                if (parts.length >= 1 && parts[0]) {
+                    var svc = { name: parts[0] };
+                    if (parts[1] && /\\d/.test(parts[1])) svc.price = parts[1];
+                    else if (parts[1]) svc.category = parts[1];
+                    if (parts[2]) svc.time = parts[2];
+                    if (parts[3]) svc.category = parts[3];
+                    results.push(svc);
                 }
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f0fdf4;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
-                    \'<b style="flex:1;color:#475569">\' + escH(s.name) + \'</b>\' +
-                    \'<span style="color:#059669;font-size:11px">\' + escH(tierLabels.join(" | ")) + \'</span>\' +
-                    \'<span class="ra-wai-del-tsvc" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
-            }
-            container.innerHTML = html;
-        }
-
-        // ─── Custom Sections ───
-        function renderCustomSections(data) {
-            if (data) currentCustomSections = data;
-            var container = document.getElementById("ra-wai-sections-section");
-            if (!container) return;
-            if (currentCustomSections.length === 0) { container.style.display = "none"; return; }
-            container.style.display = "";
-            var typeIcons = {list:"ri-list-check",steps:"ri-flow-chart",highlight:"ri-flashlight-line",info:"ri-information-line",grid:"ri-layout-grid-line",faq:"ri-question-line"};
-            var html = \'<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px"><i class="ri-layout-masonry-line" style="color:#667eea"></i> Widget-Sektionen</div>\';
-            for (var i = 0; i < currentCustomSections.length; i++) {
-                var sec = currentCustomSections[i];
-                var ico = typeIcons[sec.type] || "ri-apps-line";
-                html += \'<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#eff6ff;border-radius:8px;font-size:12px;margin-bottom:4px">\' +
-                    \'<i class="\' + ico + \'" style="color:#667eea;font-size:14px"></i>\' +
-                    \'<b style="flex:1;color:#475569">\' + escH(sec.title || sec.id) + \'</b>\' +
-                    \'<span style="color:#94a3b8;font-size:10px;text-transform:uppercase">\' + escH(sec.type || "info") + \'</span>\' +
-                    \'<span class="ra-wai-del-sec" data-idx="\' + i + \'" style="cursor:pointer;opacity:.5;font-size:14px" title="Entfernen">&times;</span></div>\';
-            }
-            container.innerHTML = html;
-        }
-
-        // ─── Delete handlers for tiers/tiered-services/sections ───
-        document.addEventListener("click", function(e) {
-            var delTier = e.target.closest(".ra-wai-del-tier");
-            if (delTier) {
-                currentQualityTiers.splice(parseInt(delTier.dataset.idx), 1);
-                renderQualityTiers();
-                editorSave("quality_tiers", currentQualityTiers);
-                return;
-            }
-            var delTsvc = e.target.closest(".ra-wai-del-tsvc");
-            if (delTsvc) {
-                currentTieredServices.splice(parseInt(delTsvc.dataset.idx), 1);
-                renderTieredServices();
-                editorSave("tiered_services", currentTieredServices);
-                return;
-            }
-            var delSec = e.target.closest(".ra-wai-del-sec");
-            if (delSec) {
-                currentCustomSections.splice(parseInt(delSec.dataset.idx), 1);
-                renderCustomSections();
-                editorSave("custom_sections", currentCustomSections);
-                return;
-            }
-        });
-
-        function addMessage(role, text) {
-            var div = document.createElement("div");
-            div.className = "ra-wai-msg " + role;
-            var isBot = role === "bot";
-            div.style.cssText = isBot ?
-                "background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#334155;max-width:85%;line-height:1.5" :
-                "background:linear-gradient(135deg,#667eea,#4338ca);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;color:#fff;max-width:85%;align-self:flex-end;line-height:1.5";
-            div.innerHTML = text.replace(/\n/g, "<br>");
-            waiMessages.appendChild(div);
-            waiMessages.scrollTop = waiMessages.scrollHeight;
-            return div;
-        }
-
-        function showTyping() {
-            var div = document.createElement("div");
-            div.id = "ra-wai-typing";
-            div.style.cssText = "background:#f1f5f9;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:13px;color:#94a3b8;max-width:85%;line-height:1.5";
-            div.innerHTML = \'<span style="display:inline-flex;gap:4px"><span style="animation:ra-wai-dot 1s infinite">·</span><span style="animation:ra-wai-dot 1s .2s infinite">·</span><span style="animation:ra-wai-dot 1s .4s infinite">·</span></span>\';
-            waiMessages.appendChild(div);
-            waiMessages.scrollTop = waiMessages.scrollHeight;
-        }
-
-        function removeTyping() {
-            var t = document.getElementById("ra-wai-typing");
-            if (t) t.remove();
-        }
-
-        // Add typing animation CSS
-        var dotStyle = document.createElement("style");
-        dotStyle.textContent = "@keyframes ra-wai-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}";
-        document.head.appendChild(dotStyle);
-
-        function sendMessage(text) {
-            if (sending || !text.trim()) return;
-            sending = true;
-            waiSend.style.opacity = "0.5";
-
-            addMessage("user", text);
-            chatHistory.push({role: "user", content: text});
-            waiInput.value = "";
-            waiInput.style.height = "36px";
-            showTyping();
-
-            var fd = new FormData();
-            fd.append("action", "ppv_widget_ai_chat");
-            fd.append("nonce", nonce);
-            fd.append("message", text);
-            fd.append("history", JSON.stringify(chatHistory));
-
-            fetch(ajaxUrl, {method: "POST", body: fd})
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    removeTyping();
-                    sending = false;
-                    waiSend.style.opacity = "1";
-
-                    if (data.success) {
-                        addMessage("bot", data.data.message);
-                        chatHistory.push({role: "assistant", content: data.data.message});
-
-                        // Update UI based on applied actions
-                        if (data.data.actions_applied && data.data.actions_applied.length > 0) {
-                            var acts = data.data.actions_applied;
-                            // Update widget controls if mode/color/lang changed
-                            var wMode = document.getElementById("ra-widget-mode");
-                            var wColor = document.getElementById("ra-widget-color");
-                            var wLang = document.getElementById("ra-widget-lang");
-                            var wText = document.getElementById("ra-widget-text");
-                            var cfg = data.data.config || {};
-
-                            if (acts.indexOf("mode") >= 0 && wMode && cfg.mode) {
-                                wMode.value = cfg.mode;
-                                wMode.dispatchEvent(new Event("change"));
-                            }
-                            if (acts.indexOf("color") >= 0 && wColor && cfg.color) {
-                                wColor.value = cfg.color;
-                                wColor.dispatchEvent(new Event("input"));
-                            }
-                            if (acts.indexOf("lang") >= 0 && wLang && cfg.lang) {
-                                wLang.value = cfg.lang;
-                                wLang.dispatchEvent(new Event("change"));
-                            }
-                            if (acts.indexOf("text") >= 0 && wText && cfg.text) {
-                                wText.value = cfg.text;
-                                wText.dispatchEvent(new Event("input"));
-                            }
-
-                            // Update brands display
-                            if (acts.indexOf("brands") >= 0 && cfg.brands) {
-                                renderBrands(cfg.brands);
-                            }
-
-                            // Update chips display
-                            if (acts.indexOf("chips") >= 0 && cfg.chips) {
-                                renderChips(cfg.chips);
-                            }
-
-                            // Update services display
-                            if (acts.indexOf("services") >= 0 && data.data.knowledge && data.data.knowledge.services) {
-                                renderServices(data.data.knowledge.services);
-                            }
-
-                            // Update quality tiers display
-                            if (acts.indexOf("quality_tiers") >= 0 && cfg.quality_tiers) {
-                                renderQualityTiers(cfg.quality_tiers);
-                            }
-
-                            // Update tiered services display
-                            if (acts.indexOf("tiered_services") >= 0 && data.data.knowledge && data.data.knowledge.tiered_services) {
-                                renderTieredServices(data.data.knowledge.tiered_services);
-                            }
-
-                            // Update custom sections display
-                            if (acts.indexOf("custom_sections") >= 0 && cfg.custom_sections) {
-                                renderCustomSections(cfg.custom_sections);
-                            }
-
-                            // Update setup status
-                            if (acts.indexOf("setup_complete") >= 0 && waiStatus) {
-                                waiStatus.style.background = "#f0fdf4";
-                                waiStatus.style.borderColor = "#bbf7d0";
-                                waiStatus.style.color = "#166534";
-                                waiStatus.innerHTML = \'<i class="ri-checkbox-circle-fill" style="font-size:18px"></i> \' + waiT.setup_done;
-                            }
-
-                            // Show a subtle notification for config changes
-                            var notif = document.createElement("div");
-                            notif.style.cssText = "background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 12px;font-size:12px;color:#166534;text-align:center;margin-top:4px";
-                            notif.innerHTML = \'<i class="ri-check-line"></i> \' + acts.length + " " + waiT.settings_updated;
-                            waiMessages.appendChild(notif);
-                            waiMessages.scrollTop = waiMessages.scrollHeight;
-                            setTimeout(function() { notif.style.opacity = "0"; setTimeout(function() { notif.remove(); }, 300); }, 3000);
-                        }
-                    } else {
-                        addMessage("bot", waiT.error_prefix + ": " + (data.data && data.data.message ? data.data.message : waiT.error_unknown));
-                    }
-                })
-                .catch(function() {
-                    removeTyping();
-                    sending = false;
-                    waiSend.style.opacity = "1";
-                    addMessage("bot", waiT.conn_error);
-                });
-        }
-
-        // Send button
-        waiSend.addEventListener("click", function() { sendMessage(waiInput.value); });
-
-        // Enter to send (Shift+Enter for new line)
-        waiInput.addEventListener("keydown", function(e) {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage(waiInput.value);
-            }
-        });
-
-        // Auto-resize textarea
-        waiInput.addEventListener("input", function() {
-            this.style.height = "36px";
-            this.style.height = Math.min(this.scrollHeight, 100) + "px";
-        });
-
-        // Quick action chips
-        document.querySelectorAll(".ra-wai-chip").forEach(function(chip) {
-            chip.addEventListener("click", function() {
-                sendMessage(this.getAttribute("data-msg"));
             });
+            return results;
+        }
+
+        function showCsvPreview(services) {
+            pendingCsvServices = services;
+            if (csvImportCount) csvImportCount.textContent = services.length;
+            var html = \'<table style="width:100%;border-collapse:collapse;font-size:12px">\';
+            html += \'<thead><tr style="background:#f8fafc"><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Bezeichnung</th><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Preis</th><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Dauer</th><th style="text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0">Kategorie</th></tr></thead><tbody>\';
+            services.forEach(function(s, i) {
+                html += \'<tr style="border-bottom:1px solid #f1f5f9\' + (i % 2 ? \';background:#fafbfc\' : \'\') + \'"><td style="padding:7px 10px;font-weight:500">\' + escH(s.name) + \'</td><td style="padding:7px 10px;color:#059669;font-weight:600">\' + escH(s.price || \'-\') + \'</td><td style="padding:7px 10px;color:#94a3b8">\' + escH(s.time || \'-\') + \'</td><td style="padding:7px 10px;color:#64748b">\' + escH(s.category || \'-\') + \'</td></tr>\';
+            });
+            html += \'</tbody></table>\';
+            if (csvTable) csvTable.innerHTML = html;
+            if (csvPreview) csvPreview.style.display = "";
+        }
+
+        if (csvCancelBtn) csvCancelBtn.addEventListener("click", function() {
+            pendingCsvServices = []; if (csvPreview) csvPreview.style.display = "none";
+        });
+        if (csvImportBtn) csvImportBtn.addEventListener("click", function() {
+            if (!pendingCsvServices.length) return;
+            // Merge into current services
+            pendingCsvServices.forEach(function(ns) {
+                var found = false;
+                currentServices.forEach(function(es, i) { if (es.name.toLowerCase() === ns.name.toLowerCase()) { currentServices[i] = ns; found = true; } });
+                if (!found) currentServices.push(ns);
+            });
+            renderServices(); editorSave("services", currentServices, csvImportBtn);
+            pendingCsvServices = []; if (csvPreview) csvPreview.style.display = "none";
+            // Switch to services tab
+            document.querySelector(\'.ra-cat-tab[data-cat-tab="services"]\').click();
+            if (waiUploadStatus) {
+                waiUploadStatus.style.display = ""; waiUploadStatus.style.background = "#f0fdf4"; waiUploadStatus.style.border = "1.5px solid #bbf7d0"; waiUploadStatus.style.color = "#166534";
+                waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + pendingCsvServices.length + \' Services erfolgreich importiert\';
+                setTimeout(function() { waiUploadStatus.style.display = "none"; }, 4000);
+            }
         });
 
-        // File upload
+        // File upload - local CSV parsing (no AI)
         if (waiUploadArea && waiFile) {
             waiUploadArea.addEventListener("click", function() { waiFile.click(); });
-            waiUploadArea.addEventListener("dragover", function(e) { e.preventDefault(); this.style.borderColor = "#667eea"; this.style.background = "#f0f4ff"; });
-            waiUploadArea.addEventListener("dragleave", function() { this.style.borderColor = "#e2e8f0"; this.style.background = "#fafbfc"; });
+            waiUploadArea.addEventListener("dragover", function(e) { e.preventDefault(); this.style.borderColor = "#3b82f6"; this.style.background = "#eff6ff"; });
+            waiUploadArea.addEventListener("dragleave", function() { this.style.borderColor = "#d1d5db"; this.style.background = "#fafbfc"; });
             waiUploadArea.addEventListener("drop", function(e) {
-                e.preventDefault();
-                this.style.borderColor = "#e2e8f0";
-                this.style.background = "#fafbfc";
-                if (e.dataTransfer.files.length) {
-                    waiFile.files = e.dataTransfer.files;
-                    uploadFile(e.dataTransfer.files[0]);
-                }
+                e.preventDefault(); this.style.borderColor = "#d1d5db"; this.style.background = "#fafbfc";
+                if (e.dataTransfer.files.length) { waiFile.files = e.dataTransfer.files; handleFileUpload(e.dataTransfer.files[0]); }
             });
-            waiFile.addEventListener("change", function() {
-                if (this.files.length) uploadFile(this.files[0]);
-            });
+            waiFile.addEventListener("change", function() { if (this.files.length) handleFileUpload(this.files[0]); });
         }
 
-        function uploadFile(file) {
-            waiUploadStatus.style.display = "";
-            waiUploadStatus.style.background = "#eff6ff";
-            waiUploadStatus.style.border = "1.5px solid #bfdbfe";
-            waiUploadStatus.style.color = "#1e40af";
-            waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line" style="animation:ra-wai-dot 1s infinite"></i> \' + waiT.uploading;
-
-            var fd = new FormData();
-            fd.append("action", "ppv_widget_ai_upload");
-            fd.append("nonce", nonce);
-            fd.append("file", file);
-
-            fetch(ajaxUrl, {method: "POST", body: fd})
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        var d = data.data;
-                        waiUploadStatus.style.background = "#f0fdf4";
-                        waiUploadStatus.style.borderColor = "#bbf7d0";
-                        waiUploadStatus.style.color = "#166534";
-
-                        if (d.file_type === "image" || d.file_type === "pdf" || d.file_type === "other") {
-                            // Non-text file: uploaded but no auto-parse possible
-                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_saved;
-                            addMessage("bot", waiT.upload_image_msg.replace(\'%s\', escH(d.file_name)));
-                        } else {
-                            waiUploadStatus.innerHTML = \'<i class="ri-check-line"></i> \' + escH(d.file_name) + \' \' + waiT.upload_success.replace(\'%d\', d.service_count);
-                            addMessage("bot", waiT.upload_bot_msg.replace(\'%s\', escH(d.file_name)).replace(\'%d\', d.service_count));
-                        }
-
-                        // Update services display
-                        if (d.parsed_services && d.parsed_services.length) {
-                            renderServices(d.parsed_services);
-                        }
-
-                        setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+        function handleFileUpload(file) {
+            var ext = file.name.split(".").pop().toLowerCase();
+            if (["csv","txt"].indexOf(ext) >= 0) {
+                // Read locally, parse, show preview
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var text = e.target.result;
+                    var parsed = parseCSVLocal(text);
+                    if (parsed.length > 0) {
+                        showCsvPreview(parsed);
                     } else {
-                        waiUploadStatus.style.background = "#fef2f2";
-                        waiUploadStatus.style.borderColor = "#fecaca";
-                        waiUploadStatus.style.color = "#991b1b";
-                        waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + (data.data && data.data.message ? escH(data.data.message) : waiT.upload_error);
+                        if (waiUploadStatus) {
+                            waiUploadStatus.style.display = ""; waiUploadStatus.style.background = "#fef2f2"; waiUploadStatus.style.border = "1.5px solid #fecaca"; waiUploadStatus.style.color = "#991b1b";
+                            waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> Keine Services in der Datei gefunden. Prufen Sie das Format.\';
+                            setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+                        }
                     }
-                })
-                .catch(function() {
-                    waiUploadStatus.style.background = "#fef2f2";
-                    waiUploadStatus.style.borderColor = "#fecaca";
-                    waiUploadStatus.style.color = "#991b1b";
-                    waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + waiT.conn_error_short;
-                });
+                };
+                reader.readAsText(file);
+            } else {
+                // For Excel files, upload to server
+                if (waiUploadStatus) {
+                    waiUploadStatus.style.display = ""; waiUploadStatus.style.background = "#eff6ff"; waiUploadStatus.style.border = "1.5px solid #bfdbfe"; waiUploadStatus.style.color = "#1e40af";
+                    waiUploadStatus.innerHTML = \'<i class="ri-loader-4-line ri-spin"></i> Datei wird verarbeitet...\';
+                }
+                var fd = new FormData();
+                fd.append("action", "ppv_widget_ai_upload"); fd.append("nonce", nonce); fd.append("file", file);
+                fetch(ajaxUrl, {method: "POST", body: fd})
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && data.data.parsed_services && data.data.parsed_services.length) {
+                            showCsvPreview(data.data.parsed_services);
+                            if (waiUploadStatus) waiUploadStatus.style.display = "none";
+                        } else {
+                            if (waiUploadStatus) {
+                                waiUploadStatus.style.background = "#fef2f2"; waiUploadStatus.style.borderColor = "#fecaca"; waiUploadStatus.style.color = "#991b1b";
+                                waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> \' + (data.data && data.data.message ? escH(data.data.message) : \'Fehler beim Verarbeiten\');
+                                setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+                            }
+                        }
+                    })
+                    .catch(function() {
+                        if (waiUploadStatus) {
+                            waiUploadStatus.style.background = "#fef2f2"; waiUploadStatus.style.borderColor = "#fecaca"; waiUploadStatus.style.color = "#991b1b";
+                            waiUploadStatus.innerHTML = \'<i class="ri-error-warning-line"></i> Verbindungsfehler\';
+                            setTimeout(function() { waiUploadStatus.style.display = "none"; }, 5000);
+                        }
+                    });
+            }
         }
+
+        // ── CSV EXPORT ──
+        var csvExportBtn = document.getElementById("ra-csv-export");
+        if (csvExportBtn) csvExportBtn.addEventListener("click", function() {
+            if (!currentServices.length) return;
+            var csv = "Bezeichnung;Preis;Dauer;Kategorie\\n";
+            currentServices.forEach(function(s) {
+                csv += [s.name || "", s.price || "", s.time || "", s.category || ""].join(";") + "\\n";
+            });
+            var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url; a.download = "services-" + storeSlug + ".csv"; a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Init renders
+        renderBrands(); renderServices();
     })();
 
     /* ===== Tab Switching ===== */
     var invoicesLoaded=false;
     var customersLoaded=false;
+    var termineLoaded=false;
 
     function switchTab(target){
         document.querySelectorAll(".ra-tab").forEach(function(t){t.classList.remove("active")});
@@ -5927,6 +6233,7 @@ echo '</div></div>
         if(tabContent)tabContent.classList.add("active");
         if(target==="invoices"&&!invoicesLoaded){loadInvoices(1);invoicesLoaded=true;}
         if(target==="customers"&&!customersLoaded){loadCustomers(1);customersLoaded=true;}
+        if(target==="termine"&&!termineLoaded){initTermineCalendar();termineLoaded=true;}
         localStorage.setItem("ra_active_tab",target);
     }
 
@@ -5936,6 +6243,434 @@ echo '</div></div>
             switchTab(target);
         });
     });
+
+    /* ===== Termine (Calendar) ===== */
+    var termineData=[];
+    var repairTermineData=[];
+    var calYear=new Date().getFullYear();
+    var calMonth=new Date().getMonth(); // 0-based
+    var calSelectedDate=null;
+
+    function initTermineCalendar(){
+        var wrap=document.getElementById("ra-termine-calendar");
+        if(!wrap)return;
+        wrap.innerHTML=buildCalendarHTML();
+        bindCalendarEvents();
+        loadTermine();
+    }
+
+    function buildCalendarHTML(){
+        return \'<div class="ra-cal-wrap">\'+
+            \'<div class="ra-cal-header">\'+
+                \'<button class="ra-cal-nav" id="ra-cal-prev"><i class="ri-arrow-left-s-line"></i></button>\'+
+                \'<div class="ra-cal-title" id="ra-cal-title"></div>\'+
+                \'<button class="ra-cal-nav" id="ra-cal-next"><i class="ri-arrow-right-s-line"></i></button>\'+
+                \'<button class="ra-btn ra-btn-sm ra-cal-today-btn" id="ra-cal-today">\'+L.termine_today+\'</button>\'+
+                \'<button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-cal-add"><i class="ri-add-line"></i> \'+L.termine_new+\'</button>\'+
+            \'</div>\'+
+            \'<div class="ra-cal-grid">\'+
+                \'<div class="ra-cal-weekdays">\'+
+                    \'<div>\'+L.termine_day_mon+\'</div>\'+
+                    \'<div>\'+L.termine_day_tue+\'</div>\'+
+                    \'<div>\'+L.termine_day_wed+\'</div>\'+
+                    \'<div>\'+L.termine_day_thu+\'</div>\'+
+                    \'<div>\'+L.termine_day_fri+\'</div>\'+
+                    \'<div class="ra-cal-weekend">\'+L.termine_day_sat+\'</div>\'+
+                    \'<div class="ra-cal-weekend">\'+L.termine_day_sun+\'</div>\'+
+                \'</div>\'+
+                \'<div class="ra-cal-days" id="ra-cal-days"></div>\'+
+            \'</div>\'+
+            \'<div class="ra-cal-sidebar" id="ra-cal-sidebar">\'+
+                \'<div class="ra-cal-sidebar-title" id="ra-cal-sidebar-title"></div>\'+
+                \'<div class="ra-cal-sidebar-list" id="ra-cal-sidebar-list"></div>\'+
+            \'</div>\'+
+        \'</div>\'+
+        \'<div class="ra-cal-modal-bg" id="ra-cal-modal-bg">\'+
+            \'<div class="ra-cal-modal" id="ra-cal-modal">\'+
+                \'<div class="ra-cal-modal-header">\'+
+                    \'<div class="ra-cal-modal-hdr-icon"><i class="ri-calendar-schedule-line"></i></div>\'+
+                    \'<div class="ra-cal-modal-hdr-text"><div class="ra-cal-modal-title" id="ra-cal-modal-title">\'+L.termine_new+\'</div><div class="ra-cal-modal-subtitle" id="ra-cal-modal-subtitle"></div></div>\'+
+                    \'<button class="ra-cal-modal-close" id="ra-cal-modal-close"><i class="ri-close-line"></i></button>\'+
+                \'</div>\'+
+                \'<div class="ra-cal-modal-body">\'+
+                    \'<input type="hidden" id="ra-tm-id">\'+
+                    \'<div class="ra-cal-field"><label>\'+L.termine_title+\'</label><input type="text" id="ra-tm-title" class="ra-input" placeholder="\'+L.termine_title_ph+\'"></div>\'+
+                    \'<div class="ra-cal-row2">\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_customer+\'</label><input type="text" id="ra-tm-customer" class="ra-input" placeholder="\'+L.termine_customer_ph+\'"></div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_phone+\'</label><input type="text" id="ra-tm-phone" class="ra-input" placeholder="\'+L.termine_phone_ph+\'"></div>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-row3">\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_date+\'</label><input type="date" id="ra-tm-date" class="ra-input"></div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_time+\'</label><input type="time" id="ra-tm-time" class="ra-input"></div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_duration+\'</label><input type="number" id="ra-tm-duration" class="ra-input" value="30" min="5" step="5"></div>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-row2">\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_type+\'</label>\'+
+                            \'<select id="ra-tm-type" class="ra-input">\'+
+                                \'<option value="general">\'+L.termine_type_general+\'</option>\'+
+                                \'<option value="repair">\'+L.termine_type_repair+\'</option>\'+
+                                \'<option value="pickup">\'+L.termine_type_pickup+\'</option>\'+
+                                \'<option value="consultation">\'+L.termine_type_consultation+\'</option>\'+
+                                \'<option value="estimate">\'+L.termine_type_estimate+\'</option>\'+
+                            \'</select>\'+
+                        \'</div>\'+
+                        \'<div class="ra-cal-field"><label>\'+L.termine_status+\'</label>\'+
+                            \'<select id="ra-tm-status" class="ra-input">\'+
+                                \'<option value="scheduled">\'+L.termine_status_scheduled+\'</option>\'+
+                                \'<option value="confirmed">\'+L.termine_status_confirmed+\'</option>\'+
+                                \'<option value="completed">\'+L.termine_status_completed+\'</option>\'+
+                                \'<option value="cancelled">\'+L.termine_status_cancelled+\'</option>\'+
+                            \'</select>\'+
+                        \'</div>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-field"><label>\'+L.termine_notes+\'</label><textarea id="ra-tm-notes" class="ra-input" rows="2" placeholder="\'+L.termine_notes_ph+\'"></textarea></div>\'+
+                    \'<div class="ra-cal-field"><label>\'+L.termine_color+\'</label>\'+
+                        \'<div class="ra-cal-colors" id="ra-tm-colors">\'+
+                            \'<span class="ra-cal-color-dot active" data-color="" style="background:#3b82f6" title="Standard"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#10b981" style="background:#10b981"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#f59e0b" style="background:#f59e0b"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#ef4444" style="background:#ef4444"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#8b5cf6" style="background:#8b5cf6"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#ec4899" style="background:#ec4899"></span>\'+
+                            \'<span class="ra-cal-color-dot" data-color="#6b7280" style="background:#6b7280"></span>\'+
+                        \'</div>\'+
+                    \'</div>\'+
+                \'</div>\'+
+                \'<div class="ra-cal-modal-footer">\'+
+                    \'<button class="ra-btn ra-btn-danger ra-btn-sm" id="ra-tm-delete" style="display:none"><i class="ri-delete-bin-line"></i> \'+L.termine_delete+\'</button>\'+
+                    \'<div style="flex:1"></div>\'+
+                    \'<button class="ra-btn ra-btn-sm" id="ra-tm-cancel">\'+L.cancel+\'</button>\'+
+                    \'<button class="ra-btn ra-btn-primary ra-btn-sm" id="ra-tm-save"><i class="ri-check-line"></i> \'+L.termine_save+\'</button>\'+
+                \'</div>\'+
+            \'</div>\'+
+        \'</div>\';
+    }
+
+    function bindCalendarEvents(){
+        document.getElementById("ra-cal-prev").addEventListener("click",function(){
+            calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();loadTermine();
+        });
+        document.getElementById("ra-cal-next").addEventListener("click",function(){
+            calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();loadTermine();
+        });
+        document.getElementById("ra-cal-today").addEventListener("click",function(){
+            var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
+            calSelectedDate=fmtDate(now);renderCalendar();loadTermine();
+        });
+        document.getElementById("ra-cal-add").addEventListener("click",function(){openTerminModal(null);});
+        document.getElementById("ra-cal-modal-close").addEventListener("click",closeTerminModal);
+        document.getElementById("ra-cal-modal-bg").addEventListener("click",function(e){
+            if(e.target===this)closeTerminModal();
+        });
+        document.getElementById("ra-tm-cancel").addEventListener("click",closeTerminModal);
+        document.getElementById("ra-tm-save").addEventListener("click",saveTermin);
+        document.getElementById("ra-tm-delete").addEventListener("click",deleteTermin);
+
+        // Color picker
+        document.getElementById("ra-tm-colors").addEventListener("click",function(e){
+            var dot=e.target.closest(".ra-cal-color-dot");
+            if(!dot)return;
+            this.querySelectorAll(".ra-cal-color-dot").forEach(function(d){d.classList.remove("active");});
+            dot.classList.add("active");
+        });
+
+        renderCalendar();
+    }
+
+    var monthNames=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+    function fmtDate(d){
+        var y=d.getFullYear(),m=("0"+(d.getMonth()+1)).slice(-2),dd=("0"+d.getDate()).slice(-2);
+        return y+"-"+m+"-"+dd;
+    }
+
+    function renderCalendar(){
+        var title=document.getElementById("ra-cal-title");
+        title.textContent=monthNames[calMonth]+" "+calYear;
+
+        var daysEl=document.getElementById("ra-cal-days");
+        var firstDay=new Date(calYear,calMonth,1);
+        var lastDay=new Date(calYear,calMonth+1,0);
+        var startDow=(firstDay.getDay()+6)%7; // Monday=0
+        var numDays=lastDay.getDate();
+        var todayStr=fmtDate(new Date());
+
+        var html="";
+        // Previous month padding
+        var prevLast=new Date(calYear,calMonth,0).getDate();
+        for(var i=startDow-1;i>=0;i--){
+            html+=\'<div class="ra-cal-day ra-cal-day-other">\'+(prevLast-i)+\'</div>\';
+        }
+        // Current month
+        for(var d=1;d<=numDays;d++){
+            var dateStr=calYear+"-"+("0"+(calMonth+1)).slice(-2)+"-"+("0"+d).slice(-2);
+            var cls="ra-cal-day";
+            if(dateStr===todayStr)cls+=" ra-cal-day-today";
+            if(dateStr===calSelectedDate)cls+=" ra-cal-day-selected";
+            var dots=getDotsForDate(dateStr);
+            html+=\'<div class="\'+cls+\'" data-date="\'+dateStr+\'">\'+
+                \'<span class="ra-cal-day-num">\'+d+\'</span>\'+
+                (dots?\'<div class="ra-cal-day-dots">\'+dots+\'</div>\':\'\')+
+            \'</div>\';
+        }
+        // Next month padding
+        var totalCells=startDow+numDays;
+        var remaining=totalCells%7===0?0:7-totalCells%7;
+        for(var n=1;n<=remaining;n++){
+            html+=\'<div class="ra-cal-day ra-cal-day-other">\'+n+\'</div>\';
+        }
+
+        daysEl.innerHTML=html;
+
+        // Click on day
+        daysEl.querySelectorAll(".ra-cal-day:not(.ra-cal-day-other)").forEach(function(el){
+            el.addEventListener("click",function(){
+                calSelectedDate=this.getAttribute("data-date");
+                daysEl.querySelectorAll(".ra-cal-day").forEach(function(d){d.classList.remove("ra-cal-day-selected");});
+                this.classList.add("ra-cal-day-selected");
+                renderSidebar();
+            });
+        });
+
+        // Auto-select today if in current month
+        if(!calSelectedDate){
+            var now=new Date();
+            if(now.getFullYear()===calYear&&now.getMonth()===calMonth){
+                calSelectedDate=todayStr;
+            }else{
+                calSelectedDate=calYear+"-"+("0"+(calMonth+1)).slice(-2)+"-01";
+            }
+        }
+        renderSidebar();
+    }
+
+    function getDotsForDate(dateStr){
+        var dots="";
+        var count=0;
+        for(var i=0;i<termineData.length&&count<3;i++){
+            if(termineData[i].termin_date===dateStr){
+                var c=termineData[i].color||"#3b82f6";
+                dots+=\'<span class="ra-cal-dot" style="background:\'+c+\'"></span>\';
+                count++;
+            }
+        }
+        for(var j=0;j<repairTermineData.length&&count<3;j++){
+            var rd=repairTermineData[j].termin_at;
+            if(rd&&rd.substring(0,10)===dateStr){
+                dots+=\'<span class="ra-cal-dot" style="background:#f59e0b"></span>\';
+                count++;
+            }
+        }
+        return dots;
+    }
+
+    function renderSidebar(){
+        var titleEl=document.getElementById("ra-cal-sidebar-title");
+        var listEl=document.getElementById("ra-cal-sidebar-list");
+        if(!calSelectedDate){listEl.innerHTML="";titleEl.textContent="";return;}
+
+        var parts=calSelectedDate.split("-");
+        titleEl.textContent=parseInt(parts[2])+". "+monthNames[parseInt(parts[1])-1]+" "+parts[0];
+
+        var items=[];
+        // Custom termine
+        for(var i=0;i<termineData.length;i++){
+            var t=termineData[i];
+            if(t.termin_date===calSelectedDate){
+                items.push({type:"termin",data:t,time:t.termin_time||"00:00"});
+            }
+        }
+        // Repair termine
+        for(var j=0;j<repairTermineData.length;j++){
+            var r=repairTermineData[j];
+            if(r.termin_at&&r.termin_at.substring(0,10)===calSelectedDate){
+                items.push({type:"repair",data:r,time:r.termin_at.substring(11,16)||"00:00"});
+            }
+        }
+        // Sort by time
+        items.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0;});
+
+        if(items.length===0){
+            listEl.innerHTML=\'<div class="ra-cal-empty"><i class="ri-calendar-line"></i><span>\'+L.termine_no_appointments+\'</span></div>\';
+            return;
+        }
+
+        var html="";
+        for(var k=0;k<items.length;k++){
+            var item=items[k];
+            if(item.type==="termin"){
+                var tm=item.data;
+                var col=tm.color||"#3b82f6";
+                var timeStr=tm.termin_time?tm.termin_time.substring(0,5):"";
+                var dur=tm.duration?tm.duration+"min":"";
+                var statusCls="ra-cal-st-"+(tm.status||"scheduled");
+                html+=\'<div class="ra-cal-item" data-termin-id="\'+tm.id+\'" style="border-left-color:\'+col+\'">\'+
+                    \'<div class="ra-cal-item-top">\'+
+                        (timeStr?\'<span class="ra-cal-item-time">\'+timeStr+\'</span>\':\'\')+
+                        (dur?\'<span class="ra-cal-item-dur">\'+dur+\'</span>\':\'\')+
+                        \'<span class="ra-cal-item-status \'+statusCls+\'">\'+getStatusLabel(tm.status)+\'</span>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-item-title">\'+escH(tm.title)+\'</div>\'+
+                    (tm.customer_name?\'<div class="ra-cal-item-meta"><i class="ri-user-3-line"></i> \'+escH(tm.customer_name)+(tm.customer_phone?\' · \'+escH(tm.customer_phone):\'\')+\'</div>\':\'\')+
+                    (tm.notes?\'<div class="ra-cal-item-meta"><i class="ri-file-text-line"></i> \'+escH(tm.notes)+\'</div>\':\'\')+
+                \'</div>\';
+            }else{
+                var rp=item.data;
+                var rpTime=rp.termin_at?rp.termin_at.substring(11,16):"";
+                var device=((rp.device_brand||"")+" "+(rp.device_model||"")).trim();
+                html+=\'<div class="ra-cal-item ra-cal-item-repair" style="border-left-color:#f59e0b">\'+
+                    \'<div class="ra-cal-item-top">\'+
+                        (rpTime&&rpTime!=="00:00"?\'<span class="ra-cal-item-time">\'+rpTime+\'</span>\':\'\')+
+                        \'<span class="ra-cal-item-badge-repair"><i class="ri-tools-line"></i> \'+L.termine_from_repair+\' #\'+rp.id+\'</span>\'+
+                    \'</div>\'+
+                    \'<div class="ra-cal-item-title">\'+escH(rp.customer_name)+\'</div>\'+
+                    (device?\'<div class="ra-cal-item-meta"><i class="ri-smartphone-line"></i> \'+escH(device)+\'</div>\':\'\')+
+                \'</div>\';
+            }
+        }
+        listEl.innerHTML=html;
+
+        // Click to edit custom termine
+        listEl.querySelectorAll(".ra-cal-item[data-termin-id]").forEach(function(el){
+            el.addEventListener("click",function(){
+                var tid=parseInt(this.getAttribute("data-termin-id"));
+                var found=null;
+                for(var x=0;x<termineData.length;x++){if(parseInt(termineData[x].id)===tid){found=termineData[x];break;}}
+                if(found)openTerminModal(found);
+            });
+        });
+    }
+
+    function getStatusLabel(s){
+        var map={scheduled:L.termine_status_scheduled,confirmed:L.termine_status_confirmed,completed:L.termine_status_completed,cancelled:L.termine_status_cancelled};
+        return map[s]||s;
+    }
+
+    function getTypeLabel(t){
+        var map={general:L.termine_type_general,repair:L.termine_type_repair,pickup:L.termine_type_pickup,consultation:L.termine_type_consultation,estimate:L.termine_type_estimate};
+        return map[t]||t;
+    }
+
+    function escH(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+
+    function formatDateNice(dateStr){
+        var p=dateStr.split("-");
+        return parseInt(p[2])+". "+monthNames[parseInt(p[1])-1]+" "+p[0];
+    }
+
+    function openTerminModal(termin){
+        var modal=document.getElementById("ra-cal-modal-bg");
+        var titleEl=document.getElementById("ra-cal-modal-title");
+        var subtitleEl=document.getElementById("ra-cal-modal-subtitle");
+        var delBtn=document.getElementById("ra-tm-delete");
+
+        if(termin){
+            titleEl.textContent=L.termine_edit;
+            subtitleEl.textContent=termin.title||"";
+            delBtn.style.display="";
+            document.getElementById("ra-tm-id").value=termin.id;
+            document.getElementById("ra-tm-title").value=termin.title||"";
+            document.getElementById("ra-tm-customer").value=termin.customer_name||"";
+            document.getElementById("ra-tm-phone").value=termin.customer_phone||"";
+            document.getElementById("ra-tm-date").value=termin.termin_date||"";
+            document.getElementById("ra-tm-time").value=termin.termin_time?termin.termin_time.substring(0,5):"";
+            document.getElementById("ra-tm-duration").value=termin.duration||30;
+            document.getElementById("ra-tm-type").value=termin.termin_type||"general";
+            document.getElementById("ra-tm-status").value=termin.status||"scheduled";
+            document.getElementById("ra-tm-notes").value=termin.notes||"";
+            // Set color
+            var selColor=termin.color||"";
+            document.querySelectorAll("#ra-tm-colors .ra-cal-color-dot").forEach(function(d){
+                d.classList.toggle("active",d.getAttribute("data-color")===selColor);
+            });
+        }else{
+            titleEl.textContent=L.termine_new;
+            subtitleEl.textContent=calSelectedDate?formatDateNice(calSelectedDate):"";
+            delBtn.style.display="none";
+            document.getElementById("ra-tm-id").value="";
+            document.getElementById("ra-tm-title").value="";
+            document.getElementById("ra-tm-customer").value="";
+            document.getElementById("ra-tm-phone").value="";
+            document.getElementById("ra-tm-date").value=calSelectedDate||fmtDate(new Date());
+            document.getElementById("ra-tm-time").value="";
+            document.getElementById("ra-tm-duration").value=30;
+            document.getElementById("ra-tm-type").value="general";
+            document.getElementById("ra-tm-status").value="scheduled";
+            document.getElementById("ra-tm-notes").value="";
+            document.querySelectorAll("#ra-tm-colors .ra-cal-color-dot").forEach(function(d){
+                d.classList.toggle("active",d.getAttribute("data-color")==="");
+            });
+        }
+        modal.classList.add("active");
+        setTimeout(function(){document.getElementById("ra-tm-title").focus();},100);
+    }
+
+    function closeTerminModal(){
+        document.getElementById("ra-cal-modal-bg").classList.remove("active");
+    }
+
+    function saveTermin(){
+        var fd=new FormData();
+        fd.append("action","ppv_repair_termine_save");
+        fd.append("nonce",NONCE);
+        var tmId=document.getElementById("ra-tm-id").value;
+        if(tmId)fd.append("id",tmId);
+        fd.append("title",document.getElementById("ra-tm-title").value);
+        fd.append("customer_name",document.getElementById("ra-tm-customer").value);
+        fd.append("customer_phone",document.getElementById("ra-tm-phone").value);
+        fd.append("termin_date",document.getElementById("ra-tm-date").value);
+        fd.append("termin_time",document.getElementById("ra-tm-time").value);
+        fd.append("duration",document.getElementById("ra-tm-duration").value);
+        fd.append("termin_type",document.getElementById("ra-tm-type").value);
+        fd.append("status",document.getElementById("ra-tm-status").value);
+        fd.append("notes",document.getElementById("ra-tm-notes").value);
+        var activeColor=document.querySelector("#ra-tm-colors .ra-cal-color-dot.active");
+        fd.append("color",activeColor?activeColor.getAttribute("data-color"):"");
+
+        fetch(AJAX,{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(resp){
+            if(resp.success){
+                closeTerminModal();
+                toast(L.termine_saved);
+                loadTermine();
+            }else{
+                toast(resp.data&&resp.data.message||L.error);
+            }
+        }).catch(function(){toast(L.connection_error);});
+    }
+
+    function deleteTermin(){
+        if(!confirm(L.termine_delete_confirm))return;
+        var tmId=document.getElementById("ra-tm-id").value;
+        if(!tmId)return;
+        var fd=new FormData();
+        fd.append("action","ppv_repair_termine_delete");
+        fd.append("nonce",NONCE);
+        fd.append("id",tmId);
+        fetch(AJAX,{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(resp){
+            if(resp.success){
+                closeTerminModal();
+                toast(L.termine_deleted);
+                loadTermine();
+            }else{
+                toast(resp.data&&resp.data.message||L.error);
+            }
+        }).catch(function(){toast(L.connection_error);});
+    }
+
+    function loadTermine(){
+        var fd=new FormData();
+        fd.append("action","ppv_repair_termine_list");
+        fd.append("nonce",NONCE);
+        fd.append("year",calYear);
+        fd.append("month",calMonth+1); // 1-based for PHP
+        fetch(AJAX,{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(resp){
+            if(resp.success){
+                termineData=resp.data.termine||[];
+                repairTermineData=resp.data.repair_termine||[];
+                renderCalendar();
+            }
+        }).catch(function(){});
+    }
 
     /* ===== Invoices ===== */
 
@@ -8705,12 +9440,13 @@ echo '</div></div>
         $prefix = $wpdb->prefix;
 
         $status_map = [
-            'new'           => [PPV_Lang::t('repair_admin_status_new'),       'ra-status-new'],
-            'in_progress'   => [PPV_Lang::t('repair_admin_status_progress'),  'ra-status-progress'],
-            'waiting_parts' => [PPV_Lang::t('repair_admin_status_waiting'),   'ra-status-waiting'],
-            'done'          => [PPV_Lang::t('repair_admin_status_done'),      'ra-status-done'],
-            'delivered'     => [PPV_Lang::t('repair_admin_status_delivered'), 'ra-status-delivered'],
-            'cancelled'     => [PPV_Lang::t('repair_admin_status_cancelled'),'ra-status-cancelled'],
+            'new'              => [PPV_Lang::t('repair_admin_status_new'),            'ra-status-new'],
+            'in_progress'      => [PPV_Lang::t('repair_admin_status_progress'),       'ra-status-progress'],
+            'waiting_parts'    => [PPV_Lang::t('repair_admin_status_waiting'),        'ra-status-waiting'],
+            'done'             => [PPV_Lang::t('repair_admin_status_done'),           'ra-status-done'],
+            'delivered'        => [PPV_Lang::t('repair_admin_status_delivered'),      'ra-status-delivered'],
+            'cancelled'        => [PPV_Lang::t('repair_admin_status_cancelled'),     'ra-status-cancelled'],
+            'not_repairable'   => [PPV_Lang::t('repair_admin_status_not_repairable'),'ra-status-not-repairable'],
         ];
 
         $st    = $status_map[$r->status] ?? ['?', ''];
@@ -8984,11 +9720,21 @@ echo '</div></div>
             . '</div>';
         }
 
-        // Badges row (invoice, termin, parts arrived)
+        // Badges row (widget source, invoice, termin)
         $badges = '';
+        $cf_data = !empty($r->custom_fields) ? json_decode($r->custom_fields, true) : [];
+        $is_widget_source = (!empty($cf_data['source_channel']) && $cf_data['source_channel'] === 'widget');
+        if ($is_widget_source) $badges .= '<div class="ra-widget-badge"><i class="ri-global-line"></i> Widget</div>';
         if ($invoice_badge_html) $badges .= $invoice_badge_html;
-        if (!empty($r->termin_at) && strtotime($r->termin_at) > time()) {
-            $badges .= '<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>';
+        if (!empty($r->termin_at)) {
+            $t_is_past = strtotime($r->termin_at) <= time();
+            $badges .= '<div class="ra-termin-badge' . ($t_is_past ? ' ra-termin-past' : '') . '" data-repair-id="' . intval($r->id) . '" data-termin-at="' . esc_attr($r->termin_at) . '"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>';
+        } elseif (empty($r->termin_at) && !in_array($r->status, ['done', 'delivered', 'cancelled'])) {
+            if ($is_widget_source) {
+                $badges .= '<div class="ra-termin-needed-badge" data-repair-id="' . intval($r->id) . '"><i class="ri-calendar-todo-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_needed', 'Termin vereinbaren')) . '</div>';
+            } else {
+                $badges .= '<div class="ra-termin-add-badge" data-repair-id="' . intval($r->id) . '"><i class="ri-calendar-todo-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_add', '+ Termin')) . '</div>';
+            }
         }
         $badges_row = $badges ? '<div class="ra-card-badges">' . $badges . '</div>' : '';
 

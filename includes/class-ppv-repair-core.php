@@ -65,11 +65,7 @@ class PPV_Repair_Core {
         add_action('wp_ajax_ppv_shop_widget_diagnose', [__CLASS__, 'ajax_shop_widget_diagnose']);
         add_action('wp_ajax_nopriv_ppv_shop_widget_diagnose', [__CLASS__, 'ajax_shop_widget_diagnose']);
 
-        // AJAX: AI widget configuration chat (admin)
-        add_action('wp_ajax_ppv_widget_ai_chat', [__CLASS__, 'ajax_widget_ai_chat']);
-        add_action('wp_ajax_nopriv_ppv_widget_ai_chat', [__CLASS__, 'ajax_widget_ai_chat']);
-
-        // AJAX: AI widget knowledge file upload (admin)
+        // AJAX: Widget catalog CSV/TXT upload (admin, needs nopriv for session-based auth)
         add_action('wp_ajax_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
         add_action('wp_ajax_nopriv_ppv_widget_ai_upload', [__CLASS__, 'ajax_widget_ai_upload']);
 
@@ -130,8 +126,21 @@ class PPV_Repair_Core {
             'ppv_repair_reward_reject'  => [__CLASS__, 'ajax_reward_reject'],
             'ppv_repair_send_email'     => [__CLASS__, 'ajax_send_repair_email'],
             'ppv_repair_parts_arrived'  => [__CLASS__, 'ajax_parts_arrived'],
+            'ppv_repair_set_termin'     => [__CLASS__, 'ajax_set_termin'],
+            'ppv_repair_delete_termin'  => [__CLASS__, 'ajax_delete_termin'],
         ];
         foreach ($admin_actions as $action => $callback) {
+            add_action("wp_ajax_{$action}", $callback);
+            add_action("wp_ajax_nopriv_{$action}", $callback);
+        }
+
+        // AJAX: Termine (appointments calendar) actions
+        $termine_actions = [
+            'ppv_repair_termine_list'   => [__CLASS__, 'ajax_termine_list'],
+            'ppv_repair_termine_save'   => [__CLASS__, 'ajax_termine_save'],
+            'ppv_repair_termine_delete' => [__CLASS__, 'ajax_termine_delete'],
+        ];
+        foreach ($termine_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
             add_action("wp_ajax_nopriv_{$action}", $callback);
         }
@@ -532,7 +541,7 @@ class PPV_Repair_Core {
                 problem_description TEXT NOT NULL,
                 accessories TEXT NULL,
                 notes TEXT NULL,
-                status ENUM('new','in_progress','waiting_parts','done','delivered','cancelled') DEFAULT 'new',
+                status ENUM('new','in_progress','waiting_parts','done','delivered','cancelled','not_repairable') DEFAULT 'new',
                 points_awarded INT DEFAULT 0,
                 estimated_cost DECIMAL(10,2) NULL,
                 final_cost DECIMAL(10,2) NULL,
@@ -1083,6 +1092,46 @@ class PPV_Repair_Core {
             }
             update_option('ppv_repair_migration_version', '3.2');
         }
+
+        // v3.3: Termine (appointments) table
+        if (version_compare($version, '3.3', '<')) {
+            $charset = $wpdb->get_charset_collate();
+            $table = $wpdb->prefix . 'ppv_repair_termine';
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                store_id BIGINT(20) UNSIGNED NOT NULL,
+                repair_id BIGINT(20) UNSIGNED NULL,
+                customer_name VARCHAR(255) NOT NULL DEFAULT '',
+                customer_phone VARCHAR(50) NULL,
+                title VARCHAR(255) NOT NULL,
+                termin_date DATE NOT NULL,
+                termin_time TIME NULL,
+                duration INT UNSIGNED DEFAULT 30,
+                termin_type VARCHAR(50) DEFAULT 'general',
+                status VARCHAR(20) DEFAULT 'scheduled',
+                notes TEXT NULL,
+                color VARCHAR(10) NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_store (store_id),
+                KEY idx_store_date (store_id, termin_date),
+                KEY idx_repair (repair_id)
+            ) {$charset};";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            update_option('ppv_repair_migration_version', '3.3');
+        }
+
+        // v3.4: Add 'not_repairable' to repairs status ENUM
+        if (version_compare($version, '3.4', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $wpdb->query("ALTER TABLE {$repairs_table} MODIFY COLUMN status ENUM('new','in_progress','waiting_parts','done','delivered','cancelled','not_repairable') DEFAULT 'new'");
+            update_option('ppv_repair_migration_version', '3.4');
+        }
     }
 
     /** ============================================================
@@ -1201,6 +1250,12 @@ class PPV_Repair_Core {
                 $custom_fields[substr($pk, 3)] = sanitize_text_field($pv);
             }
         }
+        // Source channel (widget, direct, etc.)
+        $source_channel = sanitize_text_field($_POST['source_channel'] ?? 'direct');
+        if (in_array($source_channel, ['widget', 'direct'])) {
+            $custom_fields['source_channel'] = $source_channel;
+        }
+
         // New built-in field types → stored in custom_fields JSON
         $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit', 'vehicle_plate', 'vehicle_vin', 'vehicle_mileage', 'vehicle_first_reg', 'vehicle_tuev', 'condition_check_kfz', 'condition_check_pc'];
         foreach ($extra_keys as $ek) {
@@ -1266,18 +1321,15 @@ class PPV_Repair_Core {
             $store_id
         ));
 
-        $bonus_result = ['user_id' => 0, 'points_added' => 0, 'total_points' => 0, 'is_new_user' => false];
-
-        // Only award points if PunktePass is enabled AND email is provided
+        // Link PunktePass user (create if needed) but do NOT award points yet.
+        // Points are awarded when status changes to 'done' (fertig).
         $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
+        $pp_points = intval($store->repair_points_per_form ?: 2);
         if ($pp_enabled && !empty($email)) {
-            $points = intval($store->repair_points_per_form ?: 2);
-            $bonus_result = self::award_repair_bonus($store, $email, $name, $points);
-
-            if ($bonus_result && !empty($bonus_result['user_id'])) {
+            $user_result = self::ensure_repair_user($email, $name);
+            if ($user_result && !empty($user_result['user_id'])) {
                 $wpdb->update("{$prefix}ppv_repairs", [
-                    'user_id'        => $bonus_result['user_id'],
-                    'points_awarded' => $bonus_result['points_added'],
+                    'user_id' => $user_result['user_id'],
                 ], ['id' => $repair_id]);
             }
         }
@@ -1299,10 +1351,47 @@ class PPV_Repair_Core {
             'repair_id'      => $repair_id,
             'tracking_token' => $tracking_token,
             'tracking_url'   => $tracking_url,
-            'points_added'   => $bonus_result['points_added'] ?? 0,
-            'total_points'   => $bonus_result['total_points'] ?? 0,
-            'is_new_user'    => $bonus_result['is_new_user'] ?? false,
+            'points_added'   => 0,
+            'total_points'   => 0,
+            'is_new_user'    => false,
+            'pp_enabled'     => $pp_enabled ? true : false,
+            'pp_points'      => $pp_points,
         ]);
+    }
+
+    /** ============================================================
+     * Ensure PunktePass user exists (create if needed) - NO points awarded
+     * ============================================================ */
+    public static function ensure_repair_user($email, $name) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$prefix}ppv_users WHERE email = %s LIMIT 1", $email
+        ));
+
+        if ($user) {
+            return ['user_id' => (int)$user->id, 'is_new_user' => false];
+        }
+
+        $name_parts = explode(' ', trim($name), 2);
+        $wpdb->insert("{$prefix}ppv_users", [
+            'email'        => $email,
+            'password'     => password_hash(wp_generate_password(8, false, false), PASSWORD_DEFAULT),
+            'first_name'   => $name_parts[0] ?? '',
+            'last_name'    => $name_parts[1] ?? '',
+            'display_name' => trim($name) ?: ($name_parts[0] ?? ''),
+            'qr_token'     => wp_generate_password(10, false, false),
+            'login_token'  => bin2hex(random_bytes(32)),
+            'user_type'    => 'user',
+            'active'       => 1,
+            'created_at'   => current_time('mysql'),
+            'updated_at'   => current_time('mysql'),
+        ]);
+        $user_id = $wpdb->insert_id;
+        if (!$user_id) return ['user_id' => 0, 'is_new_user' => true];
+
+        return ['user_id' => $user_id, 'is_new_user' => true];
     }
 
     /** ============================================================
@@ -1458,6 +1547,12 @@ class PPV_Repair_Core {
 
     /** AJAX: Search customers by email prefix (for form email autocomplete) */
     public static function ajax_customer_email_search() {
+        // SECURITY: Verify nonce to prevent unauthorized data harvesting
+        $nonce = sanitize_text_field($_GET['nonce'] ?? '');
+        if (!wp_verify_nonce($nonce, 'ppv_repair_form')) {
+            wp_send_json_error(['message' => 'Invalid request'], 403);
+        }
+
         $q = sanitize_text_field($_GET['q'] ?? '');
         $store_id = intval($_GET['store_id'] ?? 0);
         if (strlen($q) < 2 || !$store_id) {
@@ -1730,7 +1825,9 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
 
         global $wpdb;
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT widget_ai_config, widget_ai_knowledge, repair_custom_brands, repair_custom_problems
+            "SELECT widget_ai_config, widget_ai_knowledge, repair_custom_brands, repair_custom_problems,
+                    name, repair_company_name, address, plz, city, country, phone, whatsapp,
+                    website, logo, opening_hours, latitude, longitude, repair_color, store_slug
              FROM {$wpdb->prefix}ppv_stores
              WHERE store_slug = %s AND repair_enabled = 1",
             $store_slug
@@ -1757,6 +1854,13 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $chips = array_filter(array_map('trim', explode("\n", $store->repair_custom_problems)));
         }
 
+        // Store opening hours (from DB field, JSON format)
+        $store_hours = !empty($store->opening_hours) ? json_decode($store->opening_hours, true) : null;
+
+        // Store info for catalog mode
+        $store_name = $store->repair_company_name ?: $store->name;
+        $store_addr = trim(($store->address ?: '') . ', ' . ($store->plz ?: '') . ' ' . ($store->city ?: ''), ', ');
+
         wp_send_json_success([
             'brands'           => $brands,
             'chips'            => $chips,
@@ -1768,237 +1872,16 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             'quality_tiers'    => $config['quality_tiers'] ?? [],
             'tiered_services'  => $knowledge['tiered_services'] ?? [],
             'custom_sections'  => $config['custom_sections'] ?? [],
-        ]);
-    }
-
-    /** ============================================================
-     * AJAX: AI Widget Configuration Chat (admin)
-     * AI helps store owner configure their widget
-     * ============================================================ */
-    public static function ajax_widget_ai_chat() {
-        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
-        $store_id = self::get_current_store_id();
-        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
-
-        $message = sanitize_textarea_field($_POST['message'] ?? '');
-        $history = json_decode(stripslashes($_POST['history'] ?? '[]'), true);
-        if (!is_array($history)) $history = [];
-
-        global $wpdb;
-        $stores_table = $wpdb->prefix . 'ppv_stores';
-        $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, name, repair_company_name, repair_service_type, repair_color, store_slug,
-                    widget_ai_config, widget_ai_knowledge, widget_setup_complete, repair_premium
-             FROM {$stores_table} WHERE id = %d",
-            $store_id
-        ));
-        if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
-
-        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
-        if (!PPV_AI_Engine::is_available()) wp_send_json_error(['message' => 'AI nicht verfügbar']);
-
-        $current_config = !empty($store->widget_ai_config) ? json_decode($store->widget_ai_config, true) : [];
-        $current_knowledge = !empty($store->widget_ai_knowledge) ? json_decode($store->widget_ai_knowledge, true) : [];
-        $store_name = $store->repair_company_name ?: $store->name;
-
-        $active_lang = class_exists('PPV_Lang') ? PPV_Lang::$active : 'de';
-        $system = self::get_widget_ai_system_prompt($store_name, $current_config, $current_knowledge, (bool) $store->widget_setup_complete, $active_lang);
-
-        // Build messages for AI
-        $messages = [];
-        $recent = array_slice($history, -10);
-        foreach ($recent as $m) {
-            if (!empty($m['role']) && !empty($m['content'])) {
-                $messages[] = [
-                    'role'    => $m['role'] === 'user' ? 'user' : 'assistant',
-                    'content' => sanitize_textarea_field($m['content']),
-                ];
-            }
-        }
-        $messages[] = ['role' => 'user', 'content' => $message];
-
-        $result = PPV_AI_Engine::chat_with_history($system, $messages, [
-            'max_tokens' => 2000,  // Config chat needs more tokens for large JSON markers
-        ]);
-        if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
-
-        $ai_text = $result['text'];
-        $actions_applied = [];
-
-        // Parse and apply action markers from AI response
-        // Note: all regexes use 's' flag (DOTALL) so . matches newlines too
-
-        // [SET:key=value] pattern
-        if (preg_match_all('/\[SET:(\w+)=([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $key = strtolower(trim($match[1]));
-                $val = trim($match[2]);
-                $current_config[$key] = $val;
-                $actions_applied[] = $key;
-                $ai_text = str_replace($match[0], '', $ai_text);
-            }
-        }
-
-        // [SET_BRANDS:Brand1,Brand2,...] – replace full brand list
-        if (preg_match('/\[SET_BRANDS:([^\]]+)\]/is', $ai_text, $m)) {
-            $brandList = array_filter(array_map('trim', preg_split('/[,\n]+/', $m[1])));
-            $current_config['brands'] = array_map(function($b) {
-                $icons = ['Apple'=>"\xF0\x9F\x8D\x8E",'Samsung'=>"\xF0\x9F\x93\xB1",'Huawei'=>"\xF0\x9F\x93\xB2",'Xiaomi'=>"\xE2\xAD\x90",'Google'=>'G','Sony'=>"\xF0\x9F\x8E\xAE",'OnePlus'=>'1+','LG'=>"\xF0\x9F\x93\xBA",'Nokia'=>'N','Motorola'=>'M','OPPO'=>'O','Realme'=>'R','Honor'=>'H','Nothing'=>'N','ZTE'=>'Z'];
-                return ['id' => $b, 'label' => $b, 'icon' => $icons[$b] ?? "\xE2\x9A\x99"];
-            }, $brandList);
-            $actions_applied[] = 'brands';
-            $ai_text = str_replace($m[0], '', $ai_text);
-        }
-
-        // [SET_CHIPS:chip1,chip2,...] – replace problem chips
-        if (preg_match('/\[SET_CHIPS:([^\]]+)\]/is', $ai_text, $m)) {
-            $current_config['chips'] = array_filter(array_map('trim', preg_split('/[,\n]+/', $m[1])));
-            $actions_applied[] = 'chips';
-            $ai_text = str_replace($m[0], '', $ai_text);
-        }
-
-        // [ADD_SERVICE:name|price|time] – add a service to knowledge
-        if (preg_match_all('/\[ADD_SERVICE:([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
-            if (!isset($current_knowledge['services'])) $current_knowledge['services'] = [];
-            foreach ($matches as $match) {
-                $parts = array_map('trim', explode('|', $match[1]));
-                $svc = ['name' => $parts[0] ?? ''];
-                if (!empty($parts[1])) $svc['price'] = $parts[1];
-                if (!empty($parts[2])) $svc['time'] = $parts[2];
-                // Check if service already exists, update if so
-                $found = false;
-                foreach ($current_knowledge['services'] as $i => $existing) {
-                    if (strcasecmp($existing['name'], $svc['name']) === 0) {
-                        $current_knowledge['services'][$i] = $svc;
-                        $found = true;
-                        break;
-                    }
-                }
-                if (!$found) $current_knowledge['services'][] = $svc;
-                $ai_text = str_replace($match[0], '', $ai_text);
-            }
-            $actions_applied[] = 'services';
-        }
-
-        // [SET_SERVICES:JSON] – replace all services at once
-        if (preg_match('/\[SET_SERVICES:(\[.+?\])\]/is', $ai_text, $m)) {
-            $services = json_decode($m[1], true);
-            if (is_array($services)) {
-                $current_knowledge['services'] = $services;
-                $actions_applied[] = 'services';
-            }
-            $ai_text = str_replace($m[0], '', $ai_text);
-        }
-
-        // [SET_KNOWLEDGE:key=value] – set knowledge fields (value can contain commas)
-        if (preg_match_all('/\[SET_KNOWLEDGE:(\w+)=([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $key = strtolower(trim($match[1]));
-                $val = trim($match[2]);
-                // For array-type fields, split by comma
-                if (in_array($key, ['specialties', 'payment_methods'])) {
-                    $current_knowledge[$key] = array_filter(array_map('trim', explode(',', $val)));
-                } else {
-                    $current_knowledge[$key] = $val;
-                }
-                $actions_applied[] = $key;
-                $ai_text = str_replace($match[0], '', $ai_text);
-            }
-        }
-
-        // [SETUP_COMPLETE] – mark setup as done
-        if (preg_match('/\[SETUP_COMPLETE\]/i', $ai_text, $m)) {
-            $wpdb->update($stores_table, ['widget_setup_complete' => 1], ['id' => $store_id]);
-            $actions_applied[] = 'setup_complete';
-            $ai_text = str_replace($m[0], '', $ai_text);
-        }
-
-        // [SET_TIERS:JSON] – set quality tiers (e.g. Standard/Premium)
-        if (preg_match('/\[SET_TIERS:(\[.+?\])\]/is', $ai_text, $m)) {
-            $tiers = json_decode($m[1], true);
-            if (is_array($tiers)) {
-                $current_config['quality_tiers'] = $tiers;
-                $actions_applied[] = 'quality_tiers';
-            }
-            $ai_text = str_replace($m[0], '', $ai_text);
-        }
-
-        // [ADD_SECTION:JSON] – add a custom section to widget
-        if (preg_match_all('/\[ADD_SECTION:(\{.+?\})\]/is', $ai_text, $matches, PREG_SET_ORDER)) {
-            if (!isset($current_config['custom_sections'])) $current_config['custom_sections'] = [];
-            foreach ($matches as $match) {
-                $section = json_decode($match[1], true);
-                if (is_array($section) && !empty($section['id'])) {
-                    // Replace existing section with same id
-                    $found = false;
-                    foreach ($current_config['custom_sections'] as $i => $existing) {
-                        if (($existing['id'] ?? '') === $section['id']) {
-                            $current_config['custom_sections'][$i] = $section;
-                            $found = true;
-                            break;
-                        }
-                    }
-                    if (!$found) $current_config['custom_sections'][] = $section;
-                }
-                $ai_text = str_replace($match[0], '', $ai_text);
-            }
-            $actions_applied[] = 'custom_sections';
-        }
-
-        // [SET_SECTIONS:JSON] – replace all custom sections
-        if (preg_match('/\[SET_SECTIONS:(\[.+?\])\]/is', $ai_text, $m)) {
-            $sections = json_decode($m[1], true);
-            if (is_array($sections)) {
-                $current_config['custom_sections'] = $sections;
-                $actions_applied[] = 'custom_sections';
-            }
-            $ai_text = str_replace($m[0], '', $ai_text);
-        }
-
-        // [REMOVE_SECTION:id] – remove a custom section by id
-        if (preg_match_all('/\[REMOVE_SECTION:([^\]]+)\]/i', $ai_text, $matches, PREG_SET_ORDER)) {
-            if (isset($current_config['custom_sections'])) {
-                foreach ($matches as $match) {
-                    $remove_id = trim($match[1]);
-                    $current_config['custom_sections'] = array_values(array_filter(
-                        $current_config['custom_sections'],
-                        function($s) use ($remove_id) { return ($s['id'] ?? '') !== $remove_id; }
-                    ));
-                    $ai_text = str_replace($match[0], '', $ai_text);
-                }
-                $actions_applied[] = 'custom_sections';
-            }
-        }
-
-        // [SET_SERVICE_TIERS:JSON] – set tiered pricing for services
-        if (preg_match('/\[SET_SERVICE_TIERS:(\[.+?\])\]/is', $ai_text, $m)) {
-            $tiered_services = json_decode($m[1], true);
-            if (is_array($tiered_services)) {
-                $current_knowledge['tiered_services'] = $tiered_services;
-                $actions_applied[] = 'tiered_services';
-            }
-            $ai_text = str_replace($m[0], '', $ai_text);
-        }
-
-        // Safety catch-all: strip ALL remaining action markers (handles nested JSON via bracket counting)
-        $ai_text = self::strip_action_markers($ai_text);
-        // Clean up leftover whitespace from removed markers
-        $ai_text = preg_replace('/\n{3,}/', "\n\n", trim($ai_text));
-
-        // Save updated config and knowledge
-        if (!empty($actions_applied)) {
-            $wpdb->update($stores_table, [
-                'widget_ai_config'    => wp_json_encode($current_config),
-                'widget_ai_knowledge' => wp_json_encode($current_knowledge),
-            ], ['id' => $store_id]);
-        }
-
-        wp_send_json_success([
-            'message'         => trim($ai_text),
-            'actions_applied' => $actions_applied,
-            'config'          => $current_config,
-            'knowledge'       => $current_knowledge,
-            'setup_complete'  => (bool) ($wpdb->get_var($wpdb->prepare("SELECT widget_setup_complete FROM {$stores_table} WHERE id = %d", $store_id))),
+            // Store info for catalog widget
+            'store_name'       => $store_name,
+            'store_address'    => $store_addr,
+            'store_phone'      => $store->phone ?: '',
+            'store_whatsapp'   => $store->whatsapp ?: '',
+            'store_website'    => $store->website ?: '',
+            'store_logo'       => $store->logo ?: '',
+            'store_hours'      => $store_hours,
+            'store_lat'        => $store->latitude ? (float) $store->latitude : null,
+            'store_lng'        => $store->longitude ? (float) $store->longitude : null,
         ]);
     }
 
@@ -2048,6 +1931,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             foreach ($data as $svc) {
                 if (empty($svc['name'])) continue;
                 $s = ['name' => trim($svc['name'])];
+                if (!empty($svc['category'])) $s['category'] = trim($svc['category']);
                 if (!empty($svc['price'])) $s['price'] = trim($svc['price']);
                 if (!empty($svc['time'])) $s['time'] = trim($svc['time']);
                 $services[] = $s;
@@ -2071,230 +1955,13 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             $wpdb->update($stores_table, ['widget_ai_config' => wp_json_encode($current_config)], ['id' => $store_id]);
             wp_send_json_success(['saved' => 'custom_sections', 'count' => count($data)]);
 
-        } elseif ($field === 'ai_expand_models' && is_array($data)) {
-            // AI-assisted model expansion
-            $brand = sanitize_text_field($data['brand'] ?? '');
-            $hint = sanitize_text_field($data['hint'] ?? '');
-            $existing = is_array($data['existing'] ?? null) ? $data['existing'] : [];
-            if (!$brand) wp_send_json_error(['message' => 'Brand required']);
-
-            $prompt_text = "Brand: {$brand}";
-            if ($hint) $prompt_text .= "\nHint: {$hint}";
-            if ($existing) $prompt_text .= "\nAlready have: " . implode(', ', $existing);
-
-            $system = "You are a phone/device model database. Given a brand name (and optional hint like 'iPhone 13 series' or 'Galaxy S24'), return a JSON array of model names.
-
-RULES:
-- Return ONLY a JSON array of strings, nothing else
-- Include the most common/popular models for that brand
-- If the hint mentions a series (e.g. 'iPhone 13 series'), list ALL variants (mini, Pro, Pro Max, etc.)
-- If no hint, list the most popular recent models (last 3-4 years)
-- Do NOT include models already in the 'Already have' list
-- Maximum 20 models per response
-- Use short names: 'iPhone 14 Pro' not 'Apple iPhone 14 Pro'
-
-Example output: [\"iPhone 13\",\"iPhone 13 mini\",\"iPhone 13 Pro\",\"iPhone 13 Pro Max\"]";
-
-            $result = PPV_AI_Engine::chat($system, $prompt_text, 'en', ['model' => 'gpt-4o-mini']);
-            if (is_wp_error($result)) wp_send_json_error(['message' => $result->get_error_message()]);
-
-            $text = trim($result['text']);
-            // Extract JSON array from response
-            if (preg_match('/\[.*\]/s', $text, $match)) {
-                $models = json_decode($match[0], true);
-                if (is_array($models)) {
-                    $models = array_values(array_filter(array_map('trim', $models)));
-                    wp_send_json_success(['models' => $models]);
-                }
-            }
-            wp_send_json_error(['message' => 'AI response parse error']);
-
         } else {
             wp_send_json_error(['message' => 'Invalid field']);
         }
     }
 
-    /**
-     * Strip all action markers from AI response text, handling nested JSON brackets.
-     * Finds [MARKER_NAME:...] patterns and removes them using bracket-depth counting.
-     * Also strips truncated markers at end of text (from token limit cutoff).
-     */
-    private static function strip_action_markers($text) {
-        $markers = ['SET_SERVICE_TIERS','SET_SERVICES','SET_SECTIONS','SET_TIERS','SET_BRANDS','SET_CHIPS',
-                     'SET_KNOWLEDGE','ADD_SERVICE','ADD_SECTION','REMOVE_SECTION','SET','SETUP_COMPLETE'];
-        foreach ($markers as $name) {
-            $offset = 0;
-            while (($pos = stripos($text, '[' . $name, $offset)) !== false) {
-                // Find the matching closing bracket using depth counting
-                $i = $pos + 1; // skip the opening [
-                $len = strlen($text);
-                $depth = 1;
-                $in_str = false;
-                while ($i < $len && $depth > 0) {
-                    $c = $text[$i];
-                    if ($c === '\\' && $in_str) { $i += 2; continue; }
-                    if ($c === '"') { $in_str = !$in_str; }
-                    elseif (!$in_str) {
-                        if ($c === '[') $depth++;
-                        elseif ($c === ']') $depth--;
-                    }
-                    $i++;
-                }
-                if ($depth === 0) {
-                    // Complete marker – remove it
-                    $text = substr($text, 0, $pos) . substr($text, $i);
-                } else {
-                    // Truncated marker (never closed) – remove from start to end of text
-                    $text = substr($text, 0, $pos);
-                    break;
-                }
-            }
-        }
-        return $text;
-    }
-
-    /**
-     * System prompt for AI widget configuration assistant
-     */
-    private static function get_widget_ai_system_prompt($store_name, $config, $knowledge, $setup_complete, $lang = 'de') {
-        $config_json = wp_json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        $knowledge_json = wp_json_encode($knowledge, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-        $lang_names = ['de' => 'German', 'en' => 'English', 'hu' => 'Hungarian', 'ro' => 'Romanian', 'it' => 'Italian'];
-        $lang_name = $lang_names[$lang] ?? 'German';
-
-        // Widget language (what customers see) may differ from admin chat language
-        $widget_lang = $config['lang'] ?? 'de';
-        $widget_lang_name = $lang_names[$widget_lang] ?? 'German';
-
-        $lang_labels = [
-            'de' => ['yes' => 'Ja', 'no' => 'Nein'],
-            'en' => ['yes' => 'Yes', 'no' => 'No'],
-            'hu' => ['yes' => 'Igen', 'no' => 'Nem'],
-            'ro' => ['yes' => 'Da', 'no' => 'Nu'],
-            'it' => ['yes' => 'Sì', 'no' => 'No'],
-        ];
-        $yn = $lang_labels[$lang] ?? $lang_labels['de'];
-
-        return "You are the AI assistant for widget configuration of \"{$store_name}\" on PunktePass.
-You help the shop owner set up their repair widget for their website.
-RESPOND ONLY IN {$lang_name}.
-
-CURRENT STATUS:
-- Setup complete: " . ($setup_complete ? $yn['yes'] : $yn['no']) . "
-- Current config: {$config_json}
-- Current knowledge: {$knowledge_json}
-
-YOU HAVE FULL CONTROL over the widget. The owner trusts you to configure EVERYTHING they ask for.
-Use action markers to apply changes. You can combine multiple markers in one response.
-
-═══ BASIC SETTINGS ═══
-
-1. WIDGET MODE:
-   [SET:mode=float] – Floating button (default)
-   [SET:mode=ai] – AI diagnosis widget with 4-step wizard
-   [SET:mode=inline] – Inline banner on page
-   [SET:mode=button] – Simple button
-
-2. WIDGET APPEARANCE:
-   [SET:color=#hex] – Primary color (e.g. #667eea)
-   [SET:position=bottom-right] or [SET:position=bottom-left]
-   [SET:lang=de] – Language (de/en/hu/ro/it)
-   [SET:text=Custom Text] – Button label
-   [SET:greeting=Welcome!] – Greeting text in widget
-
-3. DEVICE BRANDS (for AI diagnosis step 1, brand names are universal):
-   [SET_BRANDS:Apple,Samsung,Huawei,Xiaomi,Google,OnePlus]
-
-4. PROBLEM CHIPS (for AI diagnosis step 2 quick-select, MUST be in {$widget_lang_name}):
-   [SET_CHIPS:Broken display,Weak battery,Not charging,Water damage,Camera broken,No sound]
-
-5. AI PERSONALITY:
-   [SET:ai_tone=professional] – Professional (default)
-   [SET:ai_tone=friendly] – Friendly and casual
-   [SET:ai_tone=expert] – Technically proficient
-
-═══ SERVICES & PRICING ═══
-
-6. SIMPLE SERVICES (single price per service):
-   [ADD_SERVICE:Display Repair iPhone|80-150 EUR|1-2 hours]
-   Or all at once:
-   [SET_SERVICES:[{\"name\":\"Display iPhone\",\"price\":\"80-150 EUR\",\"time\":\"1-2h\"}]]
-
-7. QUALITY TIERS (e.g. Standard vs Premium quality levels):
-   First define the tiers:
-   [SET_TIERS:[{\"id\":\"standard\",\"label\":\"Standard\",\"description\":\"Nachbau-Teile\",\"badge_color\":\"#3b82f6\"},{\"id\":\"premium\",\"label\":\"Premium\",\"description\":\"Original-Teile\",\"badge_color\":\"#f59e0b\"}]]
-   Then set tiered pricing for services:
-   [SET_SERVICE_TIERS:[{\"name\":\"Display iPhone 14\",\"tiers\":{\"standard\":{\"price\":\"89 EUR\",\"time\":\"1h\"},\"premium\":{\"price\":\"149 EUR\",\"time\":\"1h\"}}},{\"name\":\"Akku Samsung Galaxy\",\"tiers\":{\"standard\":{\"price\":\"39 EUR\",\"time\":\"30min\"},\"premium\":{\"price\":\"59 EUR\",\"time\":\"30min\"}}}]]
-   → Tiers can have any id/label: \"economy\", \"standard\", \"premium\", \"original\", etc.
-   → The widget will show ALL tiers side by side so the customer can choose.
-
-═══ SHOP KNOWLEDGE (AI uses this during diagnoses) ═══
-
-8. KNOWLEDGE FIELDS:
-   [SET_KNOWLEDGE:warranty=6 months warranty on all repairs]
-   [SET_KNOWLEDGE:specialties=Apple specialist,Water damage expert]
-   [SET_KNOWLEDGE:payment_methods=Cash,Card,PayPal,Transfer]
-   [SET_KNOWLEDGE:notes=We use only original parts]
-   [SET_KNOWLEDGE:turnaround=Most repairs same day]
-   [SET_KNOWLEDGE:opening_hours=Mon-Fri 10-18, Sat 10-14]
-   → You can use ANY key name. Common: warranty, specialties, payment_methods, notes, turnaround, opening_hours, location, appointment_info, pickup_service, express_info
-
-═══ CUSTOM SECTIONS (flexible widget content) ═══
-
-9. ADD CUSTOM SECTIONS to the widget (displayed after diagnosis result):
-   [ADD_SECTION:{\"id\":\"quality-info\",\"title\":\"Unsere Qualitätsstufen\",\"icon\":\"ri-shield-star-line\",\"type\":\"list\",\"items\":[\"Standard: Hochwertige Nachbau-Teile\",\"Premium: Original-Teile vom Hersteller\"]}]
-   [ADD_SECTION:{\"id\":\"process\",\"title\":\"So funktioniert es\",\"icon\":\"ri-flow-chart\",\"type\":\"steps\",\"items\":[\"Gerät abgeben\",\"Kostenlose Diagnose\",\"Reparatur\",\"Abholung\"]}]
-   [ADD_SECTION:{\"id\":\"guarantees\",\"title\":\"Unsere Garantien\",\"icon\":\"ri-shield-check-line\",\"type\":\"list\",\"items\":[\"6 Monate Garantie\",\"Kostenlose Nachbesserung\",\"Keine versteckten Kosten\"]}]
-   [ADD_SECTION:{\"id\":\"express\",\"title\":\"Express Service\",\"icon\":\"ri-flashlight-line\",\"type\":\"highlight\",\"text\":\"Die meisten Reparaturen innerhalb von 1 Stunde!\",\"badge\":\"EXPRESS\"}]
-
-   Section types:
-   - \"list\" → bullet list of items
-   - \"steps\" → numbered process steps
-   - \"highlight\" → colored callout box with text + optional badge
-   - \"info\" → simple text paragraph
-   - \"grid\" → 2-column grid of items (good for features/benefits)
-   - \"faq\" → FAQ accordion with [{\"q\":\"Question\",\"a\":\"Answer\"}] items
-
-   [SET_SECTIONS:[...]] – Replace ALL custom sections at once
-   [REMOVE_SECTION:id] – Remove a section by id
-
-═══ COMPLETE SETUP ═══
-
-10. [SETUP_COMPLETE] – When everything is configured
-
-IMPORTANT – WIDGET LANGUAGE vs ADMIN LANGUAGE:
-- You chat with the admin in {$lang_name} (their language)
-- The widget language (what CUSTOMERS see) is: {$widget_lang_name} (lang={$widget_lang})
-- ALL content saved via action markers MUST be in {$widget_lang_name}:
-  → [SET_BRANDS:...] brand names in {$widget_lang_name}
-  → [SET_CHIPS:...] problem descriptions in {$widget_lang_name}
-  → [ADD_SERVICE:...] / [SET_SERVICE_TIERS:...] service names in {$widget_lang_name}
-  → [SET_KNOWLEDGE:...] knowledge texts in {$widget_lang_name}
-  → [ADD_SECTION:...] section titles and content in {$widget_lang_name}
-  → [SET:greeting=...] greeting text in {$widget_lang_name}
-- Only your conversation text is in {$lang_name}
-
-RULES:
-- ALWAYS respond in {$lang_name}
-- ALL action marker VALUES must be in {$widget_lang_name} (the widget language customers see)
-- You have FULL AUTHORIZATION – whatever the shop owner asks, configure it
-- If the owner asks for quality tiers → use SET_TIERS + SET_SERVICE_TIERS
-- If the owner asks for custom info sections → use ADD_SECTION with appropriate type
-- If the owner describes something you can represent with existing markers → use them
-- When they paste a price list/text, parse it and use [ADD_SERVICE:...] or [SET_SERVICE_TIERS:...] for each entry
-- Briefly explain what you changed after each action
-- Suggest improvements based on the service type
-- If the user mentions an image/file, tell them to use the upload button
-- Action markers are processed automatically and NOT shown to the user
-- ALWAYS use action markers when you need to change something
-- You can combine multiple markers in a single response
-- Only set [SETUP_COMPLETE] when at least mode, color and a few services are configured
-- Maximum 3-4 sentences per response, be concise";
-    }
-
     /** ============================================================
-     * AJAX: Upload file for AI widget knowledge base (admin)
+     * AJAX: Upload CSV/TXT file to import service catalog (admin)
      * Parses CSV/text files and extracts service/price data
      * ============================================================ */
     public static function ajax_widget_ai_upload() {
@@ -2304,42 +1971,20 @@ RULES:
         if (empty($_FILES['file'])) wp_send_json_error(['message' => 'Keine Datei']);
 
         $file = $_FILES['file'];
-        $allowed_types = [
-            'text/csv', 'text/plain', 'application/csv',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'image/jpeg', 'image/png', 'image/webp',
-            'application/pdf',
-        ];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $allowed_ext = ['csv', 'txt', 'xlsx', 'xls', 'jpg', 'jpeg', 'png', 'webp', 'pdf'];
-        if (!in_array($ext, $allowed_ext)) wp_send_json_error(['message' => 'Erlaubte Dateitypen: CSV, TXT, Excel, Bilder, PDF']);
+        $allowed_ext = ['csv', 'txt', 'xlsx', 'xls'];
+        if (!in_array($ext, $allowed_ext)) wp_send_json_error(['message' => 'Erlaubte Dateitypen: CSV, TXT, Excel']);
         if ($file['size'] > 5 * 1024 * 1024) wp_send_json_error(['message' => 'Max 5MB']);
 
-        // Read file content for text-based files
+        // Read file content
         $file_content = '';
-        $file_type = 'text';
         if (in_array($ext, ['csv', 'txt'])) {
             $file_content = file_get_contents($file['tmp_name']);
-            $file_type = 'text';
-        } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            // Save image for reference
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            $upload = wp_handle_upload($file, ['test_form' => false]);
-            if (isset($upload['error'])) wp_send_json_error(['message' => $upload['error']]);
-            $file_content = 'image_url:' . $upload['url'];
-            $file_type = 'image';
-        } elseif ($ext === 'pdf') {
-            $file_content = '';
-            $file_type = 'pdf';
-        } else {
-            $file_content = '';
-            $file_type = 'other';
         }
 
-        // For text/CSV files, try to parse as price list
+        // Parse CSV/TXT as price list
         $parsed_services = [];
-        if ($file_type === 'text' && !empty($file_content)) {
+        if (!empty($file_content)) {
             $lines = explode("\n", $file_content);
             foreach ($lines as $line) {
                 $line = trim($line);
@@ -2351,64 +1996,20 @@ RULES:
 
                 if (count($parts) >= 2) {
                     $svc = ['name' => $parts[0]];
-                    // Check if second part looks like a price
                     if (preg_match('/\d/', $parts[1])) {
                         $svc['price'] = $parts[1];
                     }
                     if (!empty($parts[2])) {
                         $svc['time'] = $parts[2];
                     }
+                    if (!empty($parts[3])) {
+                        $svc['category'] = $parts[3];
+                    }
                     if (!empty($svc['name'])) {
                         $parsed_services[] = $svc;
                     }
-                } elseif (preg_match('/^(.+?)\s*[-–:]\s*(\d[\d\s.,€EUR]+.*)$/iu', $line, $m)) {
-                    // Try free-text format: "Service Name – 80 EUR" or "Service Name: 80-120 EUR"
+                } elseif (preg_match('/^(.+?)\s*[-\x{2013}:]\s*(\d[\d\s.,\x{20AC}EUR]+.*)$/iu', $line, $m)) {
                     $parsed_services[] = ['name' => trim($m[1]), 'price' => trim($m[2])];
-                }
-            }
-        }
-
-        // If we got AI, let AI also parse the file content for better understanding
-        $ai_summary = '';
-        if ($file_type === 'text' && !empty($file_content)) {
-            require_once PPV_PLUGIN_DIR . 'includes/class-ppv-ai-engine.php';
-            if (PPV_AI_Engine::is_available()) {
-                $parse_prompt = "Parse this price list / service list. Extract each service with name, price range, and estimated time.
-Return ONLY in this format, one per line:
-SERVICE_NAME|PRICE|TIME
-
-Example:
-Display iPhone 13|89-129 EUR|1-2 Stunden
-Akku Samsung Galaxy|49 EUR|30 Min
-
-File content:
-" . mb_substr($file_content, 0, 3000);
-
-                $parse_result = PPV_AI_Engine::chat(
-                    'You are a data extraction assistant. Parse the input into structured service data. Return ONLY the formatted lines, nothing else.',
-                    $parse_prompt,
-                    'de',
-                    ['model' => 'gpt-4o-mini']
-                );
-                if (!is_wp_error($parse_result) && !empty($parse_result['text'])) {
-                    $ai_lines = explode("\n", $parse_result['text']);
-                    $ai_services = [];
-                    foreach ($ai_lines as $al) {
-                        $al = trim($al);
-                        if (empty($al)) continue;
-                        $parts = array_map('trim', explode('|', $al));
-                        if (count($parts) >= 1 && !empty($parts[0])) {
-                            $svc = ['name' => $parts[0]];
-                            if (!empty($parts[1])) $svc['price'] = $parts[1];
-                            if (!empty($parts[2])) $svc['time'] = $parts[2];
-                            $ai_services[] = $svc;
-                        }
-                    }
-                    // Use AI-parsed if it found more services
-                    if (count($ai_services) > count($parsed_services)) {
-                        $parsed_services = $ai_services;
-                    }
-                    $ai_summary = $parse_result['text'];
                 }
             }
         }
@@ -2443,16 +2044,19 @@ File content:
 
         wp_send_json_success([
             'file_name'       => $file['name'],
-            'file_type'       => $file_type,
             'parsed_services' => $parsed_services,
             'service_count'   => count($parsed_services),
-            'file_content'    => $file_type === 'text' ? mb_substr($file_content, 0, 2000) : '',
-            'ai_summary'      => $ai_summary,
         ]);
     }
 
     /** AJAX: Lookup customer by email (for form autofill) */
     public static function ajax_customer_lookup() {
+        // SECURITY: Verify nonce to prevent unauthorized data harvesting
+        $nonce = sanitize_text_field($_POST['nonce'] ?? '');
+        if (!wp_verify_nonce($nonce, 'ppv_repair_form')) {
+            wp_send_json_error(['message' => 'Invalid request'], 403);
+        }
+
         $email = sanitize_email($_POST['email'] ?? '');
         $store_id = intval($_POST['store_id'] ?? 0);
         if (empty($email) || !$store_id) {
@@ -2750,6 +2354,7 @@ File content:
         .status-warten{background:#fce7f3;color:#9d174d}
         .status-fertig{background:#d1fae5;color:#065f46}
         .status-abgeholt{background:#e5e7eb;color:#374151}
+        .status-not-repairable{background:#fed7aa;color:#9a3412}
         .status-badge i{font-size:16px}
         .repair-id{font-size:28px;font-weight:700;color:#1f2937;margin-top:12px}
         .repair-meta{font-size:12px;color:#9ca3af;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:12px}
@@ -2863,6 +2468,7 @@ File content:
                 'done' => ['Fertig', 'status-fertig', 'ri-checkbox-circle-line'],
                 'delivered' => ['Abgeholt', 'status-abgeholt', 'ri-check-double-line'],
                 'cancelled' => ['Storniert', 'status-abgeholt', 'ri-close-circle-line'],
+                'not_repairable' => ['Nicht reparierbar', 'status-not-repairable', 'ri-error-warning-line'],
             ];
             $current_status = $repair->status ?: 'new';
             $status_info = $status_map[$current_status] ?? ['Unbekannt', 'status-neu', 'ri-question-line'];
@@ -2891,7 +2497,7 @@ File content:
                 'delivered' => $repair->delivered_at ? date('d.m.Y', strtotime($repair->delivered_at)) : '',
             ];
             // in_progress date: use updated_at if status is currently in_progress or beyond
-            if (in_array($current_status, ['in_progress', 'waiting_parts', 'done', 'delivered'])) {
+            if (in_array($current_status, ['in_progress', 'waiting_parts', 'done', 'delivered', 'not_repairable'])) {
                 $timeline_dates['in_progress'] = date('d.m.Y', strtotime($repair->updated_at));
             }
         ?>
@@ -3911,7 +3517,7 @@ File content:
         $new_status = sanitize_text_field($_POST['status'] ?? '');
         $notes      = sanitize_textarea_field($_POST['notes'] ?? '');
 
-        $valid = ['new', 'in_progress', 'waiting_parts', 'done', 'delivered', 'cancelled'];
+        $valid = ['new', 'in_progress', 'waiting_parts', 'done', 'delivered', 'cancelled', 'not_repairable'];
         if (!in_array($new_status, $valid)) wp_send_json_error(['message' => 'Ungültiger Status']);
 
         global $wpdb;
@@ -3995,9 +3601,27 @@ File content:
             }
         }
 
+        // 🏆 Award PunktePass points when status changes to 'done' (fertig)
+        $points_awarded = 0;
+        if ($new_status === 'done' && $old_status !== 'done' && $store) {
+            $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
+            if ($pp_enabled && !empty($repair->customer_email) && intval($repair->points_awarded) === 0) {
+                $points = intval($store->repair_points_per_form ?: 2);
+                $bonus_result = self::award_repair_bonus($store, $repair->customer_email, $repair->customer_name, $points);
+                if ($bonus_result && !empty($bonus_result['user_id'])) {
+                    $wpdb->update($wpdb->prefix . 'ppv_repairs', [
+                        'user_id'        => $bonus_result['user_id'],
+                        'points_awarded' => $bonus_result['points_added'],
+                    ], ['id' => $repair_id]);
+                    $points_awarded = $bonus_result['points_added'];
+                }
+            }
+        }
+
         wp_send_json_success([
             'message' => 'Status aktualisiert',
             'invoice_id' => $invoice_id,
+            'points_awarded' => $points_awarded,
         ]);
     }
 
@@ -4053,6 +3677,75 @@ File content:
             'message' => $no_termin ? 'Teil angekommen' : 'Teil angekommen - Termin gesetzt',
             'new_status' => 'in_progress',
         ]);
+    }
+
+    /** AJAX: Set Termin (appointment) for a widget-submitted repair */
+    public static function ajax_set_termin() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+
+        $termin_date = sanitize_text_field($_POST['termin_date'] ?? '');
+        $termin_time = sanitize_text_field($_POST['termin_time'] ?? '');
+        $send_email = !empty($_POST['send_email']);
+        $custom_message = sanitize_textarea_field($_POST['custom_message'] ?? '');
+
+        if (empty($termin_date)) wp_send_json_error(['message' => 'Bitte Datum wählen']);
+
+        global $wpdb;
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_repairs WHERE id=%d AND store_id=%d", $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        $termin_at = $termin_date . ($termin_time ? ' ' . $termin_time . ':00' : ' 00:00:00');
+
+        $wpdb->update($wpdb->prefix . 'ppv_repairs', [
+            'termin_at'  => $termin_at,
+            'updated_at' => current_time('mysql'),
+        ], ['id' => $repair_id]);
+
+        if ($send_email && !empty($repair->customer_email)) {
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
+            ));
+            if ($store) {
+                self::send_termin_notification($store, $repair, $termin_at, $custom_message);
+            }
+        }
+
+        wp_send_json_success([
+            'message'  => 'Termin gesetzt',
+            'termin_at' => $termin_at,
+        ]);
+    }
+
+    /** AJAX: Delete termin from repair */
+    public static function ajax_delete_termin() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+
+        global $wpdb;
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_repairs WHERE id=%d AND store_id=%d", $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        $wpdb->update($wpdb->prefix . 'ppv_repairs', [
+            'termin_at'  => null,
+            'updated_at' => current_time('mysql'),
+        ], ['id' => $repair_id]);
+
+        wp_send_json_success(['message' => 'Termin gelöscht']);
     }
 
     /**
@@ -4111,6 +3804,132 @@ File content:
         }
 
         wp_mail($repair->customer_email, $subject, $body, $headers);
+    }
+
+    /* ============================================================
+     * TERMINE (Appointments Calendar) AJAX Handlers
+     * ============================================================ */
+
+    /** AJAX: List termine for a month */
+    public static function ajax_termine_list() {
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $year  = intval($_POST['year']  ?? date('Y'));
+        $month = intval($_POST['month'] ?? date('n'));
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_termine';
+
+        // Get all termine for the requested month
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-t', strtotime($start));
+
+        $termine = $wpdb->get_results($wpdb->prepare(
+            "SELECT t.*, r.device_brand, r.device_model, r.problem_description
+             FROM {$table} t
+             LEFT JOIN {$wpdb->prefix}ppv_repairs r ON t.repair_id = r.id
+             WHERE t.store_id = %d AND t.termin_date BETWEEN %s AND %s
+             ORDER BY t.termin_date ASC, t.termin_time ASC",
+            $store_id, $start, $end
+        ));
+
+        // Also fetch repairs that have termin_at in this month (from existing system)
+        $repair_termine = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, customer_name, customer_phone, device_brand, device_model,
+                    problem_description, termin_at, status
+             FROM {$wpdb->prefix}ppv_repairs
+             WHERE store_id = %d AND termin_at IS NOT NULL
+               AND DATE(termin_at) BETWEEN %s AND %s
+               AND status NOT IN ('delivered','cancelled')
+             ORDER BY termin_at ASC",
+            $store_id, $start, $end
+        ));
+
+        wp_send_json_success([
+            'termine'        => $termine ?: [],
+            'repair_termine' => $repair_termine ?: [],
+        ]);
+    }
+
+    /** AJAX: Save (create/update) a termin */
+    public static function ajax_termine_save() {
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $id            = intval($_POST['id'] ?? 0);
+        $title         = sanitize_text_field($_POST['title'] ?? '');
+        $customer_name = sanitize_text_field($_POST['customer_name'] ?? '');
+        $customer_phone= sanitize_text_field($_POST['customer_phone'] ?? '');
+        $termin_date   = sanitize_text_field($_POST['termin_date'] ?? '');
+        $termin_time   = sanitize_text_field($_POST['termin_time'] ?? '');
+        $duration      = intval($_POST['duration'] ?? 30);
+        $termin_type   = sanitize_text_field($_POST['termin_type'] ?? 'general');
+        $status        = sanitize_text_field($_POST['status'] ?? 'scheduled');
+        $notes         = sanitize_textarea_field($_POST['notes'] ?? '');
+        $color         = sanitize_text_field($_POST['color'] ?? '');
+        $repair_id     = intval($_POST['repair_id'] ?? 0) ?: null;
+
+        if (empty($title)) wp_send_json_error(['message' => 'Titel erforderlich']);
+        if (empty($termin_date)) wp_send_json_error(['message' => 'Datum erforderlich']);
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_termine';
+
+        $data = [
+            'store_id'       => $store_id,
+            'repair_id'      => $repair_id,
+            'customer_name'  => $customer_name,
+            'customer_phone' => $customer_phone,
+            'title'          => $title,
+            'termin_date'    => $termin_date,
+            'termin_time'    => $termin_time ?: null,
+            'duration'       => $duration,
+            'termin_type'    => $termin_type,
+            'status'         => $status,
+            'notes'          => $notes,
+            'color'          => $color ?: null,
+        ];
+
+        if ($id > 0) {
+            // Update - verify ownership
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT store_id FROM {$table} WHERE id = %d", $id
+            ));
+            if ((int)$existing !== (int)$store_id) {
+                wp_send_json_error(['message' => 'Nicht autorisiert']);
+            }
+            $data['updated_at'] = current_time('mysql');
+            $wpdb->update($table, $data, ['id' => $id]);
+        } else {
+            $wpdb->insert($table, $data);
+            $id = $wpdb->insert_id;
+        }
+
+        wp_send_json_success(['id' => $id, 'message' => 'Gespeichert']);
+    }
+
+    /** AJAX: Delete a termin */
+    public static function ajax_termine_delete() {
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $id = intval($_POST['id'] ?? 0);
+        if (!$id) wp_send_json_error(['message' => 'Ungültige ID']);
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_termine';
+
+        // Verify ownership
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT store_id FROM {$table} WHERE id = %d", $id
+        ));
+        if ((int)$existing !== (int)$store_id) {
+            wp_send_json_error(['message' => 'Nicht autorisiert']);
+        }
+
+        $wpdb->delete($table, ['id' => $id]);
+        wp_send_json_success(['message' => 'Gelöscht']);
     }
 
     /** AJAX: Delete Repair */
@@ -4419,6 +4238,7 @@ File content:
             'done' => PPV_Lang::t('repair_email_status_done'),
             'delivered' => PPV_Lang::t('repair_email_status_delivered'),
             'cancelled' => PPV_Lang::t('repair_email_status_cancelled'),
+            'not_repairable' => PPV_Lang::t('repair_email_status_not_repairable'),
         ];
         $status_text = $status_labels[$new_status] ?? $new_status;
 
@@ -4434,9 +4254,10 @@ File content:
         $status_messages = [
             'in_progress'   => PPV_Lang::t('repair_email_status_msg_in_progress'),
             'waiting_parts' => PPV_Lang::t('repair_email_status_msg_waiting_parts'),
-            'done'          => PPV_Lang::t('repair_email_status_msg_done'),
-            'delivered'     => PPV_Lang::t('repair_email_status_msg_delivered'),
-            'cancelled'     => PPV_Lang::t('repair_email_status_msg_cancelled'),
+            'done'             => PPV_Lang::t('repair_email_status_msg_done'),
+            'delivered'        => PPV_Lang::t('repair_email_status_msg_delivered'),
+            'cancelled'        => PPV_Lang::t('repair_email_status_msg_cancelled'),
+            'not_repairable'   => PPV_Lang::t('repair_email_status_msg_not_repairable'),
         ];
         $body .= ($status_messages[$new_status] ?? PPV_Lang::t('repair_email_status_msg_default')) . "\n\n";
 
@@ -4500,7 +4321,7 @@ File content:
         $repairs = $wpdb->get_results($wpdb->prepare(
             "SELECT r.*, (SELECT GROUP_CONCAT(i.invoice_number ORDER BY i.id DESC) FROM {$prefix}ppv_repair_invoices i WHERE i.repair_id = r.id AND (i.doc_type = 'rechnung' OR i.doc_type IS NULL)) AS invoice_numbers
              FROM {$prefix}ppv_repairs r WHERE {$where_sql}
-             ORDER BY CASE WHEN r.status IN ('done','delivered','cancelled') THEN 1 ELSE 0 END ASC, r.created_at DESC LIMIT %d OFFSET %d",
+             ORDER BY CASE WHEN r.status IN ('done','delivered','cancelled','not_repairable') THEN 1 ELSE 0 END ASC, r.created_at DESC LIMIT %d OFFSET %d",
             ...$params
         ));
 
@@ -4613,6 +4434,7 @@ File content:
         if (!empty($_POST['notify_parts_arrived'])) $notify_statuses[] = 'parts_arrived';
         if (!empty($_POST['notify_done'])) $notify_statuses[] = 'done';
         if (!empty($_POST['notify_delivered'])) $notify_statuses[] = 'delivered';
+        if (!empty($_POST['notify_not_repairable'])) $notify_statuses[] = 'not_repairable';
         if (!empty($notify_statuses)) {
             $update['repair_status_notify_statuses'] = implode(',', $notify_statuses);
         }

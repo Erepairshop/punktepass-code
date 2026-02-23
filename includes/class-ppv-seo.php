@@ -336,7 +336,8 @@ class PPV_SEO {
         $logo = esc_url($store->logo ?: '');
         $slug = esc_attr($store->store_slug);
         $raw_title_seo = $store->repair_form_title ?? '';
-        $form_title = esc_attr(($raw_title_seo === '' || $raw_title_seo === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title_seo);
+        $default_titles_seo = ['', 'Reparaturauftrag', 'Szervizmegrendelés', 'Repair Order', 'Comandă de service', 'Ordine di riparazione'];
+        $form_title = esc_attr(in_array($raw_title_seo, $default_titles_seo, true) ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title_seo);
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
         $city = esc_attr($store->city ?: '');
         $address = trim(($store->address ?: '') . ', ' . ($store->plz ?: '') . ' ' . $city);

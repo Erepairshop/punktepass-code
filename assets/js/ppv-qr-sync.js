@@ -128,6 +128,7 @@
             date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
             time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
             success: true,
+            next_termin: data.next_termin || null,
             _realtime: true
           });
         } else {

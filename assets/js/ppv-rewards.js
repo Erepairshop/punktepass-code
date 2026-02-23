@@ -166,14 +166,14 @@
       } else {
         container.innerHTML = `
           <div class="ppv-ea-empty">
-            <i class="ri-checkbox-circle-line"></i>
+            <i class="ri-check-double-line"></i>
             <p>${L.rewards_no_pending || 'Keine ausstehenden Einlösungen'}</p>
           </div>
         `;
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Pending error:', err);
-      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
+      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-alert-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
     }
   }
 
@@ -194,13 +194,13 @@
     card.innerHTML = `
       <div class="ppv-ea-card-main">
         <div class="ppv-ea-card-icon pending">
-          <i class="ri-time-line"></i>
+          <i class="ri-hourglass-line"></i>
         </div>
         <div class="ppv-ea-card-info">
           <span class="ppv-ea-card-user">${escapeHtml(userName)}</span>
-          <span class="ppv-ea-card-reward"><i class="ri-gift-line"></i> ${escapeHtml(reward)}</span>
+          <span class="ppv-ea-card-reward"><i class="ri-gift-2-line"></i> ${escapeHtml(reward)}</span>
           <span class="ppv-ea-card-meta">
-            <i class="ri-calendar-line"></i> ${date}
+            <i class="ri-time-line"></i> ${date}
             <span class="ppv-ea-card-points">-${points} ${pointsLabel}</span>
           </span>
         </div>
@@ -255,7 +255,7 @@
           if (container && container.children.length === 0) {
             container.innerHTML = `
               <div class="ppv-ea-empty">
-                <i class="ri-checkbox-circle-line"></i>
+                <i class="ri-check-double-line"></i>
                 <p>${L.rewards_no_pending || 'Keine ausstehenden Einlösungen'}</p>
               </div>
             `;
@@ -304,14 +304,14 @@
       } else {
         container.innerHTML = `
           <div class="ppv-ea-empty">
-            <i class="ri-history-line"></i>
+            <i class="ri-time-line"></i>
             <p>${L.rewards_no_history || 'Keine Einträge gefunden'}</p>
           </div>
         `;
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] History error:', err);
-      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
+      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-alert-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
     }
   }
 
@@ -329,7 +329,7 @@
     const receiptNum = `#${new Date(item.redeemed_at).getFullYear()}-${String(item.id).padStart(4, '0')}`;
     const pointsLabel = L.rewards_points || 'Punkte';
 
-    const statusIcon = item.status === 'approved' ? 'ri-checkbox-circle-fill' : 'ri-close-circle-fill';
+    const statusIcon = item.status === 'approved' ? 'ri-check-double-line' : 'ri-close-circle-line';
     const statusClass = item.status === 'approved' ? 'approved' : 'cancelled';
 
     card.innerHTML = `
@@ -339,9 +339,9 @@
         </div>
         <div class="ppv-ea-card-info">
           <span class="ppv-ea-card-user">${escapeHtml(userName)}</span>
-          <span class="ppv-ea-card-reward"><i class="ri-gift-line"></i> ${escapeHtml(reward)} <span class="ppv-ea-card-points">-${points} ${pointsLabel}</span></span>
+          <span class="ppv-ea-card-reward"><i class="ri-gift-2-line"></i> ${escapeHtml(reward)} <span class="ppv-ea-card-points">-${points} ${pointsLabel}</span></span>
           <span class="ppv-ea-card-meta">
-            <i class="ri-calendar-line"></i> ${date}
+            <i class="ri-time-line"></i> ${date}
             <span class="ppv-ea-card-beleg">${receiptNum}</span>
           </span>
         </div>
@@ -403,7 +403,7 @@
     }
 
     btn.disabled = false;
-    btn.innerHTML = '<i class="ri-file-add-line"></i> ' + (L.rewards_btn_create || 'Erstellen');
+    btn.innerHTML = '<i class="ri-add-line"></i> ' + (L.rewards_btn_create || 'Erstellen');
   }
 
   async function generateDateReceipt() {
@@ -449,7 +449,7 @@
     }
 
     btn.disabled = false;
-    btn.innerHTML = '<i class="ri-file-add-line"></i> ' + (L.rewards_btn_create || 'Erstellen');
+    btn.innerHTML = '<i class="ri-add-line"></i> ' + (L.rewards_btn_create || 'Erstellen');
   }
 
   async function loadReceipts() {
@@ -470,14 +470,14 @@
       } else {
         container.innerHTML = `
           <div class="ppv-ea-empty">
-            <i class="ri-file-list-3-line"></i>
+            <i class="ri-receipt-line"></i>
             <p>${L.rewards_no_receipts || 'Keine Belege vorhanden'}</p>
           </div>
         `;
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Receipts error:', err);
-      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
+      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-alert-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
     }
   }
 
@@ -500,11 +500,11 @@
       </div>
       ${receiptUrl ? `
         <a href="${receiptUrl}" download class="ppv-ea-receipt-download" title="${L.rewards_receipt_download || 'Herunterladen'}">
-          <i class="ri-download-line"></i>
+          <i class="ri-download-2-line"></i>
         </a>
       ` : `
         <button class="ppv-ea-receipt-generate" data-id="${item.id}" title="${L.rewards_btn_create || 'Beleg erstellen'}">
-          <i class="ri-file-add-line"></i>
+          <i class="ri-add-line"></i>
         </button>
       `}
     `;
@@ -624,7 +624,7 @@
   function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `ppv-ea-toast ppv-ea-toast-${type}`;
-    toast.innerHTML = `<i class="ri-${type === 'success' ? 'checkbox-circle' : type === 'error' ? 'error-warning' : 'information'}-line"></i> ${escapeHtml(message)}`;
+    toast.innerHTML = `<i class="ri-${type === 'success' ? 'check-double' : type === 'error' ? 'alert' : 'notification-3'}-line"></i> ${escapeHtml(message)}`;
     document.body.appendChild(toast);
 
     setTimeout(() => toast.classList.add('show'), 50);

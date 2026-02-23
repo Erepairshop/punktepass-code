@@ -1129,12 +1129,18 @@ register_deactivation_hook(__FILE__, 'flush_rewrite_rules');
 add_action('rest_api_init', function () {
     register_rest_route('ppv/v1', '/user/last_scan', [
         'methods'  => 'GET',
-        'permission_callback' => '__return_true',
+        'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
         'callback' => function (WP_REST_Request $req) {
             global $wpdb;
             $user_id = intval($req->get_param('user_id'));
             if (!$user_id) {
                 return new WP_REST_Response(['success' => false, 'message' => 'Missing user_id'], 400);
+            }
+
+            // SECURITY: Only allow access to own scan data
+            $current = PPV_Permissions::get_current_user_id();
+            if (!$current || $current !== $user_id) {
+                return new WP_REST_Response(['success' => false, 'message' => 'Forbidden'], 403);
             }
 
             // Check transient cache (30 sec TTL)

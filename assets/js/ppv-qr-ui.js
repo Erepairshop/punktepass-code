@@ -106,6 +106,15 @@
         ? `<div class="ppv-scan-detail ppv-scan-scanner">👤 ${escapeHtml(scannerName)}</div>`
         : '';
 
+      // Termin badge
+      let terminHtml = '';
+      if (log.next_termin) {
+        const t = log.next_termin;
+        const terminText = t.time ? `${t.date} ${t.time}` : t.date;
+        const terminTitle = t.title ? ` – ${escapeHtml(t.title)}` : '';
+        terminHtml = `<div class="ppv-scan-termin-badge">📅 ${escapeHtml(terminText)}${terminTitle}</div>`;
+      }
+
       item.innerHTML = `
         ${avatarHtml}
         <div class="ppv-scan-info">
@@ -113,6 +122,7 @@
           <div class="ppv-scan-detail">${escapeHtml(subtitle)}</div>
           ${subtitle2Html}
           ${scannerHtml}
+          ${terminHtml}
         </div>
         ${pointsHtml}
       `;

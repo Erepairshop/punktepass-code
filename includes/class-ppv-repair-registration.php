@@ -145,6 +145,9 @@ class PPV_Repair_Registration {
         .pp-fade-in-4 { animation-delay: 0.4s; }
         .pp-fade-in-5 { animation-delay: 0.5s; }
         .pp-fade-in-6 { animation-delay: 0.6s; }
+        .pp-fade-in-7 { animation-delay: 0.7s; }
+        .pp-fade-in-8 { animation-delay: 0.8s; }
+        .pp-fade-in-9 { animation-delay: 0.9s; }
 
         /* ── HERO SECTION ── */
         .pp-hero {
@@ -341,6 +344,9 @@ class PPV_Repair_Registration {
         .pp-feature-icon.amber { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #f59e0b; }
         .pp-feature-icon.rose { background: linear-gradient(135deg, #fff1f2, #fce7f3); color: #f43f5e; }
         .pp-feature-icon.teal { background: linear-gradient(135deg, #f0fdfa, #ccfbf1); color: #14b8a6; }
+        .pp-feature-icon.cyan { background: linear-gradient(135deg, #ecfeff, #cffafe); color: #06b6d4; }
+        .pp-feature-icon.indigo { background: linear-gradient(135deg, #eef2ff, #e0e7ff); color: #6366f1; }
+        .pp-feature-icon.orange { background: linear-gradient(135deg, #fff7ed, #ffedd5); color: #f97316; }
         .pp-feature h3 {
             font-size: 14px;
             font-weight: 700;
@@ -1586,6 +1592,30 @@ class PPV_Repair_Registration {
                 <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
             </div>
         </div>
+        <div class="pp-feature pp-fade-in pp-fade-in-7" data-feature="widget">
+            <div class="pp-feature-icon cyan"><i class="ri-window-line"></i></div>
+            <div>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_widget_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_widget_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
+            </div>
+        </div>
+        <div class="pp-feature pp-fade-in pp-fade-in-8" data-feature="termine">
+            <div class="pp-feature-icon indigo"><i class="ri-calendar-schedule-line"></i></div>
+            <div>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_termine_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_termine_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
+            </div>
+        </div>
+        <div class="pp-feature pp-fade-in pp-fade-in-9" data-feature="truepunkte">
+            <div class="pp-feature-icon orange"><i class="ri-gift-2-line"></i></div>
+            <div>
+                <h3><?php echo esc_html(PPV_Lang::t('repair_feat_truepunkte_title')); ?></h3>
+                <p><?php echo esc_html(PPV_Lang::t('repair_feat_truepunkte_desc')); ?></p>
+                <span class="pp-feature-more"><?php echo esc_html(PPV_Lang::t('repair_feat_more')); ?> <i class="ri-arrow-right-s-line"></i></span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1658,6 +1688,9 @@ class PPV_Repair_Registration {
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f10')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f11')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f12')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f13')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f14')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_free_f15')); ?></li>
             </ul>
         </div>
         <div class="pp-pricing-card featured pp-fade-in pp-fade-in-2">
@@ -1675,7 +1708,6 @@ class PPV_Repair_Registration {
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f7')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f8')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f9')); ?></li>
-                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_reg_price_pro_f10')); ?></li>
             </ul>
         </div>
     </div>
@@ -2282,6 +2314,114 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_branch_b1')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_branch_b2')); ?></li>
                 <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_branch_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === Website Widget === -->
+        <div class="pp-feat-body" data-feat="widget" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon cyan"><i class="ri-window-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_widget_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_widget_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                        <i class="ri-window-line" style="font-size:18px;color:#06b6d4"></i>
+                        <strong style="font-size:13px">Widget Preview</strong>
+                    </div>
+                    <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:8px">
+                        <div style="font-weight:600;color:#0d9488">Display Reparatur</div>
+                        <div style="color:#64748b;margin-top:2px">ab 89 € · 30 min</div>
+                    </div>
+                    <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:8px">
+                        <div style="font-weight:600;color:#0d9488">Akku Tausch</div>
+                        <div style="color:#64748b;margin-top:2px">ab 49 € · 20 min</div>
+                    </div>
+                    <div class="pp-mock-btn" style="margin-top:12px;background:#06b6d4"><i class="ri-send-plane-line"></i> Reparatur anfragen</div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_widget_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_widget_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_widget_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === Termin-Kalender === -->
+        <div class="pp-feat-body" data-feat="termine" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon indigo"><i class="ri-calendar-schedule-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_termine_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_termine_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                        <strong style="font-size:13px">Februar 2026</strong>
+                        <div style="display:flex;gap:4px">
+                            <span style="width:6px;height:6px;border-radius:50%;background:#3b82f6"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#10b981"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#f59e0b"></span>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:10px;color:#94a3b8;margin-bottom:6px">
+                        <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:11px">
+                        <span style="padding:4px;color:#cbd5e1">26</span><span style="padding:4px;color:#cbd5e1">27</span><span style="padding:4px;color:#cbd5e1">28</span><span style="padding:4px;color:#cbd5e1">29</span><span style="padding:4px;color:#cbd5e1">30</span><span style="padding:4px;color:#cbd5e1">31</span><span style="padding:4px">1</span>
+                        <span style="padding:4px">2</span><span style="padding:4px;position:relative">3<span style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#3b82f6"></span></span><span style="padding:4px">4</span><span style="padding:4px;position:relative">5<span style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#10b981"></span></span><span style="padding:4px">6</span><span style="padding:4px">7</span><span style="padding:4px">8</span>
+                        <span style="padding:4px">9</span><span style="padding:4px;position:relative">10<span style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#f59e0b"></span></span><span style="padding:4px">11</span><span style="padding:4px">12</span><span style="padding:4px;position:relative">13<span style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#3b82f6"></span></span><span style="padding:4px">14</span><span style="padding:4px">15</span>
+                    </div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_termine_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_termine_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_termine_b3')); ?></li>
+            </ul>
+            <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
+        </div>
+
+        <!-- === TruePunkte === -->
+        <div class="pp-feat-body" data-feat="truepunkte" hidden>
+            <div class="pp-feat-modal-head">
+                <div class="pp-feature-icon orange"><i class="ri-gift-2-line"></i></div>
+                <div>
+                    <h2><?php echo esc_html(PPV_Lang::t('repair_feat_truepunkte_title')); ?></h2>
+                    <p><?php echo esc_html(PPV_Lang::t('repair_feat_truepunkte_desc')); ?></p>
+                </div>
+            </div>
+            <div class="pp-mockup" style="margin-top:20px">
+                <div class="pp-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="pp-mockup-inner">
+                    <div style="text-align:center;padding:8px 0">
+                        <div style="font-size:32px;margin-bottom:4px">🎁</div>
+                        <div style="font-size:11px;font-weight:600;color:#f97316;text-transform:uppercase;letter-spacing:.5px">TruePunkte</div>
+                        <div style="font-size:24px;font-weight:700;color:#0f172a;margin:4px 0">3 / 4</div>
+                        <div style="font-size:11px;color:#64748b">Punkte gesammelt</div>
+                        <div style="display:flex;justify-content:center;gap:6px;margin:10px 0">
+                            <span style="width:24px;height:24px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">★</span>
+                            <span style="width:24px;height:24px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">★</span>
+                            <span style="width:24px;height:24px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">★</span>
+                            <span style="width:24px;height:24px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94a3b8">★</span>
+                        </div>
+                        <div style="font-size:11px;color:#64748b;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 10px;margin-top:8px">🏆 Belohnung: 10€ Rabatt</div>
+                    </div>
+                </div>
+            </div>
+            <ul class="pp-feat-bullets">
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_truepunkte_b1')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_truepunkte_b2')); ?></li>
+                <li><i class="ri-check-line"></i> <?php echo esc_html(PPV_Lang::t('repair_feat_truepunkte_b3')); ?></li>
             </ul>
             <a href="#register" class="pp-feat-cta" onclick="document.getElementById('ppFeatOverlay').classList.remove('active')"><?php echo esc_html(PPV_Lang::t('repair_feat_modal_cta')); ?></a>
         </div>

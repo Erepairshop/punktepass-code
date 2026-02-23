@@ -42,7 +42,8 @@ class PPV_Repair_Form {
 
         $pp_enabled   = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
         $raw_title    = $store->repair_form_title ?? '';
-        $form_title   = esc_html(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
+        $default_titles = ['', 'Reparaturauftrag', 'Szervizmegrendelés', 'Repair Order', 'Comandă de service', 'Ordine di riparazione'];
+        $form_title   = esc_html(in_array($raw_title, $default_titles, true) ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
         $form_subtitle = esc_html($store->repair_form_subtitle ?? '');
         $service_type  = esc_html($store->repair_service_type ?? 'Allgemein');
         $reward_name   = esc_html($store->repair_reward_name ?? '10 Euro Rabatt');
@@ -313,6 +314,7 @@ class PPV_Repair_Form {
         <input type="hidden" name="action" value="ppv_repair_submit">
         <input type="hidden" name="nonce" value="<?php echo $nonce; ?>">
         <input type="hidden" name="store_id" value="<?php echo $store_id; ?>">
+        <input type="hidden" name="source_channel" value="<?php echo $is_embed ? 'widget' : 'direct'; ?>">
         <input type="hidden" name="qr_user_id" id="rf-qr-user-id" value="">
 
         <!-- Step 1: Customer info -->
@@ -786,12 +788,12 @@ class PPV_Repair_Form {
 
         <?php if ($pp_enabled): ?>
         <div id="repair-points-card" class="repair-points-card" style="display:none">
-            <div class="repair-points-badge">
-                <span class="repair-points-plus">+</span>
+            <div class="repair-points-badge repair-points-pending">
+                <i class="ri-time-line" style="font-size:20px"></i>
                 <span id="repair-points-count" class="repair-points-count">0</span>
             </div>
             <div class="repair-points-label"><?php echo esc_html(PPV_Lang::t('repair_bonus_points')); ?></div>
-            <div id="repair-points-total" class="repair-points-total"></div>
+            <div id="repair-points-total" class="repair-points-total"><?php echo esc_html(PPV_Lang::t('repair_points_on_completion')); ?></div>
         </div>
         <?php endif; ?>
 
@@ -1143,6 +1145,7 @@ function toggleProblemTag(btn, text) {
     var successDiv = document.getElementById('repair-success');
     var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
     var storeId = <?php echo $store_id; ?>;
+    var ppvNonce = '<?php echo esc_js($nonce); ?>';
     var formSubmitted = false;
 
     // Shared function to display the success page with data
@@ -1185,25 +1188,14 @@ function toggleProblemTag(btn, text) {
             }
         } catch(e) { console.warn('[Repair] QR render error:', e); }
 
-        // Show points card
+        // Show pending points card (points awarded on completion)
         <?php if ($pp_enabled): ?>
         try {
-            if (d && d.points_added > 0) {
+            if (d && d.pp_enabled) {
                 var ptsCard = document.getElementById('repair-points-card');
                 var ptsCount = document.getElementById('repair-points-count');
-                var ptsTotal = document.getElementById('repair-points-total');
                 if (ptsCard) ptsCard.style.display = 'block';
-                if (ptsCount) ptsCount.textContent = d.points_added;
-                if (ptsTotal && d.total_points) {
-                    var reqPts = <?php echo $required_pts; ?>;
-                    var rwName = <?php echo json_encode($reward_name); ?>;
-                    var remaining = Math.max(0, reqPts - d.total_points);
-                    var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
-                    var suffixStr = remaining > 0
-                        ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
-                        : ppvLang.points_redeemable.replace('%s', rwName);
-                    ptsTotal.textContent = totalStr + ' — ' + suffixStr;
-                }
+                if (ptsCount) ptsCount.textContent = d.pp_points || <?php echo intval($store->repair_points_per_form ?: 2); ?>;
             }
         } catch(e) { console.warn('[Repair] Points render error:', e); }
         <?php endif; ?>
@@ -1250,6 +1242,7 @@ function toggleProblemTag(btn, text) {
         fd.append('action', 'ppv_repair_customer_lookup');
         fd.append('email', email);
         fd.append('store_id', storeId);
+        fd.append('nonce', ppvNonce);
 
         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
             .then(function(r) { return r.json(); })
@@ -1745,6 +1738,8 @@ function toggleProblemTag(btn, text) {
 
 <script>
 (function(){
+    var ppvNonce = '<?php echo esc_js($nonce); ?>';
+
     // HTTP GET helper (fetch with XHR fallback for old WebViews)
     function xhrGet(url, cb) {
         if (window.fetch) {
@@ -1813,7 +1808,7 @@ function toggleProblemTag(btn, text) {
         emailInput.addEventListener('input', triggerEmailSearch);
 
         function searchEmails(q) {
-            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
+            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q) + '&nonce=' + encodeURIComponent(ppvNonce);
             xhrGet(url, function(err, resp){
                 if (err) { console.warn('Email search error:', err); }
                 if (err || !resp || !resp.success || !resp.data || !resp.data.length) {

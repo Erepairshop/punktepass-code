@@ -64,7 +64,22 @@
             step3_title: 'Analyse l\u00e4uft...', step3_wait: 'KI analysiert Ihr Problem',
             step4_title: 'Diagnose', step4_price: 'Gesch\u00e4tzte Kosten',
             step4_cta: 'Reparatur anfragen', step4_hint: '* Unverbindliche Sch\u00e4tzung',
-            back: 'Zur\u00fcck', next: 'Weiter', analyze: 'Analysieren'
+            back: 'Zur\u00fcck', next: 'Weiter', analyze: 'Analysieren',
+            // Catalog mode
+            cat_fab: 'Preisliste', cat_title: 'Unsere Leistungen', cat_subtitle: 'Preise & \u00d6ffnungszeiten',
+            cat_search: 'Service suchen...', cat_hours: '\u00d6ffnungszeiten', cat_open: 'Ge\u00f6ffnet', cat_closed: 'Geschlossen',
+            cat_contact: 'Kontakt & Anfahrt', cat_cta: 'Reparatur anfragen', cat_no_results: 'Keine Ergebnisse',
+            cat_no_results_hint: 'Kein passender Service gefunden? Kein Problem! F\u00fcllen Sie das Formular aus und wir melden uns bei Ihnen.',
+            cat_general: 'Allgemein', cat_from: 'ab', cat_map: 'Route planen', cat_call: 'Anrufen',
+            cat_days: ['Mo','Di','Mi','Do','Fr','Sa','So'], cat_services: 'Leistungen', cat_time: 'Dauer',
+            cat_confirm_title: 'Reparatur gew\u00fcnscht?',
+            cat_confirm_text: 'M\u00f6chten Sie eine Reparatur f\u00fcr diesen Service anfragen?',
+            cat_confirm_yes: 'Ja, Reparatur anfragen',
+            cat_confirm_no: 'Zur\u00fcck',
+            cat_transition_title: 'Formular ausf\u00fcllen',
+            cat_transition_text: 'Bitte f\u00fcllen Sie das folgende Formular aus \u2013 wir melden uns mit einem Termin, wann wir es erledigen k\u00f6nnen.',
+            cat_transition_btn: 'Formular \u00f6ffnen',
+            cat_price_label: 'Preis', cat_time_label: 'Dauer'
         },
         en: {
             fab: 'Request repair', title: 'Submit a repair',
@@ -79,7 +94,21 @@
             step3_title: 'Analyzing...', step3_wait: 'AI is analyzing your problem',
             step4_title: 'Diagnosis', step4_price: 'Estimated cost',
             step4_cta: 'Request repair', step4_hint: '* Non-binding estimate',
-            back: 'Back', next: 'Next', analyze: 'Analyze'
+            back: 'Back', next: 'Next', analyze: 'Analyze',
+            cat_fab: 'Price list', cat_title: 'Our Services', cat_subtitle: 'Prices & Opening Hours',
+            cat_search: 'Search service...', cat_hours: 'Opening Hours', cat_open: 'Open', cat_closed: 'Closed',
+            cat_contact: 'Contact & Directions', cat_cta: 'Request repair', cat_no_results: 'No results',
+            cat_no_results_hint: 'Can\'t find the right service? No problem! Fill out the form and we\'ll get back to you.',
+            cat_general: 'General', cat_from: 'from', cat_map: 'Get directions', cat_call: 'Call',
+            cat_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], cat_services: 'Services', cat_time: 'Duration',
+            cat_confirm_title: 'Request repair?',
+            cat_confirm_text: 'Would you like to request a repair for this service?',
+            cat_confirm_yes: 'Yes, request repair',
+            cat_confirm_no: 'Back',
+            cat_transition_title: 'Fill out the form',
+            cat_transition_text: 'Please fill out the following form \u2013 we will get back to you with an appointment.',
+            cat_transition_btn: 'Open form',
+            cat_price_label: 'Price', cat_time_label: 'Duration'
         },
         hu: {
             fab: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', title: 'Jav\u00edt\u00e1s bek\u00fcld\u00e9se',
@@ -94,7 +123,21 @@
             step3_title: 'Elemz\u00e9s...', step3_wait: 'AI elemzi a probl\u00e9m\u00e1t',
             step4_title: 'Diagn\u00f3zis', step4_price: 'Becs\u00fclt k\u00f6lts\u00e9g',
             step4_cta: 'Jav\u00edt\u00e1s megrendel\u00e9se', step4_hint: '* Nem k\u00f6telez\u0151 becsl\u00e9s',
-            back: 'Vissza', next: 'Tov\u00e1bb', analyze: 'Elemz\u00e9s'
+            back: 'Vissza', next: 'Tov\u00e1bb', analyze: 'Elemz\u00e9s',
+            cat_fab: '\u00c1rlista', cat_title: 'Szolg\u00e1ltat\u00e1saink', cat_subtitle: '\u00c1rak & Nyitvatart\u00e1s',
+            cat_search: 'Keres\u00e9s...', cat_hours: 'Nyitvatart\u00e1s', cat_open: 'Nyitva', cat_closed: 'Z\u00e1rva',
+            cat_contact: 'Kapcsolat & Megk\u00f6zel\u00edt\u00e9s', cat_cta: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', cat_no_results: 'Nincs tal\u00e1lat',
+            cat_no_results_hint: 'Nem tal\u00e1lja a megfelel\u0151 szolg\u00e1ltat\u00e1st? Semmi gond! T\u00f6ltse ki az \u0171rlapot \u00e9s felvessz\u00fck \u00d6nnel a kapcsolatot.',
+            cat_general: '\u00c1ltal\u00e1nos', cat_from: '-t\u00f3l', cat_map: '\u00datvonaltervez\u00e9s', cat_call: 'H\u00edv\u00e1s',
+            cat_days: ['H\u00e9','Ke','Sze','Cs','P\u00e9','Szo','Vas'], cat_services: 'Szolg\u00e1ltat\u00e1sok', cat_time: 'Id\u0151tartam',
+            cat_confirm_title: 'Jav\u00edt\u00e1st szeretn\u00e9?',
+            cat_confirm_text: 'Szeretn\u00e9 megrendelni ezt a jav\u00edt\u00e1st?',
+            cat_confirm_yes: 'Igen, jav\u00edt\u00e1st k\u00e9rek',
+            cat_confirm_no: 'Vissza',
+            cat_transition_title: '\u0170rlap kit\u00f6lt\u00e9se',
+            cat_transition_text: 'K\u00e9rj\u00fck t\u00f6ltse ki a k\u00f6vetkez\u0151 \u0171rlapot \u2013 jelentkez\u00fcnk egy id\u0151ponttal, amikor el tudjuk v\u00e9gezni.',
+            cat_transition_btn: '\u0170rlap megnyit\u00e1sa',
+            cat_price_label: '\u00c1r', cat_time_label: 'Id\u0151tartam'
         },
         ro: {
             fab: 'Solicit\u0103 repara\u021bie', title: 'Trimite repara\u021bie',
@@ -109,7 +152,21 @@
             step3_title: 'Se analizeaz\u0103...', step3_wait: 'AI analizeaz\u0103 problema',
             step4_title: 'Diagnostic', step4_price: 'Cost estimat',
             step4_cta: 'Solicit\u0103 repara\u021bie', step4_hint: '* Estimare orientativ\u0103',
-            back: '\u00cenapoi', next: 'Urm\u0103torul', analyze: 'Analizeaz\u0103'
+            back: '\u00cenapoi', next: 'Urm\u0103torul', analyze: 'Analizeaz\u0103',
+            cat_fab: 'List\u0103 pre\u021buri', cat_title: 'Serviciile noastre', cat_subtitle: 'Pre\u021buri & Program',
+            cat_search: 'C\u0103utare serviciu...', cat_hours: 'Program', cat_open: 'Deschis', cat_closed: '\u00cenchis',
+            cat_contact: 'Contact & Direc\u021bii', cat_cta: 'Solicit\u0103 repara\u021bie', cat_no_results: 'Niciun rezultat',
+            cat_no_results_hint: 'Nu g\u0103si\u021bi serviciul potrivit? Nicio problem\u0103! Completa\u021bi formularul \u0219i v\u0103 vom contacta.',
+            cat_general: 'General', cat_from: 'de la', cat_map: 'Planific\u0103 ruta', cat_call: 'Sun\u0103',
+            cat_days: ['Lu','Ma','Mi','Jo','Vi','S\u00e2','Du'], cat_services: 'Servicii', cat_time: 'Durat\u0103',
+            cat_confirm_title: 'Dori\u021bi repara\u021bie?',
+            cat_confirm_text: 'Dori\u021bi s\u0103 solicita\u021bi o repara\u021bie pentru acest serviciu?',
+            cat_confirm_yes: 'Da, solicit repara\u021bie',
+            cat_confirm_no: '\u00cenapoi',
+            cat_transition_title: 'Completa\u021bi formularul',
+            cat_transition_text: 'V\u0103 rug\u0103m completa\u021bi formularul \u2013 v\u0103 vom contacta cu o programare.',
+            cat_transition_btn: 'Deschide formularul',
+            cat_price_label: 'Pre\u021b', cat_time_label: 'Durat\u0103'
         },
         it: {
             fab: 'Richiedi riparazione', title: 'Invia riparazione',
@@ -124,11 +181,25 @@
             step3_title: 'Analisi in corso...', step3_wait: 'AI sta analizzando il problema',
             step4_title: 'Diagnosi', step4_price: 'Costo stimato',
             step4_cta: 'Richiedi riparazione', step4_hint: '* Stima non vincolante',
-            back: 'Indietro', next: 'Avanti', analyze: 'Analizza'
+            back: 'Indietro', next: 'Avanti', analyze: 'Analizza',
+            cat_fab: 'Listino prezzi', cat_title: 'I nostri servizi', cat_subtitle: 'Prezzi & Orari',
+            cat_search: 'Cerca servizio...', cat_hours: 'Orari di apertura', cat_open: 'Aperto', cat_closed: 'Chiuso',
+            cat_contact: 'Contatti & Indicazioni', cat_cta: 'Richiedi riparazione', cat_no_results: 'Nessun risultato',
+            cat_no_results_hint: 'Non trovi il servizio giusto? Nessun problema! Compila il modulo e ti contatteremo.',
+            cat_general: 'Generale', cat_from: 'da', cat_map: 'Indicazioni', cat_call: 'Chiama',
+            cat_days: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'], cat_services: 'Servizi', cat_time: 'Durata',
+            cat_confirm_title: 'Richiedi riparazione?',
+            cat_confirm_text: 'Vorresti richiedere una riparazione per questo servizio?',
+            cat_confirm_yes: 'S\u00ec, richiedi riparazione',
+            cat_confirm_no: 'Indietro',
+            cat_transition_title: 'Compila il modulo',
+            cat_transition_text: 'Compila il seguente modulo \u2013 ti contatteremo con un appuntamento.',
+            cat_transition_btn: 'Apri modulo',
+            cat_price_label: 'Prezzo', cat_time_label: 'Durata'
         }
     };
     var lang = t[config.lang] || t.de;
-    var fabText = config.text || (config.mode === 'ai' ? lang.ai_fab : lang.fab);
+    var fabText = config.text || (config.mode === 'ai' ? lang.ai_fab : config.mode === 'catalog' ? lang.cat_fab : lang.fab);
 
     var W = 'ppv-sw'; // CSS prefix
     var isLeft = config.position === 'bottom-left';
@@ -360,6 +431,120 @@
             '.' + W + '-brands{grid-template-columns:repeat(3,1fr);gap:12px}' +
             '.' + W + '-brand{padding:16px 12px;font-size:14px}' +
             '.' + W + '-brand-icon{font-size:28px}' +
+        '}' +
+
+        /* ─── CATALOG MODE STYLES ──────────────────────────── */
+        '#' + W + '-cat-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#f8fafc}' +
+        '#' + W + '-cat-body *{box-sizing:border-box}' +
+
+        /* Search */
+        '#' + W + '-cat-search-wrap{padding:12px 16px;background:#fff;border-bottom:1px solid #f1f5f9;position:sticky;top:0;z-index:2}' +
+        '#' + W + '-cat-search{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2394a3b8\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'8\'/%3E%3Cline x1=\'21\' y1=\'21\' x2=\'16.65\' y2=\'16.65\'/%3E%3C/svg%3E") 12px center no-repeat;transition:border-color .2s,background-color .2s;color:#0f172a}' +
+        '#' + W + '-cat-search:focus{border-color:' + config.color + ';background-color:#fff}' +
+        '#' + W + '-cat-search::placeholder{color:#94a3b8}' +
+
+        /* Service count badge in header */
+        '#' + W + '-cat-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:rgba(255,255,255,.25);font-size:11px;font-weight:700;margin-left:8px}' +
+
+        /* Category sections */
+        '.' + W + '-cat-section{border-bottom:1px solid #f1f5f9}' +
+        '.' + W + '-cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:#fff;transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}' +
+        '.' + W + '-cat-hdr:hover{background:#f8fafc}' +
+        '.' + W + '-cat-hdr:active{background:#f1f5f9}' +
+        '.' + W + '-cat-hdr-left{display:flex;align-items:center;gap:10px;min-width:0}' +
+        '.' + W + '-cat-hdr-icon{width:32px;height:32px;border-radius:10px;background:' + config.color + '12;color:' + config.color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
+        '.' + W + '-cat-hdr-name{font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+        '.' + W + '-cat-hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}' +
+        '.' + W + '-cat-hdr-cnt{font-size:11px;font-weight:600;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:10px}' +
+        '.' + W + '-cat-hdr-arrow{width:20px;height:20px;color:#94a3b8;transition:transform .25s ease;flex-shrink:0}' +
+        '.' + W + '-cat-section.open .' + W + '-cat-hdr-arrow{transform:rotate(180deg)}' +
+
+        /* Category items container */
+        '.' + W + '-cat-items{max-height:0;overflow:hidden;transition:max-height .3s ease;background:#fafbfc}' +
+        '.' + W + '-cat-section.open .' + W + '-cat-items{max-height:9999px}' +
+
+        /* Service rows – clickable cards */
+        '.' + W + '-cat-row{display:flex;align-items:center;padding:12px 16px 12px 58px;border-top:1px solid #f1f5f9;gap:10px;min-height:52px;cursor:pointer;transition:all .15s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative}' +
+        '.' + W + '-cat-row:first-child{border-top:none}' +
+        '.' + W + '-cat-row:hover{background:#f0f7ff}' +
+        '.' + W + '-cat-row:active{background:#e0efff;transform:scale(.995)}' +
+        '.' + W + '-cat-name{flex:1;min-width:0;font-size:14px;font-weight:500;color:#1e293b;line-height:1.3;overflow:hidden;text-overflow:ellipsis}' +
+        '.' + W + '-cat-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}' +
+        '.' + W + '-cat-time{font-size:11px;color:#64748b;white-space:nowrap;background:#f1f5f9;padding:2px 8px;border-radius:4px}' +
+        '.' + W + '-cat-price{font-size:14px;font-weight:800;color:' + config.color + ';white-space:nowrap;background:' + config.color + '12;padding:4px 12px;border-radius:8px}' +
+        '.' + W + '-cat-arrow{width:18px;height:18px;color:#94a3b8;flex-shrink:0;transition:transform .2s,color .2s}' +
+        '.' + W + '-cat-row:hover .' + W + '-cat-arrow{color:' + config.color + ';transform:translateX(2px)}' +
+
+        /* Hours section */
+        '#' + W + '-cat-hours{padding:16px;background:#fff;border-bottom:1px solid #f1f5f9}' +
+        '#' + W + '-cat-hours-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px}' +
+        '.' + W + '-cat-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}' +
+        '.' + W + '-cat-badge-open{background:#dcfce7;color:#166534}' +
+        '.' + W + '-cat-badge-closed{background:#fee2e2;color:#991b1b}' +
+        '.' + W + '-cat-badge-dot{width:6px;height:6px;border-radius:50%;display:inline-block}' +
+        '.' + W + '-cat-badge-open .' + W + '-cat-badge-dot{background:#22c55e}' +
+        '.' + W + '-cat-badge-closed .' + W + '-cat-badge-dot{background:#ef4444}' +
+        '.' + W + '-cat-day{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#475569}' +
+        '.' + W + '-cat-day-name{font-weight:600;color:#64748b;min-width:40px}' +
+        '.' + W + '-cat-day-time{color:#334155}' +
+        '.' + W + '-cat-day.today{font-weight:700;color:' + config.color + '}' +
+        '.' + W + '-cat-day.today .' + W + '-cat-day-name{color:' + config.color + '}' +
+
+        /* Contact section */
+        '#' + W + '-cat-contact{padding:16px;background:#fff;border-bottom:1px solid #f1f5f9}' +
+        '#' + W + '-cat-contact-title{font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px}' +
+        '.' + W + '-cat-contact-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:#475569;text-decoration:none}' +
+        'a.' + W + '-cat-contact-row:hover{color:' + config.color + '}' +
+        '.' + W + '-cat-contact-icon{width:32px;height:32px;border-radius:10px;background:#f1f5f9;color:#64748b;display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
+
+        /* Confirm overlay */
+        '#' + W + '-cat-confirm{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;background:#fff;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}' +
+        '#' + W + '-cat-confirm.active{display:flex}' +
+        '#' + W + '-cat-confirm-icon{width:72px;height:72px;border-radius:50%;background:' + config.color + '12;display:flex;align-items:center;justify-content:center;margin-bottom:20px}' +
+        '#' + W + '-cat-confirm-icon svg{width:36px;height:36px;color:' + config.color + '}' +
+        '#' + W + '-cat-confirm-svc{font-size:17px;font-weight:700;color:#0f172a;margin:0 0 4px}' +
+        '#' + W + '-cat-confirm-meta{display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 20px;font-size:13px;color:#64748b}' +
+        '#' + W + '-cat-confirm-meta span{display:flex;align-items:center;gap:4px}' +
+        '#' + W + '-cat-confirm-q{font-size:15px;color:#475569;margin:0 0 24px;line-height:1.5}' +
+        '#' + W + '-cat-confirm-yes{display:block;width:100%;max-width:320px;padding:14px;border:none;border-radius:12px;background:' + grad + ';color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px ' + config.color + '30;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-confirm-yes:hover{opacity:.9;transform:translateY(-1px)}' +
+        '#' + W + '-cat-confirm-back{display:block;width:100%;max-width:320px;padding:12px;border:2px solid #e2e8f0;border-radius:12px;background:#fff;color:#64748b;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;margin-top:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-confirm-back:hover{border-color:#cbd5e1;background:#f8fafc}' +
+
+        /* Transition screen */
+        '#' + W + '-cat-transition{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:6;background:#fff;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}' +
+        '#' + W + '-cat-transition.active{display:flex}' +
+        '#' + W + '-cat-transition-icon{width:80px;height:80px;border-radius:50%;background:' + config.color + '12;display:flex;align-items:center;justify-content:center;margin-bottom:20px}' +
+        '#' + W + '-cat-transition-icon svg{width:40px;height:40px;color:' + config.color + '}' +
+        '#' + W + '-cat-transition h3{font-size:20px;font-weight:700;color:#0f172a;margin:0 0 12px}' +
+        '#' + W + '-cat-transition p{font-size:15px;color:#475569;margin:0 0 28px;line-height:1.6;max-width:360px}' +
+        '#' + W + '-cat-transition-btn{display:block;width:100%;max-width:320px;padding:16px;border:none;border-radius:12px;background:' + grad + ';color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px ' + config.color + '30;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-transition-btn:hover{opacity:.9;transform:translateY(-1px)}' +
+
+        /* Embedded form iframe */
+        '#' + W + '-cat-iframe-wrap{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:7;background:#fff;flex-direction:column}' +
+        '#' + W + '-cat-iframe-wrap.active{display:flex}' +
+        '#' + W + '-cat-iframe{flex:1;border:none;width:100%;height:100%;background:#f8fafc}' +
+        '#' + W + '-cat-back-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
+        '#' + W + '-cat-back-bar:hover{background:#f1f5f9}' +
+        '#' + W + '-cat-back-bar svg{width:18px;height:18px;color:#64748b}' +
+        '#' + W + '-cat-back-bar span{font-size:14px;font-weight:600;color:#64748b}' +
+
+        /* No results */
+        '#' + W + '-cat-empty{padding:40px 20px;text-align:center;color:#94a3b8;font-size:14px;display:none}' +
+        '#' + W + '-cat-empty svg{width:48px;height:48px;margin:0 auto 12px;color:#cbd5e1}' +
+
+        /* Loading */
+        '#' + W + '-cat-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px}' +
+        '#' + W + '-cat-loading .' + W + '-spinner{width:40px;height:40px}' +
+
+        /* Desktop panel for catalog – right side sheet */
+        '@media(min-width:769px){' +
+            '#' + W + '-panel.catalog-panel{top:0;left:auto;right:0;bottom:0;width:420px;max-width:100%;border-radius:0;box-shadow:-4px 0 24px rgba(0,0,0,.12);transform:translateX(100%)}' +
+            '#' + W + '-panel.catalog-panel.open{transform:translateX(0)}' +
+        '}' +
+        '@media(max-width:768px){' +
+            '#' + W + '-cat-row{padding-left:16px}' +
         '}';
     document.head.appendChild(style);
 
@@ -456,15 +641,488 @@
         container.appendChild(inline);
     }
 
+    // ─── CATALOG MODE ────────────────────────────────────────
+    if (config.mode === 'catalog') {
+        var listSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+        var chevronSVG = '<svg class="' + W + '-cat-hdr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+
+        // Create FAB
+        var catFab = document.createElement('button');
+        catFab.id = W + '-fab';
+        catFab.innerHTML = listSVG + '<span>' + fabText + '</span>';
+        document.body.appendChild(catFab);
+
+        // Create Panel (fullscreen mobile, side-sheet desktop)
+        var catPanel = document.createElement('div');
+        catPanel.id = W + '-panel';
+        catPanel.className = 'catalog-panel';
+        var arrowBackSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>';
+        var clipboardSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>';
+
+        catPanel.innerHTML =
+            '<div id="' + W + '-hdr">' +
+                '<div><div id="' + W + '-hdr-t">' + lang.cat_title + '<span id="' + W + '-cat-count"></span></div>' +
+                '<div id="' + W + '-hdr-s">' + lang.cat_subtitle + '</div></div>' +
+                '<button id="' + W + '-cls" aria-label="' + lang.close + '">&times;</button>' +
+            '</div>' +
+            '<div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden">' +
+                '<div id="' + W + '-cat-search-wrap">' +
+                    '<input type="text" id="' + W + '-cat-search" placeholder="' + lang.cat_search + '" autocomplete="off">' +
+                '</div>' +
+                '<div id="' + W + '-cat-body">' +
+                    '<div id="' + W + '-cat-loading"><div class="' + W + '-spinner"></div><div style="font-size:14px;color:#64748b">' + lang.cat_title + '...</div></div>' +
+                '</div>' +
+                /* Confirm overlay */
+                '<div id="' + W + '-cat-confirm">' +
+                    '<div id="' + W + '-cat-confirm-icon">' + wrenchSVG + '</div>' +
+                    '<div id="' + W + '-cat-confirm-svc"></div>' +
+                    '<div id="' + W + '-cat-confirm-meta"></div>' +
+                    '<p id="' + W + '-cat-confirm-q">' + lang.cat_confirm_text + '</p>' +
+                    '<button type="button" id="' + W + '-cat-confirm-yes">' + lang.cat_confirm_yes + ' \u2192</button>' +
+                    '<button type="button" id="' + W + '-cat-confirm-back">' + lang.cat_confirm_no + '</button>' +
+                '</div>' +
+                /* Transition screen */
+                '<div id="' + W + '-cat-transition">' +
+                    '<div id="' + W + '-cat-transition-icon">' + clipboardSVG + '</div>' +
+                    '<h3>' + lang.cat_transition_title + '</h3>' +
+                    '<p>' + lang.cat_transition_text + '</p>' +
+                    '<button type="button" id="' + W + '-cat-transition-btn">' + lang.cat_transition_btn + ' \u2192</button>' +
+                '</div>' +
+                /* Embedded form iframe */
+                '<div id="' + W + '-cat-iframe-wrap">' +
+                    '<div id="' + W + '-cat-back-bar">' +
+                        arrowBackSVG + '<span>' + lang.cat_confirm_no + '</span>' +
+                    '</div>' +
+                    '<iframe id="' + W + '-cat-iframe" src="about:blank" loading="lazy"></iframe>' +
+                '</div>' +
+            '</div>' +
+            '<div id="' + W + '-ftr">' + buildFooter() + '</div>';
+        document.body.appendChild(catPanel);
+
+        var catOpen = false;
+        var catLoaded = false;
+        var catScrollY = 0;
+        var allServices = [];
+        var catBody = catPanel.querySelector('#' + W + '-cat-body');
+        var searchInput = catPanel.querySelector('#' + W + '-cat-search');
+
+        function catLock() {
+            catScrollY = window.pageYOffset;
+            document.body.classList.add(W + '-noscroll');
+            document.body.style.top = '-' + catScrollY + 'px';
+        }
+        function catUnlock() {
+            document.body.classList.remove(W + '-noscroll');
+            document.body.style.top = '';
+            window.scrollTo(0, catScrollY);
+        }
+
+        catFab.addEventListener('click', function(e) {
+            e.preventDefault();
+            catOpen = !catOpen;
+            catPanel.classList.toggle('open', catOpen);
+            if (catOpen) {
+                catLock();
+                if (!catLoaded) { catLoaded = true; loadCatalog(); }
+            } else { catUnlock(); }
+        });
+
+        catPanel.querySelector('#' + W + '-cls').addEventListener('click', function() {
+            catOpen = false;
+            catPanel.classList.remove('open');
+            catUnlock();
+        });
+
+        // Category icon mapping
+        var catIcons = {
+            'display': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+            'akku': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>',
+            'batterie': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>',
+            'battery': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>',
+            'kamera': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+            'camera': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+            'wasser': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+            'water': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+            'ladebuchse': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
+            'charging': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+            'lautsprecher': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+            'speaker': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+            'software': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+            'glas': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+            'backcover': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+            'r\u00fcckseite': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+            'konsole': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>',
+            'console': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>',
+            'laptop': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
+            'tablet': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+            'daten': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+            'data': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+            'platine': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+            'board': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+            'default': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'
+        };
+
+        function getCatIcon(catName) {
+            var lower = (catName || '').toLowerCase();
+            for (var key in catIcons) {
+                if (key !== 'default' && lower.indexOf(key) !== -1) return catIcons[key];
+            }
+            return catIcons['default'];
+        }
+
+        function escH(s) {
+            var d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // Check if store is currently open
+        function isStoreOpen(hours) {
+            if (!hours) return null;
+            var now = new Date();
+            var dayMap = ['so','mo','di','mi','do','fr','sa'];
+            var todayKey = dayMap[now.getDay()];
+            var day = hours[todayKey];
+            if (!day || day.closed) return false;
+            var currentMin = now.getHours() * 60 + now.getMinutes();
+            var fromParts = (day.von || '').split(':');
+            var toParts = (day.bis || '').split(':');
+            if (fromParts.length < 2 || toParts.length < 2) return null;
+            var fromMin = parseInt(fromParts[0]) * 60 + parseInt(fromParts[1]);
+            var toMin = parseInt(toParts[0]) * 60 + parseInt(toParts[1]);
+            return currentMin >= fromMin && currentMin <= toMin;
+        }
+
+        // Build opening hours HTML
+        function buildHoursHTML(hours) {
+            if (!hours) return '';
+            var dayKeys = ['mo','di','mi','do','fr','sa','so'];
+            var dayNames = lang.cat_days || ['Mo','Di','Mi','Do','Fr','Sa','So'];
+            var now = new Date();
+            var todayIdx = (now.getDay() + 6) % 7; // Monday=0
+            var html = '';
+            for (var i = 0; i < dayKeys.length; i++) {
+                var d = hours[dayKeys[i]];
+                var isClosed = !d || d.closed || (!d.von && !d.bis);
+                var timeStr = isClosed ? lang.cat_closed : (d.von + ' \u2013 ' + d.bis);
+                var cls = W + '-cat-day' + (i === todayIdx ? ' today' : '');
+                html += '<div class="' + cls + '">' +
+                    '<span class="' + W + '-cat-day-name">' + dayNames[i] + '</span>' +
+                    '<span class="' + W + '-cat-day-time">' + (isClosed ? '<span style="color:#94a3b8">' + timeStr + '</span>' : timeStr) + '</span>' +
+                '</div>';
+            }
+            return html;
+        }
+
+        // Build contact HTML
+        var svgPin = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+        var svgPhone = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+        var svgWhatsApp = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+        var svgGlobe = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+        var svgClock = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+
+        function buildContactHTML(data) {
+            var html = '';
+            if (data.store_address) {
+                var mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.store_address);
+                if (data.store_lat && data.store_lng) {
+                    mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + data.store_lat + ',' + data.store_lng;
+                }
+                html += '<a class="' + W + '-cat-contact-row" href="' + mapUrl + '" target="_blank" rel="noopener">' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgPin + '</span>' +
+                    '<span>' + escH(data.store_address) + '</span></a>';
+            }
+            if (data.store_phone) {
+                html += '<a class="' + W + '-cat-contact-row" href="tel:' + escH(data.store_phone) + '">' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgPhone + '</span>' +
+                    '<span>' + escH(data.store_phone) + '</span></a>';
+            }
+            if (data.store_whatsapp) {
+                var waNum = data.store_whatsapp.replace(/[^0-9]/g, '');
+                html += '<a class="' + W + '-cat-contact-row" href="https://wa.me/' + waNum + '" target="_blank" rel="noopener">' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgWhatsApp + '</span>' +
+                    '<span>WhatsApp</span></a>';
+            }
+            if (data.store_website) {
+                html += '<a class="' + W + '-cat-contact-row" href="' + escH(data.store_website) + '" target="_blank" rel="noopener">' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgGlobe + '</span>' +
+                    '<span>' + escH(data.store_website.replace(/^https?:\/\//, '')) + '</span></a>';
+            }
+            return html;
+        }
+
+        // Group services by category
+        function groupServices(services) {
+            var groups = {};
+            var order = [];
+            for (var i = 0; i < services.length; i++) {
+                var svc = services[i];
+                var cat = svc.category || lang.cat_general;
+                if (!groups[cat]) { groups[cat] = []; order.push(cat); }
+                groups[cat].push(svc);
+            }
+            return { groups: groups, order: order };
+        }
+
+        // Render catalog content
+        function renderCatalog(data) {
+            allServices = data.services || [];
+            var grouped = groupServices(allServices);
+            var totalCount = allServices.length;
+
+            // Update header count
+            var countBadge = catPanel.querySelector('#' + W + '-cat-count');
+            if (countBadge) countBadge.textContent = totalCount;
+
+            // Update header with store name if available
+            if (data.store_name) {
+                var hdrTitle = catPanel.querySelector('#' + W + '-hdr-t');
+                if (hdrTitle) hdrTitle.innerHTML = escH(data.store_name) + '<span id="' + W + '-cat-count">' + totalCount + '</span>';
+            }
+
+            var html = '';
+
+            // Service categories
+            html += '<div id="' + W + '-cat-sections">';
+            for (var ci = 0; ci < grouped.order.length; ci++) {
+                var catName = grouped.order[ci];
+                var items = grouped.groups[catName];
+                var isFirst = ci === 0;
+                html += '<div class="' + W + '-cat-section' + (isFirst ? ' open' : '') + '" data-cat="' + escH(catName) + '">' +
+                    '<div class="' + W + '-cat-hdr">' +
+                        '<div class="' + W + '-cat-hdr-left">' +
+                            '<span class="' + W + '-cat-hdr-icon">' + getCatIcon(catName) + '</span>' +
+                            '<span class="' + W + '-cat-hdr-name">' + escH(catName) + '</span>' +
+                        '</div>' +
+                        '<div class="' + W + '-cat-hdr-right">' +
+                            '<span class="' + W + '-cat-hdr-cnt">' + items.length + '</span>' +
+                            chevronSVG +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="' + W + '-cat-items">';
+                for (var si = 0; si < items.length; si++) {
+                    var svc = items[si];
+                    // Find original index in allServices
+                    var origIdx = allServices.indexOf(svc);
+                    html += '<div class="' + W + '-cat-row" data-svc-idx="' + origIdx + '" data-search="' + escH((svc.name || '').toLowerCase() + ' ' + (catName).toLowerCase()) + '">' +
+                        '<span class="' + W + '-cat-name">' + escH(svc.name || '') + '</span>' +
+                        '<span class="' + W + '-cat-meta">' +
+                            (svc.time ? '<span class="' + W + '-cat-time"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + escH(svc.time) + '</span>' : '') +
+                            (svc.price ? '<span class="' + W + '-cat-price">' + escH(svc.price) + '</span>' : '') +
+                        '</span>' +
+                        '<svg class="' + W + '-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+                    '</div>';
+                }
+                html += '</div></div>';
+            }
+            html += '</div>';
+
+            // No results placeholder with CTA
+            html += '<div id="' + W + '-cat-empty">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+                '<div style="font-weight:600;margin-bottom:6px">' + lang.cat_no_results + '</div>' +
+                '<div style="font-size:13px;color:#64748b;line-height:1.5;margin-bottom:14px">' + lang.cat_no_results_hint + '</div>' +
+                '<button id="' + W + '-cat-empty-cta" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:' + config.color + ';color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px ' + config.color + '40;transition:transform .15s,box-shadow .15s;font-family:inherit">' +
+                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' +
+                    lang.cat_cta +
+                '</button>' +
+            '</div>';
+
+            // Opening hours
+            if (data.store_hours) {
+                var openStatus = isStoreOpen(data.store_hours);
+                var badgeCls = openStatus === true ? W + '-cat-badge-open' : W + '-cat-badge-closed';
+                var badgeText = openStatus === true ? lang.cat_open : lang.cat_closed;
+                html += '<div id="' + W + '-cat-hours">' +
+                    '<div id="' + W + '-cat-hours-title">' +
+                        svgClock + ' ' + lang.cat_hours +
+                        (openStatus !== null ? ' <span class="' + W + '-cat-badge ' + badgeCls + '"><span class="' + W + '-cat-badge-dot"></span> ' + badgeText + '</span>' : '') +
+                    '</div>' +
+                    buildHoursHTML(data.store_hours) +
+                '</div>';
+            }
+
+            // Contact
+            var contactHTML = buildContactHTML(data);
+            if (contactHTML) {
+                html += '<div id="' + W + '-cat-contact">' +
+                    '<div id="' + W + '-cat-contact-title">' + svgPin + ' ' + lang.cat_contact + '</div>' +
+                    contactHTML +
+                '</div>';
+            }
+
+            catBody.innerHTML = html;
+
+            // Bind accordion toggles
+            var sections = catBody.querySelectorAll('.' + W + '-cat-hdr');
+            for (var hi = 0; hi < sections.length; hi++) {
+                sections[hi].addEventListener('click', function() {
+                    this.parentElement.classList.toggle('open');
+                });
+            }
+
+            // Bind service row clicks → confirm flow
+            var svcRows = catBody.querySelectorAll('.' + W + '-cat-row');
+            for (var ri = 0; ri < svcRows.length; ri++) {
+                svcRows[ri].addEventListener('click', function() {
+                    var svcIdx = parseInt(this.getAttribute('data-svc-idx'));
+                    if (!isNaN(svcIdx) && allServices[svcIdx]) {
+                        showConfirm(allServices[svcIdx]);
+                    }
+                });
+            }
+
+            // No-results CTA → open form with search text as problem
+            var emptyCta = catBody.querySelector('#' + W + '-cat-empty-cta');
+            if (emptyCta) {
+                emptyCta.addEventListener('click', function() {
+                    var q = searchInput.value.trim();
+                    selectedSvc = q ? { name: q, category: '' } : null;
+                    showForm();
+                });
+            }
+        }
+
+        // ── Confirm / Transition / Form flow ──
+        var confirmEl = catPanel.querySelector('#' + W + '-cat-confirm');
+        var confirmSvc = catPanel.querySelector('#' + W + '-cat-confirm-svc');
+        var confirmMeta = catPanel.querySelector('#' + W + '-cat-confirm-meta');
+        var confirmYes = catPanel.querySelector('#' + W + '-cat-confirm-yes');
+        var confirmBack = catPanel.querySelector('#' + W + '-cat-confirm-back');
+        var transitionEl = catPanel.querySelector('#' + W + '-cat-transition');
+        var transitionBtn = catPanel.querySelector('#' + W + '-cat-transition-btn');
+        var iframeWrapEl = catPanel.querySelector('#' + W + '-cat-iframe-wrap');
+        var iframeEl = catPanel.querySelector('#' + W + '-cat-iframe');
+        var backBarEl = catPanel.querySelector('#' + W + '-cat-back-bar');
+        var selectedSvc = null;
+
+        function showConfirm(svc) {
+            selectedSvc = svc;
+            confirmSvc.textContent = svc.name || '';
+            var metaHTML = '';
+            if (svc.price) metaHTML += '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ' + escH(svc.price) + '</span>';
+            if (svc.time) metaHTML += '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + escH(svc.time) + '</span>';
+            confirmMeta.innerHTML = metaHTML;
+            confirmEl.classList.add('active');
+        }
+
+        function hideConfirm() {
+            confirmEl.classList.remove('active');
+            selectedSvc = null;
+        }
+
+        function showTransition() {
+            confirmEl.classList.remove('active');
+            transitionEl.classList.add('active');
+        }
+
+        function hideTransition() {
+            transitionEl.classList.remove('active');
+        }
+
+        function showForm() {
+            transitionEl.classList.remove('active');
+            var url = FORM_URL + '?embed=1';
+            if (selectedSvc) {
+                if (selectedSvc.name) url += '&problem=' + encodeURIComponent(selectedSvc.name);
+                if (selectedSvc.category) url += '&category=' + encodeURIComponent(selectedSvc.category);
+            }
+            iframeEl.src = url;
+            iframeWrapEl.classList.add('active');
+        }
+
+        function hideForm() {
+            iframeWrapEl.classList.remove('active');
+            iframeEl.src = 'about:blank';
+        }
+
+        function resetFlow() {
+            hideConfirm();
+            hideTransition();
+            hideForm();
+        }
+
+        confirmYes.addEventListener('click', showTransition);
+        confirmBack.addEventListener('click', hideConfirm);
+        transitionBtn.addEventListener('click', showForm);
+        backBarEl.addEventListener('click', function() {
+            resetFlow();
+        });
+
+        // Search/filter
+        var searchTimer = null;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            var val = this.value.trim().toLowerCase();
+            searchTimer = setTimeout(function() {
+                var sectionsEl = catBody.querySelectorAll('.' + W + '-cat-section');
+                var emptyEl = catBody.querySelector('#' + W + '-cat-empty');
+                var hoursEl = catBody.querySelector('#' + W + '-cat-hours');
+                var contactEl = catBody.querySelector('#' + W + '-cat-contact');
+                var anyVisible = false;
+
+                for (var si = 0; si < sectionsEl.length; si++) {
+                    var sec = sectionsEl[si];
+                    var rows = sec.querySelectorAll('.' + W + '-cat-row');
+                    var visibleInSection = 0;
+                    for (var ri = 0; ri < rows.length; ri++) {
+                        var searchData = rows[ri].getAttribute('data-search') || '';
+                        var match = !val || searchData.indexOf(val) !== -1;
+                        rows[ri].style.display = match ? '' : 'none';
+                        if (match) visibleInSection++;
+                    }
+                    sec.style.display = visibleInSection > 0 ? '' : 'none';
+                    if (visibleInSection > 0) {
+                        anyVisible = true;
+                        // Update count badge
+                        var cnt = sec.querySelector('.' + W + '-cat-hdr-cnt');
+                        if (cnt) cnt.textContent = visibleInSection;
+                        // Auto-expand on search
+                        if (val) sec.classList.add('open');
+                    }
+                }
+
+                if (emptyEl) emptyEl.style.display = anyVisible ? 'none' : 'block';
+                // Hide hours/contact during search
+                if (hoursEl) hoursEl.style.display = val ? 'none' : '';
+                if (contactEl) contactEl.style.display = val ? 'none' : '';
+            }, 150);
+        });
+
+        // Load catalog data from server
+        function loadCatalog() {
+            var fd = new FormData();
+            fd.append('action', 'ppv_shop_widget_config');
+            fd.append('store_slug', config.store);
+            fetch(AJAX_URL, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(resp) {
+                    if (resp.success && resp.data) {
+                        renderCatalog(resp.data);
+                    } else {
+                        catBody.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#94a3b8">' +
+                            '<div style="margin-bottom:8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+                            '<div>Store not found</div></div>';
+                    }
+                })
+                .catch(function() {
+                    catBody.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#94a3b8">' +
+                        '<div style="margin-bottom:8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+                        '<div>Connection error</div></div>';
+                });
+        }
+    }
+
     // ─── AI MODE ───────────────────────────────────────────
     if (config.mode === 'ai') {
+        var svgApple = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>';
         var defaultBrands = [
-            { id: 'Apple',   icon: '\uD83C\uDF4E', label: 'Apple' },
-            { id: 'Samsung', icon: '\uD83D\uDCF1', label: 'Samsung' },
-            { id: 'Huawei',  icon: '\uD83D\uDCF2', label: 'Huawei' },
-            { id: 'Xiaomi',  icon: '\u2B50', label: 'Xiaomi' },
+            { id: 'Apple',   icon: svgApple, label: 'Apple' },
+            { id: 'Samsung', icon: 'S', label: 'Samsung' },
+            { id: 'Huawei',  icon: 'H', label: 'Huawei' },
+            { id: 'Xiaomi',  icon: 'X', label: 'Xiaomi' },
             { id: 'Google',  icon: 'G', label: 'Google' },
-            { id: 'Other',   icon: '\u2699', label: lang.step1_model }
+            { id: 'Other',   icon: '+', label: lang.step1_model }
         ];
         var defaultChips = lang.step2_chips || [];
         var brands = defaultBrands;
@@ -495,20 +1153,20 @@
                         storeConfig = data.data;
                         // Override brands if custom ones provided
                         if (storeConfig.brands && storeConfig.brands.length > 0) {
-                            var brandIcons = {Apple:'\uD83C\uDF4E',Samsung:'\uD83D\uDCF1',Huawei:'\uD83D\uDCF2',Xiaomi:'\u2B50',Google:'G',Sony:'\uD83C\uDFAE',OnePlus:'1+',LG:'\uD83D\uDCFA',Nokia:'N'};
+                            var brandIcons = {Apple:svgApple,Samsung:'S',Huawei:'H',Xiaomi:'X',Google:'G',Sony:'S',OnePlus:'1+',LG:'LG',Nokia:'N'};
                             brandModelsMap = {};
                             var newBrands = [];
                             for (var i = 0; i < storeConfig.brands.length; i++) {
                                 var b = storeConfig.brands[i];
                                 var bid = typeof b === 'string' ? b : (b.id || b.label || b);
                                 var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
-                                var bicon = (typeof b === 'object' && b.icon) ? b.icon : (brandIcons[bid] || '\u2699');
+                                var bicon = (typeof b === 'object' && b.icon) ? b.icon : (brandIcons[bid] || '+');
                                 var bmodels = (typeof b === 'object' && b.models) ? b.models : [];
                                 newBrands.push({ id: bid, icon: bicon, label: blabel });
                                 if (bmodels.length > 0) brandModelsMap[bid] = bmodels;
                             }
                             // Always add "Other" at the end
-                            newBrands.push({ id: 'Other', icon: '\u2699', label: lang.step1_model });
+                            newBrands.push({ id: 'Other', icon: '+', label: lang.step1_model });
                             // Re-render brand grid
                             var brandContainer = aiPanel.querySelector('.' + W + '-brands');
                             if (brandContainer) {
@@ -950,7 +1608,7 @@
             var resultDiv = aiPanel.querySelector('#' + W + '-result');
             resultDiv.innerHTML =
                 '<div class="' + W + '-result-section" style="text-align:center;padding:30px 14px">' +
-                    '<p style="font-size:32px;margin:0 0 8px">\u26A0\uFE0F</p>' +
+                    '<div style="margin:0 0 8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
                     '<p class="' + W + '-result-text">' + escHTML(msg) + '</p>' +
                 '</div>' +
                 '<div class="' + W + '-btns">' +

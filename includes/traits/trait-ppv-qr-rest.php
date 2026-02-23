@@ -1074,6 +1074,61 @@ trait PPV_QR_REST_Trait {
             ? $user_info->display_name
             : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
+        // 📅 TERMIN: Check if customer has an upcoming appointment at this store
+        $next_termin = null;
+        $user_email = $user_info->email ?? null;
+        if ($user_email) {
+            $termine_table = $wpdb->prefix . 'ppv_repair_termine';
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $today = current_time('Y-m-d');
+
+            // Check ppv_repair_termine via linked repair's customer_email
+            $termin_row = $wpdb->get_row($wpdb->prepare(
+                "SELECT t.id, t.title, t.termin_date, t.termin_time, t.duration, t.termin_type, t.status
+                 FROM {$termine_table} t
+                 INNER JOIN {$repairs_table} r ON t.repair_id = r.id
+                 WHERE r.customer_email = %s AND r.store_id = %d
+                   AND t.termin_date >= %s AND t.status = 'scheduled'
+                 ORDER BY t.termin_date ASC, t.termin_time ASC
+                 LIMIT 1",
+                $user_email, $store_id, $today
+            ));
+
+            // Also check legacy ppv_repairs.termin_at
+            if (!$termin_row) {
+                $legacy = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id, device_name AS title, termin_at
+                     FROM {$repairs_table}
+                     WHERE customer_email = %s AND store_id = %d
+                       AND termin_at IS NOT NULL AND termin_at >= %s
+                       AND status NOT IN ('done', 'cancelled', 'picked_up')
+                     ORDER BY termin_at ASC
+                     LIMIT 1",
+                    $user_email, $store_id, $today
+                ));
+                if ($legacy && $legacy->termin_at) {
+                    $termin_row = (object)[
+                        'id' => $legacy->id,
+                        'title' => $legacy->title,
+                        'termin_date' => date('Y-m-d', strtotime($legacy->termin_at)),
+                        'termin_time' => date('H:i:s', strtotime($legacy->termin_at)),
+                        'duration' => null,
+                        'termin_type' => 'repair',
+                        'status' => 'scheduled',
+                    ];
+                }
+            }
+
+            if ($termin_row) {
+                $next_termin = [
+                    'date' => date('d.m.Y', strtotime($termin_row->termin_date)),
+                    'time' => $termin_row->termin_time ? date('H:i', strtotime($termin_row->termin_time)) : null,
+                    'title' => $termin_row->title ?: null,
+                    'type' => $termin_row->termin_type ?: 'general',
+                ];
+            }
+        }
+
         // 📡 ABLY: Send real-time notification (non-blocking)
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             PPV_Ably::trigger_scan($store_id, [
@@ -1092,6 +1147,7 @@ trait PPV_QR_REST_Trait {
                 'success' => true,
                 'scanner_id' => $scanner_id,       // 👤 Who scanned (employee)
                 'scanner_name' => $scanner_name,   // 👤 Scanner email/name
+                'next_termin' => $next_termin,     // 📅 Next appointment
             ]);
 
             // 📡 ABLY: Also notify user's dashboard of points update
@@ -1298,6 +1354,8 @@ trait PPV_QR_REST_Trait {
             'scanner_name' => $scanner_name,
             // 📊 Customer insights for Händler (visit patterns, VIP, points)
             'customer_insights' => $customer_insights,
+            // 📅 Next appointment for this customer
+            'next_termin' => $next_termin,
         ], 200);
     }
 
