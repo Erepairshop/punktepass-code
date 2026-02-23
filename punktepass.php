@@ -1009,6 +1009,9 @@ add_action('init', function () {
     // Händler Demo page
     add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
     add_rewrite_tag('%ppv_demo_haendler%', '1');
+    // Sales page (Partner Info)
+    add_rewrite_rule('^sales/?$', 'index.php?ppv_sales=1', 'top');
+    add_rewrite_tag('%ppv_sales%', '1');
 }, 10);
 
 // ========================================
@@ -1048,6 +1051,20 @@ add_action('template_redirect', function() {
         if (file_exists($demo_file)) {
             header('Content-Type: text/html; charset=UTF-8');
             readfile($demo_file);
+            exit;
+        }
+    }
+}, 1);
+
+// ========================================
+// 💼 SALES PAGE HANDLER (Partner Info)
+// ========================================
+add_action('template_redirect', function() {
+    if (get_query_var('ppv_sales')) {
+        $sales_file = PPV_PLUGIN_DIR . 'sales/punktepass-partner-info.html';
+        if (file_exists($sales_file)) {
+            header('Content-Type: text/html; charset=UTF-8');
+            readfile($sales_file);
             exit;
         }
     }
@@ -1124,6 +1141,8 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_tag('%ppv_landing%', '1');
     add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
     add_rewrite_tag('%ppv_demo_haendler%', '1');
+    add_rewrite_rule('^sales/?$', 'index.php?ppv_sales=1', 'top');
+    add_rewrite_tag('%ppv_sales%', '1');
     // Blog: no rewrite rules needed - uses direct URL detection in PPV_Blog::handle_request()
     flush_rewrite_rules();
 });
