@@ -135,6 +135,9 @@ return [
     'repair_reg_price_free_f10' => 'Analisi AI dei problemi',
     'repair_reg_price_free_f11' => 'Modalità offline (senza internet)',
     'repair_reg_price_free_f12' => 'Controllo stato & documentazione foto',
+    'repair_reg_price_free_f13' => 'Widget Sito Web & Catalogo',
+    'repair_reg_price_free_f14' => 'Calendario Appuntamenti',
+    'repair_reg_price_free_f15' => 'TruePunkte Fidelizzazione',
     'repair_reg_price_pro'      => 'Premium',
     'repair_reg_price_pro_val'  => '€39',
     'repair_reg_price_pro_per'  => 'al mese (netto)',
@@ -144,10 +147,9 @@ return [
     'repair_reg_price_pro_f4'   => 'Supporto prioritario',
     'repair_reg_price_pro_f5'   => 'Moduli auto & PC',
     'repair_reg_price_pro_f6'   => 'Chat supporto AI & escalation',
-    'repair_reg_price_pro_f7'   => 'Gestione appuntamenti & notifiche',
-    'repair_reg_price_pro_f8'   => 'Statistiche & report settimanali',
-    'repair_reg_price_pro_f9'   => 'Integrazione WhatsApp',
-    'repair_reg_price_pro_f10'  => 'Branding personalizzato & logo',
+    'repair_reg_price_pro_f7'   => 'Statistiche & report settimanali',
+    'repair_reg_price_pro_f8'   => 'Integrazione WhatsApp',
+    'repair_reg_price_pro_f9'   => 'Branding personalizzato & logo',
     'repair_reg_price_popular'  => 'Popolare',
 
     // OAuth
@@ -234,6 +236,27 @@ return [
     'repair_feat_branch_mock_car'       => 'Auto',
     'repair_feat_branch_mock_bike'      => 'Bicicletta',
     'repair_feat_branch_mock_console'   => 'Console',
+
+    // Feature: Widget
+    'repair_feat_widget_title'           => 'Widget Sito Web',
+    'repair_feat_widget_desc'            => 'Widget di riparazione per il tuo sito',
+    'repair_feat_widget_b1'              => 'Widget incorporabile con catalogo servizi e prezzi',
+    'repair_feat_widget_b2'              => 'I clienti prenotano direttamente dal tuo sito',
+    'repair_feat_widget_b3'              => 'Personalizzabile: colori, lingua, posizione',
+
+    // Feature: Termine
+    'repair_feat_termine_title'          => 'Calendario Appuntamenti',
+    'repair_feat_termine_desc'           => 'Calendario professionale per tutti gli appuntamenti',
+    'repair_feat_termine_b1'             => 'Vista mensile con punti colorati per gli appuntamenti',
+    'repair_feat_termine_b2'             => 'Crea, modifica ed elimina appuntamenti',
+    'repair_feat_termine_b3'             => 'Appuntamenti di riparazione visibili automaticamente',
+
+    // Feature: TruePunkte
+    'repair_feat_truepunkte_title'       => 'TruePunkte',
+    'repair_feat_truepunkte_desc'        => 'Fidelizzazione clienti tramite punti premio',
+    'repair_feat_truepunkte_b1'          => 'I clienti raccolgono punti ad ogni riparazione',
+    'repair_feat_truepunkte_b2'          => 'Premi configurabili liberamente (es. sconto 10€)',
+    'repair_feat_truepunkte_b3'          => 'Basato su codice QR – nessuna app extra necessaria',
 
     // Registration form
     'repair_reg_form_title'     => 'Pronto in 2 minuti',

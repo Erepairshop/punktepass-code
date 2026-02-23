@@ -135,6 +135,9 @@ return [
     'repair_reg_price_free_f10' => 'AI-Problemanalyse',
     'repair_reg_price_free_f11' => 'Offline-Modus (kein Internet nötig)',
     'repair_reg_price_free_f12' => 'Zustandsprüfung & Fotodokumentation',
+    'repair_reg_price_free_f13' => 'Website Widget & Katalog',
+    'repair_reg_price_free_f14' => 'Termin-Kalender',
+    'repair_reg_price_free_f15' => 'TruePunkte Kundenbindung',
     'repair_reg_price_pro'      => 'Premium',
     'repair_reg_price_pro_val'  => '39 €',
     'repair_reg_price_pro_per'  => 'pro Monat (netto)',
@@ -144,10 +147,9 @@ return [
     'repair_reg_price_pro_f4'   => 'Prioritäts-Support',
     'repair_reg_price_pro_f5'   => 'KFZ- & PC-Reparatur Module',
     'repair_reg_price_pro_f6'   => 'AI Support Chat & Eskalation',
-    'repair_reg_price_pro_f7'   => 'Termin-Management & Benachrichtigungen',
-    'repair_reg_price_pro_f8'   => 'Statistiken & Wochenberichte',
-    'repair_reg_price_pro_f9'   => 'WhatsApp-Integration',
-    'repair_reg_price_pro_f10'  => 'Individuelles Branding & Logo',
+    'repair_reg_price_pro_f7'   => 'Statistiken & Wochenberichte',
+    'repair_reg_price_pro_f8'   => 'WhatsApp-Integration',
+    'repair_reg_price_pro_f9'   => 'Individuelles Branding & Logo',
     'repair_reg_price_popular'  => 'Beliebt',
 
     // OAuth
@@ -234,6 +236,27 @@ return [
     'repair_feat_branch_mock_car'       => 'KFZ',
     'repair_feat_branch_mock_bike'      => 'Fahrrad',
     'repair_feat_branch_mock_console'   => 'Konsole',
+
+    // Feature: Widget
+    'repair_feat_widget_title'           => 'Website Widget',
+    'repair_feat_widget_desc'            => 'Reparatur-Widget für Ihre Website',
+    'repair_feat_widget_b1'              => 'Einbettbares Widget mit Servicekatalog & Preisen',
+    'repair_feat_widget_b2'              => 'Kunden buchen direkt von Ihrer Website',
+    'repair_feat_widget_b3'              => 'Anpassbar: Farben, Sprache, Position',
+
+    // Feature: Termine
+    'repair_feat_termine_title'          => 'Termin-Kalender',
+    'repair_feat_termine_desc'           => 'Professioneller Kalender für alle Termine',
+    'repair_feat_termine_b1'             => 'Monatsansicht mit farbigen Terminpunkten',
+    'repair_feat_termine_b2'             => 'Termine erstellen, bearbeiten & löschen',
+    'repair_feat_termine_b3'             => 'Reparatur-Termine automatisch sichtbar',
+
+    // Feature: TruePunkte
+    'repair_feat_truepunkte_title'       => 'TruePunkte',
+    'repair_feat_truepunkte_desc'        => 'Kundenbindung durch Treuepunkte',
+    'repair_feat_truepunkte_b1'          => 'Kunden sammeln Punkte bei jeder Reparatur',
+    'repair_feat_truepunkte_b2'          => 'Belohnungen frei konfigurierbar (z.B. 10€ Rabatt)',
+    'repair_feat_truepunkte_b3'          => 'QR-Code basiert – kein Extra-App nötig',
 
     // Registration form
     'repair_reg_form_title'     => 'In 2 Minuten startklar',

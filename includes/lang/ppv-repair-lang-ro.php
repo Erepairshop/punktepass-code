@@ -135,6 +135,9 @@ return [
     'repair_reg_price_free_f10' => 'Analiză AI a problemelor',
     'repair_reg_price_free_f11' => 'Mod offline (fără internet)',
     'repair_reg_price_free_f12' => 'Verificare stare & documentare foto',
+    'repair_reg_price_free_f13' => 'Widget Website & Catalog',
+    'repair_reg_price_free_f14' => 'Calendar Programări',
+    'repair_reg_price_free_f15' => 'TruePunkte Fidelizare',
     'repair_reg_price_pro'      => 'Premium',
     'repair_reg_price_pro_val'  => '39 €',
     'repair_reg_price_pro_per'  => 'pe lună (net)',
@@ -144,10 +147,9 @@ return [
     'repair_reg_price_pro_f4'   => 'Suport prioritar',
     'repair_reg_price_pro_f5'   => 'Module auto & PC',
     'repair_reg_price_pro_f6'   => 'Chat suport AI & escalare',
-    'repair_reg_price_pro_f7'   => 'Gestionare programări & notificări',
-    'repair_reg_price_pro_f8'   => 'Statistici & rapoarte săptămânale',
-    'repair_reg_price_pro_f9'   => 'Integrare WhatsApp',
-    'repair_reg_price_pro_f10'  => 'Branding personalizat & logo',
+    'repair_reg_price_pro_f7'   => 'Statistici & rapoarte săptămânale',
+    'repair_reg_price_pro_f8'   => 'Integrare WhatsApp',
+    'repair_reg_price_pro_f9'   => 'Branding personalizat & logo',
     'repair_reg_price_popular'  => 'Popular',
 
     // OAuth
@@ -234,6 +236,27 @@ return [
     'repair_feat_branch_mock_car'       => 'Auto',
     'repair_feat_branch_mock_bike'      => 'Bicicletă',
     'repair_feat_branch_mock_console'   => 'Consolă',
+
+    // Feature: Widget
+    'repair_feat_widget_title'           => 'Widget Website',
+    'repair_feat_widget_desc'            => 'Widget de reparații pentru site-ul dvs.',
+    'repair_feat_widget_b1'              => 'Widget încorporabil cu catalog de servicii și prețuri',
+    'repair_feat_widget_b2'              => 'Clienții rezervă direct de pe site-ul dvs.',
+    'repair_feat_widget_b3'              => 'Personalizabil: culori, limbă, poziție',
+
+    // Feature: Termine
+    'repair_feat_termine_title'          => 'Calendar Programări',
+    'repair_feat_termine_desc'           => 'Calendar profesional pentru toate programările',
+    'repair_feat_termine_b1'             => 'Vizualizare lunară cu puncte colorate pentru programări',
+    'repair_feat_termine_b2'             => 'Creare, editare și ștergere programări',
+    'repair_feat_termine_b3'             => 'Programările de reparații vizibile automat',
+
+    // Feature: TruePunkte
+    'repair_feat_truepunkte_title'       => 'TruePunkte',
+    'repair_feat_truepunkte_desc'        => 'Fidelizarea clienților prin puncte de recompensă',
+    'repair_feat_truepunkte_b1'          => 'Clienții colectează puncte la fiecare reparație',
+    'repair_feat_truepunkte_b2'          => 'Recompense configurabile liber (ex. reducere 10€)',
+    'repair_feat_truepunkte_b3'          => 'Bazat pe cod QR – nu necesită aplicație suplimentară',
 
     // Registration form
     'repair_reg_form_title'     => 'Gata în 2 minute',

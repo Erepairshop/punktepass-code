@@ -135,6 +135,9 @@ return [
     'repair_reg_price_free_f10' => 'AI probléma-elemzés',
     'repair_reg_price_free_f11' => 'Offline mód (internet nélkül)',
     'repair_reg_price_free_f12' => 'Állapotfelmérés & fotódokumentáció',
+    'repair_reg_price_free_f13' => 'Weboldal Widget & Katalógus',
+    'repair_reg_price_free_f14' => 'Időpont naptár',
+    'repair_reg_price_free_f15' => 'TruePunkte Ügyfélhűség',
     'repair_reg_price_pro'      => 'Prémium',
     'repair_reg_price_pro_val'  => '39 €',
     'repair_reg_price_pro_per'  => 'havonta (nettó)',
@@ -144,10 +147,9 @@ return [
     'repair_reg_price_pro_f4'   => 'Prioritás-támogatás',
     'repair_reg_price_pro_f5'   => 'Autó & PC szerviz modulok',
     'repair_reg_price_pro_f6'   => 'AI támogatás chat & eszkaláció',
-    'repair_reg_price_pro_f7'   => 'Időpontkezelés & értesítések',
-    'repair_reg_price_pro_f8'   => 'Statisztikák & heti jelentések',
-    'repair_reg_price_pro_f9'   => 'WhatsApp integráció',
-    'repair_reg_price_pro_f10'  => 'Egyedi arculat & logó',
+    'repair_reg_price_pro_f7'   => 'Statisztikák & heti jelentések',
+    'repair_reg_price_pro_f8'   => 'WhatsApp integráció',
+    'repair_reg_price_pro_f9'   => 'Egyedi arculat & logó',
     'repair_reg_price_popular'  => 'Népszerű',
 
     // OAuth
@@ -234,6 +236,27 @@ return [
     'repair_feat_branch_mock_car'       => 'Autó',
     'repair_feat_branch_mock_bike'      => 'Kerékpár',
     'repair_feat_branch_mock_console'   => 'Konzol',
+
+    // Feature: Widget
+    'repair_feat_widget_title'           => 'Weboldal Widget',
+    'repair_feat_widget_desc'            => 'Javítási widget a weboldalához',
+    'repair_feat_widget_b1'              => 'Beágyazható widget szolgáltatás-katalógussal és árakkal',
+    'repair_feat_widget_b2'              => 'Ügyfelek közvetlenül a weboldalról foglalnak',
+    'repair_feat_widget_b3'              => 'Testreszabható: színek, nyelv, pozíció',
+
+    // Feature: Termine
+    'repair_feat_termine_title'          => 'Időpont naptár',
+    'repair_feat_termine_desc'           => 'Professzionális naptár minden időponthoz',
+    'repair_feat_termine_b1'             => 'Havi nézet színes időpont-pontokkal',
+    'repair_feat_termine_b2'             => 'Időpontok létrehozása, szerkesztése és törlése',
+    'repair_feat_termine_b3'             => 'Javítási időpontok automatikusan láthatóak',
+
+    // Feature: TruePunkte
+    'repair_feat_truepunkte_title'       => 'TruePunkte',
+    'repair_feat_truepunkte_desc'        => 'Ügyfélhűség törzsvásárlói pontokkal',
+    'repair_feat_truepunkte_b1'          => 'Ügyfelek pontokat gyűjtenek minden javítás után',
+    'repair_feat_truepunkte_b2'          => 'Jutalmak szabadon konfigurálhatók (pl. 10€ kedvezmény)',
+    'repair_feat_truepunkte_b3'          => 'QR-kód alapú – nem kell külön alkalmazás',
 
     // Registration form
     'repair_reg_form_title'     => '2 perc alatt indulhat',

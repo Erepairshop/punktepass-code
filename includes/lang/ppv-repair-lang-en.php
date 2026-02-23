@@ -135,6 +135,9 @@ return [
     'repair_reg_price_free_f10' => 'AI problem analysis',
     'repair_reg_price_free_f11' => 'Offline mode (no internet needed)',
     'repair_reg_price_free_f12' => 'Condition check & photo documentation',
+    'repair_reg_price_free_f13' => 'Website Widget & Catalog',
+    'repair_reg_price_free_f14' => 'Appointment Calendar',
+    'repair_reg_price_free_f15' => 'TruePunkte Loyalty',
     'repair_reg_price_pro'      => 'Premium',
     'repair_reg_price_pro_val'  => '€39',
     'repair_reg_price_pro_per'  => 'per month (net)',
@@ -144,10 +147,9 @@ return [
     'repair_reg_price_pro_f4'   => 'Priority support',
     'repair_reg_price_pro_f5'   => 'Vehicle & PC repair modules',
     'repair_reg_price_pro_f6'   => 'AI support chat & escalation',
-    'repair_reg_price_pro_f7'   => 'Appointment management & notifications',
-    'repair_reg_price_pro_f8'   => 'Statistics & weekly reports',
-    'repair_reg_price_pro_f9'   => 'WhatsApp integration',
-    'repair_reg_price_pro_f10'  => 'Custom branding & logo',
+    'repair_reg_price_pro_f7'   => 'Statistics & weekly reports',
+    'repair_reg_price_pro_f8'   => 'WhatsApp integration',
+    'repair_reg_price_pro_f9'   => 'Custom branding & logo',
     'repair_reg_price_popular'  => 'Popular',
 
     // OAuth
@@ -234,6 +236,27 @@ return [
     'repair_feat_branch_mock_car'       => 'Car',
     'repair_feat_branch_mock_bike'      => 'Bicycle',
     'repair_feat_branch_mock_console'   => 'Console',
+
+    // Feature: Widget
+    'repair_feat_widget_title'           => 'Website Widget',
+    'repair_feat_widget_desc'            => 'Repair widget for your website',
+    'repair_feat_widget_b1'              => 'Embeddable widget with service catalog & prices',
+    'repair_feat_widget_b2'              => 'Customers book directly from your website',
+    'repair_feat_widget_b3'              => 'Customizable: colors, language, position',
+
+    // Feature: Termine
+    'repair_feat_termine_title'          => 'Appointment Calendar',
+    'repair_feat_termine_desc'           => 'Professional calendar for all appointments',
+    'repair_feat_termine_b1'             => 'Monthly view with colored appointment dots',
+    'repair_feat_termine_b2'             => 'Create, edit & delete appointments',
+    'repair_feat_termine_b3'             => 'Repair appointments automatically visible',
+
+    // Feature: TruePunkte
+    'repair_feat_truepunkte_title'       => 'TruePunkte',
+    'repair_feat_truepunkte_desc'        => 'Customer loyalty through reward points',
+    'repair_feat_truepunkte_b1'          => 'Customers collect points with every repair',
+    'repair_feat_truepunkte_b2'          => 'Rewards freely configurable (e.g. €10 discount)',
+    'repair_feat_truepunkte_b3'          => 'QR code based – no extra app needed',
 
     // Registration form
     'repair_reg_form_title'     => 'Ready in 2 minutes',
