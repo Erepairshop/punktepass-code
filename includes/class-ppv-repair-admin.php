@@ -5547,7 +5547,7 @@ echo '</div></div>
             attrs += \' data-mode="\' + mode + \'"\';
             if (lang !== "de") attrs += \' data-lang="\' + lang + \'"\';
             if (color !== "#667eea") attrs += \' data-color="\' + color + \'"\';
-            if (mode === "float" && pos !== "bottom-right") attrs += \' data-position="\' + pos + \'"\';
+            if ((mode === "float" || mode === "catalog") && pos !== "bottom-right") attrs += \' data-position="\' + pos + \'"\';
             if (text) attrs += \' data-text="\' + text.replace(/"/g, "&quot;") + \'"\';
             if ((mode === "inline" || mode === "button") && target) attrs += \' data-target="\' + target.replace(/"/g, "&quot;") + \'"\';
 
