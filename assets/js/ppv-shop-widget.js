@@ -69,6 +69,7 @@
             cat_fab: 'Preisliste', cat_title: 'Unsere Leistungen', cat_subtitle: 'Preise & \u00d6ffnungszeiten',
             cat_search: 'Service suchen...', cat_hours: '\u00d6ffnungszeiten', cat_open: 'Ge\u00f6ffnet', cat_closed: 'Geschlossen',
             cat_contact: 'Kontakt & Anfahrt', cat_cta: 'Reparatur anfragen', cat_no_results: 'Keine Ergebnisse',
+            cat_no_results_hint: 'Kein passender Service gefunden? Kein Problem! F\u00fcllen Sie das Formular aus und wir melden uns bei Ihnen.',
             cat_general: 'Allgemein', cat_from: 'ab', cat_map: 'Route planen', cat_call: 'Anrufen',
             cat_days: ['Mo','Di','Mi','Do','Fr','Sa','So'], cat_services: 'Leistungen', cat_time: 'Dauer',
             cat_confirm_title: 'Reparatur gew\u00fcnscht?',
@@ -97,6 +98,7 @@
             cat_fab: 'Price list', cat_title: 'Our Services', cat_subtitle: 'Prices & Opening Hours',
             cat_search: 'Search service...', cat_hours: 'Opening Hours', cat_open: 'Open', cat_closed: 'Closed',
             cat_contact: 'Contact & Directions', cat_cta: 'Request repair', cat_no_results: 'No results',
+            cat_no_results_hint: 'Can\'t find the right service? No problem! Fill out the form and we\'ll get back to you.',
             cat_general: 'General', cat_from: 'from', cat_map: 'Get directions', cat_call: 'Call',
             cat_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], cat_services: 'Services', cat_time: 'Duration',
             cat_confirm_title: 'Request repair?',
@@ -125,6 +127,7 @@
             cat_fab: '\u00c1rlista', cat_title: 'Szolg\u00e1ltat\u00e1saink', cat_subtitle: '\u00c1rak & Nyitvatart\u00e1s',
             cat_search: 'Keres\u00e9s...', cat_hours: 'Nyitvatart\u00e1s', cat_open: 'Nyitva', cat_closed: 'Z\u00e1rva',
             cat_contact: 'Kapcsolat & Megk\u00f6zel\u00edt\u00e9s', cat_cta: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', cat_no_results: 'Nincs tal\u00e1lat',
+            cat_no_results_hint: 'Nem tal\u00e1lja a megfelel\u0151 szolg\u00e1ltat\u00e1st? Semmi gond! T\u00f6ltse ki az \u0171rlapot \u00e9s felvessz\u00fck \u00d6nnel a kapcsolatot.',
             cat_general: '\u00c1ltal\u00e1nos', cat_from: '-t\u00f3l', cat_map: '\u00datvonaltervez\u00e9s', cat_call: 'H\u00edv\u00e1s',
             cat_days: ['H\u00e9','Ke','Sze','Cs','P\u00e9','Szo','Vas'], cat_services: 'Szolg\u00e1ltat\u00e1sok', cat_time: 'Id\u0151tartam',
             cat_confirm_title: 'Jav\u00edt\u00e1st szeretn\u00e9?',
@@ -153,6 +156,7 @@
             cat_fab: 'List\u0103 pre\u021buri', cat_title: 'Serviciile noastre', cat_subtitle: 'Pre\u021buri & Program',
             cat_search: 'C\u0103utare serviciu...', cat_hours: 'Program', cat_open: 'Deschis', cat_closed: '\u00cenchis',
             cat_contact: 'Contact & Direc\u021bii', cat_cta: 'Solicit\u0103 repara\u021bie', cat_no_results: 'Niciun rezultat',
+            cat_no_results_hint: 'Nu g\u0103si\u021bi serviciul potrivit? Nicio problem\u0103! Completa\u021bi formularul \u0219i v\u0103 vom contacta.',
             cat_general: 'General', cat_from: 'de la', cat_map: 'Planific\u0103 ruta', cat_call: 'Sun\u0103',
             cat_days: ['Lu','Ma','Mi','Jo','Vi','S\u00e2','Du'], cat_services: 'Servicii', cat_time: 'Durat\u0103',
             cat_confirm_title: 'Dori\u021bi repara\u021bie?',
@@ -181,6 +185,7 @@
             cat_fab: 'Listino prezzi', cat_title: 'I nostri servizi', cat_subtitle: 'Prezzi & Orari',
             cat_search: 'Cerca servizio...', cat_hours: 'Orari di apertura', cat_open: 'Aperto', cat_closed: 'Chiuso',
             cat_contact: 'Contatti & Indicazioni', cat_cta: 'Richiedi riparazione', cat_no_results: 'Nessun risultato',
+            cat_no_results_hint: 'Non trovi il servizio giusto? Nessun problema! Compila il modulo e ti contatteremo.',
             cat_general: 'Generale', cat_from: 'da', cat_map: 'Indicazioni', cat_call: 'Chiama',
             cat_days: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'], cat_services: 'Servizi', cat_time: 'Durata',
             cat_confirm_title: 'Richiedi riparazione?',
@@ -888,10 +893,16 @@
             }
             html += '</div>';
 
-            // No results placeholder
+            // No results placeholder with CTA
             html += '<div id="' + W + '-cat-empty">' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
-                '<div>' + lang.cat_no_results + '</div></div>';
+                '<div style="font-weight:600;margin-bottom:6px">' + lang.cat_no_results + '</div>' +
+                '<div style="font-size:13px;color:#64748b;line-height:1.5;margin-bottom:14px">' + lang.cat_no_results_hint + '</div>' +
+                '<button id="' + W + '-cat-empty-cta" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:' + config.color + ';color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px ' + config.color + '40;transition:transform .15s,box-shadow .15s;font-family:inherit">' +
+                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' +
+                    lang.cat_cta +
+                '</button>' +
+            '</div>';
 
             // Opening hours
             if (data.store_hours) {
@@ -934,6 +945,15 @@
                     if (!isNaN(svcIdx) && allServices[svcIdx]) {
                         showConfirm(allServices[svcIdx]);
                     }
+                });
+            }
+
+            // No-results CTA → open form directly (no service pre-selected)
+            var emptyCta = catBody.querySelector('#' + W + '-cat-empty-cta');
+            if (emptyCta) {
+                emptyCta.addEventListener('click', function() {
+                    selectedSvc = null;
+                    showForm();
                 });
             }
         }
