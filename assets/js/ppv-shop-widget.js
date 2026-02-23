@@ -446,6 +446,14 @@
         /* Service count badge in header */
         '#' + W + '-cat-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:rgba(255,255,255,.25);font-size:11px;font-weight:700;margin-left:8px}' +
 
+        /* Brand filter row */
+        '.' + W + '-cat-brands{display:flex;gap:8px;padding:12px 16px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}' +
+        '.' + W + '-cat-brands::-webkit-scrollbar{display:none}' +
+        '.' + W + '-cat-brand-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;font-size:13px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;flex-shrink:0}' +
+        '.' + W + '-cat-brand-btn:hover{border-color:' + config.color + ';color:' + config.color + '}' +
+        '.' + W + '-cat-brand-btn.sel{background:' + config.color + ';color:#fff;border-color:' + config.color + '}' +
+        '.' + W + '-cat-brand-icon{font-size:15px;line-height:1}' +
+
         /* Category sections */
         '.' + W + '-cat-section{border-bottom:1px solid #f1f5f9}' +
         '.' + W + '-cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:#fff;transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}' +
@@ -882,6 +890,22 @@
 
             var html = '';
 
+            // Brand filter row
+            var catBrands = data.brands || [];
+            if (catBrands.length > 0) {
+                html += '<div class="' + W + '-cat-brands">';
+                for (var bi = 0; bi < catBrands.length; bi++) {
+                    var b = catBrands[bi];
+                    var bid = typeof b === 'string' ? b : (b.id || b.label || b);
+                    var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
+                    var bicon = (typeof b === 'object' && b.icon) ? b.icon : '';
+                    html += '<button type="button" class="' + W + '-cat-brand-btn" data-brand="' + escH(bid) + '">' +
+                        (bicon ? '<span class="' + W + '-cat-brand-icon">' + escH(bicon) + '</span>' : '') +
+                        escH(blabel) + '</button>';
+                }
+                html += '</div>';
+            }
+
             // Service categories
             html += '<div id="' + W + '-cat-sections">';
             for (var ci = 0; ci < grouped.order.length; ci++) {
@@ -960,6 +984,21 @@
                 });
             }
 
+            // Bind brand filter clicks
+            var brandBtns = catBody.querySelectorAll('.' + W + '-cat-brand-btn');
+            for (var bri = 0; bri < brandBtns.length; bri++) {
+                brandBtns[bri].addEventListener('click', function() {
+                    var wasActive = this.classList.contains('sel');
+                    for (var x = 0; x < brandBtns.length; x++) brandBtns[x].classList.remove('sel');
+                    if (wasActive) {
+                        selectedBrand = '';
+                    } else {
+                        this.classList.add('sel');
+                        selectedBrand = this.getAttribute('data-brand');
+                    }
+                });
+            }
+
             // Bind service row clicks → confirm flow
             var svcRows = catBody.querySelectorAll('.' + W + '-cat-row');
             for (var ri = 0; ri < svcRows.length; ri++) {
@@ -981,6 +1020,9 @@
                 });
             }
         }
+
+        // ── Brand selection state ──
+        var selectedBrand = '';
 
         // ── Confirm / Transition / Form flow ──
         var confirmEl = catPanel.querySelector('#' + W + '-cat-confirm');
@@ -1026,6 +1068,7 @@
                 if (selectedSvc.name) url += '&problem=' + encodeURIComponent(selectedSvc.name);
                 if (selectedSvc.category) url += '&category=' + encodeURIComponent(selectedSvc.category);
             }
+            if (selectedBrand) url += '&brand=' + encodeURIComponent(selectedBrand);
             iframeEl.src = url;
             iframeWrapEl.classList.add('active');
         }
