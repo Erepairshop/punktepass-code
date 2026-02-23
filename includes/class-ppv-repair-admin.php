@@ -1070,26 +1070,39 @@ a:hover{color:#5a67d8}
 .ra-cal-item-meta i{font-size:13px}
 .ra-cal-item-badge-repair{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:#fef3c7;color:#92400e}
 /* Modal */
-.ra-cal-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ra-cal-modal-bg{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .ra-cal-modal-bg.active{display:flex}
-.ra-cal-modal{background:#fff;border-radius:20px;width:95%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.15);animation:ra-modal-in .2s ease}
-@keyframes ra-modal-in{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-.ra-cal-modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #f1f5f9}
-.ra-cal-modal-title{font-size:17px;font-weight:700;color:#0f172a}
-.ra-cal-modal-close{width:32px;height:32px;border-radius:8px;border:none;background:#f1f5f9;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#64748b;transition:all .15s}
-.ra-cal-modal-close:hover{background:#e2e8f0;color:#0f172a}
-.ra-cal-modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
-.ra-cal-field{display:flex;flex-direction:column;gap:4px}
-.ra-cal-field label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
-.ra-cal-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.ra-cal-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.ra-cal-colors{display:flex;gap:8px;padding:4px 0}
-.ra-cal-color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;transition:all .15s;border:3px solid transparent}
-.ra-cal-color-dot:hover{transform:scale(1.15)}
-.ra-cal-color-dot.active{border-color:#0f172a;box-shadow:0 0 0 2px #fff,0 0 0 4px #0f172a}
-.ra-cal-modal-footer{display:flex;align-items:center;gap:8px;padding:16px 24px;border-top:1px solid #f1f5f9}
-.ra-btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
-.ra-btn-danger:hover{background:#fecaca}
+.ra-cal-modal{background:#fff;border-radius:24px;width:95%;max-width:540px;box-shadow:0 25px 80px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.05);animation:ra-modal-in .25s cubic-bezier(.22,1,.36,1)}
+@keyframes ra-modal-in{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.ra-cal-modal-header{display:flex;align-items:center;gap:14px;padding:24px 28px 20px;border-bottom:1px solid #f1f5f9}
+.ra-cal-modal-hdr-icon{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+.ra-cal-modal-hdr-text{flex:1}
+.ra-cal-modal-title{font-size:18px;font-weight:700;color:#0f172a;line-height:1.2}
+.ra-cal-modal-subtitle{font-size:13px;color:#94a3b8;margin-top:2px}
+.ra-cal-modal-close{width:36px;height:36px;border-radius:10px;border:none;background:#f1f5f9;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#64748b;transition:all .15s;flex-shrink:0}
+.ra-cal-modal-close:hover{background:#e2e8f0;color:#0f172a;transform:rotate(90deg)}
+.ra-cal-modal-body{padding:24px 28px;display:flex;flex-direction:column;gap:16px;max-height:60vh;overflow-y:auto}
+.ra-cal-field{display:flex;flex-direction:column;gap:6px}
+.ra-cal-field label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+.ra-cal-field .ra-input{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;color:#1e293b;background:#fafbfc;transition:all .2s ease;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none}
+.ra-cal-field .ra-input:focus{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.12);background:#fff}
+.ra-cal-field .ra-input::placeholder{color:#b0b8c9}
+.ra-cal-field textarea.ra-input{resize:vertical;min-height:56px}
+.ra-cal-field select.ra-input{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer}
+.ra-cal-field select.ra-input:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23667eea%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")}
+.ra-cal-field input[type="date"].ra-input,.ra-cal-field input[type="time"].ra-input{cursor:pointer}
+.ra-cal-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ra-cal-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.ra-cal-colors{display:flex;gap:10px;padding:6px 0}
+.ra-cal-color-dot{width:30px;height:30px;border-radius:50%;cursor:pointer;transition:all .2s cubic-bezier(.22,1,.36,1);border:3px solid transparent;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.ra-cal-color-dot:hover{transform:scale(1.2);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.ra-cal-color-dot.active{border-color:#fff;box-shadow:0 0 0 3px #0f172a,0 4px 12px rgba(0,0,0,.15);transform:scale(1.1)}
+.ra-cal-modal-footer{display:flex;align-items:center;gap:10px;padding:18px 28px;border-top:1px solid #f1f5f9;background:#fafbfc;border-radius:0 0 24px 24px}
+.ra-cal-modal-footer .ra-btn{border-radius:12px;font-weight:600;padding:10px 20px;font-size:13px;transition:all .15s}
+.ra-cal-modal-footer .ra-btn-primary{box-shadow:0 4px 14px rgba(102,126,234,.3)}
+.ra-cal-modal-footer .ra-btn-primary:hover{box-shadow:0 6px 20px rgba(102,126,234,.4);transform:translateY(-1px)}
+.ra-btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:12px}
+.ra-btn-danger:hover{background:#fecaca;transform:translateY(-1px)}
 /* Responsive */
 @media(max-width:768px){
 .ra-cal-wrap{grid-template-columns:1fr;min-height:auto}
@@ -6176,7 +6189,8 @@ echo '</div></div>
         \'<div class="ra-cal-modal-bg" id="ra-cal-modal-bg">\'+
             \'<div class="ra-cal-modal" id="ra-cal-modal">\'+
                 \'<div class="ra-cal-modal-header">\'+
-                    \'<div class="ra-cal-modal-title" id="ra-cal-modal-title">\'+L.termine_new+\'</div>\'+
+                    \'<div class="ra-cal-modal-hdr-icon"><i class="ri-calendar-schedule-line"></i></div>\'+
+                    \'<div class="ra-cal-modal-hdr-text"><div class="ra-cal-modal-title" id="ra-cal-modal-title">\'+L.termine_new+\'</div><div class="ra-cal-modal-subtitle" id="ra-cal-modal-subtitle"></div></div>\'+
                     \'<button class="ra-cal-modal-close" id="ra-cal-modal-close"><i class="ri-close-line"></i></button>\'+
                 \'</div>\'+
                 \'<div class="ra-cal-modal-body">\'+
@@ -6440,13 +6454,20 @@ echo '</div></div>
 
     function escH(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
 
+    function formatDateNice(dateStr){
+        var p=dateStr.split("-");
+        return parseInt(p[2])+". "+monthNames[parseInt(p[1])-1]+" "+p[0];
+    }
+
     function openTerminModal(termin){
         var modal=document.getElementById("ra-cal-modal-bg");
         var titleEl=document.getElementById("ra-cal-modal-title");
+        var subtitleEl=document.getElementById("ra-cal-modal-subtitle");
         var delBtn=document.getElementById("ra-tm-delete");
 
         if(termin){
             titleEl.textContent=L.termine_edit;
+            subtitleEl.textContent=termin.title||"";
             delBtn.style.display="";
             document.getElementById("ra-tm-id").value=termin.id;
             document.getElementById("ra-tm-title").value=termin.title||"";
@@ -6465,6 +6486,7 @@ echo '</div></div>
             });
         }else{
             titleEl.textContent=L.termine_new;
+            subtitleEl.textContent=calSelectedDate?formatDateNice(calSelectedDate):"";
             delBtn.style.display="none";
             document.getElementById("ra-tm-id").value="";
             document.getElementById("ra-tm-title").value="";
