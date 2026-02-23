@@ -756,7 +756,9 @@ class PPV_Repair_Partner {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $t['page_title']; ?></title>
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="<?php echo esc_attr(html_entity_decode(strip_tags($t['hero_sub']), ENT_QUOTES, 'UTF-8')); ?>">
+    <link rel="canonical" href="https://punktepass.de/formular/partner<?php echo $lang !== 'de' ? '?lang=' . $lang : ''; ?>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     <?php echo PPV_SEO::get_favicon_links(); ?>
