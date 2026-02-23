@@ -1546,6 +1546,12 @@ class PPV_Repair_Core {
 
     /** AJAX: Search customers by email prefix (for form email autocomplete) */
     public static function ajax_customer_email_search() {
+        // SECURITY: Verify nonce to prevent unauthorized data harvesting
+        $nonce = sanitize_text_field($_GET['nonce'] ?? '');
+        if (!wp_verify_nonce($nonce, 'ppv_repair_form')) {
+            wp_send_json_error(['message' => 'Invalid request'], 403);
+        }
+
         $q = sanitize_text_field($_GET['q'] ?? '');
         $store_id = intval($_GET['store_id'] ?? 0);
         if (strlen($q) < 2 || !$store_id) {
@@ -2044,6 +2050,12 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
 
     /** AJAX: Lookup customer by email (for form autofill) */
     public static function ajax_customer_lookup() {
+        // SECURITY: Verify nonce to prevent unauthorized data harvesting
+        $nonce = sanitize_text_field($_POST['nonce'] ?? '');
+        if (!wp_verify_nonce($nonce, 'ppv_repair_form')) {
+            wp_send_json_error(['message' => 'Invalid request'], 403);
+        }
+
         $email = sanitize_email($_POST['email'] ?? '');
         $store_id = intval($_POST['store_id'] ?? 0);
         if (empty($email) || !$store_id) {

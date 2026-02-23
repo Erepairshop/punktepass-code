@@ -7,32 +7,49 @@ class PPV_User_QR {
         add_shortcode('ppv_user_qr', [__CLASS__, 'render_qr']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_styles']);
         add_action('rest_api_init', function () {
-            // Régi statikus QR endpoint
+            // Statikus QR endpoint - AUTHENTICATED + own-data only
             register_rest_route('ppv/v1', '/user/qr', [
                 'methods' => 'GET',
                 'callback' => [__CLASS__, 'rest_get_user_qr'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
             ]);
 
-            // ÚJ: Timed QR endpoint (30 perces)
+            // Timed QR endpoint (30 perces) - AUTHENTICATED + own-data only
             register_rest_route('ppv/v1', '/user/generate-timed-qr', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_generate_timed_qr'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
             ]);
         });
     }
+
+    /**
+     * Verify the requesting user can only access their own QR data
+     */
+    private static function verify_own_user($requested_user_id) {
+        $current = PPV_Permissions::get_current_user_id();
+        if (!$current || $current !== $requested_user_id) {
+            return false;
+        }
+        return true;
+    }
+
     public static function rest_get_user_qr($request) {
         global $wpdb;
         $user_id = intval($request->get_param('user_id'));
-        if (!$user_id) return ['error' => 'missing_user_id'];
+        if (!$user_id) return new WP_REST_Response(['error' => 'missing_user_id'], 400);
+
+        // SECURITY: Only allow access to own QR code
+        if (!self::verify_own_user($user_id)) {
+            return new WP_REST_Response(['error' => 'forbidden'], 403);
+        }
 
         $user = $wpdb->get_row($wpdb->prepare(
             "SELECT id, qr_token FROM {$wpdb->prefix}ppv_users WHERE id=%d",
             $user_id
         ));
 
-        if (!$user) return ['error' => 'user_not_found'];
+        if (!$user) return new WP_REST_Response(['error' => 'user_not_found'], 404);
         return [
             'qr_value' => "PPUSER-{$user->id}-{$user->qr_token}",
             'qr_url'   => 'https://api.qrserver.com/v1/create-qr-code/?size=364x364&data=' . urlencode("PPUSER-{$user->id}-{$user->qr_token}")
@@ -50,6 +67,11 @@ class PPV_User_QR {
 
         if (!$user_id) {
             return new WP_REST_Response(['code' => 'missing_user_id', 'message' => 'User ID hiányzik'], 400);
+        }
+
+        // SECURITY: Only allow access to own QR code
+        if (!self::verify_own_user($user_id)) {
+            return new WP_REST_Response(['code' => 'forbidden', 'message' => 'Keine Berechtigung'], 403);
         }
 
         // User lekérése
@@ -106,7 +128,7 @@ class PPV_User_QR {
         ], 200);
     }
 
-    
+
 
     public static function enqueue_styles() {
         // 🎨 QR Code Generator library (local generation, offline support)

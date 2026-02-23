@@ -1144,6 +1144,7 @@ function toggleProblemTag(btn, text) {
     var successDiv = document.getElementById('repair-success');
     var ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
     var storeId = <?php echo $store_id; ?>;
+    var ppvNonce = '<?php echo esc_js($nonce); ?>';
     var formSubmitted = false;
 
     // Shared function to display the success page with data
@@ -1240,6 +1241,7 @@ function toggleProblemTag(btn, text) {
         fd.append('action', 'ppv_repair_customer_lookup');
         fd.append('email', email);
         fd.append('store_id', storeId);
+        fd.append('nonce', ppvNonce);
 
         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
             .then(function(r) { return r.json(); })
@@ -1735,6 +1737,8 @@ function toggleProblemTag(btn, text) {
 
 <script>
 (function(){
+    var ppvNonce = '<?php echo esc_js($nonce); ?>';
+
     // HTTP GET helper (fetch with XHR fallback for old WebViews)
     function xhrGet(url, cb) {
         if (window.fetch) {
@@ -1803,7 +1807,7 @@ function toggleProblemTag(btn, text) {
         emailInput.addEventListener('input', triggerEmailSearch);
 
         function searchEmails(q) {
-            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q);
+            var url = '<?php echo admin_url("admin-ajax.php"); ?>?action=ppv_repair_customer_email_search&store_id=' + storeId + '&q=' + encodeURIComponent(q) + '&nonce=' + encodeURIComponent(ppvNonce);
             xhrGet(url, function(err, resp){
                 if (err) { console.warn('Email search error:', err); }
                 if (err || !resp || !resp.success || !resp.data || !resp.data.length) {
