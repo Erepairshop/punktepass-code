@@ -393,6 +393,46 @@ REPAIR MANAGEMENT (Reparaturen tab):
   OPTION 2 - Without appointment (ohne Termin): Check "Nur als angekommen markieren (ohne Termin)" checkbox. Hides date/time fields. Just marks the part as arrived.
   Both options change status to "In Bearbeitung" and remove the Teil angekommen button.
 
+BADGES ON REPAIR CARDS:
+• Purple "Widget" badge: appears if the repair was submitted through the website widget (not direct form access)
+• Red pulsing "Termin vereinbaren" badge: appears on Widget-submitted repairs that have no appointment yet. Click it to open appointment scheduling modal.
+• Grey "+ Termin" badge: appears on all other repairs without an appointment. Click it to schedule an appointment.
+• Green Termin badge with date: shows the scheduled appointment date/time (appears after setting an appointment)
+• Yellow invoice badge: shows invoice numbers linked to the repair
+
+APPOINTMENT SCHEDULING (Termin):
+• Click the red "Termin vereinbaren" or grey "+ Termin" badge on any repair card
+• Modal opens showing: customer name, email, phone, device, problem description
+• Set appointment date (required) and time (optional)
+• Add optional message to the customer
+• Checkbox to send appointment confirmation email to the customer
+• After saving, the badge changes to a green date badge
+• Appointment email includes: date/time, repair ID, device info, custom message, shop contact details
+
+WIDGET SYSTEM (Einstellungen → Widget tab):
+• Embed a repair widget on any external website
+• 4 widget modes:
+  - Katalog/Preisliste: full catalog with service prices, opening hours, contact info
+  - Floating Button: floating action button in corner of page
+  - Inline Banner: embedded banner inside a page section
+  - Einfacher Button: simple button with CSS selector target
+• Widget configuration: position (bottom-right/left), color, language (DE/EN/HU/RO/IT), button text
+• Embed code: copy the HTML snippet and paste on any website
+• Direct link: shareable URL to the repair form
+
+WIDGET CATALOG DATA (Einstellungen → Widget tab → Katalog-Daten):
+• 3 inner tabs: Services, Marken (Brands), Import
+• SERVICES tab: add individual services with category, name, price, duration. Service list sortable.
+• BRANDS tab: add device brands (Apple, Samsung, etc.) shown in widget
+• IMPORT tab:
+  - CSV format info: Bezeichnung;Preis;Dauer;Kategorie (semicolon or comma separator)
+  - AI CSV tip: link to claude.ai where users can describe their services and get a ready CSV generated
+  - Upload: drag & drop CSV/TXT/Excel file
+  - Preview table before import
+  - Export: download current services as CSV
+• Widget repairs are tracked with source_channel=widget, visible as purple "Widget" badge on cards
+• Widget-submitted repairs automatically get red "Termin vereinbaren" badge prompting the admin to schedule an appointment
+
 INVOICE SYSTEM (Rechnungen tab):
 • Create invoices (Rechnung) or quotes (Angebot)
 • QUOTE CREATION (Neues Angebot): modern 2-step wizard modal
@@ -1308,7 +1348,7 @@ PROMPT;
                 'error'             => 'Entschuldigung, es gab einen Fehler. Bitte versuchen Sie es erneut.',
                 'limit_placeholder' => 'Chat-Limit erreicht',
                 'wa_prefill'        => 'Hallo, ich brauche Hilfe mit dem Reparaturformular',
-                'chips'             => ['Rechnung per Mail senden', 'Status ändern', 'Felder anpassen', 'Reparatur drucken'],
+                'chips'             => ['Rechnung per Mail senden', 'Widget einrichten', 'Termin vereinbaren', 'Reparatur drucken'],
             ],
             'hu' => [
                 'title'             => 'Javítás Asszisztens',
@@ -1318,7 +1358,7 @@ PROMPT;
                 'error'             => 'Sajnos hiba történt. Kérjük, próbálja újra.',
                 'limit_placeholder' => 'Chat limit elérve',
                 'wa_prefill'        => 'Szia, segítségre van szükségem a javítási űrlappal',
-                'chips'             => ['Számla küldés emailben', 'Státusz módosítás', 'Mezők testreszabása', 'Javítás nyomtatása'],
+                'chips'             => ['Számla küldés emailben', 'Widget beállítás', 'Időpont egyeztetés', 'Javítás nyomtatása'],
             ],
             'ro' => [
                 'title'             => 'Asistent Reparații',
@@ -1328,7 +1368,7 @@ PROMPT;
                 'error'             => 'Ne pare rău, a apărut o eroare. Vă rugăm să încercați din nou.',
                 'limit_placeholder' => 'Limită chat atinsă',
                 'wa_prefill'        => 'Bună, am nevoie de ajutor cu formularul de reparații',
-                'chips'             => ['Trimite factură email', 'Schimbare status', 'Personalizare câmpuri', 'Tipărire reparație'],
+                'chips'             => ['Trimite factură email', 'Configurare widget', 'Programare client', 'Tipărire reparație'],
             ],
             'en' => [
                 'title'             => 'Repair Assistant',
@@ -1338,7 +1378,7 @@ PROMPT;
                 'error'             => 'Sorry, something went wrong. Please try again.',
                 'limit_placeholder' => 'Chat limit reached',
                 'wa_prefill'        => 'Hello, I need help with the repair form',
-                'chips'             => ['Send invoice by email', 'Change status', 'Customize fields', 'Print repair ticket'],
+                'chips'             => ['Send invoice by email', 'Set up widget', 'Schedule appointment', 'Print repair ticket'],
             ],
             'it' => [
                 'title'             => 'Assistente Riparazioni',
@@ -1348,7 +1388,7 @@ PROMPT;
                 'error'             => 'Spiacente, si è verificato un errore. Riprova.',
                 'limit_placeholder' => 'Limite chat raggiunto',
                 'wa_prefill'        => 'Ciao, ho bisogno di aiuto con il modulo di riparazione',
-                'chips'             => ['Invia fattura email', 'Cambia stato', 'Personalizza campi', 'Stampa riparazione'],
+                'chips'             => ['Invia fattura email', 'Configura widget', 'Fissa appuntamento', 'Stampa riparazione'],
             ],
         ];
 
