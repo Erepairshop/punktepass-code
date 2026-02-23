@@ -313,6 +313,7 @@ class PPV_Repair_Form {
         <input type="hidden" name="action" value="ppv_repair_submit">
         <input type="hidden" name="nonce" value="<?php echo $nonce; ?>">
         <input type="hidden" name="store_id" value="<?php echo $store_id; ?>">
+        <input type="hidden" name="source_channel" value="<?php echo $is_embed ? 'widget' : 'direct'; ?>">
         <input type="hidden" name="qr_user_id" id="rf-qr-user-id" value="">
 
         <!-- Step 1: Customer info -->

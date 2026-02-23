@@ -529,6 +529,11 @@ return [
     'repair_admin_no_termin_confirm'   => 'Confirm part arrived',
     'repair_admin_no_termin_success'   => 'Part marked as arrived',
 
+    // Widget Termin
+    'repair_admin_termin_needed'       => 'Schedule appointment',
+    'repair_admin_termin_needed_desc'  => 'This order was submitted via the widget. Please schedule an appointment with the customer.',
+    'repair_admin_termin_add'          => '+ Appointment',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Subscription & Payment',
     'repair_admin_abo_status'     => 'Status',

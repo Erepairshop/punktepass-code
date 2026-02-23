@@ -529,6 +529,11 @@ return [
     'repair_admin_no_termin_confirm'   => 'Conferma arrivo pezzo',
     'repair_admin_no_termin_success'   => 'Pezzo segnato come arrivato',
 
+    // Widget Termin
+    'repair_admin_termin_needed'       => 'Fissare appuntamento',
+    'repair_admin_termin_needed_desc'  => 'Questo ordine è stato inviato tramite il widget. Si prega di fissare un appuntamento con il cliente.',
+    'repair_admin_termin_add'          => '+ Appuntamento',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abbonamento e Pagamento',
     'repair_admin_abo_status'     => 'Stato',

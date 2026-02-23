@@ -529,6 +529,11 @@ return [
     'repair_admin_no_termin_confirm'   => 'Alkatrész megérkezését megerősítem',
     'repair_admin_no_termin_success'   => 'Alkatrész megérkezettnek jelölve',
 
+    // Widget Termin
+    'repair_admin_termin_needed'       => 'Időpont egyeztetés',
+    'repair_admin_termin_needed_desc'  => 'Ez a megrendelés a widgeten keresztül érkezett. Kérjük, egyeztessen időpontot az ügyféllel.',
+    'repair_admin_termin_add'          => '+ Időpont',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Előfizetés és fizetés',
     'repair_admin_abo_status'     => 'Állapot',

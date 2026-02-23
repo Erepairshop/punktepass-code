@@ -529,6 +529,11 @@ return [
     'repair_admin_no_termin_confirm'   => 'Teil angekommen bestätigen',
     'repair_admin_no_termin_success'   => 'Teil als angekommen markiert',
 
+    // Widget Termin
+    'repair_admin_termin_needed'       => 'Termin vereinbaren',
+    'repair_admin_termin_needed_desc'  => 'Dieser Auftrag wurde über das Widget eingereicht. Bitte vereinbaren Sie einen Termin mit dem Kunden.',
+    'repair_admin_termin_add'          => '+ Termin',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abo & Zahlung',
     'repair_admin_abo_status'     => 'Status',

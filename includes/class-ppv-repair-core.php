@@ -126,6 +126,7 @@ class PPV_Repair_Core {
             'ppv_repair_reward_reject'  => [__CLASS__, 'ajax_reward_reject'],
             'ppv_repair_send_email'     => [__CLASS__, 'ajax_send_repair_email'],
             'ppv_repair_parts_arrived'  => [__CLASS__, 'ajax_parts_arrived'],
+            'ppv_repair_set_termin'     => [__CLASS__, 'ajax_set_termin'],
         ];
         foreach ($admin_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -1197,6 +1198,12 @@ class PPV_Repair_Core {
                 $custom_fields[substr($pk, 3)] = sanitize_text_field($pv);
             }
         }
+        // Source channel (widget, direct, etc.)
+        $source_channel = sanitize_text_field($_POST['source_channel'] ?? 'direct');
+        if (in_array($source_channel, ['widget', 'direct'])) {
+            $custom_fields['source_channel'] = $source_channel;
+        }
+
         // New built-in field types → stored in custom_fields JSON
         $extra_keys = ['device_color', 'purchase_date', 'condition_check', 'priority', 'cost_limit', 'vehicle_plate', 'vehicle_vin', 'vehicle_mileage', 'vehicle_first_reg', 'vehicle_tuev', 'condition_check_kfz', 'condition_check_pc'];
         foreach ($extra_keys as $ek) {
@@ -3551,6 +3558,51 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         wp_send_json_success([
             'message' => $no_termin ? 'Teil angekommen' : 'Teil angekommen - Termin gesetzt',
             'new_status' => 'in_progress',
+        ]);
+    }
+
+    /** AJAX: Set Termin (appointment) for a widget-submitted repair */
+    public static function ajax_set_termin() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+
+        $termin_date = sanitize_text_field($_POST['termin_date'] ?? '');
+        $termin_time = sanitize_text_field($_POST['termin_time'] ?? '');
+        $send_email = !empty($_POST['send_email']);
+        $custom_message = sanitize_textarea_field($_POST['custom_message'] ?? '');
+
+        if (empty($termin_date)) wp_send_json_error(['message' => 'Bitte Datum wählen']);
+
+        global $wpdb;
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_repairs WHERE id=%d AND store_id=%d", $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        $termin_at = $termin_date . ($termin_time ? ' ' . $termin_time . ':00' : ' 00:00:00');
+
+        $wpdb->update($wpdb->prefix . 'ppv_repairs', [
+            'termin_at'  => $termin_at,
+            'updated_at' => current_time('mysql'),
+        ], ['id' => $repair_id]);
+
+        if ($send_email && !empty($repair->customer_email)) {
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $store_id
+            ));
+            if ($store) {
+                self::send_termin_notification($store, $repair, $termin_at, $custom_message);
+            }
+        }
+
+        wp_send_json_success([
+            'message'  => 'Termin gesetzt',
+            'termin_at' => $termin_at,
         ]);
     }
 

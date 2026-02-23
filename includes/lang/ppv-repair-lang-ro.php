@@ -529,6 +529,11 @@ return [
     'repair_admin_no_termin_confirm'   => 'Confirmă sosirea piesei',
     'repair_admin_no_termin_success'   => 'Piesa marcată ca sosită',
 
+    // Widget Termin
+    'repair_admin_termin_needed'       => 'Programare necesară',
+    'repair_admin_termin_needed_desc'  => 'Această comandă a fost trimisă prin widget. Vă rugăm să stabiliți o programare cu clientul.',
+    'repair_admin_termin_add'          => '+ Programare',
+
     // Subscription Settings
     'repair_admin_abo_title'      => 'Abonament și plată',
     'repair_admin_abo_status'     => 'Status',

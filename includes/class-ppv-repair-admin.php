@@ -810,6 +810,15 @@ a:hover{color:#5a67d8}
 .ra-btn-invoice-exists:hover{background:#d97706;color:#fff;border-color:#d97706}
 .ra-invoice-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:3px 10px}
 .ra-invoice-badge i{font-size:12px}
+.ra-widget-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:3px 10px}
+.ra-widget-badge i{font-size:12px}
+.ra-termin-needed-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#dc2626;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:5px 12px;cursor:pointer;transition:all .2s;animation:ra-pulse-badge 2s ease-in-out infinite}
+.ra-termin-needed-badge:hover{background:#dc2626;color:#fff;border-color:#dc2626}
+.ra-termin-needed-badge i{font-size:14px}
+@keyframes ra-pulse-badge{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.3)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+.ra-termin-add-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;cursor:pointer;transition:all .2s}
+.ra-termin-add-badge:hover{background:#e0f2fe;color:#0369a1;border-color:#7dd3fc}
+.ra-termin-add-badge i{font-size:12px}
 .ra-btn-delete{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
 .ra-btn-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
 .ra-btn-print{padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
@@ -3071,6 +3080,48 @@ echo '</div></div>
     </div>
 </div>';
 
+        // Set Termin Modal (for widget-submitted repairs without appointment)
+        echo '<div class="ra-modal-overlay" id="ra-set-termin-modal">
+    <div class="ra-modal" style="max-width:460px">
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0 0 4px"><i class="ri-calendar-todo-line" style="color:#dc2626"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_needed', 'Termin vereinbaren')) . '</h3>
+        <p style="font-size:13px;color:#64748b;margin:0 0 16px">' . esc_html(PPV_Lang::t('repair_admin_termin_needed_desc', 'Dieser Auftrag wurde über das Widget eingereicht. Bitte vereinbaren Sie einen Termin mit dem Kunden.')) . '</p>
+
+        <div id="ra-st-customer-info" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_customer_data', 'Kundendaten')) . '</div>
+            <div id="ra-st-name" style="font-size:14px;font-weight:600;color:#1e293b"></div>
+            <div id="ra-st-contact" style="font-size:13px;color:#475569;margin-top:4px"></div>
+            <div id="ra-st-device" style="font-size:13px;color:#475569;margin-top:4px"></div>
+            <div id="ra-st-problem" style="font-size:12px;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0"></div>
+        </div>
+
+        <div style="margin-bottom:14px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-calendar-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_date')) . ' *</label>
+            <input type="date" lang="' . esc_attr($lang) . '" id="ra-st-date" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:14px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-time-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_time')) . '</label>
+            <input type="time" id="ra-st-time" class="ra-input" style="width:100%;font-size:15px;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:14px">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px"><i class="ri-chat-1-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_message')) . '</label>
+            <textarea id="ra-st-message" class="ra-input" rows="2" style="width:100%;font-size:13px;padding:10px 12px;resize:vertical" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_termin_message_ph')) . '"></textarea>
+        </div>
+        <div style="margin-bottom:14px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                <input type="checkbox" id="ra-st-send-email" checked style="width:18px;height:18px;cursor:pointer;accent-color:#dc2626">
+                <i class="ri-mail-send-line" style="color:#dc2626"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_send_email')) . '
+            </label>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
+            <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-st-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
+            <button type="button" class="ra-btn ra-btn-primary" style="flex:2;background:#dc2626" id="ra-st-submit">
+                <i class="ri-calendar-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_confirm')) . '
+            </button>
+        </div>
+    </div>
+</div>';
+
         // New Invoice Modal (standalone invoice creation)
         // New Invoice Modal - Modern Design
         echo '<div class="ra-modal-overlay" id="ra-new-invoice-modal">
@@ -4040,6 +4091,8 @@ echo '</div></div>
         'termin_no_date' => PPV_Lang::t('repair_admin_termin_no_date'),
         'no_termin_confirm' => PPV_Lang::t('repair_admin_no_termin_confirm'),
         'no_termin_success' => PPV_Lang::t('repair_admin_no_termin_success'),
+        'termin_needed' => PPV_Lang::t('repair_admin_termin_needed'),
+        'termin_add' => PPV_Lang::t('repair_admin_termin_add'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
         'create_inv_btn' => PPV_Lang::t('repair_admin_create_inv_btn'),
@@ -4354,6 +4407,81 @@ echo '</div></div>
             btn.disabled=false;
             btn.innerHTML=\'<i class="ri-check-line"></i> \'+btnLabel;
             toast(L.connection_error);
+        });
+    });
+
+    /* ===== Set Termin (widget badge click) ===== */
+    var stModal=document.getElementById("ra-set-termin-modal"),stRepairId=null;
+    document.getElementById("ra-repairs-list").addEventListener("click",function(e){
+        var badge=e.target.closest(".ra-termin-needed-badge")||e.target.closest(".ra-termin-add-badge");
+        if(!badge)return;
+        var card=badge.closest(".ra-repair-card");
+        if(!card)return;
+        stRepairId=card.dataset.id;
+        // Fill customer info
+        document.getElementById("ra-st-name").textContent=card.dataset.name||"";
+        var contact=[];
+        if(card.dataset.email)contact.push(card.dataset.email);
+        if(card.dataset.phone)contact.push(card.dataset.phone);
+        document.getElementById("ra-st-contact").textContent=contact.join(" \u2022 ");
+        var dev=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
+        document.getElementById("ra-st-device").textContent=dev?("\uD83D\uDCF1 "+dev):"";
+        document.getElementById("ra-st-problem").textContent=card.dataset.problem||"";
+        // Default: tomorrow 10:00
+        var tmr=new Date();tmr.setDate(tmr.getDate()+1);
+        document.getElementById("ra-st-date").value=tmr.toISOString().split("T")[0];
+        document.getElementById("ra-st-time").value="10:00";
+        document.getElementById("ra-st-message").value="";
+        document.getElementById("ra-st-send-email").checked=true;
+        stModal.classList.add("show");
+    });
+    document.getElementById("ra-st-cancel").addEventListener("click",function(){stModal.classList.remove("show");stRepairId=null});
+    stModal.addEventListener("click",function(e){if(e.target===stModal){stModal.classList.remove("show");stRepairId=null}});
+    document.getElementById("ra-st-submit").addEventListener("click",function(){
+        if(!stRepairId)return;
+        var tDate=document.getElementById("ra-st-date").value;
+        if(!tDate){toast(L.termin_no_date||"Bitte Datum wählen");return}
+        var tTime=document.getElementById("ra-st-time").value;
+        var msg=document.getElementById("ra-st-message").value;
+        var sendEmail=document.getElementById("ra-st-send-email").checked;
+        var btn=this;btn.disabled=true;
+        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
+        var fd=new FormData();
+        fd.append("action","ppv_repair_set_termin");
+        fd.append("nonce",NONCE);
+        fd.append("repair_id",stRepairId);
+        fd.append("termin_date",tDate);
+        fd.append("termin_time",tTime);
+        fd.append("custom_message",msg);
+        if(sendEmail)fd.append("send_email","1");
+        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
+        .then(function(r){return r.json()})
+        .then(function(data){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+(L.termin_confirm||"Termin bestätigen");
+            if(data.success){
+                toast(L.termin_success||"Termin gesetzt");
+                stModal.classList.remove("show");
+                // Replace badge on card
+                var card=document.querySelector(\'.ra-repair-card[data-id="\'+stRepairId+\'"]\');
+                if(card){
+                    var nb=card.querySelector(".ra-termin-needed-badge")||card.querySelector(".ra-termin-add-badge");
+                    if(nb){
+                        var dParts=tDate.split("-");
+                        nb.className="ra-termin-badge";
+                        nb.style.cursor="";nb.style.animation="";
+                        nb.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                    }
+                }
+                stRepairId=null;
+            }else{
+                toast(data.data&&data.data.message?data.data.message:(L.error||"Fehler"));
+            }
+        })
+        .catch(function(){
+            btn.disabled=false;
+            btn.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+(L.termin_confirm||"Termin bestätigen");
+            toast(L.connection_error||"Verbindungsfehler");
         });
     });
 
@@ -4674,11 +4802,21 @@ echo '</div></div>
                 imeiHtml+pinHtml+musterHtml+accHtml+
             \'</div>\';
         }
+        // Parse custom_fields for source_channel
+        var cf={};try{if(r.custom_fields)cf=JSON.parse(r.custom_fields)}catch(e){}
+        var isWidget=cf.source_channel==="widget";
         // Badges
         var badges="";
+        if(isWidget)badges+=\'<div class="ra-widget-badge"><i class="ri-global-line"></i> Widget</div>\';
         if(invoiceBadgeHtml)badges+=invoiceBadgeHtml;
         if(r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()){
             badges+=\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\';
+        } else if(r.status!=="done"&&r.status!=="delivered"&&r.status!=="cancelled"){
+            if(isWidget&&!r.termin_at){
+                badges+=\'<div class="ra-termin-needed-badge" data-repair-id="\'+r.id+\'"><i class="ri-calendar-todo-line"></i> \'+(L.termin_needed||"Termin vereinbaren")+\'</div>\';
+            } else if(!r.termin_at){
+                badges+=\'<div class="ra-termin-add-badge" data-repair-id="\'+r.id+\'"><i class="ri-calendar-todo-line"></i> \'+(L.termin_add||"+ Termin")+\'</div>\';
+            }
         }
         var badgesRow=badges?\'<div class="ra-card-badges">\'+badges+\'</div>\':"";
         // Comments
@@ -8917,11 +9055,20 @@ echo '</div></div>
             . '</div>';
         }
 
-        // Badges row (invoice, termin, parts arrived)
+        // Badges row (widget source, invoice, termin)
         $badges = '';
+        $cf_data = !empty($r->custom_fields) ? json_decode($r->custom_fields, true) : [];
+        $is_widget_source = (!empty($cf_data['source_channel']) && $cf_data['source_channel'] === 'widget');
+        if ($is_widget_source) $badges .= '<div class="ra-widget-badge"><i class="ri-global-line"></i> Widget</div>';
         if ($invoice_badge_html) $badges .= $invoice_badge_html;
         if (!empty($r->termin_at) && strtotime($r->termin_at) > time()) {
             $badges .= '<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>';
+        } elseif (empty($r->termin_at) && !in_array($r->status, ['done', 'delivered', 'cancelled'])) {
+            if ($is_widget_source) {
+                $badges .= '<div class="ra-termin-needed-badge" data-repair-id="' . intval($r->id) . '"><i class="ri-calendar-todo-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_needed', 'Termin vereinbaren')) . '</div>';
+            } else {
+                $badges .= '<div class="ra-termin-add-badge" data-repair-id="' . intval($r->id) . '"><i class="ri-calendar-todo-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_add', '+ Termin')) . '</div>';
+            }
         }
         $badges_row = $badges ? '<div class="ra-card-badges">' . $badges . '</div>' : '';
 
