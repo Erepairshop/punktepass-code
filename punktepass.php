@@ -1124,13 +1124,7 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_tag('%ppv_landing%', '1');
     add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
     add_rewrite_tag('%ppv_demo_haendler%', '1');
-    // Blog rewrite rules
-    add_rewrite_rule('^blog/?$', 'index.php?ppv_blog=1', 'top');
-    add_rewrite_rule('^blog/seite/([0-9]+)/?$', 'index.php?ppv_blog=1&ppv_blog_page=$matches[1]', 'top');
-    add_rewrite_rule('^blog/kategorie/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]', 'top');
-    add_rewrite_rule('^blog/kategorie/([^/]+)/seite/([0-9]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]&ppv_blog_page=$matches[2]', 'top');
-    add_rewrite_rule('^blog/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_slug=$matches[1]', 'top');
-    add_rewrite_rule('^blog-sitemap\.xml$', 'index.php?ppv_blog_sitemap=1', 'top');
+    // Blog: no rewrite rules needed - uses direct URL detection in PPV_Blog::handle_request()
     flush_rewrite_rules();
 });
 

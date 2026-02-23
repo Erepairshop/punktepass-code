@@ -21,11 +21,8 @@ class PPV_Blog {
 
     /** Register hooks */
     public static function hooks() {
-        add_action('template_redirect', [__CLASS__, 'handle_request'], 5);
-        add_action('init', [__CLASS__, 'register_rewrite_rules']);
-
-        // Sitemap route
-        add_action('template_redirect', [__CLASS__, 'handle_sitemap'], 1);
+        // Direct URL detection (bypasses WP rewrite - most reliable)
+        add_action('init', [__CLASS__, 'handle_request'], 5);
 
         // Auto-ping search engines on publish/update
         add_action('publish_post', [__CLASS__, 'on_post_publish'], 10, 2);
@@ -35,46 +32,58 @@ class PPV_Blog {
         add_action('init', [__CLASS__, 'serve_indexnow_key'], 1);
     }
 
-    /** Register rewrite rules for blog */
-    public static function register_rewrite_rules() {
-        // Blog listing (paginated)
-        add_rewrite_rule('^blog/?$', 'index.php?ppv_blog=1', 'top');
-        add_rewrite_rule('^blog/seite/([0-9]+)/?$', 'index.php?ppv_blog=1&ppv_blog_page=$matches[1]', 'top');
-
-        // Category archive
-        add_rewrite_rule('^blog/kategorie/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]', 'top');
-        add_rewrite_rule('^blog/kategorie/([^/]+)/seite/([0-9]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]&ppv_blog_page=$matches[2]', 'top');
-
-        // Single post
-        add_rewrite_rule('^blog/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_slug=$matches[1]', 'top');
+    /**
+     * Handle blog requests via direct URL detection.
+     * Works like /checkout and /formular - no rewrite rules needed.
+     *
+     * URL patterns:
+     *   /blog/                              → listing page 1
+     *   /blog/seite/2/                      → listing page 2
+     *   /blog/kategorie/slug/               → category archive
+     *   /blog/kategorie/slug/seite/2/       → category page 2
+     *   /blog/post-slug/                    → single post
+     *   /blog-sitemap.xml                   → XML sitemap
+     */
+    public static function handle_request() {
+        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+        $path = parse_url($request_uri, PHP_URL_PATH);
+        $path = rtrim($path, '/');
 
         // Blog sitemap
-        add_rewrite_rule('^blog-sitemap\.xml$', 'index.php?ppv_blog_sitemap=1', 'top');
-
-        // Register query vars
-        add_filter('query_vars', function($vars) {
-            $vars[] = 'ppv_blog';
-            $vars[] = 'ppv_blog_slug';
-            $vars[] = 'ppv_blog_cat';
-            $vars[] = 'ppv_blog_page';
-            $vars[] = 'ppv_blog_sitemap';
-            return $vars;
-        });
-    }
-
-    /** Handle blog requests */
-    public static function handle_request() {
-        if (!get_query_var('ppv_blog')) return;
-
-        $slug = get_query_var('ppv_blog_slug');
-        $cat  = get_query_var('ppv_blog_cat');
-        $page = max(1, intval(get_query_var('ppv_blog_page') ?: 1));
-
-        // Exclude reserved slugs
-        $reserved = ['kategorie', 'seite'];
-        if ($slug && in_array($slug, $reserved)) {
-            $slug = '';
+        if ($path === '/blog-sitemap.xml') {
+            self::output_sitemap();
+            exit;
         }
+
+        // Must start with /blog
+        if (!preg_match('#^/blog(/|$)#', $path)) return;
+
+        // Parse URL segments
+        $slug = '';
+        $cat  = '';
+        $page = 1;
+
+        // /blog/kategorie/{cat}/seite/{n}
+        if (preg_match('#^/blog/kategorie/([^/]+)/seite/(\d+)$#', $path, $m)) {
+            $cat  = $m[1];
+            $page = max(1, intval($m[2]));
+        }
+        // /blog/kategorie/{cat}
+        elseif (preg_match('#^/blog/kategorie/([^/]+)$#', $path, $m)) {
+            $cat = $m[1];
+        }
+        // /blog/seite/{n}
+        elseif (preg_match('#^/blog/seite/(\d+)$#', $path, $m)) {
+            $page = max(1, intval($m[1]));
+        }
+        // /blog/{post-slug}
+        elseif (preg_match('#^/blog/([^/]+)$#', $path, $m)) {
+            $reserved = ['kategorie', 'seite', 'feed', 'rss'];
+            if (!in_array($m[1], $reserved)) {
+                $slug = $m[1];
+            }
+        }
+        // /blog = listing page 1 (already default)
 
         if ($slug) {
             self::render_single($slug);
@@ -739,10 +748,8 @@ class PPV_Blog {
     // BLOG SITEMAP (XML)
     // =========================================
 
-    /** Handle /blog-sitemap.xml request */
-    public static function handle_sitemap() {
-        if (!get_query_var('ppv_blog_sitemap')) return;
-
+    /** Output /blog-sitemap.xml */
+    private static function output_sitemap() {
         header('Content-Type: application/xml; charset=UTF-8');
         header('X-Robots-Tag: noindex');
         header('Cache-Control: public, max-age=3600');
