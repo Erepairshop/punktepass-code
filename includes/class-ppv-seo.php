@@ -191,6 +191,16 @@ class PPV_SEO {
             ]);
         }
 
+        // Blog pages (rendered standalone, but inject SEO for WP pages too)
+        if (strpos($uri, '/blog') === 0) {
+            return array_merge($default_seo, [
+                'title' => 'Blog - PunktePass | Tipps für Kundenbindung & Bonusprogramme',
+                'description' => 'Tipps, News und Wissenswertes rund um Kundenbindung, Bonusprogramme und digitale Lösungen für lokale Geschäfte.',
+                'keywords' => 'Kundenbindung, Bonusprogramm, Treuepunkte, lokale Geschäfte, Einzelhandel, QR-Code, PunktePass Blog',
+                'canonical' => home_url('/blog/'),
+            ]);
+        }
+
         return $default_seo;
     }
 
@@ -859,6 +869,11 @@ class PPV_SEO {
         // Add formular sitemap
         $output .= "\n# PunktePass Formular System\n";
         $output .= "Sitemap: {$site_url}/formular-sitemap.xml\n\n";
+
+        // Blog
+        $output .= "# PunktePass Blog\n";
+        $output .= "Allow: /blog\n";
+        $output .= "Allow: /blog/*\n\n";
 
         // Allow all formular pages
         $output .= "# Allow formular pages\n";

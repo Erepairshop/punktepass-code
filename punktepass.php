@@ -387,6 +387,8 @@ $core_modules = [
     'includes/class-ppv-repair-invoice.php',
     // AI Support Chat Widget (handler pages)
     'includes/class-ppv-ai-support.php',
+    // Blog System (SEO)
+    'includes/class-ppv-blog.php',
 ];
 
 // Debug only if enabled
@@ -719,6 +721,7 @@ $whitelist = [
     'ppv-toast-points',
     'ppv-vip-settings', // VIP settings
     'ppv-user-settings', // User settings page
+    'ppv-blog',          // Blog pages
     'remix-icons',      // Icons for VIP settings
     'remixicons',       // Remix icons CDN
     'google-platform',
@@ -773,6 +776,9 @@ if (class_exists('PPV_Repair_Core')) PPV_Repair_Core::hooks();
 
 // AI Support Chat Widget (handler/admin pages)
 if (class_exists('PPV_AI_Support')) PPV_AI_Support::hooks();
+
+// Blog System (SEO-optimized blog at /blog/)
+if (class_exists('PPV_Blog')) PPV_Blog::hooks();
 
 // Vendor/User Signup
 foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
@@ -1118,6 +1124,12 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_tag('%ppv_landing%', '1');
     add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
     add_rewrite_tag('%ppv_demo_haendler%', '1');
+    // Blog rewrite rules
+    add_rewrite_rule('^blog/?$', 'index.php?ppv_blog=1', 'top');
+    add_rewrite_rule('^blog/seite/([0-9]+)/?$', 'index.php?ppv_blog=1&ppv_blog_page=$matches[1]', 'top');
+    add_rewrite_rule('^blog/kategorie/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]', 'top');
+    add_rewrite_rule('^blog/kategorie/([^/]+)/seite/([0-9]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]&ppv_blog_page=$matches[2]', 'top');
+    add_rewrite_rule('^blog/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_slug=$matches[1]', 'top');
     flush_rewrite_rules();
 });
 
