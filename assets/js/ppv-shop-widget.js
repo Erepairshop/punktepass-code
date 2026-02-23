@@ -446,6 +446,22 @@
         /* Service count badge in header */
         '#' + W + '-cat-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:rgba(255,255,255,.25);font-size:11px;font-weight:700;margin-left:8px}' +
 
+        /* Brand filter row */
+        '.' + W + '-cat-brands{display:flex;gap:8px;padding:12px 16px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}' +
+        '.' + W + '-cat-brands::-webkit-scrollbar{display:none}' +
+        '.' + W + '-cat-brand-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;font-size:13px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;flex-shrink:0}' +
+        '.' + W + '-cat-brand-btn:hover{border-color:' + config.color + ';color:' + config.color + '}' +
+        '.' + W + '-cat-brand-btn.sel{background:' + config.color + ';color:#fff;border-color:' + config.color + '}' +
+        '.' + W + '-cat-brand-icon{font-size:15px;line-height:1}' +
+
+        /* Model chips row */
+        '.' + W + '-cat-models{display:flex;gap:6px;padding:6px 16px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:wrap}' +
+        '.' + W + '-cat-models::-webkit-scrollbar{display:none}' +
+        '.' + W + '-cat-models:empty{display:none}' +
+        '.' + W + '-cat-model-btn{padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:16px;background:#f8fafc;font-size:12px;font-weight:500;color:#475569;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;flex-shrink:0}' +
+        '.' + W + '-cat-model-btn:hover{border-color:' + config.color + ';color:' + config.color + '}' +
+        '.' + W + '-cat-model-btn.sel{background:' + config.color + '18;color:' + config.color + ';border-color:' + config.color + ';font-weight:600}' +
+
         /* Category sections */
         '.' + W + '-cat-section{border-bottom:1px solid #f1f5f9}' +
         '.' + W + '-cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:#fff;transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}' +
@@ -882,13 +898,32 @@
 
             var html = '';
 
+            // Brand filter row
+            var catBrands = data.brands || [];
+            var brandModelsMap = {};
+            if (catBrands.length > 0) {
+                html += '<div class="' + W + '-cat-brands">';
+                for (var bi = 0; bi < catBrands.length; bi++) {
+                    var b = catBrands[bi];
+                    var bid = typeof b === 'string' ? b : (b.id || b.label || b);
+                    var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
+                    var bicon = (typeof b === 'object' && b.icon) ? b.icon : '';
+                    var bmodels = (typeof b === 'object' && b.models && b.models.length) ? b.models : [];
+                    if (bmodels.length > 0) brandModelsMap[bid] = bmodels;
+                    html += '<button type="button" class="' + W + '-cat-brand-btn" data-brand="' + escH(bid) + '">' +
+                        (bicon ? '<span class="' + W + '-cat-brand-icon">' + escH(bicon) + '</span>' : '') +
+                        escH(blabel) + '</button>';
+                }
+                html += '</div>';
+                html += '<div class="' + W + '-cat-models"></div>';
+            }
+
             // Service categories
             html += '<div id="' + W + '-cat-sections">';
             for (var ci = 0; ci < grouped.order.length; ci++) {
                 var catName = grouped.order[ci];
                 var items = grouped.groups[catName];
-                var isFirst = ci === 0;
-                html += '<div class="' + W + '-cat-section' + (isFirst ? ' open' : '') + '" data-cat="' + escH(catName) + '">' +
+                html += '<div class="' + W + '-cat-section" data-cat="' + escH(catName) + '">' +
                     '<div class="' + W + '-cat-hdr">' +
                         '<div class="' + W + '-cat-hdr-left">' +
                             '<span class="' + W + '-cat-hdr-icon">' + getCatIcon(catName) + '</span>' +
@@ -961,6 +996,55 @@
                 });
             }
 
+            // Bind brand filter clicks
+            var brandBtns = catBody.querySelectorAll('.' + W + '-cat-brand-btn');
+            var modelsContainer = catBody.querySelector('.' + W + '-cat-models');
+            for (var bri = 0; bri < brandBtns.length; bri++) {
+                brandBtns[bri].addEventListener('click', function() {
+                    var wasActive = this.classList.contains('sel');
+                    for (var x = 0; x < brandBtns.length; x++) brandBtns[x].classList.remove('sel');
+                    if (wasActive) {
+                        selectedBrand = '';
+                        selectedModel = '';
+                        if (modelsContainer) modelsContainer.innerHTML = '';
+                    } else {
+                        this.classList.add('sel');
+                        selectedBrand = this.getAttribute('data-brand');
+                        selectedModel = '';
+                        renderModelChips(selectedBrand);
+                    }
+                });
+            }
+
+            function renderModelChips(brand) {
+                if (!modelsContainer) return;
+                var models = brandModelsMap[brand];
+                if (!models || models.length === 0) {
+                    modelsContainer.innerHTML = '';
+                    return;
+                }
+                var mhtml = '';
+                for (var mi = 0; mi < models.length; mi++) {
+                    mhtml += '<button type="button" class="' + W + '-cat-model-btn" data-model="' + escH(models[mi]) + '">' + escH(models[mi]) + '</button>';
+                }
+                modelsContainer.innerHTML = mhtml;
+
+                // Bind model chip clicks
+                var modelBtns = modelsContainer.querySelectorAll('.' + W + '-cat-model-btn');
+                for (var mbi = 0; mbi < modelBtns.length; mbi++) {
+                    modelBtns[mbi].addEventListener('click', function() {
+                        var wasModelActive = this.classList.contains('sel');
+                        for (var mx = 0; mx < modelBtns.length; mx++) modelBtns[mx].classList.remove('sel');
+                        if (wasModelActive) {
+                            selectedModel = '';
+                        } else {
+                            this.classList.add('sel');
+                            selectedModel = this.getAttribute('data-model');
+                        }
+                    });
+                }
+            }
+
             // Bind service row clicks → confirm flow
             var svcRows = catBody.querySelectorAll('.' + W + '-cat-row');
             for (var ri = 0; ri < svcRows.length; ri++) {
@@ -983,6 +1067,10 @@
             }
         }
 
+        // ── Brand + Model selection state ──
+        var selectedBrand = '';
+        var selectedModel = '';
+
         // ── Confirm / Transition / Form flow ──
         var confirmEl = catPanel.querySelector('#' + W + '-cat-confirm');
         var confirmSvc = catPanel.querySelector('#' + W + '-cat-confirm-svc');
@@ -1000,6 +1088,10 @@
             selectedSvc = svc;
             confirmSvc.textContent = svc.name || '';
             var metaHTML = '';
+            if (selectedBrand || selectedModel) {
+                var deviceText = selectedBrand + (selectedModel ? ' ' + selectedModel : '');
+                metaHTML += '<span style="background:' + config.color + '15;color:' + config.color + ';padding:2px 8px;border-radius:6px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> ' + escH(deviceText) + '</span>';
+            }
             if (svc.price) metaHTML += '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ' + escH(svc.price) + '</span>';
             if (svc.time) metaHTML += '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + escH(svc.time) + '</span>';
             confirmMeta.innerHTML = metaHTML;
@@ -1027,6 +1119,8 @@
                 if (selectedSvc.name) url += '&problem=' + encodeURIComponent(selectedSvc.name);
                 if (selectedSvc.category) url += '&category=' + encodeURIComponent(selectedSvc.category);
             }
+            if (selectedBrand) url += '&brand=' + encodeURIComponent(selectedBrand);
+            if (selectedModel) url += '&model=' + encodeURIComponent(selectedModel);
             iframeEl.src = url;
             iframeWrapEl.classList.add('active');
         }
