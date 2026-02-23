@@ -428,7 +428,8 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
         $required_points = intval($store->repair_required_points ?? 4);
         $raw_title = $store->repair_form_title ?? '';
-        $form_title = esc_attr(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
+        $default_titles = ['', 'Reparaturauftrag', 'Szervizmegrendelés', 'Repair Order', 'Comandă de service', 'Ordine di riparazione'];
+        $form_title = esc_attr(in_array($raw_title, $default_titles, true) ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
         $form_subtitle = esc_attr($store->repair_form_subtitle ?? '');
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
         $reward_type = esc_attr($store->repair_reward_type ?? 'discount_fixed');
