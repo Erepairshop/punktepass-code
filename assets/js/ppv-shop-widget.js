@@ -452,7 +452,7 @@
         '.' + W + '-cat-hdr:hover{background:#f8fafc}' +
         '.' + W + '-cat-hdr:active{background:#f1f5f9}' +
         '.' + W + '-cat-hdr-left{display:flex;align-items:center;gap:10px;min-width:0}' +
-        '.' + W + '-cat-hdr-icon{width:32px;height:32px;border-radius:8px;background:' + config.color + '12;color:' + config.color + ';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}' +
+        '.' + W + '-cat-hdr-icon{width:32px;height:32px;border-radius:10px;background:' + config.color + '12;color:' + config.color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
         '.' + W + '-cat-hdr-name{font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
         '.' + W + '-cat-hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}' +
         '.' + W + '-cat-hdr-cnt{font-size:11px;font-weight:600;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:10px}' +
@@ -495,7 +495,7 @@
         '#' + W + '-cat-contact-title{font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px}' +
         '.' + W + '-cat-contact-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:#475569;text-decoration:none}' +
         'a.' + W + '-cat-contact-row:hover{color:' + config.color + '}' +
-        '.' + W + '-cat-contact-icon{width:32px;height:32px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}' +
+        '.' + W + '-cat-contact-icon{width:32px;height:32px;border-radius:10px;background:#f1f5f9;color:#64748b;display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
 
         /* Confirm overlay */
         '#' + W + '-cat-confirm{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;background:#fff;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}' +
@@ -735,13 +735,31 @@
 
         // Category icon mapping
         var catIcons = {
-            'display': '\uD83D\uDCF1', 'akku': '\uD83D\uDD0B', 'batterie': '\uD83D\uDD0B', 'battery': '\uD83D\uDD0B',
-            'kamera': '\uD83D\uDCF7', 'camera': '\uD83D\uDCF7', 'wasser': '\uD83D\uDCA7', 'water': '\uD83D\uDCA7',
-            'ladebuchse': '\uD83D\uDD0C', 'charging': '\uD83D\uDD0C', 'lautsprecher': '\uD83D\uDD0A', 'speaker': '\uD83D\uDD0A',
-            'software': '\uD83D\uDCBB', 'glas': '\uD83D\uDD0D', 'backcover': '\uD83D\uDEE1', 'r\u00fcckseite': '\uD83D\uDEE1',
-            'konsole': '\uD83C\uDFAE', 'console': '\uD83C\uDFAE', 'laptop': '\uD83D\uDCBB', 'tablet': '\uD83D\uDCF2',
-            'daten': '\uD83D\uDCBE', 'data': '\uD83D\uDCBE', 'platine': '\u2699\uFE0F', 'board': '\u2699\uFE0F',
-            'default': '\uD83D\uDD27'
+            'display': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+            'akku': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>',
+            'batterie': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>',
+            'battery': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>',
+            'kamera': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+            'camera': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+            'wasser': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+            'water': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+            'ladebuchse': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
+            'charging': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+            'lautsprecher': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+            'speaker': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+            'software': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+            'glas': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+            'backcover': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+            'r\u00fcckseite': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+            'konsole': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>',
+            'console': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>',
+            'laptop': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
+            'tablet': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+            'daten': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+            'data': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+            'platine': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+            'board': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+            'default': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'
         };
 
         function getCatIcon(catName) {
@@ -797,6 +815,12 @@
         }
 
         // Build contact HTML
+        var svgPin = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+        var svgPhone = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+        var svgWhatsApp = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+        var svgGlobe = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+        var svgClock = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+
         function buildContactHTML(data) {
             var html = '';
             if (data.store_address) {
@@ -805,23 +829,23 @@
                     mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + data.store_lat + ',' + data.store_lng;
                 }
                 html += '<a class="' + W + '-cat-contact-row" href="' + mapUrl + '" target="_blank" rel="noopener">' +
-                    '<span class="' + W + '-cat-contact-icon">\uD83D\uDCCD</span>' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgPin + '</span>' +
                     '<span>' + escH(data.store_address) + '</span></a>';
             }
             if (data.store_phone) {
                 html += '<a class="' + W + '-cat-contact-row" href="tel:' + escH(data.store_phone) + '">' +
-                    '<span class="' + W + '-cat-contact-icon">\uD83D\uDCDE</span>' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgPhone + '</span>' +
                     '<span>' + escH(data.store_phone) + '</span></a>';
             }
             if (data.store_whatsapp) {
                 var waNum = data.store_whatsapp.replace(/[^0-9]/g, '');
                 html += '<a class="' + W + '-cat-contact-row" href="https://wa.me/' + waNum + '" target="_blank" rel="noopener">' +
-                    '<span class="' + W + '-cat-contact-icon">\uD83D\uDCAC</span>' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgWhatsApp + '</span>' +
                     '<span>WhatsApp</span></a>';
             }
             if (data.store_website) {
                 html += '<a class="' + W + '-cat-contact-row" href="' + escH(data.store_website) + '" target="_blank" rel="noopener">' +
-                    '<span class="' + W + '-cat-contact-icon">\uD83C\uDF10</span>' +
+                    '<span class="' + W + '-cat-contact-icon">' + svgGlobe + '</span>' +
                     '<span>' + escH(data.store_website.replace(/^https?:\/\//, '')) + '</span></a>';
             }
             return html;
@@ -883,7 +907,7 @@
                     html += '<div class="' + W + '-cat-row" data-svc-idx="' + origIdx + '" data-search="' + escH((svc.name || '').toLowerCase() + ' ' + (catName).toLowerCase()) + '">' +
                         '<span class="' + W + '-cat-name">' + escH(svc.name || '') + '</span>' +
                         '<span class="' + W + '-cat-meta">' +
-                            (svc.time ? '<span class="' + W + '-cat-time">\u23F1 ' + escH(svc.time) + '</span>' : '') +
+                            (svc.time ? '<span class="' + W + '-cat-time"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + escH(svc.time) + '</span>' : '') +
                             (svc.price ? '<span class="' + W + '-cat-price">' + escH(svc.price) + '</span>' : '') +
                         '</span>' +
                         '<svg class="' + W + '-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
@@ -911,7 +935,7 @@
                 var badgeText = openStatus === true ? lang.cat_open : lang.cat_closed;
                 html += '<div id="' + W + '-cat-hours">' +
                     '<div id="' + W + '-cat-hours-title">' +
-                        '\uD83D\uDD52 ' + lang.cat_hours +
+                        svgClock + ' ' + lang.cat_hours +
                         (openStatus !== null ? ' <span class="' + W + '-cat-badge ' + badgeCls + '"><span class="' + W + '-cat-badge-dot"></span> ' + badgeText + '</span>' : '') +
                     '</div>' +
                     buildHoursHTML(data.store_hours) +
@@ -922,7 +946,7 @@
             var contactHTML = buildContactHTML(data);
             if (contactHTML) {
                 html += '<div id="' + W + '-cat-contact">' +
-                    '<div id="' + W + '-cat-contact-title">\uD83D\uDCCD ' + lang.cat_contact + '</div>' +
+                    '<div id="' + W + '-cat-contact-title">' + svgPin + ' ' + lang.cat_contact + '</div>' +
                     contactHTML +
                 '</div>';
             }
@@ -976,8 +1000,8 @@
             selectedSvc = svc;
             confirmSvc.textContent = svc.name || '';
             var metaHTML = '';
-            if (svc.price) metaHTML += '<span>\uD83D\uDCB0 ' + escH(svc.price) + '</span>';
-            if (svc.time) metaHTML += '<span>\u23F1 ' + escH(svc.time) + '</span>';
+            if (svc.price) metaHTML += '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ' + escH(svc.price) + '</span>';
+            if (svc.time) metaHTML += '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + escH(svc.time) + '</span>';
             confirmMeta.innerHTML = metaHTML;
             confirmEl.classList.add('active');
         }
@@ -1077,13 +1101,13 @@
                         renderCatalog(resp.data);
                     } else {
                         catBody.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#94a3b8">' +
-                            '<div style="font-size:32px;margin-bottom:8px">\u26A0\uFE0F</div>' +
+                            '<div style="margin-bottom:8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
                             '<div>Store not found</div></div>';
                     }
                 })
                 .catch(function() {
                     catBody.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#94a3b8">' +
-                        '<div style="font-size:32px;margin-bottom:8px">\u26A0\uFE0F</div>' +
+                        '<div style="margin-bottom:8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
                         '<div>Connection error</div></div>';
                 });
         }
@@ -1091,13 +1115,14 @@
 
     // ─── AI MODE ───────────────────────────────────────────
     if (config.mode === 'ai') {
+        var svgApple = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>';
         var defaultBrands = [
-            { id: 'Apple',   icon: '\uD83C\uDF4E', label: 'Apple' },
-            { id: 'Samsung', icon: '\uD83D\uDCF1', label: 'Samsung' },
-            { id: 'Huawei',  icon: '\uD83D\uDCF2', label: 'Huawei' },
-            { id: 'Xiaomi',  icon: '\u2B50', label: 'Xiaomi' },
+            { id: 'Apple',   icon: svgApple, label: 'Apple' },
+            { id: 'Samsung', icon: 'S', label: 'Samsung' },
+            { id: 'Huawei',  icon: 'H', label: 'Huawei' },
+            { id: 'Xiaomi',  icon: 'X', label: 'Xiaomi' },
             { id: 'Google',  icon: 'G', label: 'Google' },
-            { id: 'Other',   icon: '\u2699', label: lang.step1_model }
+            { id: 'Other',   icon: '+', label: lang.step1_model }
         ];
         var defaultChips = lang.step2_chips || [];
         var brands = defaultBrands;
@@ -1128,20 +1153,20 @@
                         storeConfig = data.data;
                         // Override brands if custom ones provided
                         if (storeConfig.brands && storeConfig.brands.length > 0) {
-                            var brandIcons = {Apple:'\uD83C\uDF4E',Samsung:'\uD83D\uDCF1',Huawei:'\uD83D\uDCF2',Xiaomi:'\u2B50',Google:'G',Sony:'\uD83C\uDFAE',OnePlus:'1+',LG:'\uD83D\uDCFA',Nokia:'N'};
+                            var brandIcons = {Apple:svgApple,Samsung:'S',Huawei:'H',Xiaomi:'X',Google:'G',Sony:'S',OnePlus:'1+',LG:'LG',Nokia:'N'};
                             brandModelsMap = {};
                             var newBrands = [];
                             for (var i = 0; i < storeConfig.brands.length; i++) {
                                 var b = storeConfig.brands[i];
                                 var bid = typeof b === 'string' ? b : (b.id || b.label || b);
                                 var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
-                                var bicon = (typeof b === 'object' && b.icon) ? b.icon : (brandIcons[bid] || '\u2699');
+                                var bicon = (typeof b === 'object' && b.icon) ? b.icon : (brandIcons[bid] || '+');
                                 var bmodels = (typeof b === 'object' && b.models) ? b.models : [];
                                 newBrands.push({ id: bid, icon: bicon, label: blabel });
                                 if (bmodels.length > 0) brandModelsMap[bid] = bmodels;
                             }
                             // Always add "Other" at the end
-                            newBrands.push({ id: 'Other', icon: '\u2699', label: lang.step1_model });
+                            newBrands.push({ id: 'Other', icon: '+', label: lang.step1_model });
                             // Re-render brand grid
                             var brandContainer = aiPanel.querySelector('.' + W + '-brands');
                             if (brandContainer) {
@@ -1583,7 +1608,7 @@
             var resultDiv = aiPanel.querySelector('#' + W + '-result');
             resultDiv.innerHTML =
                 '<div class="' + W + '-result-section" style="text-align:center;padding:30px 14px">' +
-                    '<p style="font-size:32px;margin:0 0 8px">\u26A0\uFE0F</p>' +
+                    '<div style="margin:0 0 8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
                     '<p class="' + W + '-result-text">' + escHTML(msg) + '</p>' +
                 '</div>' +
                 '<div class="' + W + '-btns">' +
