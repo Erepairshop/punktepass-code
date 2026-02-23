@@ -2389,37 +2389,37 @@ echo '</div></div>
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
                         <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-code-s-slash-line" style="color:#fff;font-size:18px"></i></div>
                         <div>
-                            <h4 style="margin:0;font-size:16px">Website-Widget</h4>
-                            <p style="margin:0;font-size:12px;color:#94a3b8">Reparatur-Widget auf Ihrer Website einbetten</p>
+                            <h4 style="margin:0;font-size:16px">' . esc_html(PPV_Lang::t('repair_admin_widget_title')) . '</h4>
+                            <p style="margin:0;font-size:12px;color:#94a3b8">' . esc_html(PPV_Lang::t('repair_admin_widget_subtitle')) . '</p>
                         </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                         <div class="field">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Widget-Modus</label>
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_mode')) . '</label>
                             <select name="widget_mode" id="ra-widget-mode" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none;transition:border-color .2s">
-                                <option value="catalog">Katalog / Preisliste</option>
-                                <option value="float">Floating Button</option>
-                                <option value="inline">Inline Banner</option>
-                                <option value="button">Einfacher Button</option>
+                                <option value="catalog">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_catalog')) . '</option>
+                                <option value="float">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_float')) . '</option>
+                                <option value="inline">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_inline')) . '</option>
+                                <option value="button">' . esc_html(PPV_Lang::t('repair_admin_widget_mode_button')) . '</option>
                             </select>
                         </div>
                         <div class="field">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Position</label>
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_position')) . '</label>
                             <select name="widget_position" id="ra-widget-position" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none">
-                                <option value="bottom-right">Unten rechts</option>
-                                <option value="bottom-left">Unten links</option>
+                                <option value="bottom-right">' . esc_html(PPV_Lang::t('repair_admin_widget_pos_br')) . '</option>
+                                <option value="bottom-left">' . esc_html(PPV_Lang::t('repair_admin_widget_pos_bl')) . '</option>
                             </select>
                         </div>
                         <div class="field">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Farbe</label>
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_color')) . '</label>
                             <div style="display:flex;gap:8px;align-items:center">
                                 <input type="color" name="widget_color" id="ra-widget-color" value="' . $store_color . '" style="width:42px;height:42px;border:1.5px solid #e2e8f0;border-radius:10px;padding:3px;cursor:pointer;flex-shrink:0">
                                 <span id="ra-widget-color-hex" style="font-size:12px;font-family:monospace;color:#94a3b8">' . $store_color . '</span>
                             </div>
                         </div>
                         <div class="field">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Sprache</label>
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_language')) . '</label>
                             <select name="widget_lang" id="ra-widget-lang" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;outline:none">
                                 <option value="de">Deutsch</option>
                                 <option value="en">English</option>
@@ -2429,11 +2429,11 @@ echo '</div></div>
                             </select>
                         </div>
                         <div class="field" id="ra-widget-text-wrap">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">Button-Text</label>
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_btn_text')) . '</label>
                             <input type="text" name="widget_text" id="ra-widget-text" placeholder="Reparatur anfragen" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
                         </div>
                         <div class="field" id="ra-widget-target-wrap" style="display:none">
-                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">CSS-Selector</label>
+                            <label style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block">' . esc_html(PPV_Lang::t('repair_admin_widget_css_sel')) . '</label>
                             <input type="text" name="widget_target" id="ra-widget-target" placeholder="#mein-widget" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
                         </div>
                     </div>
@@ -2465,13 +2465,13 @@ echo '</div></div>
                     <div style="margin-top:16px;display:grid;gap:12px">
                         <div>
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                                <span style="font-size:12px;font-weight:700;color:#475569"><i class="ri-code-s-slash-line" style="margin-right:4px"></i> Embed Code</span>
-                                <button type="button" id="ra-widget-copy" style="background:#1e293b;border:none;color:#e2e8f0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-file-copy-line"></i> Kopieren</button>
+                                <span style="font-size:12px;font-weight:700;color:#475569"><i class="ri-code-s-slash-line" style="margin-right:4px"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_embed')) . '</span>
+                                <button type="button" id="ra-widget-copy" style="background:#1e293b;border:none;color:#e2e8f0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-file-copy-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_copy')) . '</button>
                             </div>
                             <pre id="ra-widget-code" style="background:#1e293b;color:#e2e8f0;padding:14px 16px;border-radius:10px;font-size:11px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:0"></pre>
                         </div>
                         <div>
-                            <span style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px"><i class="ri-link" style="margin-right:4px"></i> Direkter Link</span>
+                            <span style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px"><i class="ri-link" style="margin-right:4px"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_direct_link')) . '</span>
                             <div style="display:flex;gap:6px;align-items:center">
                                 <input type="text" readonly id="ra-widget-direct-link" value="' . esc_attr($form_url) . '" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#475569;font-family:monospace">
                                 <button type="button" id="ra-widget-copy-link" style="background:linear-gradient(135deg,' . $store_color . ',' . esc_attr(self::darken_hex($store_color, 0.25)) . ');border:none;color:#fff;padding:9px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px"><i class="ri-file-copy-line"></i> Link</button>
@@ -2485,42 +2485,42 @@ echo '</div></div>
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
                         <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ri-list-settings-line" style="color:#fff;font-size:18px"></i></div>
                         <div style="flex:1">
-                            <h4 style="margin:0;font-size:16px">Katalog-Daten</h4>
-                            <p style="margin:0;font-size:12px;color:#94a3b8">Services, Preise und Marken fur Ihr Widget</p>
+                            <h4 style="margin:0;font-size:16px">' . esc_html(PPV_Lang::t('repair_admin_widget_catalog')) . '</h4>
+                            <p style="margin:0;font-size:12px;color:#94a3b8">' . esc_html(PPV_Lang::t('repair_admin_widget_catalog_sub')) . '</p>
                         </div>
                         <span id="ra-wai-total-badge" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0"></span>
                     </div>
 
                     <!-- Inner Tab Navigation -->
                     <div id="ra-cat-tabs" style="display:flex;gap:4px;padding:4px;background:#f1f5f9;border-radius:10px;margin-bottom:16px">
-                        <button type="button" class="ra-cat-tab active" data-cat-tab="services" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.08)"><i class="ri-tools-line"></i> Services</button>
-                        <button type="button" class="ra-cat-tab" data-cat-tab="brands" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-smartphone-line"></i> Marken</button>
-                        <button type="button" class="ra-cat-tab" data-cat-tab="import" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-upload-cloud-line"></i> Import</button>
+                        <button type="button" class="ra-cat-tab active" data-cat-tab="services" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.08)"><i class="ri-tools-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_tab_services')) . '</button>
+                        <button type="button" class="ra-cat-tab" data-cat-tab="brands" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-smartphone-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_tab_brands')) . '</button>
+                        <button type="button" class="ra-cat-tab" data-cat-tab="import" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;background:transparent;color:#64748b"><i class="ri-upload-cloud-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_tab_import')) . '</button>
                     </div>
 
                     <!-- TAB: Services -->
                     <div id="ra-cat-panel-services" class="ra-cat-panel">
                         <!-- Add service form -->
                         <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">
-                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Service hinzufugen</div>
+                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">' . esc_html(PPV_Lang::t('repair_admin_widget_add_service')) . '</div>
                             <div style="display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:8px;align-items:end">
                                 <div>
-                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Kategorie</label>
-                                    <input type="text" id="ra-wai-svc-cat" placeholder="z.B. Display" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s" list="ra-wai-cat-list">
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_category')) . '</label>
+                                    <input type="text" id="ra-wai-svc-cat" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_category_ph')) . '" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s" list="ra-wai-cat-list">
                                     <datalist id="ra-wai-cat-list"></datalist>
                                 </div>
                                 <div>
-                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Bezeichnung *</label>
-                                    <input type="text" id="ra-wai-svc-name" placeholder="iPhone 15 Display Reparatur" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_name')) . '</label>
+                                    <input type="text" id="ra-wai-svc-name" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_name_ph')) . '" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
                                 </div>
                                 <div>
-                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Preis</label>
-                                    <input type="text" id="ra-wai-svc-price" placeholder="89 EUR" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_price')) . '</label>
+                                    <input type="text" id="ra-wai-svc-price" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_price_ph')) . '" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
                                 </div>
                                 <div>
-                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">Dauer</label>
+                                    <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px">' . esc_html(PPV_Lang::t('repair_admin_widget_duration')) . '</label>
                                     <div style="display:flex;gap:4px">
-                                        <input type="text" id="ra-wai-svc-time" placeholder="1 Std" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
+                                        <input type="text" id="ra-wai-svc-time" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_duration_ph')) . '" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;transition:border-color .2s">
                                         <button type="button" id="ra-wai-svc-add" style="background:#10b981;border:none;color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s"><i class="ri-add-line" style="font-size:16px"></i></button>
                                     </div>
                                 </div>
@@ -2531,8 +2531,8 @@ echo '</div></div>
                         <div id="ra-wai-service-list" style="margin-bottom:8px"></div>
                         <div id="ra-wai-service-empty" style="display:none;text-align:center;padding:32px 16px;color:#94a3b8">
                             <i class="ri-inbox-line" style="font-size:36px;display:block;margin-bottom:8px;opacity:.5"></i>
-                            <div style="font-size:13px;font-weight:600">Noch keine Services</div>
-                            <div style="font-size:12px;margin-top:4px">Fugen Sie oben Services hinzu oder importieren Sie eine CSV-Datei</div>
+                            <div style="font-size:13px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_widget_no_services')) . '</div>
+                            <div style="font-size:12px;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_widget_no_svc_hint')) . '</div>
                         </div>
                         <span id="ra-wai-service-count" style="font-size:11px;color:#94a3b8;display:block;text-align:right"></span>
                     </div>
@@ -2540,17 +2540,17 @@ echo '</div></div>
                     <!-- TAB: Brands -->
                     <div id="ra-cat-panel-brands" class="ra-cat-panel" style="display:none">
                         <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">
-                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Marke hinzufugen</div>
+                            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">' . esc_html(PPV_Lang::t('repair_admin_widget_add_brand')) . '</div>
                             <div style="display:flex;gap:8px">
-                                <input type="text" id="ra-wai-brand-input" placeholder="z.B. Apple, Samsung, Huawei..." style="flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;transition:border-color .2s">
-                                <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-add-line"></i> Hinzufugen</button>
+                                <input type="text" id="ra-wai-brand-input" placeholder="' . esc_attr(PPV_Lang::t('repair_admin_widget_brand_ph')) . '" style="flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;transition:border-color .2s">
+                                <button type="button" id="ra-wai-brand-add" style="background:#3b82f6;border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;transition:background .2s"><i class="ri-add-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_add_btn')) . '</button>
                             </div>
                         </div>
                         <div id="ra-wai-brand-list" style="margin-bottom:8px"></div>
                         <div id="ra-wai-brand-empty" style="display:none;text-align:center;padding:32px 16px;color:#94a3b8">
                             <i class="ri-smartphone-line" style="font-size:36px;display:block;margin-bottom:8px;opacity:.5"></i>
-                            <div style="font-size:13px;font-weight:600">Noch keine Marken</div>
-                            <div style="font-size:12px;margin-top:4px">Fugen Sie oben Marken hinzu (z.B. Apple, Samsung)</div>
+                            <div style="font-size:13px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_widget_no_brands')) . '</div>
+                            <div style="font-size:12px;margin-top:4px">' . esc_html(PPV_Lang::t('repair_admin_widget_no_brand_hint')) . '</div>
                         </div>
                         <span id="ra-wai-brand-count" style="font-size:11px;color:#94a3b8;display:block;text-align:right"></span>
                     </div>
@@ -2561,12 +2561,12 @@ echo '</div></div>
                         <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1.5px solid #bfdbfe;border-radius:12px;padding:16px;margin-bottom:16px">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
                                 <i class="ri-information-line" style="font-size:18px;color:#3b82f6"></i>
-                                <span style="font-size:13px;font-weight:700;color:#1e40af">CSV-Format</span>
+                                <span style="font-size:13px;font-weight:700;color:#1e40af">' . esc_html(PPV_Lang::t('repair_admin_widget_csv_format')) . '</span>
                             </div>
                             <div style="font-size:12px;color:#475569;line-height:1.6">
-                                Ihre Datei sollte pro Zeile einen Service enthalten:<br>
+                                ' . esc_html(PPV_Lang::t('repair_admin_widget_csv_desc')) . '<br>
                                 <code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:11px;color:#1e40af;border:1px solid #dbeafe">Bezeichnung;Preis;Dauer;Kategorie</code><br>
-                                <span style="color:#94a3b8">Trennzeichen: Semikolon (;) oder Komma (,)</span>
+                                <span style="color:#94a3b8">' . esc_html(PPV_Lang::t('repair_admin_widget_csv_sep')) . '</span>
                             </div>
                             <div style="margin-top:10px;background:#fff;border-radius:8px;padding:10px 12px;font-family:monospace;font-size:11px;color:#475569;line-height:1.8;border:1px solid #dbeafe">
                                 iPhone 15 Display;89 EUR;1 Std;Display<br>
@@ -2581,13 +2581,13 @@ echo '</div></div>
                                 <i class="ri-sparkling-2-fill" style="font-size:18px;color:#fff"></i>
                             </div>
                             <div style="flex:1;min-width:0">
-                                <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:4px">Tipp: CSV mit KI erstellen!</div>
+                                <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:4px">' . esc_html(PPV_Lang::t('repair_admin_widget_ai_title')) . '</div>
                                 <div style="font-size:12px;color:#6b7280;line-height:1.5">
-                                    Keine Lust die CSV-Datei manuell zu erstellen? Lassen Sie <strong style="color:#5b21b6">Claude AI</strong> Ihre Preisliste generieren &ndash; einfach Ihre Services beschreiben und die fertige CSV herunterladen.
+                                    ' . esc_html(PPV_Lang::t('repair_admin_widget_ai_desc')) . '
                                 </div>
                                 <a href="https://claude.ai" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 14px;background:#7c3aed;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:background .2s" onmouseover="this.style.background=\'#6d28d9\'" onmouseout="this.style.background=\'#7c3aed\'">
                                     <i class="ri-external-link-line" style="font-size:13px"></i>
-                                    claude.ai &ouml;ffnen
+                                    ' . esc_html(PPV_Lang::t('repair_admin_widget_ai_btn')) . '
                                 </a>
                             </div>
                         </div>
@@ -2598,18 +2598,18 @@ echo '</div></div>
                             <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#eff6ff,#dbeafe);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
                                 <i class="ri-upload-cloud-2-line" style="font-size:28px;color:#3b82f6"></i>
                             </div>
-                            <p style="font-size:14px;color:#475569;margin:0 0 4px;font-weight:600">Preisliste hochladen</p>
-                            <p style="font-size:12px;color:#94a3b8;margin:0">CSV, TXT oder Excel - Drag & Drop oder klicken</p>
+                            <p style="font-size:14px;color:#475569;margin:0 0 4px;font-weight:600">' . esc_html(PPV_Lang::t('repair_admin_widget_upload')) . '</p>
+                            <p style="font-size:12px;color:#94a3b8;margin:0">' . esc_html(PPV_Lang::t('repair_admin_widget_upload_hint')) . '</p>
                         </div>
                         <div id="ra-wai-upload-status" style="display:none;padding:12px 16px;border-radius:10px;font-size:13px;margin-top:12px"></div>
 
                         <!-- CSV Preview -->
                         <div id="ra-csv-preview" style="display:none;margin-top:16px">
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                                <span style="font-size:13px;font-weight:700;color:#475569"><i class="ri-file-list-3-line" style="margin-right:4px"></i> Vorschau</span>
+                                <span style="font-size:13px;font-weight:700;color:#475569"><i class="ri-file-list-3-line" style="margin-right:4px"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_preview')) . '</span>
                                 <div style="display:flex;gap:6px">
-                                    <button type="button" id="ra-csv-cancel" style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Abbrechen</button>
-                                    <button type="button" id="ra-csv-import" style="background:#10b981;border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ri-check-line"></i> <span id="ra-csv-import-count">0</span> Services importieren</button>
+                                    <button type="button" id="ra-csv-cancel" style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">' . esc_html(PPV_Lang::t('repair_admin_widget_cancel')) . '</button>
+                                    <button type="button" id="ra-csv-import" style="background:#10b981;border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><i class="ri-check-line"></i> <span id="ra-csv-import-count">0</span> ' . esc_html(PPV_Lang::t('repair_admin_widget_import_btn')) . '</button>
                                 </div>
                             </div>
                             <div id="ra-csv-table" style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;max-height:300px;overflow-y:auto"></div>
@@ -2617,7 +2617,7 @@ echo '</div></div>
 
                         <!-- Export -->
                         <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9">
-                            <button type="button" id="ra-csv-export" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#475569;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s"><i class="ri-download-2-line"></i> Aktuelle Services als CSV exportieren</button>
+                            <button type="button" id="ra-csv-export" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#475569;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s"><i class="ri-download-2-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_widget_export')) . '</button>
                         </div>
                     </div>
 
