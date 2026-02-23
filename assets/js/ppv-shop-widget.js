@@ -948,11 +948,12 @@
                 });
             }
 
-            // No-results CTA → open form directly (no service pre-selected)
+            // No-results CTA → open form with search text as problem
             var emptyCta = catBody.querySelector('#' + W + '-cat-empty-cta');
             if (emptyCta) {
                 emptyCta.addEventListener('click', function() {
-                    selectedSvc = null;
+                    var q = searchInput.value.trim();
+                    selectedSvc = q ? { name: q, category: '' } : null;
                     showForm();
                 });
             }
