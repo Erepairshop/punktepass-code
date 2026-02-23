@@ -42,16 +42,18 @@ class PPV_Legal {
      * Get Current Language
      * ============================================================ */
     private static function get_language() {
-        if (!empty($_COOKIE['ppv_lang'])) {
-            return sanitize_text_field($_COOKIE['ppv_lang']);
+        $supported = ['de', 'en', 'hu', 'ro'];
+        if (!empty($_COOKIE['ppv_lang']) && in_array($_COOKIE['ppv_lang'], $supported)) {
+            return $_COOKIE['ppv_lang'];
         }
-        if (!empty($_GET['lang'])) {
-            return sanitize_text_field($_GET['lang']);
+        if (!empty($_GET['lang']) && in_array($_GET['lang'], $supported)) {
+            return $_GET['lang'];
         }
         $locale = get_locale();
         if (strpos($locale, 'hu') !== false) return 'hu';
         if (strpos($locale, 'ro') !== false) return 'ro';
-        return 'ro'; // Default Romanian
+        if (strpos($locale, 'en') !== false) return 'en';
+        return 'de'; // Default German
     }
 
     /** ============================================================
@@ -81,6 +83,7 @@ class PPV_Legal {
                 </a>
                 <div class="ppv-legal-lang">
                     <button class="ppv-lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>" data-lang="de">DE</button>
+                    <button class="ppv-lang-btn <?php echo $lang === 'en' ? 'active' : ''; ?>" data-lang="en">EN</button>
                     <button class="ppv-lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>" data-lang="hu">HU</button>
                     <button class="ppv-lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>" data-lang="ro">RO</button>
                 </div>
