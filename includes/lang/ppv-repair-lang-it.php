@@ -557,6 +557,10 @@ return [
     // Widget Termin
     'repair_admin_termin_needed'       => 'Fissare appuntamento',
     'repair_admin_termin_needed_desc'  => 'Questo ordine è stato inviato tramite il widget. Si prega di fissare un appuntamento con il cliente.',
+    'repair_admin_termin_edit'         => 'Modifica appuntamento',
+    'repair_admin_termin_edit_desc'    => 'Modificare l\'appuntamento esistente per questo ordine.',
+    'repair_admin_termin_delete'       => 'Elimina appuntamento',
+    'repair_admin_termin_deleted'      => 'Appuntamento eliminato',
     'repair_admin_termin_add'          => '+ Appuntamento',
 
     // Widget Admin Tab

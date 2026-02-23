@@ -127,6 +127,7 @@ class PPV_Repair_Core {
             'ppv_repair_send_email'     => [__CLASS__, 'ajax_send_repair_email'],
             'ppv_repair_parts_arrived'  => [__CLASS__, 'ajax_parts_arrived'],
             'ppv_repair_set_termin'     => [__CLASS__, 'ajax_set_termin'],
+            'ppv_repair_delete_termin'  => [__CLASS__, 'ajax_delete_termin'],
         ];
         foreach ($admin_actions as $action => $callback) {
             add_action("wp_ajax_{$action}", $callback);
@@ -3721,6 +3722,30 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             'message'  => 'Termin gesetzt',
             'termin_at' => $termin_at,
         ]);
+    }
+
+    /** AJAX: Delete termin from repair */
+    public static function ajax_delete_termin() {
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_repair_admin')) wp_send_json_error(['message' => 'Sicherheitsfehler']);
+
+        $repair_id = intval($_POST['repair_id'] ?? 0);
+        if (!$repair_id) wp_send_json_error(['message' => 'Ungültige Reparatur-ID']);
+
+        global $wpdb;
+        $store_id = self::get_current_store_id();
+        if (!$store_id) wp_send_json_error(['message' => 'Nicht autorisiert']);
+
+        $repair = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_repairs WHERE id=%d AND store_id=%d", $repair_id, $store_id
+        ));
+        if (!$repair) wp_send_json_error(['message' => 'Reparatur nicht gefunden']);
+
+        $wpdb->update($wpdb->prefix . 'ppv_repairs', [
+            'termin_at'  => null,
+            'updated_at' => current_time('mysql'),
+        ], ['id' => $repair_id]);
+
+        wp_send_json_success(['message' => 'Termin gelöscht']);
     }
 
     /**

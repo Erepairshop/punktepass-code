@@ -557,6 +557,10 @@ return [
     // Widget Termin
     'repair_admin_termin_needed'       => 'Termin vereinbaren',
     'repair_admin_termin_needed_desc'  => 'Dieser Auftrag wurde über das Widget eingereicht. Bitte vereinbaren Sie einen Termin mit dem Kunden.',
+    'repair_admin_termin_edit'         => 'Termin ändern',
+    'repair_admin_termin_edit_desc'    => 'Ändern Sie den bestehenden Termin für diesen Auftrag.',
+    'repair_admin_termin_delete'       => 'Termin löschen',
+    'repair_admin_termin_deleted'      => 'Termin gelöscht',
     'repair_admin_termin_add'          => '+ Termin',
 
     // Widget Admin Tab

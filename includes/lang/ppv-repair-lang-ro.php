@@ -557,6 +557,10 @@ return [
     // Widget Termin
     'repair_admin_termin_needed'       => 'Programare necesară',
     'repair_admin_termin_needed_desc'  => 'Această comandă a fost trimisă prin widget. Vă rugăm să stabiliți o programare cu clientul.',
+    'repair_admin_termin_edit'         => 'Modificare programare',
+    'repair_admin_termin_edit_desc'    => 'Modificați programarea existentă pentru această comandă.',
+    'repair_admin_termin_delete'       => 'Ștergere programare',
+    'repair_admin_termin_deleted'      => 'Programare ștearsă',
     'repair_admin_termin_add'          => '+ Programare',
 
     // Widget Admin Tab

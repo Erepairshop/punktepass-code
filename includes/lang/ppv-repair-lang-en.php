@@ -557,6 +557,10 @@ return [
     // Widget Termin
     'repair_admin_termin_needed'       => 'Schedule appointment',
     'repair_admin_termin_needed_desc'  => 'This order was submitted via the widget. Please schedule an appointment with the customer.',
+    'repair_admin_termin_edit'         => 'Change appointment',
+    'repair_admin_termin_edit_desc'    => 'Change the existing appointment for this order.',
+    'repair_admin_termin_delete'       => 'Delete appointment',
+    'repair_admin_termin_deleted'      => 'Appointment deleted',
     'repair_admin_termin_add'          => '+ Appointment',
 
     // Widget Admin Tab

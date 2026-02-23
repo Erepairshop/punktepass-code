@@ -557,6 +557,10 @@ return [
     // Widget Termin
     'repair_admin_termin_needed'       => 'Időpont egyeztetés',
     'repair_admin_termin_needed_desc'  => 'Ez a megrendelés a widgeten keresztül érkezett. Kérjük, egyeztessen időpontot az ügyféllel.',
+    'repair_admin_termin_edit'         => 'Időpont módosítása',
+    'repair_admin_termin_edit_desc'    => 'Módosítsa a meglévő időpontot ehhez a megrendeléshez.',
+    'repair_admin_termin_delete'       => 'Időpont törlése',
+    'repair_admin_termin_deleted'      => 'Időpont törölve',
     'repair_admin_termin_add'          => '+ Időpont',
 
     // Widget Admin Tab
