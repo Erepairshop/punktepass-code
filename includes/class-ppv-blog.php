@@ -23,6 +23,16 @@ class PPV_Blog {
     public static function hooks() {
         add_action('template_redirect', [__CLASS__, 'handle_request'], 5);
         add_action('init', [__CLASS__, 'register_rewrite_rules']);
+
+        // Sitemap route
+        add_action('template_redirect', [__CLASS__, 'handle_sitemap'], 1);
+
+        // Auto-ping search engines on publish/update
+        add_action('publish_post', [__CLASS__, 'on_post_publish'], 10, 2);
+        add_action('edit_post', [__CLASS__, 'on_post_update'], 10, 2);
+
+        // Serve IndexNow key verification file (/{key}.txt)
+        add_action('init', [__CLASS__, 'serve_indexnow_key'], 1);
     }
 
     /** Register rewrite rules for blog */
@@ -38,12 +48,16 @@ class PPV_Blog {
         // Single post
         add_rewrite_rule('^blog/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_slug=$matches[1]', 'top');
 
+        // Blog sitemap
+        add_rewrite_rule('^blog-sitemap\.xml$', 'index.php?ppv_blog_sitemap=1', 'top');
+
         // Register query vars
         add_filter('query_vars', function($vars) {
             $vars[] = 'ppv_blog';
             $vars[] = 'ppv_blog_slug';
             $vars[] = 'ppv_blog_cat';
             $vars[] = 'ppv_blog_page';
+            $vars[] = 'ppv_blog_sitemap';
             return $vars;
         });
     }
@@ -488,6 +502,13 @@ class PPV_Blog {
     <!-- Favicons -->
     <?php echo PPV_SEO::get_favicon_links(); ?>
 
+    <!-- RSS Feed Discovery -->
+    <link rel="alternate" type="application/rss+xml" title="PunktePass Blog RSS" href="<?php echo $site_url; ?>/feed/" />
+    <link rel="alternate" type="application/atom+xml" title="PunktePass Blog Atom" href="<?php echo $site_url; ?>/feed/atom/" />
+
+    <!-- Blog Sitemap -->
+    <link rel="sitemap" type="application/xml" title="Blog Sitemap" href="<?php echo $site_url; ?>/blog-sitemap.xml" />
+
     <link rel="manifest" href="<?php echo $site_url; ?>/manifest.json">
     <meta name="theme-color" content="#0f172a">
 </head>
@@ -712,5 +733,224 @@ class PPV_Blog {
     private static function estimate_read_time($content) {
         $word_count = str_word_count(strip_tags($content));
         return max(1, ceil($word_count / 200));
+    }
+
+    // =========================================
+    // BLOG SITEMAP (XML)
+    // =========================================
+
+    /** Handle /blog-sitemap.xml request */
+    public static function handle_sitemap() {
+        if (!get_query_var('ppv_blog_sitemap')) return;
+
+        header('Content-Type: application/xml; charset=UTF-8');
+        header('X-Robots-Tag: noindex');
+        header('Cache-Control: public, max-age=3600');
+
+        $site_url = home_url();
+
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"' . "\n";
+        echo '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"' . "\n";
+        echo '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
+
+        // Blog main page
+        echo '  <url>' . "\n";
+        echo '    <loc>' . esc_url($site_url . '/blog/') . '</loc>' . "\n";
+        echo '    <changefreq>daily</changefreq>' . "\n";
+        echo '    <priority>0.9</priority>' . "\n";
+        echo '  </url>' . "\n";
+
+        // Category pages
+        $categories = get_categories(['hide_empty' => true]);
+        foreach ($categories as $cat) {
+            echo '  <url>' . "\n";
+            echo '    <loc>' . esc_url($site_url . '/blog/kategorie/' . $cat->slug . '/') . '</loc>' . "\n";
+            echo '    <changefreq>weekly</changefreq>' . "\n";
+            echo '    <priority>0.7</priority>' . "\n";
+            echo '  </url>' . "\n";
+        }
+
+        // All published posts
+        $posts = get_posts([
+            'post_type'      => 'post',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ]);
+
+        foreach ($posts as $p) {
+            $post_url = $site_url . '/blog/' . $p->post_name . '/';
+            $modified = get_the_modified_date('c', $p->ID);
+            $thumbnail = get_the_post_thumbnail_url($p->ID, 'large');
+
+            echo '  <url>' . "\n";
+            echo '    <loc>' . esc_url($post_url) . '</loc>' . "\n";
+            echo '    <lastmod>' . esc_html($modified) . '</lastmod>' . "\n";
+            echo '    <changefreq>monthly</changefreq>' . "\n";
+            echo '    <priority>0.8</priority>' . "\n";
+
+            // Image sitemap tag (helps Google Images)
+            if ($thumbnail) {
+                echo '    <image:image>' . "\n";
+                echo '      <image:loc>' . esc_url($thumbnail) . '</image:loc>' . "\n";
+                echo '      <image:title>' . esc_html($p->post_title) . '</image:title>' . "\n";
+                echo '    </image:image>' . "\n";
+            }
+
+            // News sitemap for posts < 2 days old
+            $post_age_days = (time() - strtotime($p->post_date_gmt)) / 86400;
+            if ($post_age_days <= 2) {
+                echo '    <news:news>' . "\n";
+                echo '      <news:publication>' . "\n";
+                echo '        <news:name>PunktePass</news:name>' . "\n";
+                echo '        <news:language>de</news:language>' . "\n";
+                echo '      </news:publication>' . "\n";
+                echo '      <news:publication_date>' . get_the_date('c', $p->ID) . '</news:publication_date>' . "\n";
+                echo '      <news:title>' . esc_html($p->post_title) . '</news:title>' . "\n";
+                echo '    </news:news>' . "\n";
+            }
+
+            echo '  </url>' . "\n";
+        }
+
+        echo '</urlset>';
+        exit;
+    }
+
+    // =========================================
+    // AUTO-PING ON PUBLISH (Google, Bing, IndexNow)
+    // =========================================
+
+    /**
+     * When a post is published, notify search engines immediately.
+     * - Ping Google & Bing sitemaps
+     * - Submit to IndexNow (Bing, Yandex, etc.)
+     */
+    public static function on_post_publish($post_id, $post) {
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+        if (wp_is_post_revision($post_id)) return;
+        if ($post->post_type !== 'post') return;
+        if ($post->post_status !== 'publish') return;
+
+        // Avoid double-ping (use transient as lock)
+        $lock_key = 'ppv_blog_ping_' . $post_id;
+        if (get_transient($lock_key)) return;
+        set_transient($lock_key, 1, 300); // 5 min lock
+
+        $post_url = home_url('/blog/' . $post->post_name . '/');
+        $sitemap_url = home_url('/blog-sitemap.xml');
+
+        // Run pings asynchronously
+        self::ping_google($sitemap_url);
+        self::ping_bing($sitemap_url);
+        self::ping_indexnow($post_url);
+
+        ppv_log("[PPV_Blog] Pinged search engines for: {$post_url}");
+    }
+
+    /**
+     * On post update, re-ping if it was already published
+     */
+    public static function on_post_update($post_id, $post) {
+        if (!is_object($post)) {
+            $post = get_post($post_id);
+        }
+        if (!$post || $post->post_type !== 'post' || $post->post_status !== 'publish') return;
+
+        // Only re-ping if content actually changed (compare modified vs published date)
+        $modified = strtotime($post->post_modified_gmt);
+        $published = strtotime($post->post_date_gmt);
+        if (($modified - $published) < 10) return; // Skip initial publish (handled by on_post_publish)
+
+        $lock_key = 'ppv_blog_update_ping_' . $post_id;
+        if (get_transient($lock_key)) return;
+        set_transient($lock_key, 1, 600); // 10 min lock
+
+        $post_url = home_url('/blog/' . $post->post_name . '/');
+        self::ping_indexnow($post_url);
+
+        ppv_log("[PPV_Blog] IndexNow re-ping for updated: {$post_url}");
+    }
+
+    /**
+     * Ping Google Sitemap
+     * Google officially deprecated the ping endpoint in 2023,
+     * but we also ping the sitemap to ensure discovery.
+     */
+    private static function ping_google($sitemap_url) {
+        $ping_url = 'https://www.google.com/ping?sitemap=' . urlencode($sitemap_url);
+        wp_remote_get($ping_url, [
+            'timeout'   => 5,
+            'blocking'  => false,
+            'sslverify' => true,
+        ]);
+    }
+
+    /**
+     * Ping Bing Sitemap
+     */
+    private static function ping_bing($sitemap_url) {
+        $ping_url = 'https://www.bing.com/ping?sitemap=' . urlencode($sitemap_url);
+        wp_remote_get($ping_url, [
+            'timeout'   => 5,
+            'blocking'  => false,
+            'sslverify' => true,
+        ]);
+    }
+
+    /**
+     * IndexNow - Instant URL submission to Bing, Yandex, Seznam, Naver
+     * Uses Bing as the endpoint. Key is auto-generated and stored.
+     *
+     * @see https://www.indexnow.org/documentation
+     */
+    private static function ping_indexnow($url) {
+        $key = self::get_indexnow_key();
+        $host = wp_parse_url(home_url(), PHP_URL_HOST);
+
+        $payload = [
+            'host'    => $host,
+            'key'     => $key,
+            'urlList' => [$url],
+        ];
+
+        wp_remote_post('https://api.indexnow.org/indexnow', [
+            'timeout'   => 5,
+            'blocking'  => false,
+            'sslverify' => true,
+            'headers'   => ['Content-Type' => 'application/json'],
+            'body'      => json_encode($payload),
+        ]);
+    }
+
+    /**
+     * Get or create the IndexNow API key.
+     * Key must also be served at /{key}.txt on the domain.
+     */
+    private static function get_indexnow_key() {
+        $key = get_option('ppv_indexnow_key');
+        if (!$key) {
+            $key = wp_generate_password(32, false, false);
+            update_option('ppv_indexnow_key', $key, true);
+        }
+        return $key;
+    }
+
+    /**
+     * Serve the IndexNow key verification file.
+     * Called from init hook to handle /{key}.txt requests.
+     */
+    public static function serve_indexnow_key() {
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $path = parse_url($uri, PHP_URL_PATH);
+        $key = get_option('ppv_indexnow_key');
+
+        if ($key && $path === '/' . $key . '.txt') {
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo $key;
+            exit;
+        }
     }
 }

@@ -870,6 +870,9 @@ class PPV_SEO {
         $output .= "\n# PunktePass Formular System\n";
         $output .= "Sitemap: {$site_url}/formular-sitemap.xml\n\n";
 
+        // Blog sitemap
+        $output .= "Sitemap: {$site_url}/blog-sitemap.xml\n\n";
+
         // Blog
         $output .= "# PunktePass Blog\n";
         $output .= "Allow: /blog\n";

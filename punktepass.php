@@ -1130,6 +1130,7 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^blog/kategorie/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]', 'top');
     add_rewrite_rule('^blog/kategorie/([^/]+)/seite/([0-9]+)/?$', 'index.php?ppv_blog=1&ppv_blog_cat=$matches[1]&ppv_blog_page=$matches[2]', 'top');
     add_rewrite_rule('^blog/([^/]+)/?$', 'index.php?ppv_blog=1&ppv_blog_slug=$matches[1]', 'top');
+    add_rewrite_rule('^blog-sitemap\.xml$', 'index.php?ppv_blog_sitemap=1', 'top');
     flush_rewrite_rules();
 });
 
