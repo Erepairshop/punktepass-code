@@ -754,6 +754,7 @@ a:hover{color:#5a67d8}
 .ra-status-done{background:#d1fae5;color:#065f46}
 .ra-status-delivered{background:#e5e7eb;color:#374151}
 .ra-status-cancelled{background:#fecaca;color:#991b1b}
+.ra-status-not-repairable{background:#fed7aa;color:#9a3412}
 /* Card sections */
 .ra-card-section{padding:12px 20px;border-bottom:1px solid #f1f5f9}
 .ra-card-section:last-of-type{border-bottom:none}
@@ -2252,6 +2253,10 @@ echo '</div></div>
                         <input type="checkbox" name="notify_delivered" value="1" ' . (in_array('delivered', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
                         <span style="color:#6b7280"><i class="ri-truck-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '
                     </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="notify_not_repairable" value="1" ' . (in_array('not_repairable', $notify_statuses_arr) ? 'checked' : '') . ' style="width:16px;height:16px">
+                        <span style="color:#9a3412"><i class="ri-error-warning-line"></i></span> ' . esc_html(PPV_Lang::t('repair_admin_status_not_repairable')) . '
+                    </label>
                 </div>
             </div>
 
@@ -2771,6 +2776,7 @@ echo '</div></div>
                 <option value="done">' . esc_html(PPV_Lang::t('repair_admin_status_done')) . '</option>
                 <option value="delivered">' . esc_html(PPV_Lang::t('repair_admin_status_delivered')) . '</option>
                 <option value="cancelled">' . esc_html(PPV_Lang::t('repair_admin_status_cancelled')) . '</option>
+                <option value="not_repairable">' . esc_html(PPV_Lang::t('repair_admin_status_not_repairable')) . '</option>
             </select>
         </div>
     </div>';
@@ -4208,6 +4214,7 @@ echo '</div></div>
         'status_done' => PPV_Lang::t('repair_admin_status_done'),
         'status_delivered' => PPV_Lang::t('repair_admin_status_delivered'),
         'status_cancelled' => PPV_Lang::t('repair_admin_status_cancelled'),
+        'status_not_repairable' => PPV_Lang::t('repair_admin_status_not_repairable'),
         // Custom field labels for print
         'cf_color' => PPV_Lang::t('repair_fb_color'),
         'cf_purchase_date' => PPV_Lang::t('repair_fb_purchase_date'),
@@ -4344,7 +4351,8 @@ echo '</div></div>
             waiting_parts:[L.status_waiting,"ra-status-waiting"],
             done:[L.status_done,"ra-status-done"],
             delivered:[L.status_delivered,"ra-status-delivered"],
-            cancelled:[L.status_cancelled,"ra-status-cancelled"]
+            cancelled:[L.status_cancelled,"ra-status-cancelled"],
+            not_repairable:[L.status_not_repairable,"ra-status-not-repairable"]
         };
         card.setAttribute("data-status",status);
         var badge=card.querySelector(".ra-status");
@@ -4899,7 +4907,8 @@ echo '</div></div>
             waiting_parts:[L.status_waiting,"ra-status-waiting"],
             done:[L.status_done,"ra-status-done"],
             delivered:[L.status_delivered,"ra-status-delivered"],
-            cancelled:[L.status_cancelled,"ra-status-cancelled"]
+            cancelled:[L.status_cancelled,"ra-status-cancelled"],
+            not_repairable:[L.status_not_repairable,"ra-status-not-repairable"]
         };
         var st=map[r.status]||["?",""];
         var device=((r.device_brand||"")+" "+(r.device_model||"")).trim();
@@ -4908,8 +4917,8 @@ echo '</div></div>
         var problem=(r.problem_description||"");
         if(problem.length>150)problem=problem.substring(0,150)+"...";
         var fullProblem=r.problem_description||"";
-        var opts=["new","in_progress","waiting_parts","done","delivered","cancelled"];
-        var labels=[L.status_new,L.status_progress,L.status_waiting,L.status_done,L.status_delivered,L.status_cancelled];
+        var opts=["new","in_progress","waiting_parts","done","delivered","cancelled","not_repairable"];
+        var labels=[L.status_new,L.status_progress,L.status_waiting,L.status_done,L.status_delivered,L.status_cancelled,L.status_not_repairable];
         var selectHtml="";
         for(var i=0;i<opts.length;i++){
             selectHtml+=\'<option value="\'+opts[i]+\'" \'+(r.status===opts[i]?"selected":"")+\'>\'+labels[i]+\'</option>\';
@@ -9341,12 +9350,13 @@ echo '</div></div>
         $prefix = $wpdb->prefix;
 
         $status_map = [
-            'new'           => [PPV_Lang::t('repair_admin_status_new'),       'ra-status-new'],
-            'in_progress'   => [PPV_Lang::t('repair_admin_status_progress'),  'ra-status-progress'],
-            'waiting_parts' => [PPV_Lang::t('repair_admin_status_waiting'),   'ra-status-waiting'],
-            'done'          => [PPV_Lang::t('repair_admin_status_done'),      'ra-status-done'],
-            'delivered'     => [PPV_Lang::t('repair_admin_status_delivered'), 'ra-status-delivered'],
-            'cancelled'     => [PPV_Lang::t('repair_admin_status_cancelled'),'ra-status-cancelled'],
+            'new'              => [PPV_Lang::t('repair_admin_status_new'),            'ra-status-new'],
+            'in_progress'      => [PPV_Lang::t('repair_admin_status_progress'),       'ra-status-progress'],
+            'waiting_parts'    => [PPV_Lang::t('repair_admin_status_waiting'),        'ra-status-waiting'],
+            'done'             => [PPV_Lang::t('repair_admin_status_done'),           'ra-status-done'],
+            'delivered'        => [PPV_Lang::t('repair_admin_status_delivered'),      'ra-status-delivered'],
+            'cancelled'        => [PPV_Lang::t('repair_admin_status_cancelled'),     'ra-status-cancelled'],
+            'not_repairable'   => [PPV_Lang::t('repair_admin_status_not_repairable'),'ra-status-not-repairable'],
         ];
 
         $st    = $status_map[$r->status] ?? ['?', ''];

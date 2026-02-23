@@ -787,12 +787,12 @@ class PPV_Repair_Form {
 
         <?php if ($pp_enabled): ?>
         <div id="repair-points-card" class="repair-points-card" style="display:none">
-            <div class="repair-points-badge">
-                <span class="repair-points-plus">+</span>
+            <div class="repair-points-badge repair-points-pending">
+                <i class="ri-time-line" style="font-size:20px"></i>
                 <span id="repair-points-count" class="repair-points-count">0</span>
             </div>
             <div class="repair-points-label"><?php echo esc_html(PPV_Lang::t('repair_bonus_points')); ?></div>
-            <div id="repair-points-total" class="repair-points-total"></div>
+            <div id="repair-points-total" class="repair-points-total"><?php echo esc_html(PPV_Lang::t('repair_points_on_completion')); ?></div>
         </div>
         <?php endif; ?>
 
@@ -1186,25 +1186,14 @@ function toggleProblemTag(btn, text) {
             }
         } catch(e) { console.warn('[Repair] QR render error:', e); }
 
-        // Show points card
+        // Show pending points card (points awarded on completion)
         <?php if ($pp_enabled): ?>
         try {
-            if (d && d.points_added > 0) {
+            if (d && d.pp_enabled) {
                 var ptsCard = document.getElementById('repair-points-card');
                 var ptsCount = document.getElementById('repair-points-count');
-                var ptsTotal = document.getElementById('repair-points-total');
                 if (ptsCard) ptsCard.style.display = 'block';
-                if (ptsCount) ptsCount.textContent = d.points_added;
-                if (ptsTotal && d.total_points) {
-                    var reqPts = <?php echo $required_pts; ?>;
-                    var rwName = <?php echo json_encode($reward_name); ?>;
-                    var remaining = Math.max(0, reqPts - d.total_points);
-                    var totalStr = ppvLang.points_total.replace('%d', d.total_points).replace('%d', reqPts);
-                    var suffixStr = remaining > 0
-                        ? ppvLang.points_remaining.replace('%d', remaining).replace('%s', rwName)
-                        : ppvLang.points_redeemable.replace('%s', rwName);
-                    ptsTotal.textContent = totalStr + ' — ' + suffixStr;
-                }
+                if (ptsCount) ptsCount.textContent = d.pp_points || <?php echo intval($store->repair_points_per_form ?: 2); ?>;
             }
         } catch(e) { console.warn('[Repair] Points render error:', e); }
         <?php endif; ?>

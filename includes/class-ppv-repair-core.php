@@ -540,7 +540,7 @@ class PPV_Repair_Core {
                 problem_description TEXT NOT NULL,
                 accessories TEXT NULL,
                 notes TEXT NULL,
-                status ENUM('new','in_progress','waiting_parts','done','delivered','cancelled') DEFAULT 'new',
+                status ENUM('new','in_progress','waiting_parts','done','delivered','cancelled','not_repairable') DEFAULT 'new',
                 points_awarded INT DEFAULT 0,
                 estimated_cost DECIMAL(10,2) NULL,
                 final_cost DECIMAL(10,2) NULL,
@@ -1124,6 +1124,13 @@ class PPV_Repair_Core {
 
             update_option('ppv_repair_migration_version', '3.3');
         }
+
+        // v3.4: Add 'not_repairable' to repairs status ENUM
+        if (version_compare($version, '3.4', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $wpdb->query("ALTER TABLE {$repairs_table} MODIFY COLUMN status ENUM('new','in_progress','waiting_parts','done','delivered','cancelled','not_repairable') DEFAULT 'new'");
+            update_option('ppv_repair_migration_version', '3.4');
+        }
     }
 
     /** ============================================================
@@ -1313,18 +1320,15 @@ class PPV_Repair_Core {
             $store_id
         ));
 
-        $bonus_result = ['user_id' => 0, 'points_added' => 0, 'total_points' => 0, 'is_new_user' => false];
-
-        // Only award points if PunktePass is enabled AND email is provided
+        // Link PunktePass user (create if needed) but do NOT award points yet.
+        // Points are awarded when status changes to 'done' (fertig).
         $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
+        $pp_points = intval($store->repair_points_per_form ?: 2);
         if ($pp_enabled && !empty($email)) {
-            $points = intval($store->repair_points_per_form ?: 2);
-            $bonus_result = self::award_repair_bonus($store, $email, $name, $points);
-
-            if ($bonus_result && !empty($bonus_result['user_id'])) {
+            $user_result = self::ensure_repair_user($email, $name);
+            if ($user_result && !empty($user_result['user_id'])) {
                 $wpdb->update("{$prefix}ppv_repairs", [
-                    'user_id'        => $bonus_result['user_id'],
-                    'points_awarded' => $bonus_result['points_added'],
+                    'user_id' => $user_result['user_id'],
                 ], ['id' => $repair_id]);
             }
         }
@@ -1346,10 +1350,47 @@ class PPV_Repair_Core {
             'repair_id'      => $repair_id,
             'tracking_token' => $tracking_token,
             'tracking_url'   => $tracking_url,
-            'points_added'   => $bonus_result['points_added'] ?? 0,
-            'total_points'   => $bonus_result['total_points'] ?? 0,
-            'is_new_user'    => $bonus_result['is_new_user'] ?? false,
+            'points_added'   => 0,
+            'total_points'   => 0,
+            'is_new_user'    => false,
+            'pp_enabled'     => $pp_enabled ? true : false,
+            'pp_points'      => $pp_points,
         ]);
+    }
+
+    /** ============================================================
+     * Ensure PunktePass user exists (create if needed) - NO points awarded
+     * ============================================================ */
+    public static function ensure_repair_user($email, $name) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$prefix}ppv_users WHERE email = %s LIMIT 1", $email
+        ));
+
+        if ($user) {
+            return ['user_id' => (int)$user->id, 'is_new_user' => false];
+        }
+
+        $name_parts = explode(' ', trim($name), 2);
+        $wpdb->insert("{$prefix}ppv_users", [
+            'email'        => $email,
+            'password'     => password_hash(wp_generate_password(8, false, false), PASSWORD_DEFAULT),
+            'first_name'   => $name_parts[0] ?? '',
+            'last_name'    => $name_parts[1] ?? '',
+            'display_name' => trim($name) ?: ($name_parts[0] ?? ''),
+            'qr_token'     => wp_generate_password(10, false, false),
+            'login_token'  => bin2hex(random_bytes(32)),
+            'user_type'    => 'user',
+            'active'       => 1,
+            'created_at'   => current_time('mysql'),
+            'updated_at'   => current_time('mysql'),
+        ]);
+        $user_id = $wpdb->insert_id;
+        if (!$user_id) return ['user_id' => 0, 'is_new_user' => true];
+
+        return ['user_id' => $user_id, 'is_new_user' => true];
     }
 
     /** ============================================================
@@ -2300,6 +2341,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         .status-warten{background:#fce7f3;color:#9d174d}
         .status-fertig{background:#d1fae5;color:#065f46}
         .status-abgeholt{background:#e5e7eb;color:#374151}
+        .status-not-repairable{background:#fed7aa;color:#9a3412}
         .status-badge i{font-size:16px}
         .repair-id{font-size:28px;font-weight:700;color:#1f2937;margin-top:12px}
         .repair-meta{font-size:12px;color:#9ca3af;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:12px}
@@ -2413,6 +2455,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
                 'done' => ['Fertig', 'status-fertig', 'ri-checkbox-circle-line'],
                 'delivered' => ['Abgeholt', 'status-abgeholt', 'ri-check-double-line'],
                 'cancelled' => ['Storniert', 'status-abgeholt', 'ri-close-circle-line'],
+                'not_repairable' => ['Nicht reparierbar', 'status-not-repairable', 'ri-error-warning-line'],
             ];
             $current_status = $repair->status ?: 'new';
             $status_info = $status_map[$current_status] ?? ['Unbekannt', 'status-neu', 'ri-question-line'];
@@ -2441,7 +2484,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
                 'delivered' => $repair->delivered_at ? date('d.m.Y', strtotime($repair->delivered_at)) : '',
             ];
             // in_progress date: use updated_at if status is currently in_progress or beyond
-            if (in_array($current_status, ['in_progress', 'waiting_parts', 'done', 'delivered'])) {
+            if (in_array($current_status, ['in_progress', 'waiting_parts', 'done', 'delivered', 'not_repairable'])) {
                 $timeline_dates['in_progress'] = date('d.m.Y', strtotime($repair->updated_at));
             }
         ?>
@@ -3461,7 +3504,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         $new_status = sanitize_text_field($_POST['status'] ?? '');
         $notes      = sanitize_textarea_field($_POST['notes'] ?? '');
 
-        $valid = ['new', 'in_progress', 'waiting_parts', 'done', 'delivered', 'cancelled'];
+        $valid = ['new', 'in_progress', 'waiting_parts', 'done', 'delivered', 'cancelled', 'not_repairable'];
         if (!in_array($new_status, $valid)) wp_send_json_error(['message' => 'Ungültiger Status']);
 
         global $wpdb;
@@ -3545,9 +3588,27 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             }
         }
 
+        // 🏆 Award PunktePass points when status changes to 'done' (fertig)
+        $points_awarded = 0;
+        if ($new_status === 'done' && $old_status !== 'done' && $store) {
+            $pp_enabled = isset($store->repair_punktepass_enabled) ? intval($store->repair_punktepass_enabled) : 1;
+            if ($pp_enabled && !empty($repair->customer_email) && intval($repair->points_awarded) === 0) {
+                $points = intval($store->repair_points_per_form ?: 2);
+                $bonus_result = self::award_repair_bonus($store, $repair->customer_email, $repair->customer_name, $points);
+                if ($bonus_result && !empty($bonus_result['user_id'])) {
+                    $wpdb->update($wpdb->prefix . 'ppv_repairs', [
+                        'user_id'        => $bonus_result['user_id'],
+                        'points_awarded' => $bonus_result['points_added'],
+                    ], ['id' => $repair_id]);
+                    $points_awarded = $bonus_result['points_added'];
+                }
+            }
+        }
+
         wp_send_json_success([
             'message' => 'Status aktualisiert',
             'invoice_id' => $invoice_id,
+            'points_awarded' => $points_awarded,
         ]);
     }
 
@@ -4140,6 +4201,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             'done' => PPV_Lang::t('repair_email_status_done'),
             'delivered' => PPV_Lang::t('repair_email_status_delivered'),
             'cancelled' => PPV_Lang::t('repair_email_status_cancelled'),
+            'not_repairable' => PPV_Lang::t('repair_email_status_not_repairable'),
         ];
         $status_text = $status_labels[$new_status] ?? $new_status;
 
@@ -4155,9 +4217,10 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         $status_messages = [
             'in_progress'   => PPV_Lang::t('repair_email_status_msg_in_progress'),
             'waiting_parts' => PPV_Lang::t('repair_email_status_msg_waiting_parts'),
-            'done'          => PPV_Lang::t('repair_email_status_msg_done'),
-            'delivered'     => PPV_Lang::t('repair_email_status_msg_delivered'),
-            'cancelled'     => PPV_Lang::t('repair_email_status_msg_cancelled'),
+            'done'             => PPV_Lang::t('repair_email_status_msg_done'),
+            'delivered'        => PPV_Lang::t('repair_email_status_msg_delivered'),
+            'cancelled'        => PPV_Lang::t('repair_email_status_msg_cancelled'),
+            'not_repairable'   => PPV_Lang::t('repair_email_status_msg_not_repairable'),
         ];
         $body .= ($status_messages[$new_status] ?? PPV_Lang::t('repair_email_status_msg_default')) . "\n\n";
 
@@ -4221,7 +4284,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         $repairs = $wpdb->get_results($wpdb->prepare(
             "SELECT r.*, (SELECT GROUP_CONCAT(i.invoice_number ORDER BY i.id DESC) FROM {$prefix}ppv_repair_invoices i WHERE i.repair_id = r.id AND (i.doc_type = 'rechnung' OR i.doc_type IS NULL)) AS invoice_numbers
              FROM {$prefix}ppv_repairs r WHERE {$where_sql}
-             ORDER BY CASE WHEN r.status IN ('done','delivered','cancelled') THEN 1 ELSE 0 END ASC, r.created_at DESC LIMIT %d OFFSET %d",
+             ORDER BY CASE WHEN r.status IN ('done','delivered','cancelled','not_repairable') THEN 1 ELSE 0 END ASC, r.created_at DESC LIMIT %d OFFSET %d",
             ...$params
         ));
 
@@ -4334,6 +4397,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         if (!empty($_POST['notify_parts_arrived'])) $notify_statuses[] = 'parts_arrived';
         if (!empty($_POST['notify_done'])) $notify_statuses[] = 'done';
         if (!empty($_POST['notify_delivered'])) $notify_statuses[] = 'delivered';
+        if (!empty($_POST['notify_not_repairable'])) $notify_statuses[] = 'not_repairable';
         if (!empty($notify_statuses)) {
             $update['repair_status_notify_statuses'] = implode(',', $notify_statuses);
         }

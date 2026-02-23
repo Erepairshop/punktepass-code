@@ -875,6 +875,18 @@
     color: #6b7280;
     margin-top: 8px;
 }
+.repair-points-pending {
+    align-items: center;
+    gap: 6px;
+    color: #f59e0b;
+}
+.repair-points-pending .repair-points-count {
+    color: #f59e0b;
+    font-size: 36px;
+}
+.repair-points-pending + .repair-points-label {
+    color: #d97706;
+}
 
 /* Tracking card */
 .repair-tracking-card {
