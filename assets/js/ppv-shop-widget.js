@@ -887,8 +887,7 @@
             for (var ci = 0; ci < grouped.order.length; ci++) {
                 var catName = grouped.order[ci];
                 var items = grouped.groups[catName];
-                var isFirst = ci === 0;
-                html += '<div class="' + W + '-cat-section' + (isFirst ? ' open' : '') + '" data-cat="' + escH(catName) + '">' +
+                html += '<div class="' + W + '-cat-section" data-cat="' + escH(catName) + '">' +
                     '<div class="' + W + '-cat-hdr">' +
                         '<div class="' + W + '-cat-hdr-left">' +
                             '<span class="' + W + '-cat-hdr-icon">' + getCatIcon(catName) + '</span>' +
