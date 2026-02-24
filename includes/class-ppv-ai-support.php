@@ -1361,6 +1361,7 @@ PROMPT;
         $labels = [
             'de' => [
                 'title'             => 'Reparatur-Assistent',
+                'fab_label'         => 'Hilfe',
                 'status'            => 'KI-Hilfe für Reparaturen',
                 'welcome'           => 'Hallo! Ich bin Ihr Reparatur-Assistent. Wie kann ich helfen?',
                 'placeholder'       => 'Frage zur Reparatur...',
@@ -1371,6 +1372,7 @@ PROMPT;
             ],
             'hu' => [
                 'title'             => 'Javítás Asszisztens',
+                'fab_label'         => 'Segítség',
                 'status'            => 'AI segítség a javításokhoz',
                 'welcome'           => 'Helló! Én vagyok a javítás asszisztens. Hogyan segíthetek?',
                 'placeholder'       => 'Kérdés a javításról...',
@@ -1381,6 +1383,7 @@ PROMPT;
             ],
             'ro' => [
                 'title'             => 'Asistent Reparații',
+                'fab_label'         => 'Ajutor',
                 'status'            => 'Ajutor AI pentru reparații',
                 'welcome'           => 'Bună! Sunt asistentul pentru reparații. Cum vă pot ajuta?',
                 'placeholder'       => 'Întrebare despre reparații...',
@@ -1391,6 +1394,7 @@ PROMPT;
             ],
             'en' => [
                 'title'             => 'Repair Assistant',
+                'fab_label'         => 'Help',
                 'status'            => 'AI help for repairs',
                 'welcome'           => 'Hello! I\'m your repair assistant. How can I help?',
                 'placeholder'       => 'Ask about repairs...',
@@ -1401,6 +1405,7 @@ PROMPT;
             ],
             'it' => [
                 'title'             => 'Assistente Riparazioni',
+                'fab_label'         => 'Aiuto',
                 'status'            => 'Aiuto AI per riparazioni',
                 'welcome'           => 'Ciao! Sono il tuo assistente riparazioni. Come posso aiutarti?',
                 'placeholder'       => 'Domanda sulle riparazioni...',
@@ -1424,9 +1429,13 @@ PROMPT;
         ?>
 
 <style>
-#ppv-repair-chat-fab{position:fixed;bottom:24px;right:24px;z-index:9990;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(102,126,234,0.4);transition:transform .2s,box-shadow .2s}
-#ppv-repair-chat-fab:hover{transform:scale(1.08);box-shadow:0 8px 28px rgba(102,126,234,0.5)}
-#ppv-repair-chat-fab.has-panel{background:rgba(100,116,139,0.8);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+#ppv-repair-chat-fab{position:fixed;bottom:24px;right:24px;z-index:9990;height:48px;border-radius:24px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 20px 0 16px;font-size:15px;font-weight:700;font-family:inherit;letter-spacing:.3px;box-shadow:0 6px 24px rgba(102,126,234,0.45),0 2px 8px rgba(118,75,162,0.3);transition:transform .2s,box-shadow .2s;animation:ppvHelpPulse 3s ease-in-out infinite}
+#ppv-repair-chat-fab i{font-size:20px}
+#ppv-repair-chat-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 32px rgba(102,126,234,0.55),0 4px 12px rgba(118,75,162,0.35);animation:none}
+#ppv-repair-chat-fab:active{transform:translateY(0) scale(0.98)}
+#ppv-repair-chat-fab.has-panel{background:rgba(100,116,139,0.8);box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:none;padding:0;width:48px;justify-content:center}
+#ppv-repair-chat-fab.has-panel span{display:none}
+@keyframes ppvHelpPulse{0%,100%{box-shadow:0 6px 24px rgba(102,126,234,0.45),0 2px 8px rgba(118,75,162,0.3)}50%{box-shadow:0 6px 32px rgba(102,126,234,0.65),0 2px 16px rgba(118,75,162,0.5)}}
 #ppv-repair-chat-panel{position:fixed;bottom:92px;right:24px;z-index:9991;width:380px;max-width:calc(100vw - 48px);height:480px;max-height:calc(100vh - 140px);background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden;animation:ppvRcSlideUp .25s ease}
 @keyframes ppvRcSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 #ppv-repair-chat-panel.visible{display:flex}
@@ -1461,11 +1470,12 @@ PROMPT;
 .ppv-rc-escalate a:hover{filter:brightness(0.9)}
 .ppv-rc-wa-btn{background:#25d366;color:#fff!important}
 .ppv-rc-email-btn{background:#667eea;color:#fff!important}
-@media(max-width:480px){#ppv-repair-chat-fab{bottom:16px;right:16px;width:50px;height:50px;font-size:22px}#ppv-repair-chat-panel{right:8px;left:8px;width:auto;bottom:80px;height:calc(100vh - 120px);max-height:none}}
+@media(max-width:480px){#ppv-repair-chat-fab{bottom:16px;right:16px;height:44px;font-size:14px;padding:0 16px 0 12px}#ppv-repair-chat-fab i{font-size:18px}#ppv-repair-chat-panel{right:8px;left:8px;width:auto;bottom:74px;height:calc(100vh - 120px);max-height:none}}
 </style>
 
 <button type="button" id="ppv-repair-chat-fab" title="<?php echo esc_attr($labels['title']); ?>">
-    <i class="ri-sparkling-2-fill"></i>
+    <i class="ri-questionnaire-fill"></i>
+    <span><?php echo esc_html($labels['fab_label']); ?></span>
 </button>
 
 <div id="ppv-repair-chat-panel">
@@ -1542,7 +1552,7 @@ PROMPT;
         isOpen = !isOpen;
         panel.classList.toggle('visible', isOpen);
         fab.classList.toggle('has-panel', isOpen);
-        fab.innerHTML = isOpen ? '<i class="ri-close-line"></i>' : '<i class="ri-sparkling-2-fill"></i>';
+        fab.innerHTML = isOpen ? '<i class="ri-close-line"></i>' : '<i class="ri-questionnaire-fill"></i><span><?php echo esc_html($labels['fab_label']); ?></span>';
         if (isOpen) {
             scrollToBottom();
             setTimeout(function() { input.focus(); }, 100);
