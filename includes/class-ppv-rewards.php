@@ -1067,6 +1067,7 @@ class PPV_Rewards {
             'reference' => 'REDEEM-' . $redeem_id,
             'created' => current_time('mysql')
         ], ['%d', '%d', '%d', '%s', '%s', '%s']);
+        do_action('ppv_points_changed', $user_id);
 
         return true;
     }

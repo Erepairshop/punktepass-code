@@ -182,6 +182,7 @@ $wpdb->insert("{$prefix}ppv_points", [
     'reference' => $reference,
     'created'   => current_time('mysql'),
 ], ['%d','%d','%d','%s','%s','%s']);
+do_action('ppv_points_changed', $user_id);
 
 // Log to ppv_pos_log so it appears in QR Center "Letzte Scans"
 $wpdb->insert("{$prefix}ppv_pos_log", [

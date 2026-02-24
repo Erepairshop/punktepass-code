@@ -287,6 +287,7 @@ class PPV_POS_AUTO_API {
                             $response_message[] = "Fehler bei der Einlösung";
                         } else {
                             $wpdb->query('COMMIT');
+                            do_action('ppv_points_changed', $user_id);
                             $response_message[] = "{$reward->title} eingelöst";
                         }
                     } else {

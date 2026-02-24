@@ -92,6 +92,7 @@ class PPV_Repair_Invoice {
                     'reference' => 'Eingelöst: ' . $reward_name . ' (Rechnung ' . $invoice_number . ')',
                     'created' => current_time('mysql'),
                 ]);
+                do_action('ppv_points_changed', $repair->user_id);
             }
         } elseif ($pp_enabled && !empty($repair->user_id) && !empty($repair->reward_approved)) {
             // Fallback: auto-calculate discount if reward approved but no manual values
@@ -129,6 +130,7 @@ class PPV_Repair_Invoice {
                 'reference' => 'Eingelöst: ' . $reward_name . ' (Rechnung ' . $invoice_number . ')',
                 'created' => current_time('mysql'),
             ]);
+            do_action('ppv_points_changed', $repair->user_id);
         }
 
         // VAT calculation

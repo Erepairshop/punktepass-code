@@ -16,6 +16,9 @@
   if (isSafari) {
   }
 
+  // 🤖 Android detection (for Google Wallet button)
+  const isAndroid = /android/i.test(navigator.userAgent);
+
   // ✅ OPTIMIZED: Conditional logging (only in DEBUG mode)
   const log = (...args) => { if (DEBUG) console.log(...args); };
   const warn = (...args) => { if (DEBUG) console.warn(...args); };
@@ -67,6 +70,10 @@
       // Load more
       load_more: "Mehr anzeigen",
       more_stores: "weitere",
+      // Google Wallet
+      google_wallet_add: "Zu Google Wallet hinzufügen",
+      google_wallet_loading: "Wird geladen…",
+      google_wallet_error: "Google Wallet nicht verfügbar",
     },
     hu: {
       title: "Pontjaim",
@@ -110,6 +117,10 @@
       // Load more
       load_more: "Tovább",
       more_stores: "további",
+      // Google Wallet
+      google_wallet_add: "Hozzáadás a Google Wallethez",
+      google_wallet_loading: "Betöltés…",
+      google_wallet_error: "Google Wallet nem elérhető",
     },
     ro: {
       title: "Punctele mele",
@@ -153,6 +164,10 @@
       // Load more
       load_more: "Mai multe",
       more_stores: "în plus",
+      // Google Wallet
+      google_wallet_add: "Adaugă în Google Wallet",
+      google_wallet_loading: "Se încarcă…",
+      google_wallet_error: "Google Wallet indisponibil",
     },
     en: {
       title: "My Points",
@@ -196,6 +211,10 @@
       // Load more
       load_more: "Load more",
       more_stores: "more",
+      // Google Wallet
+      google_wallet_add: "Add to Google Wallet",
+      google_wallet_loading: "Loading…",
+      google_wallet_error: "Google Wallet unavailable",
     }
   };
 
@@ -541,6 +560,9 @@
           <!-- 🏆 TIER PROGRESS SECTION -->
           ${buildTierProgressHtml(d.tier, d.tiers, l, lang)}
 
+          <!-- 📱 GOOGLE WALLET (Android only) -->
+          ${isAndroid ? buildGoogleWalletHtml(l) : ''}
+
           <!-- 🎁 REFERRAL PROGRAM SECTION -->
           ${buildReferralHtml(d.referral, l, lang)}
 
@@ -599,7 +621,65 @@
     `;
 
     container.innerHTML = html;
+
+    // Bind Google Wallet button click
+    const gwalletBtn = container.querySelector('#ppv-google-wallet-btn');
+    if (gwalletBtn) {
+      gwalletBtn.addEventListener('click', function() {
+        const btn = this;
+        const label = btn.querySelector('.gwallet-label');
+        const origText = label.textContent;
+        label.textContent = l.google_wallet_loading;
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+
+        fetch(location.origin + '/wp-json/ppv/v1/google-wallet/save-url', {
+          credentials: 'include',
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.save_url) {
+            window.location.href = data.save_url;
+          } else {
+            label.textContent = data.error || l.google_wallet_error;
+            setTimeout(() => { label.textContent = origText; btn.style.opacity = '1'; btn.style.pointerEvents = ''; }, 3000);
+          }
+        })
+        .catch(() => {
+          label.textContent = l.google_wallet_error;
+          setTimeout(() => { label.textContent = origText; btn.style.opacity = '1'; btn.style.pointerEvents = ''; }, 3000);
+        });
+      });
+    }
+
     log('✅ Render complete');
+  }
+
+  /** ============================
+   * 📱 BUILD GOOGLE WALLET HTML
+   * ============================ */
+  function buildGoogleWalletHtml(l) {
+    return `
+      <div style="text-align:center; margin: 16px 0;">
+        <button id="ppv-google-wallet-btn" type="button" style="
+          display: inline-flex; align-items: center; gap: 10px;
+          background: #1a1a1a; color: #fff; border: none; border-radius: 24px;
+          padding: 12px 24px; font-size: 14px; font-weight: 500;
+          cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          transition: transform 0.15s, box-shadow 0.15s;
+        " onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'"
+           onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M21.2 9.3l-1.7-1.1c-.2-.1-.4-.1-.5 0l-3.3 2.1-2-1.3c-.2-.1-.4-.1-.5 0L9.8 11.2l-2-1.3c-.2-.1-.4-.1-.5 0L3.8 12c-.2.1-.3.3-.3.5v3.2c0 .2.1.4.3.5l3.5 2.2c.1.1.2.1.3.1s.2 0 .3-.1l3.3-2.1 2 1.3c.1.1.2.1.3.1s.2 0 .3-.1l3.3-2.1 2 1.3c.1.1.2.1.3.1s.2 0 .3-.1l1.7-1.1c.2-.1.3-.3.3-.5V9.8c-.1-.2-.2-.4-.4-.5z" fill="#4285F4"/>
+            <path d="M10.1 16.4l-3.3 2.1c-.1.1-.2.1-.3.1s-.2 0-.3-.1l-3.5-2.2c-.2-.1-.3-.3-.3-.5v-3.2c0-.2.1-.4.3-.5l3.5-2.2c.1-.1.4-.1.5 0l2 1.3" fill="#EA4335"/>
+            <path d="M13.9 14.3l-3.3 2.1c-.2.1-.4.1-.5 0l-2-1.3" fill="#FBBC04"/>
+            <path d="M17.7 12.2l-3.3 2.1c-.2.1-.4.1-.5 0l-2-1.3" fill="#4285F4"/>
+            <path d="M21.5 9.8v3.2c0 .2-.1.4-.3.5l-1.7 1.1c-.1.1-.2.1-.3.1s-.2 0-.3-.1l-2-1.3" fill="#34A853"/>
+          </svg>
+          <span class="gwallet-label">${l.google_wallet_add}</span>
+        </button>
+      </div>
+    `;
   }
 
   /** ============================

@@ -749,6 +749,7 @@ add_action('init', function() {
         'points'      => $points_to_add,
         'created'     => current_time('mysql')
     ]);
+    do_action('ppv_points_changed', $user_id);
 
     $msg = $campaign_id > 0
         ? "✅ Du hast {$points_to_add} Punkte aus der Kampagne gesammelt!"

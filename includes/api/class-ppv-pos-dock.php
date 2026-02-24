@@ -210,6 +210,7 @@ class PPV_POS_DOCK {
             'type'     => 'sale',
             'created'  => current_time('mysql')
         ]);
+        do_action('ppv_points_changed', $user_id);
         return ['success' => true, 'message' => "+$points Punkte hinzugefügt"];
     }
 
@@ -243,6 +244,7 @@ class PPV_POS_DOCK {
             'reference' => $reward->title,
             'created'   => current_time('mysql')
         ]);
+        do_action('ppv_points_changed', $user_id);
 
         return [
             'success' => true,
@@ -324,6 +326,7 @@ class PPV_POS_DOCK {
                 'type' => 'offline_sync',
                 'created' => current_time('mysql')
             ]);
+            do_action('ppv_points_changed', $uid);
             $count++;
         }
         return ['success' => true, 'message' => "✅ $count offline transactions synced"];

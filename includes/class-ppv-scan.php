@@ -495,6 +495,10 @@ public static function ajax_auto_add_point() {
             'created'    => current_time('mysql')
         ]);
 
+        if ($insert_result !== false) {
+            do_action('ppv_points_changed', $user_id);
+        }
+
         if ($insert_result === false) {
             $wpdb->query('ROLLBACK');
             ppv_log("❌ [PPV_Scan] Failed to insert points: " . $wpdb->last_error);

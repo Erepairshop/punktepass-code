@@ -132,6 +132,7 @@ class PPV_POS_API {
                 'created'  => current_time('mysql'),
                 'note'     => 'POS Sync #' . esc_sql($transaction_id)
             ]);
+            do_action('ppv_points_changed', $user_id);
         }
 
         /** =========================================================

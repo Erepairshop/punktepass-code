@@ -260,6 +260,7 @@ class PPV_Rewards_API {
                 'reference' => $reward->title,
                 'created' => current_time('mysql')
             ]);
+            do_action('ppv_points_changed', $user_id);
 
             // 🔹 Reward Request log
             $wpdb->insert("{$wpdb->prefix}ppv_reward_requests", [

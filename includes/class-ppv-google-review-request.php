@@ -342,6 +342,7 @@ class PPV_Google_Review_Request {
             'description' => 'Google Review Bonus',
             'created_at' => current_time('mysql')
         ], ['%d', '%d', '%d', '%s', '%s', '%s']);
+        do_action('ppv_points_changed', $user_id);
 
         // Mark bonus as awarded
         $wpdb->update(

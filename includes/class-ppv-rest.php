@@ -123,6 +123,7 @@ class PPV_Scan {
             'campaign_id' => $campaign_id,
             'created'     => current_time('mysql')
         ]);
+        do_action('ppv_points_changed', $user_id);
 
         wp_send_json_success([
             'msg'    => "{$points_to_add} Punkt(e) erfolgreich gesammelt!",

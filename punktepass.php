@@ -389,6 +389,8 @@ $core_modules = [
     'includes/class-ppv-ai-support.php',
     // Blog System (SEO)
     'includes/class-ppv-blog.php',
+    // Google Wallet Loyalty Pass
+    'includes/class-ppv-google-wallet.php',
 ];
 
 // Debug only if enabled

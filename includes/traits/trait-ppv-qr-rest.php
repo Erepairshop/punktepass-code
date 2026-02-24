@@ -960,6 +960,10 @@ trait PPV_QR_REST_Trait {
                 'created' => current_time('mysql')
             ]);
 
+            if ($insert_result !== false) {
+                do_action('ppv_points_changed', $user_id);
+            }
+
             if ($insert_result === false) {
                 $wpdb->query('ROLLBACK');
                 ppv_log("❌ [PPV_QR] Failed to insert points: " . $wpdb->last_error);
@@ -1701,6 +1705,7 @@ trait PPV_QR_REST_Trait {
                 'reference' => $qr,
                 'created' => current_time('mysql')
             ]);
+            do_action('ppv_points_changed', $user);
 
             self::insert_log($store->id, $user, "Offline szinkronizálva: $qr", 'offline_sync');
             $synced++;
@@ -2503,6 +2508,7 @@ trait PPV_QR_REST_Trait {
                 'type' => 'redemption',
                 'created' => current_time('mysql')
             ]);
+            do_action('ppv_points_changed', $prompt->user_id);
 
             // 🆕 3. Calculate actual_amount based on reward type
             $actual_amount = null;

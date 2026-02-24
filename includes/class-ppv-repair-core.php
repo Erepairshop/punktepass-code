@@ -1456,6 +1456,7 @@ class PPV_Repair_Core {
                 'user_id' => $user_id, 'store_id' => $store_id, 'points' => $points,
                 'type' => 'bonus', 'reference' => $reference, 'created' => current_time('mysql'),
             ]);
+            do_action('ppv_points_changed', $user_id);
             $points_added = $points;
 
             $wpdb->insert("{$prefix}ppv_pos_log", [
@@ -4332,6 +4333,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             'reference' => 'repair_reward_' . $repair_id,
             'created' => current_time('mysql'),
         ]);
+        do_action('ppv_points_changed', $user_id);
 
         // Mark reward as approved on the repair
         $wpdb->update(

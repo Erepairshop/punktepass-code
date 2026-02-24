@@ -292,6 +292,7 @@ class PPV_Referral_Handler {
                 'source' => 'referral',
                 'created' => current_time('mysql')
             ]);
+            do_action('ppv_points_changed', $referral->referrer_user_id);
 
             // Also give points to referred user (optional - same amount)
             $wpdb->insert($wpdb->prefix . 'ppv_points', [
@@ -301,6 +302,7 @@ class PPV_Referral_Handler {
                 'source' => 'referral_bonus',
                 'created' => current_time('mysql')
             ]);
+            do_action('ppv_points_changed', $referral->referred_user_id);
 
             ppv_log("✅ [PPV_Referral] Points given: referrer={$referral->referrer_user_id} (+{$referral->reward_value}), referred={$referral->referred_user_id} (+{$referral->reward_value})");
         }

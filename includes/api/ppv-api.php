@@ -194,6 +194,7 @@ class PPV_API {
             'points'=>$points,
             'created'=>current_time('mysql')
         ]);
+        do_action('ppv_points_changed', $user_id);
 
         // Update lifetime_points for VIP level calculation (only for positive points)
         if (class_exists('PPV_User_Level') && $points > 0) {
@@ -299,6 +300,7 @@ class PPV_API {
             'reference' => $reference,
             'created'   => current_time('mysql'),
         ], ['%d','%d','%d','%s','%s','%s']);
+        do_action('ppv_points_changed', $user_id);
 
         // Update lifetime_points
         if (class_exists('PPV_User_Level') && $points > 0) {
