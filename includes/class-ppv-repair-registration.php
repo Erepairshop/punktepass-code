@@ -1938,6 +1938,11 @@ class PPV_Repair_Registration {
             }
 
             if (res.success && res.data) {
+                // Redirect to success page
+                if (res.data.redirect) {
+                    window.location.href = res.data.redirect;
+                    return;
+                }
                 var slug    = res.data.slug || '';
                 var formUrl = 'https://punktepass.de/formular/' + slug;
 

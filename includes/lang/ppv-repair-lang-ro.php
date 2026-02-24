@@ -293,6 +293,16 @@ return [
     'repair_reg_email_info'     => 'Veți primi toate datele de acces prin e-mail.',
     'repair_reg_to_admin'       => 'Către zona admin',
     'repair_reg_test_form'      => 'Testați formularul',
+
+    // Registration success page (/formular/registrierung-erfolgreich)
+    'repair_regsuccess_title'       => 'Înregistrare reușită!',
+    'repair_regsuccess_subtitle'    => 'Formularul dvs. de reparații este acum activ',
+    'repair_regsuccess_step1'       => 'Configurați zona admin',
+    'repair_regsuccess_step1_text'  => 'Personalizați culorile, logo-ul și setările pentru magazinul dvs.',
+    'repair_regsuccess_step2'       => 'Testați formularul',
+    'repair_regsuccess_step2_text'  => 'Deschideți link-ul formularului și testați fluxul de lucru.',
+    'repair_regsuccess_step3'       => 'Primiți clienți',
+    'repair_regsuccess_step3_text'  => 'Afișați codul QR în magazin – clienții completează formularul direct.',
     'repair_reg_login_text'     => 'Deja înregistrat?',
     'repair_reg_login_link'     => 'Conectați-vă aici',
 

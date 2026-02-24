@@ -293,6 +293,16 @@ return [
     'repair_reg_email_info'     => 'You will receive all login details by email.',
     'repair_reg_to_admin'       => 'Go to admin area',
     'repair_reg_test_form'      => 'Test form',
+
+    // Registration success page (/formular/registrierung-erfolgreich)
+    'repair_regsuccess_title'       => 'Registration successful!',
+    'repair_regsuccess_subtitle'    => 'Your repair form is now active',
+    'repair_regsuccess_step1'       => 'Set up admin area',
+    'repair_regsuccess_step1_text'  => 'Customize colors, logo and settings to match your shop.',
+    'repair_regsuccess_step2'       => 'Test your form',
+    'repair_regsuccess_step2_text'  => 'Open your form link and test the workflow.',
+    'repair_regsuccess_step3'       => 'Welcome customers',
+    'repair_regsuccess_step3_text'  => 'Display the QR code in your shop – customers fill out the form directly.',
     'repair_reg_login_text'     => 'Already registered?',
     'repair_reg_login_link'     => 'Log in here',
 

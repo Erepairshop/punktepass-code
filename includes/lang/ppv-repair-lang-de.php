@@ -293,6 +293,16 @@ return [
     'repair_reg_email_info'     => 'Sie erhalten alle Zugangsdaten per E-Mail.',
     'repair_reg_to_admin'       => 'Zum Admin-Bereich',
     'repair_reg_test_form'      => 'Formular testen',
+
+    // Registration success page (/formular/registrierung-erfolgreich)
+    'repair_regsuccess_title'       => 'Registrierung erfolgreich!',
+    'repair_regsuccess_subtitle'    => 'Ihr Reparaturformular ist jetzt aktiv',
+    'repair_regsuccess_step1'       => 'Admin-Bereich einrichten',
+    'repair_regsuccess_step1_text'  => 'Passen Sie Farben, Logo und Einstellungen an Ihr Geschäft an.',
+    'repair_regsuccess_step2'       => 'Formular testen',
+    'repair_regsuccess_step2_text'  => 'Öffnen Sie Ihren Formular-Link und testen Sie den Ablauf.',
+    'repair_regsuccess_step3'       => 'Kunden empfangen',
+    'repair_regsuccess_step3_text'  => 'Zeigen Sie den QR-Code im Geschäft – Kunden füllen das Formular direkt aus.',
     'repair_reg_login_text'     => 'Bereits registriert?',
     'repair_reg_login_link'     => 'Hier einloggen',
 

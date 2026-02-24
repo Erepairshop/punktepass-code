@@ -246,6 +246,16 @@ class PPV_Repair_Core {
             exit;
         }
 
+        // /formular/registrierung-erfolgreich → Post-registration success page
+        if ($path === '/formular/registrierung-erfolgreich') {
+            if (empty($_SESSION['ppv_reg_success_slug'])) {
+                header('Location: /formular');
+                exit;
+            }
+            self::render_registration_success_page();
+            exit;
+        }
+
         // /formular/admin/login → Login page
         if ($path === '/formular/admin/login') {
             PPV_Repair_Admin::render_login();
@@ -2838,10 +2848,293 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         $admin_url = home_url('/formular/admin');
         self::send_welcome_email($email, $owner_name, $shop_name, $form_url, $admin_url, $password);
 
+        // Set session flag for success page
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        $_SESSION['ppv_reg_success_slug'] = $slug;
+        $_SESSION['ppv_reg_success_shop'] = $shop_name;
+
         wp_send_json_success([
             'store_id' => $store_id, 'slug' => $slug,
             'form_url' => $form_url, 'message' => 'Registrierung erfolgreich!',
+            'redirect' => '/formular/registrierung-erfolgreich',
         ]);
+    }
+
+    /** ============================================================
+     * Render Registration Success Page
+     * Only accessible via session flag set after successful registration
+     * ============================================================ */
+    private static function render_registration_success_page() {
+        PPV_Lang::load_extra('ppv-repair-lang');
+        $lang = PPV_Lang::current();
+
+        $slug = sanitize_text_field($_SESSION['ppv_reg_success_slug']);
+        $shop = sanitize_text_field($_SESSION['ppv_reg_success_shop'] ?? '');
+        $form_url = home_url("/formular/{$slug}");
+        $admin_url = '/formular/admin';
+
+        // Clear session flag (one-time view)
+        unset($_SESSION['ppv_reg_success_slug'], $_SESSION['ppv_reg_success_shop']);
+
+        $t = [
+            'title'      => PPV_Lang::t('repair_regsuccess_title'),
+            'subtitle'   => PPV_Lang::t('repair_regsuccess_subtitle'),
+            'form_label' => PPV_Lang::t('repair_reg_form_link'),
+            'email_info' => PPV_Lang::t('repair_reg_email_info'),
+            'to_admin'   => PPV_Lang::t('repair_reg_to_admin'),
+            'test_form'  => PPV_Lang::t('repair_reg_test_form'),
+            'step1_title'=> PPV_Lang::t('repair_regsuccess_step1'),
+            'step1_text' => PPV_Lang::t('repair_regsuccess_step1_text'),
+            'step2_title'=> PPV_Lang::t('repair_regsuccess_step2'),
+            'step2_text' => PPV_Lang::t('repair_regsuccess_step2_text'),
+            'step3_title'=> PPV_Lang::t('repair_regsuccess_step3'),
+            'step3_text' => PPV_Lang::t('repair_regsuccess_step3_text'),
+        ];
+
+        echo '<!DOCTYPE html>
+<html lang="' . esc_attr($lang) . '">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>' . esc_html($t['title']) . ' - PunktePass</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    ' . PPV_SEO::get_favicon_links() . '
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1f2937;
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .rs-page { max-width: 560px; margin: 0 auto; padding: 32px 16px; }
+        .rs-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .rs-header {
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 40px 28px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .rs-header::before {
+            content: "";
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, transparent 60%);
+        }
+        .rs-check {
+            width: 80px; height: 80px;
+            margin: 0 auto 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; color: #fff;
+            animation: scaleIn 0.5s ease-out;
+        }
+        @keyframes scaleIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .rs-header h1 { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 6px; position: relative; }
+        .rs-header p { font-size: 15px; color: rgba(255,255,255,0.85); position: relative; }
+        .rs-body { padding: 32px 28px; }
+        .rs-link-box {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1.5px solid #bae6fd;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .rs-link-label {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            color: #0369a1; margin-bottom: 8px;
+        }
+        .rs-link-url {
+            font-size: 16px; font-weight: 600; color: #1d4ed8;
+            word-break: break-all; text-decoration: none;
+        }
+        .rs-link-url:hover { text-decoration: underline; }
+        .rs-copy-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin-top: 12px; padding: 8px 16px;
+            background: #1d4ed8; color: #fff;
+            border: none; border-radius: 8px; cursor: pointer;
+            font-size: 13px; font-weight: 600;
+            transition: all 0.2s;
+        }
+        .rs-copy-btn:hover { background: #1e40af; }
+        .rs-copy-btn.copied { background: #059669; }
+        .rs-email-info {
+            font-size: 13px; color: #9ca3af;
+            text-align: center; margin-bottom: 28px;
+        }
+        .rs-steps { margin-bottom: 28px; }
+        .rs-step {
+            display: flex; gap: 16px; padding: 16px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .rs-step:last-child { border-bottom: none; }
+        .rs-step-num {
+            width: 36px; height: 36px; flex-shrink: 0;
+            background: linear-gradient(135deg, #667eea, #4338ca);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 700; color: #fff;
+        }
+        .rs-step-title { font-size: 15px; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
+        .rs-step-text { font-size: 13px; color: #6b7280; }
+        .rs-actions {
+            display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+        }
+        .rs-btn-primary {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea, #4338ca);
+            color: #fff; border-radius: 12px; font-weight: 600; font-size: 15px;
+            text-decoration: none; transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+        .rs-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35); }
+        .rs-btn-secondary {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 28px;
+            background: #f8fafc; color: #374151; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; font-weight: 600; font-size: 15px;
+            text-decoration: none; transition: all 0.3s;
+        }
+        .rs-btn-secondary:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .rs-confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+    </style>
+</head>
+<body>
+    <canvas class="rs-confetti" id="confetti-canvas"></canvas>
+    <div class="rs-page">
+        <div class="rs-card">
+            <div class="rs-header">
+                <div class="rs-check"><i class="ri-check-line"></i></div>
+                <h1>' . esc_html($t['title']) . '</h1>
+                <p>' . esc_html($t['subtitle']) . '</p>
+            </div>
+            <div class="rs-body">
+                <div class="rs-link-box">
+                    <div class="rs-link-label">' . esc_html($t['form_label']) . '</div>
+                    <a class="rs-link-url" href="' . esc_url($form_url) . '" target="_blank">' . esc_html($form_url) . '</a>
+                    <br>
+                    <button class="rs-copy-btn" id="copy-btn" data-url="' . esc_attr($form_url) . '">
+                        <i class="ri-file-copy-line"></i> <span>Link kopieren</span>
+                    </button>
+                </div>
+                <p class="rs-email-info"><i class="ri-mail-check-line"></i> ' . esc_html($t['email_info']) . '</p>
+
+                <div class="rs-steps">
+                    <div class="rs-step">
+                        <div class="rs-step-num">1</div>
+                        <div>
+                            <div class="rs-step-title">' . esc_html($t['step1_title']) . '</div>
+                            <div class="rs-step-text">' . esc_html($t['step1_text']) . '</div>
+                        </div>
+                    </div>
+                    <div class="rs-step">
+                        <div class="rs-step-num">2</div>
+                        <div>
+                            <div class="rs-step-title">' . esc_html($t['step2_title']) . '</div>
+                            <div class="rs-step-text">' . esc_html($t['step2_text']) . '</div>
+                        </div>
+                    </div>
+                    <div class="rs-step">
+                        <div class="rs-step-num">3</div>
+                        <div>
+                            <div class="rs-step-title">' . esc_html($t['step3_title']) . '</div>
+                            <div class="rs-step-text">' . esc_html($t['step3_text']) . '</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rs-actions">
+                    <a href="' . esc_url($admin_url) . '" class="rs-btn-primary"><i class="ri-dashboard-line"></i> ' . esc_html($t['to_admin']) . '</a>
+                    <a href="' . esc_url($form_url) . '" class="rs-btn-secondary" target="_blank"><i class="ri-external-link-line"></i> ' . esc_html($t['test_form']) . '</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Copy link button
+    document.getElementById("copy-btn").addEventListener("click", function() {
+        var btn = this;
+        var url = btn.getAttribute("data-url");
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function() {
+                btn.classList.add("copied");
+                btn.querySelector("span").textContent = "Kopiert!";
+                btn.querySelector("i").className = "ri-check-line";
+                setTimeout(function() {
+                    btn.classList.remove("copied");
+                    btn.querySelector("span").textContent = "Link kopieren";
+                    btn.querySelector("i").className = "ri-file-copy-line";
+                }, 2000);
+            });
+        }
+    });
+
+    // Simple confetti effect
+    (function() {
+        var canvas = document.getElementById("confetti-canvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        var pieces = [];
+        var colors = ["#667eea","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4"];
+        for (var i = 0; i < 80; i++) {
+            pieces.push({
+                x: Math.random() * canvas.width,
+                y: -20 - Math.random() * 200,
+                w: 6 + Math.random() * 6,
+                h: 4 + Math.random() * 4,
+                r: Math.random() * 360,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: (Math.random() - 0.5) * 3,
+                vy: 2 + Math.random() * 3,
+                vr: (Math.random() - 0.5) * 8,
+                opacity: 1
+            });
+        }
+        var frame = 0;
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            var alive = false;
+            pieces.forEach(function(p) {
+                if (p.opacity <= 0) return;
+                alive = true;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.r * Math.PI / 180);
+                ctx.globalAlpha = p.opacity;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                ctx.restore();
+                p.x += p.vx;
+                p.y += p.vy;
+                p.r += p.vr;
+                p.vy += 0.05;
+                if (frame > 60) p.opacity -= 0.008;
+            });
+            frame++;
+            if (alive && frame < 200) requestAnimationFrame(draw);
+            else canvas.style.display = "none";
+        }
+        draw();
+    })();
+    </script>
+</body>
+</html>';
     }
 
     /** Send Welcome Email */
@@ -3394,9 +3687,11 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
                 'created_at'      => current_time('mysql'),
             ]);
 
-            // Set session and redirect to admin
+            // Set session and redirect to success page
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
             $_SESSION['ppv_repair_store_id'] = $store_id;
+            $_SESSION['ppv_reg_success_slug'] = $slug;
+            $_SESSION['ppv_reg_success_shop'] = $shop_name;
 
             $form_url  = home_url("/formular/{$slug}");
             $admin_url = home_url('/formular/admin');
@@ -3405,7 +3700,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             wp_send_json_success([
                 'store_id' => $store_id,
                 'slug'     => $slug,
-                'redirect' => $admin_url,
+                'redirect' => '/formular/registrierung-erfolgreich',
                 'mode'     => 'register',
                 'message'  => 'Registrierung erfolgreich!',
             ]);

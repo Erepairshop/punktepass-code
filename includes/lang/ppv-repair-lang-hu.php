@@ -293,6 +293,16 @@ return [
     'repair_reg_email_info'     => 'Az összes bejelentkezési adatot e-mailben kapja meg.',
     'repair_reg_to_admin'       => 'Admin felület',
     'repair_reg_test_form'      => 'Űrlap tesztelése',
+
+    // Registration success page (/formular/registrierung-erfolgreich)
+    'repair_regsuccess_title'       => 'Sikeres regisztráció!',
+    'repair_regsuccess_subtitle'    => 'A szervizűrlapja most aktív',
+    'repair_regsuccess_step1'       => 'Admin felület beállítása',
+    'repair_regsuccess_step1_text'  => 'Szabja testre a színeket, logót és beállításokat az üzletéhez.',
+    'repair_regsuccess_step2'       => 'Űrlap tesztelése',
+    'repair_regsuccess_step2_text'  => 'Nyissa meg az űrlap-linket és tesztelje a folyamatot.',
+    'repair_regsuccess_step3'       => 'Ügyfelek fogadása',
+    'repair_regsuccess_step3_text'  => 'Mutassa a QR-kódot az üzletben – az ügyfelek közvetlenül kitöltik az űrlapot.',
     'repair_reg_login_text'     => 'Már regisztrált?',
     'repair_reg_login_link'     => 'Bejelentkezés itt',
 

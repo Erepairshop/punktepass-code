@@ -293,6 +293,16 @@ return [
     'repair_reg_email_info'     => 'Riceverai tutti i dati di accesso via email.',
     'repair_reg_to_admin'       => 'Vai all\'area amministrativa',
     'repair_reg_test_form'      => 'Testa il modulo',
+
+    // Registration success page (/formular/registrierung-erfolgreich)
+    'repair_regsuccess_title'       => 'Registrazione completata!',
+    'repair_regsuccess_subtitle'    => 'Il tuo modulo di riparazione è ora attivo',
+    'repair_regsuccess_step1'       => 'Configura l\'area admin',
+    'repair_regsuccess_step1_text'  => 'Personalizza colori, logo e impostazioni per il tuo negozio.',
+    'repair_regsuccess_step2'       => 'Testa il modulo',
+    'repair_regsuccess_step2_text'  => 'Apri il link del modulo e testa il flusso di lavoro.',
+    'repair_regsuccess_step3'       => 'Accogli i clienti',
+    'repair_regsuccess_step3_text'  => 'Mostra il codice QR nel negozio – i clienti compilano il modulo direttamente.',
     'repair_reg_login_text'     => 'Già registrato?',
     'repair_reg_login_link'     => 'Accedi qui',
 
