@@ -2898,6 +2898,27 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>' . esc_html($t['title']) . ' - PunktePass</title>
     <meta name="robots" content="noindex, nofollow">
+
+    <!-- Google Analytics (loads only with consent) -->
+    <script>
+        function loadGoogleAnalytics() {
+            if (localStorage.getItem("cookie_consent") === "accepted") {
+                var s = document.createElement("script");
+                s.async = true;
+                s.src = "https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3";
+                document.head.appendChild(s);
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag("js", new Date());
+                gtag("config", "G-NDVQK1WSG3");
+                // Track registration conversion
+                gtag("event", "sign_up", { method: "repair_form" });
+            }
+        }
+        loadGoogleAnalytics();
+    </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
     ' . PPV_SEO::get_favicon_links() . '
