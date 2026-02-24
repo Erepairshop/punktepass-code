@@ -4979,6 +4979,11 @@ echo '</div></div>
     function pollRepairs(){
         if(document.hidden)return;
         if(searchInput.value.trim()!==""||filterSelect.value!=="")return;
+        /* Skip polling if user is writing a comment (focus or has text) */
+        var cInputs=document.querySelectorAll(".ra-comment-input");
+        for(var ci=0;ci<cInputs.length;ci++){
+            if(cInputs[ci]===document.activeElement||cInputs[ci].value.trim())return;
+        }
         doSearch(1);
     }
     function startPoll(){if(!pollTimer)pollTimer=setInterval(pollRepairs,15000)}

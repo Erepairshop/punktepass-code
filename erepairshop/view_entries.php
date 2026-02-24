@@ -870,8 +870,8 @@ foreach ($alleEintraege as $entry) {
         '.sig-img{height:35px;display:flex;align-items:flex-end;border-bottom:1px solid #ccc}' +
         '.footer{text-align:center;margin-top:8px;font-size:9px;color:#9ca3af}' +
         '@media print{body{padding:10px 15px}@page{margin:10mm}}</style></head><body>' +
-        '<div class="header"><div class="logo">E<span>repairshop</span></div>' +
-        '<div class="header-info"><strong>Reparaturannahme</strong> Siedlungsring 51, 89415 Lauingen | Tel: 0176 98479520</div></div>' +
+        '<div class="header"><div class="logo">E<span>repairshop</span><br><span style="font-size:10px;font-weight:normal;color:#6b7280">Inh. Erik Borota</span></div>' +
+        '<div class="header-info">Siedlungsring 51, 89415 Lauingen<br><strong>Tel: 0176 98479520</strong><br>info@erepairshop.de<br>erepairshop.de</div></div>' +
         '<div class="title"><h1>Reparaturauftrag</h1><p>' + data.datum + '</p></div>' +
         '<div class="two-col">' +
         '<div class="section"><div class="section-title">Kunde</div>' +
