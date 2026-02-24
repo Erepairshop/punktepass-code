@@ -62,6 +62,8 @@ return [
     'repair_acc_case'           => 'Tok / Case',
     'repair_acc_keys'           => 'Kulcsok',
     'repair_acc_other'          => 'Egyéb',
+    'repair_color_other'        => 'Egyéb',
+    'repair_color_other_placeholder' => 'pl. Midnight Green, Pacific Blue...',
     'repair_step4_title'        => 'Aláírás',
     'repair_signature_label'    => 'Ügyfél aláírása',
     'repair_signature_hint'     => 'Kérjük, írjon alá ujjal vagy egérrel',

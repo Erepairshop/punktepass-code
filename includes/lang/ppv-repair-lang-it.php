@@ -62,6 +62,8 @@ return [
     'repair_acc_case'           => 'Custodia / Cover',
     'repair_acc_keys'           => 'Chiavi',
     'repair_acc_other'          => 'Altro',
+    'repair_color_other'        => 'Altro',
+    'repair_color_other_placeholder' => 'es. Midnight Green, Pacific Blue...',
     'repair_step4_title'        => 'Firma',
     'repair_signature_label'    => 'Firma del cliente',
     'repair_signature_hint'     => 'Firma con il dito o il mouse',

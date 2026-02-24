@@ -432,7 +432,7 @@ class PPV_Repair_Form {
             <?php if (!empty($field_config['device_color']['enabled'])): ?>
             <div class="repair-field">
                 <label><?php echo esc_html($field_config['device_color']['label'] ?? PPV_Lang::t('repair_fb_color')); ?></label>
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;gap:10px;flex-wrap:wrap" id="rf-color-options">
                     <?php
                     $colors = ['Schwarz' => '#000', 'Weiß' => '#fff', 'Silber' => '#c0c0c0', 'Gold' => '#d4a437', 'Blau' => '#3b82f6', 'Rot' => '#ef4444', 'Grün' => '#22c55e', 'Rosa' => '#ec4899'];
                     foreach ($colors as $cname => $chex): ?>
@@ -442,7 +442,13 @@ class PPV_Repair_Form {
                         <?php echo esc_html($cname); ?>
                     </label>
                     <?php endforeach; ?>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:13px;transition:all .2s" class="repair-color-label repair-color-other" id="rf-color-other-btn">
+                        <input type="radio" name="device_color" value="__other__" style="display:none">
+                        <span style="width:16px;height:16px;border-radius:50%;background:conic-gradient(#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6,#ef4444);border:1.5px solid #d1d5db;display:inline-block"></span>
+                        <?php echo esc_html(PPV_Lang::t('repair_color_other', 'Andere')); ?>
+                    </label>
                 </div>
+                <input type="text" id="rf-color-custom" name="device_color_custom" placeholder="<?php echo esc_attr(PPV_Lang::t('repair_color_other_placeholder', 'z.B. Midnight Green, Pacific Blue...')); ?>" style="display:none;margin-top:8px;width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;background:#f8fafc;color:#0f172a;outline:none;transition:border-color .2s" onfocus="this.style.borderColor='var(--repair-accent)'" onblur="this.style.borderColor='#e2e8f0'">
             </div>
             <?php endif; ?>
 
@@ -1030,6 +1036,16 @@ document.querySelectorAll('.repair-color-label').forEach(function(lbl){
     lbl.addEventListener('click',function(){
         document.querySelectorAll('.repair-color-label').forEach(function(l){l.style.borderColor='#e2e8f0';l.style.background=''});
         this.style.borderColor='var(--repair-accent)';this.style.background='#eff6ff';
+        var customInput=document.getElementById('rf-color-custom');
+        if(customInput){
+            if(this.id==='rf-color-other-btn'){
+                customInput.style.display='block';
+                customInput.focus();
+            } else {
+                customInput.style.display='none';
+                customInput.value='';
+            }
+        }
     });
 });
 // Condition check toggle
@@ -1611,6 +1627,12 @@ function toggleProblemTag(btn, text) {
         // Build form data
         var fd = new FormData(form);
         fd.set('accessories', JSON.stringify(accessories));
+        // Handle custom color: replace __other__ with typed value
+        if (fd.get('device_color') === '__other__') {
+            var customColor = (document.getElementById('rf-color-custom') || {}).value || '';
+            fd.set('device_color', customColor.trim());
+        }
+        fd.delete('device_color_custom');
 
         // If offline, queue for later
         if (!navigator.onLine) {

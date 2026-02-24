@@ -62,6 +62,8 @@ return [
     'repair_acc_case'           => 'Hülle / Case',
     'repair_acc_keys'           => 'Schlüssel',
     'repair_acc_other'          => 'Sonstiges',
+    'repair_color_other'        => 'Andere',
+    'repair_color_other_placeholder' => 'z.B. Midnight Green, Pacific Blue...',
     'repair_step4_title'        => 'Unterschrift',
     'repair_signature_label'    => 'Unterschrift des Kunden',
     'repair_signature_hint'     => 'Bitte unterschreiben Sie mit dem Finger oder der Maus',

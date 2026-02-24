@@ -62,6 +62,8 @@ return [
     'repair_acc_case'           => 'Case / Cover',
     'repair_acc_keys'           => 'Keys',
     'repair_acc_other'          => 'Other',
+    'repair_color_other'        => 'Other',
+    'repair_color_other_placeholder' => 'e.g. Midnight Green, Pacific Blue...',
     'repair_step4_title'        => 'Signature',
     'repair_signature_label'    => 'Customer Signature',
     'repair_signature_hint'     => 'Please sign with your finger or mouse',

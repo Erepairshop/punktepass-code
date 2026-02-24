@@ -62,6 +62,8 @@ return [
     'repair_acc_case'           => 'Husă / Carcasă',
     'repair_acc_keys'           => 'Chei',
     'repair_acc_other'          => 'Altele',
+    'repair_color_other'        => 'Altă culoare',
+    'repair_color_other_placeholder' => 'ex. Midnight Green, Pacific Blue...',
     'repair_step4_title'        => 'Semnătură',
     'repair_signature_label'    => 'Semnătura clientului',
     'repair_signature_hint'     => 'Vă rugăm să semnați cu degetul sau mouse-ul',
