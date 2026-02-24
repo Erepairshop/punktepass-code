@@ -16,8 +16,10 @@
   if (isSafari) {
   }
 
-  // 🤖 Android detection (for Google Wallet button)
-  const isAndroid = /android/i.test(navigator.userAgent);
+  // 🍏 iOS detection (hide Google Wallet on iOS – Apple Wallet comes later)
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  // 📱 Show Google Wallet on all platforms except iOS
+  const showGoogleWallet = !isIOS;
 
   // ✅ OPTIMIZED: Conditional logging (only in DEBUG mode)
   const log = (...args) => { if (DEBUG) console.log(...args); };
@@ -561,7 +563,7 @@
           ${buildTierProgressHtml(d.tier, d.tiers, l, lang)}
 
           <!-- 📱 GOOGLE WALLET (Android only) -->
-          ${isAndroid ? buildGoogleWalletHtml(l) : ''}
+          ${showGoogleWallet ? buildGoogleWalletHtml(l) : ''}
 
           <!-- 🎁 REFERRAL PROGRAM SECTION -->
           ${buildReferralHtml(d.referral, l, lang)}
