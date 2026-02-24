@@ -65,9 +65,19 @@ class PPV_Login {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Login - PunktePass</title>
+    <?php
+    // SEO meta tags (description, OG, Twitter Card, JSON-LD structured data)
+    if (class_exists('PPV_SEO')) {
+        $seo_tags = PPV_SEO::get_login_page_head($lang);
+        // Extract title from SEO tags for <title> element
+        preg_match('/og:title" content="([^"]+)"/', $seo_tags, $title_match);
+        $seo_title = $title_match[1] ?? 'PunktePass - Digitales Bonusprogramm';
+        echo $seo_tags;
+    } else {
+        $seo_title = 'PunktePass - Digitales Bonusprogramm';
+    }
+    ?>
+    <title><?php echo esc_html($seo_title); ?></title>
     <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
     <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">

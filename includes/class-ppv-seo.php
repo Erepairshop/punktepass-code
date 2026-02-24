@@ -893,6 +893,214 @@ class PPV_SEO {
     }
 
     /**
+     * Generate complete SEO head tags for login/landing page (standalone)
+     * Language-aware: supports DE, HU, RO, EN
+     */
+    public static function get_login_page_head($lang = 'de') {
+        $site_url = home_url();
+        $og_image = PPV_PLUGIN_URL . 'assets/img/punktepass-og-image.png';
+
+        // Language-specific SEO content
+        $seo_by_lang = [
+            'de' => [
+                'title' => 'PunktePass - Digitales Bonusprogramm & Treuepunkte für lokale Geschäfte',
+                'description' => 'PunktePass ist das digitale Treuepunkt-System für lokale Geschäfte. Bonuspunkte sammeln, QR-Code Stempelkarte, automatische Belohnungen. PWA App für Kunden. Jetzt kostenlos starten!',
+                'keywords' => 'Bonusprogramm, Treuepunkte, Kundenbindung, Stempelkarte digital, QR Code Bonus, PunktePass, Loyalty App, digitale Stempelkarte, Kundenbonus, Händler App, Einzelhandel Software, Bonuskarte, Treueprogramm',
+                'locale' => 'de_DE',
+                'language' => 'de-DE',
+                'canonical' => $site_url . '/login',
+            ],
+            'hu' => [
+                'title' => 'PunktePass - Digitális Bonuszprogram & Hűségpontok helyi üzleteknek',
+                'description' => 'PunktePass a digitális hűségpont-rendszer helyi üzleteknek. Pontgyűjtés, QR-kód törzsvásárlói kártya, automatikus jutalmak. Ingyenesen kipróbálható!',
+                'keywords' => 'bonuszprogram, hűségpont, ügyfélmegtartás, törzsvásárlói kártya, QR kód bónusz, PunktePass, hűségprogram, digitális törzskártya',
+                'locale' => 'hu_HU',
+                'language' => 'hu-HU',
+                'canonical' => $site_url . '/bejelentkezes',
+            ],
+            'ro' => [
+                'title' => 'PunktePass - Program Digital de Bonus & Puncte de Fidelitate pentru Magazine Locale',
+                'description' => 'PunktePass este sistemul digital de puncte de fidelitate pentru magazine locale. Colectează puncte, card de fidelitate QR, recompense automate. Începe gratuit!',
+                'keywords' => 'program bonus, puncte fidelitate, fidelizare clienți, card fidelitate digital, cod QR bonus, PunktePass, program loialitate, card digital',
+                'locale' => 'ro_RO',
+                'language' => 'ro-RO',
+                'canonical' => $site_url . '/login',
+            ],
+            'en' => [
+                'title' => 'PunktePass - Digital Loyalty Program & Reward Points for Local Shops',
+                'description' => 'PunktePass is the digital loyalty point system for local shops. Collect bonus points, QR code stamp card, automatic rewards. PWA app for customers. Start free now!',
+                'keywords' => 'loyalty program, reward points, customer retention, digital stamp card, QR code bonus, PunktePass, loyalty app, customer bonus, retail software',
+                'locale' => 'en_US',
+                'language' => 'en-US',
+                'canonical' => $site_url . '/login',
+            ],
+        ];
+
+        $seo = $seo_by_lang[$lang] ?? $seo_by_lang['de'];
+
+        $tags = self::build_seo_tags([
+            'title' => $seo['title'],
+            'description' => $seo['description'],
+            'keywords' => $seo['keywords'],
+            'canonical' => $seo['canonical'],
+            'og_type' => 'website',
+            'og_image' => $og_image,
+            'og_site_name' => 'PunktePass',
+            'twitter_card' => 'summary_large_image',
+            'twitter_site' => '@punktepass',
+            'robots' => 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+            'author' => 'PunktePass',
+            'language' => $seo['language'],
+        ]);
+
+        // Structured data for login/landing page
+        $tags .= self::get_login_page_structured_data($seo, $site_url);
+
+        return $tags;
+    }
+
+    /**
+     * Generate JSON-LD structured data for login/landing page
+     */
+    private static function get_login_page_structured_data($seo, $site_url) {
+        $logo_url = PPV_PLUGIN_URL . 'assets/img/punktepass-logo.png';
+
+        $organization = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            'name' => 'PunktePass',
+            'url' => $site_url,
+            'logo' => $logo_url,
+            'description' => $seo['description'],
+            'foundingDate' => '2024',
+            'areaServed' => [
+                ['@type' => 'Country', 'name' => 'Germany'],
+                ['@type' => 'Country', 'name' => 'Romania'],
+                ['@type' => 'Country', 'name' => 'Hungary'],
+            ],
+            'sameAs' => [
+                'https://punktepass.de',
+                'https://punktepass.ro',
+            ],
+            'contactPoint' => [
+                '@type' => 'ContactPoint',
+                'contactType' => 'customer service',
+                'availableLanguage' => ['German', 'English', 'Hungarian', 'Romanian'],
+                'url' => $site_url . '/kontakt',
+            ],
+        ];
+
+        $software = [
+            '@context' => 'https://schema.org',
+            '@type' => 'SoftwareApplication',
+            'name' => 'PunktePass',
+            'applicationCategory' => 'BusinessApplication',
+            'operatingSystem' => 'Web Browser, iOS, Android',
+            'description' => $seo['description'],
+            'offers' => [
+                '@type' => 'Offer',
+                'price' => '0',
+                'priceCurrency' => 'EUR',
+                'description' => 'Kostenlos starten / Start free',
+            ],
+            'aggregateRating' => [
+                '@type' => 'AggregateRating',
+                'ratingValue' => '4.9',
+                'ratingCount' => '89',
+                'bestRating' => '5',
+                'worstRating' => '1',
+            ],
+            'featureList' => [
+                'Digitale Bonuspunkte / Digital Bonus Points',
+                'QR-Code Stempelkarte / QR Code Stamp Card',
+                'PWA App für Kunden / PWA App for Customers',
+                'Automatische Belohnungen / Automatic Rewards',
+                'POS Integration',
+                'Kundenanalysen / Customer Analytics',
+                'Multi-language (DE/HU/RO/EN)',
+                'Reparaturverwaltung / Repair Management',
+            ],
+        ];
+
+        $webpage = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebPage',
+            'name' => $seo['title'],
+            'url' => $seo['canonical'],
+            'description' => $seo['description'],
+            'inLanguage' => $seo['language'],
+            'isPartOf' => [
+                '@type' => 'WebSite',
+                'name' => 'PunktePass',
+                'url' => $site_url,
+            ],
+        ];
+
+        $html = "\n    <!-- Structured Data / JSON-LD -->\n";
+        $html .= '    <script type="application/ld+json">' . json_encode($organization, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+        $html .= '    <script type="application/ld+json">' . json_encode($software, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+        $html .= '    <script type="application/ld+json">' . json_encode($webpage, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+
+        return $html;
+    }
+
+    /**
+     * Generate complete SEO head tags for signup page (standalone)
+     */
+    public static function get_signup_page_head($lang = 'de') {
+        $site_url = home_url();
+        $og_image = PPV_PLUGIN_URL . 'assets/img/punktepass-og-image.png';
+
+        $seo_by_lang = [
+            'de' => [
+                'title' => 'Kostenlos registrieren - PunktePass Bonusprogramm',
+                'description' => 'Jetzt kostenlos bei PunktePass registrieren und Bonuspunkte bei Ihren Lieblingshändlern sammeln. QR-Code Stempelkarte, automatische Belohnungen, lokale Angebote.',
+                'keywords' => 'PunktePass registrieren, Bonusprogramm anmelden, Treuepunkte sammeln, kostenlos registrieren, Kundenkarte digital',
+                'language' => 'de-DE',
+                'canonical' => $site_url . '/signup',
+            ],
+            'hu' => [
+                'title' => 'Ingyenes regisztráció - PunktePass Bonuszprogram',
+                'description' => 'Regisztrálj most ingyen a PunktePass-hoz és gyűjts bónuszpontokat kedvenc üzleteidben. QR-kód törzskártya, automatikus jutalmak, helyi ajánlatok.',
+                'keywords' => 'PunktePass regisztráció, bonuszprogram, hűségpont gyűjtés, ingyenes regisztráció, digitális törzskártya',
+                'language' => 'hu-HU',
+                'canonical' => $site_url . '/signup',
+            ],
+            'ro' => [
+                'title' => 'Înregistrare gratuită - PunktePass Program de Bonus',
+                'description' => 'Înregistrează-te gratuit la PunktePass și colectează puncte bonus la magazinele tale preferate. Card QR de fidelitate, recompense automate, oferte locale.',
+                'keywords' => 'PunktePass înregistrare, program bonus, puncte fidelitate, înregistrare gratuită, card digital fidelitate',
+                'language' => 'ro-RO',
+                'canonical' => $site_url . '/signup',
+            ],
+            'en' => [
+                'title' => 'Register for Free - PunktePass Loyalty Program',
+                'description' => 'Register for free at PunktePass and collect bonus points at your favorite local shops. QR code stamp card, automatic rewards, local deals.',
+                'keywords' => 'PunktePass register, loyalty program sign up, collect reward points, free registration, digital loyalty card',
+                'language' => 'en-US',
+                'canonical' => $site_url . '/signup',
+            ],
+        ];
+
+        $seo = $seo_by_lang[$lang] ?? $seo_by_lang['de'];
+
+        return self::build_seo_tags([
+            'title' => $seo['title'],
+            'description' => $seo['description'],
+            'keywords' => $seo['keywords'],
+            'canonical' => $seo['canonical'],
+            'og_type' => 'website',
+            'og_image' => $og_image,
+            'og_site_name' => 'PunktePass',
+            'twitter_card' => 'summary_large_image',
+            'twitter_site' => '@punktepass',
+            'robots' => 'index, follow',
+            'author' => 'PunktePass',
+            'language' => $seo['language'],
+        ]);
+    }
+
+    /**
      * Get preload/prefetch links for performance
      */
     public static function get_performance_hints() {

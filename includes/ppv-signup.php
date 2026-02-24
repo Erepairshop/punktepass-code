@@ -152,9 +152,18 @@ class PPV_Signup {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title><?php echo esc_html(PPV_Lang::t('signup_title')); ?> - PunktePass</title>
+    <?php
+    // SEO meta tags (description, OG, Twitter Card)
+    if (class_exists('PPV_SEO')) {
+        $seo_tags = PPV_SEO::get_signup_page_head($lang);
+        preg_match('/og:title" content="([^"]+)"/', $seo_tags, $title_match);
+        $seo_title = $title_match[1] ?? (PPV_Lang::t('signup_title') . ' - PunktePass');
+        echo $seo_tags;
+    } else {
+        $seo_title = PPV_Lang::t('signup_title') . ' - PunktePass';
+    }
+    ?>
+    <title><?php echo esc_html($seo_title); ?></title>
     <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="preconnect" href="https://accounts.google.com" crossorigin>
