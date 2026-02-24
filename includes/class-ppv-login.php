@@ -525,6 +525,11 @@ public static function render_landing_page($atts) {
                     <span>&middot;</span>
                     <a href="/impressum"><?php echo PPV_Lang::t('landing_footer_imprint'); ?></a>
                 </div>
+                <div style="margin-top:12px">
+                    <a href="https://launchigniter.com/product/punktepass?ref=badge-punktepass" target="_blank" rel="noopener noreferrer">
+                        <img src="https://launchigniter.com/api/badge/punktepass?theme=light" alt="Featured on LaunchIgniter" width="212" height="55" loading="lazy">
+                    </a>
+                </div>
             </footer>
         </div>
 

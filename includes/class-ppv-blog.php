@@ -557,6 +557,11 @@ class PPV_Blog {
                 <a href="<?php echo home_url('/kontakt'); ?>">Kontakt</a>
             </div>
             <p class="ppv-blog-footer-copy">&copy; <?php echo date('Y'); ?> PunktePass. Alle Rechte vorbehalten.</p>
+            <div style="margin-top:16px">
+                <a href="https://launchigniter.com/product/punktepass?ref=badge-punktepass" target="_blank" rel="noopener noreferrer">
+                    <img src="https://launchigniter.com/api/badge/punktepass?theme=light" alt="Featured on LaunchIgniter" width="212" height="55" loading="lazy">
+                </a>
+            </div>
         </div>
     </footer>
 
