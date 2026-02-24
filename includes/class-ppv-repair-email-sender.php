@@ -371,15 +371,18 @@ class PPV_Repair_Email_Sender {
      * Build HTML email with Repair Form branding
      */
     private static function build_html_email($message, $lang = 'de') {
-        // 1) Convert {{CTA:url|text}} placeholders to table-based buttons (survives wp_kses_post)
+        // Check for HTML tables in original message before CTA replacement adds its own
+        $is_html_content = (strpos($message, '<table') !== false);
+
+        // 1) Convert {{CTA:url|text}} placeholders to table-based buttons
         $message = preg_replace_callback(
             '/\{\{CTA:([^|]+)\|([^}]+)\}\}/',
             function($matches) {
                 $url = trim($matches[1]);
                 $text = trim($matches[2]);
-                return '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:10px 0;"><tr>' .
-                    '<td align="center" bgcolor="#667eea" style="background-color:#667eea;border-radius:10px;">' .
-                    '<a href="' . esc_url($url) . '" target="_blank" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 28px;font-weight:600;font-size:15px;">' .
+                return '<table cellpadding="0" cellspacing="0" border="0" align="center" role="presentation" style="margin:10px auto;"><tr>' .
+                    '<td align="center" bgcolor="#0d9488" style="background-color:#0d9488;border-radius:24px;">' .
+                    '<a href="' . esc_url($url) . '" target="_blank" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 36px;font-weight:600;font-size:15px;">' .
                     $text . '</a></td></tr></table>';
             },
             $message
@@ -390,27 +393,30 @@ class PPV_Repair_Email_Sender {
             function($matches) {
                 $url = $matches[1];
                 $text = $matches[2];
-                return '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:10px 0;"><tr>' .
-                    '<td align="center" bgcolor="#667eea" style="background-color:#667eea;border-radius:10px;">' .
-                    '<a href="' . $url . '" target="_blank" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 28px;font-weight:600;font-size:15px;">' .
+                return '<table cellpadding="0" cellspacing="0" border="0" align="center" role="presentation" style="margin:10px auto;"><tr>' .
+                    '<td align="center" bgcolor="#0d9488" style="background-color:#0d9488;border-radius:24px;">' .
+                    '<a href="' . $url . '" target="_blank" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 36px;font-weight:600;font-size:15px;">' .
                     $text . '</a></td></tr></table>';
             },
             $message
         );
-        $message = nl2br($message);
+        // Only apply nl2br for plain text content (not HTML-rich templates)
+        if (!$is_html_content) {
+            $message = nl2br($message);
+        }
         $year = date('Y');
 
         $header_titles = [
-            'de' => ['title' => 'Reparaturverwaltung', 'subtitle' => 'Digitale L&ouml;sung f&uuml;r Ihren Reparatur-Service'],
-            'hu' => ['title' => 'Javításkezelő', 'subtitle' => 'Digitális megoldás az Ön javítási szolgáltatásához'],
-            'ro' => ['title' => 'Gestionare Reparații', 'subtitle' => 'Soluție digitală pentru serviciul dvs. de reparații'],
-            'en' => ['title' => 'Repair Management', 'subtitle' => 'Digital Solution for Your Repair Service'],
+            'de' => ['title' => 'Schluss mit Papier-Chaos<br>in der Werkstatt', 'subtitle' => 'Digitales Reparaturformular &ndash; von einem Werkstatt-Betreiber entwickelt,<br>der die gleichen Probleme hatte wie Sie.'],
+            'hu' => ['title' => 'V&eacute;ge a pap&iacute;r-k&aacute;osznak a m&uuml;helyben', 'subtitle' => 'Digit&aacute;lis jav&iacute;t&aacute;si &uuml;rlap &ndash; egy m&uuml;hely-tulajdonos fejlesztette,<br>aki ugyanazokkal a probl&eacute;m&aacute;kkal k&uuml;zd&ouml;tt mint &Ouml;n.'],
+            'ro' => ['title' => 'Gata cu haosul de h&acirc;rtie &icirc;n atelier', 'subtitle' => 'Formular digital de repara&#539;ii &ndash; dezvoltat de un proprietar de atelier<br>care a avut acelea&#537;i probleme ca dvs.'],
+            'en' => ['title' => 'End the Paper Chaos<br>in Your Workshop', 'subtitle' => 'Digital repair form &ndash; built by a workshop owner<br>who had the same problems as you.'],
         ];
         $footer_titles = [
-            'de' => 'Reparaturverwaltung &middot; PunktePass',
-            'hu' => 'Javításkezelő &middot; PunktePass',
-            'ro' => 'Gestionare Reparații &middot; PunktePass',
-            'en' => 'Repair Management &middot; PunktePass',
+            'de' => 'eRepairShop &middot; PunktePass',
+            'hu' => 'eRepairShop &middot; PunktePass',
+            'ro' => 'eRepairShop &middot; PunktePass',
+            'en' => 'eRepairShop &middot; PunktePass',
         ];
         $ht = $header_titles[$lang] ?? $header_titles['de'];
         $ft = $footer_titles[$lang] ?? $footer_titles['de'];
@@ -429,9 +435,9 @@ class PPV_Repair_Email_Sender {
     <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;" role="presentation">
         <!-- Header -->
         <tr>
-            <td align="center" bgcolor="#667eea" style="background-color:#667eea;padding:24px 35px;">
-                <p style="color:#ffffff;font-size:18px;font-weight:700;margin:0;font-family:Arial,Helvetica,sans-serif;">' . $ht['title'] . '</p>
-                <p style="color:#c7d2fe;font-size:13px;margin:4px 0 0 0;font-family:Arial,Helvetica,sans-serif;">' . $ht['subtitle'] . '</p>
+            <td align="center" bgcolor="#0d9488" style="background-color:#0d9488;padding:32px 35px;">
+                <p style="color:#ffffff;font-size:22px;font-weight:700;margin:0;line-height:1.3;font-family:Arial,Helvetica,sans-serif;">' . $ht['title'] . '</p>
+                <p style="color:#99f6e4;font-size:13px;margin:10px 0 0 0;line-height:1.5;font-family:Arial,Helvetica,sans-serif;">' . $ht['subtitle'] . '</p>
             </td>
         </tr>
         <!-- Body -->
@@ -509,31 +515,39 @@ class PPV_Repair_Email_Sender {
         $selected_lang = isset($_GET['lang']) ? sanitize_text_field($_GET['lang']) : 'de';
         if (!in_array($selected_lang, ['de', 'hu', 'ro', 'en', 'it'])) $selected_lang = 'de';
 
-        // Default template for Repair Form promotion
-        $default_template = 'Hallo,
+        // Default template for Repair Form promotion (rich HTML)
+        $default_template = '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px;" role="presentation"><tr><td width="48" valign="top" style="padding-right:14px;"><div style="width:48px;height:48px;border-radius:50%;background-color:#e5e7eb;text-align:center;line-height:48px;font-size:20px;font-weight:700;color:#374151;">E</div></td><td valign="middle"><p style="margin:0;font-weight:700;font-size:15px;color:#1f2937;">Erik Borota</p><p style="margin:2px 0 0 0;font-size:13px;color:#6b7280;">Inhaber, eRepairShop &middot; Lauingen</p></td></tr></table>
 
-ich hei&szlig;e Erik und betreibe selbst einen Reparatur-Shop in Lauingen (Bayern).
+<p style="margin:0 0 14px;font-size:15px;color:#374151;">Hallo,</p>
+<p style="margin:0 0 14px;font-size:15px;color:#374151;">ich hei&szlig;e Erik und betreibe selbst einen Reparatur-Shop in Lauingen (Bayern).</p>
+<p style="margin:0 0 14px;font-size:15px;color:#374151;">Ich hatte das gleiche Problem wie wahrscheinlich jeder Werkstatt-Betreiber: unleserliche Zettel, verlorene Auftr&auml;ge, Kunden die st&auml;ndig anrufen. Deshalb habe ich mir ein digitales System gebaut &ndash; <strong>150 Kunden nutzen es mittlerweile bei mir im Alltag.</strong></p>
+<p style="margin:0 0 24px;font-size:15px;color:#374151;">Jetzt biete ich es anderen Werkst&auml;tten an:</p>
 
-Ich hatte das gleiche Problem wie wahrscheinlich jeder Werkstatt-Betreiber: unleserliche Zettel, verlorene Auftr&auml;ge, Kunden die st&auml;ndig anrufen. Deshalb habe ich mir ein digitales System gebaut &ndash; 150 Kunden nutzen es mittlerweile bei mir im Alltag.
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;" role="presentation"><tr><td align="center" width="33%" style="padding:18px 8px;border-right:1px solid #e5e7eb;"><p style="margin:0;font-size:28px;font-weight:700;color:#0d9488;">150+</p><p style="margin:4px 0 0;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Kunden Aktiv</p></td><td align="center" width="33%" style="padding:18px 8px;border-right:1px solid #e5e7eb;"><p style="margin:0;font-size:28px;font-weight:700;color:#0d9488;">30+</p><p style="margin:4px 0 0;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Min. Gespart/Tag</p></td><td align="center" width="34%" style="padding:18px 8px;"><p style="margin:0;font-size:28px;font-weight:700;color:#0d9488;">0</p><p style="margin:4px 0 0;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Auftr&auml;ge Verloren</p></td></tr></table>
 
-Jetzt biete ich es anderen Werkst&auml;tten an:
+<p style="color:#0d9488;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 18px;">Was Sie damit k&ouml;nnen:</p>
 
-&bull; Digitale Reparaturannahme (online oder am Tablet)
-&bull; Rechnungen &amp; Angebote als PDF
-&bull; Live-Tracking f&uuml;r Kunden (weniger Anrufe!)
-&bull; DATEV &amp; CSV Export
-&bull; Eingebauter KI-Assistent &ndash; hilft Ihnen direkt im System bei Fragen, ohne auf Support warten zu m&uuml;ssen
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128203;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">Digitale Reparaturannahme</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Kunden f&uuml;llen online oder am Tablet aus &ndash; keine Papierzettel mehr</p></td></tr></table>
 
-Die ersten 50 Formulare pro Monat sind dauerhaft kostenlos.
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128196;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">Rechnungen &amp; Angebote als PDF</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Per Knopfdruck erstellen und direkt per Email versenden</p></td></tr></table>
 
-Falls Sie mal reinschauen m&ouml;chten:
-{{CTA:https://punktepass.de/formular|&#128073; Jetzt kostenlos testen}}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128205;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">Live-Tracking f&uuml;r Kunden</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Kunden sehen den Reparaturstatus in Echtzeit &ndash; weniger Anrufe</p></td></tr></table>
 
-Wenn Sie Fragen haben, antworten Sie einfach auf diese Email &ndash; ich antworte pers&ouml;nlich.
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128202;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">DATEV &amp; CSV Export</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Alle Daten f&uuml;r Ihren Steuerberater &ndash; ein Klick, fertig</p></td></tr></table>
 
-Viele Gr&uuml;&szlig;e
-Erik Borota
-eRepairShop, Lauingen';
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:6px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128295;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">F&uuml;r jede Branche</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Handy, PC, KFZ, Fahrrad, E-Scooter, Konsolen und mehr</p></td></tr></table>
+
+<p style="margin:24px 0 4px;font-size:15px;color:#374151;">Die ersten 50 Formulare pro Monat sind <strong>dauerhaft kostenlos</strong>.</p>
+
+{{CTA:https://punktepass.de/formular|Kostenlos testen &rarr;}}
+
+<p style="text-align:center;font-size:12px;color:#9ca3af;margin:4px 0 28px;">50 Formulare/Monat gratis &middot; Keine Kreditkarte &middot; In 2 Min. startklar</p>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;" role="presentation"><tr><td style="border-top:1px solid #e5e7eb;font-size:0;line-height:0;">&nbsp;</td></tr></table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 12px;" role="presentation"><tr><td style="border-left:3px solid #d1d5db;padding:0 0 0 16px;"><p style="margin:0;font-style:italic;color:#4b5563;font-size:14px;line-height:1.6;">&bdquo;Ich habe das System gebaut, weil ich selbst genervt war vom Papier-Chaos. Wenn Sie Fragen haben, schreiben Sie mir einfach &ndash; ich antworte pers&ouml;nlich.&ldquo;</p></td></tr></table>
+
+<p style="margin:0;font-weight:700;font-size:14px;color:#1f2937;">Erik Borota</p>';
 
         $default_subject_de = 'Kurze Frage zu Ihrem Reparatur-Service';
 
