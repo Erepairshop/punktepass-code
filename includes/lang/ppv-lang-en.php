@@ -1386,6 +1386,19 @@ return [
 'switch_error' => 'Error switching',
 
 // ============================================
+// MY POINTS PAGE
+// ============================================
+'mypoints_title'       => 'My Points',
+'mypoints_total'       => 'Total Points',
+'mypoints_avg'         => 'Avg. Points',
+'mypoints_best_day'    => 'Best Day',
+'mypoints_top_store'   => 'Top Store',
+'mypoints_activity'    => 'Activity today',
+'mypoints_next_reward' => 'Next Reward',
+'mypoints_top3'        => 'Top 3 Stores',
+'mypoints_recent'      => 'Recent Activity',
+
+// ============================================
 // LEGAL PAGES
 // ============================================
 'legal_back_home' => 'Back to Home',

@@ -381,7 +381,7 @@
 
     // Get language from global
     let lang = window.ppv_mypoints?.lang || 'de';
-    if (!["de", "hu", "ro"].includes(lang)) lang = "de";
+    if (!["de", "en", "hu", "ro"].includes(lang)) lang = "de";
 
     const l = getLabels(lang);
     log('🌍 [PPV_MYPOINTS] Active language:', lang);
@@ -838,6 +838,17 @@
         pending: 'Függőben',
         no_referrals_yet: 'Még nincsenek meghívások',
       },
+      en: {
+        title: 'Invite Friends',
+        subtitle: 'Invite friends and both of you earn bonus points!',
+        your_code: 'Your invite code',
+        copy: 'Copy link',
+        copied: 'Copied!',
+        whatsapp: 'WhatsApp',
+        successful: 'Successful',
+        pending: 'Pending',
+        no_referrals_yet: 'No invitations yet',
+      },
       ro: {
         title: 'Invită prieteni',
         subtitle: 'Invită-ți prietenii și amândoi primiți puncte bonus!',
@@ -929,6 +940,7 @@
     const lang = window.ppv_mypoints?.lang || 'de';
     const messages = {
       de: `Hey! Hol dir Punkte bei ${storeName}! Nutze meinen Einladungslink: ${url}`,
+      en: `Hey! Collect points at ${storeName}! Use my invite link: ${url}`,
       hu: `Hé! Gyűjts pontokat itt: ${storeName}! Használd a meghívó linkemet: ${url}`,
       ro: `Hei! Colectează puncte la ${storeName}! Folosește link-ul meu de invitație: ${url}`
     };

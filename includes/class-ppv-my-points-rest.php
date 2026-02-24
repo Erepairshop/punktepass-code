@@ -507,7 +507,7 @@ if (class_exists('PPV_Lang')) {
                 $reward_text = '';
                 switch ($store->referral_reward_type) {
                     case 'points':
-                        $reward_text = $store->referral_reward_value . ' ' . ($lang === 'de' ? 'Punkte' : ($lang === 'hu' ? 'pont' : 'puncte'));
+                        $reward_text = $store->referral_reward_value . ' ' . ($lang === 'de' ? 'Punkte' : ($lang === 'en' ? 'Points' : ($lang === 'hu' ? 'pont' : 'puncte')));
                         break;
                     case 'euro':
                         $reward_text = $store->referral_reward_value . '€ ' . ($lang === 'de' ? 'Rabatt' : ($lang === 'hu' ? 'kedvezmény' : 'reducere'));

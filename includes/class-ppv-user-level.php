@@ -16,11 +16,11 @@ class PPV_User_Level {
     // Starter = no VIP bonus, VIP starts at Bronze (25+ scans)
     // Each level adds +25 scans
     const LEVELS = [
-        'starter'  => ['min' => 0,   'max' => 24,     'name_de' => 'Starter',  'name_hu' => 'Kezdő',    'name_ro' => 'Începător', 'vip' => false],
-        'bronze'   => ['min' => 25,  'max' => 49,     'name_de' => 'Bronze',   'name_hu' => 'Bronz',    'name_ro' => 'Bronz',     'vip' => true],
-        'silver'   => ['min' => 50,  'max' => 74,     'name_de' => 'Silber',   'name_hu' => 'Ezüst',    'name_ro' => 'Argint',    'vip' => true],
-        'gold'     => ['min' => 75,  'max' => 99,     'name_de' => 'Gold',     'name_hu' => 'Arany',    'name_ro' => 'Aur',       'vip' => true],
-        'platinum' => ['min' => 100, 'max' => 999999, 'name_de' => 'Platin',   'name_hu' => 'Platina',  'name_ro' => 'Platină',   'vip' => true],
+        'starter'  => ['min' => 0,   'max' => 24,     'name_de' => 'Starter',  'name_en' => 'Starter',  'name_hu' => 'Kezdő',    'name_ro' => 'Începător', 'vip' => false],
+        'bronze'   => ['min' => 25,  'max' => 49,     'name_de' => 'Bronze',   'name_en' => 'Bronze',   'name_hu' => 'Bronz',    'name_ro' => 'Bronz',     'vip' => true],
+        'silver'   => ['min' => 50,  'max' => 74,     'name_de' => 'Silber',   'name_en' => 'Silver',   'name_hu' => 'Ezüst',    'name_ro' => 'Argint',    'vip' => true],
+        'gold'     => ['min' => 75,  'max' => 99,     'name_de' => 'Gold',     'name_en' => 'Gold',     'name_hu' => 'Arany',    'name_ro' => 'Aur',       'vip' => true],
+        'platinum' => ['min' => 100, 'max' => 999999, 'name_de' => 'Platin',   'name_en' => 'Platinum', 'name_hu' => 'Platina',  'name_ro' => 'Platină',   'vip' => true],
     ];
 
     // Level icons (RemixIcon classes)

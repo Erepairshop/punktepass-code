@@ -1469,6 +1469,19 @@ return [
     'switch_error' => 'Fehler beim Wechseln',
 
     // ============================================
+    // MY POINTS PAGE
+    // ============================================
+    'mypoints_title'       => 'Meine Punkte',
+    'mypoints_total'       => 'Gesamtpunkte',
+    'mypoints_avg'         => 'Ø Punkte',
+    'mypoints_best_day'    => 'Bester Tag',
+    'mypoints_top_store'   => 'Top Laden',
+    'mypoints_activity'    => 'Aktivität heute',
+    'mypoints_next_reward' => 'Nächste Prämie',
+    'mypoints_top3'        => 'Top 3 Geschäfte',
+    'mypoints_recent'      => 'Letzte Aktivitäten',
+
+    // ============================================
     // LEGAL PAGES
     // ============================================
     'legal_back_home' => 'Zurück zur Startseite',
