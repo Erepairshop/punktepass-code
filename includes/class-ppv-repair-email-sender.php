@@ -510,20 +510,30 @@ class PPV_Repair_Email_Sender {
         if (!in_array($selected_lang, ['de', 'hu', 'ro', 'en', 'it'])) $selected_lang = 'de';
 
         // Default template for Repair Form promotion
-        $default_template = 'Guten Tag,
+        $default_template = 'Hallo,
 
-ich habe Ihr Gesch&auml;ft online gefunden und gesehen, dass Sie Reparaturen anbieten.
+ich hei&szlig;e Erik und betreibe selbst einen Reparatur-Shop in Lauingen (Bayern).
 
-Kurze Frage: Nutzen Sie aktuell noch Papier-Formulare f&uuml;r die Reparaturannahme, oder haben Sie das schon digital gel&ouml;st?
+Ich hatte das gleiche Problem wie wahrscheinlich jeder Werkstatt-Betreiber: unleserliche Zettel, verlorene Auftr&auml;ge, Kunden die st&auml;ndig anrufen. Deshalb habe ich mir ein digitales System gebaut &ndash; 150 Kunden nutzen es mittlerweile bei mir im Alltag.
 
-Ich habe ein kostenloses Tool gebaut, mit dem Werkst&auml;tten ihre Reparaturannahme in 2 Minuten digitalisieren k&ouml;nnen &ndash; inklusive Rechnungen, Kundenverwaltung und DATEV-Export.
+Jetzt biete ich es anderen Werkst&auml;tten an:
 
-Falls das interessant klingt, zeige ich Ihnen gerne kurz, wie es funktioniert.
+&bull; Digitale Reparaturannahme (online oder am Tablet)
+&bull; Rechnungen &amp; Angebote als PDF
+&bull; Live-Tracking f&uuml;r Kunden (weniger Anrufe!)
+&bull; DATEV &amp; CSV Export
+&bull; Eingebauter KI-Assistent &ndash; hilft Ihnen direkt im System bei Fragen, ohne auf Support warten zu m&uuml;ssen
 
-{{CTA:https://punktepass.de/formular|&#128073; Kostenlos starten}}
+Die ersten 50 Formulare pro Monat sind dauerhaft kostenlos.
+
+Falls Sie mal reinschauen m&ouml;chten:
+{{CTA:https://punktepass.de/formular|&#128073; Jetzt kostenlos testen}}
+
+Wenn Sie Fragen haben, antworten Sie einfach auf diese Email &ndash; ich antworte pers&ouml;nlich.
 
 Viele Gr&uuml;&szlig;e
-Erik Borota';
+Erik Borota
+eRepairShop, Lauingen';
 
         $default_subject_de = 'Kurze Frage zu Ihrem Reparatur-Service';
 
