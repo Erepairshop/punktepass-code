@@ -407,7 +407,7 @@ class PPV_Repair_Email_Sender {
         $year = date('Y');
 
         $header_titles = [
-            'de' => ['title' => 'Schluss mit Papier-Chaos<br>in der Werkstatt', 'subtitle' => 'Digitales Reparaturformular &ndash; von einem Werkstatt-Betreiber entwickelt,<br>der die gleichen Probleme hatte wie Sie.'],
+            'de' => ['title' => '1 Jahr Premium-Zugang<br>kostenlos f&uuml;r Ihre Werkstatt', 'subtitle' => '10 Partnerwerkst&auml;tten gesucht &ndash; digitales Reparaturformular<br>von einem Werkstatt-Betreiber entwickelt.'],
             'hu' => ['title' => 'V&eacute;ge a pap&iacute;r-k&aacute;osznak a m&uuml;helyben', 'subtitle' => 'Digit&aacute;lis jav&iacute;t&aacute;si &uuml;rlap &ndash; egy m&uuml;hely-tulajdonos fejlesztette,<br>aki ugyanazokkal a probl&eacute;m&aacute;kkal k&uuml;zd&ouml;tt mint &Ouml;n.'],
             'ro' => ['title' => 'Gata cu haosul de h&acirc;rtie &icirc;n atelier', 'subtitle' => 'Formular digital de repara&#539;ii &ndash; dezvoltat de un proprietar de atelier<br>care a avut acelea&#537;i probleme ca dvs.'],
             'en' => ['title' => 'End the Paper Chaos<br>in Your Workshop', 'subtitle' => 'Digital repair form &ndash; built by a workshop owner<br>who had the same problems as you.'],
@@ -516,38 +516,47 @@ class PPV_Repair_Email_Sender {
         if (!in_array($selected_lang, ['de', 'hu', 'ro', 'en', 'it'])) $selected_lang = 'de';
 
         // Default template for Repair Form promotion (rich HTML)
-        $default_template = '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px;" role="presentation"><tr><td width="48" style="width:48px;padding-right:14px;" valign="top"><table cellpadding="0" cellspacing="0" border="0" width="48" style="width:48px;" role="presentation"><tr><td width="48" height="48" align="center" valign="middle" bgcolor="#e5e7eb" style="width:48px;height:48px;border-radius:50%;background-color:#e5e7eb;font-size:20px;font-weight:700;color:#374151;font-family:Arial,sans-serif;">E</td></tr></table></td><td valign="middle"><p style="margin:0;font-weight:700;font-size:15px;color:#1f2937;">Erik Borota</p><p style="margin:2px 0 0 0;font-size:13px;color:#6b7280;">Inhaber, eRepairShop &middot; Lauingen</p></td></tr></table>
+        $default_template = '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px;" role="presentation"><tr><td width="48" style="width:48px;padding-right:14px;" valign="top"><table cellpadding="0" cellspacing="0" border="0" width="48" style="width:48px;" role="presentation"><tr><td width="48" height="48" align="center" valign="middle" bgcolor="#e5e7eb" style="width:48px;height:48px;border-radius:50%;background-color:#e5e7eb;font-size:20px;font-weight:700;color:#374151;font-family:Arial,sans-serif;">E</td></tr></table></td><td valign="middle"><p style="margin:0;font-weight:700;font-size:15px;color:#1f2937;">Erik Borota</p><p style="margin:2px 0 0 0;font-size:13px;color:#6b7280;">Werkstatt-Betreiber &middot; Lauingen</p></td></tr></table>
 
-<p style="margin:0 0 14px;font-size:15px;color:#374151;">Hallo,</p>
-<p style="margin:0 0 14px;font-size:15px;color:#374151;">ich hei&szlig;e Erik und betreibe selbst einen Reparatur-Shop in Lauingen (Bayern).</p>
-<p style="margin:0 0 14px;font-size:15px;color:#374151;">Ich hatte das gleiche Problem wie wahrscheinlich jeder Werkstatt-Betreiber: unleserliche Zettel, verlorene Auftr&auml;ge, Kunden die st&auml;ndig anrufen. Deshalb habe ich mir ein digitales System gebaut &ndash; Kunden nutzen es mittlerweile bei mir im Alltag.</p>
-<p style="margin:0 0 24px;font-size:15px;color:#374151;">Jetzt biete ich es anderen Werkst&auml;tten an:</p>
+<p style="margin:0 0 14px;font-size:15px;color:#374151;">Guten Tag,</p>
+<p style="margin:0 0 14px;font-size:15px;color:#374151;">mein Name ist Erik Borota &ndash; ich bin selbst Werkstatt-Betreiber in Lauingen und habe ein digitales Reparaturformular entwickelt, weil ich die t&auml;glichen Probleme mit Papierkram aus eigener Erfahrung kenne.</p>
+<p style="margin:0 0 24px;font-size:15px;color:#374151;">Ich suche derzeit <strong>10 Partnerwerkst&auml;tten</strong>, denen ich <strong>1 Jahr Premium-Zugang komplett kostenlos</strong> schalte &ndash; im Austausch f&uuml;r ehrliches Feedback.</p>
 
-<p style="color:#0d9488;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 18px;">Was Sie damit k&ouml;nnen:</p>
+<p style="color:#0d9488;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 18px;">Was Sie mit dem Premium-Zugang bekommen:</p>
 
-<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128203;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">Digitale Reparaturannahme</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Kunden f&uuml;llen online oder am Tablet aus &ndash; keine Papierzettel mehr</p></td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:10px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">Digitales Reparaturformular (online oder am Tablet vor Ort)</p></td></tr></table>
 
-<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128196;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">Rechnungen &amp; Angebote als PDF</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Per Knopfdruck erstellen und direkt per Email versenden</p></td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:10px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">Unbegrenzte Formulare pro Monat</p></td></tr></table>
 
-<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128205;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">Live-Tracking f&uuml;r Kunden</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Kunden sehen den Reparaturstatus in Echtzeit &ndash; weniger Anrufe</p></td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:10px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">Professionelle Rechnungen &amp; Angebote als PDF per E-Mail</p></td></tr></table>
 
-<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128202;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">DATEV &amp; CSV Export</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Alle Daten f&uuml;r Ihren Steuerberater &ndash; ein Klick, fertig</p></td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:10px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">DATEV, CSV &amp; Excel-Export f&uuml;r den Steuerberater</p></td></tr></table>
 
-<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:6px;" role="presentation"><tr><td width="36" valign="top" style="padding-top:2px;font-size:18px;">&#128295;</td><td><p style="margin:0;font-weight:600;font-size:14px;color:#1f2937;">F&uuml;r jede Branche</p><p style="margin:2px 0 0;font-size:13px;color:#6b7280;">Handy, PC, KFZ, Fahrrad, E-Scooter, Konsolen und mehr</p></td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:10px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">Kundenverwaltung mit kompletter Reparatur-Historie</p></td></tr></table>
 
-<p style="margin:24px 0 4px;font-size:15px;color:#374151;">Die ersten 50 Formulare pro Monat sind <strong>dauerhaft kostenlos</strong>.</p>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:10px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">Digitale Kaufvertr&auml;ge mit IMEI-Pr&uuml;fung</p></td></tr></table>
 
-{{CTA:https://punktepass.de/formular|Kostenlos testen &rarr;}}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:10px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">F&uuml;r alle Branchen: Handy, PC, KFZ, Fahrrad, E-Scooter</p></td></tr></table>
 
-<p style="text-align:center;font-size:12px;color:#9ca3af;margin:4px 0 28px;">50 Formulare/Monat gratis &middot; Keine Kreditkarte &middot; In 2 Min. startklar</p>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px;" role="presentation"><tr><td width="28" valign="top" style="padding-top:2px;font-size:15px;color:#0d9488;">&#10004;</td><td><p style="margin:0;font-size:14px;color:#1f2937;">DSGVO-konform, Made in Germany</p></td></tr></table>
+
+<p style="color:#0d9488;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 14px;">So funktioniert es:</p>
+
+<p style="margin:0 0 6px;font-size:14px;color:#374151;">&rarr; Kostenlos registrieren auf <strong>punktepass.de</strong></p>
+<p style="margin:0 0 6px;font-size:14px;color:#374151;">&rarr; Ihre Registrierungs-E-Mail an mich senden: <strong><a href="mailto:info@punktepass.de" style="color:#0d9488;text-decoration:none;">info@punktepass.de</a></strong></p>
+<p style="margin:0 0 20px;font-size:14px;color:#374151;">&rarr; Ich schalte Ihren Premium-Zugang innerhalb von 24 Stunden frei</p>
+
+{{CTA:https://punktepass.de/formular|Jetzt kostenlos registrieren &rarr;}}
+
+<p style="text-align:center;font-size:12px;color:#9ca3af;margin:4px 0 28px;">Kein Vertrag &middot; Keine Kreditkarte &middot; Kein Risiko</p>
 
 <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;" role="presentation"><tr><td style="border-top:1px solid #e5e7eb;font-size:0;line-height:0;">&nbsp;</td></tr></table>
 
-<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 12px;" role="presentation"><tr><td style="border-left:3px solid #d1d5db;padding:0 0 0 16px;"><p style="margin:0;font-style:italic;color:#4b5563;font-size:14px;line-height:1.6;">&bdquo;Ich habe das System gebaut, weil ich selbst genervt war vom Papier-Chaos. Wenn Sie Fragen haben, schreiben Sie mir einfach &ndash; ich antworte pers&ouml;nlich.&ldquo;</p></td></tr></table>
+<p style="margin:0 0 4px;font-size:15px;color:#374151;">Haben Sie Interesse? Ich freue mich auf Ihre R&uuml;ckmeldung.</p>
 
-<p style="margin:0;font-weight:700;font-size:14px;color:#1f2937;">Erik Borota</p>';
+<p style="margin:12px 0 0;font-weight:700;font-size:14px;color:#1f2937;">Erik Borota</p>';
 
-        $default_subject_de = 'Kurze Frage zu Ihrem Reparatur-Service';
+        $default_subject_de = '1 Jahr Premium-Zugang kostenlos für Ihre Werkstatt';
 
         // Hungarian template
         $default_template_hu = 'J&oacute; napot,
