@@ -516,9 +516,7 @@ class PPV_Repair_Email_Sender {
         if (!in_array($selected_lang, ['de', 'hu', 'ro', 'en', 'it'])) $selected_lang = 'de';
 
         // Default template for Repair Form promotion (rich HTML)
-        $default_template = '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px;" role="presentation"><tr><td width="48" style="width:48px;padding-right:14px;" valign="top"><table cellpadding="0" cellspacing="0" border="0" width="48" style="width:48px;" role="presentation"><tr><td width="48" height="48" align="center" valign="middle" bgcolor="#e5e7eb" style="width:48px;height:48px;border-radius:50%;background-color:#e5e7eb;font-size:20px;font-weight:700;color:#374151;font-family:Arial,sans-serif;">E</td></tr></table></td><td valign="middle"><p style="margin:0;font-weight:700;font-size:15px;color:#1f2937;">Erik Borota</p><p style="margin:2px 0 0 0;font-size:13px;color:#6b7280;">Werkstatt-Betreiber &middot; Lauingen</p></td></tr></table>
-
-<p style="margin:0 0 14px;font-size:15px;color:#374151;">Guten Tag,</p>
+        $default_template = '<p style="margin:0 0 14px;font-size:15px;color:#374151;">Guten Tag,</p>
 <p style="margin:0 0 14px;font-size:15px;color:#374151;">mein Name ist Erik Borota &ndash; ich bin selbst Werkstatt-Betreiber in Lauingen und habe ein digitales Reparaturformular entwickelt, weil ich die t&auml;glichen Probleme mit Papierkram aus eigener Erfahrung kenne.</p>
 <p style="margin:0 0 24px;font-size:15px;color:#374151;">Ich suche derzeit <strong>10 Partnerwerkst&auml;tten</strong>, denen ich <strong>1 Jahr Premium-Zugang komplett kostenlos</strong> schalte &ndash; im Austausch f&uuml;r ehrliches Feedback.</p>
 
@@ -542,7 +540,7 @@ class PPV_Repair_Email_Sender {
 
 <p style="color:#0d9488;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 14px;">So funktioniert es:</p>
 
-<p style="margin:0 0 6px;font-size:14px;color:#374151;">&rarr; Kostenlos registrieren auf <strong>punktepass.de</strong></p>
+<p style="margin:0 0 6px;font-size:14px;color:#374151;">&rarr; Kostenlos registrieren auf <strong><a href="https://punktepass.de/formular" style="color:#0d9488;text-decoration:none;">punktepass.de/formular</a></strong></p>
 <p style="margin:0 0 6px;font-size:14px;color:#374151;">&rarr; Ihre Registrierungs-E-Mail an mich senden: <strong><a href="mailto:info@punktepass.de" style="color:#0d9488;text-decoration:none;">info@punktepass.de</a></strong></p>
 <p style="margin:0 0 20px;font-size:14px;color:#374151;">&rarr; Ich schalte Ihren Premium-Zugang innerhalb von 24 Stunden frei</p>
 
