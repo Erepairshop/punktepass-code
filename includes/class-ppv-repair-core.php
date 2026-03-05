@@ -379,7 +379,10 @@ class PPV_Repair_Core {
                 exit;
             }
 
-            $limit_reached = (!$store->repair_premium && $store->repair_form_count >= $store->repair_form_limit);
+            $store_is_premium = !empty($store->repair_premium)
+                || (($store->subscription_status ?? '') === 'active'
+                    && (!$store->subscription_expires_at || strtotime($store->subscription_expires_at) > time()));
+            $limit_reached = (!$store_is_premium && $store->repair_form_count >= $store->repair_form_limit);
             echo PPV_Repair_Form::render_standalone_page($store, $limit_reached);
             exit;
         }
@@ -1169,7 +1172,10 @@ class PPV_Repair_Core {
             wp_send_json_error(['message' => 'Reparaturformular nicht verfügbar']);
         }
 
-        if (!$store->repair_premium && $store->repair_form_count >= $store->repair_form_limit) {
+        $store_is_premium = !empty($store->repair_premium)
+            || (($store->subscription_status ?? '') === 'active'
+                && (!$store->subscription_expires_at || strtotime($store->subscription_expires_at) > time()));
+        if (!$store_is_premium && $store->repair_form_count >= $store->repair_form_limit) {
             wp_send_json_error(['message' => 'Formularlimit erreicht.']);
         }
 
