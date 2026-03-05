@@ -3543,7 +3543,14 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
 
         $update = ['status' => $new_status, 'updated_at' => current_time('mysql')];
         if (!empty($notes)) $update['notes'] = $notes;
-        if ($new_status === 'done') $update['completed_at'] = current_time('mysql');
+        if ($new_status === 'done') {
+            // Only reset completed_at if feedback email hasn't been sent yet.
+            // If email was already sent (feedback_email_sent=1), keep the original
+            // completed_at so the cron doesn't pick up this repair again.
+            if (empty($repair->feedback_email_sent)) {
+                $update['completed_at'] = current_time('mysql');
+            }
+        }
         if ($new_status === 'delivered') $update['delivered_at'] = current_time('mysql');
 
         $old_status = $repair->status;
