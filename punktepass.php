@@ -1009,6 +1009,9 @@ add_action('init', function () {
     // Händler Demo page
     add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
     add_rewrite_tag('%ppv_demo_haendler%', '1');
+    // Portfolio page
+    add_rewrite_rule('^portfolio/?$', 'index.php?ppv_portfolio=1', 'top');
+    add_rewrite_tag('%ppv_portfolio%', '1');
 }, 10);
 
 // ========================================
@@ -1048,6 +1051,20 @@ add_action('template_redirect', function() {
         if (file_exists($demo_file)) {
             header('Content-Type: text/html; charset=UTF-8');
             readfile($demo_file);
+            exit;
+        }
+    }
+}, 1);
+
+// ========================================
+// 📋 PORTFOLIO PAGE HANDLER
+// ========================================
+add_action('template_redirect', function() {
+    if (get_query_var('ppv_portfolio')) {
+        $portfolio_file = PPV_PLUGIN_DIR . 'portfolio.html';
+        if (file_exists($portfolio_file)) {
+            header('Content-Type: text/html; charset=UTF-8');
+            readfile($portfolio_file);
             exit;
         }
     }
