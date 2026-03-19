@@ -44,6 +44,7 @@ class PPV_Weekly_Report {
               AND email != ''
               AND subscription_status IN ('active', 'trial')
               AND parent_store_id IS NULL
+              AND (repair_enabled IS NULL OR repair_enabled = 0)
         ");
 
         $sent_count = 0;
