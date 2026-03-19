@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio — PunktePass Digital Loyalty Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        :root {
+            --primary: #6C5CE7;
+            --primary-dark: #5A4BD1;
+            --accent: #00D2FF;
+            --bg-dark: #0F0F1A;
+            --bg-card: #1A1A2E;
+            --bg-card-hover: #222240;
+            --text: #E8E8F0;
+            --text-muted: #8888AA;
+            --border: #2A2A45;
+            --gradient-1: linear-gradient(135deg, #6C5CE7, #00D2FF);
+            --gradient-2: linear-gradient(135deg, #FF6B6B, #FFE66D);
+            --gradient-3: linear-gradient(135deg, #00D2FF, #0ACF83);
+            --gradient-4: linear-gradient(135deg, #FF6B6B, #6C5CE7);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 210, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(255, 107, 107, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(108, 92, 231, 0.15);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+        .hero h1 {
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero .subtitle {
+            font-size: clamp(16px, 2vw, 20px);
+            color: var(--text-muted);
+            max-width: 650px;
+            margin: 0 auto 40px;
+            font-weight: 300;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 60px;
+        }
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .stat-item:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 60px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .section-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Tech grid */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        .tech-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            transition: all 0.2s;
+        }
+        .tech-card:hover {
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+        }
+        .tech-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tech-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .tech-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            background: rgba(108, 92, 231, 0.12);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent);
+            margin-top: 10px;
+            margin-right: 4px;
+        }
+
+        /* Architecture */
+        .arch-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            overflow-x: auto;
+        }
+        .arch-layers {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 600px;
+        }
+        .arch-layer {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .arch-label {
+            width: 110px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .arch-boxes {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        .arch-box {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .arch-layer:nth-child(1) .arch-box { background: rgba(0, 210, 255, 0.12); color: #00D2FF; border: 1px solid rgba(0, 210, 255, 0.2); }
+        .arch-layer:nth-child(2) .arch-box { background: rgba(108, 92, 231, 0.12); color: #A39BF7; border: 1px solid rgba(108, 92, 231, 0.2); }
+        .arch-layer:nth-child(3) .arch-box { background: rgba(10, 207, 131, 0.12); color: #0ACF83; border: 1px solid rgba(10, 207, 131, 0.2); }
+        .arch-layer:nth-child(4) .arch-box { background: rgba(255, 107, 107, 0.12); color: #FF6B6B; border: 1px solid rgba(255, 107, 107, 0.2); }
+        .arch-layer:nth-child(5) .arch-box { background: rgba(255, 230, 109, 0.12); color: #FFE66D; border: 1px solid rgba(255, 230, 109, 0.2); }
+        .arch-connector {
+            width: 2px;
+            height: 12px;
+            background: var(--border);
+            margin-left: 170px;
+        }
+
+        /* Feature list */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            transition: border-color 0.2s;
+        }
+        .feature-item:hover { border-color: var(--primary); }
+        .feature-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        /* Timeline */
+        .challenge-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .challenge-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            transition: border-color 0.2s;
+        }
+        .challenge-card:hover { border-color: var(--primary); }
+        .challenge-emoji {
+            font-size: 24px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .challenge-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .challenge-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Role */
+        .role-banner {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+        }
+        .role-banner h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .role-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .role-pill {
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .pill-1 { background: rgba(108, 92, 231, 0.15); color: #A39BF7; }
+        .pill-2 { background: rgba(0, 210, 255, 0.15); color: #00D2FF; }
+        .pill-3 { background: rgba(10, 207, 131, 0.15); color: #0ACF83; }
+        .pill-4 { background: rgba(255, 107, 107, 0.15); color: #FF6B6B; }
+        .pill-5 { background: rgba(255, 230, 109, 0.15); color: #FFE66D; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 0 60px;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+        .footer p {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* Code metrics */
+        .metrics-bar {
+            margin-top: 16px;
+        }
+        .metric-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            width: 80px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .metric-bar-bg {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+        .metric-value {
+            font-size: 12px;
+            font-weight: 600;
+            width: 70px;
+            flex-shrink: 0;
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: white; color: #1a1a2e; }
+            .bg-grid { display: none; }
+            .stat-item, .tech-card, .feature-item, .challenge-card, .arch-diagram, .role-banner {
+                background: #f8f8fc;
+                border-color: #ddd;
+            }
+            .hero h1, .stat-number {
+                -webkit-text-fill-color: #6C5CE7;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero { padding: 50px 0 40px; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .tech-grid { grid-template-columns: 1fr; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .arch-diagram { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-badge">PORTFOLIO &mdash; FULL-STACK PROJECT</div>
+            <h1>PunktePass</h1>
+            <p class="subtitle">
+                A complete digital loyalty platform with QR-based point collection,
+                real-time POS sync, AI-powered support, native iOS app, and multi-language support &mdash;
+                built from scratch as a solo developer.
+            </p>
+        </section>
+
+        <!-- Key Stats -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-number">158K+</div>
+                <div class="stat-label">Lines of Code</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">153</div>
+                <div class="stat-label">PHP Classes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">75</div>
+                <div class="stat-label">JS Modules</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">43</div>
+                <div class="stat-label">REST Endpoints</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Languages</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">iOS</div>
+                <div class="stat-label">Native App</div>
+            </div>
+        </div>
+
+        <!-- Code Metrics Visual -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon" style="background: rgba(108, 92, 231, 0.15);">📊</div>
+                <h2>Codebase Breakdown</h2>
+            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px;">
+                <div class="metrics-bar">
+                    <div class="metric-row">
+                        <span class="metric-label">PHP</span>
+                        <div class="metric-bar-bg">
+                            <div class="metric-bar-fill" style="width: 82%; background: var(--gradient-1);"></div>
+                        </div>
+                        <span class="metric-value" style="color: #A39BF7;">129,658</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">JavaScript</span>
+                        <div class="metric-bar-bg">
+                            <div class="metric-bar-fill" style="width: 17%; background: var(--gradient-2);"></div>
+                        </div>
+                        <span class="metric-value" style="color: #FFE66D;">27,317</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Swift (iOS)</span>
+                        <div class="metric-bar-bg">
+                            <div class="metric-bar-fill" style="width: 1%; background: var(--gradient-3);"></div>
+                        </div>
+                        <span class="metric-value" style="color: #0ACF83;">1,555</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">CSS</span>
+                        <div class="metric-bar-bg">
+                            <div class="metric-bar-fill" style="width: 6%; background: var(--gradient-4);"></div>
+                        </div>
+                        <span class="metric-value" style="color: #FF6B6B;">26 files</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon" style="background: rgba(0, 210, 255, 0.15);">🏗</div>
+                <h2>System Architecture</h2>
+            </div>
+            <div class="arch-diagram">
+                <div class="arch-layers">
+                    <div class="arch-layer">
+                        <div class="arch-label">CLIENT</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box">PWA Web App</div>
+                            <div class="arch-box">iOS Native (Swift)</div>
+                            <div class="arch-box">POS Terminals</div>
+                            <div class="arch-box">Repair Kiosk</div>
+                        </div>
+                    </div>
+                    <div class="arch-connector"></div>
+                    <div class="arch-layer">
+                        <div class="arch-label">API LAYER</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box">43 REST Endpoints</div>
+                            <div class="arch-box">WordPress AJAX</div>
+                            <div class="arch-box">Standalone APIs</div>
+                            <div class="arch-box">WebSocket (Ably)</div>
+                        </div>
+                    </div>
+                    <div class="arch-connector"></div>
+                    <div class="arch-layer">
+                        <div class="arch-label">BACKEND</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box">109 PHP Classes</div>
+                            <div class="arch-box">Custom Auth System</div>
+                            <div class="arch-box">AI Engine (Claude)</div>
+                            <div class="arch-box">PDF Generator</div>
+                        </div>
+                    </div>
+                    <div class="arch-connector"></div>
+                    <div class="arch-layer">
+                        <div class="arch-label">SERVICES</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box">Stripe Payments</div>
+                            <div class="arch-box">PayPal</div>
+                            <div class="arch-box">Firebase FCM</div>
+                            <div class="arch-box">Nominatim Geo</div>
+                        </div>
+                    </div>
+                    <div class="arch-connector"></div>
+                    <div class="arch-layer">
+                        <div class="arch-label">DATA</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box">MySQL (7+ Custom Tables)</div>
+                            <div class="arch-box">Session Store</div>
+                            <div class="arch-box">LiteSpeed Cache</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon" style="background: rgba(10, 207, 131, 0.15);">⚡</div>
+                <h2>Technology Stack</h2>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h3>🔧 Backend</h3>
+                    <p>Custom WordPress plugin architecture with 153 PHP files, trait-based composition,
+                       and a completely custom authentication system (non-WordPress user management).</p>
+                    <span class="tech-tag">PHP 7.4+</span>
+                    <span class="tech-tag">WordPress</span>
+                    <span class="tech-tag">MySQL</span>
+                    <span class="tech-tag">REST API</span>
+                </div>
+                <div class="tech-card">
+                    <h3>🎨 Frontend</h3>
+                    <p>75 JavaScript modules with vanilla JS architecture. Custom UI components,
+                       real-time dashboard updates, interactive charts, and responsive design with dark/light theme support.</p>
+                    <span class="tech-tag">Vanilla JS</span>
+                    <span class="tech-tag">CSS3</span>
+                    <span class="tech-tag">PWA</span>
+                    <span class="tech-tag">Service Worker</span>
+                </div>
+                <div class="tech-card">
+                    <h3>📱 Mobile (iOS)</h3>
+                    <p>Native iOS app with Swift, WebView bridge for hybrid functionality,
+                       Firebase push notifications, and automated CI/CD pipeline via Codemagic to TestFlight.</p>
+                    <span class="tech-tag">Swift</span>
+                    <span class="tech-tag">Xcode</span>
+                    <span class="tech-tag">Firebase</span>
+                    <span class="tech-tag">Codemagic CI/CD</span>
+                </div>
+                <div class="tech-card">
+                    <h3>🤖 AI Integration</h3>
+                    <p>Context-aware AI support chat powered by Claude API. Page-aware responses,
+                       store-specific context from sessions, escalation workflows to human support via WhatsApp/email.</p>
+                    <span class="tech-tag">Claude API</span>
+                    <span class="tech-tag">System Prompts</span>
+                    <span class="tech-tag">Escalation Logic</span>
+                </div>
+                <div class="tech-card">
+                    <h3>💳 Payments</h3>
+                    <p>Full payment processing with multiple providers: Stripe for card payments,
+                       PayPal subscriptions, bank transfer support, and automated partner commission tracking.</p>
+                    <span class="tech-tag">Stripe</span>
+                    <span class="tech-tag">PayPal</span>
+                    <span class="tech-tag">Bank Transfer</span>
+                    <span class="tech-tag">Commissions</span>
+                </div>
+                <div class="tech-card">
+                    <h3>🔄 Real-Time</h3>
+                    <p>WebSocket-based real-time sync via Ably for live QR scan monitoring,
+                       POS device synchronization, and instant dashboard updates across all connected clients.</p>
+                    <span class="tech-tag">Ably WebSocket</span>
+                    <span class="tech-tag">Firebase FCM</span>
+                    <span class="tech-tag">Live Sync</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon" style="background: rgba(255, 107, 107, 0.15);">🎯</div>
+                <h2>Key Features Built</h2>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-1);"></div>
+                    <span>QR code scanning with fraud detection</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-2);"></div>
+                    <span>Multi-vendor POS system with live sync</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-3);"></div>
+                    <span>Loyalty points & rewards management</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-4);"></div>
+                    <span>Device fingerprinting & approval flow</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-1);"></div>
+                    <span>AI-powered context-aware support chat</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-2);"></div>
+                    <span>Repair shop invoice & form system</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-3);"></div>
+                    <span>Stripe & PayPal payment processing</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-4);"></div>
+                    <span>Multi-language UI (DE/HU/RO/EN/IT)</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-1);"></div>
+                    <span>Native iOS app with push notifications</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-2);"></div>
+                    <span>Partner commission & payout tracking</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-3);"></div>
+                    <span>Analytics dashboard & business insights</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-4);"></div>
+                    <span>PDF receipt & invoice generation</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-1);"></div>
+                    <span>Blog CMS with SEO & IndexNow</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-2);"></div>
+                    <span>User onboarding & guided setup</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-3);"></div>
+                    <span>WhatsApp & email notification system</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: var(--gradient-4);"></div>
+                    <span>GDPR-compliant data management</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Engineering Challenges -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon" style="background: rgba(255, 230, 109, 0.15);">💡</div>
+                <h2>Engineering Challenges Solved</h2>
+            </div>
+            <div class="challenge-list">
+                <div class="challenge-card">
+                    <div class="challenge-emoji">🔐</div>
+                    <div>
+                        <h4>Custom Authentication System</h4>
+                        <p>Built a complete user authentication system independent of WordPress, including
+                           token-based sessions, device fingerprinting, multi-device management with approval workflows,
+                           and QR-code-based login for kiosk environments.</p>
+                    </div>
+                </div>
+                <div class="challenge-card">
+                    <div class="challenge-emoji">⚡</div>
+                    <div>
+                        <h4>Real-Time Multi-Device Sync</h4>
+                        <p>Implemented WebSocket-based real-time synchronization between POS terminals,
+                           admin dashboards, and customer devices. QR scans appear instantly across all connected
+                           clients with suspicious activity detection and alerts.</p>
+                    </div>
+                </div>
+                <div class="challenge-card">
+                    <div class="challenge-emoji">🤖</div>
+                    <div>
+                        <h4>Context-Aware AI Support</h4>
+                        <p>Integrated Claude API with dynamic system prompts that know the entire platform.
+                           The AI detects which page the user is on, which store they belong to, and provides
+                           relevant answers. Includes escalation flow to human support when needed.</p>
+                    </div>
+                </div>
+                <div class="challenge-card">
+                    <div class="challenge-emoji">🌍</div>
+                    <div>
+                        <h4>Multi-Language Architecture</h4>
+                        <p>Designed a translation system supporting 5 languages (German, Hungarian, Romanian,
+                           English, Italian) with 2,000+ translation keys each. Includes context-specific
+                           translations for main app and repair subsystem.</p>
+                    </div>
+                </div>
+                <div class="challenge-card">
+                    <div class="challenge-emoji">🛡</div>
+                    <div>
+                        <h4>Anti-Fraud & Security</h4>
+                        <p>Built device fingerprinting to prevent QR code abuse, with admin approval workflows
+                           for new devices. Implemented nonce validation, CORS handling, rate limiting,
+                           and cross-domain API security for external integrations.</p>
+                    </div>
+                </div>
+                <div class="challenge-card">
+                    <div class="challenge-emoji">📱</div>
+                    <div>
+                        <h4>Cross-Platform Delivery</h4>
+                        <p>Shipped as a responsive PWA for web, native iOS app via Swift with WebView bridge,
+                           and Fully Kiosk-compatible for tablet POS. Set up automated CI/CD with Codemagic
+                           for TestFlight deployment on every build.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Role -->
+        <section class="section">
+            <div class="role-banner">
+                <h3>My Role: Solo Full-Stack Developer</h3>
+                <p style="color: var(--text-muted); font-size: 14px; max-width: 600px; margin: 0 auto;">
+                    Designed, developed, and deployed the entire platform independently &mdash;
+                    from database schema to iOS App Store. Every line of code, every API integration,
+                    every deployment pipeline.
+                </p>
+                <div class="role-pills">
+                    <span class="role-pill pill-1">Backend Architecture</span>
+                    <span class="role-pill pill-2">Frontend Development</span>
+                    <span class="role-pill pill-3">Database Design</span>
+                    <span class="role-pill pill-4">iOS App Development</span>
+                    <span class="role-pill pill-5">AI Integration</span>
+                    <span class="role-pill pill-1">Payment Integration</span>
+                    <span class="role-pill pill-2">Real-Time Systems</span>
+                    <span class="role-pill pill-3">CI/CD Pipeline</span>
+                    <span class="role-pill pill-4">DevOps & Deployment</span>
+                    <span class="role-pill pill-5">UX/UI Design</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p style="margin-bottom: 8px; color: var(--text); font-weight: 500;">
+                Built with dedication, curiosity, and thousands of hours of self-taught programming.
+            </p>
+            <p>
+                <a href="https://punktepass.de" target="_blank">punktepass.de</a>
+                &nbsp;&middot;&nbsp;
+                Available for full-stack, PHP, or AI integration roles
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
