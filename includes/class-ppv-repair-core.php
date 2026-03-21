@@ -1145,6 +1145,13 @@ class PPV_Repair_Core {
             $wpdb->query("ALTER TABLE {$repairs_table} MODIFY COLUMN status ENUM('new','in_progress','waiting_parts','done','delivered','cancelled','not_repairable') DEFAULT 'new'");
             update_option('ppv_repair_migration_version', '3.4');
         }
+
+        // v3.5: Change muster_image from VARCHAR(500) to LONGTEXT (base64 canvas data is too large for VARCHAR)
+        if (version_compare($version, '3.5', '<')) {
+            $repairs_table = $wpdb->prefix . 'ppv_repairs';
+            $wpdb->query("ALTER TABLE {$repairs_table} MODIFY COLUMN muster_image LONGTEXT NULL");
+            update_option('ppv_repair_migration_version', '3.5');
+        }
     }
 
     /** ============================================================
