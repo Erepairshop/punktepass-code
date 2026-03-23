@@ -16,35 +16,41 @@
 2025-11-20-RG;Telefónica Germany (O2);1411178101/08;20.11.2025;Mobilfunk (6 Nummern);Telekommunikation;93,03;17,68;110,71
 2025-12-18-RG;Telefónica Germany (O2);1436524748/08;18.12.2025;Mobilfunk (6 Nummern);Telekommunikation;116,58;22,15;138,73
 20250925_0010367122;11880 Internet Services AG;0010367122;25.09.2025;Werbe-Eintrag Bronze 11880.com (12 Mo);Werbung/Marketing;84,00;15,96;99,96
-4EU113065;4Phones.nl B.V.;INV-NL-54305;15/09/2025;Samsung Galaxy S24 Ultra S928B Display;Wareneinkauf/Ersatzteile;167,90;0,00;167,90
-4EU113492;4Phones.nl B.V.;INV-NL-54724;17/09/2025;PIXDURA For iPhone 15 Pro Display And;Wareneinkauf/Ersatzteile;89,90;0,00;89,90
-4EU114394;4Phones.nl B.V.;INV-NL-55612;24/09/2025;"For iPhone 16 Extra Glass Without NFC,; For iPhone 16 Extra Glass Without NFC,";Wareneinkauf/Ersatzteile;431,88;0,00;431,88
-4EU114885;4Phones.nl B.V.;INV-NL-55990;29/09/2025;"For iPhone 13 Complete Housing incl. All; Samsung Galaxy S23 Ultra S918B Display";Wareneinkauf/Ersatzteile;227,60;0,00;227,60
-4EU115201;4Phones.nl B.V.;INV-NL-56126;30/09/2025;"OnePlus 9 Pro (LE2123) Back Cover; Samsung Galaxy S24 FE S721B Display";Wareneinkauf/Ersatzteile;67,10;0,00;67,10
-4EU115837;4Phones.nl B.V.;INV-NL-56828;06/10/2025;"Samsung Galaxy S23 Ultra S918B System; Samsung Galaxy A52s 5G A528B Display";Wareneinkauf/Ersatzteile;115,01;0,00;115,01
-4EU116023;4Phones.nl B.V.;INV-NL-56956;07/10/2025;"Samsung Galaxy S23 Ultra S918B Display; Xiaomi Redmi Note 11S (2201117SG)";Wareneinkauf/Ersatzteile;184,30;0,00;184,30
-4EU117220;4Phones.nl B.V.;INV-NL-58049;16/10/2025;"PIXDURA For iPhone XR Display And; Huawei P30 Lite Display And Digitizer";Wareneinkauf/Ersatzteile;215,26;0,00;215,26
-4EU117334;4Phones.nl B.V.;INV-NL-58191;17/10/2025;"Samsung Galaxy S24 Ultra S928B System; Samsung Galaxy S24 Ultra S928B Bottom";Wareneinkauf/Ersatzteile;104;0,00;104,00
-4EU117628;4Phones.nl B.V.;INV-NL-58338;20/10/2025;PIXDURA For iPhone 13 Pro Max Display;Wareneinkauf/Ersatzteile;89,90;0,00;89,90
-4EU120734;4Phones.nl B.V.;INV-NL-61336;13/11/2025;"Samsung Galaxy S23 Ultra S918B Display; Samsung Galaxy Z Fold3 F926B Display";Wareneinkauf/Ersatzteile;558,20;0,00;558,20
-4EU120843;4Phones.nl B.V.;INV-NL-61487;14/11/2025;"Rixus For iPhone 16 Pro Max Duo; PIXDURA For iPhone 14 Pro Display And";Wareneinkauf/Ersatzteile;106,03;0,00;106,03
-4EU121373;4Phones.nl B.V.;INV-NL-62014;19/11/2025;Samsung Galaxy A22 5G A226B Display;Wareneinkauf/Ersatzteile;54,15;0,00;54,15
-4EU122951;4Phones.nl B.V.;INV-NL-63539;02/12/2025;"Rixus RXU82C Boost Data Cable USB-C; For iPhone 12 Pro Max Complete";Wareneinkauf/Ersatzteile;76,16;0,00;76,16
-4EU123668;4Phones.nl B.V.;INV-NL-64233;08/12/2025;"For iPhone 12 Complete Housing incl. All; PIXDURA For iPhone 12 Pro Max Display";Wareneinkauf/Ersatzteile;87,85;0,00;87,85
+25091005879M1001;finn GmbH;25091005879M1001;30.09.2025;Kfz-Leasing Fahrzeugmiete (29.09.-28.10.2025);Kfz-Leasing;352.94;67.06;420.00
+25101005879M1001;finn GmbH;25101005879M1001;30.10.2025;Kfz-Leasing Fahrzeugmiete (29.10.-28.11.2025);Kfz-Leasing;352.94;67.06;420.00
+25111005879M1001;finn GmbH;25111005879M1001;30.11.2025;Kfz-Leasing Fahrzeugmiete (29.11.-28.12.2025);Kfz-Leasing;352.94;67.06;420.00
+4EU113065;4Phones.nl B.V.;INV-NL-54305;15/09/2025;Samsung Galaxy S24 Ultra S928B Display;Wareneinkauf/Ersatzteile (igE);167,90;0,00;167,90
+4EU113492;4Phones.nl B.V.;INV-NL-54724;17/09/2025;PIXDURA For iPhone 15 Pro Display And;Wareneinkauf/Ersatzteile (igE);89,90;0,00;89,90
+4EU114394;4Phones.nl B.V.;INV-NL-55612;24/09/2025;"For iPhone 16 Extra Glass Without NFC,; For iPhone 16 Extra Glass Without NFC,";Wareneinkauf/Ersatzteile (igE);431,88;0,00;431,88
+4EU114885;4Phones.nl B.V.;INV-NL-55990;29/09/2025;"For iPhone 13 Complete Housing incl. All; Samsung Galaxy S23 Ultra S918B Display";Wareneinkauf/Ersatzteile (igE);227,60;0,00;227,60
+4EU115201;4Phones.nl B.V.;INV-NL-56126;30/09/2025;"OnePlus 9 Pro (LE2123) Back Cover; Samsung Galaxy S24 FE S721B Display";Wareneinkauf/Ersatzteile (igE);67,10;0,00;67,10
+4EU115837;4Phones.nl B.V.;INV-NL-56828;06/10/2025;"Samsung Galaxy S23 Ultra S918B System; Samsung Galaxy A52s 5G A528B Display";Wareneinkauf/Ersatzteile (igE);115,01;0,00;115,01
+4EU116023;4Phones.nl B.V.;INV-NL-56956;07/10/2025;"Samsung Galaxy S23 Ultra S918B Display; Xiaomi Redmi Note 11S (2201117SG)";Wareneinkauf/Ersatzteile (igE);184,30;0,00;184,30
+4EU117220;4Phones.nl B.V.;INV-NL-58049;16/10/2025;"PIXDURA For iPhone XR Display And; Huawei P30 Lite Display And Digitizer";Wareneinkauf/Ersatzteile (igE);215,26;0,00;215,26
+4EU117334;4Phones.nl B.V.;INV-NL-58191;17/10/2025;"Samsung Galaxy S24 Ultra S928B System; Samsung Galaxy S24 Ultra S928B Bottom";Wareneinkauf/Ersatzteile (igE);104;0,00;104,00
+4EU117628;4Phones.nl B.V.;INV-NL-58338;20/10/2025;PIXDURA For iPhone 13 Pro Max Display;Wareneinkauf/Ersatzteile (igE);89,90;0,00;89,90
+4EU120734;4Phones.nl B.V.;INV-NL-61336;13/11/2025;"Samsung Galaxy S23 Ultra S918B Display; Samsung Galaxy Z Fold3 F926B Display";Wareneinkauf/Ersatzteile (igE);558,20;0,00;558,20
+4EU120843;4Phones.nl B.V.;INV-NL-61487;14/11/2025;"Rixus For iPhone 16 Pro Max Duo; PIXDURA For iPhone 14 Pro Display And";Wareneinkauf/Ersatzteile (igE);106,03;0,00;106,03
+4EU121373;4Phones.nl B.V.;INV-NL-62014;19/11/2025;Samsung Galaxy A22 5G A226B Display;Wareneinkauf/Ersatzteile (igE);54,15;0,00;54,15
+4EU122951;4Phones.nl B.V.;INV-NL-63539;02/12/2025;"Rixus RXU82C Boost Data Cable USB-C; For iPhone 12 Pro Max Complete";Wareneinkauf/Ersatzteile (igE);76,16;0,00;76,16
+4EU123668;4Phones.nl B.V.;INV-NL-64233;08/12/2025;"For iPhone 12 Complete Housing incl. All; PIXDURA For iPhone 12 Pro Max Display";Wareneinkauf/Ersatzteile (igE);87,85;0,00;87,85
 G328293 - Rechnung BIZ1OS28U6E;SPOT Service Parts or Tools GmbH;G328293;06.10.2025;Rückglas & Schraubenkit Samsung;Wareneinkauf/Ersatzteile;142,02;26,98;169,00
 RE341262;FirmenABC Marketing GmbH;RE341262;01.10.2025;FirmenABC-Top-Eintrag + GMB + Reichweitenverstärker;Werbung/Marketing;124,92;23,73;148,65
 RE342433;FirmenABC Marketing GmbH;RE342433;01.11.2025;FirmenABC-Top-Eintrag + GMB + Reichweitenverstärker;Werbung/Marketing;124,92;23,73;148,65
 RE343527;FirmenABC Marketing GmbH;RE343527;01.12.2025;FirmenABC-Top-Eintrag + GMB + Reichweitenverstärker;Werbung/Marketing;124,92;23,73;148,65
-Rechnung 1150289;Spotproduktion (Regensburg);1150289;20.10.2025;Spotproduktion Standardspot;Werbung/Marketing;179,00;34,01;213,01
-Rechnung Nr 2562001;eBay Verkäufer;2562001;02.12.2025;L Aufsteller DIN A5 Acryl (5 Stk);Bürobedarf/Werbung;20,25;3,85;24,10
+Rechnung 1150289;andre media AG (Spotproduktion);1150289;20.10.2025;Spotproduktion Standardspot;Werbung/Marketing;179,00;34,01;213,01
+Rechnung Nr 2562001;eBay Verkäufer;2562001;02.12.2025;L Aufsteller DIN A5 Acryl (5 Stk);Wareneinkauf/Ersatzteile (Klarna);20,25;3,85;24,10
 Rechnung Nr._ 85764;Eselt GmbH;85764;27.09.2025;eBay-Schnittstelle + Premium-Mitgliedschaft;Software/Abonnement;21,83;4,15;25,98
 Rechnung Nr._ 86594;Eselt GmbH;86594;27.10.2025;eBay-Schnittstelle + Premium-Mitgliedschaft;Software/Abonnement;21,83;4,15;25,98
 Rechnung Nr._ 87429;Eselt GmbH;87429;27.11.2025;eBay-Schnittstelle + Premium-Mitgliedschaft;Software/Abonnement;21,83;4,15;25,98
 SD10252054-INV-DI;B2Mobility GmbH (bp Tankstelle);SD10252054;30/09/25;Diesel, Super bleifrei;Kfz-Kosten/Tanken;159,28;29,65;188,93
 SD10268258-INV-DI;B2Mobility GmbH (bp Tankstelle);SD10268258;31/10/25;Super bleifrei;Kfz-Kosten/Tanken;46,37;8,65;55,02
 SD10286230-INV-DI;B2Mobility GmbH (bp Tankstelle);SD10286230;30/11/25;Diesel, Super bleifrei;Kfz-Kosten/Tanken;88,07;16,39;104,46
-X400015250620251201X;Ambient Media GmbH;X400015250620251201X;1. Dezember 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
-d4159d0c92308ad34f3f80d5ebc0fadc;nm-mobile (Nabil Moutkane);202548233;08.10.2025;LCD Display Samsung Galaxy Z Fold 3;Wareneinkauf/Ersatzteile;272,81;51,83;324,64
-smartcom (1) (1) (1) (2);SmartCom Bayern GmbH;2530180;08.11.2025;Samsung S23 Ultra LCD                                       ;Wareneinkauf/Ersatzteile;234,29;44,52;278,81
-smartcom (1) (1);SmartCom Bayern GmbH;2528767;10.11.2025;Huawei Service Pack LCD P20 black                           ;Wareneinkauf/Ersatzteile;30,39;5,77;36,16
-smartcom (1) (2) (1);SmartCom Bayern GmbH;2530180;10.11.2025;Samsung A53 Service Pack LCD                                ;Wareneinkauf/Ersatzteile;76,57;14,55;91,12
+X400015250620250901X;Ambient-TV;X400015250620250901X;1. September 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
+X400015250620250929X;Ambient-TV;X400015250620250929X;29. September 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
+X400015250620251103X;Ambient-TV;X400015250620251103X;3. November 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
+X400015250620251201X;Ambient-TV;X400015250620251201X;1. Dezember 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
+d4159d0c92308ad34f3f80d5ebc0fadc;nm-mobile (Nabil Moutkane);202548233;08.10.2025;LCD Display Samsung Galaxy Z Fold 3;Wareneinkauf/Ersatzteile (Klarna);272,81;51,83;324,64
+smartcom (1) (1) (1) (2);SmartCom Bayern GmbH;2530180;08.11.2025;Samsung S23 Ultra LCD                                       ;Wareneinkauf/Ersatzteile (Klarna);234,29;44,52;278,81
+smartcom (1) (1);SmartCom Bayern GmbH;2528767;10.11.2025;Huawei Service Pack LCD P20 black                           ;Wareneinkauf/Ersatzteile (Klarna);30,39;5,77;36,16
+smartcom (1) (2) (1);SmartCom Bayern GmbH;2530180;10.11.2025;Samsung A53 Service Pack LCD                                ;Wareneinkauf/Ersatzteile (Klarna);76,57;14,55;91,12
