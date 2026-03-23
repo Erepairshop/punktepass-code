@@ -1,56 +1,32 @@
-﻿file;supplier;inv_nr;date;product;category;net;vat;gross
-1033410464;DHL Paket GmbH;1033410464;30.11.2025;DHL PAKET;Versand/Shipping;7,95;1,51;9,46
-1041537639;DHL Paket GmbH;1041537639;10.11.2025;DHL RETOURE;Versand/Shipping;6,65;1,26;7,91
-1057859221;DHL Paket GmbH;1057859221;30.09.2025;DHL RETOURE;Versand/Shipping;13,22;2,51;15,73
-1057859223;DHL Paket GmbH;1057859223;30.09.2025;DHL Kleinpaket;Versand/Shipping;6,74;1,28;8,02
-1057859226;DHL Paket GmbH;1057859226;30.09.2025;DHL PAKET;Versand/Shipping;18,75;3,56;22,31
-1116939259;DHL Paket GmbH;1116939259;10.10.2025;DHL RETOURE;Versand/Shipping;6,61;1,26;7,87
-1116939260;DHL Paket GmbH;1116939260;10.10.2025;DHL Kleinpaket;Versand/Shipping;23,59;4,48;28,07
-1141475781;DHL Paket GmbH;1141475781;20.11.2025;DHL Kleinpaket;Versand/Shipping;3,56;0,68;4,24
-1157868019;DHL Paket GmbH;1157868019;31.10.2025;DHL Kleinpaket;Versand/Shipping;6,74;1,28;8,02
-1157868020;DHL Paket GmbH;1157868020;31.10.2025;DHL PAKET;Versand/Shipping;13,35;2,54;15,89
-1239635617;DHL Paket GmbH;1239635617;20.12.2025;DHL Kleinpaket;Versand/Shipping;7,12;1,35;8,47
-1567111397;DHL Paket GmbH;1567111397;10.12.2025;DHL PAKET International;Versand/Shipping;15,18;2,88;18,06
-1575256043;Deutsche Post AG;1575256043;10.10.2025;DHL PAKET International;Versand/Shipping;14,99;2,85;17,84
-1831383438;DHL Paket GmbH;1831383438;10.12.2025;DHL Kleinpaket;Versand/Shipping;14,74;2,80;17,54
-2025-11-20-RG;Telefónica Germany (O2);1411178101/08;20.11.2025;Mobilfunk (6 Nummern);Telekommunikation;93,03;17,68;110,71
-2025-12-18-RG;Telefónica Germany (O2);1436524748/08;18.12.2025;Mobilfunk (6 Nummern);Telekommunikation;116,58;22,15;138,73
-20250925_0010367122;11880 Internet Services AG;0010367122;25.09.2025;Werbe-Eintrag Bronze 11880.com (12 Mo);Werbung/Marketing;84,00;15,96;99,96
-25091005879M1001;finn GmbH;25091005879M1001;30.09.2025;Kfz-Leasing Fahrzeugmiete + Ratenvereinbarung (29.09.-28.10.2025);Kfz-Leasing;457,98;87,02;545,00
-25101005879M1001;finn GmbH;25101005879M1001;30.10.2025;Kfz-Leasing Fahrzeugmiete + Ratenvereinbarung (29.10.-28.11.2025);Kfz-Leasing;457,98;87,02;545,00
-25111005879M1001;finn GmbH;25111005879M1001;30.11.2025;Kfz-Leasing Fahrzeugmiete + Ratenvereinbarung (29.11.-28.12.2025);Kfz-Leasing;457,98;87,02;545,00
-4EU113065;4Phones.nl B.V.;INV-NL-54305;15/09/2025;Samsung Galaxy S24 Ultra S928B Display;Wareneinkauf/Ersatzteile (igE);167,90;0,00;167,90
-4EU113492;4Phones.nl B.V.;INV-NL-54724;17/09/2025;PIXDURA For iPhone 15 Pro Display And;Wareneinkauf/Ersatzteile (igE);89,90;0,00;89,90
-4EU114394;4Phones.nl B.V.;INV-NL-55612;24/09/2025;"For iPhone 16 Extra Glass Without NFC,; For iPhone 16 Extra Glass Without NFC,";Wareneinkauf/Ersatzteile (igE);431,88;0,00;431,88
-4EU114885;4Phones.nl B.V.;INV-NL-55990;29/09/2025;"For iPhone 13 Complete Housing incl. All; Samsung Galaxy S23 Ultra S918B Display";Wareneinkauf/Ersatzteile (igE);227,60;0,00;227,60
-4EU115201;4Phones.nl B.V.;INV-NL-56126;30/09/2025;"OnePlus 9 Pro (LE2123) Back Cover; Samsung Galaxy S24 FE S721B Display";Wareneinkauf/Ersatzteile (igE);67,10;0,00;67,10
-4EU115837;4Phones.nl B.V.;INV-NL-56828;06/10/2025;"Samsung Galaxy S23 Ultra S918B System; Samsung Galaxy A52s 5G A528B Display";Wareneinkauf/Ersatzteile (igE);115,01;0,00;115,01
-4EU116023;4Phones.nl B.V.;INV-NL-56956;07/10/2025;"Samsung Galaxy S23 Ultra S918B Display; Xiaomi Redmi Note 11S (2201117SG)";Wareneinkauf/Ersatzteile (igE);184,30;0,00;184,30
-4EU117220;4Phones.nl B.V.;INV-NL-58049;16/10/2025;"PIXDURA For iPhone XR Display And; Huawei P30 Lite Display And Digitizer";Wareneinkauf/Ersatzteile (igE);215,26;0,00;215,26
-4EU117334;4Phones.nl B.V.;INV-NL-58191;17/10/2025;"Samsung Galaxy S24 Ultra S928B System; Samsung Galaxy S24 Ultra S928B Bottom";Wareneinkauf/Ersatzteile (igE);104;0,00;104,00
-4EU117628;4Phones.nl B.V.;INV-NL-58338;20/10/2025;PIXDURA For iPhone 13 Pro Max Display;Wareneinkauf/Ersatzteile (igE);89,90;0,00;89,90
-4EU120734;4Phones.nl B.V.;INV-NL-61336;13/11/2025;"Samsung Galaxy S23 Ultra S918B Display; Samsung Galaxy Z Fold3 F926B Display";Wareneinkauf/Ersatzteile (igE);558,20;0,00;558,20
-4EU120843;4Phones.nl B.V.;INV-NL-61487;14/11/2025;"Rixus For iPhone 16 Pro Max Duo; PIXDURA For iPhone 14 Pro Display And";Wareneinkauf/Ersatzteile (igE);106,03;0,00;106,03
-4EU121373;4Phones.nl B.V.;INV-NL-62014;19/11/2025;Samsung Galaxy A22 5G A226B Display;Wareneinkauf/Ersatzteile (igE);54,15;0,00;54,15
-4EU122951;4Phones.nl B.V.;INV-NL-63539;02/12/2025;"Rixus RXU82C Boost Data Cable USB-C; For iPhone 12 Pro Max Complete";Wareneinkauf/Ersatzteile (igE);76,16;0,00;76,16
-4EU123668;4Phones.nl B.V.;INV-NL-64233;08/12/2025;"For iPhone 12 Complete Housing incl. All; PIXDURA For iPhone 12 Pro Max Display";Wareneinkauf/Ersatzteile (igE);87,85;0,00;87,85
-G328293 - Rechnung BIZ1OS28U6E;SPOT Service Parts or Tools GmbH;G328293;06.10.2025;Rückglas & Schraubenkit Samsung;Wareneinkauf/Ersatzteile;142,02;26,98;169,00
-RE341262;FirmenABC Marketing GmbH;RE341262;01.10.2025;FirmenABC-Top-Eintrag + GMB + Reichweitenverstärker;Werbung/Marketing;124,92;23,73;148,65
-RE342433;FirmenABC Marketing GmbH;RE342433;01.11.2025;FirmenABC-Top-Eintrag + GMB + Reichweitenverstärker;Werbung/Marketing;124,92;23,73;148,65
-RE343527;FirmenABC Marketing GmbH;RE343527;01.12.2025;FirmenABC-Top-Eintrag + GMB + Reichweitenverstärker;Werbung/Marketing;124,92;23,73;148,65
-Rechnung 1150289;andre media AG (Spotproduktion);1150289;20.10.2025;Spotproduktion Standardspot;Werbung/Marketing;179,00;34,01;213,01
-Rechnung Nr 2562001;eBay Verkäufer;2562001;02.12.2025;L Aufsteller DIN A5 Acryl (5 Stk);Wareneinkauf/Ersatzteile (Klarna);20,25;3,85;24,10
-Rechnung Nr._ 85764;Eselt GmbH;85764;27.09.2025;eBay-Schnittstelle + Premium-Mitgliedschaft;Software/Abonnement;21,83;4,15;25,98
-Rechnung Nr._ 86594;Eselt GmbH;86594;27.10.2025;eBay-Schnittstelle + Premium-Mitgliedschaft;Software/Abonnement;21,83;4,15;25,98
-Rechnung Nr._ 87429;Eselt GmbH;87429;27.11.2025;eBay-Schnittstelle + Premium-Mitgliedschaft;Software/Abonnement;21,83;4,15;25,98
-SD10252054-INV-DI;B2Mobility GmbH (bp Tankstelle);SD10252054;30/09/25;Diesel, Super bleifrei;Kfz-Kosten/Tanken;159,28;29,65;188,93
-SD10268258-INV-DI;B2Mobility GmbH (bp Tankstelle);SD10268258;31/10/25;Super bleifrei;Kfz-Kosten/Tanken;46,37;8,65;55,02
-SD10286230-INV-DI;B2Mobility GmbH (bp Tankstelle);SD10286230;30/11/25;Diesel, Super bleifrei;Kfz-Kosten/Tanken;88,07;16,39;104,46
-X400015250620250901X;Ambient-TV;X400015250620250901X;1. September 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
-X400015250620250929X;Ambient-TV;X400015250620250929X;29. September 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
-X400015250620251103X;Ambient-TV;X400015250620251103X;3. November 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
-X400015250620251201X;Ambient-TV;X400015250620251201X;1. Dezember 2025;Medialeistung Spot (McDonald's TV);Werbung/Marketing;180,00;34,20;214,20
-d4159d0c92308ad34f3f80d5ebc0fadc;nm-mobile (Nabil Moutkane);202548233;08.10.2025;LCD Display Samsung Galaxy Z Fold 3;Wareneinkauf/Ersatzteile (Klarna);272,81;51,83;324,64
-smartcom (1) (1) (1) (2);SmartCom Bayern GmbH;2530180;08.11.2025;Samsung S23 Ultra LCD                                       ;Wareneinkauf/Ersatzteile (Klarna);234,29;44,52;278,81
-smartcom (1) (1);SmartCom Bayern GmbH;2528767;10.11.2025;Huawei Service Pack LCD P20 black                           ;Wareneinkauf/Ersatzteile (Klarna);30,39;5,77;36,16
-smartcom (1) (2) (1);SmartCom Bayern GmbH;2530180;10.11.2025;Samsung A53 Service Pack LCD                                ;Wareneinkauf/Ersatzteile (Klarna);76,57;14,55;91,12
+﻿Nr;Szekció;Szállító;Típus;Nettó (táblázat);MwSt (táblázat);Bruttó (táblázat);STÁTUSZ;ZIP bruttó;PDF fájlok;Megjegyzés
+5;Vorsteuer 19%;finn GmbH;Kfz-Leasing (3 Monate);1.381,51;262,49;1.644,00;MEGVAN;1.635,00;"25091005879M1001.pdf; 25101005879M1001.pdf; 25111005879M1001.pdf";3x 545€ (420 Gesamtsumme + 125 Ratenvereinbarung). Eltérés: 9€
+6;Vorsteuer 19%;Ambient-TV;Werbung;540,00;102,60;642,60;MEGVAN;642,60;"X400015250620250929X.pdf; X400015250620251103X.pdf; X400015250620251201X.pdf";3x 214,20€ = 642,60€. EGYEZIK. (4. számla X...0901X szeptemberi, más időszak)
+7;Vorsteuer 19%;Telefonica Germany;Telefon;479,42;91,09;570,51;RÉSZBEN;249,44;"2025-11-20-RG.pdf (110,71€); 2025-12-18-RG.pdf (138,73€)";HIÁNYZIK: ~321€ (okt. számla = 2025-10-20-RG.pdf SÉRÜLT/ÜRES)
+8;Vorsteuer 19%;B2Mobility;Kfz-Betriebskosten/Tanken;366,39;69,62;436,01;RÉSZBEN;348,41;"SD10252054-INV-DI.pdf (188,93€); SD10268258-INV-DI.pdf (55,02€); SD10286230-INV-DI.pdf (104,46€)";HIÁNYZIK: ~87,60€ (valószínűleg dec. számla)
+9;Vorsteuer 19%;Phonetastik GmbH;Wareneinkauf;286,76;54,49;341,25;HIÁNYZIK;;;Phonetastik GmbH - Wareneinkauf 341,25€ - NINCS a ZIP-ben
+10;Vorsteuer 19%;Kleinanzeigen.de;Werbung;225,54;42,85;268,39;HIÁNYZIK;;;Kleinanzeigen.de - Werbung 268,39€ - NINCS a ZIP-ben
+11;Vorsteuer 19%;Vodafone GmbH;Telefon;176,47;33,53;210,00;HIÁNYZIK;;;Vodafone GmbH - Telefon 210,00€ - NINCS a ZIP-ben
+12;Vorsteuer 19%;Deutsche Post / DHL;Porto/Versand;159,18;30,25;189,43;MEGVAN;189,43;"1033410464.pdf; 1041537639.pdf; 1057859221.pdf; 1057859223.pdf; 1057859226.pdf; 1116939259.pdf; 1116939260.pdf; 1141475781.pdf; 1157868019.pdf; 1157868020.pdf; 1239635617.pdf; 1567111397.pdf; 1575256043.pdf; 1831383438.pdf";14 DHL számla, összeg EGYEZIK
+13;Vorsteuer 19%;Apple Services;Software;133,68;25,40;159,08;HIÁNYZIK;;;Apple Services - Software 159,08€ - NINCS a ZIP-ben
+14;Vorsteuer 19%;Eselt GmbH;Software;65,50;12,44;77,94;MEGVAN;77,94;"Rechnung Nr._ 85764.pdf (25,98€); Rechnung Nr._ 86594.pdf (25,98€); Rechnung Nr._ 87429.pdf (25,98€)";3x Eselt 25,98€ = 77,94€. EGYEZIK
+15;Vorsteuer 19%;Billbee GmbH;Software;30,30;5,76;36,06;HIÁNYZIK;;;Billbee GmbH - Software 36,06€ - NINCS a ZIP-ben
+16;Vorsteuer 19%;Klarna (üzleti);Wareneinkauf;2.215,13;420,67;2.635,80;RÉSZBEN;754,83;"smartcom (1) (1).pdf (36,16€); smartcom (1) (2) (1).pdf (278,81€); smartcom (1) (1) (1) (2).pdf (91,12€); d4159d0c92308ad34f3f80d5ebc0fadc.pdf (324,64€); Rechnung Nr 2562001.pdf (24,10€)";SmartCom 406,09€ + nm-mobile 324,64€ + eBay Aufsteller 24,10€ = 754,83€. HIÁNYZIK: ~1.880,97€
+17;Vorsteuer 19%;F.E.L.S Rechtsanwälte;Rechtskosten;252,10;47,90;300,00;HIÁNYZIK;;;F.E.L.S Rechtsanwälte - 300,00€ - NINCS a ZIP-ben
+18;Vorsteuer 19%;FirmenABC Marketing;Werbung;374,75;71,20;445,95;MEGVAN;445,95;"RE341262.pdf (148,65€); RE342433.pdf (148,65€); RE343527.pdf (148,65€)";3x FirmenABC 148,65€ = 445,95€. EGYEZIK
+19;Vorsteuer 19%;Temu.com;Wareneinkauf;185,15;35,18;220,33;HIÁNYZIK;;;Temu.com - Wareneinkauf 220,33€ - NINCS a ZIP-ben
+20;Vorsteuer 19%;andre media AG;Werbung;179,00;34,01;213,01;MEGVAN;213,01;Rechnung 1150289.pdf;andre media AG = Spotproduktion Regensburg. EGYEZIK
+21;Vorsteuer 19%;Amazon;Betriebsbedarf;170,21;32,34;202,55;HIÁNYZIK;;;Amazon - Betriebsbedarf 202,55€ - NINCS a ZIP-ben
+22;Vorsteuer 19%;SPOT Service Parts;Wareneinkauf;142,02;26,98;169,00;MEGVAN;169,00;G328293 - Rechnung BIZ1OS28U6E.pdf;SPOT Service 169,00€. EGYEZIK
+23;Vorsteuer 19%;TikTok Shop;Werbung;111,76;21,24;133,00;HIÁNYZIK;;;TikTok Shop - Werbung 133,00€ - NINCS a ZIP-ben
+24;Vorsteuer 19%;11880 Internet Services;Werbung;88,61;16,84;105,45;RÉSZBEN;99,96;20250925_0010367122.pdf;11880 - ZIP: 99,96€ vs táblázat 105,45€. Eltérés: 5,49€
+25;Vorsteuer 19%;Elementor Ltd;Software;70,49;13,39;83,88;HIÁNYZIK;;;Elementor Ltd - Software 83,88€ - NINCS a ZIP-ben
+26;Vorsteuer 19%;HeyGen Technology;Software;63,87;12,13;76,00;HIÁNYZIK;;;HeyGen Technology - Software 76,00€ - NINCS a ZIP-ben
+27;Vorsteuer 19%;AliExpress;Wareneinkauf;54,13;10,29;64,42;HIÁNYZIK;;;AliExpress - Wareneinkauf 64,42€ - NINCS a ZIP-ben
+28;Vorsteuer 19%;SANDAM GmbH;Betriebsbedarf;19,83;3,77;23,60;HIÁNYZIK;;;SANDAM GmbH - Betriebsbedarf 23,60€ - NINCS a ZIP-ben
+29;Vorsteuer 19%;Microsoft Payments;Software;8,39;1,60;9,99;HIÁNYZIK;;;Microsoft Payments - Software 9,99€ - NINCS a ZIP-ben
+30;Vorsteuer 19%;Google Payment;Software;6,69;1,27;7,96;HIÁNYZIK;;;Google Payment - Software 7,96€ - NINCS a ZIP-ben
+31;Vorsteuer 19%;eBay GmbH;eBay Gebühren;171,07;32,59;203,66;HIÁNYZIK;;;eBay GmbH - eBay Gebühren 203,66€ - NINCS a ZIP-ben
+32;igE;4Phones.nl B.V. (NL);EU Wareneinkauf (Handys);2.420,09;459,82;2.420,09;MEGVAN;2.575,24;"4EU113065.pdf; 4EU113492.pdf; 4EU114394.pdf; 4EU114885.pdf; 4EU115201.pdf; 4EU115837.pdf; 4EU116023.pdf; 4EU117220.pdf; 4EU117334.pdf; 4EU117628.pdf; 4EU120734.pdf; 4EU120843.pdf; 4EU121373.pdf; 4EU122951.pdf; 4EU123668.pdf";15 db 4Phones számla. ZIP: 2.575,24€ vs táblázat 2.420,09€. Eltérés: 155,15€ (időszak?)
+33;igE;GSM Supply B.V. (NL);EU Wareneinkauf (Handys);949,59;180,42;949,59;HIÁNYZIK;;;GSM Supply B.V. (NL) - EU Wareneinkauf 949,59€ - NINCS a ZIP-ben
+34;§13b Reverse Charge;Meta (Facebook, IE);Werbung §13b;356,71;67,77;356,71;HIÁNYZIK;;;Meta (Facebook, IE) - Werbung §13b 356,71€ - NINCS a ZIP-ben
+35;§13b Reverse Charge;Automattic Inc. (USA);Software §13b;10,71;2,03;10,71;HIÁNYZIK;;;Automattic Inc. (USA) - Software §13b 10,71€ - NINCS a ZIP-ben
