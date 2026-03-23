@@ -1,0 +1,167 @@
+DHL Paket GmbH
+Niederlassung Vertrieb
+
+
+                                                                                         Rechnung
+
+DHL Paket GmbH, Ferdinand-Porsche-Str. 1a, 89312 Günzburg                                Seite 1 von 3
+
+                                                                                         Bei Zahlung oder Rückfragen bitte angeben:
+Erik Borota Erepairshop                                                                  Rechnungsnummer:                  1057859226
+Inh. Erik Borota                                                                         Rechnungsdatum:                   30.09.2025
+Siedlungsring 51                                                                         Leistungszeitraum:                09.2025
+89415 Lauingen                                                                           Kundennummer:                     5255567540
+                                                                                         SEPA Mandatsreferenz:             EED0001000000000319482
+                                                                                         Gläubiger-ID:                     DE72ZZZ00000219639
+
+
+
+
+ Für Ihre Aufträge zur Sendungsbeförderung danken wir Ihnen und erlauben uns, diese wie folgt in Rechnung zu stellen.
+ Grundlage der Abrechnung sind die an Deutsche Post DHL übermittelten Auftragsdaten aus EDI-Nachrichten und die durch Deutsche Post
+ DHL ermittelten Paketsendungsdaten.
+
+          Genutztes Versandprodukt: DHL PAKET
+          Abrechnungsnummer:        5255567540 01 01
+          Auftraggeber:             Erik Borota Erepairshop, Inh. Erik Borota, Siedlungsring 51, 89415 Lauingen
+          Einlieferer:                        Erik Borota Erepairshop, Inh. Erik Borota, Siedlungsring 51, 89415 Lauingen
+          Ihre Referenz:                      DHL PAKET GKP
+          Abgerechnete Blatt- bzw.
+          ICR-Nummer/n:                       825-826
+          Einlieferungszeitraum:              23.09.2025 bis 23.09.2025
+
+ Rechnungsbetrag (ohne Umsatzsteuer)                                                                                                                  18,75 EUR
+ Umsatzsteuer (C1)                                                  19% von                        18,75    EUR                                           3,56 EUR
+ Rechnungsbetrag (inklusive Umsatzsteuer)                                                                                                             22,31 EUR
+
+ Wir buchen den Betrag frühestens am 06.10.2025 von Ihrem Konto IBAN DE5XXXXXXXXXXXXXXX3555, BIC BYLADEM1DLG ab.
+
+ Weitere ausführlichere Informationen entnehmen Sie bitte der folgenden EINZELÜBERSICHT.
+
+ Mit freundlichen Grüßen
+ Ihre DHL Paket GmbH
+
+
+
+
+Bitte beachten Sie folgende Hinweise
+
+Einwendungen gegen die in der Rechnung gestellte Forderung richten Sie bitte innerhalb von 30 Tagen nach Zugang der Rechnung an die
+unten genannte Anschrift Ihrer Abrechnungsstelle. Erfolgt innerhalb dieser Frist keine Einwendung, so gilt die Rechnung als anerkannt.
+Spätere Einwendungen können wir leider nicht mehr berücksichtigen.
+
+Die Rechnung kann unberechnete Aufträge aus vorherigen Abrechnungszeiträumen enthalten. Ist dies der Fall sind diese in der
+EINZELÜBERSICHT separat ausgewiesen.
+
+                            Hausadresse:                          DHL Paket GmbH                    Geschäftsführung:             Deutsche Post AG
+                            Ferdinand-Porsche-Str. 1a             Sitz Bonn                         Norman Chmiel                 Sitz Bonn
+                            89312 Günzburg                        Registergericht Bonn              Dr. Benjamin Rasch            Registergericht: Bonn
+                                                                  HRB 19565                         Markus Reckling               HRB 6792
+                            Abrechnungsstelle:                    USt-IdNr.                         Dr. Christian Schawel
+                            Deutsche Post AG                      DE 813312787                      Alexander Schmitz-Hübsch      Vorstand:
+                            Ravensburg                            St.Nr 205/5777/4144                                             Dr. Tobias Meyer, Vorsitzender
+                            Abrechnungsstelle                                                                                     Oscar de Bok
+                            Ferdinand-Porsche-Str. 1                                                                              Pablo Ciano
+                            89312 Günzburg                        Kontoverbindung                                                 Nikola Hagleitner
+                            Telefon +49 228 28 609 811            Postbank Köln                                                   Melanie Kreis
+                                                                  IBAN:                                                           Dr. Thomas Ogilvie
+                            E-Mail:                               DE88370100500000235506                                          John Pearson
+                            abrechnung.paket@dhl.com              BIC: PBNKDEFFXXX                                                Hendrik Venter
+
+                            www.dhl.de                                                                                            Vorsitzende des Aufsichtsrates:
+                                                                                                                                  Dr. Katrin Suder
+Rechnung                                                                                        Rechnungsnummer:   1057859226
+                                                                                                Rechnungsdatum:    30.09.2025
+Seite 2 von 3                                                                                   Kundennummer:      5255567540
+
+
+
+
+                                                      ZUSAMMENFASSUNG
+                              Produkt / Service                             Anzahl USt.-                              Gesamtpreis
+                                                                                    Kz.                                   in EUR
+DHL PAKET (GK) 1 kg                                                             2   C1                                      10,00
+  GoGreen Plus DHL Paket                                                        2   C1                                       0,30
+
+Anzahl Sendungen                                                                  2                                         10,00
+Anzahl Services                                                                   2                                          0,30
+  Maut- und CO2-Zuschlag                                                          2        C1                                0,38
+  Energiezuschlag DHL Paket (GK) 1,25%                                            2        C1                                0,12
+Summe                                                                                                                       10,80
+
+Monatspauschale Stufe 1                                                           1        C1                                   7,95
+
+
+Rechnungsbetrag (ohne Umsatzsteuer):                                                                                       18,75
+
+
+                                                       EINZELÜBERSICHT
+Aufträge aktueller Zeitraum:
+
+Einlieferungs-   Blatt-Nr./                       Produkt / Service              Anzahl Einh. USt.- Einzelpreis       Gesamtpreis
+    datum         ICR-Nr.                                                                      Kz.      in EUR            in EUR
+  23.09.2025        825        DHL PAKET (GK) 1 kg                                   1 ST C1               5,00              5,00
+                                 Maut- und CO2-Zuschlag                              1 ST C1               0,19              0,19
+                                 GoGreen Plus DHL Paket                              1 ST C1               0,15              0,15
+                                 Energiezuschlag DHL Paket (GK) 1,25%                1 ST C1               0,06              0,06
+                    826        DHL PAKET (GK) 1 kg                                   1 ST C1               5,00              5,00
+                                 Maut- und CO2-Zuschlag                              1 ST C1               0,19              0,19
+                                 GoGreen Plus DHL Paket                              1 ST C1               0,15              0,15
+                                 Energiezuschlag DHL Paket (GK) 1,25%                1 ST C1               0,06              0,06
+
+                               Anzahl Sendungen                                        2
+                               Anzahl Services                                         2
+
+
+Summe (aktueller Zeitraum):                                                                                                10,80
+
+
+
+
+                                                         Monatspauschale
+   Abrechnungsnummer                        Produkt / Service           Anzahl        USt.-         Einzelpreis       Gesamtpreis
+                                                                                       Kz.              in EUR            in EUR
+52555675400101                 Monatspauschale Stufe 1                       1         C1                  7,95              7,95
+
+
+Summe:                                                                                                                      7,95
+Rechnung                                                                                           Rechnungsnummer:        1057859226
+                                                                                                   Rechnungsdatum:         30.09.2025
+Seite 3 von 3                                                                                      Kundennummer:           5255567540
+
+
+
+
+                                        Sie haben Fragen zu Ihrer Rechnung?
+Alle Antworten rund um die Abrechnung bei DHL Paket sowie detaillierte Musterrechnungen finden Sie unter www.dhl.de/abrechnung.
+
+Änderungswünsche zu Ihrer Rechnungsstellung oder zu Ihren Stammdaten können Sie gerne formlos schriftlich oder telefonisch an Ihren
+Ansprechpartner im DHL Vertrieb richten.
+
+Fragen zur vorliegenden Rechnung beantwortet Ihnen gerne die Sie betreuende Abrechnungsstelle unter der auf Seite 1 angegebenen
+Kontaktadresse.
+
+
+
+Erläuterungen
+
+Blatt- / ICR-Nr.:
+Sollten Sie Ihre Aufträge elektronisch per EDI an die Deutsche Post DHL übermitteln, so handelt es sich bei der/den oben aufgeführten
+Nummer/n nicht um die "Blattnummer" des entsprechenden Auftrags, sondern um die "ICR-Nummer".
+leer
+Maut- und CO2-Zuschlag:
+Zuschlag getrennt vom Basispreis für staatliche Abgaben mit direktem Bezug auf unsere Transportleistung, insbesondere die
+streckenbezogene Gebühr für die Benutzung von Bundesfernstraßen mit schweren Nutzfahrzeugen in Deutschland sowie die aus der
+staatlichen CO2-Bepreisung resultierenden Mehrkosten.
+
+Energiezuschlag:
+Zuschlag prozentual auf den Basispreis gemäß aktueller Energiepreisentwicklung. Alle Informationen zu Höhe, Berechnung und Wirkung des
+Zuschlags siehe dhl.de/energiezuschlag
+
+USt.-Kz.:
+C1 -   voller Steuersatz    19 %
+
+Ab dem 9. Oktober 2025 gelten neue Vorgaben für SEPA-Überweisungen. Banken müssen vor der Freigabe einer Überweisung prüfen, ob der
+Zahlungsempfänger mit der IBAN übereinstimmt (Verification of Payee, kurz VoP). Bitte achten Sie darauf, dass der Empfängername mit den
+Angaben auf dieser Rechnung übereinstimmt, um Probleme bei der Zahlung zu vermeiden.
+

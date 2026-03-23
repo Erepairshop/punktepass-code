@@ -1,0 +1,56 @@
+                                                                                                                                       Rechnung
+                                                                                                                                               Invoice
+
+
+
+
+Firma:                  Eselt GmbH                                                   Rechnung Summe
+Company:                                                                             Invoice Total
+Adresse:                Särichener Str. 7c                                           Rechnung Nr.:                                            86594
+Address:                                                                             Invoice No.:
+                        02923 Kodersdorf                                             Rechnung Datum:                                     27.10.2025
+                        Deutschland                                                  Invoice Date:
+
+Email:                  info@eselt.de                                                Gesamtsumme:                                        EUR 25.98
+                                                                                     Total amount:
+Web:                    eselt.de
+                                                                                     Bezahlt:                                            EUR 25.98
+                                                                                     Paid:
+Kunde:                  Erik Borota                                                  Schuldend:                                            EUR 0,00
+Customer:                                                                            Owe:
+Adresse:                Siedlungsring 51
+Address:
+                        89415 Lauingen
+                        Deutschland
+Email:                  borota25@gmail.com
+
+
+                                                                                Das Rechnungsdatum entspricht dem Leistungsdatum
+                                                                                                     The Invoice date corresponds to the service date
+
+
+Anz.        Posten                                                                                        Netto-Preis/St.             Zwischensumme
+Number.     Positions                                                                                     Netto Price/Tax                     Subtotal
+1           Premium-Mitgliedschaft - Plan Artikel200 (27.10.2025 - 26.11.2025)                               EUR 5.45                      EUR 5.45
+1           eBay-Schnittstelle                                                                              EUR 16.38                     EUR 16.38
+
+
+                                                                                                                G-Preis                   EUR 21.83
+                                                                                                               Total price
+                                                                                                       MwSt. (19 %)                        EUR 4.15
+                                                                                                             Tax. (19 %)
+                                                                                                 Rechnung Betrag                          EUR 25.98
+                                                                                                          Invoice Amount
+
+
+Vielen Dank für Ihren Auftrag
+Thank you for the order
+Ihre Zahlung ist bei uns eingegangen
+We have received your payment
+
+
+
+
+                                              Eselt GmbH - Särichener Str. 7c - 02923 Kodersdorf - Deutschland
+                   Geschäftsführer: Jacek Fester USt.-IdNr. : DE308128896 Steuernummer: 207/108/05009 HRB 35729 Amtsgericht Dresden
+

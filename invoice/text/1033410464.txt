@@ -1,0 +1,114 @@
+DHL Paket GmbH
+Niederlassung Vertrieb
+
+
+                                                                                         Rechnung
+
+DHL Paket GmbH, Ferdinand-Porsche-Str. 1a, 89312 Günzburg                                Seite 1 von 2
+
+                                                                                         Bei Zahlung oder Rückfragen bitte angeben:
+Erik Borota Erepairshop                                                                  Rechnungsnummer:                  1033410464
+Inh. Erik Borota                                                                         Rechnungsdatum:                   30.11.2025
+Siedlungsring 51                                                                         Leistungszeitraum:                11.2025
+89415 Lauingen                                                                           Kundennummer:                     5255567540
+                                                                                         SEPA Mandatsreferenz:             EED0001000000000319482
+                                                                                         Gläubiger-ID:                     DE72ZZZ00000219639
+
+
+
+
+ Für Ihre Aufträge zur Sendungsbeförderung danken wir Ihnen und erlauben uns, diese wie folgt in Rechnung zu stellen.
+ Grundlage der Abrechnung sind die an Deutsche Post DHL übermittelten Auftragsdaten aus EDI-Nachrichten und die durch Deutsche Post
+ DHL ermittelten Paketsendungsdaten.
+
+          Genutztes Versandprodukt: DHL PAKET
+          Abrechnungsnummer:        5255567540 01 01
+          Auftraggeber:             Erik Borota Erepairshop, Inh. Erik Borota, Siedlungsring 51, 89415 Lauingen
+          Einlieferer:                        Erik Borota Erepairshop, Inh. Erik Borota, Siedlungsring 51, 89415 Lauingen
+          Ihre Referenz:                      DHL PAKET GKP
+          Abgerechnete Blatt- bzw.
+          ICR-Nummer/n:
+          Einlieferungszeitraum:              30.11.2025 bis 30.11.2025
+
+ Rechnungsbetrag (ohne Umsatzsteuer)                                                                                                                      7,95 EUR
+ Umsatzsteuer (C1)                                                  19% von                         7,95    EUR                                           1,51 EUR
+ Rechnungsbetrag (inklusive Umsatzsteuer)                                                                                                                 9,46 EUR
+
+ Wir buchen den Betrag frühestens am 03.12.2025 von Ihrem Konto IBAN DE5XXXXXXXXXXXXXXX3555, BIC BYLADEM1DLG ab.
+
+ Weitere ausführlichere Informationen entnehmen Sie bitte der folgenden EINZELÜBERSICHT.
+
+ Mit freundlichen Grüßen
+ Ihre DHL Paket GmbH
+
+
+
+
+Bitte beachten Sie folgende Hinweise
+
+Einwendungen gegen die in der Rechnung gestellte Forderung richten Sie bitte innerhalb von 30 Tagen nach Zugang der Rechnung an die
+unten genannte Anschrift Ihrer Abrechnungsstelle. Erfolgt innerhalb dieser Frist keine Einwendung, so gilt die Rechnung als anerkannt.
+Spätere Einwendungen können wir leider nicht mehr berücksichtigen.
+
+Die Rechnung kann unberechnete Aufträge aus vorherigen Abrechnungszeiträumen enthalten. Ist dies der Fall sind diese in der
+EINZELÜBERSICHT separat ausgewiesen.
+
+                            Hausadresse:                          DHL Paket GmbH                    Geschäftsführung:             Deutsche Post AG
+                            Ferdinand-Porsche-Str. 1a             Sitz Bonn                         Norman Chmiel                 Sitz Bonn
+                            89312 Günzburg                        Registergericht Bonn              Dr. Benjamin Rasch            Registergericht: Bonn
+                                                                  HRB 19565                         Markus Reckling               HRB 6792
+                            Abrechnungsstelle:                    USt-IdNr.                         Dr. Christian Schawel
+                            Deutsche Post AG                      DE 813312787                      Alexander Schmitz-Hübsch      Vorstand:
+                            Ravensburg                            St.Nr 205/5777/4144                                             Dr. Tobias Meyer, Vorsitzender
+                            Abrechnungsstelle                                                                                     Oscar de Bok
+                            Ferdinand-Porsche-Str. 1                                                                              Pablo Ciano
+                            89312 Günzburg                        Kontoverbindung                                                 Nikola Hagleitner
+                            Telefon +49 228 28 609 811            Postbank Köln                                                   Melanie Kreis
+                                                                  IBAN:                                                           Dr. Thomas Ogilvie
+                            E-Mail:                               DE88370100500000235506                                          John Pearson
+                            abrechnung.paket@dhl.com              BIC: PBNKDEFFXXX                                                Hendrik Venter
+
+                            www.dhl.de                                                                                            Vorsitzende des Aufsichtsrates:
+                                                                                                                                  Dr. Katrin Suder
+Rechnung                                                                                           Rechnungsnummer:        1033410464
+                                                                                                   Rechnungsdatum:         30.11.2025
+Seite 2 von 2                                                                                      Kundennummer:           5255567540
+
+
+
+
+                                                    ZUSAMMENFASSUNG
+                             Produkt / Service                                       Anzahl USt.-                              Gesamtpreis
+                                                                                             Kz.                                   in EUR
+Monatspauschale Stufe 1                                                                  1   C1                                       7,95
+
+
+Rechnungsbetrag (ohne Umsatzsteuer):                                                                                                    7,95
+
+
+
+
+                                        Sie haben Fragen zu Ihrer Rechnung?
+Alle Antworten rund um die Abrechnung bei DHL Paket sowie detaillierte Musterrechnungen finden Sie unter www.dhl.de/abrechnung.
+
+Änderungswünsche zu Ihrer Rechnungsstellung oder zu Ihren Stammdaten können Sie gerne formlos schriftlich oder telefonisch an Ihren
+Ansprechpartner im DHL Vertrieb richten.
+
+Fragen zur vorliegenden Rechnung beantwortet Ihnen gerne die Sie betreuende Abrechnungsstelle unter der auf Seite 1 angegebenen
+Kontaktadresse.
+
+
+
+Erläuterungen
+
+Blatt- / ICR-Nr.:
+Sollten Sie Ihre Aufträge elektronisch per EDI an die Deutsche Post DHL übermitteln, so handelt es sich bei der/den oben aufgeführten
+Nummer/n nicht um die "Blattnummer" des entsprechenden Auftrags, sondern um die "ICR-Nummer".
+leer
+USt.-Kz.:
+C1 -      voller Steuersatz  19 %
+
+Wir bedanken uns bei Ihnen für die gute und vertrauensvolle Zusammenarbeit und wünschen Ihnen eine schöne Adventszeit und ein
+erfolgreiches Jahr 2026.
+Ihre DHL Paket GmbH
+
