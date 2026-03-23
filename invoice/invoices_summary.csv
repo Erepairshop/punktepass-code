@@ -9,7 +9,7 @@
 12;Vorsteuer 19%;Deutsche Post / DHL;Porto/Versand;159,18;30,25;189,43;MEGVAN;189,43;"1033410464.pdf; 1041537639.pdf; 1057859221.pdf; 1057859223.pdf; 1057859226.pdf; 1116939259.pdf; 1116939260.pdf; 1141475781.pdf; 1157868019.pdf; 1157868020.pdf; 1239635617.pdf; 1567111397.pdf; 1575256043.pdf; 1831383438.pdf";14 DHL számla, összeg EGYEZIK
 13;Vorsteuer 19%;Apple Services;Software;133,68;25,40;159,08;HIÁNYZIK;;;Apple Services - Software 159,08€ - NINCS a ZIP-ben
 14;Vorsteuer 19%;Eselt GmbH;Software;65,50;12,44;77,94;MEGVAN;77,94;"Rechnung Nr._ 85764.pdf (25,98€); Rechnung Nr._ 86594.pdf (25,98€); Rechnung Nr._ 87429.pdf (25,98€)";3x Eselt 25,98€ = 77,94€. EGYEZIK
-15;Vorsteuer 19%;Billbee GmbH;Software;30,30;5,76;36,06;HIÁNYZIK;;;Billbee GmbH - Software 36,06€ - NINCS a ZIP-ben
+15;Vorsteuer 19%;Billbee GmbH;Software;30,30;5,76;36,06;MEGVAN;38,68;;3 számla: 16,49€ + 10,47€ + 11,72€ = 38,68€ bruttó. Eltérés: +2,62€
 16;Vorsteuer 19%;Klarna (üzleti);Wareneinkauf;2.215,13;420,67;2.635,80;RÉSZBEN;754,83;"smartcom (1) (1).pdf (36,16€); smartcom (1) (2) (1).pdf (278,81€); smartcom (1) (1) (1) (2).pdf (91,12€); d4159d0c92308ad34f3f80d5ebc0fadc.pdf (324,64€); Rechnung Nr 2562001.pdf (24,10€)";SmartCom 406,09€ + nm-mobile 324,64€ + eBay Aufsteller 24,10€ = 754,83€. HIÁNYZIK: ~1.880,97€
 17;Vorsteuer 19%;F.E.L.S Rechtsanwälte;Rechtskosten;252,10;47,90;300,00;HIÁNYZIK;;;F.E.L.S Rechtsanwälte - 300,00€ - NINCS a ZIP-ben
 18;Vorsteuer 19%;FirmenABC Marketing;Werbung;374,75;71,20;445,95;MEGVAN;445,95;"RE341262.pdf (148,65€); RE342433.pdf (148,65€); RE343527.pdf (148,65€)";3x FirmenABC 148,65€ = 445,95€. EGYEZIK
