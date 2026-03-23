@@ -4,7 +4,7 @@
 7;Vorsteuer 19%;Telefonica Germany;Telefon;479,42;91,09;570,51;RÉSZBEN;249,44;"2025-11-20-RG.pdf (110,71€); 2025-12-18-RG.pdf (138,73€)";HIÁNYZIK: ~321€ (okt. számla = 2025-10-20-RG.pdf SÉRÜLT/ÜRES)
 8;Vorsteuer 19%;B2Mobility;Kfz-Betriebskosten/Tanken;366,39;69,62;436,01;RÉSZBEN;348,41;"SD10252054-INV-DI.pdf (188,93€); SD10268258-INV-DI.pdf (55,02€); SD10286230-INV-DI.pdf (104,46€)";HIÁNYZIK: ~87,60€ (valószínűleg dec. számla)
 9;Vorsteuer 19%;Phonetastik GmbH;Wareneinkauf;286,76;54,49;341,25;MEGVAN;341,25;;5 számla (Okt-Dec): #43099 52,73€ + #42945 82,80€ + #44772 44,04€ + #45344 68,12€ + #46474 93,56€ = 341,25€. EGYEZIK
-10;Vorsteuer 19%;Kleinanzeigen.de;Werbung;225,54;42,85;268,39;HIÁNYZIK;;;Kleinanzeigen.de - Werbung 268,39€ - NINCS a ZIP-ben
+10;Vorsteuer 19%;Kleinanzeigen.de;Werbung;225,54;42,85;268,39;MEGVAN;268,39;;3 számla (Okt-Dec): EKA25466800 58,31€ (10.2025) + EKA25545137 61,33€ (11.2025) + EKA25623378 148,75€ (12.2025) = 268,39€. EGYEZIK
 11;Vorsteuer 19%;Vodafone GmbH;Telefon;176,47;33,53;210,00;HIÁNYZIK;;;Vodafone GmbH - Telefon 210,00€ - NINCS a ZIP-ben
 12;Vorsteuer 19%;Deutsche Post / DHL;Porto/Versand;159,18;30,25;189,43;MEGVAN;189,43;"1033410464.pdf; 1041537639.pdf; 1057859221.pdf; 1057859223.pdf; 1057859226.pdf; 1116939259.pdf; 1116939260.pdf; 1141475781.pdf; 1157868019.pdf; 1157868020.pdf; 1239635617.pdf; 1567111397.pdf; 1575256043.pdf; 1831383438.pdf";14 DHL számla, összeg EGYEZIK
 13;Vorsteuer 19%;Apple Services;Software;133,68;25,40;159,08;HIÁNYZIK;;;Apple Services - Software 159,08€ - NINCS a ZIP-ben
