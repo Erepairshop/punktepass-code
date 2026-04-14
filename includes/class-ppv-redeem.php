@@ -87,8 +87,20 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
 
         $params = $request->get_json_params();
 
-        // 🏪 FILIALE SUPPORT: Use session-aware store ID
-        $store_id = !empty($params['store_id']) ? intval($params['store_id']) : self::get_store_id();
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID (SECURITY: never trust client-supplied store_id)
+        $store_id = self::get_store_id();
+        // Allow client store_id only if it belongs to the same parent store
+        if (!empty($params['store_id']) && intval($params['store_id']) !== $store_id) {
+            $req_store = intval($params['store_id']);
+            if (class_exists('PPV_Filiale')) {
+                $handler_parent = PPV_Filiale::get_parent_id($store_id);
+                $req_parent     = PPV_Filiale::get_parent_id($req_store);
+                if ($handler_parent === $req_parent) {
+                    $store_id = $req_store; // Same parent — allow filiale switch
+                }
+                // Otherwise silently use handler's own store_id
+            }
+        }
         $user_id = intval($params['user_id'] ?? ($_SESSION['ppv_user_id'] ?? get_current_user_id()));
         $reward_id = intval($params['reward_id'] ?? 0);
 

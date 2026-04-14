@@ -175,8 +175,8 @@ if (
     setcookie('ppv_pos_token', $token, [
         'expires'  => time() + 43200,
         'path'     => '/',
-        'secure'   => false,
-        'httponly' => false,
+        'secure'   => true,
+        'httponly'  => true,
         'samesite' => 'Lax'
     ]);
 
@@ -238,6 +238,28 @@ if (
     $store_id = intval($request->get_param('store_id'));
     if (!$store_id) {
         return new WP_REST_Response(['success' => false, 'message' => '❌ Missing store_id'], 400);
+    }
+
+    // SECURITY: Verify the POS token belongs to the requested store (prevent IDOR)
+    if (!current_user_can('manage_options')) {
+        $token = $request->get_header('ppv-pos-token');
+        if (empty($token) && isset($_GET['pos_token'])) {
+            $token = sanitize_text_field($_GET['pos_token']);
+        }
+        if ($token) {
+            $token_store_id = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s AND pos_enabled = 1 LIMIT 1",
+                $token
+            ));
+            // Check if requested store is the same or a sibling filiale
+            if ($token_store_id) {
+                $token_parent = class_exists('PPV_Filiale') ? PPV_Filiale::get_parent_id($token_store_id) : $token_store_id;
+                $req_parent   = class_exists('PPV_Filiale') ? PPV_Filiale::get_parent_id($store_id) : $store_id;
+                if ($token_parent !== $req_parent) {
+                    return new WP_REST_Response(['success' => false, 'message' => '❌ No access to this store'], 403);
+                }
+            }
+        }
     }
 
     $prefix = $wpdb->prefix;

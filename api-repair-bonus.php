@@ -72,13 +72,21 @@ if (!$api_store) {
 // Extract parameters
 $email     = sanitize_email($params['email'] ?? '');
 $name      = sanitize_text_field($params['name'] ?? '');
-$store_id  = intval($params['store_id'] ?? 0);
 $points    = intval($params['points'] ?? 2);
 $reference = sanitize_text_field($params['reference'] ?? 'Reparatur-Formular Bonus');
 
-// Auto-detect store_id from API key if not provided
-if (!$store_id) {
-    $store_id = (int) $api_store->id;
+// SECURITY: store_id always from API key, allow override only for own filialen
+$store_id = (int) $api_store->id;
+if (!empty($params['store_id']) && intval($params['store_id']) !== $store_id) {
+    $req_store = intval($params['store_id']);
+    // Check if requested store is a filiale of the API key's store
+    if (class_exists('PPV_Filiale')) {
+        $api_parent = PPV_Filiale::get_parent_id($store_id);
+        $req_parent = PPV_Filiale::get_parent_id($req_store);
+        if ($api_parent === $req_parent) {
+            $store_id = $req_store;
+        }
+    }
 }
 
 if (empty($email) || !is_email($email)) {

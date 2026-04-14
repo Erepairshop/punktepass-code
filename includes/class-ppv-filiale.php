@@ -403,6 +403,17 @@ class PPV_Filiale {
             return;
         }
 
+        // SECURITY: Verify filiale belongs to the handler's store (prevent IDOR)
+        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+        if ($handler_store_id) {
+            $handler_parent = self::get_parent_id($handler_store_id);
+            $target_parent  = self::get_parent_id($filiale_id);
+            if ($handler_parent !== $target_parent) {
+                wp_send_json_error(['msg' => 'No access to this filiale']);
+                return;
+            }
+        }
+
         // Set as current (this handles all session vars + cache flush)
         self::set_current_filiale($filiale_id);
 

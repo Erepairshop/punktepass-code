@@ -38,6 +38,17 @@ trait PPV_QR_REST_Trait {
             @session_start();
         }
 
+        // SECURITY: Verify filiale belongs to the handler's store (prevent IDOR)
+        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+        if ($handler_store_id && class_exists('PPV_Filiale')) {
+            $handler_parent = PPV_Filiale::get_parent_id($handler_store_id);
+            $target_parent  = PPV_Filiale::get_parent_id($filiale_id);
+            if ($handler_parent !== $target_parent) {
+                wp_send_json_error(['message' => 'Kein Zugriff auf diese Filiale']);
+                return;
+            }
+        }
+
         // Update session with new filiale ID
         $_SESSION['ppv_current_filiale_id'] = $filiale_id;
 
