@@ -67,7 +67,7 @@
     function renderList() {
         const el = document.getElementById('prospect-list');
         if (!prospects.length) {
-            el.innerHTML = '<div class="empty-state"><i class="ri-map-pin-line"></i><p>Noch keine Besuche</p></div>';
+            el.innerHTML = '<div class="empty-state"><i class="ri-map-pin-line"></i><p>Încă nu sunt vizite</p></div>';
             return;
         }
         el.innerHTML = prospects.map(p => `
@@ -119,7 +119,7 @@
 
     function getGPS() {
         if (!navigator.geolocation) {
-            document.getElementById('checkin-gps-status').innerHTML = '<i class="ri-error-warning-fill"></i> GPS nicht verfügbar';
+            document.getElementById('checkin-gps-status').innerHTML = '<i class="ri-error-warning-fill"></i> GPS indisponibil';
             return;
         }
         navigator.geolocation.getCurrentPosition(
@@ -127,11 +127,11 @@
                 const { latitude, longitude } = pos.coords;
                 document.getElementById('ci-lat').value = latitude;
                 document.getElementById('ci-lng').value = longitude;
-                document.getElementById('checkin-gps-status').innerHTML = `<i class="ri-checkbox-circle-fill" style="color:#22c55e"></i> Position: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+                document.getElementById('checkin-gps-status').innerHTML = `<i class="ri-checkbox-circle-fill" style="color:#22c55e"></i> Poziție: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
                 reverseGeocode(latitude, longitude);
             },
             err => {
-                document.getElementById('checkin-gps-status').innerHTML = `<i class="ri-error-warning-fill"></i> GPS Fehler: ${err.message}`;
+                document.getElementById('checkin-gps-status').innerHTML = `<i class="ri-error-warning-fill"></i> Eroare GPS: ${err.message}`;
             },
             { enableHighAccuracy: true, timeout: 15000 }
         );
@@ -139,7 +139,7 @@
 
     async function reverseGeocode(lat, lng) {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=de`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=ro`);
             const data = await res.json();
             if (data.address) {
                 const a = data.address;
@@ -157,7 +157,7 @@
         e.preventDefault();
         const btn = document.getElementById('ci-submit');
         btn.disabled = true;
-        btn.innerHTML = '<i class="ri-loader-4-line spin"></i> Speichern...';
+        btn.innerHTML = '<i class="ri-loader-4-line spin"></i> Se salvează...';
 
         const data = {
             lat: parseFloat(document.getElementById('ci-lat').value),
@@ -179,7 +179,7 @@
         if (res.success) {
             checkinModal.style.display = 'none';
             loadProspects();
-            showToast('Check-in gespeichert!');
+            showToast('Check-in salvat!');
         } else {
             showToast(res.message || 'Fehler', true);
         }
@@ -200,11 +200,11 @@
                 ${p.contact_phone ? `<p><i class="ri-phone-fill"></i> <a href="tel:${esc(p.contact_phone)}">${esc(p.contact_phone)}</a></p>` : ''}
                 ${p.contact_email ? `<p><i class="ri-mail-fill"></i> ${esc(p.contact_email)}</p>` : ''}
                 ${p.notes ? `<p><i class="ri-sticky-note-fill"></i> ${esc(p.notes)}</p>` : ''}
-                <p><i class="ri-time-fill"></i> Besucht: ${formatDate(p.visited_at)}</p>
+                <p><i class="ri-time-fill"></i> Vizitat: ${formatDate(p.visited_at)}</p>
             </div>
 
             <div class="detail-section">
-                <label>Status</label>
+                <label>Stare</label>
                 <div class="status-buttons">
                     ${['visited','contacted','interested','customer','not_interested'].map(s =>
                         `<button class="status-btn ${p.status === s ? 'active' : ''}" onclick="window._updateProspect(${id},'status','${s}')">${statusLabel(s)}</button>`
@@ -213,7 +213,7 @@
             </div>
 
             <div class="detail-section">
-                <label>Ergebnis</label>
+                <label>Rezultat</label>
                 <div class="status-buttons">
                     ${['pending','trial','converted','lost'].map(r =>
                         `<button class="status-btn result-${r} ${(p.result||'pending') === r ? 'active' : ''}" onclick="window._updateProspect(${id},'result','${r}')">${resultLabel(r)}</button>`
@@ -222,21 +222,21 @@
             </div>
 
             <div class="detail-section">
-                <label><input type="checkbox" id="det-device" ${p.needs_device == 1 ? 'checked' : ''} onchange="window._updateProspect(${id},'needs_device',this.checked?1:0)"> Braucht Gerät</label>
-                <label><input type="checkbox" id="det-delivered" ${p.device_delivered == 1 ? 'checked' : ''} onchange="window._updateProspect(${id},'device_delivered',this.checked?1:0)"> Gerät geliefert</label>
+                <label><input type="checkbox" id="det-device" ${p.needs_device == 1 ? 'checked' : ''} onchange="window._updateProspect(${id},'needs_device',this.checked?1:0)"> Necesită dispozitiv</label>
+                <label><input type="checkbox" id="det-delivered" ${p.device_delivered == 1 ? 'checked' : ''} onchange="window._updateProspect(${id},'device_delivered',this.checked?1:0)"> Dispozitiv livrat</label>
             </div>
 
             ${p.trial_start ? `<div class="detail-section trial-info">
-                <p><i class="ri-calendar-fill"></i> Testphase: ${formatDate(p.trial_start)} - ${formatDate(p.trial_end)}</p>
+                <p><i class="ri-calendar-fill"></i> Perioadă de test: ${formatDate(p.trial_start)} - ${formatDate(p.trial_end)}</p>
             </div>` : ''}
 
             <div class="detail-section">
-                <label>Follow-up Datum</label>
+                <label>Data follow-up</label>
                 <input type="date" id="det-followup" value="${p.next_followup ? p.next_followup.split(' ')[0] : ''}" onchange="window._updateProspect(${id},'next_followup',this.value)">
             </div>
 
             <div class="detail-section">
-                <label>Notizen</label>
+                <label>Notițe</label>
                 <textarea id="det-notes" rows="3" onblur="window._updateProspect(${id},'notes',this.value)">${esc(p.notes || '')}</textarea>
             </div>
         `;
@@ -246,7 +246,7 @@
     window._updateProspect = async function(id, field, value) {
         const res = await apiCall(`prospect/${id}`, 'POST', { [field]: value });
         if (res.success) {
-            showToast('Gespeichert');
+            showToast('Salvat');
             loadProspects();
         }
     };
@@ -308,9 +308,9 @@
         const statuses = s.by_status || {};
         const results = s.by_result || {};
         pipe.innerHTML = `
-            <h3>Pipeline</h3>
+            <h3>Flux vânzări</h3>
             <div class="pipeline-row">${Object.entries(statuses).map(([k,v]) => `<div class="pipe-item"><span class="pipe-dot" style="background:${statusColor(k)}"></span>${statusLabel(k)}: <b>${v}</b></div>`).join('')}</div>
-            ${Object.keys(results).length ? `<h3>Ergebnisse</h3><div class="pipeline-row">${Object.entries(results).map(([k,v]) => `<div class="pipe-item"><span class="pipe-dot" style="background:${resultColor(k)}"></span>${resultLabel(k)}: <b>${v}</b></div>`).join('')}</div>` : ''}
+            ${Object.keys(results).length ? `<h3>Rezultate</h3><div class="pipeline-row">${Object.entries(results).map(([k,v]) => `<div class="pipe-item"><span class="pipe-dot" style="background:${resultColor(k)}"></span>${resultLabel(k)}: <b>${v}</b></div>`).join('')}</div>` : ''}
         `;
     }
 
@@ -318,10 +318,10 @@
     //  Helpers
     // ============================================================
     function statusLabel(s) {
-        return { visited: 'Besucht', contacted: 'Kontaktiert', interested: 'Interessiert', customer: 'Kunde', not_interested: 'Kein Interesse' }[s] || s;
+        return { visited: 'Vizitat', contacted: 'Contactat', interested: 'Interesat', customer: 'Client', not_interested: 'Neinteresat' }[s] || s;
     }
     function resultLabel(r) {
-        return { pending: 'Offen', trial: '30-Tage Test', converted: 'Kunde!', lost: 'Verloren' }[r] || r;
+        return { pending: 'Deschis', trial: 'Test 30 zile', converted: 'Client!', lost: 'Pierdut' }[r] || r;
     }
     function statusColor(s) {
         return { visited: '#64748b', contacted: '#3b82f6', interested: '#f59e0b', customer: '#22c55e', not_interested: '#ef4444' }[s] || '#999';
@@ -332,7 +332,7 @@
     function formatDate(d) {
         if (!d) return '-';
         const dt = new Date(d);
-        return dt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return dt.toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function showToast(msg, err = false) {

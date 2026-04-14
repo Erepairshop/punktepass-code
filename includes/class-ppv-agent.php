@@ -50,7 +50,7 @@ class PPV_Agent {
         $nonce = wp_create_nonce('wp_rest');
 
         ?><!DOCTYPE html>
-<html lang="de">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -64,19 +64,19 @@ class PPV_Agent {
     <header class="agent-header">
         <h1><i class="ri-map-pin-user-fill"></i> PunktePass Agent</h1>
         <div class="agent-header-actions">
-            <button id="btn-stats" class="header-btn" title="Statistik"><i class="ri-bar-chart-fill"></i></button>
-            <button id="btn-list" class="header-btn active" title="Liste"><i class="ri-list-check"></i></button>
-            <button id="btn-map" class="header-btn" title="Karte"><i class="ri-map-2-fill"></i></button>
+            <button id="btn-stats" class="header-btn" title="Statistici"><i class="ri-bar-chart-fill"></i></button>
+            <button id="btn-list" class="header-btn active" title="Listă"><i class="ri-list-check"></i></button>
+            <button id="btn-map" class="header-btn" title="Hartă"><i class="ri-map-2-fill"></i></button>
         </div>
     </header>
 
     <!-- Stats Panel -->
     <div id="panel-stats" class="panel" style="display:none">
         <div class="stats-grid" id="stats-grid">
-            <div class="stat-card"><div class="stat-num" id="stat-today">-</div><div class="stat-label">Heute</div></div>
-            <div class="stat-card"><div class="stat-num" id="stat-week">-</div><div class="stat-label">Woche</div></div>
-            <div class="stat-card"><div class="stat-num" id="stat-month">-</div><div class="stat-label">Monat</div></div>
-            <div class="stat-card accent"><div class="stat-num" id="stat-followups">-</div><div class="stat-label">Follow-ups</div></div>
+            <div class="stat-card"><div class="stat-num" id="stat-today">-</div><div class="stat-label">Azi</div></div>
+            <div class="stat-card"><div class="stat-num" id="stat-week">-</div><div class="stat-label">Săptămâna</div></div>
+            <div class="stat-card"><div class="stat-num" id="stat-month">-</div><div class="stat-label">Luna</div></div>
+            <div class="stat-card accent"><div class="stat-num" id="stat-followups">-</div><div class="stat-label">Follow-up</div></div>
         </div>
         <div class="stats-pipeline" id="stats-pipeline"></div>
     </div>
@@ -85,17 +85,17 @@ class PPV_Agent {
     <div id="panel-list" class="panel">
         <div class="filter-bar">
             <select id="filter-status">
-                <option value="">Alle Status</option>
-                <option value="visited">Besucht</option>
-                <option value="contacted">Kontaktiert</option>
-                <option value="interested">Interessiert</option>
-                <option value="customer">Kunde</option>
-                <option value="not_interested">Kein Interesse</option>
+                <option value="">Toate statusurile</option>
+                <option value="visited">Vizitat</option>
+                <option value="contacted">Contactat</option>
+                <option value="interested">Interesat</option>
+                <option value="customer">Client</option>
+                <option value="not_interested">Neinteresat</option>
             </select>
             <select id="filter-period">
-                <option value="">Alle</option>
-                <option value="today">Heute</option>
-                <option value="week">Woche</option>
+                <option value="">Toate</option>
+                <option value="today">Azi</option>
+                <option value="week">Săptămâna</option>
             </select>
         </div>
         <div id="prospect-list" class="prospect-list"></div>
@@ -109,7 +109,7 @@ class PPV_Agent {
     <!-- FAB: Check-in Button -->
     <button id="btn-checkin" class="fab-checkin">
         <i class="ri-map-pin-add-fill"></i>
-        <span>Ich war hier!</span>
+        <span>Am fost aici!</span>
     </button>
 
     <!-- Check-in Modal -->
@@ -120,51 +120,51 @@ class PPV_Agent {
                 <button class="modal-close" id="checkin-close">&times;</button>
             </div>
             <div id="checkin-gps-status" class="gps-status">
-                <i class="ri-gps-fill spin"></i> GPS Position wird ermittelt...
+                <i class="ri-gps-fill spin"></i> Se determină poziția GPS...
             </div>
             <form id="checkin-form">
                 <input type="hidden" id="ci-lat" name="lat">
                 <input type="hidden" id="ci-lng" name="lng">
 
                 <div class="form-group">
-                    <label>Adresse (auto)</label>
-                    <input type="text" id="ci-address" name="address" readonly placeholder="Wird automatisch ermittelt...">
+                    <label>Adresă (auto)</label>
+                    <input type="text" id="ci-address" name="address" readonly placeholder="Se determină automat...">
                 </div>
                 <div class="form-group">
-                    <label>Stadt (auto)</label>
+                    <label>Oraș (auto)</label>
                     <input type="text" id="ci-city" name="city" readonly>
                 </div>
 
                 <div class="form-group">
-                    <label>Geschäftsname *</label>
-                    <input type="text" id="ci-business" name="business_name" required placeholder="z.B. Eiscafé Milano">
+                    <label>Numele firmei *</label>
+                    <input type="text" id="ci-business" name="business_name" required placeholder="ex. Gelateria Milano">
                 </div>
 
                 <div class="form-group">
-                    <label>Kontaktperson</label>
-                    <input type="text" id="ci-contact" name="contact_name" placeholder="Name">
+                    <label>Persoană de contact</label>
+                    <input type="text" id="ci-contact" name="contact_name" placeholder="Nume">
                 </div>
                 <div class="form-group">
                     <label>Telefon</label>
-                    <input type="tel" id="ci-phone" name="contact_phone" placeholder="+49...">
+                    <input type="tel" id="ci-phone" name="contact_phone" placeholder="+40...">
                 </div>
 
                 <div class="form-group">
                     <label>Status</label>
                     <div class="status-buttons">
-                        <button type="button" class="status-btn active" data-status="visited">Besucht</button>
-                        <button type="button" class="status-btn" data-status="interested">Interessiert</button>
-                        <button type="button" class="status-btn" data-status="not_interested">Kein Interesse</button>
+                        <button type="button" class="status-btn active" data-status="visited">Vizitat</button>
+                        <button type="button" class="status-btn" data-status="interested">Interesat</button>
+                        <button type="button" class="status-btn" data-status="not_interested">Neinteresat</button>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Notizen</label>
-                    <textarea id="ci-notes" name="notes" rows="2" placeholder="Kurze Notiz..."></textarea>
+                    <label>Notițe</label>
+                    <textarea id="ci-notes" name="notes" rows="2" placeholder="Notă scurtă..."></textarea>
                 </div>
 
                 <button type="submit" class="btn-submit" id="ci-submit">
-                    <i class="ri-save-fill"></i> Speichern
+                    <i class="ri-save-fill"></i> Salvează
                 </button>
             </form>
         </div>
