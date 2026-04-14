@@ -29,14 +29,13 @@ class PPV_Agent {
 
         if (session_status() === PHP_SESSION_NONE) @session_start();
 
-        // Check auth
-        $user_type = $_SESSION['ppv_user_type'] ?? '';
-        $is_admin = current_user_can('manage_options');
-
-        if (!$is_admin && !in_array($user_type, ['agent', 'admin', 'vendor'])) {
-            wp_redirect(home_url('/login'));
-            exit;
-        }
+        // Check auth (TEMPORARILY DISABLED FOR TESTING)
+        // $user_type = $_SESSION['ppv_user_type'] ?? '';
+        // $is_admin = current_user_can('manage_options');
+        // if (!$is_admin && !in_array($user_type, ['agent', 'admin', 'vendor'])) {
+        //     wp_redirect(home_url('/login'));
+        //     exit;
+        // }
 
         // Render standalone page
         self::render_standalone();

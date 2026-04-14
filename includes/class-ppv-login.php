@@ -262,6 +262,13 @@ public static function check_already_logged_in() {
     if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_vendor_store_id'])) {
         $user_type = $_SESSION['ppv_user_type'] ?? '';
 
+        // Agent redirect → /agent
+        if ($user_type === 'agent') {
+            ppv_log("🔄 [PPV_Login] Agent redirect from login page");
+            wp_safe_redirect(home_url('/agent'));
+            exit;
+        }
+
         // Allowed types for qr-center: store, handler, vendor, admin, scanner
         if (in_array($user_type, ['store', 'handler', 'vendor', 'admin', 'scanner'])) {
             ppv_log("🔄 [PPV_Login] Store/Handler/Scanner redirect from login page (type={$user_type})");
@@ -819,6 +826,37 @@ public static function render_landing_page($atts) {
 
             // ✅ FIX: Respect actual user_type from database (vendor, scanner, user, store)
             $db_user_type = $user->user_type ?? 'user';
+
+            // 📍 AGENT LOGIN: Redirect to /agent dashboard
+            if ($db_user_type === 'agent') {
+                ppv_log("📍 [PPV_Login] Agent user detected: #{$user->id}");
+                $_SESSION['ppv_user_id'] = $user->id;
+                $_SESSION['ppv_user_type'] = 'agent';
+                $_SESSION['ppv_user_email'] = $user->email;
+
+                $token = $user->login_token;
+                if (empty($token)) {
+                    $token = md5(uniqid('ppv_agent_', true));
+                    $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
+                }
+
+                $domain = $_SERVER['HTTP_HOST'] ?? '';
+                $expire = $remember ? time() + (86400 * 180) : time() + (86400 * 30);
+                setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
+
+                if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                    PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
+                }
+
+                ppv_log("✅ [PPV_Login] Agent logged in (#{$user->id})");
+                wp_send_json_success([
+                    'message' => PPV_Lang::t('login_success'),
+                    'role' => 'agent',
+                    'user_id' => (int)$user->id,
+                    'user_token' => $token,
+                    'redirect' => home_url('/agent')
+                ]);
+            }
 
             // 🏪 VENDOR/STORE/HANDLER LOGIN: Handle store owner users
             if (in_array($db_user_type, ['vendor', 'store', 'handler'])) {

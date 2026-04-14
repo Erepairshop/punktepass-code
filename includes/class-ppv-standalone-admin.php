@@ -348,6 +348,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/sales-map') {
             require_once __DIR__ . '/admin/standalone/sales-map.php';
             PPV_Standalone_Sales_Map::render();
+        } elseif ($path === '/admin/agent-prospects') {
+            require_once __DIR__ . '/admin/standalone/agent-prospects.php';
+            PPV_Standalone_Agent_Prospects::render();
         } elseif ($path === '/admin/push-sender') {
             require_once __DIR__ . '/admin/standalone/push-sender.php';
             PPV_Standalone_Push_Sender::render();
@@ -1644,6 +1647,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/sales-map" class="<?php echo $current_page === 'sales-map' ? 'active' : ''; ?>">
                         <i class="ri-map-pin-line"></i> Sales Map
+                    </a>
+                    <a href="/admin/agent-prospects" class="<?php echo $current_page === 'agent-prospects' ? 'active' : ''; ?>">
+                        <i class="ri-user-location-line"></i> Agent Vizite
                     </a>
                     <a href="/admin/dev-settings" class="<?php echo $current_page === 'dev-settings' ? 'active' : ''; ?>">
                         <i class="ri-settings-3-line"></i> Dev Settings
