@@ -1650,6 +1650,7 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/agent-prospects" class="<?php echo $current_page === 'agent-prospects' ? 'active' : ''; ?>">
                         <i class="ri-user-location-line"></i> Agent Vizite
+                        <?php if ($counts['agent_new'] > 0): ?><span class="nav-badge"><?php echo $counts['agent_new']; ?></span><?php endif; ?>
                     </a>
                     <a href="/admin/dev-settings" class="<?php echo $current_page === 'dev-settings' ? 'active' : ''; ?>">
                         <i class="ri-settings-3-line"></i> Dev Settings
@@ -1693,7 +1694,8 @@ class PPV_Standalone_Admin {
             'support' => 0,
             'renewals' => 0,
             'suspicious' => 0,
-            'pending' => 0
+            'pending' => 0,
+            'agent_new' => 0
         ];
 
         // Pending device requests (new/pending status)
@@ -1726,6 +1728,14 @@ class PPV_Standalone_Admin {
         $counts['pending'] = intval($wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed WHERE status = 'pending'"
         ));
+
+        // New agent visits (last 24 hours)
+        $agent_table = $wpdb->prefix . 'ppv_sales_markers';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$agent_table'") === $agent_table) {
+            $counts['agent_new'] = intval($wpdb->get_var(
+                "SELECT COUNT(*) FROM $agent_table WHERE visited_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+            ));
+        }
 
         // Cache for 1 minute
         wp_cache_set($cache_key, $counts, '', 60);

@@ -70,8 +70,16 @@ class PPV_Standalone_Agent_Prospects {
         // Get agents list
         $agents = $wpdb->get_results("SELECT id, email, display_name FROM $users_table WHERE user_type = 'agent' ORDER BY email");
 
-        // Get potential agent users (for role assignment)
-        $potential_agents = $wpdb->get_results("SELECT id, email, display_name, user_type FROM $users_table WHERE user_type IN ('user','vendor','handler','store') ORDER BY email LIMIT 100");
+        // Get potential agent users (for role assignment) — search or last 5
+        $agent_search = sanitize_text_field($_GET['agent_search'] ?? '');
+        if ($agent_search) {
+            $potential_agents = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, email, display_name, user_type FROM $users_table WHERE email LIKE %s AND user_type != 'agent' ORDER BY email LIMIT 20",
+                '%' . $wpdb->esc_like($agent_search) . '%'
+            ));
+        } else {
+            $potential_agents = $wpdb->get_results("SELECT id, email, display_name, user_type FROM $users_table WHERE user_type != 'agent' ORDER BY id DESC LIMIT 5");
+        }
 
         ?>
         <style>
@@ -158,11 +166,12 @@ class PPV_Standalone_Agent_Prospects {
                     <th>Trial</th>
                     <th>Follow-up</th>
                     <th>Vizit</th>
+                    <th>Megjegyzés</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($prospects)): ?>
-                    <tr><td colspan="11" style="text-align:center;padding:40px;color:#94a3b8;">Nincs adat</td></tr>
+                    <tr><td colspan="12" style="text-align:center;padding:40px;color:#94a3b8;">Nincs adat</td></tr>
                 <?php endif; ?>
                 <?php foreach ($prospects as $i => $p): ?>
                 <tr>
@@ -188,6 +197,7 @@ class PPV_Standalone_Agent_Prospects {
                     </td>
                     <td><?php if ($p->next_followup): ?><span style="color:<?php echo strtotime($p->next_followup) <= time() ? '#ef4444' : '#64748b'; ?>"><?php echo date('d.m.Y', strtotime($p->next_followup)); ?></span><?php endif; ?></td>
                     <td><small><?php echo $p->visited_at ? date('d.m.Y H:i', strtotime($p->visited_at)) : '-'; ?></small></td>
+                    <td><small style="color:#475569"><?php echo esc_html($p->notes ?: '-'); ?></small></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -217,6 +227,11 @@ class PPV_Standalone_Agent_Prospects {
         <?php endif; ?>
 
         <p style="margin-bottom:10px"><strong>Agent jog hozzáadása felhasználóhoz:</strong></p>
+        <form method="get" action="/admin/agent-prospects" style="margin-bottom:12px;display:flex;gap:8px;max-width:500px">
+            <input type="text" name="agent_search" value="<?php echo esc_attr($agent_search); ?>" placeholder="Keresés email címre..." style="flex:1;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px">
+            <button type="submit" style="padding:8px 16px;background:#1e293b;color:#fff;border:none;border-radius:8px;cursor:pointer;">Keresés</button>
+            <?php if ($agent_search): ?><a href="/admin/agent-prospects" style="padding:8px 12px;color:#64748b;text-decoration:none;">✕</a><?php endif; ?>
+        </form>
         <table class="agent-table" style="max-width:700px">
             <thead><tr><th>ID</th><th>Név</th><th>Email</th><th>Jelenlegi típus</th><th></th></tr></thead>
             <?php foreach ($potential_agents as $u): ?>
