@@ -339,7 +339,9 @@ $core_modules = [
     'includes/class-ppv-bonus-days.php',
     'includes/class-ppv-filiale.php',
     'includes/class-ppv-handler-notifications.php',
+    'includes/class-ppv-agent.php',
     'includes/api/ppv-stores.php',
+    'includes/api/ppv-agent.php',
     'includes/pp-profile-lite.php',
     'includes/tools/generate-pos-keys.php',
     'includes/class-ppv-bottom-nav.php',
@@ -767,6 +769,9 @@ if (class_exists('PPV_SMTP')) PPV_SMTP::hooks(); // SMTP email configuration
 if (class_exists('PPV_Push')) PPV_Push::hooks(); // Push notifications (FCM)
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
+
+// Agent Dashboard (sales rep mobile app)
+if (class_exists('PPV_Agent')) PPV_Agent::hooks();
 
 // Standalone Shell (renders PunktePass pages without WP theme for speed)
 if (class_exists('PPV_Standalone_Shell')) PPV_Standalone_Shell::hooks();
