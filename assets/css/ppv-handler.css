@@ -78,12 +78,21 @@ body {
     -webkit-font-smoothing:antialiased
 }
 
+/* Mobile scroll fix: theme-light.css set height:100% + contain:layout style which blocked scroll */
 #ppv-dashboard-root {
-    min-height:100vh;
-    min-height:100dvh;
+    min-height:100vh !important;
+    min-height:100dvh !important;
+    height:auto !important;
     display:flex;
     flex-direction:column;
-    position:relative
+    position:relative !important;
+    contain:none !important;
+}
+
+html, body {
+    height:auto !important;
+    overflow:visible !important;
+    overflow-y:auto !important;
 }
 
 .ppv-dashboard-netto {
