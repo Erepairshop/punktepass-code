@@ -91,9 +91,12 @@ body {
 
 .ppv-dashboard-netto {
     flex:1;
+    min-height:0;
     overflow-y:auto;
     overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+    overscroll-behavior:contain;
     scroll-behavior:smooth;
     padding-top:calc(var(--header-height) + 16px);
     padding-bottom:calc(var(--bottom-nav-height) + 32px + env(safe-area-inset-bottom));
