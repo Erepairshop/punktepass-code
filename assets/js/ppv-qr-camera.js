@@ -1246,7 +1246,7 @@
       }
 
       const d = insights.display;
-      const name = customerName || 'Kunde';
+      const name = customerName || (L.insights_default_name || 'Kunde');
       const initial = name.charAt(0).toUpperCase();
       const vipLevel = insights.vip_level || 'starter';
       const vipLabel = insights.vip_label || 'Starter';
@@ -1279,15 +1279,15 @@
           <div class="ppv-insights-stats">
             <div class="ppv-insights-stat">
               <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${visitCount}×</span>
-              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Besuche</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">${L.insights_visits || 'Besuche'}</span>
             </div>
             <div class="ppv-insights-stat">
               <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${currentPoints}</span>
-              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Punkte</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">${L.insights_points || 'Punkte'}</span>
             </div>
             <div class="ppv-insights-stat">
               <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${insights.avg_frequency_days || '—'}</span>
-              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Ø Tage</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">${L.insights_avg_days || 'Ø Tage'}</span>
             </div>
           </div>
 
@@ -1300,8 +1300,8 @@
                 stroke-dashoffset="${dashOffset}"/>
             </svg>
             <div class="ppv-progress-text">
-              <div class="ppv-progress-main">${pointsToReward <= 0 ? '🎁 Belohnung bereit!' : `Noch ${pointsToReward} Punkte`}</div>
-              <div class="ppv-progress-sub">${Math.round(progressPercent)}% zur Belohnung</div>
+              <div class="ppv-progress-main">${pointsToReward <= 0 ? (L.insights_reward_ready || '🎁 Belohnung bereit!') : (L.insights_points_to_reward || 'Noch {n} Punkte').replace('{n}', pointsToReward)}</div>
+              <div class="ppv-progress-sub">${(L.insights_progress_to_reward || '{pct}% zur Belohnung').replace('{pct}', Math.round(progressPercent))}</div>
             </div>
           </div>
           ` : ''}
@@ -1309,7 +1309,7 @@
           ${insights.has_pattern && d.line2 ? `
           <div class="ppv-insights-pattern">
             ${insights.common_day ? `<span class="ppv-pattern-tag">📅 ${insights.common_day}</span>` : ''}
-            ${insights.common_time ? `<span class="ppv-pattern-tag">🕐 ${insights.common_time} Uhr</span>` : ''}
+            ${insights.common_time ? `<span class="ppv-pattern-tag">🕐 ${insights.common_time}${L.insights_time_unit ? ' ' + L.insights_time_unit : ''}</span>` : ''}
           </div>
           ` : ''}
 

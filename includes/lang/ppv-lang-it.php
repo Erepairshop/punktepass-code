@@ -1971,4 +1971,14 @@ return [
     'checkout_paypal_success' => 'Il Suo abbonamento PayPal è stato attivato con successo.',
     'checkout_paypal_redirect' => 'Verrà reindirizzato a breve...',
     'checkout_paypal_error' => 'Errore PayPal: Riprovi.',
+
+    // CUSTOMER INSIGHTS MODAL (scan utani)
+    'insights_default_name' => 'Cliente',
+    'insights_visits' => 'Visite',
+    'insights_points' => 'Punti',
+    'insights_avg_days' => 'Ø Giorni',
+    'insights_reward_ready' => '🎁 Premio pronto!',
+    'insights_points_to_reward' => 'Ancora {n} punti',
+    'insights_progress_to_reward' => '{pct}% al premio',
+    'insights_time_unit' => '',
 ];

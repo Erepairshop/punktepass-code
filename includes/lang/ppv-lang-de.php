@@ -2091,5 +2091,15 @@ return [
     'checkout_paypal_success' => 'Ihr PayPal-Abo wurde erfolgreich aktiviert.',
     'checkout_paypal_redirect' => 'Sie werden gleich weitergeleitet...',
     'checkout_paypal_error' => 'PayPal Fehler: Bitte versuchen Sie es erneut.',
+
+    // CUSTOMER INSIGHTS MODAL (scan utani)
+    'insights_default_name' => 'Kunde',
+    'insights_visits' => 'Besuche',
+    'insights_points' => 'Punkte',
+    'insights_avg_days' => 'Ø Tage',
+    'insights_reward_ready' => '🎁 Belohnung bereit!',
+    'insights_points_to_reward' => 'Noch {n} Punkte',
+    'insights_progress_to_reward' => '{pct}% zur Belohnung',
+    'insights_time_unit' => 'Uhr',
 ];
 

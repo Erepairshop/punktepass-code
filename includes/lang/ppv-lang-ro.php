@@ -2072,4 +2072,14 @@ return [
     'checkout_paypal_success' => 'Abonamentul dvs. PayPal a fost activat cu succes.',
     'checkout_paypal_redirect' => 'Veți fi redirecționat în curând...',
     'checkout_paypal_error' => 'Eroare PayPal: Vă rugăm încercați din nou.',
+
+    // CUSTOMER INSIGHTS MODAL (scan utani)
+    'insights_default_name' => 'Client',
+    'insights_visits' => 'Vizite',
+    'insights_points' => 'Puncte',
+    'insights_avg_days' => 'Ø Zile',
+    'insights_reward_ready' => '🎁 Recompensă gata!',
+    'insights_points_to_reward' => 'Încă {n} puncte',
+    'insights_progress_to_reward' => '{pct}% până la recompensă',
+    'insights_time_unit' => '',
 ];

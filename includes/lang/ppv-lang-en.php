@@ -1971,4 +1971,14 @@ return [
     'checkout_paypal_success' => 'Your PayPal subscription has been successfully activated.',
     'checkout_paypal_redirect' => 'You will be redirected shortly...',
     'checkout_paypal_error' => 'PayPal error: Please try again.',
+
+    // CUSTOMER INSIGHTS MODAL (scan utani)
+    'insights_default_name' => 'Customer',
+    'insights_visits' => 'Visits',
+    'insights_points' => 'Points',
+    'insights_avg_days' => 'Ø Days',
+    'insights_reward_ready' => '🎁 Reward ready!',
+    'insights_points_to_reward' => '{n} more points',
+    'insights_progress_to_reward' => '{pct}% to reward',
+    'insights_time_unit' => '',
 ];

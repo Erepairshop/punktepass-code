@@ -2067,4 +2067,14 @@ return [
     'checkout_paypal_success' => 'PayPal előfizetése sikeresen aktiválva.',
     'checkout_paypal_redirect' => 'Átirányítás hamarosan...',
     'checkout_paypal_error' => 'PayPal hiba: Kérjük, próbálja újra.',
+
+    // CUSTOMER INSIGHTS MODAL (scan utani)
+    'insights_default_name' => 'Vásárló',
+    'insights_visits' => 'Látogatás',
+    'insights_points' => 'Pontok',
+    'insights_avg_days' => 'Ø Nap',
+    'insights_reward_ready' => '🎁 Jutalom kész!',
+    'insights_points_to_reward' => 'Még {n} pont',
+    'insights_progress_to_reward' => '{pct}% a jutalomig',
+    'insights_time_unit' => 'óra',
 ];
