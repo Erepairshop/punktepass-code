@@ -693,6 +693,14 @@
           videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
           this.readerDiv.appendChild(videoEl);
         }
+        // iOS Safari + Android WebView (Fully Kiosk, régi Samsung) fekete-kép fix:
+        // playsinline kötelező inline-lejátszáshoz, muted kell az autoplay-hez
+        videoEl.setAttribute('playsinline', 'true');
+        videoEl.setAttribute('webkit-playsinline', 'true');
+        videoEl.setAttribute('muted', 'true');
+        videoEl.setAttribute('autoplay', 'true');
+        videoEl.muted = true;
+        videoEl.playsInline = true;
 
         const options = {
           preferredCamera: 'environment',
