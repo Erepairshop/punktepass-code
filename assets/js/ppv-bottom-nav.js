@@ -131,6 +131,20 @@
     // Add loading state
     document.body.classList.add('ppv-spa-loading');
 
+    // Scroll-lock cleanup: ha egy modal overflow:hidden-t rakott a body-ra
+    // (pl. QR-modal a user-dashboard-on) es bezaras nelkul navigal a user
+    // a bottom-nav-el, a body scroll-locked marad -> nem lehet scrollozni
+    // az uj oldalon. Kitoroljuk minden navigation-kor.
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.classList.remove('qr-modal-open');
+    // Bezarunk minden ismert scroll-locko class-t
+    const scrollLockClasses = Array.from(document.body.classList).filter(c =>
+      c.endsWith('-noscroll') || c.endsWith('-no-scroll') || c === 'modal-open'
+    );
+    scrollLockClasses.forEach(c => document.body.classList.remove(c));
+
     try {
       // Fetch the new page
       const html = await fetchPage(url);
