@@ -463,3 +463,35 @@ body.ppv-light #ppv-global-header .ppv-header-avatar {
 body.ppv-light #ppv-global-header .ppv-lang-wrap:hover {
     background: rgba(14, 165, 233, 0.06);
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE SCROLL FIX v5 (GLOBAL - minden standalone oldal)
+   Felulirja az oldalankenti inline styles-t (bottom-nav kompenzacio,
+   touch-action, position stabilitas). QR Center utan user_dashboard /
+   my-points / belohnungen / rewards / stats / settings / profile-lite
+   is ezt hasznalja — egy helyen van.
+   ═══════════════════════════════════════════════ */
+html, body {
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    position: static !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
+}
+
+/* Minden .ppv-standalone-wrap elegendo padding-bottom-ot kap a fix bottom-nav
+   takaras-kompenzalasara (48px nav + safe-area + margin). Az oldalak kulon-kulon
+   180-200px also padding-ot nyernek — igy az utolso lista-elem nem lesz rejtett. */
+.ppv-standalone-wrap {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px) + 32px) !important;
+    touch-action: manipulation;
+}
+
+/* Android Chrome + iOS Safari: az egyes oldalakon a wrapper-nek overflow nem lehet
+   hidden (korabban zarolta a scroll-t). */
+.ppv-standalone-wrap,
+.ppv-qr-wrapper,
+.ppv-dashboard-inner {
+    overflow: visible !important;
+}
