@@ -495,3 +495,23 @@ html, body {
 .ppv-dashboard-inner {
     overflow: visible !important;
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE SCROLL FIX v9 — INPUT-FOCUS BLOCK
+   ═══════════════════════════════════════════════
+   ROOT CAUSE: user_dashboard kozepen van <input> elem (topOverlay: INPUT.).
+   Az input/textarea/select elemek alapertelmezett touch-action-je NEM enged
+   pan-y scroll-t — a user-ujj egyszeruen "megakad" az input-on. A body-n
+   levo touch-action:manipulation nem orokloidik.
+   FIX: explicit touch-action:pan-y az INPUT-CSALADRA, hogy a fuggoleges
+   scroll akkor is megy, ha a user az input-on kezdi a husast. */
+body.ppv-standalone input,
+body.ppv-standalone textarea,
+body.ppv-standalone select,
+body.ppv-standalone label,
+body.ppv-app-mode input,
+body.ppv-app-mode textarea,
+body.ppv-app-mode select,
+body.ppv-app-mode label {
+    touch-action: pan-y !important;
+}
