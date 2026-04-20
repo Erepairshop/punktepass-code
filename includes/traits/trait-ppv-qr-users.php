@@ -59,15 +59,15 @@ trait PPV_QR_Users_Trait {
         ?>
         <div class="ppv-scanner-users">
             <div class="ppv-scanner-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3><i class="ri-team-line"></i> <?php echo self::t('scanner_users_title', 'Scanner Felhasználók'); ?></h3>
+                <h3><i class="ri-team-line"></i> <?php echo self::t('qr_admin_users_title_text', 'Scanner-Benutzer'); ?></h3>
                 <button id="ppv-new-scanner-btn" class="ppv-btn neon" type="button">
-                    <i class="ri-add-line"></i> <?php echo self::t('add_scanner_user', 'Új Scanner Létrehozása'); ?>
+                    <i class="ri-add-line"></i> <?php echo self::t('qr_admin_users_add_btn_text', 'Neuen Scanner erstellen'); ?>
                 </button>
             </div>
 
             <?php if (empty($scanners)): ?>
                 <div style="text-align: center; padding: 40px; color: #999;">
-                    <p>📭 <?php echo self::t('no_scanner_users', 'Még nincs scanner felhasználó létrehozva.'); ?></p>
+                    <p>📭 <?php echo self::t('qr_admin_users_no_users_text', 'Noch keine Scanner-Benutzer erstellt.'); ?></p>
                 </div>
             <?php else: ?>
                 <div class="scanner-users-list">
@@ -86,7 +86,7 @@ trait PPV_QR_Users_Trait {
                                         <?php endif; ?>
                                     </div>
                                     <div class="scanner-user-meta">
-                                        <?php echo self::t('created_at', 'Létrehozva'); ?>: <?php echo $created_date; ?>
+                                        <?php echo self::t('created_at', 'Erstellt am'); ?>: <?php echo $created_date; ?>
                                     </div>
                                     <div class="scanner-user-store">
                                         🏪 <?php
@@ -103,11 +103,11 @@ trait PPV_QR_Users_Trait {
                                     <div class="scanner-user-status">
                                         <?php if ($is_active): ?>
                                             <span class="scanner-status-badge scanner-status-active">
-                                                ✅ <?php echo self::t('status_active', 'Aktív'); ?>
+                                                ✅ <?php echo self::t('status_active', 'Aktiv'); ?>
                                             </span>
                                         <?php else: ?>
                                             <span class="scanner-status-badge scanner-status-inactive">
-                                                🚫 <?php echo self::t('status_disabled', 'Letiltva'); ?>
+                                                🚫 <?php echo self::t('status_disabled', 'Deaktiviert'); ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
@@ -120,17 +120,17 @@ trait PPV_QR_Users_Trait {
 
                                     <!-- Password Reset -->
                                     <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>">
-                                        <i class="ri-refresh-line"></i> <?php echo self::t('reset_password', 'Jelszó Reset'); ?>
+                                        <i class="ri-refresh-line"></i> <?php echo self::t('reset_password', 'Passwort zurücksetzen'); ?>
                                     </button>
 
                                     <!-- Toggle Active/Disable -->
                                     <?php if ($is_active): ?>
                                         <button class="ppv-scanner-toggle ppv-btn-outline scanner-btn-danger" data-user-id="<?php echo $scanner->id; ?>" data-action="disable">
-                                            🚫 <?php echo self::t('disable', 'Letiltás'); ?>
+                                            🚫 <?php echo self::t('disable', 'Deaktivieren'); ?>
                                         </button>
                                     <?php else: ?>
                                         <button class="ppv-scanner-toggle ppv-btn" data-user-id="<?php echo $scanner->id; ?>" data-action="enable">
-                                            ✅ <?php echo self::t('enable', 'Engedélyezés'); ?>
+                                            ✅ <?php echo self::t('enable', 'Aktivieren'); ?>
                                         </button>
                                     <?php endif; ?>
                                 </div>
@@ -143,20 +143,20 @@ trait PPV_QR_Users_Trait {
             <!-- Create Scanner Modal -->
             <div id="ppv-scanner-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
                 <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-                    <h3 style="margin-top: 0; color: #fff;"><i class="ri-user-add-line"></i> <?php echo self::t('create_scanner_title', 'Új Scanner Létrehozása'); ?></h3>
+                    <h3 style="margin-top: 0; color: #fff;"><i class="ri-user-add-line"></i> <?php echo self::t('create_scanner_title', 'Neuen Scanner Erstellen'); ?></h3>
 
                     <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
-                        <?php echo self::t('scanner_login', 'E-mail vagy Benutzername'); ?> <span style="color: #ff5252;">*</span>
+                        <?php echo self::t('qr_admin_users_login_label', 'E-Mail oder Benutzername'); ?> <span style="color: #ff5252;">*</span>
                     </label>
-                    <input type="text" id="ppv-scanner-login" class="ppv-input" placeholder="<?php echo self::t('scanner_login_placeholder', 'scanner1 oder scanner@example.com'); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                    <input type="text" id="ppv-scanner-login" class="ppv-input" placeholder="<?php echo self::t('qr_admin_users_login_placeholder', 'scanner1 oder scanner@example.com'); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
 
                     <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
-                        <?php echo self::t('scanner_password', 'Jelszó'); ?> <span style="color: #ff5252;">*</span>
+                        <?php echo self::t('scanner_password', 'Passwort'); ?> <span style="color: #ff5252;">*</span>
                     </label>
                     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <input type="text" id="ppv-scanner-password" class="ppv-input" placeholder="<?php echo self::t('enter_password', 'Adjon meg jelszót'); ?>" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff;">
+                        <input type="text" id="ppv-scanner-password" class="ppv-input" placeholder="<?php echo self::t('qr_admin_users_password_placeholder', 'Passwort eingeben'); ?>" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff;">
                         <button id="ppv-scanner-gen-pw" class="ppv-btn-outline" style="padding: 12px; white-space: nowrap;">
-                            🎲 <?php echo self::t('generate', 'Generálás'); ?>
+                            🎲 <?php echo self::t('generate', 'Generieren'); ?>
                         </button>
                     </div>
 
@@ -185,10 +185,10 @@ trait PPV_QR_Users_Trait {
 
                     <div style="display: flex; gap: 10px;">
                         <button id="ppv-scanner-create" class="ppv-btn" style="flex: 1; padding: 12px;">
-                            ✅ <?php echo self::t('create', 'Létrehozás'); ?>
+                            ✅ <?php echo self::t('create', 'Erstellen'); ?>
                         </button>
                         <button id="ppv-scanner-cancel" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
-                            ❌ <?php echo self::t('cancel', 'Mégse'); ?>
+                            ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
                         </button>
                     </div>
                 </div>

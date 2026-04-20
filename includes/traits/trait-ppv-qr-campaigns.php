@@ -21,7 +21,7 @@ trait PPV_QR_Campaigns_Trait {
                 <div class="ppv-campaign-controls">
                     <?php if ($has_multiple_filialen): ?>
                     <select id="ppv-campaign-filiale" class="ppv-filter ppv-filiale-select">
-                        <option value="all"><?php echo self::t('all_branches', 'Összes filiale'); ?></option>
+                        <option value="all"><?php echo self::t('qr_admin_campaigns_all_branches', 'Alle Filialen'); ?></option>
                         <?php foreach ($filialen as $fil): ?>
                             <option value="<?php echo intval($fil->id); ?>">
                                 <?php echo esc_html($fil->company_name ?: $fil->name ?: 'Filiale #' . $fil->id); ?>
@@ -63,12 +63,12 @@ trait PPV_QR_Campaigns_Trait {
                         <option value="points"><?php echo self::t('type_points', 'Extra Punkte'); ?></option>
                         <option value="discount"><?php echo self::t('type_discount', 'Rabatt (%)'); ?></option>
                         <option value="fixed"><?php echo self::t('type_fixed', 'Fix Bonus (€)'); ?></option>
-                        <option value="free_product">🎁 <?php echo self::t('type_free_product', 'Gratis Termék'); ?></option>
+                        <option value="free_product">🎁 <?php echo self::t('qr_admin_campaigns_type_free_product', 'Gratis-Produkt'); ?></option>
                     </select>
 
                     <!-- SZÜKSÉGES PONTOK (csak POINTS típusnál!) -->
                     <div id="camp-required-points-wrapper" style="display: none;">
-                        <label><?php echo self::t('label_required_points', 'Szükséges pontok'); ?></label>
+                        <label><?php echo self::t('qr_admin_campaigns_label_required_points', 'Benötigte Punkte'); ?></label>
                         <input type="number" id="camp-required-points" value="0" min="0" step="1">
                     </div>
 
@@ -78,19 +78,19 @@ trait PPV_QR_Campaigns_Trait {
 
                     <!-- PONTOK PER SCAN (csak POINTS típusnál!) -->
                     <div id="camp-points-given-wrapper" style="display: none;">
-                        <label><?php echo self::t('label_points_given', 'Pontok per scan'); ?></label>
+                        <label><?php echo self::t('qr_admin_campaigns_label_points_given', 'Punkte pro Scan'); ?></label>
                         <input type="number" id="camp-points-given" value="1" min="1" step="1">
                     </div>
 
                     <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
                     <div id="camp-free-product-name-wrapper" style="display: none;">
-                        <label><?php echo self::t('label_free_product', '🎁 Termék neve'); ?></label>
-                        <input type="text" id="camp-free-product-name" placeholder="<?php echo esc_attr(self::t('camp_placeholder_free_product', 'pl. Kávé + Sütemény')); ?>">
+                        <label><?php echo self::t('qr_admin_campaigns_label_free_product', '🎁 Produktname'); ?></label>
+                        <input type="text" id="camp-free-product-name" placeholder="<?php echo esc_attr(self::t('qr_admin_campaigns_placeholder_free_product', 'z. B. Kaffee + Kuchen')); ?>">
                     </div>
 
                     <!-- GRATIS TERMÉK ÉRTÉKE (csak ha van termék név!) -->
                     <div id="camp-free-product-value-wrapper" style="display: none;">
-                        <label style="color: #ff9800;"><i class="ri-money-euro-circle-line"></i> <?php echo self::t('label_free_product_value', 'Termék értéke'); ?> <span style="color: #ff0000;">*</span></label>
+                        <label style="color: #ff9800;"><i class="ri-money-euro-circle-line"></i> <?php echo self::t('qr_admin_campaigns_label_free_product_value', 'Produktwert'); ?> <span style="color: #ff0000;">*</span></label>
                         <input type="number" id="camp-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
                     </div>
 

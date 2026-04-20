@@ -312,13 +312,13 @@ trait PPV_QR_Scanner_Trait {
 
                     <!-- Result Box -->
                     <div id="ppv-scan-result" style="text-align: center; padding: 15px; background: rgba(0, 230, 255, 0.1); border-radius: 8px; border: 1px solid rgba(0, 230, 255, 0.3); margin-bottom: 15px; min-height: 40px; display: flex; align-items: center; justify-content: center; color: #00e6ff; font-weight: bold;">
-                        <i class="ri-loader-4-line ri-spin"></i> Scanner aktiv...
+                        <i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html(self::t('qr_admin_scanner_active', 'Scanner aktiv...')); ?>
                     </div>
 
                     <!-- Controls -->
                     <div style="display: flex; gap: 10px; justify-content: center;">
                         <button id="ppv-torch-toggle" class="ppv-btn" type="button" style="display: none;">
-                            🔦 Taschenlampe
+                            <?php echo esc_html(self::t('qr_admin_scanner_torch', '🔦 Taschenlampe')); ?>
                         </button>
                         <button id="ppv-camera-cancel" class="ppv-btn-outline" type="button" style="flex: 1;">
                             <?php echo self::t('btn_cancel', 'Abbrechen'); ?>

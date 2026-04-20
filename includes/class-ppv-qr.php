@@ -1143,7 +1143,7 @@ class PPV_QR {
         // ⛔ PERMISSION CHECK: Only handlers and scanners can access
         if (!class_exists('PPV_Permissions')) {
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
-                ❌ Zugriff verweigert. Nur für Händler und Scanner.
+                ' . self::t('qr_admin_access_denied', '❌ Zugriff verweigert. Nur für Händler und Scanner.') . '
             </div>';
         }
 
@@ -1160,7 +1160,7 @@ class PPV_QR {
         if (is_wp_error($auth_check)) {
             ppv_log("❌ [QR_CENTER] check_handler() FAILED: " . $auth_check->get_error_message());
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
-                ❌ Zugriff verweigert. Nur für Händler und Scanner.
+                ' . self::t('qr_admin_access_denied', '❌ Zugriff verweigert. Nur für Händler und Scanner.') . '
             </div>';
         }
         ppv_log("✅ [QR_CENTER] check_handler() PASSED");
