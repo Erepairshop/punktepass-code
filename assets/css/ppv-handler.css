@@ -89,12 +89,24 @@ body {
     contain:none !important;
 }
 
-html, body {
+/* Mobile scroll fix v10: body overflow-y MUST be VISIBLE not auto.
+   Ha body overflow-y:auto, a body CLAIMELI a scroll-ot, de ha body scrollHeight==clientHeight
+   (dashboard esetén), akkor dead-scroll (scroll chain break → html nem scrolloz).
+   Megoldás: csak a html overflow-y:auto, body overflow-y:visible → touch-events buborékolnak
+   a html-hez (document.scrollingElement) és scrolloz. */
+html {
     height:auto !important;
     overflow-x:hidden !important;
     overflow-y:auto !important;
     position:static !important;
     -webkit-overflow-scrolling:touch;
+}
+body {
+    height:auto !important;
+    min-height:100vh;
+    overflow-x:hidden !important;
+    overflow-y:visible !important;
+    position:static !important;
 }
 
 .ppv-dashboard-netto {
