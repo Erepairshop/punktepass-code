@@ -956,6 +956,39 @@ trait PPV_QR_REST_Trait {
                 ], 429);
             }
 
+            // 🕒 PER-STORE COOLDOWN (custom_settings.scan_cooldown_sec)
+            // A bolt kérhet egyedi cooldownt (pl. 10 perc = 600 sec) azonos user
+            // két szkene között. DEFAULT 0 = nincs cooldown — csak a fenti 10mp
+            // duplicate-guard érvényes.
+            // Demo módban kikapcsolva, mint a duplicate-check.
+            if (!$is_demo_mode && class_exists('PPV_Store_Setting')) {
+                $cooldown = intval(PPV_Store_Setting::get($store_id, 'scan_cooldown_sec', 0));
+                if ($cooldown > 0) {
+                    $last_row = $wpdb->get_row($wpdb->prepare("
+                        SELECT created FROM {$wpdb->prefix}ppv_points
+                        WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
+                        ORDER BY id DESC LIMIT 1
+                    ", $user_id, $store_id));
+
+                    if ($last_row && $last_row->created) {
+                        $last_ts = strtotime($last_row->created);
+                        $now_ts  = time();
+                        if ($last_ts + $cooldown > $now_ts) {
+                            $wait_sec = ($last_ts + $cooldown) - $now_ts;
+                            $wpdb->query('ROLLBACK');
+                            ppv_log("⏳ [PPV_QR] Cooldown block: user={$user_id}, store={$store_id}, wait={$wait_sec}s (cooldown={$cooldown}s)");
+                            return new WP_REST_Response([
+                                'success'      => false,
+                                'message'      => self::t('err_scan_cooldown', "⏳ Nächster Scan in {$wait_sec}s möglich"),
+                                'error_type'   => 'scan_cooldown',
+                                'wait_sec'     => $wait_sec,
+                                'cooldown_sec' => $cooldown
+                            ], 429);
+                        }
+                    }
+                }
+            }
+
             $insert_result = $wpdb->insert("{$wpdb->prefix}ppv_points", [
                 'user_id' => $user_id,
                 'store_id' => $store_id,
