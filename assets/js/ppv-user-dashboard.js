@@ -1519,6 +1519,18 @@ async function initUserDashboard() {
               } else {
                 rewardText = `${formattedValue} ${currencySymbol} ${T.discount_fixed_text}`;
               }
+            } else if (r.action_type === 'free_product') {
+              // Ingyenes termek: termek neve + (bolt altal bevitt ertek)
+              const prodName = r.free_product || T.free_product_text;
+              const prodValue = parseFloat(r.free_product_value || 0);
+              if (prodValue > 0) {
+                const valueStr = currencySymbol === '€'
+                  ? `${currencySymbol}${prodValue.toFixed(0)}`
+                  : `${prodValue.toFixed(0)} ${currencySymbol}`;
+                rewardText = `${escapeHtml(prodName)} (${valueStr})`;
+              } else {
+                rewardText = escapeHtml(prodName);
+              }
             } else {
               rewardText = `${formattedValue} ${r.currency || 'pont'}`;
             }

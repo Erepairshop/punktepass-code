@@ -1693,7 +1693,8 @@ public static function render_dashboard() {
     if (!empty($store_ids_str)) {
         $rewards_query = "
             SELECT store_id, id, title, required_points, points_given,
-                   action_type, action_value, currency, description, end_date
+                   action_type, action_value, currency, description, end_date,
+                   free_product, free_product_value
             FROM {$prefix}ppv_rewards
             WHERE store_id IN ({$store_ids_str})
               AND required_points > 0
@@ -1718,7 +1719,9 @@ public static function render_dashboard() {
                 'action_type' => $r->action_type,
                 'action_value' => $r->action_value,
                 'currency' => $r->currency,
-                'end_date' => $r->end_date
+                'end_date' => $r->end_date,
+                'free_product' => $r->free_product,
+                'free_product_value' => (float)$r->free_product_value
             ];
             $rewards_count[$sid]++;
         }
