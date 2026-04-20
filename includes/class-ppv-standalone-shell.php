@@ -181,10 +181,8 @@ class PPV_Standalone_Shell {
     ?>
     <style>
     /* Standalone shell base */
-    html,body{margin:0;padding:0;min-height:100vh;background:var(--pp-bg,#f5f5f7)}
-    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding:0 0 90px 0;min-height:100vh}
-    /* Ensure safe area on iOS */
-    .ppv-standalone-wrap{padding-top:env(safe-area-inset-top,0)}
+    html,body{margin:0;padding:0;height:auto;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:none;touch-action:manipulation;position:static}
+    .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding-left:0;padding-right:0;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px) + 32px);min-height:100vh;min-height:100dvh;padding-top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px)}
     </style>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
