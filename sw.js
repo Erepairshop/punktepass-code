@@ -10,9 +10,9 @@
 // ✅ Dynamic pages (handler/user) never cached - fixes onboarding/profile state issues
 // ✅ PWA standalone mode: Skip cache for HTML navigation (v6.2)
 
-const CACHE_VERSION = "v6.2";
+const CACHE_VERSION = "v6.3";
 const CACHE_NAME = "punktepass-" + CACHE_VERSION;
-const API_CACHE = "punktepass-api-v6.2";
+const API_CACHE = "punktepass-api-v6.3";
 
 // Only cache critical files
 const ASSETS = [
@@ -139,15 +139,19 @@ self.addEventListener("fetch", e => {
 
   // ✅ Dynamic handler/user pages - Network first, no cache
   // These pages have dynamic state (onboarding, profile, points, etc.)
+  // v6.3: minden lang-variansot + /handler URL-t belefoglalva (scroll-fix nem ment ki
+  //       mert pl. /handler / /mein-konto / /my-points nem volt a listan es
+  //       pageCache() regi HTML-t szolgalt ki)
   const dynamicPages = [
+    '/handler',
     '/qr-center',
-    '/mein-profil',
-    '/rewards',
-    '/statistik',
-    '/einstellungen',
-    '/user_dashboard',
-    '/meine-punkte',
-    '/belohnungen'
+    '/kasszascanner', '/kassenscanner',
+    '/mein-profil', '/mein-konto', '/my-account', '/profile', '/profil', '/fiok',
+    '/rewards', '/belohnungen', '/jutalmak', '/recompense', '/premi',
+    '/statistik', '/statistics', '/statisztika', '/statistici',
+    '/einstellungen', '/settings', '/beallitasok', '/setari',
+    '/user_dashboard', '/user-dashboard', '/dashboard', '/mein-dashboard',
+    '/my-points', '/meine-punkte', '/pontjaim', '/punctele-mele'
   ];
   if (dynamicPages.some(page => url.pathname.includes(page))) {
     e.respondWith(
@@ -184,9 +188,24 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // ✅ HTML pages - Cache first with background refresh
+  // ✅ HTML pages - NETWORK FIRST (v6.3: scroll-fix es barmilyen inline style
+  // azonnal jusson el a user-hez, cache-first-ben a regi HTML maradt.
+  // Offline fallback: ha nincs net, cache-bol szolgaljuk ki.)
   if (req.mode === "navigate") {
-    e.respondWith(pageCache(req));
+    e.respondWith(
+      fetch(req, { cache: 'no-store' })
+        .then(fresh => {
+          if (fresh && fresh.status === 200) {
+            const cache = caches.open(CACHE_NAME);
+            cache.then(c => c.put(req, fresh.clone()).catch(() => {}));
+          }
+          return fresh;
+        })
+        .catch(() => caches.match(req) || new Response(
+          '<html><body style="font-family:sans-serif;text-align:center;padding:40px"><h1>Offline</h1><p>Bitte überprüfe deine Internetverbindung.</p></body></html>',
+          { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        ))
+    );
     return;
   }
 
