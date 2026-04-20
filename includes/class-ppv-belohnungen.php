@@ -343,7 +343,8 @@ class PPV_Belohnungen {
     window.ppv_lang = <?php echo wp_json_encode($global_strings); ?>;
     </script>
     <style>
-    html,body{margin:0;padding:0;height:auto;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:none;touch-action:manipulation;position:static}
+    html{margin:0;padding:0;height:auto;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:none;touch-action:manipulation;position:static}
+    body{margin:0;padding:0;height:auto;min-height:100vh;min-height:100dvh;background:var(--pp-bg,#f5f5f7);overflow-x:hidden;overflow-y:visible;touch-action:manipulation;position:static}
     .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding-left:0;padding-right:0;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px) + 32px);min-height:100vh;min-height:100dvh;padding-top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px)}
     </style>
 </head>
