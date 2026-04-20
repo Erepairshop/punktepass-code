@@ -969,6 +969,71 @@ class PPV_QR {
     .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding-left:0;padding-right:0;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px) + 32px);min-height:100vh;min-height:100dvh;padding-top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px)}
     .ppv-qr-wrapper{overflow:visible !important}
     </style>
+<?php if (isset($_GET['scrolldiag']) && $_GET['scrolldiag'] === '1'): ?>
+    <script>
+    // Scroll diagnostic overlay — URL-ben ?scrolldiag=1 parameter eseten aktivalodik
+    (function(){
+      function diag(){
+        var html = document.documentElement, body = document.body;
+        var hs = getComputedStyle(html), bs = getComputedStyle(body);
+        var wrap = document.querySelector('.ppv-standalone-wrap');
+        var ws = wrap ? getComputedStyle(wrap) : null;
+        var qw = document.querySelector('.ppv-qr-wrapper');
+        var qws = qw ? getComputedStyle(qw) : null;
+        var data = {
+          'viewport (inner)': window.innerWidth + 'x' + window.innerHeight,
+          'viewport (visual)': (window.visualViewport ? window.visualViewport.width + 'x' + window.visualViewport.height : 'n/a'),
+          'body scrollHeight': body.scrollHeight,
+          'body clientHeight': body.clientHeight,
+          'html scrollHeight': html.scrollHeight,
+          'html clientHeight': html.clientHeight,
+          'scrollable?': (html.scrollHeight > html.clientHeight ? 'YES +'+(html.scrollHeight-html.clientHeight)+'px' : 'NO'),
+          'scrollTop': window.pageYOffset,
+          'html overflow': hs.overflow+'/'+hs.overflowY+'/'+hs.overflowX,
+          'html height': hs.height,
+          'html position': hs.position,
+          'body overflow': bs.overflow+'/'+bs.overflowY+'/'+bs.overflowX,
+          'body height': bs.height,
+          'body minH': bs.minHeight,
+          'body position': bs.position,
+          'body touchAction': bs.touchAction,
+          'body overscroll': bs.overscrollBehavior+'/'+bs.overscrollBehaviorY,
+          'body className': body.className,
+          'wrap found': !!wrap,
+          'wrap overflow': ws ? (ws.overflow+'/'+ws.overflowY) : 'n/a',
+          'wrap height': ws ? ws.height : 'n/a',
+          'wrap minH': ws ? ws.minHeight : 'n/a',
+          'wrap maxH': ws ? ws.maxHeight : 'n/a',
+          'wrap padding-bot': ws ? ws.paddingBottom : 'n/a',
+          'qrwrap overflow': qws ? (qws.overflow+'/'+qws.overflowY) : 'n/a',
+          'qrwrap height': qws ? qws.height : 'n/a',
+          'qrwrap maxH': qws ? qws.maxHeight : 'n/a',
+          'fullscreen-mode': !!document.querySelector('.ppv-fullscreen-mode'),
+          'mini-hidden': !!document.querySelector('#ppv-mini-scanner.ppv-mini-hidden'),
+          'mini-scanner exists': !!document.querySelector('#ppv-mini-scanner'),
+          'mini-reader displayed': (function(){var r=document.querySelector('#ppv-mini-reader'); return r?r.style.display:'no-el'})(),
+          'support-modal.show': !!document.querySelector('.ppv-support-modal.show, .ppv-support-modal[style*="display: block"]'),
+          'device-blocked': !!document.querySelector('#ppv-device-blocked-overlay'),
+          'insights-card': !!document.querySelector('#ppv-customer-insights'),
+          'feedback-modal vis': (function(){var f=document.querySelector('.ppv-feedback-modal'); if(!f)return 'no-el'; var s=getComputedStyle(f); return s.visibility+'/'+s.opacity+'/'+s.display})(),
+          'bottom-nav rect': (function(){var b=document.querySelector('.ppv-bottom-nav'); if(!b)return 'no-el'; var r=b.getBoundingClientRect(); return 't='+Math.round(r.top)+' h='+Math.round(r.height)})(),
+        };
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.96);color:#0f0;font:11px monospace;padding:14px;z-index:2147483647;overflow-y:auto;-webkit-overflow-scrolling:touch;line-height:1.5';
+        var html2 = '<button onclick="this.parentElement.remove()" style="position:sticky;top:0;float:right;background:#f44;color:#fff;border:none;padding:10px 18px;border-radius:6px;font-weight:700;font-size:14px;z-index:1">BEZÁR</button><h3 style="color:#0ff;margin:0 0 10px;font-size:14px">SCROLL DIAGNOSTIC</h3>';
+        for (var k in data) html2 += '<div style="padding:2px 0;border-bottom:1px solid #222"><span style="color:#888">'+k+':</span> <b style="color:#ff0">'+data[k]+'</b></div>';
+        html2 += '<hr style="margin:10px 0;border-color:#333"><h4 style="color:#0ff;margin:6px 0">Touch test:</h4><div id="ppvtt" style="background:#222;padding:10px;border-radius:6px;color:#fff;min-height:60px">Húzz az ujjaddal felfelé/lefelé EZEN A HELYEN — itt kiírja hogy jön-e a scroll event.</div>';
+        d.innerHTML = html2;
+        document.body.appendChild(d);
+        var tt = d.querySelector('#ppvtt'); var tts = [];
+        window.addEventListener('scroll', function(){ tts.push('scroll:y='+window.pageYOffset); if(tts.length>6)tts.shift(); tt.innerText = tts.join('\n'); }, {passive:true});
+        document.addEventListener('touchmove', function(e){ tts.push('touchmove:y='+e.touches[0].clientY); if(tts.length>6)tts.shift(); tt.innerText = tts.join('\n'); }, {passive:true});
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(diag, 800); });
+      else setTimeout(diag, 800);
+    })();
+    </script>
+<?php endif; ?>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
 <?php echo $global_header; ?>
