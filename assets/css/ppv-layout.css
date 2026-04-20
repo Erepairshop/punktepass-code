@@ -14,17 +14,26 @@
  */
 
 /* ── Page Scroll ─────────────────────────── */
-/* !important overrides legacy handler-light.css & ppv-theme-light.css */
-html, body {
+/* Mobile scroll fix v11: html scrolloz, body OVERFLOW-Y: VISIBLE.
+   Ha mindketto overflow-y:auto ES body height==scrollHeight (dashboard esete),
+   a body CLAIMELI a scroll-gesztust de dead-scroll (sh==ch), es nem engedi
+   a html-hez. Csak a html legyen a scrolling element. */
+html {
     min-height: 100% !important;
     height: auto !important;
     width: 100%;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 body {
+    min-height: 100% !important;
+    height: auto !important;
+    width: 100%;
+    overflow-y: visible !important;  /* NEM auto! scroll chain a html-ig */
+    overflow-x: hidden !important;
     padding-top: env(safe-area-inset-top, 0px);
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
@@ -32,11 +41,8 @@ body {
 
 /* iOS: use fill-available for true viewport height */
 @supports (-webkit-touch-callout: none) {
-    html, body {
+    html {
         min-height: -webkit-fill-available;
-    }
-    body {
-        -webkit-overflow-scrolling: touch;
     }
 }
 
