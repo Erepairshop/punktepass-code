@@ -1541,6 +1541,9 @@ class PPV_Rewards_Management {
         $desc     = sanitize_textarea_field($data['description'] ?? '');
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
+        // 🎁 Free product fields (only meaningful for action_type='free_product')
+        $free_product       = sanitize_text_field($data['free_product'] ?? '');
+        $free_product_value = floatval($data['free_product_value'] ?? 0);
 
         // 🔒 SECURITY: Max points per scan limit
         $max_points_per_scan = 20;
@@ -1605,6 +1608,8 @@ class PPV_Rewards_Management {
                 'description'     => $desc,
                 'action_type'     => $type,
                 'action_value'    => $value,
+                'free_product'       => $free_product,
+                'free_product_value' => $free_product_value,
                 'currency'        => $currency,
                 'active'          => 1,  // FIX: Set active by default!
                 'start_date'      => $start_date,
@@ -1657,6 +1662,9 @@ class PPV_Rewards_Management {
         $desc     = sanitize_textarea_field($data['description'] ?? '');
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
+        // 🎁 Free product fields (only meaningful for action_type='free_product')
+        $free_product       = sanitize_text_field($data['free_product'] ?? '');
+        $free_product_value = floatval($data['free_product_value'] ?? 0);
 
         // 🔒 SECURITY: Max points per scan limit
         $max_points_per_scan = 20;
@@ -1698,6 +1706,8 @@ class PPV_Rewards_Management {
             'description'     => $desc,
             'action_type'     => $type,
             'action_value'    => $value,
+            'free_product'       => $free_product,
+            'free_product_value' => $free_product_value,
             'start_date'      => $start_date,
             'end_date'        => $end_date,
             'is_campaign'     => $is_campaign
