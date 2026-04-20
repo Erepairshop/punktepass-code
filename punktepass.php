@@ -711,10 +711,12 @@ $whitelist = [
     'ppv-core',         // Design tokens, reset, typography
     'ppv-layout',       // Page structure, scroll, header
     'ppv-components',   // Shared UI components
+    'ppv-global-header',// Sticky app-bar, all standalone pages
     'ppv-bottom-nav',   // Bottom navigation bar
     'ppv-qr',           // QR Center page
     'ppv-dashboard',    // User Dashboard page
     'ppv-theme-light',  // Legacy theme (being phased out)
+    'ppv-theme-dark-colors',
     'ppv-handler',      // Handler theme (light/dark)
     'ppv-handler-light',
     'ppv-handler-dark',

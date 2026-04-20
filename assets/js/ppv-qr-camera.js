@@ -324,22 +324,26 @@
       };
 
       const dragStart = e => {
+        if (!(e.target === handle || e.target.classList.contains('ppv-drag-icon'))) return;
         const rect = this.miniContainer.getBoundingClientRect();
         currentX = rect.left; currentY = rect.top;
         offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - currentX;
         offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - currentY;
-        if (e.target === handle || e.target.classList.contains('ppv-drag-icon')) {
-          isDragging = true;
-          this.miniContainer.style.transition = 'none';
-          document.addEventListener('touchmove', drag, { passive: false });
-          document.addEventListener('mousemove', drag);
-        }
+        isDragging = true;
+        this.miniContainer.style.transition = 'none';
+        document.addEventListener('touchmove', drag, { passive: false });
+        document.addEventListener('mousemove', drag);
       };
 
       handle.addEventListener('mousedown', dragStart);
       document.addEventListener('mouseup', dragEnd);
       handle.addEventListener('touchstart', dragStart, { passive: false });
       document.addEventListener('touchend', dragEnd);
+      // Critical: touchcancel edge-case (iOS gesture interrupt, multitouch, screen-edge swipe)
+      // ha nem kezeljük → a touchmove listener bennragad és GLOBÁLISAN blokkolja a scroll-t
+      document.addEventListener('touchcancel', dragEnd);
+      // Safety net: blur / visibilitychange esetén is tisztítsunk (ha a kéz lecsúszott a drag közben)
+      window.addEventListener('blur', dragEnd);
     }
 
     setupToggle() {
