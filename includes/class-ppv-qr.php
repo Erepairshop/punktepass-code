@@ -416,9 +416,18 @@ class PPV_QR {
 
         $metadata = json_encode($metadata_array);
 
+        $email = null;
+        if ($user_id) {
+            $email = $wpdb->get_var($wpdb->prepare(
+                "SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+                $user_id
+            ));
+        }
+
         $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id' => $store_id,
             'user_id' => $user_id,
+            'email' => $email,
             'message' => sanitize_text_field($msg),
             'type' => $type,
             'points_change' => intval($points_change),

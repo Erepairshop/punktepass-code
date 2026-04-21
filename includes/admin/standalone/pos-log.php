@@ -39,10 +39,12 @@ class PPV_Standalone_POSLog {
         $logs = $wpdb->get_results("
             SELECT
                 l.*,
+                COALESCE(NULLIF(l.email, ''), u.email) AS email,
                 s.name as store_name,
                 s.company_name
             FROM {$wpdb->prefix}ppv_pos_log l
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON l.store_id = s.id
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
             {$where}
             ORDER BY l.id DESC
             LIMIT 200
