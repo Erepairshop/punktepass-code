@@ -671,7 +671,7 @@ async function initUserDashboard() {
 
         <div class="ppv-redemption-actions">
           <button class="ppv-btn-later" id="ppv-redemption-later">
-            <i class="ri-time-line"></i> ${lang === 'de' ? 'Später' : lang === 'hu' ? 'Később' : 'Mai târziu'}
+            <i class="ri-time-line"></i> ${lang === 'de' ? 'Später' : lang === 'hu' ? 'Később' : lang === 'ro' ? 'Mai târziu' : 'Later'}
           </button>
         </div>
 
@@ -703,10 +703,12 @@ async function initUserDashboard() {
       }
     }, 1000);
 
-    // Event: Later button
+    // Event: Later button — close primary modal + show "next time scan QR" info modal
     document.getElementById('ppv-redemption-later').addEventListener('click', () => {
       handleRedemptionResponse(token, 'decline', null);
       closeRedemptionModal();
+      // 📢 Info modal a felhasznalonak hogy kovetkezo scan-kor valthato be
+      setTimeout(() => showRewardLaterModal(), 350);
     });
 
     // Event: Reward selection
@@ -749,6 +751,57 @@ async function initUserDashboard() {
         redemptionModalElement = null;
       }, 300);
     }
+  };
+
+  // ════════════════════════════════════════════════════════════════
+  // 📢 REWARD-LATER INFO MODAL — "Later"-re kattintás után
+  // Közli a userrel: következő scan-kor be tudja váltani a rewardot.
+  // 4 nyelv (de/en/hu/ro), OK-gombbal bezárható, 10mp után auto-close.
+  // ════════════════════════════════════════════════════════════════
+  const showRewardLaterModal = () => {
+    const title = lang === 'de' ? 'Später einlösen'
+               : lang === 'hu' ? 'Később beváltás'
+               : lang === 'ro' ? 'Încasează mai târziu'
+               : 'Redeem later';
+    const msg = lang === 'de' ? 'Beim nächsten Besuch scanne einfach deinen QR-Code, um die Prämie einzulösen.'
+             : lang === 'hu' ? 'Következő látogatáskor szkenneld be a QR-kódodat a jutalom beváltásához.'
+             : lang === 'ro' ? 'La următoarea vizită, scanează codul QR pentru a încasa recompensa.'
+             : 'On your next visit, simply scan your QR code to redeem the reward.';
+    const ok = lang === 'de' ? 'Verstanden'
+            : lang === 'hu' ? 'Értem'
+            : lang === 'ro' ? 'Am înțeles'
+            : 'Got it';
+
+    const modal = document.createElement('div');
+    modal.id = 'ppv-reward-later-modal';
+    modal.className = 'ppv-redemption-modal';  // reuse existing CSS class
+    modal.innerHTML = `
+      <div class="ppv-redemption-overlay"></div>
+      <div class="ppv-redemption-container" style="max-width: 420px; text-align: center;">
+        <div class="ppv-redemption-header">
+          <i class="ri-qr-scan-2-line" style="font-size: 56px; color: #00e6ff;"></i>
+          <h2 style="margin-top: 12px;">${title}</h2>
+        </div>
+        <p style="color: rgba(255,255,255,0.85); padding: 16px 8px; font-size: 15px; line-height: 1.5;">
+          ${msg}
+        </p>
+        <div class="ppv-redemption-actions" style="margin-top: 8px;">
+          <button class="ppv-btn-later" id="ppv-reward-later-ok" style="min-width: 160px;">
+            <i class="ri-check-line"></i> ${ok}
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('show'), 10);
+
+    const close = () => {
+      modal.classList.remove('show');
+      setTimeout(() => { if (modal.parentNode) modal.remove(); }, 300);
+    };
+    document.getElementById('ppv-reward-later-ok').addEventListener('click', close);
+    // Auto-close 10mp után
+    setTimeout(close, 10000);
   };
 
   const handleRedemptionResponse = async (token, action, rewardId) => {
