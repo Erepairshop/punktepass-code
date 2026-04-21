@@ -53,7 +53,7 @@ class PPV_Standalone_POSLog {
         // Get stats (canonical tables: ppv_points + ppv_reward_requests)
         $total_points_given = $wpdb->get_var("SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE points > 0");
         $total_points_redeemed = $wpdb->get_var("SELECT COALESCE(ABS(SUM(points)), 0) FROM {$wpdb->prefix}ppv_points WHERE points < 0");
-        $total_rewards = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_reward_requests WHERE status = 'approved'");
+        $total_rewards = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points WHERE points < 0 AND type IN ('redeem','redemption')");
 
         self::render_html($logs, $stores, $store_filter, $type_filter, $total_points_given, $total_points_redeemed, $total_rewards);
     }
