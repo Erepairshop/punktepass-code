@@ -87,6 +87,11 @@ if (!class_exists('PPV_Onboarding')) {
          * Enqueue onboarding JS & localize config
          */
         public static function enqueue_assets() {
+            // 🚫 GLOBAL KILL SWITCH: onboarding disabled (set option 'ppv_onboarding_enabled' to '1' to re-enable)
+            if (!get_option('ppv_onboarding_enabled', '0')) {
+                return;
+            }
+
             // DEBUG: Add inline console log to see if this method runs at all
             add_action('wp_footer', function() {
                 $session_vars = json_encode([
