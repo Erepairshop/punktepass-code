@@ -374,6 +374,7 @@ $core_modules = [
     'includes/class-ppv-roi-calculator.php',
     'includes/class-ppv-haendlervertrag.php',
     'includes/class-ppv-standalone-admin.php',
+    'includes/class-ppv-remote-service.php',
     'includes/class-ppv-device-fingerprint.php',
     'includes/class-ppv-push.php',
     'includes/class-ppv-weekly-report.php',

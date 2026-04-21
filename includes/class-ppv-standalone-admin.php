@@ -354,6 +354,12 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/push-sender') {
             require_once __DIR__ . '/admin/standalone/push-sender.php';
             PPV_Standalone_Push_Sender::render();
+        } elseif ($path === '/admin/client-errors') {
+            require_once __DIR__ . '/admin/standalone/client-errors.php';
+            PPV_Standalone_ClientErrors::render();
+        } elseif ($path === '/admin/device-diagnostics') {
+            require_once __DIR__ . '/admin/standalone/device-diagnostics.php';
+            PPV_Standalone_DeviceDiagnostics::render();
         } elseif ($path === '/admin/dev-settings') {
             self::render_dev_settings();
         } else {
@@ -1644,6 +1650,12 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/push-sender" class="<?php echo $current_page === 'push-sender' ? 'active' : ''; ?>">
                         <i class="ri-notification-3-line"></i> Push Sender
+                    </a>
+                    <a href="/admin/client-errors" class="<?php echo $current_page === 'client-errors' ? 'active' : ''; ?>">
+                        <i class="ri-error-warning-line"></i> Client Errors
+                    </a>
+                    <a href="/admin/device-diagnostics" class="<?php echo $current_page === 'device-diagnostics' ? 'active' : ''; ?>">
+                        <i class="ri-smartphone-line"></i> Device Diag
                     </a>
                     <a href="/admin/sales-map" class="<?php echo $current_page === 'sales-map' ? 'active' : ''; ?>">
                         <i class="ri-map-pin-line"></i> Sales Map
