@@ -28,7 +28,7 @@ class PPV_Standalone_DeviceDiagnostics {
             LEFT JOIN {$p}ppv_users u ON d.user_id = u.id
             LEFT JOIN {$p}ppv_stores s ON d.store_id = s.id
             LEFT JOIN {$p}ppv_users owner ON s.user_id = owner.id
-            WHERE u.user_type IN ('handler', 'scanner', 'admin', 'agent')
+            WHERE u.user_type IN ('vendor', 'handler', 'scanner', 'admin', 'agent')
             ORDER BY d.last_heartbeat DESC LIMIT 200
         ");
 
