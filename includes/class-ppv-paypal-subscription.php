@@ -89,7 +89,7 @@ class PPV_PayPal_Subscription {
      */
     public static function check_repair_admin_permission() {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
         return !empty($_SESSION['ppv_repair_store_id']);
     }
@@ -99,7 +99,7 @@ class PPV_PayPal_Subscription {
      */
     public static function cancel_repair_subscription(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = $_SESSION['ppv_repair_store_id'] ?? 0;
@@ -189,7 +189,7 @@ class PPV_PayPal_Subscription {
      */
     public static function check_handler_permission() {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
         return !empty($_SESSION['ppv_vendor_store_id']);
     }
@@ -237,7 +237,7 @@ class PPV_PayPal_Subscription {
      */
     public static function create_subscription(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = $_SESSION['ppv_vendor_store_id'] ?? $request->get_param('store_id');
@@ -436,7 +436,7 @@ class PPV_PayPal_Subscription {
      */
     public static function cancel_subscription(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = $_SESSION['ppv_vendor_store_id'] ?? 0;
@@ -492,7 +492,7 @@ class PPV_PayPal_Subscription {
      */
     public static function get_subscription_status(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = $_SESSION['ppv_vendor_store_id'] ?? 0;
@@ -515,3 +515,4 @@ class PPV_PayPal_Subscription {
         ], 200);
     }
 }
+

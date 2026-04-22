@@ -289,7 +289,7 @@ if (!class_exists('PPV_Onboarding')) {
 
             // ✅ Fallback: Check if vendor user is logged in via ppv_users
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-                @session_start();
+                ppv_maybe_start_session();
             }
 
             if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'vendor' && !empty($_SESSION['ppv_user_id'])) {
@@ -716,7 +716,7 @@ if (!class_exists('PPV_Onboarding')) {
          */
         private static function check_auth() {
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-                @session_start();
+                ppv_maybe_start_session();
             }
 
             // Debug: Session state
@@ -1020,10 +1020,11 @@ if (!class_exists('PPV_Onboarding')) {
          */
         private static function ensure_session() {
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-                @session_start();
+                ppv_maybe_start_session();
             }
         }
     }
 
     PPV_Onboarding::hooks();
 }
+

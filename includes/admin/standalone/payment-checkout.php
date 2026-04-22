@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    ppv_maybe_start_session();
 }
 
 // Check if user is logged in (support both vendor and repair admin sessions)
@@ -662,3 +662,4 @@ $thou_sep = ($lang === 'en') ? ',' : '.';
     </script>
 </body>
 </html>
+

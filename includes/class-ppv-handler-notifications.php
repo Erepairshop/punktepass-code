@@ -495,7 +495,7 @@ class PPV_Handler_Notifications {
      */
     private static function get_current_store_id() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (!empty($_SESSION['ppv_store_id'])) {
@@ -511,3 +511,4 @@ class PPV_Handler_Notifications {
 }
 
 PPV_Handler_Notifications::hooks();
+

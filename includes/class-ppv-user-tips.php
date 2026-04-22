@@ -412,7 +412,7 @@ class PPV_User_Tips {
      */
     public static function check_admin_permission() {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         return !empty($_SESSION['ppv_admin_logged_in']);
     }
@@ -934,7 +934,7 @@ class PPV_User_Tips {
      */
     private static function get_user_id() {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         return intval($_SESSION['ppv_user_id'] ?? 0);
@@ -1105,3 +1105,4 @@ class PPV_User_Tips {
 
 // Initialize
 PPV_User_Tips::hooks();
+

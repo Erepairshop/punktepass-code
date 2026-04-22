@@ -150,7 +150,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 
         private static function ensure_session() {
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-                @session_start();
+                ppv_maybe_start_session();
             }
         }
 
@@ -309,7 +309,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             ppv_disable_wp_optimization();
 
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-                @session_start();
+                ppv_maybe_start_session();
             }
 
             if (!class_exists('PPV_Permissions')) {

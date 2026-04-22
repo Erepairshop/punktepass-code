@@ -115,7 +115,7 @@ class PPV_Referral_Handler {
 
         // Also store in session for immediate access
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         $_SESSION['ppv_referral'] = [
             'code' => strtoupper($code),
@@ -138,7 +138,7 @@ class PPV_Referral_Handler {
     public static function get_referral_data() {
         // First check session (immediate access after redirect)
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (!empty($_SESSION['ppv_referral']) && isset($_SESSION['ppv_referral']['code'])) {
@@ -181,7 +181,7 @@ class PPV_Referral_Handler {
     public static function clear_referral_cookie() {
         setcookie(self::COOKIE_NAME, '', time() - 3600, '/', '', is_ssl(), true);
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         unset($_SESSION['ppv_referral']);
     }
@@ -321,3 +321,4 @@ class PPV_Referral_Handler {
 }
 
 PPV_Referral_Handler::hooks();
+

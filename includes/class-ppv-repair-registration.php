@@ -20,7 +20,7 @@ class PPV_Repair_Registration {
     public static function render_standalone() {
         // If already logged in as repair handler, redirect to admin
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         if (!empty($_SESSION['ppv_repair_store_id'])) {
             header('Location: /formular/admin');
@@ -2495,3 +2495,4 @@ function rejectCookies() {
 <?php
     }
 }
+

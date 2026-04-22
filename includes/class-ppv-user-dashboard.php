@@ -28,7 +28,7 @@ class PPV_User_Dashboard {
         if ($session_started) return;
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         $session_started = true;
     }
@@ -1026,7 +1026,7 @@ private static function get_today_hours($opening_hours) {
         ppv_disable_wp_optimization();
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Customer auth: check ppv_user_id in session
@@ -1911,3 +1911,4 @@ public static function render_dashboard() {
 }
 
 PPV_User_Dashboard::hooks();
+

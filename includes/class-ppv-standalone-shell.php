@@ -74,7 +74,7 @@ class PPV_Standalone_Shell {
 
         // Session
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Auth check for non-auth pages
@@ -201,3 +201,4 @@ wp_print_scripts();
 <?php
     }
 }
+

@@ -18,7 +18,7 @@ class PPV_Bonus_Days {
 
         // 🔐 Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
@@ -165,3 +165,4 @@ wp_add_inline_script('ppv-bonus-days', "window.ppv_bonus_ajax = {$__json};", 'be
 add_action('plugins_loaded', function() {
     if (class_exists('PPV_Bonus_Days')) PPV_Bonus_Days::hooks();
 });
+

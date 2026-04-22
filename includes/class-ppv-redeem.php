@@ -20,7 +20,7 @@ class PPV_Redeem {
     private static function get_store_id() {
         // 🔐 Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
@@ -265,7 +265,7 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
      *  🔹 RENDER FRONTEND (POS)
      * ============================================================ */
     public static function render_redeem_page() {
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
         global $wpdb;
 
         // 🏪 FILIALE SUPPORT: Use session-aware store ID
@@ -334,3 +334,4 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
 }
 
 PPV_Redeem::hooks();
+

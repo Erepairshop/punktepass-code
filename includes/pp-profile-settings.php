@@ -16,7 +16,7 @@ wp_add_inline_script('pp-profile-settings', "window.ppv_ajax = {$__json};", 'bef
  */
 
 global $wpdb;
-if (session_status() === PHP_SESSION_NONE) @session_start();
+if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
 $user_id = intval($_SESSION['ppv_user_id'] ?? get_current_user_id());
 // Resolve shared store: vendor_store_id (access user) OR own store
 $__ppv_store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
@@ -197,7 +197,7 @@ add_action('wp_ajax_ppv_toggle_abo_status', function() {
     if (!is_user_logged_in()) wp_send_json_error(['message' => 'Nicht eingeloggt']);
 
     global $wpdb;
-    if (session_status() === PHP_SESSION_NONE) @session_start();
+    if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
     $user_id = intval($_SESSION['ppv_user_id'] ?? get_current_user_id());
     $sid = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
     if (!$sid && $user_id) {
@@ -213,3 +213,4 @@ add_action('wp_ajax_ppv_toggle_abo_status', function() {
 
     wp_send_json_success(['new_status' => $new_status]);
 });
+

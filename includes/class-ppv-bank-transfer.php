@@ -77,7 +77,7 @@ class PPV_Bank_Transfer {
      */
     public static function check_handler_permission() {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
         return !empty($_SESSION['ppv_vendor_store_id']);
     }
@@ -100,7 +100,7 @@ class PPV_Bank_Transfer {
         $account_holder = get_option('ppv_bank_account_holder', self::ACCOUNT_HOLDER);
 
         // Get store-specific pricing
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
         $store_id = $_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_repair_store_id'] ?? 0;
         $pricing = $store_id ? self::get_pricing($store_id) : [
             'price_net' => self::PRICE_NET, 'price_gross' => self::PRICE_GROSS,
@@ -125,7 +125,7 @@ class PPV_Bank_Transfer {
      */
     public static function request_subscription(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = $_SESSION['ppv_vendor_store_id'] ?? 0;
@@ -474,3 +474,4 @@ Echipa PunktePass
         ");
     }
 }
+

@@ -254,7 +254,7 @@ class PPV_Standalone_Admin {
      */
     private static function process_admin_request($path) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Kijelentkezés kezelése
@@ -966,7 +966,7 @@ class PPV_Standalone_Admin {
      */
     public static function rest_change_password(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_admin_logged_in'])) {
@@ -1000,7 +1000,7 @@ class PPV_Standalone_Admin {
      */
     public static function rest_search_users(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_admin_logged_in'])) {
@@ -2529,3 +2529,4 @@ class PPV_Standalone_Admin {
         exit;
     }
 }
+

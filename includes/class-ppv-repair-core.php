@@ -250,7 +250,7 @@ class PPV_Repair_Core {
                 'samesite' => 'Lax'
             ]);
             ini_set('session.gc_maxlifetime', $lifetime);
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // /formular → Registration page
@@ -507,7 +507,7 @@ class PPV_Repair_Core {
                 'samesite' => 'Lax'
             ]);
             ini_set('session.gc_maxlifetime', $lifetime);
-            @session_start();
+            ppv_maybe_start_session();
         }
         // Regenerate session ID on login for security
         session_regenerate_id(true);
@@ -2878,7 +2878,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
      * Also visible in main PunktePass system
      * ============================================================ */
     public static function ajax_create_filiale() {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) ppv_maybe_start_session();
 
         $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
         if (!$current_store_id) {
@@ -3015,7 +3015,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
      * Updates session to point to different store
      * ============================================================ */
     public static function ajax_switch_filiale() {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) ppv_maybe_start_session();
 
         $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
         if (!$current_store_id) {
@@ -3066,7 +3066,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
      * AJAX: Edit filiale (name, city, plz)
      * ============================================================ */
     public static function ajax_edit_filiale() {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) ppv_maybe_start_session();
 
         $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
         if (!$current_store_id) wp_send_json_error(['message' => 'Nicht angemeldet']);
@@ -3109,7 +3109,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
      * AJAX: Delete filiale (child only, not parent)
      * ============================================================ */
     public static function ajax_delete_filiale() {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) ppv_maybe_start_session();
 
         $current_store_id = intval($_SESSION['ppv_repair_store_id'] ?? 0);
         if (!$current_store_id) wp_send_json_error(['message' => 'Nicht angemeldet']);
@@ -3415,7 +3415,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
             ]);
 
             // Set session and redirect to admin
-            if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) ppv_maybe_start_session();
             $_SESSION['ppv_repair_store_id'] = $store_id;
 
             $form_url  = home_url("/formular/{$slug}");
@@ -3447,7 +3447,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         }
 
         // Set session
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) ppv_maybe_start_session();
         $_SESSION['ppv_repair_store_id'] = $store->id;
 
         wp_send_json_success([
@@ -4559,7 +4559,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
                 'samesite' => 'Lax'
             ]);
             ini_set('session.gc_maxlifetime', $lifetime);
-            @session_start();
+            ppv_maybe_start_session();
         }
         // Try repair-specific session first
         if (!empty($_SESSION['ppv_repair_store_id'])) return (int)$_SESSION['ppv_repair_store_id'];
@@ -4641,7 +4641,7 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
      * ============================================================ */
     public static function ajax_logout() {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         unset($_SESSION['ppv_repair_store_id']);
         unset($_SESSION['ppv_repair_store_name']);
@@ -4785,3 +4785,4 @@ Adjust based on device brand (Apple typically higher, Samsung mid, Xiaomi/Huawei
         return implode(', ', $parts);
     }
 }
+

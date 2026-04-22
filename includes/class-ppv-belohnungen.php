@@ -19,7 +19,7 @@ class PPV_Belohnungen {
 
     private static function ensure_session() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
     }
 
@@ -249,7 +249,7 @@ class PPV_Belohnungen {
         ppv_disable_wp_optimization();
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
@@ -873,3 +873,4 @@ class PPV_Belohnungen {
 
 // Initialize
 PPV_Belohnungen::hooks();
+

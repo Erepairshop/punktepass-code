@@ -23,7 +23,7 @@ trait PPV_QR_Scanner_Trait {
 
         // Try to get store ID from session
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
@@ -344,7 +344,7 @@ trait PPV_QR_Scanner_Trait {
 
         // Get current store ID from session
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 🏪 FILIALE SUPPORT: Check all possible store ID sources
@@ -695,3 +695,4 @@ trait PPV_QR_Scanner_Trait {
         <?php
     }
 }
+

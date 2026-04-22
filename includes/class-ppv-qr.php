@@ -77,7 +77,7 @@ class PPV_QR {
 
         // 🔐 Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST (if session exists)
@@ -547,7 +547,7 @@ class PPV_QR {
 
         // ✅ SESSION INICIALIZÁLÁS
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // ⛔ PERMISSION CHECK: Only load camera scanner JS for handlers/scanners
@@ -743,7 +743,7 @@ class PPV_QR {
 
         // Start session
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Auth check
@@ -1291,3 +1291,4 @@ class PPV_QR {
         }
     }
 }
+

@@ -36,7 +36,7 @@ class PPV_SessionBridge {
                 'samesite' => 'Lax'     // CSRF protection
             ]);
 
-            @session_start();
+            ppv_maybe_start_session();
             ppv_log("✅ [PPV_SessionBridge] Session started with 30-day lifetime, domain={$domain}");
         }
     }
@@ -201,3 +201,4 @@ if (!function_exists('ppv_is_logged_in')) {
 
 // Aktiválás
 PPV_SessionBridge::hooks();
+

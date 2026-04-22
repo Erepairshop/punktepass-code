@@ -90,7 +90,7 @@ class PPV_VIP_Settings {
         global $wpdb;
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Session store
@@ -755,3 +755,4 @@ class PPV_VIP_Settings {
 
 // Initialize
 PPV_VIP_Settings::hooks();
+

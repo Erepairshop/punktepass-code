@@ -30,7 +30,7 @@ class PPV_User_Settings {
      *  🔹 Session / Token Bridge - Get PPV User ID
      * ============================================================ */
     private static function get_ppv_user_id() {
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
 
         // Check session first
         if (!empty($_SESSION['ppv_user_id'])) {
@@ -84,7 +84,7 @@ class PPV_User_Settings {
      * ============================================================ */
     private static function t($key) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         $lang_code = $_SESSION['ppv_lang'] ?? 'de';
@@ -115,7 +115,7 @@ class PPV_User_Settings {
         ppv_disable_wp_optimization();
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
@@ -243,7 +243,7 @@ class PPV_User_Settings {
 
     public static function enqueue_assets() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         $lang = sanitize_text_field($_GET['lang'] ?? '');
@@ -1109,3 +1109,4 @@ class PPV_User_Settings {
 }
 
 PPV_User_Settings::hooks();
+

@@ -23,7 +23,7 @@ class PPV_AI_Support {
      */
     private static function is_handler() {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         $user  = wp_get_current_user();
@@ -1669,3 +1669,4 @@ PROMPT;
         <?php
     }
 }
+

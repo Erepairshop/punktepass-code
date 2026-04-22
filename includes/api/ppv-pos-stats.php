@@ -69,7 +69,7 @@ class PPV_POS_STATS_API {
 
         // 🏪 FILIALE SUPPORT: Use session-aware store ID, ignore request parameter
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Check ppv_current_filiale_id FIRST
@@ -204,3 +204,4 @@ class PPV_POS_STATS_API {
 // 🔹 Plugin init
 // ============================================================
 add_action('plugins_loaded', ['PPV_POS_STATS_API', 'hooks']);
+

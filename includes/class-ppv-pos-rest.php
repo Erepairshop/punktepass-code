@@ -164,7 +164,7 @@ if (
     $wpdb->update("{$wpdb->prefix}ppv_stores", ['pos_token' => $token], ['id' => $store->id]);
 
     if (session_status() === PHP_SESSION_NONE) {
-        @session_start();
+        ppv_maybe_start_session();
     }
 
     $_SESSION['ppv_is_pos'] = true;
@@ -376,3 +376,4 @@ wp_add_inline_script('ppv-pos-dashboard', "window.PPV_STORE_ID = {$__json};", 'b
 // 🔹 Inicializálás
 // ============================================================
 add_action('plugins_loaded', ['PPV_POS_REST', 'hooks']);
+

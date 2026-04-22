@@ -223,7 +223,7 @@ class PPV_Login {
                 'httponly' => true,
                 'samesite' => 'Lax'
             ]);
-            @session_start();
+            ppv_maybe_start_session();
             ppv_log("✅ [PPV_Login] Session started (ID=" . session_id() . ")");
         }
     }
@@ -242,7 +242,7 @@ public static function check_already_logged_in() {
 
     // ✅ Start session first
     if (session_status() === PHP_SESSION_NONE) {
-        @session_start();
+        ppv_maybe_start_session();
     }
 
     // ✅ Restore session from cookie if needed
@@ -2220,3 +2220,5 @@ public static function render_landing_page($atts) {
 
 // Initialize
 PPV_Login::hooks();
+
+

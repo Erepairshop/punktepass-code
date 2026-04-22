@@ -45,7 +45,7 @@ class PPV_Rewards_API {
 
         // 🔐 Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
@@ -378,3 +378,4 @@ class PPV_Rewards_API {
 }
 
 add_action('plugins_loaded', ['PPV_Rewards_API', 'hooks']);
+

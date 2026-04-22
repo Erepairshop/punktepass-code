@@ -87,7 +87,7 @@ class PPV_Logout {
 
         // 2️⃣ Session destroy - COMPLETE destruction
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Clear all session data

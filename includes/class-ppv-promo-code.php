@@ -73,7 +73,7 @@ class PPV_Promo_Code {
      */
     public static function redeem_code(WP_REST_Request $request) {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = $_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_repair_store_id'] ?? 0;
@@ -145,3 +145,4 @@ class PPV_Promo_Code {
         ], 200);
     }
 }
+

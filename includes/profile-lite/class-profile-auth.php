@@ -13,7 +13,7 @@ class PPV_Profile_Auth {
      */
     public static function ensure_session() {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
     }
 
@@ -179,3 +179,4 @@ class PPV_Profile_Auth {
         return null;
     }
 }
+

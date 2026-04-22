@@ -42,7 +42,7 @@ class PPV_Stripe_Checkout {
 
         // Determine price based on store country (VAT only for DE)
         $price_id = 'price_1SFWxYG5r7ItrUMax8uVCa9p'; // Default: gross (incl. VAT)
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
         $store_id = $_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_repair_store_id'] ?? 0;
         if ($store_id) {
             global $wpdb;
@@ -79,3 +79,4 @@ class PPV_Stripe_Checkout {
         }
     }
 }
+

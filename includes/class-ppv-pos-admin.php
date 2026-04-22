@@ -74,7 +74,7 @@ public static function hooks_loader() {
         // ============================================================
         add_action('wp', function () {
             if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
-                @session_start();
+                ppv_maybe_start_session();
                 ppv_log("✅ [PPV_POS_Admin] Session started safely (moved to wp hook).");
             } else {
                 ppv_log("⚠️ [PPV_POS_Admin] Session skipped – headers sent or already active.");
@@ -259,7 +259,7 @@ add_action('rest_api_init', function() {
             }
 
             if (session_status() === PHP_SESSION_NONE) {
-                @session_start();
+                ppv_maybe_start_session();
             }
 
             $_SESSION['ppv_is_pos'] = true;
@@ -289,3 +289,4 @@ add_action('rest_api_init', function() {
         'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
     ]);
 });
+

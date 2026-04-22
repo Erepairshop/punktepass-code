@@ -129,7 +129,7 @@ class PPV_Haendlervertrag {
 
         // Start session if not started
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Set session
@@ -149,7 +149,7 @@ class PPV_Haendlervertrag {
      */
     private static function get_logged_in_user() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (!empty($_SESSION['ppv_vertrag_user_id'])) {
@@ -171,7 +171,7 @@ class PPV_Haendlervertrag {
             // Check logout action
             if (isset($_GET['logout'])) {
                 if (session_status() === PHP_SESSION_NONE) {
-                    @session_start();
+                    ppv_maybe_start_session();
                 }
                 unset($_SESSION['ppv_vertrag_user_id']);
                 unset($_SESSION['ppv_vertrag_user_email']);
@@ -2048,3 +2048,4 @@ class PPV_Haendlervertrag {
 
 // Initialize
 PPV_Haendlervertrag::hooks();
+

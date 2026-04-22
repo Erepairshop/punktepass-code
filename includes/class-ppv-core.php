@@ -497,7 +497,7 @@ class PPV_Core {
 
     public static function init_session_bridge() {
         if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // ✅ POS / User sync

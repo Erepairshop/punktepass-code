@@ -36,6 +36,36 @@ function ppv_log($msg) {
     }
 }
 
+if (!function_exists('ppv_get_session_cookie_params')) {
+    function ppv_get_session_cookie_params() {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $host = is_string($host) ? trim($host) : '';
+        $host = preg_replace('/:\d+$/', '', $host);
+
+        return [
+            'lifetime' => 86400 * 30,
+            'path' => '/',
+            'domain' => $host ?: '',
+            'secure' => is_ssl(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ];
+    }
+}
+
+if (!function_exists('ppv_maybe_start_session')) {
+    function ppv_maybe_start_session() {
+        if (session_status() !== PHP_SESSION_NONE || headers_sent()) {
+            return;
+        }
+
+        ini_set('session.gc_maxlifetime', (string) (86400 * 30));
+        ini_set('session.cookie_lifetime', (string) (86400 * 30));
+        session_set_cookie_params(ppv_get_session_cookie_params());
+        @session_start();
+    }
+}
+
 /**
  * Disable all WP/LiteSpeed CSS/JS optimization for standalone pages.
  * Call this BEFORE rendering any standalone HTML page.
@@ -142,7 +172,7 @@ if (!defined('PPV_ABLY_API_KEY')) {
 // session could start with default PHP settings instead of custom domain/lifetime
 // add_action('init', function () {
 //     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-//         @session_start();
+//         ppv_maybe_start_session();
 //     }
 // }, 1);
 
@@ -285,7 +315,7 @@ add_filter('rest_authentication_errors', function ($result) {
     // SESSION auth (Google/Facebook/TikTok login)
     // Start session and restore from token if needed
     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-        @session_start();
+        ppv_maybe_start_session();
     }
 
     // Restore session from ppv_user_token cookie
@@ -1341,3 +1371,4 @@ add_action('init', function () {
 if (class_exists('PPV_Auto_Debug')) {
     PPV_Auto_Debug::enable();
 }
+

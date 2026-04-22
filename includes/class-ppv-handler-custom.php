@@ -109,7 +109,7 @@ class PPV_Handler_Custom {
     public static function check_admin_permission() {
         // Check standalone admin session
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         return !empty($_SESSION['ppv_admin_logged_in']);
@@ -122,7 +122,7 @@ class PPV_Handler_Custom {
         global $wpdb;
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Session store
@@ -447,3 +447,4 @@ class PPV_Handler_Custom {
 
 // Initialize
 PPV_Handler_Custom::hooks();
+

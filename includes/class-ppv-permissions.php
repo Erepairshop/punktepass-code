@@ -44,7 +44,7 @@ class PPV_Permissions {
 
         // 0. Ensure session is started
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
             ppv_perm_log("🔍 [PPV_Permissions] Session started");
         }
 
@@ -692,7 +692,7 @@ class PPV_Permissions {
 
         // 0. Ensure session is started
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 1. Check session authentication (PPV user)
@@ -828,3 +828,4 @@ class PPV_Permissions {
         return false;
     }
 }
+

@@ -51,7 +51,7 @@ class PPV_Rewards_Management {
     public static function enqueue_assets() {
         // 🔐 Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         wp_enqueue_script(
@@ -171,7 +171,7 @@ class PPV_Rewards_Management {
      * ============================================================ */
     public static function render_management_page() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         global $wpdb;

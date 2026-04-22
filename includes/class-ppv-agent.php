@@ -27,7 +27,7 @@ class PPV_Agent {
         $page = get_query_var('ppv_page');
         if ($page !== 'agent') return;
 
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
 
         // Check auth (TEMPORARILY DISABLED FOR TESTING)
         // $user_type = $_SESSION['ppv_user_type'] ?? '';
@@ -204,3 +204,4 @@ class PPV_Agent {
         return ob_get_clean();
     }
 }
+

@@ -86,7 +86,7 @@ class PPV_WhatsApp {
      */
     public static function check_admin_permission() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         return !empty($_SESSION['ppv_admin_logged_in']);
     }
@@ -1055,3 +1055,4 @@ class PPV_WhatsApp {
 
 // Initialize
 PPV_WhatsApp::hooks();
+

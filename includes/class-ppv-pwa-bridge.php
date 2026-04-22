@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 // 🔹 Biztonságos session-indítás a fájl legelején
 if (session_status() === PHP_SESSION_NONE) {
-    @session_start();
+    ppv_maybe_start_session();
 }
 
 /**
@@ -120,3 +120,4 @@ wp_add_inline_script('ppv-bridge', "
 }
 
 PPV_Bridge::hooks();
+

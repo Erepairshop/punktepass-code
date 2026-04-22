@@ -14,6 +14,55 @@ class PPV_Remote_Service {
         add_action('init', [__CLASS__, 'ensure_tables'], 5);
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_telemetry']);
+        // Fallback: direct footer print for pages that bypass enqueue
+        add_action('wp_footer', [__CLASS__, 'print_footer_telemetry'], 999);
+        // PP standalone pages: use output buffer to inject before </body>
+        add_action('init', [__CLASS__, 'start_output_buffer'], 1);
+        add_action('shutdown', [__CLASS__, 'flush_output_buffer'], 1);
+        // AJAX nopriv fallback (in case REST blocked by auth filter)
+        add_action('wp_ajax_ppv_client_error', [__CLASS__, 'ajax_log_error']);
+        add_action('wp_ajax_nopriv_ppv_client_error', [__CLASS__, 'ajax_log_error']);
+        add_action('wp_ajax_ppv_device_heartbeat', [__CLASS__, 'ajax_heartbeat']);
+        add_action('wp_ajax_nopriv_ppv_device_heartbeat', [__CLASS__, 'ajax_heartbeat']);
+        add_action('wp_ajax_ppv_pending_actions', [__CLASS__, 'ajax_pending_actions']);
+        add_action('wp_ajax_nopriv_ppv_pending_actions', [__CLASS__, 'ajax_pending_actions']);
+        add_action('wp_ajax_ppv_action_result', [__CLASS__, 'ajax_action_result']);
+        add_action('wp_ajax_nopriv_ppv_action_result', [__CLASS__, 'ajax_action_result']);
+    }
+
+    private static function make_json_req($method = 'POST') {
+        $req = new WP_REST_Request($method);
+        $raw = file_get_contents('php://input');
+        $req->set_body($raw);
+        $req->add_header('Content-Type', 'application/json');
+        // Manually parse + prime body params so get_json_params() works
+        if ($raw) {
+            $parsed = json_decode($raw, true);
+            if (is_array($parsed)) {
+                foreach ($parsed as $k => $v) $req->set_param($k, $v);
+            }
+        }
+        return $req;
+    }
+    public static function ajax_log_error() {
+        $req = self::make_json_req('POST');
+        foreach ($_POST as $k => $v) $req->set_param($k, $v);
+        self::rest_log_error($req);
+        wp_send_json(['ok' => true]);
+    }
+    public static function ajax_heartbeat() {
+        $req = self::make_json_req('POST');
+        self::rest_heartbeat($req);
+        wp_send_json(['ok' => true]);
+    }
+    public static function ajax_pending_actions() {
+        $req = new WP_REST_Request('GET');
+        foreach ($_GET as $k => $v) $req->set_param($k, $v);
+        wp_send_json(self::rest_pending_actions($req));
+    }
+    public static function ajax_action_result() {
+        $req = self::make_json_req('POST');
+        wp_send_json(self::rest_action_result($req));
     }
 
     public static function ensure_tables() {
@@ -111,8 +160,8 @@ class PPV_Remote_Service {
 
     public static function rest_log_error(WP_REST_Request $req) {
         global $wpdb;
-        $b = $req->get_json_params();
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        $b = $req->get_json_params() ?: json_decode($req->get_body(), true) ?: [];
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
         $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
         $store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
         $email = sanitize_email($_SESSION['ppv_email'] ?? '');
@@ -134,8 +183,15 @@ class PPV_Remote_Service {
 
     public static function rest_heartbeat(WP_REST_Request $req) {
         global $wpdb;
-        $b = $req->get_json_params();
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        $b = $req->get_json_params() ?: json_decode($req->get_body(), true) ?: [];
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
+        if (empty($_SESSION)) {
+            error_log('[PPV_Remote_Service] heartbeat empty session: session_id=' . session_id()
+                . ', phpsessid_cookie=' . (!empty($_COOKIE[session_name()]) ? 'yes' : 'no')
+                . ', cookie_name=' . session_name()
+                . ', request_uri=' . ($_SERVER['REQUEST_URI'] ?? '')
+                . ', fingerprint=' . sanitize_text_field($b['fingerprint'] ?? ''));
+        }
         $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
         $store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
 
@@ -177,7 +233,7 @@ class PPV_Remote_Service {
 
     public static function rest_pending_actions(WP_REST_Request $req) {
         global $wpdb;
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
         $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
         $fp = sanitize_text_field($req->get_param('fingerprint') ?? '');
         if (!$user_id || !$fp) return ['actions' => []];
@@ -193,7 +249,7 @@ class PPV_Remote_Service {
 
     public static function rest_action_result(WP_REST_Request $req) {
         global $wpdb;
-        $b = $req->get_json_params();
+        $b = $req->get_json_params() ?: json_decode($req->get_body(), true) ?: [];
         $id = intval($b['id'] ?? 0);
         if (!$id) return ['ok' => false];
         $wpdb->update("{$wpdb->prefix}ppv_remote_actions", [
@@ -204,26 +260,29 @@ class PPV_Remote_Service {
         return ['ok' => true];
     }
 
-    public static function enqueue_telemetry() {
-        // Only logged-in PP users
-        if (session_status() === PHP_SESSION_NONE) @session_start();
-        if (empty($_SESSION['ppv_user_id'])) return;
+    private static $footer_printed = false;
 
+    public static function enqueue_telemetry() {
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
+        // Mark telemetry script so wp_footer fallback can skip
+        if (!self::$footer_printed) {
+            add_action('wp_print_footer_scripts', function() {
+                self::$footer_printed = true;
+            }, 1);
+        }
         wp_register_script('ppv-telemetry', false, [], '1', true);
         wp_enqueue_script('ppv-telemetry');
 
-        $rest_base = esc_url_raw(rest_url('punktepass/v1'));
-        $nonce = wp_create_nonce('wp_rest');
+        $ajax = esc_url_raw(admin_url('admin-ajax.php'));
 
         $inline = <<<JS
 (function(){
-  var REST = '{$rest_base}';
-  var NONCE = '{$nonce}';
-  function post(path, body){
+  var AJAX = '{$ajax}';
+  function post(action, body){
     try {
-      return fetch(REST + path, {
+      return fetch(AJAX + '?action=' + action, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-WP-Nonce': NONCE},
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body||{}),
         credentials: 'include',
         keepalive: true
@@ -233,7 +292,7 @@ class PPV_Remote_Service {
 
   // Global error handler
   window.addEventListener('error', function(ev){
-    post('/client-error', {
+    post('ppv_client_error', {
       url: location.href,
       message: (ev.message || 'Unknown error') + (ev.filename ? ' @ ' + ev.filename + ':' + ev.lineno : ''),
       stack: ev.error && ev.error.stack ? ev.error.stack : null,
@@ -242,7 +301,7 @@ class PPV_Remote_Service {
   });
   window.addEventListener('unhandledrejection', function(ev){
     var r = ev.reason || {};
-    post('/client-error', {
+    post('ppv_client_error', {
       url: location.href,
       message: 'Unhandled promise: ' + (r.message || r.toString()),
       stack: r.stack || null,
@@ -267,7 +326,7 @@ class PPV_Remote_Service {
     try { if (navigator.getBattery) { var b = await navigator.getBattery(); battery = Math.round(b.level*100); } } catch(e){}
     try { if (navigator.connection) conn = navigator.connection.effectiveType || ''; } catch(e){}
 
-    post('/device/heartbeat', {
+    post('ppv_device_heartbeat', {
       fingerprint: getFP(),
       sw_version: (window.PPV_VERSION || ''),
       screen: screen.width + 'x' + screen.height,
@@ -282,8 +341,8 @@ class PPV_Remote_Service {
 
     // Poll pending remote actions
     try {
-      var r = await fetch(REST + '/device/pending-actions?fingerprint=' + encodeURIComponent(getFP()), {
-        credentials: 'include', headers: {'X-WP-Nonce': NONCE}
+      var r = await fetch(AJAX + '?action=ppv_pending_actions&fingerprint=' + encodeURIComponent(getFP()), {
+        credentials: 'include'
       });
       var j = await r.json();
       (j.actions || []).forEach(function(a){ handleRemoteAction(a); });
@@ -306,7 +365,7 @@ class PPV_Remote_Service {
           break;
       }
     } catch(e){ result = 'err:' + e.message; }
-    post('/device/action-result', { id: a.id, status: 'done', result: result });
+    post('ppv_action_result', { id: a.id, status: 'done', result: result });
   }
 
   // Fire heartbeat: once now + every 3 minutes
@@ -317,6 +376,41 @@ JS;
 
         wp_add_inline_script('ppv-telemetry', $inline);
     }
+
+    public static function start_output_buffer() {
+        if (defined('REST_REQUEST') || defined('DOING_AJAX') || defined('DOING_CRON') || php_sapi_name() === 'cli') return;
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
+        // Use callback form so buffer transforms on flush regardless of exit/die
+        ob_start([__CLASS__, 'ob_inject_callback']);
+    }
+
+    public static function ob_inject_callback($html) {
+        if (stripos($html, '</body>') === false) return $html;
+        return str_ireplace('</body>', self::get_telemetry_snippet() . '</body>', $html);
+    }
+
+    public static function flush_output_buffer() {
+        // No-op — ob_start callback handles injection on flush
+    }
+
+    public static function get_telemetry_snippet() {
+        $ajax = esc_url_raw(admin_url('admin-ajax.php'));
+        $js = '<script>/*PPV-telemetry-ob*/(function(){';
+        $js .= 'var AJAX="' . $ajax . '";';
+        $js .= 'function post(a,b){try{return fetch(AJAX+"?action="+a,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{}),credentials:"include",keepalive:true}).catch(function(){});}catch(e){}}';
+        $js .= 'window.addEventListener("error",function(ev){post("ppv_client_error",{url:location.href,message:(ev.message||"")+(ev.filename?" @ "+ev.filename+":"+ev.lineno:""),stack:ev.error&&ev.error.stack?ev.error.stack:null,severity:"error"});});';
+        $js .= 'window.addEventListener("unhandledrejection",function(ev){var r=ev.reason||{};post("ppv_client_error",{url:location.href,message:"Unhandled promise: "+(r.message||r.toString()),stack:r.stack||null,severity:"error"});});';
+        $js .= 'function getFP(){try{var fp=localStorage.getItem("ppv_fp");if(!fp){fp="fp_"+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("ppv_fp",fp);}return fp;}catch(e){return "fp_no_ls";}}';
+        $js .= 'async function hb(){var cam="?",nt="?",bat=null,conn="";try{var c=await navigator.permissions.query({name:"camera"});cam=c.state;}catch(e){}try{nt=(typeof Notification!=="undefined"?Notification.permission:"?");}catch(e){}try{if(navigator.getBattery){var b=await navigator.getBattery();bat=Math.round(b.level*100);}}catch(e){}try{if(navigator.connection)conn=navigator.connection.effectiveType||"";}catch(e){}post("ppv_device_heartbeat",{fingerprint:getFP(),sw_version:(window.PPV_VERSION||""),screen:screen.width+"x"+screen.height,lang:navigator.language,online:navigator.onLine,camera:cam,notification:nt,battery:bat,connection:conn,url:location.href});}';
+        $js .= 'hb();setInterval(hb,180000);';
+        $js .= '})();</script>';
+        return $js;
+    }
+
+    public static function print_footer_telemetry() {
+        echo self::get_telemetry_snippet();
+    }
 }
 
 PPV_Remote_Service::hooks();
+

@@ -48,7 +48,7 @@ class PPV_Agent_API {
     public static function check_agent_permission() {
         if (current_user_can('manage_options')) return true;
 
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
 
         $user_type = $_SESSION['ppv_user_type'] ?? '';
         if (in_array($user_type, ['agent', 'admin', 'vendor'])) return true;
@@ -71,7 +71,7 @@ class PPV_Agent_API {
      * Get agent user ID from session
      */
     private static function get_agent_id() {
-        if (session_status() === PHP_SESSION_NONE) @session_start();
+        if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
         return intval($_SESSION['ppv_user_id'] ?? 0);
     }
 
@@ -330,3 +330,4 @@ class PPV_Agent_API {
 }
 
 PPV_Agent_API::hooks();
+

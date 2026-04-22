@@ -71,7 +71,7 @@ class PPV_Analytics_API {
 
     public static function check_permission() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         
         $user_id = get_current_user_id();
@@ -84,7 +84,7 @@ class PPV_Analytics_API {
 
     public static function get_analytics($request) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         
         $user_id = get_current_user_id();
@@ -175,7 +175,7 @@ class PPV_Analytics_API {
 
     public static function get_trend($request) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         
         $user_id = get_current_user_id();
@@ -233,7 +233,7 @@ class PPV_Analytics_API {
 
     public static function get_store_breakdown($request) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         
         $user_id = get_current_user_id();
@@ -304,7 +304,7 @@ class PPV_Analytics_API {
 
     public static function get_summary($request) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         
         $user_id = get_current_user_id();
@@ -388,7 +388,7 @@ class PPV_Analytics_API {
 
     public static function debug_points($request) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         
         global $wpdb;

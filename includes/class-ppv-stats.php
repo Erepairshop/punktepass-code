@@ -313,7 +313,7 @@ class PPV_Stats {
         ppv_disable_wp_optimization();
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (!class_exists('PPV_Permissions')) {

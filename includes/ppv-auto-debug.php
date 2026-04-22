@@ -127,7 +127,7 @@ class PPV_Auto_Debug {
      * 🔹 SESSION TRACKING
      * ============================================================ */
     public static function capture_session() {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) ppv_maybe_start_session();
 
         // 🏪 FILIALE SUPPORT: Show active filiale if set, otherwise show base store_id
         $active_store_id = $_SESSION['ppv_current_filiale_id'] ?? $_SESSION['ppv_store_id'] ?? 0;
@@ -314,3 +314,4 @@ if (defined('PPV_DEBUG') && PPV_DEBUG === true) {
         });
     });
 }
+

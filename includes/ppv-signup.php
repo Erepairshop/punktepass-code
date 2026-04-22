@@ -38,7 +38,7 @@ class PPV_Signup {
      * ============================================================ */
     public static function init() {
         if (!session_id() && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         self::hooks();
@@ -111,7 +111,7 @@ class PPV_Signup {
                 'httponly' => true,
                 'samesite' => 'Lax'
             ]);
-            @session_start();
+            ppv_maybe_start_session();
         }
     }
 
@@ -885,7 +885,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
 
         // Check if user is logged in
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_user_id'])) {
@@ -987,7 +987,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
 
         // Check if user is logged in
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_user_id'])) {
@@ -1174,7 +1174,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Get user info
@@ -1490,7 +1490,7 @@ www.punktepass.de
 
         // Check if handler is logged in
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_user_id'])) {
@@ -1637,7 +1637,7 @@ www.punktepass.de
 
         // Check if handler is logged in
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_user_id'])) {
@@ -1716,7 +1716,7 @@ www.punktepass.de
 
         // Check if handler is logged in
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_user_id'])) {
@@ -1818,7 +1818,7 @@ www.punktepass.de
 
         // Check if handler is logged in
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (empty($_SESSION['ppv_user_id'])) {
@@ -1939,3 +1939,4 @@ add_action('wp_ajax_ppv_update_scanner_filiale', ['PPV_Signup', 'ajax_update_sca
 add_action('wp_ajax_nopriv_ppv_update_scanner_filiale', ['PPV_Signup', 'ajax_update_scanner_filiale']);
 
 PPV_Signup::hooks();
+

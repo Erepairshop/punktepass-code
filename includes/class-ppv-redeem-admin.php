@@ -26,7 +26,7 @@ class PPV_Redeem_Admin {
      * ============================================================ */
     private static function ensure_session() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
     }
 
@@ -494,3 +494,4 @@ return [
 }
 
 PPV_Redeem_Admin::hooks();
+

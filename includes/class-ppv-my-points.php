@@ -55,7 +55,7 @@ class PPV_My_Points {
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
             ppv_log("🔍 [PPV_My_Points] Session started");
         } else {
             ppv_log("🔍 [PPV_My_Points] Session already active");
@@ -168,7 +168,7 @@ class PPV_My_Points {
         ppv_disable_wp_optimization();
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Customer auth

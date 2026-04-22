@@ -16,7 +16,7 @@ trait PPV_QR_Devices_Trait {
 
         // Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Get current handler's store_id (same logic as API's get_session_store_id)
@@ -858,3 +858,4 @@ trait PPV_QR_Devices_Trait {
     // 🏪 AJAX: SWITCH FILIALE
     // ============================================================
 }
+

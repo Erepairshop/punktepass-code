@@ -448,7 +448,7 @@ add_action('init', function() {
     global $wpdb;
 
     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-        @session_start();
+        ppv_maybe_start_session();
     }
 
     // Cookie alapú helyreállítás
@@ -539,7 +539,7 @@ add_action('template_redirect', function() {
 
     // Check if user is logged in (WP or session)
     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-        @session_start();
+        ppv_maybe_start_session();
     }
 
     $user_id = 0;

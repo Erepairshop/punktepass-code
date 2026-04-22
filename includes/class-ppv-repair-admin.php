@@ -332,7 +332,7 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $prefix = $wpdb->prefix;
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Load translations
@@ -9837,3 +9837,4 @@ echo '</div></div>
         . '</div>';
     }
 }
+

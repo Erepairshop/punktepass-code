@@ -1012,7 +1012,7 @@ class PPV_Device_Fingerprint {
         global $wpdb;
 
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Check for filiale first
@@ -1812,7 +1812,7 @@ class PPV_Device_Fingerprint {
 
         // Get current user info for logging
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
         $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
         $user_type = sanitize_text_field($_SESSION['ppv_user_type'] ?? 'handler');
@@ -2785,3 +2785,4 @@ class PPV_Device_Fingerprint {
         ppv_log("📧 [Mobile Scanner Email] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$admin_email}, store_id={$store_id}, device_id={$device_id}");
     }
 }
+

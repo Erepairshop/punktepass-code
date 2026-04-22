@@ -118,7 +118,7 @@ class PPV_Rewards {
         global $wpdb;
 
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
@@ -208,7 +208,7 @@ class PPV_Rewards {
         ppv_disable_wp_optimization();
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         if (!class_exists('PPV_Permissions')) {
@@ -396,7 +396,7 @@ class PPV_Rewards {
      * ============================================================ */
     public static function render_page() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         global $wpdb;
@@ -1073,3 +1073,4 @@ class PPV_Rewards {
 
 // Initialize
 PPV_Rewards::hooks();
+

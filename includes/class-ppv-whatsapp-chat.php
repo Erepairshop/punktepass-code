@@ -20,7 +20,7 @@ class PPV_WhatsApp_Chat {
     public static function render_chat($atts = []) {
         // Get store from session
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = $_SESSION['ppv_store_id'] ?? 0;
@@ -452,3 +452,4 @@ class PPV_WhatsApp_Chat {
 
 // Initialize
 PPV_WhatsApp_Chat::hooks();
+

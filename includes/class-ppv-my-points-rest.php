@@ -29,7 +29,7 @@ class PPV_My_Points_REST {
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
             ppv_log("🔍 [check_mypoints_permission] Session started");
         }
 
@@ -101,7 +101,7 @@ class PPV_My_Points_REST {
 
         // 🔹 Force language reload (Cookie / Session / Header alapján)
 if (class_exists('PPV_Lang')) {
-    if (session_status() === PHP_SESSION_NONE) @session_start();
+    if (session_status() === PHP_SESSION_NONE) ppv_maybe_start_session();
 
     $cookie_lang  = $_COOKIE['ppv_lang'] ?? '';
     $session_lang = $_SESSION['ppv_lang'] ?? '';
@@ -126,7 +126,7 @@ if (class_exists('PPV_Lang')) {
         // ✅ SAME AS USER DASHBOARD - Simple user detection
         // Start session if not started yet
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
             ppv_log("🔍 [PPV_MyPoints_REST] Session started");
         } else {
             ppv_log("🔍 [PPV_MyPoints_REST] Session already active, SID: " . session_id());
@@ -545,3 +545,4 @@ if (class_exists('PPV_Lang')) {
 }
 
 PPV_My_Points_REST::hooks();
+

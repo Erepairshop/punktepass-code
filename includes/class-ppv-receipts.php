@@ -98,7 +98,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         global $wpdb;
 
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // 🔄 Token restoration for trial users
@@ -153,7 +153,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
      * ============================================================ */
     public static function render_receipts_page() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         global $wpdb;

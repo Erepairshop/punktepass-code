@@ -175,7 +175,7 @@ class PPV_Filiale {
      */
     public static function get_current_filiale() {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         return isset($_SESSION['ppv_current_filiale_id'])
@@ -188,7 +188,7 @@ class PPV_Filiale {
      */
     public static function set_current_filiale($store_id) {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         $store_id = intval($store_id);
@@ -220,7 +220,7 @@ class PPV_Filiale {
 
         // Restart session for continued use
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
             ppv_log("🏪 [FILIALE] Session restarted. VERIFY: ppv_store_id=" . ($_SESSION['ppv_store_id'] ?? 'EMPTY'));
         }
 
@@ -234,7 +234,7 @@ class PPV_Filiale {
     public static function ajax_create_filiale() {
         // Start session if needed
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Auth check using PPV_Permissions (same as QR-Center)
@@ -366,7 +366,7 @@ class PPV_Filiale {
     public static function ajax_switch_filiale() {
         // Start session if needed
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Auth check using PPV_Permissions (same as QR-Center)
@@ -429,7 +429,7 @@ class PPV_Filiale {
     public static function ajax_get_filialen() {
         // Start session if needed
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Auth check using PPV_Permissions (same as QR-Center)
@@ -468,7 +468,7 @@ class PPV_Filiale {
     public static function ajax_check_filiale_limit() {
         // Start session if needed
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Auth check
@@ -502,7 +502,7 @@ class PPV_Filiale {
     public static function ajax_request_more_filialen() {
         // Start session if needed
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // Auth check
@@ -680,4 +680,5 @@ class PPV_Filiale {
 }
 
 PPV_Filiale::hooks();
+
 

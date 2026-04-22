@@ -37,7 +37,7 @@ class PPV_POS_Diagnostic {
                     'httponly' => true,
                     'samesite' => 'Lax'
                 ]);
-                @session_start();
+                ppv_maybe_start_session();
                 ppv_log("✅ [POS DIAG] Session started (domain={$domain}, ID=" . session_id() . ")");
             }
         }
@@ -59,3 +59,4 @@ class PPV_POS_Diagnostic {
 }
 
 PPV_POS_Diagnostic::init();
+

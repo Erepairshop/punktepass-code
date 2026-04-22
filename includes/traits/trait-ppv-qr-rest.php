@@ -35,7 +35,7 @@ trait PPV_QR_REST_Trait {
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         // SECURITY: Verify filiale belongs to the handler's store (prevent IDOR)
@@ -2816,3 +2816,4 @@ trait PPV_QR_REST_Trait {
         ];
     }
 }
+

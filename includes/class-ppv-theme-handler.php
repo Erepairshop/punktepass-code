@@ -28,7 +28,7 @@ class PPV_Theme_Handler {
     public static function init_theme() {
         // Session safe start
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            ppv_maybe_start_session();
         }
 
         $theme = self::get_user_theme();
@@ -247,3 +247,4 @@ class PPV_Theme_Handler {
 
 // Auto-initialize
 PPV_Theme_Handler::hooks();
+
