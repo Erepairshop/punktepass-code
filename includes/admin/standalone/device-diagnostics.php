@@ -19,12 +19,16 @@ class PPV_Standalone_DeviceDiagnostics {
             ]);
         }
 
+        // Csak handler / scanner / admin / agent eszkozok — plain user-eket kizarjuk
         $rows = $wpdb->get_results("
-            SELECT d.*, u.email, s.name AS store_name,
+            SELECT d.*, u.email, u.user_type, s.name AS store_name,
+                owner.email AS store_owner_email,
                 TIMESTAMPDIFF(MINUTE, d.last_heartbeat, NOW()) AS mins_ago
             FROM {$p}ppv_device_diagnostics d
             LEFT JOIN {$p}ppv_users u ON d.user_id = u.id
             LEFT JOIN {$p}ppv_stores s ON d.store_id = s.id
+            LEFT JOIN {$p}ppv_users owner ON s.user_id = owner.id
+            WHERE u.user_type IN ('handler', 'scanner', 'admin', 'agent')
             ORDER BY d.last_heartbeat DESC LIMIT 200
         ");
 
@@ -65,7 +69,14 @@ button:hover{background:#4ec9b0;color:#1a1a2e;}
     $offline = !$r->online;
 ?>
 <tr>
-<td><?php echo esc_html($r->email ?: 'user#' . $r->user_id); ?><div class="small"><?php echo esc_html($r->store_name ?: '-'); ?> · fp:<?php echo esc_html(substr($r->device_fingerprint, 0, 12)); ?></div></td>
+<td>
+  <?php echo esc_html($r->email ?: 'user#' . $r->user_id); ?>
+  <span class="small" style="color:#ffa94d;">[<?php echo esc_html($r->user_type ?: '?'); ?>]</span>
+  <div class="small"><?php echo esc_html($r->store_name ?: '-'); ?> · fp:<?php echo esc_html(substr($r->device_fingerprint, 0, 12)); ?></div>
+  <?php if (!empty($r->store_owner_email) && $r->store_owner_email !== $r->email): ?>
+    <div class="small" style="color:#4ec9b0;">→ konto: <?php echo esc_html($r->store_owner_email); ?></div>
+  <?php endif; ?>
+</td>
 <td class="<?php echo $stale ? 'stale' : 'online'; ?>"><?php echo $r->mins_ago; ?>p</td>
 <td><?php echo esc_html($r->sw_version ?: '-'); ?></td>
 <td><?php echo esc_html($r->screen); ?></td>
