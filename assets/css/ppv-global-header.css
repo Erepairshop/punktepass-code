@@ -11,7 +11,7 @@
    ═══════════════════════════════════════════════ */
 
 #ppv-global-header {
-    position: sticky !important;
+    position: fixed !important;
     top: 0;
     left: 0;
     right: 0;
@@ -480,10 +480,9 @@ html, body {
     overscroll-behavior-x: none;
 }
 
-/* Minden .ppv-standalone-wrap elegendo padding-bottom-ot kap a fix bottom-nav
-   takaras-kompenzalasara (48px nav + safe-area + margin). Az oldalak kulon-kulon
-   180-200px also padding-ot nyernek — igy az utolso lista-elem nem lesz rejtett. */
+/* Fix header kompenzáció: top-padding = header-magasság + safe-area */
 .ppv-standalone-wrap {
+    padding-top: calc(var(--pp-header-height, 64px) + env(safe-area-inset-top, 0px)) !important;
     padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px) + 32px) !important;
     touch-action: manipulation;
 }
