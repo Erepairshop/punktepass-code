@@ -16,8 +16,18 @@ wp_add_inline_script('pp-profile-settings', "window.ppv_ajax = {$__json};", 'bef
  */
 
 global $wpdb;
-$user_id = get_current_user_id();
-$store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+if (session_status() === PHP_SESSION_NONE) @session_start();
+$user_id = intval($_SESSION['ppv_user_id'] ?? get_current_user_id());
+// Resolve shared store: vendor_store_id (access user) OR own store
+$__ppv_store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+if (!$__ppv_store_id && $user_id) {
+    $__ppv_store_id = intval($wpdb->get_var($wpdb->prepare(
+        "SELECT COALESCE(NULLIF(vendor_store_id,0), (SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1))
+         FROM {$wpdb->prefix}ppv_users WHERE id=%d", $user_id, $user_id)));
+}
+$store = $__ppv_store_id
+    ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d", $__ppv_store_id))
+    : null;
 $settings = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pp_store_settings WHERE store_id=%d", $store->id));
 
 if (!$store) {
@@ -151,7 +161,13 @@ add_action('wp_ajax_ppv_save_settings', function() {
 
     global $wpdb;
     $user_id = get_current_user_id();
-    $store = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+    $sid = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+    if (!$sid && $user_id) {
+        $sid = intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(NULLIF(vendor_store_id,0), (SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1))
+             FROM {$wpdb->prefix}ppv_users WHERE id=%d", $user_id, $user_id)));
+    }
+    $store = $sid ? $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id=%d", $sid)) : null;
     if (!$store) wp_send_json_error(['message' => 'Kein Store gefunden']);
 
     $data = [
@@ -181,8 +197,15 @@ add_action('wp_ajax_ppv_toggle_abo_status', function() {
     if (!is_user_logged_in()) wp_send_json_error(['message' => 'Nicht eingeloggt']);
 
     global $wpdb;
-    $user_id = get_current_user_id();
-    $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+    if (session_status() === PHP_SESSION_NONE) @session_start();
+    $user_id = intval($_SESSION['ppv_user_id'] ?? get_current_user_id());
+    $sid = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+    if (!$sid && $user_id) {
+        $sid = intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(NULLIF(vendor_store_id,0), (SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1))
+             FROM {$wpdb->prefix}ppv_users WHERE id=%d", $user_id, $user_id)));
+    }
+    $store = $sid ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d", $sid)) : null;
     if (!$store) wp_send_json_error(['message' => 'Kein Store gefunden']);
 
     $new_status = ($store->subscription_status === 'active') ? 'paused' : 'active';
