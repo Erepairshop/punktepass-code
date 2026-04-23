@@ -472,8 +472,11 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
             $js_base = PPV_PLUGIN_URL . 'assets/js/';
             $js_dir = PPV_PLUGIN_DIR . 'assets/js/';
 
+            // 0. Debug logger (MUST load first — all modules reference window.ppvLog)
+            wp_enqueue_script('ppv-debug', $js_base . 'ppv-debug.js', [], filemtime($js_dir . 'ppv-debug.js'), true);
+
             // 1. Core module (state, helpers, Turbo cache fix)
-            wp_enqueue_script('pp-profile-core', $js_base . 'pp-profile-core.js', [], filemtime($js_dir . 'pp-profile-core.js'), true);
+            wp_enqueue_script('pp-profile-core', $js_base . 'pp-profile-core.js', ['ppv-debug'], filemtime($js_dir . 'pp-profile-core.js'), true);
 
             // 2. Tabs module
             wp_enqueue_script('pp-profile-tabs', $js_base . 'pp-profile-tabs.js', ['pp-profile-core'], filemtime($js_dir . 'pp-profile-tabs.js'), true);
