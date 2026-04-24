@@ -1778,7 +1778,29 @@ public static function render_dashboard() {
         }
     }
 
-    ppv_log("✅ [REST DEBUG] Batch loaded " . count($all_rewards) . " store rewards, " . count($all_campaigns) . " store campaigns");
+    // ✅ Batch query for store ratings (avg + count per store, from pp_reviews table)
+    $all_ratings = [];
+    if (!empty($store_ids_str)) {
+        $reviews_table = "{$wpdb->prefix}pp_reviews";
+        // Check if table exists — silently skip if missing
+        $tbl_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $reviews_table));
+        if ($tbl_exists === $reviews_table) {
+            $ratings_raw = $wpdb->get_results("
+                SELECT store_id, ROUND(AVG(rating), 1) AS avg_rating, COUNT(*) AS review_count
+                FROM {$reviews_table}
+                WHERE store_id IN ({$store_ids_str})
+                GROUP BY store_id
+            ");
+            foreach ($ratings_raw as $r) {
+                $all_ratings[(int)$r->store_id] = [
+                    'avg' => (float)$r->avg_rating,
+                    'count' => (int)$r->review_count,
+                ];
+            }
+        }
+    }
+
+    ppv_log("✅ [REST DEBUG] Batch loaded " . count($all_rewards) . " store rewards, " . count($all_campaigns) . " store campaigns, " . count($all_ratings) . " ratings");
 
     $result = [];
     foreach ($stores as $store) {
@@ -1866,6 +1888,8 @@ public static function render_dashboard() {
             'rewards' => $rewards,
             'campaigns' => $campaigns,
             'vip' => $vip,  // ✅ NEW: VIP bonus info
+            'rating_avg' => $all_ratings[(int)$store->id]['avg'] ?? null,
+            'rating_count' => $all_ratings[(int)$store->id]['count'] ?? 0,
             'vacation_from' => $store->vacation_from ?? null,
             'vacation_to' => $store->vacation_to ?? null,
             'vacation_message' => $store->vacation_message ?? null,

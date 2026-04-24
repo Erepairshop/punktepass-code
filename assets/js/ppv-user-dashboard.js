@@ -565,6 +565,20 @@ async function initUserDashboard() {
     return String(str).replace(/[&<>"']/g, m => map[m]);
   };
 
+  // Render 5-star rating icons (filled + half + empty) for a given average (0..5)
+  const renderStars = (avg) => {
+    const rating = Math.max(0, Math.min(5, Number(avg) || 0));
+    const full = Math.floor(rating);
+    const half = (rating - full) >= 0.5 ? 1 : 0;
+    const empty = 5 - full - half;
+    let html = '<span class="ppv-stars">';
+    for (let i = 0; i < full; i++) html += '<i class="ri-star-fill"></i>';
+    if (half) html += '<i class="ri-star-half-fill"></i>';
+    for (let i = 0; i < empty; i++) html += '<i class="ri-star-line"></i>';
+    html += '</span>';
+    return html;
+  };
+
   // Format vacation date to local format (YYYY-MM-DD → DD.MM.)
   const formatVacationDate = (dateStr) => {
     if (!dateStr) return '';
@@ -1858,7 +1872,7 @@ async function initUserDashboard() {
             ${store.public_email ? `<a href="mailto:${escapeHtml(store.public_email)}" class="ppv-action-btn ppv-email"><i class="ri-mail-fill"></i> E-Mail</a>` : ''}
             ${store.website ? `<a href="${escapeHtml(store.website)}" target="_blank" rel="noopener" class="ppv-action-btn ppv-web"><i class="ri-global-line"></i> ${T.website}</a>` : ''}
             <button class="ppv-action-btn ppv-rate ppv-store-rate-btn" data-store-id="${store.id}" data-store-name="${escapeHtml(store.company_name || store.name)}" type="button">
-              <i class="ri-star-line"></i> ${T.rate_store || 'Bewerten'}
+              <i class="ri-star-line"></i> ${T.rate_store || 'Bewerten'}${store.rating_count > 0 ? ` · ${renderStars(store.rating_avg || 0)} <span class="ppv-rating-meta">${Number(store.rating_avg || 0).toFixed(1)} (${store.rating_count})</span>` : ''}
             </button>
           </div>
         </div>

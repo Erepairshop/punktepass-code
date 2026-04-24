@@ -1687,3 +1687,20 @@ select, input, button, textarea {
 .ppv-action-btn.ppv-rate:hover {
     background: linear-gradient(135deg, rgba(255, 193, 7, 0.25), rgba(255, 152, 0, 0.25));
 }
+
+/* Store rating display inside Bewerten button */
+.ppv-stars {
+  display: inline-flex;
+  gap: 1px;
+  color: #fbbf24;
+  margin: 0 4px 0 6px;
+  font-size: 0.9em;
+}
+.ppv-stars i.ri-star-line {
+  color: rgba(251, 191, 36, 0.35);
+}
+.ppv-rating-meta {
+  font-size: 0.8em;
+  opacity: 0.75;
+  margin-left: 2px;
+}
