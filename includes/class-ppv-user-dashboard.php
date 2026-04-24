@@ -1675,6 +1675,11 @@ public static function render_dashboard() {
               OR (s.company_name IS NOT NULL AND s.company_name != '')
           )
           AND EXISTS (SELECT 1 FROM {$prefix}ppv_rewards r WHERE r.store_id = s.id)
+          AND s.subscription_status IN ('active', 'trial')
+          AND (
+              (s.subscription_status = 'active' AND (s.subscription_expires_at IS NULL OR s.subscription_expires_at > NOW()))
+              OR (s.subscription_status = 'trial' AND (s.trial_ends_at IS NULL OR s.trial_ends_at > NOW()))
+          )
         ORDER BY s.name ASC
     ");
 
