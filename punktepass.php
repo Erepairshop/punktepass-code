@@ -415,6 +415,8 @@ $core_modules = [
     'includes/class-ppv-seo.php',
     // AEO/GEO — Schema.org Organization + SoftwareApplication + FAQPage + llms.txt route
     'includes/class-ppv-schema-orgs.php',
+    // AEO/GEO — Per-store LocalBusiness schema + /shop/{slug}/ public landing pages
+    'includes/class-ppv-store-page.php',
     // Repair Form Module
     'includes/class-ppv-repair-core.php',
     'includes/class-ppv-repair-form.php',
@@ -1163,6 +1165,8 @@ add_action('init', function() {
 
 register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
+    // Per-store public landing pages with LocalBusiness Schema.org
+    add_rewrite_rule('^shop/([^/]+)/?$', 'index.php?ppv_shop_slug=$matches[1]', 'top');
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
     add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
     add_rewrite_rule('^demo/?$', 'index.php?ppv_demo=1', 'top');

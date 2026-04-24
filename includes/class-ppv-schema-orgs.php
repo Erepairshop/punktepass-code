@@ -52,6 +52,23 @@ class PPV_Schema_Orgs {
         // Always output Organization + SoftwareApplication (cached)
         echo self::get_core_schemas();
 
+        // Per-store LocalBusiness schema on /shop/{slug}/ pages
+        $shop_slug = get_query_var('ppv_shop_slug');
+        if ($shop_slug && class_exists('PPV_Store_Page')) {
+            global $wpdb;
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE store_slug = %s AND active = 1 LIMIT 1",
+                $shop_slug
+            ));
+            if ($store) {
+                $lang = sanitize_key($_GET['lang'] ?? 'de');
+                if (!in_array($lang, ['de', 'hu', 'ro', 'en'], true)) {
+                    $lang = 'de';
+                }
+                echo PPV_Store_Page::get_store_schema_html($store, $lang);
+            }
+        }
+
         // FAQ only on relevant pages (home, login, pricing, how-it-works)
         if (self::is_faq_page($uri)) {
             echo self::get_faq_schema();
@@ -516,6 +533,25 @@ class PPV_Schema_Orgs {
         // x-default points to DE
         $xml .= '    <xhtml:link rel="alternate" hreflang="x-default" href="' . esc_url($base_url) . '"/>' . "\n";
         return $xml;
+    }
+
+    // -------------------------------------------------------------------------
+    // Per-store LocalBusiness schema (proxy to PPV_Store_Page)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the JSON-LD HTML string for a single store row.
+     * Delegates to PPV_Store_Page::build_store_schema() so schema logic lives in one place.
+     *
+     * @param object $store_row  DB row from wp_ppv_stores
+     * @param string $lang       Language code (de/hu/ro/en), default 'de'
+     * @return string            <script type="application/ld+json">…</script> block
+     */
+    public static function get_store_schema($store_row, string $lang = 'de'): string {
+        if (!class_exists('PPV_Store_Page')) {
+            return '';
+        }
+        return PPV_Store_Page::get_store_schema_html($store_row, $lang);
     }
 
     // -------------------------------------------------------------------------
