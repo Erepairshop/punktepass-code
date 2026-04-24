@@ -1704,3 +1704,14 @@ select, input, button, textarea {
   opacity: 0.75;
   margin-left: 2px;
 }
+
+/* Store rating summary at bottom of card (centered) */
+.ppv-store-rating-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}

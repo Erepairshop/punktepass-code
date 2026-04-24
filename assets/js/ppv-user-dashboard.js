@@ -1872,9 +1872,15 @@ async function initUserDashboard() {
             ${store.public_email ? `<a href="mailto:${escapeHtml(store.public_email)}" class="ppv-action-btn ppv-email"><i class="ri-mail-fill"></i> E-Mail</a>` : ''}
             ${store.website ? `<a href="${escapeHtml(store.website)}" target="_blank" rel="noopener" class="ppv-action-btn ppv-web"><i class="ri-global-line"></i> ${T.website}</a>` : ''}
             <button class="ppv-action-btn ppv-rate ppv-store-rate-btn" data-store-id="${store.id}" data-store-name="${escapeHtml(store.company_name || store.name)}" type="button">
-              <i class="ri-star-line"></i> ${T.rate_store || 'Bewerten'}${store.rating_count > 0 ? ` · ${renderStars(store.rating_avg || 0)} <span class="ppv-rating-meta">${Number(store.rating_avg || 0).toFixed(1)} (${store.rating_count})</span>` : ''}
+              <i class="ri-star-line"></i> ${T.rate_store || 'Bewerten'}
             </button>
           </div>
+          ${store.rating_count > 0 ? `
+            <div class="ppv-store-rating-summary">
+              ${renderStars(store.rating_avg || 0)}
+              <span class="ppv-rating-meta">${Number(store.rating_avg || 0).toFixed(1)} (${store.rating_count})</span>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;

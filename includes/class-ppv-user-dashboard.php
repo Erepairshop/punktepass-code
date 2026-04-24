@@ -279,13 +279,42 @@ class PPV_User_Dashboard {
         ", $uid, $uid));
     }
 
-private static function is_store_open($opening_hours) {
+private static function country_to_timezone($country) {
+    // Map ISO2 country codes to primary timezones used by PP.
+    $map = [
+        'DE' => 'Europe/Berlin',
+        'AT' => 'Europe/Vienna',
+        'CH' => 'Europe/Zurich',
+        'HU' => 'Europe/Budapest',
+        'RO' => 'Europe/Bucharest',
+        'SK' => 'Europe/Bratislava',
+        'CZ' => 'Europe/Prague',
+        'PL' => 'Europe/Warsaw',
+        'IT' => 'Europe/Rome',
+        'FR' => 'Europe/Paris',
+        'ES' => 'Europe/Madrid',
+        'NL' => 'Europe/Amsterdam',
+        'BE' => 'Europe/Brussels',
+        'SI' => 'Europe/Ljubljana',
+        'HR' => 'Europe/Zagreb',
+        'RS' => 'Europe/Belgrade',
+        'BG' => 'Europe/Sofia',
+        'GR' => 'Europe/Athens',
+        'UK' => 'Europe/London',
+        'IE' => 'Europe/Dublin',
+    ];
+    return $map[strtoupper($country ?? 'DE')] ?? 'Europe/Berlin';
+}
+
+private static function is_store_open($opening_hours, $country = null) {
     if (empty($opening_hours)) {
         return false;
     }
 
-    $now = current_time('timestamp');
-    
+    // ✅ Use store's country timezone instead of WP site timezone
+    $tz = new DateTimeZone(self::country_to_timezone($country));
+    $dt = new DateTime('now', $tz);
+
     // ✅ FIX: Map English day names to 2-char codes
     $day_map = [
         'monday' => 'mo',
@@ -296,11 +325,11 @@ private static function is_store_open($opening_hours) {
         'saturday' => 'sa',
         'sunday' => 'so'
     ];
-    
-    $day_name = strtolower(date('l', $now));
+
+    $day_name = strtolower($dt->format('l'));
     $day = $day_map[$day_name] ?? 'mo';
-    
-    $current_time = date('H:i', $now);
+
+    $current_time = $dt->format('H:i');
 
     $hours = json_decode($opening_hours, true);
     if (!is_array($hours)) {
@@ -341,13 +370,15 @@ private static function is_store_open($opening_hours) {
     return $is_open;
 }
 
-private static function get_today_hours($opening_hours) {
+private static function get_today_hours($opening_hours, $country = null) {
     if (empty($opening_hours)) {
         return '';
     }
 
-    $now = current_time('timestamp');
-    
+    // ✅ Store-country timezone (same fix as is_store_open)
+    $tz = new DateTimeZone(self::country_to_timezone($country));
+    $dt = new DateTime('now', $tz);
+
     // ✅ FIX: Map English day names to 2-char codes
     $day_map = [
         'monday' => 'mo',
@@ -358,8 +389,8 @@ private static function get_today_hours($opening_hours) {
         'saturday' => 'sa',
         'sunday' => 'so'
     ];
-    
-    $day_name = strtolower(date('l', $now));
+
+    $day_name = strtolower($dt->format('l'));
     $day = $day_map[$day_name] ?? 'mo';
 
     $hours = json_decode($opening_hours, true);
@@ -1814,9 +1845,9 @@ public static function render_dashboard() {
             if ($distance_km > $max_distance) continue;
         }
 
-        // ✅ Open + hours safe
-        $is_open = self::is_store_open($store->opening_hours);
-        $today_hours = self::get_today_hours($store->opening_hours);
+        // ✅ Open + hours safe (timezone based on store country)
+        $is_open = self::is_store_open($store->opening_hours, $store->country ?? null);
+        $today_hours = self::get_today_hours($store->opening_hours, $store->country ?? null);
 
         // ✅ Gallery safe
         $gallery_images = [];
