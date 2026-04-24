@@ -1688,21 +1688,28 @@ select, input, button, textarea {
     background: linear-gradient(135deg, rgba(255, 193, 7, 0.25), rgba(255, 152, 0, 0.25));
 }
 
-/* Store rating display inside Bewerten button */
+/* Store rating display (tomor, remixicon-alapu csillagok) */
 .ppv-stars {
   display: inline-flex;
-  gap: 1px;
+  align-items: center;
+  gap: 0;
   color: #fbbf24;
-  margin: 0 4px 0 6px;
-  font-size: 0.9em;
+  font-size: 18px;
+  line-height: 1;
+}
+.ppv-stars i {
+  display: inline-block;
+  width: 1em;
+  line-height: 1;
 }
 .ppv-stars i.ri-star-line {
   color: rgba(251, 191, 36, 0.35);
 }
 .ppv-rating-meta {
-  font-size: 0.8em;
-  opacity: 0.75;
-  margin-left: 2px;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  margin-left: 6px;
 }
 
 /* Store rating summary at bottom of card (centered) */
