@@ -33,12 +33,25 @@ class PPV_SEO {
         // Add SEO to WordPress pages via wp_head
         add_action('wp_head', [__CLASS__, 'inject_wordpress_seo'], 1);
 
+        // hreflang for multilingual pages (runs after main SEO tags)
+        add_action('wp_head', [__CLASS__, 'inject_hreflang'], 2);
+
         // Override Yoast/RankMath if needed
         add_filter('wpseo_title', [__CLASS__, 'filter_seo_title'], 10, 1);
         add_filter('wpseo_metadesc', [__CLASS__, 'filter_seo_description'], 10, 1);
 
         // Handle Google verification file requests early
         add_action('init', [__CLASS__, 'handle_google_verification'], 1);
+    }
+
+    /**
+     * Inject hreflang alternate links for multilingual pages.
+     * Delegates to PPV_Schema_Orgs if available.
+     */
+    public static function inject_hreflang() {
+        if (class_exists('PPV_Schema_Orgs')) {
+            PPV_Schema_Orgs::output_hreflang();
+        }
     }
 
     /**
@@ -484,9 +497,13 @@ class PPV_SEO {
             $html .= '    <meta property="og:image" content="' . esc_url($args['og_image']) . '">' . "\n";
             $html .= '    <meta property="og:image:width" content="1200">' . "\n";
             $html .= '    <meta property="og:image:height" content="630">' . "\n";
+            $html .= '    <meta property="og:image:alt" content="' . esc_attr($args['og_site_name']) . ' — Digitales Bonusprogramm">' . "\n";
         }
         $html .= '    <meta property="og:site_name" content="' . esc_attr($args['og_site_name']) . '">' . "\n";
         $html .= '    <meta property="og:locale" content="de_DE">' . "\n";
+        $html .= '    <meta property="og:locale:alternate" content="hu_HU">' . "\n";
+        $html .= '    <meta property="og:locale:alternate" content="ro_RO">' . "\n";
+        $html .= '    <meta property="og:locale:alternate" content="en_US">' . "\n";
 
         // Twitter Card tags
         $html .= "\n    <!-- Twitter Card -->\n";

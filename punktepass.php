@@ -413,6 +413,8 @@ $core_modules = [
     'includes/class-ppv-standalone-shell.php',
     // SEO System
     'includes/class-ppv-seo.php',
+    // AEO/GEO — Schema.org Organization + SoftwareApplication + FAQPage + llms.txt route
+    'includes/class-ppv-schema-orgs.php',
     // Repair Form Module
     'includes/class-ppv-repair-core.php',
     'includes/class-ppv-repair-form.php',
@@ -818,6 +820,12 @@ if (class_exists('PPV_AI_Support')) PPV_AI_Support::hooks();
 
 // Blog System (SEO-optimized blog at /blog/)
 if (class_exists('PPV_Blog')) PPV_Blog::hooks();
+
+// AEO/GEO — Schema.org + llms.txt route (AI-engine recommendation boost)
+if (class_exists('PPV_Schema_Orgs')) {
+    PPV_Schema_Orgs::hooks();
+    PPV_Schema_Orgs::register_llms_route();
+}
 
 // Vendor/User Signup
 foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
