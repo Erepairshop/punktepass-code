@@ -24,39 +24,111 @@
     return true;
   };
 
-  // --- Helper: küldés ---
+  // --- Helper: küldés (sendBeacon fallback navigation alatt is megérkezik) ---
   async function sendLog(url, payload) {
     if (!url) return;
+    const body = JSON.stringify(payload);
+    // Beacon: megbízhatóbban túléli a unload/navigate-et (max 64KB)
+    if (navigator.sendBeacon && body.length < 60000) {
+      try {
+        const blob = new Blob([body], { type: "application/json" });
+        if (navigator.sendBeacon(url, blob)) return;
+      } catch (e) { /* fallthrough to fetch */ }
+    }
     try {
       await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body,
+        keepalive: true, // unload alatt is megpróbálja
       });
     } catch (e) {
       if (PPV_DEBUG) console.warn("⚠️ Logger send error:", e);
     }
   }
 
-  // --- JS hibák ---
+  // --- JS hibák (uncaught + capture phase a resource-loading errorokhoz) ---
   window.addEventListener("error", (e) => {
+    // Resource load failure (img/script/link/audio/video 404, dekódolási hiba)
+    if (e.target && e.target !== window && (e.target.src || e.target.href)) {
+      const src = e.target.src || e.target.href;
+      if (!shouldSend("res:" + src)) return;
+      sendLog(API_JS, {
+        message: "Resource load failed: " + (e.target.tagName || "?"),
+        file: src,
+        line: 0,
+        browser: navigator.userAgent,
+        type: "resource",
+      });
+      return;
+    }
+    // Sima JS error
     if (!shouldSend("js:" + e.message)) return;
     sendLog(API_JS, {
       message: e.message,
       file: e.filename,
       line: e.lineno,
+      col: e.colno,
+      stack: e.error && e.error.stack ? String(e.error.stack).substring(0, 800) : "",
       browser: navigator.userAgent,
+      type: "js",
     });
-  });
+  }, true); // capture phase: így a resource load failure is bubble-ödik ide
 
   window.addEventListener("unhandledrejection", (e) => {
-    const msg = e.reason ? e.reason.toString() : "Unhandled Promise Rejection";
+    const reason = e.reason;
+    let msg = "Unhandled Promise Rejection";
+    let stack = "";
+    if (reason) {
+      if (typeof reason === "string") msg = reason;
+      else if (reason.message) { msg = reason.message; stack = reason.stack ? String(reason.stack).substring(0, 800) : ""; }
+      else { try { msg = JSON.stringify(reason).substring(0, 300); } catch (_) { msg = String(reason); } }
+    }
     if (!shouldSend("js:" + msg)) return;
     sendLog(API_JS, {
       message: msg,
       file: "Promise",
       line: 0,
+      stack,
       browser: navigator.userAgent,
+      type: "promise",
+    });
+  });
+
+  // --- console.error / console.warn override (manualis hibalogolas elkapasa) ---
+  ["error", "warn"].forEach(level => {
+    const orig = console[level];
+    console[level] = function(...args) {
+      try {
+        const msg = args.map(a => {
+          if (a instanceof Error) return a.message + (a.stack ? "\n" + a.stack : "");
+          if (typeof a === "object") { try { return JSON.stringify(a); } catch (_) { return String(a); } }
+          return String(a);
+        }).join(" ").substring(0, 500);
+        if (shouldSend("console:" + level + ":" + msg)) {
+          sendLog(API_JS, {
+            message: "console." + level + ": " + msg,
+            file: window.location.pathname,
+            line: 0,
+            browser: navigator.userAgent,
+            type: "console-" + level,
+          });
+        }
+      } catch (_) { /* never break logging */ }
+      return orig.apply(console, args);
+    };
+  });
+
+  // --- CSP violation (Content Security Policy blokkolt eroforras) ---
+  document.addEventListener("securitypolicyviolation", (e) => {
+    const key = "csp:" + e.violatedDirective + ":" + e.blockedURI;
+    if (!shouldSend(key)) return;
+    sendLog(API_JS, {
+      message: "CSP violation: " + e.violatedDirective + " blocked " + (e.blockedURI || "(inline)"),
+      file: e.sourceFile || window.location.pathname,
+      line: e.lineNumber || 0,
+      browser: navigator.userAgent,
+      type: "csp",
     });
   });
 
