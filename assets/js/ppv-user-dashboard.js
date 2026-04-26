@@ -2117,17 +2117,24 @@ async function initUserDashboard() {
       }
     }
 
-    // 2️⃣ If we have GPS-cached location, opportunistically refresh GPS in background
-    //    (silent — don't switch source, but update coords if user moved significantly)
-    if (cachedSource === 'gps' && navigator.geolocation) {
+    // 2️⃣ Opportunistic GPS upgrade in background:
+    //    - If cached as 'gps': refresh coords silently (no source change).
+    //    - If cached as 'address': try GPS; if granted, upgrade source to 'gps' and re-render.
+    if (navigator.geolocation && cachedSource !== 'unknown') {
       navigator.geolocation.getCurrentPosition(
         (p) => {
           const newLat = p.coords.latitude;
           const newLng = p.coords.longitude;
-          // Only update cache if difference > ~100m (rough lat/lng degree threshold)
-          if (Math.abs(newLat - userLat) > 0.001 || Math.abs(newLng - userLng) > 0.001) {
-            localStorage.setItem('ppv_user_lat', newLat.toString());
-            localStorage.setItem('ppv_user_lng', newLng.toString());
+          localStorage.setItem('ppv_user_lat', newLat.toString());
+          localStorage.setItem('ppv_user_lng', newLng.toString());
+          if (cachedSource === 'address') {
+            // Upgrade: address → gps. Persist + re-render store list with fresh coords.
+            localStorage.setItem('ppv_user_loc_source', 'gps');
+            window.PPV_LOCATION_SOURCE = 'gps';
+            window.PPV_STORES_LOADING = false;
+            if (typeof window.PPV_INIT_STORES === 'function') {
+              window.PPV_INIT_STORES();
+            }
           }
         },
         () => {},
@@ -2343,6 +2350,9 @@ async function initUserDashboard() {
 
   // 🔐 Cache static QR for offline fallback (runs in background)
   fetchAndCacheStaticQR();
+
+  // Expose initStores so opportunistic GPS upgrade can re-render after switching source
+  window.PPV_INIT_STORES = initStores;
 
   // DOM is already rendered above, call initStores directly
   // Using requestAnimationFrame to ensure DOM is painted
