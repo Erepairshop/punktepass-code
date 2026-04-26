@@ -21,6 +21,7 @@
 
     let messaging = null;
     let initialized = false;
+    let serviceWorkerRegistration = null;
 
     /**
      * Initialize Firebase Messaging
@@ -60,6 +61,12 @@
         }
 
         try {
+            const swRegistration = await getMessagingServiceWorkerRegistration();
+            if (!swRegistration) {
+                console.log('[PPV FCM] Messaging service worker not available');
+                return null;
+            }
+
             // Request notification permission
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
@@ -68,11 +75,38 @@
             }
 
             // Get FCM token
-            const token = await messaging.getToken({ vapidKey: vapidKey });
+            const token = await messaging.getToken({
+                vapidKey: vapidKey,
+                serviceWorkerRegistration: swRegistration
+            });
             console.log('[PPV FCM] Token received:', token.substring(0, 20) + '...');
             return token;
         } catch (error) {
             console.error('[PPV FCM] Token error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Register the dedicated Firebase messaging service worker
+     */
+    async function getMessagingServiceWorkerRegistration() {
+        if (serviceWorkerRegistration) {
+            return serviceWorkerRegistration;
+        }
+
+        if (!('serviceWorker' in navigator)) {
+            return null;
+        }
+
+        try {
+            serviceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                scope: '/firebase-messaging/'
+            });
+            console.log('[PPV FCM] Messaging SW registered:', serviceWorkerRegistration.scope);
+            return serviceWorkerRegistration;
+        } catch (error) {
+            console.error('[PPV FCM] Messaging SW registration failed:', error);
             return null;
         }
     }
@@ -245,6 +279,8 @@
             setTimeout(async () => {
                 if (await initFirebase()) {
                     setupMessageHandler();
+
+                    await getMessagingServiceWorkerRegistration();
 
                     // Check if already granted - then just refresh token
                     if (Notification.permission === 'granted') {

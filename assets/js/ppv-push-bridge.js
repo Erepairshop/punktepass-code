@@ -49,14 +49,9 @@
                 }, 1000);
             }
 
-            // For Web/PWA/TWA: Auto-request permission if user is logged in
+            // For Web/PWA/TWA: Web push permission is handled by Firebase Messaging
             if (this.platform === 'web' && (window.ppvUserId || window.ppv_user_id)) {
-                ppvLog('[PPV Push] Web platform detected with logged-in user, checking push support...');
-                setTimeout(() => {
-                    if (this.isSupported() && window.ppvVapidKey) {
-                        this.requestPermission();
-                    }
-                }, 2000);
+                ppvLog('[PPV Push] Web platform detected with logged-in user; Firebase messaging handles permission flow');
             }
 
             this.initialized = true;
@@ -177,7 +172,15 @@
                     }
                 }
             } else if (this.platform === 'web') {
-                // Web: Use Notification API
+                // Web: Delegate to Firebase Messaging when available
+                if (window.PPVFirebaseMessaging && typeof window.PPVFirebaseMessaging.register === 'function') {
+                    return window.PPVFirebaseMessaging.register().then(function(result) {
+                        self.permissionState = (typeof Notification !== 'undefined') ? Notification.permission : null;
+                        return result;
+                    });
+                }
+
+                // Legacy fallback
                 if ('Notification' in window) {
                     return Notification.requestPermission().then(function(result) {
                         self.permissionState = result;

@@ -22,6 +22,7 @@ class PPV_PWA {
     public static function register_pwa_routes() {
         add_rewrite_rule('^manifest\.json$', 'index.php?ppv_pwa_file=manifest', 'top');
         add_rewrite_rule('^sw\.js$', 'index.php?ppv_pwa_file=sw', 'top');
+        add_rewrite_rule('^firebase-messaging-sw\.js$', 'index.php?ppv_pwa_file=firebase_messaging_sw', 'top');
         add_filter('query_vars', function($vars) {
             $vars[] = 'ppv_pwa_file';
             return $vars;
@@ -45,6 +46,17 @@ class PPV_PWA {
 
         if ($file === 'sw') {
             $path = PPV_PLUGIN_DIR . 'sw.js';
+            if (file_exists($path)) {
+                header('Content-Type: application/javascript');
+                header('Cache-Control: no-cache');
+                header('Service-Worker-Allowed: /');
+                readfile($path);
+                exit;
+            }
+        }
+
+        if ($file === 'firebase_messaging_sw') {
+            $path = PPV_PLUGIN_DIR . 'firebase-messaging-sw.js';
             if (file_exists($path)) {
                 header('Content-Type: application/javascript');
                 header('Cache-Control: no-cache');
