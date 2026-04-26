@@ -61,7 +61,12 @@ trait PPV_QR_Devices_Trait {
 
         $device_count = count($devices);
         $can_add_more = $device_count < $max_devices;
+        $ppv_debug = !empty($_GET['ppv_debug']);
         ?>
+        <?php if ($ppv_debug): ?>
+        <!-- PPV-DEBUG-VERSION-MARKER (only when ?ppv_debug=1) -->
+        <div style="position:fixed;top:5px;right:5px;background:#f44;color:#fff;font:bold 10px monospace;padding:3px 6px;z-index:99999;border-radius:3px;">DBG <?php echo @date('H:i:s', filemtime(__FILE__)); ?></div>
+        <?php endif; ?>
         <div class="ppv-user-devices">
             <div class="ppv-devices-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
@@ -188,34 +193,33 @@ trait PPV_QR_Devices_Trait {
             </div>
         </div>
 
+        <?php if ($ppv_debug): ?>
+        <!-- STATIC DEBUG BOX (only when ?ppv_debug=1) -->
+        <div id="ppv-debug-overlay" style="position:fixed !important;left:0 !important;right:0 !important;bottom:0 !important;max-height:40vh;overflow:auto;background:#000 !important;color:#0f0 !important;font:bold 12px/1.4 monospace !important;padding:8px !important;z-index:2147483647 !important;border-top:3px solid #0f0 !important;white-space:pre-wrap;display:block !important;">[ppv-debug-static-html] HTML rendered. JS inicializalas folyamatban...
+<button onclick="document.getElementById('ppv-debug-overlay').remove()" style="position:absolute;top:4px;right:6px;background:#f44;color:#fff;border:0;padding:3px 10px;font:bold 12px monospace;">X</button></div>
         <script>
-        // === TEMP DEBUG OVERLAY (eltavolitando ha bug megvan) ===
         (function(){
-            try {
-                var box = document.createElement('div');
-                box.id = 'ppv-debug-overlay';
-                box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:35vh;overflow:auto;background:rgba(0,0,0,0.88);color:#0f0;font:11px/1.3 monospace;padding:6px 8px;z-index:99999;border-top:2px solid #0f0;white-space:pre-wrap;';
-                box.textContent = '[ppv-debug] init ' + new Date().toLocaleTimeString() + ' ua=' + (navigator.userAgent.substr(0,80)) + '\n';
-                var close = document.createElement('button');
-                close.textContent = 'X';
-                close.style.cssText = 'position:absolute;top:2px;right:6px;background:#f44;color:#fff;border:0;padding:2px 8px;font-weight:bold;cursor:pointer;';
-                close.onclick = function(){ box.remove(); };
-                box.appendChild(close);
-                (document.body || document.documentElement).appendChild(box);
-                window._ppvDbg = function(msg){
-                    var line = '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
-                    box.appendChild(document.createTextNode(line));
-                    box.scrollTop = box.scrollHeight;
-                };
-                window.addEventListener('error', function(e){
-                    window._ppvDbg('JS ERROR: ' + (e.message||'?') + ' @ ' + (e.filename||'?').split('/').pop() + ':' + (e.lineno||'?'));
-                });
-                window.addEventListener('unhandledrejection', function(e){
-                    window._ppvDbg('PROMISE REJECT: ' + (e.reason && e.reason.message || e.reason || '?'));
-                });
-                window._ppvDbg('jQuery=' + (typeof jQuery) + ' $=' + (typeof window.$));
-            } catch(e) {}
+            var box = document.getElementById('ppv-debug-overlay');
+            if (!box) return;
+            window._ppvDbg = function(msg){
+                box.appendChild(document.createTextNode('[' + new Date().toLocaleTimeString() + '] ' + msg + '\n'));
+                box.scrollTop = box.scrollHeight;
+            };
+            window.addEventListener('error', function(e){
+                window._ppvDbg('JS ERROR: ' + (e.message||'?') + ' @ ' + (e.filename||'?').split('/').pop() + ':' + (e.lineno||'?') + ':' + (e.colno||'?'));
+            });
+            window.addEventListener('unhandledrejection', function(e){
+                window._ppvDbg('PROMISE REJECT: ' + (e.reason && e.reason.message || e.reason || '?'));
+            });
+            window._ppvDbg('debug ok, jQuery=' + (typeof jQuery));
+            setTimeout(function(){
+                window._ppvDbg('after 2s: currentFingerprint=' + (typeof currentFingerprint) + ' deviceCheckResult=' + (typeof deviceCheckResult));
+            }, 2000);
         })();
+        </script>
+        <?php endif; ?>
+        <script>
+        // === MAIN SCRIPT BLOCK ===
         jQuery(document).ready(function($){
             if (window._ppvDbg) window._ppvDbg('jQuery ready, deviceCards=' + $('.ppv-device-card').length + ' delBtns=' + $('.ppv-device-delete-btn').length + ' updBtns=' + $('.ppv-device-update-btn').length);
             // Track ANY click on the device action buttons (capture phase, before handlers)
@@ -465,8 +469,7 @@ trait PPV_QR_Devices_Trait {
                             const slotsText = remainingSlots === 1
                                 ? '<?php echo esc_js(self::t('one_more_device', '1 további készüléket')); ?>'
                                 : remainingSlots + ' <?php echo esc_js(self::t('more_devices', 'további készüléket')); ?>';
-                                statusHtml += '<br><span style="color: #2196f3; font-size: 12px; margin-top: 5px; display: inline-block;"><i class="ri-information-line"></i> <?php echo esc_js(self::t('qr_admin_devices_can_register_more', 'Sie können noch')); ?> ' + slotsText + '. <?php echo esc_js(self::t('qr_admin_devices_open_on_new', 'Öffnen Sie diese Seite auf dem neuen Gerät.')); ?></span>';
-                                }
+                            statusHtml += '<br><span style="color: #2196f3; font-size: 12px; margin-top: 5px; display: inline-block;"><i class="ri-information-line"></i> <?php echo esc_js(self::t('qr_admin_devices_can_register_more', 'Sie können noch')); ?> ' + slotsText + '. <?php echo esc_js(self::t('qr_admin_devices_open_on_new', 'Öffnen Sie diese Seite auf dem neuen Gerät.')); ?></span>';
                             $('#ppv-copy-link-btn').show();
                         } else {
                             $('#ppv-copy-link-btn').hide();
