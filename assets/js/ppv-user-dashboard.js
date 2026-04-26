@@ -2067,51 +2067,56 @@ async function initUserDashboard() {
       window.PPV_LOCATION_SOURCE = cachedSource || 'unknown';
     }
 
-    // 1️⃣ If no cached location: run GPS + address-location API IN PARALLEL (race)
+    // 1️⃣ First entry (no cached location): WAIT for actual GPS before address fallback.
+    //    Address-API runs in parallel only as a fallback if GPS denied or 15s timeout.
     if (!userLat && !userLng) {
-      // GPS promise (3s timeout - fast fail)
+      // GPS: longer timeout (15s) so user has time to grant permission. Distinguish denied vs timeout.
       const geoPromise = new Promise((resolve) => {
-        if (!navigator.geolocation) { resolve(null); return; }
-        const to = setTimeout(() => resolve(null), 3000);
+        if (!navigator.geolocation) { resolve({ outcome: 'unsupported' }); return; }
+        const to = setTimeout(() => resolve({ outcome: 'timeout' }), 15000);
         navigator.geolocation.getCurrentPosition(
           (p) => {
             clearTimeout(to);
             localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
             localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
             localStorage.setItem('ppv_user_loc_source', 'gps');
-            resolve({ lat: p.coords.latitude, lng: p.coords.longitude, source: 'gps' });
+            resolve({ outcome: 'ok', lat: p.coords.latitude, lng: p.coords.longitude });
           },
-          () => { clearTimeout(to); resolve(null); },
-          { timeout: 3000, maximumAge: 600000, enableHighAccuracy: false }
+          (err) => {
+            clearTimeout(to);
+            // err.code: 1=denied, 2=unavailable, 3=timeout
+            resolve({ outcome: err && err.code === 1 ? 'denied' : 'failed' });
+          },
+          { timeout: 15000, maximumAge: 600000, enableHighAccuracy: false }
         );
       });
 
-      // Address-location API promise (runs in parallel with GPS)
+      // Address-API (fetched in parallel but only consumed if GPS doesn't yield coords)
       const addrPromise = fetch(API + 'user/address-location', { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d?.success && d.lat && d.lng) {
-            return { lat: d.lat, lng: d.lng, source: 'address' };
+            return { lat: d.lat, lng: d.lng };
           }
           if (d?.has_address === false) window.PPV_NO_ADDRESS = true;
           return null;
         })
         .catch(() => null);
 
-      // Race: use whichever resolves with coordinates first
-      const results = await Promise.all([geoPromise, addrPromise]);
-      // Prefer GPS over address
-      const geoResult = results[0];
-      const addrResult = results[1];
-      const best = geoResult || addrResult;
-      if (best) {
-        userLat = best.lat;
-        userLng = best.lng;
-        window.PPV_LOCATION_SOURCE = best.source;
-        // Cache address-source as fallback (GPS already cached above on success)
-        if (best.source === 'address') {
-          localStorage.setItem('ppv_user_lat', best.lat.toString());
-          localStorage.setItem('ppv_user_lng', best.lng.toString());
+      const geo = await geoPromise;
+      if (geo.outcome === 'ok') {
+        userLat = geo.lat;
+        userLng = geo.lng;
+        window.PPV_LOCATION_SOURCE = 'gps';
+      } else {
+        // GPS denied / timeout / unsupported → fall back to address
+        const addr = await addrPromise;
+        if (addr) {
+          userLat = addr.lat;
+          userLng = addr.lng;
+          window.PPV_LOCATION_SOURCE = 'address';
+          localStorage.setItem('ppv_user_lat', addr.lat.toString());
+          localStorage.setItem('ppv_user_lng', addr.lng.toString());
           localStorage.setItem('ppv_user_loc_source', 'address');
         }
       }
