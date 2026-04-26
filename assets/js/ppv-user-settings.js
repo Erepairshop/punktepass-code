@@ -447,8 +447,18 @@ function initUserSettings() {
   }
 }
 
+// Wait for jQuery to be available (handles deferred/async loading by cache plugins)
+function ppvWhenJQuery(cb) {
+  if (typeof jQuery !== 'undefined') { cb(); return; }
+  var start = Date.now();
+  var iv = setInterval(function() {
+    if (typeof jQuery !== 'undefined') { clearInterval(iv); cb(); }
+    else if (Date.now() - start > 8000) { clearInterval(iv); console.warn('PPV user-settings: jQuery not loaded after 8s'); }
+  }, 50);
+}
+
 // Initialize on jQuery ready
-jQuery(document).ready(initUserSettings);
+ppvWhenJQuery(function() { jQuery(document).ready(initUserSettings); });
 
 // 🚀 Turbo-compatible: Re-initialize after navigation (only turbo:load, not render to avoid double-init)
 document.addEventListener("turbo:load", function() {
@@ -456,7 +466,7 @@ document.addEventListener("turbo:load", function() {
   if (wrapper) {
     wrapper.dataset.initialized = 'false';
   }
-  initUserSettings();
+  ppvWhenJQuery(initUserSettings);
 });
 
 })(); // End IIFE

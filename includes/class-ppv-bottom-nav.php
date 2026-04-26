@@ -547,19 +547,31 @@ class PPV_Bottom_Nav {
                 });
             }
 
-            // Initialize on DOM ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
+            // Wait for jQuery (handles deferred/async loading by cache plugins)
+            function whenJQuery(cb) {
+                if (typeof jQuery !== 'undefined') { cb(); return; }
+                var start = Date.now();
+                var iv = setInterval(function() {
+                    if (typeof jQuery !== 'undefined') { clearInterval(iv); cb(); }
+                    else if (Date.now() - start > 8000) { clearInterval(iv); console.warn('PPV bottom-nav: jQuery not loaded after 8s'); }
+                }, 50);
+            }
+
+            // Initialize on DOM ready (and jQuery ready)
+            function startBottomNav() {
+                whenJQuery(function() {
                     initAll();
                     initFeedbackModal();
                 });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', startBottomNav);
             } else {
-                initAll();
-                initFeedbackModal();
+                startBottomNav();
             }
 
             // 🚀 Reinitialize nav after Turbo navigation (Support modal uses event delegation, no reinit needed)
-            document.addEventListener('turbo:load', initAll);
+            document.addEventListener('turbo:load', function() { whenJQuery(initAll); });
 
             // 🚀 Show loading indicator
             document.addEventListener('turbo:before-fetch-request', function() {
