@@ -189,7 +189,40 @@ trait PPV_QR_Devices_Trait {
         </div>
 
         <script>
+        // === TEMP DEBUG OVERLAY (eltavolitando ha bug megvan) ===
+        (function(){
+            try {
+                var box = document.createElement('div');
+                box.id = 'ppv-debug-overlay';
+                box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:35vh;overflow:auto;background:rgba(0,0,0,0.88);color:#0f0;font:11px/1.3 monospace;padding:6px 8px;z-index:99999;border-top:2px solid #0f0;white-space:pre-wrap;';
+                box.textContent = '[ppv-debug] init ' + new Date().toLocaleTimeString() + ' ua=' + (navigator.userAgent.substr(0,80)) + '\n';
+                var close = document.createElement('button');
+                close.textContent = 'X';
+                close.style.cssText = 'position:absolute;top:2px;right:6px;background:#f44;color:#fff;border:0;padding:2px 8px;font-weight:bold;cursor:pointer;';
+                close.onclick = function(){ box.remove(); };
+                box.appendChild(close);
+                (document.body || document.documentElement).appendChild(box);
+                window._ppvDbg = function(msg){
+                    var line = '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+                    box.appendChild(document.createTextNode(line));
+                    box.scrollTop = box.scrollHeight;
+                };
+                window.addEventListener('error', function(e){
+                    window._ppvDbg('JS ERROR: ' + (e.message||'?') + ' @ ' + (e.filename||'?').split('/').pop() + ':' + (e.lineno||'?'));
+                });
+                window.addEventListener('unhandledrejection', function(e){
+                    window._ppvDbg('PROMISE REJECT: ' + (e.reason && e.reason.message || e.reason || '?'));
+                });
+                window._ppvDbg('jQuery=' + (typeof jQuery) + ' $=' + (typeof window.$));
+            } catch(e) {}
+        })();
         jQuery(document).ready(function($){
+            if (window._ppvDbg) window._ppvDbg('jQuery ready, deviceCards=' + $('.ppv-device-card').length + ' delBtns=' + $('.ppv-device-delete-btn').length + ' updBtns=' + $('.ppv-device-update-btn').length);
+            // Track ANY click on the device action buttons (capture phase, before handlers)
+            document.addEventListener('click', function(ev){
+                var t = ev.target.closest && ev.target.closest('.ppv-device-delete-btn,.ppv-device-update-btn,.ppv-device-mobile-scanner-btn,#ppv-register-device-btn');
+                if (t && window._ppvDbg) window._ppvDbg('CLICK: ' + (t.className||t.id) + ' did=' + (t.dataset.deviceId||'-'));
+            }, true);
             // ============================================================
             // 📱 USER DEVICE MANAGEMENT
             // ============================================================
@@ -643,6 +676,7 @@ trait PPV_QR_Devices_Trait {
                 const $btn = $(this);
                 const deviceId = $btn.data('device-id');
                 const deviceName = $btn.data('device-name');
+                if (window._ppvDbg) window._ppvDbg('delete handler fired did=' + deviceId);
 
                 // Confirmation dialog with warning that deletion is permanent
                 if (!confirm('<?php echo esc_js(self::t('confirm_delete_device', 'Sind Sie sicher, dass Sie dieses Gerät löschen möchten?\n\nDie Löschung kann nicht rückgängig gemacht werden!')); ?>\n\n📱 ' + deviceName)) {
@@ -688,6 +722,7 @@ trait PPV_QR_Devices_Trait {
                 const $btn = $(this);
                 const deviceId = $btn.data('device-id');
                 const deviceName = $btn.data('device-name');
+                if (window._ppvDbg) window._ppvDbg('update handler fired did=' + deviceId + ' fp=' + (currentFingerprint?'ok':'MISSING'));
 
                 if (!confirm('<?php echo esc_js(self::t('confirm_update_fingerprint', 'Fingerprint für dieses Gerät mit dem aktuellen Browser aktualisieren?')); ?>\n\n' + deviceName)) {
                     return;
