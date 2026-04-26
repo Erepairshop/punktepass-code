@@ -2057,12 +2057,14 @@ async function initUserDashboard() {
     let userLat = null;
     let userLng = null;
 
-    // 🚀 Try cached location first (instant!)
+    // 🚀 Try cached location first (instant!) — sticky source: GPS once granted stays GPS
     const cachedLat = localStorage.getItem('ppv_user_lat');
     const cachedLng = localStorage.getItem('ppv_user_lng');
+    const cachedSource = localStorage.getItem('ppv_user_loc_source'); // 'gps' | 'address'
     if (cachedLat && cachedLng) {
       userLat = parseFloat(cachedLat);
       userLng = parseFloat(cachedLng);
+      window.PPV_LOCATION_SOURCE = cachedSource || 'unknown';
     }
 
     // 1️⃣ If no cached location: run GPS + address-location API IN PARALLEL (race)
@@ -2076,7 +2078,8 @@ async function initUserDashboard() {
             clearTimeout(to);
             localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
             localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
-            resolve({ lat: p.coords.latitude, lng: p.coords.longitude });
+            localStorage.setItem('ppv_user_loc_source', 'gps');
+            resolve({ lat: p.coords.latitude, lng: p.coords.longitude, source: 'gps' });
           },
           () => { clearTimeout(to); resolve(null); },
           { timeout: 3000, maximumAge: 600000, enableHighAccuracy: false }
@@ -2088,8 +2091,7 @@ async function initUserDashboard() {
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d?.success && d.lat && d.lng) {
-            window.PPV_LOCATION_SOURCE = 'address';
-            return { lat: d.lat, lng: d.lng };
+            return { lat: d.lat, lng: d.lng, source: 'address' };
           }
           if (d?.has_address === false) window.PPV_NO_ADDRESS = true;
           return null;
@@ -2105,7 +2107,32 @@ async function initUserDashboard() {
       if (best) {
         userLat = best.lat;
         userLng = best.lng;
+        window.PPV_LOCATION_SOURCE = best.source;
+        // Cache address-source as fallback (GPS already cached above on success)
+        if (best.source === 'address') {
+          localStorage.setItem('ppv_user_lat', best.lat.toString());
+          localStorage.setItem('ppv_user_lng', best.lng.toString());
+          localStorage.setItem('ppv_user_loc_source', 'address');
+        }
       }
+    }
+
+    // 2️⃣ If we have GPS-cached location, opportunistically refresh GPS in background
+    //    (silent — don't switch source, but update coords if user moved significantly)
+    if (cachedSource === 'gps' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          const newLat = p.coords.latitude;
+          const newLng = p.coords.longitude;
+          // Only update cache if difference > ~100m (rough lat/lng degree threshold)
+          if (Math.abs(newLat - userLat) > 0.001 || Math.abs(newLng - userLng) > 0.001) {
+            localStorage.setItem('ppv_user_lat', newLat.toString());
+            localStorage.setItem('ppv_user_lng', newLng.toString());
+          }
+        },
+        () => {},
+        { timeout: 5000, maximumAge: 600000, enableHighAccuracy: false }
+      );
     }
 
     // 2️⃣ Fetch and render stores with best available coordinates
