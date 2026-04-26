@@ -817,10 +817,26 @@ trait PPV_QR_Devices_Trait {
                 }
             });
 
+            // Watchdog: if checkDeviceStatus doesn't finish in 8s, show register button as fallback
+            let _statusChecked = false;
+            setTimeout(() => {
+                if (!_statusChecked) {
+                    console.warn('[Devices] checkDeviceStatus watchdog timeout - showing register button');
+                    $('#ppv-device-status').html('<span style="color: #ff9800;">⚠️ <?php echo esc_js(self::t('device_check_timeout', 'Gerätestatus konnte nicht geladen werden. Versuchen Sie es manuell.')); ?></span>');
+                    $('#ppv-register-device-btn').show();
+                }
+            }, 8000);
+
             // Initialize on page load
             checkDeviceStatus().then(() => {
+                _statusChecked = true;
                 highlightCurrentDevice();
                 checkMobileScannerPendingRequests();
+            }).catch((err) => {
+                _statusChecked = true;
+                console.error('[Devices] checkDeviceStatus error:', err);
+                $('#ppv-device-status').html('<span style="color: #f44336;">❌ <?php echo esc_js(self::t('device_check_error', 'Fehler beim Prüfen. Versuchen Sie zu registrieren.')); ?></span>');
+                $('#ppv-register-device-btn').show();
             });
         });
         </script>
