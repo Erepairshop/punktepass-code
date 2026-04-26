@@ -418,15 +418,15 @@ return [
 
 // App Download
 'login_download_app' => 'Download App',
-'header_install_app' => 'Install App',
+'header_install_app' => 'Google Play',
 'login_download_android' => 'Android',
 'login_download_ios' => 'iOS',
 'login_open_in_chrome' => 'Open in Chrome',
 'login_download_apk' => 'Download APK',
-'login_pwa_install_hint' => 'Open the browser menu and select "Add to Home Screen".',
-'login_pwa_banner_title' => 'Install PunktePass App',
-'login_pwa_banner_desc' => 'Install the app for faster access!',
-'login_pwa_banner_install' => 'Install',
+'login_pwa_install_hint' => 'Scarica l'app ufficiale PunktePass da Google Play.',
+'login_pwa_banner_title' => 'PunktePass su Google Play',
+'login_pwa_banner_desc' => 'Scarica l'app ufficiale su Google Play!',
+'login_pwa_banner_install' => 'Google Play',
 
 // Footer
 'landing_footer_copyright' => '© 2025 PunktePass. All rights reserved.',
@@ -1847,7 +1847,7 @@ return [
 'faq_a16' => 'After 60 seconds without action, "Later" is automatically selected. Your points are preserved and you can redeem on your next visit.',
 
 'faq_q17' => 'Can I install PunktePass as an app?',
-'faq_a17' => 'Yes! Tap "Add to Home Screen" in the browser and PunktePass works like a regular app.',
+'faq_a17' => 'Sì! Scarica l'app ufficiale su Google Play (cerca: PunktePass) o sull'App Store di Apple per iOS.',
 
 // Security
 'faq_security_title' => 'Security',

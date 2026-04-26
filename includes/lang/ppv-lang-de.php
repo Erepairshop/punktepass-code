@@ -426,15 +426,15 @@ return [
 
     // App Download
     'login_download_app' => 'App herunterladen',
-    'header_install_app' => 'App installieren',
+    'header_install_app' => 'Google Play',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'In Chrome öffnen',
     'login_download_apk' => 'APK herunterladen',
     'login_pwa_install_hint' => 'Öffne das Browser-Menü und wähle "Zum Startbildschirm hinzufügen".',
-    'login_pwa_banner_title' => 'PunktePass App installieren',
-    'login_pwa_banner_desc' => 'Installiere die App für schnelleren Zugriff!',
-    'login_pwa_banner_install' => 'Installieren',
+    'login_pwa_banner_title' => 'PunktePass auf Google Play',
+    'login_pwa_banner_desc' => 'Lade die offizielle App im Google Play Store!',
+    'login_pwa_banner_install' => 'Google Play',
 
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
@@ -1955,7 +1955,7 @@ return [
     'faq_a16' => 'Nach 60 Sekunden ohne Aktion wird "Später" automatisch gewählt. Deine Punkte bleiben erhalten und du kannst beim nächsten Mal einlösen.',
 
     'faq_q17' => 'Kann ich PunktePass als App installieren?',
-    'faq_a17' => 'Ja! Tippe im Browser auf "Zum Startbildschirm hinzufügen" und PunktePass funktioniert wie eine normale App.',
+    'faq_a17' => 'Ja! Lade die offizielle App im Google Play Store herunter (Suche: PunktePass) oder im Apple App Store für iOS.',
 
     // Sicherheit
     'faq_security_title' => 'Sicherheit',

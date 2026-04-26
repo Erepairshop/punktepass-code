@@ -452,15 +452,15 @@ return [
 
     // App Download
     'login_download_app' => 'App letöltése',
-    'header_install_app' => 'App telepítése',
+    'header_install_app' => 'Google Play',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Megnyitás Chrome-ban',
     'login_download_apk' => 'APK letöltése',
-    'login_pwa_install_hint' => 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.',
-    'login_pwa_banner_title' => 'PunktePass App telepítése',
-    'login_pwa_banner_desc' => 'Telepítsd az appot a gyorsabb hozzáféréshez!',
-    'login_pwa_banner_install' => 'Telepítés',
+    'login_pwa_install_hint' => 'Töltsd le a hivatalos PunktePass alkalmazást a Google Play-ről.',
+    'login_pwa_banner_title' => 'PunktePass a Google Play-en',
+    'login_pwa_banner_desc' => 'Tölts a hivatalos alkalmazást gyorsabb hozzáférésért!',
+    'login_pwa_banner_install' => 'Google Play',
 
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Minden jog fenntartva.',
@@ -1931,7 +1931,7 @@ return [
     'faq_a16' => '60 másodperc tétlenség után automatikusan a "Később" opció lesz kiválasztva. A pontjaid megmaradnak és legközelebb beválthatod.',
 
     'faq_q17' => 'Telepíthetem a PunktePass-t alkalmazásként?',
-    'faq_a17' => 'Igen! Koppints a böngészőben a "Hozzáadás a kezdőképernyőhöz" opcióra és a PunktePass normál alkalmazásként fog működni.',
+    'faq_a17' => 'Igen! Töltsd le a hivatalos alkalmazást a Google Play-ről (keresés: PunktePass) vagy az Apple App Store-ból iOS-en.',
 
     // Biztonság
     'faq_security_title' => 'Biztonság',

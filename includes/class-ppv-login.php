@@ -333,15 +333,10 @@ public static function render_landing_page($atts) {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
                             <span>App Store</span>
                         </a>
-                        <!-- Android PWA Install Button (header) -->
-                        <button type="button" class="lo-header-app" id="ppv-android-header-link" style="display:none;">
+                        <!-- Android Google Play Link (header) -->
+                        <a href="https://play.google.com/store/apps/details?id=de.punktepass.twa" target="_blank" rel="noopener" class="lo-header-app" id="ppv-android-header-link">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
-                            <span><?php echo PPV_Lang::t('header_install_app', 'App installieren'); ?></span>
-                        </button>
-                        <!-- Android APK Download (header fallback) -->
-                        <a href="https://punktepass.de/wp-content/plugins/punktepass/assets/app/punktepass.apk" class="lo-header-app" id="ppv-android-header-apk" style="display:none;" download>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
-                            <span><?php echo PPV_Lang::t('login_download_apk', 'APK herunterladen'); ?></span>
+                            <span>Google Play</span>
                         </a>
                         <!-- Language Switcher -->
                         <?php if (class_exists('PPV_Lang_Switcher')): ?>
@@ -369,13 +364,13 @@ public static function render_landing_page($atts) {
                                 <span class="lo-modal-platform-name">App Store</span>
                             </div>
                         </a>
-                        <button type="button" class="lo-modal-platform" id="ppv-modal-android-btn">
+                        <a href="https://play.google.com/store/apps/details?id=de.punktepass.twa" target="_blank" rel="noopener" class="lo-modal-platform" id="ppv-modal-android-btn">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
                             <div class="lo-modal-platform-text">
                                 <span class="lo-modal-platform-label"><?php echo PPV_Lang::t('app_download_available', 'Verfügbar im'); ?></span>
-                                <span class="lo-modal-platform-name">Android</span>
+                                <span class="lo-modal-platform-name">Google Play</span>
                             </div>
-                        </button>
+                        </a>
                     </div>
                     <button type="button" class="lo-modal-dismiss" id="ppv-app-modal-dismiss"><?php echo PPV_Lang::t('app_download_dont_show', 'Nicht mehr anzeigen'); ?></button>
                 </div>
@@ -509,15 +504,15 @@ public static function render_landing_page($atts) {
                 </div>
             </main>
 
-            <!-- PWA Install Banner -->
+            <!-- Google Play Install Banner (Android only) -->
             <div id="ppv-pwa-banner" class="lo-pwa-banner" style="display:none;">
                 <div class="lo-pwa-inner">
                     <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/pwa-icon-192.png" alt="PunktePass" class="lo-pwa-icon">
                     <div class="lo-pwa-text">
-                        <strong><?php echo PPV_Lang::t('login_pwa_banner_title', 'PunktePass App installieren'); ?></strong>
-                        <p><?php echo PPV_Lang::t('login_pwa_banner_desc', 'Installiere die App für schnelleren Zugriff!'); ?></p>
+                        <strong><?php echo PPV_Lang::t('login_pwa_banner_title', 'PunktePass App auf Google Play'); ?></strong>
+                        <p><?php echo PPV_Lang::t('login_pwa_banner_desc', 'Lade die offizielle App für schnelleren Zugriff!'); ?></p>
                     </div>
-                    <button type="button" id="ppv-pwa-banner-install" class="lo-pwa-install"><?php echo PPV_Lang::t('login_pwa_banner_install', 'Installieren'); ?></button>
+                    <a href="https://play.google.com/store/apps/details?id=de.punktepass.twa" target="_blank" rel="noopener" id="ppv-pwa-banner-install" class="lo-pwa-install"><?php echo PPV_Lang::t('login_pwa_banner_install', 'Google Play'); ?></a>
                     <button type="button" id="ppv-pwa-banner-close" class="lo-pwa-close">&times;</button>
                 </div>
             </div>
@@ -588,110 +583,33 @@ public static function render_landing_page($atts) {
         }
         </script>
 
-        <!-- PWA Install Button Handler -->
+        <!-- Google Play Install Button + Banner Handler -->
         <script>
         (function() {
-            let deferredPrompt = null;
-            const installBtn = document.getElementById('ppv-pwa-install-btn');
-            const chromeLink = document.getElementById('ppv-android-chrome-link');
-            const apkLink = document.getElementById('ppv-android-apk-link');
-            const apkHeaderLink = document.getElementById('ppv-android-header-apk');
+            // Google Play link visibility + banner display logic
             const pwaBanner = document.getElementById('ppv-pwa-banner');
-            const bannerInstall = document.getElementById('ppv-pwa-banner-install');
             const bannerClose = document.getElementById('ppv-pwa-banner-close');
             const androidHeaderBtn = document.getElementById('ppv-android-header-link');
-            const pwaInstallHint = <?php echo json_encode(PPV_Lang::t('login_pwa_install_hint', 'Öffne das Browsermenü und wähle "Zum Startbildschirm hinzufügen".')); ?>;
-            let pwaPromptReceived = false;
+            const iosHeaderLink = document.getElementById('ppv-ios-header-link');
 
             const isAndroid = /Android/i.test(navigator.userAgent);
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const isChrome = /Chrome/i.test(navigator.userAgent) && !/Edge|OPR|Opera/i.test(navigator.userAgent);
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             const bannerDismissed = localStorage.getItem('ppv_pwa_banner_dismissed');
-            const iosHeaderLink = document.getElementById('ppv-ios-header-link');
 
-            if (isIOS && !isStandalone && iosHeaderLink) {
-                iosHeaderLink.style.display = 'inline-flex';
+            // Show iOS link only on iOS, Google Play link only on Android (Both default-hidden via CSS / inline style not set)
+            if (iosHeaderLink) {
+                iosHeaderLink.style.display = (isIOS && !isStandalone) ? 'inline-flex' : 'none';
             }
-
-            if (isAndroid && isChrome && !isStandalone && androidHeaderBtn) {
-                androidHeaderBtn.style.display = 'inline-flex';
-            }
-
-            if (isAndroid && !isChrome && !isStandalone) {
-                if (apkLink) apkLink.style.display = 'inline-flex';
-                if (apkHeaderLink) apkHeaderLink.style.display = 'inline-flex';
-            }
-
-            if (isAndroid && isChrome && !isStandalone) {
-                setTimeout(() => {
-                    if (!pwaPromptReceived) {
-                        if (apkLink) apkLink.style.display = 'inline-flex';
-                        if (apkHeaderLink) apkHeaderLink.style.display = 'inline-flex';
-                        if (androidHeaderBtn) androidHeaderBtn.style.display = 'none';
-                    }
-                }, 3000);
-            }
-
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                pwaPromptReceived = true;
-                if (apkLink) apkLink.style.display = 'none';
-                if (apkHeaderLink) apkHeaderLink.style.display = 'none';
-
-                if (installBtn && isAndroid && !isStandalone) {
-                    installBtn.style.display = 'inline-flex';
-                    if (chromeLink) chromeLink.style.display = 'none';
-                }
-
-                if (isAndroid && !isStandalone && !bannerDismissed && pwaBanner) {
-                    setTimeout(() => {
-                        pwaBanner.style.display = 'flex';
-                    }, 1500);
-                }
-            });
-
             if (androidHeaderBtn) {
-                androidHeaderBtn.addEventListener('click', async () => {
-                    if (deferredPrompt) {
-                        deferredPrompt.prompt();
-                        const { outcome } = await deferredPrompt.userChoice;
-                        deferredPrompt = null;
-                        if (outcome === 'accepted') {
-                            androidHeaderBtn.style.display = 'none';
-                            if (installBtn) installBtn.style.display = 'none';
-                            if (pwaBanner) pwaBanner.style.display = 'none';
-                        }
-                    } else {
-                        alert(pwaInstallHint);
-                    }
-                });
+                androidHeaderBtn.style.display = (isAndroid && !isStandalone) ? 'inline-flex' : 'none';
             }
 
-            if (installBtn) {
-                installBtn.addEventListener('click', async () => {
-                    if (!deferredPrompt) {
-                        alert(pwaInstallHint);
-                        return;
-                    }
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    deferredPrompt = null;
-                    installBtn.style.display = 'none';
-                    if (pwaBanner) pwaBanner.style.display = 'none';
-                });
-            }
-
-            if (bannerInstall) {
-                bannerInstall.addEventListener('click', async () => {
-                    if (!deferredPrompt) return;
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    deferredPrompt = null;
-                    if (pwaBanner) pwaBanner.style.display = 'none';
-                    if (installBtn) installBtn.style.display = 'none';
-                });
+            // Show install banner on Android (not standalone, not dismissed) after 1.5s
+            if (isAndroid && !isStandalone && !bannerDismissed && pwaBanner) {
+                setTimeout(() => {
+                    pwaBanner.style.display = 'flex';
+                }, 1500);
             }
 
             if (bannerClose) {
@@ -700,17 +618,9 @@ public static function render_landing_page($atts) {
                     localStorage.setItem('ppv_pwa_banner_dismissed', '1');
                 });
             }
-
-            window.addEventListener('appinstalled', () => {
-                if (installBtn) installBtn.style.display = 'none';
-                if (chromeLink) chromeLink.style.display = 'none';
-                if (pwaBanner) pwaBanner.style.display = 'none';
-                if (androidHeaderBtn) androidHeaderBtn.style.display = 'none';
-                deferredPrompt = null;
-            });
         })();
 
-        // App Download Modal Handler
+        // App Download Modal Handler — first-visit popup with iOS/Google Play links
         (function() {
             const modal = document.getElementById('ppv-app-download-modal');
             const closeBtn = document.getElementById('ppv-app-modal-close');
@@ -742,27 +652,10 @@ public static function render_landing_page($atts) {
                 closeModal();
             });
 
-            androidBtn?.addEventListener('click', async () => {
-                if (window.deferredPrompt) {
-                    try {
-                        await window.deferredPrompt.prompt();
-                        const { outcome } = await window.deferredPrompt.userChoice;
-                        if (outcome === 'accepted') {
-                            closeModal();
-                            localStorage.setItem('ppv_app_modal_dismissed', 'true');
-                        }
-                    } catch (err) {
-                        console.error('PWA install error:', err);
-                    }
-                } else {
-                    window.location.href = '<?php echo PPV_PLUGIN_URL; ?>assets/app/punktepass.apk';
-                    closeModal();
-                }
-            });
-
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                window.deferredPrompt = e;
+            // Android Google Play link click → mark modal dismissed (user converted)
+            androidBtn?.addEventListener('click', () => {
+                localStorage.setItem('ppv_app_modal_dismissed', 'true');
+                // <a href> handles navigation — don't preventDefault
             });
         })();
         </script>

@@ -465,15 +465,15 @@ return [
 
     // App Download
     'login_download_app' => 'Descarcă aplicația',
-    'header_install_app' => 'Instalează aplicația',
+    'header_install_app' => 'Google Play',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Deschide în Chrome',
     'login_download_apk' => 'Descarcă APK',
     'login_pwa_install_hint' => 'Deschide meniul browserului și selectează "Adaugă pe ecranul principal".',
-    'login_pwa_banner_title' => 'Instalează aplicația PunktePass',
-    'login_pwa_banner_desc' => 'Instalează aplicația pentru acces mai rapid!',
-    'login_pwa_banner_install' => 'Instalează',
+    'login_pwa_banner_title' => 'PunktePass pe Google Play',
+    'login_pwa_banner_desc' => 'Descarcă aplicația oficială din Google Play!',
+    'login_pwa_banner_install' => 'Google Play',
 
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Toate drepturile rezervate.',
@@ -1936,7 +1936,7 @@ return [
     'faq_a16' => 'După 60 de secunde fără acțiune, "Mai târziu" este selectat automat. Punctele rămân și poți răscumpăra data viitoare.',
 
     'faq_q17' => 'Pot instala PunktePass ca aplicație?',
-    'faq_a17' => 'Da! Apasă în browser pe "Adaugă pe ecranul principal" și PunktePass va funcționa ca o aplicație normală.',
+    'faq_a17' => 'Da! Descarcă aplicația oficială din Google Play (căutare: PunktePass) sau din Apple App Store pentru iOS.',
 
     // Securitate
     'faq_security_title' => 'Securitate',
