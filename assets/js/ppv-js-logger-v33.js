@@ -24,6 +24,26 @@
     return true;
   };
 
+  // --- Filter: NEM logoljuk ezeket (external/extension/CORS-mask noise, nem PP bug) ---
+  const NOISE_PATTERNS = [
+    /^Script error\.?$/i,                    // generic CORS-blokkolt 3rd-party hiba (üzenet nélkül)
+    /__firefox__/,                            // Firefox Focus iOS reader extension
+    /window\.ethereum/,                       // MetaMask / crypto wallet
+    /__BRAVE_/,                               // Brave Shield
+    /chrome-extension:/,                      // Chrome extension források
+    /moz-extension:/,                         // Firefox extension források
+    /safari-extension:/,                      // Safari extension források
+    /ResizeObserver loop/,                    // jóindulatú browser warning, nem hiba
+    /Non-Error promise rejection captured/,   // Sentry-szerű generikus
+    /Cannot redefine property: googletag/,   // Google Ads SDK
+    /\bKaspersky\b/i,                         // Kaspersky AV inject
+    /AbortError/,                             // user navigated away (route change közben)
+  ];
+  function isNoise(message) {
+    if (!message || typeof message !== "string") return false;
+    return NOISE_PATTERNS.some((re) => re.test(message));
+  }
+
   // --- Helper: küldés (sendBeacon fallback navigation alatt is megérkezik) ---
   async function sendLog(url, payload) {
     if (!url) return;
@@ -63,6 +83,7 @@
       return;
     }
     // Sima JS error
+    if (isNoise(e.message)) return;
     if (!shouldSend("js:" + e.message)) return;
     sendLog(API_JS, {
       message: e.message,
@@ -84,6 +105,7 @@
       else if (reason.message) { msg = reason.message; stack = reason.stack ? String(reason.stack).substring(0, 800) : ""; }
       else { try { msg = JSON.stringify(reason).substring(0, 300); } catch (_) { msg = String(reason); } }
     }
+    if (isNoise(msg)) return;
     if (!shouldSend("js:" + msg)) return;
     sendLog(API_JS, {
       message: msg,
@@ -105,6 +127,7 @@
           if (typeof a === "object") { try { return JSON.stringify(a); } catch (_) { return String(a); } }
           return String(a);
         }).join(" ").substring(0, 500);
+        if (isNoise(msg)) { return orig.apply(console, args); }
         if (shouldSend("console:" + level + ":" + msg)) {
           sendLog(API_JS, {
             message: "console." + level + ": " + msg,
