@@ -77,7 +77,7 @@ class PPV_QR {
 
         // 🔐 Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            ppv_maybe_start_session();
+            @session_start();
         }
 
         // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST (if session exists)
@@ -210,7 +210,7 @@ class PPV_QR {
 
         // Check closed flag
         if (!is_array($day_hours) || !empty($day_hours['closed'])) {
-            return ['open' => false, 'hours' => 'Geschlossen', 'reason' => 'closed_flag'];
+            return ['open' => false, 'hours' => self::t('qr_admin_scanner_closed', 'Geschlossen'), 'reason' => 'closed_flag'];
         }
 
         // Extract opening times
@@ -240,7 +240,7 @@ class PPV_QR {
                 'valid' => false,
                 'response' => new WP_REST_Response([
                     'success' => false,
-                    'message' => self::t('err_unknown_store', '❌ Ismeretlen bolt')
+                    'message' => self::t('qr_admin_err_unknown_store', '❌ Unbekannter Shop')
                 ], 400)
             ];
         }
@@ -416,18 +416,9 @@ class PPV_QR {
 
         $metadata = json_encode($metadata_array);
 
-        $email = null;
-        if ($user_id) {
-            $email = $wpdb->get_var($wpdb->prepare(
-                "SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d",
-                $user_id
-            ));
-        }
-
         $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id' => $store_id,
             'user_id' => $user_id,
-            'email' => $email,
             'message' => sanitize_text_field($msg),
             'type' => $type,
             'points_change' => intval($points_change),
@@ -547,7 +538,7 @@ class PPV_QR {
 
         // ✅ SESSION INICIALIZÁLÁS
         if (session_status() === PHP_SESSION_NONE) {
-            ppv_maybe_start_session();
+            @session_start();
         }
 
         // ⛔ PERMISSION CHECK: Only load camera scanner JS for handlers/scanners
@@ -743,7 +734,7 @@ class PPV_QR {
 
         // Start session
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            ppv_maybe_start_session();
+            @session_start();
         }
 
         // Auth check
@@ -950,8 +941,7 @@ class PPV_QR {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>QR Center - PunktePass</title>
-    <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
+    <title><?php echo esc_attr(self::t('qr_admin_page_title', 'QR Center - PunktePass')); ?></title>    <link rel="manifest" href="<?php echo esc_url($site_url); ?>/manifest.json">
     <link rel="icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="<?php echo esc_url($plugin_url); ?>assets/img/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
@@ -1291,4 +1281,3 @@ class PPV_QR {
         }
     }
 }
-

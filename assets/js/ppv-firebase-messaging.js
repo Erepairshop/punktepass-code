@@ -23,6 +23,20 @@
     let initialized = false;
     let serviceWorkerRegistration = null;
 
+    function getCurrentUserId() {
+        return window.ppvUserId ||
+               window.ppv_user_id ||
+               (window.ppv_bridge_user && window.ppv_bridge_user.id) ||
+               (window.ppvPushConfig && window.ppvPushConfig.userId) ||
+               null;
+    }
+
+    function isPushDismissedRecently() {
+        const dismissedAt = parseInt(localStorage.getItem('ppv_push_dismissed') || '0', 10);
+        if (!dismissedAt) return false;
+        return (Date.now() - dismissedAt) < (24 * 60 * 60 * 1000);
+    }
+
     /**
      * Initialize Firebase Messaging
      */
@@ -115,7 +129,7 @@
      * Register FCM token with backend
      */
     async function registerToken() {
-        const userId = window.ppvUserId || window.ppv_user_id;
+        const userId = getCurrentUserId();
         if (!userId) {
             console.log('[PPV FCM] No user ID, skipping registration');
             return false;
@@ -210,7 +224,7 @@
         if (!('Notification' in window)) return false;
         if (Notification.permission === 'granted') return false;
         if (Notification.permission === 'denied') return false;
-        if (localStorage.getItem('ppv_push_dismissed')) return false;
+        if (isPushDismissedRecently()) return false;
         return true;
     }
 
@@ -272,7 +286,7 @@
     // Auto-initialize when user is logged in
     document.addEventListener('DOMContentLoaded', async function() {
         // Only init if user is logged in and Firebase SDK is available
-        if ((window.ppvUserId || window.ppv_user_id) && typeof firebase !== 'undefined') {
+        if (getCurrentUserId() && typeof firebase !== 'undefined') {
             console.log('[PPV FCM] Auto-initializing for logged-in user');
 
             // Wait a bit for page to fully load

@@ -426,15 +426,15 @@ return [
 
     // App Download
     'login_download_app' => 'App herunterladen',
-    'header_install_app' => 'Google Play',
+    'header_install_app' => 'App installieren',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'In Chrome öffnen',
     'login_download_apk' => 'APK herunterladen',
     'login_pwa_install_hint' => 'Öffne das Browser-Menü und wähle "Zum Startbildschirm hinzufügen".',
-    'login_pwa_banner_title' => 'PunktePass auf Google Play',
-    'login_pwa_banner_desc' => 'Lade die offizielle App im Google Play Store!',
-    'login_pwa_banner_install' => 'Google Play',
+    'login_pwa_banner_title' => 'PunktePass App installieren',
+    'login_pwa_banner_desc' => 'Installiere die App für schnelleren Zugriff!',
+    'login_pwa_banner_install' => 'Installieren',
 
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
@@ -1955,7 +1955,7 @@ return [
     'faq_a16' => 'Nach 60 Sekunden ohne Aktion wird "Später" automatisch gewählt. Deine Punkte bleiben erhalten und du kannst beim nächsten Mal einlösen.',
 
     'faq_q17' => 'Kann ich PunktePass als App installieren?',
-    'faq_a17' => 'Ja! Lade die offizielle App im Google Play Store herunter (Suche: PunktePass) oder im Apple App Store für iOS.',
+    'faq_a17' => 'Ja! Tippe im Browser auf "Zum Startbildschirm hinzufügen" und PunktePass funktioniert wie eine normale App.',
 
     // Sicherheit
     'faq_security_title' => 'Sicherheit',
@@ -2102,12 +2102,12 @@ return [
     'insights_progress_to_reward' => '{pct}% zur Belohnung',
     'insights_time_unit' => 'Uhr',
 
-    // ============================================================
-    // QR CENTER: ADMIN TABS (auto-added i18n)
-    // ============================================================
+    'qr_admin_page_title' => 'QR Center - PunktePass',
     'qr_admin_access_denied' => '❌ Zugriff verweigert. Nur für Händler und Scanner.',
     'qr_admin_scanner_active' => 'Scanner aktiv...',
     'qr_admin_scanner_torch' => '🔦 Taschenlampe',
+    'qr_admin_scanner_closed' => 'Geschlossen',
+    'qr_admin_err_unknown_store' => '❌ Unbekannter Shop',
     'qr_admin_devices_title_text' => 'Registrierte Geräte',
     'qr_admin_devices_subtitle_text' => 'Verwalten Sie die Geräte, die den Scanner verwenden.',
     'qr_admin_devices_count_label' => 'Geräte',
@@ -2122,6 +2122,8 @@ return [
     'qr_admin_devices_no_devices_text' => 'Noch keine Geräte registriert.',
     'qr_admin_devices_register_first_text' => 'Registrieren Sie Ihr erstes Gerät, um den Scanner zu nutzen.',
     'qr_admin_devices_current_badge_text' => 'Dieses Gerät',
+    'qr_admin_devices_mobile_scanner' => 'Mobiler Scanner',
+    'qr_admin_devices_link_copied' => 'Link kopiert!',
     'qr_admin_users_title_text' => 'Scanner-Benutzer',
     'qr_admin_users_add_btn_text' => 'Neuen Scanner erstellen',
     'qr_admin_users_no_users_text' => 'Noch keine Scanner-Benutzer erstellt.',
@@ -2135,5 +2137,11 @@ return [
     'qr_admin_campaigns_label_free_product' => '🎁 Produktname',
     'qr_admin_campaigns_placeholder_free_product' => 'z. B. Kaffee + Kuchen',
     'qr_admin_campaigns_label_free_product_value' => 'Produktwert',
+    'qr_admin_err_token_missing' => 'Token fehlt oder unbekannter Shop',
+    'qr_admin_campaign_created' => '✅ Kampagne erfolgreich erstellt',
+    'qr_admin_err_campaign_id_missing' => '❌ Kampagnen-ID fehlt',
+    'qr_admin_campaign_updated' => '✅ Kampagne erfolgreich aktualisiert',
+    'qr_admin_devices_can_register_more' => 'Sie können noch',
+    'qr_admin_devices_open_on_new' => 'Öffnen Sie diese Seite auf dem neuen Gerät.',
 ];
 

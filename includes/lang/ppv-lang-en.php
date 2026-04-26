@@ -418,15 +418,15 @@ return [
 
 // App Download
 'login_download_app' => 'Download App',
-'header_install_app' => 'Google Play',
+'header_install_app' => 'Install App',
 'login_download_android' => 'Android',
 'login_download_ios' => 'iOS',
 'login_open_in_chrome' => 'Open in Chrome',
 'login_download_apk' => 'Download APK',
-'login_pwa_install_hint' => 'Download the official PunktePass app from Google Play.',
-'login_pwa_banner_title' => 'PunktePass on Google Play',
-'login_pwa_banner_desc' => 'Download the official app on Google Play!',
-'login_pwa_banner_install' => 'Google Play',
+'login_pwa_install_hint' => 'Open the browser menu and select "Add to Home Screen".',
+'login_pwa_banner_title' => 'Install PunktePass App',
+'login_pwa_banner_desc' => 'Install the app for faster access!',
+'login_pwa_banner_install' => 'Install',
 
 // Footer
 'landing_footer_copyright' => '© 2025 PunktePass. All rights reserved.',
@@ -1847,7 +1847,7 @@ return [
 'faq_a16' => 'After 60 seconds without action, "Later" is automatically selected. Your points are preserved and you can redeem on your next visit.',
 
 'faq_q17' => 'Can I install PunktePass as an app?',
-'faq_a17' => 'Yes! Download the official app on Google Play (search: PunktePass) or on the Apple App Store for iOS.',
+'faq_a17' => 'Yes! Tap "Add to Home Screen" in the browser and PunktePass works like a regular app.',
 
 // Security
 'faq_security_title' => 'Security',
@@ -1982,16 +1982,16 @@ return [
     'insights_progress_to_reward' => '{pct}% to reward',
     'insights_time_unit' => '',
 
-    // ============================================================
-    // QR CENTER: ADMIN TABS
-    // ============================================================
-    'qr_admin_access_denied' => '❌ Access denied. Only for merchants and scanners.',
+    'qr_admin_page_title' => 'QR Center - PunktePass',
+    'qr_admin_access_denied' => '❌ Access denied. Only for vendors and scanners.',
     'qr_admin_scanner_active' => 'Scanner active...',
     'qr_admin_scanner_torch' => '🔦 Flashlight',
+    'qr_admin_scanner_closed' => 'Closed',
+    'qr_admin_err_unknown_store' => '❌ Unknown store',
     'qr_admin_devices_title_text' => 'Registered Devices',
     'qr_admin_devices_subtitle_text' => 'Manage the devices that use the scanner.',
     'qr_admin_devices_count_label' => 'Devices',
-    'qr_admin_devices_info_text' => 'To register a new device, click the "Register Device" button on the desired device.',
+    'qr_admin_devices_info_text' => 'To register a new device, click the "Register device" button on the desired device.',
     'qr_admin_devices_current_text' => 'Current Device',
     'qr_admin_devices_checking_text' => 'Checking device status...',
     'qr_admin_devices_register_btn_text' => 'Register Device',
@@ -2002,6 +2002,8 @@ return [
     'qr_admin_devices_no_devices_text' => 'No devices registered yet.',
     'qr_admin_devices_register_first_text' => 'Register your first device to use the scanner.',
     'qr_admin_devices_current_badge_text' => 'This Device',
+    'qr_admin_devices_mobile_scanner' => 'Mobile Scanner',
+    'qr_admin_devices_link_copied' => 'Link copied!',
     'qr_admin_users_title_text' => 'Scanner Users',
     'qr_admin_users_add_btn_text' => 'Create New Scanner',
     'qr_admin_users_no_users_text' => 'No scanner users created yet.',
@@ -2015,4 +2017,10 @@ return [
     'qr_admin_campaigns_label_free_product' => '🎁 Product Name',
     'qr_admin_campaigns_placeholder_free_product' => 'e.g. Coffee + Cake',
     'qr_admin_campaigns_label_free_product_value' => 'Product Value',
+    'qr_admin_err_token_missing' => 'Token missing or unknown store',
+    'qr_admin_campaign_created' => '✅ Campaign successfully created',
+    'qr_admin_err_campaign_id_missing' => '❌ Campaign ID missing',
+    'qr_admin_campaign_updated' => '✅ Campaign successfully updated',
+    'qr_admin_devices_can_register_more' => 'You can still register',
+    'qr_admin_devices_open_on_new' => 'Open this page on the new device.',
 ];

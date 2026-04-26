@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "de.punktepass.twa",
-        "sha256_cert_fingerprints": ["15:3D:B1:2D:56:C2:2C:B7:FB:04:7B:D9:7A:5F:1A:D2:19:6C:75:BA:C8:D7:97:BE:3C:FD:C2:9C:D8:3D:E8:E9"]
+        "sha256_cert_fingerprints": ["6E:BC:26:F0:04:55:FD:05:88:B7:68:AD:90:62:67:B4:84:02:B0:D0:45:1C:8B:71:87:CF:EC:57:71:40:29:12"]
       }
     }]

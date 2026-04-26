@@ -24,6 +24,20 @@
         token: null,
         permissionState: null,
 
+        getCurrentUserId: function() {
+            return window.ppvUserId ||
+                   window.ppv_user_id ||
+                   (window.ppv_bridge_user && window.ppv_bridge_user.id) ||
+                   (window.ppvPushConfig && window.ppvPushConfig.userId) ||
+                   null;
+        },
+
+        isPushDismissedRecently: function() {
+            const dismissedAt = parseInt(localStorage.getItem('ppv_push_dismissed') || '0', 10);
+            if (!dismissedAt) return false;
+            return (Date.now() - dismissedAt) < (24 * 60 * 60 * 1000);
+        },
+
         /**
          * Initialize the push bridge
          */
@@ -50,7 +64,7 @@
             }
 
             // For Web/PWA/TWA: Web push permission is handled by Firebase Messaging
-            if (this.platform === 'web' && (window.ppvUserId || window.ppv_user_id)) {
+            if (this.platform === 'web' && this.getCurrentUserId()) {
                 ppvLog('[PPV Push] Web platform detected with logged-in user; Firebase messaging handles permission flow');
             }
 
@@ -223,7 +237,7 @@
             }
 
             // Get user info from window object (set by PHP)
-            const userId = window.ppvUserId || window.ppv_user_id || null;
+            const userId = this.getCurrentUserId();
             const storeId = window.ppvStoreId || window.ppv_store_id || null;
             const language = window.ppvLang || document.documentElement.lang || 'de';
 

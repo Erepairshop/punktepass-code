@@ -16,7 +16,7 @@ trait PPV_QR_Devices_Trait {
 
         // Ensure session is started
         if (session_status() === PHP_SESSION_NONE) {
-            ppv_maybe_start_session();
+            @session_start();
         }
 
         // Get current handler's store_id (same logic as API's get_session_store_id)
@@ -143,7 +143,7 @@ trait PPV_QR_Devices_Trait {
                                         <?php echo esc_html($device_type['icon']); ?> <?php echo esc_html($device->device_name ?: $device_type['name']); ?>
                                         <?php if ($is_mobile_scanner): ?>
                                         <span style="background: linear-gradient(135deg, #9c27b0, #673ab7); color: white; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: normal;">
-                                            <i class="ri-map-pin-line"></i> Mobile Scanner
+                                            <i class="ri-map-pin-line"></i> <?php echo esc_html(self::t('qr_admin_devices_mobile_scanner', 'Mobiler Scanner')); ?>
                                         </span>
                                         <?php endif; ?>
                                     </div>
@@ -163,7 +163,7 @@ trait PPV_QR_Devices_Trait {
                                     <!-- Mobile Scanner request/status button -->
                                     <?php if (!$is_mobile_scanner): ?>
                                     <button class="ppv-device-mobile-scanner-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #9c27b0; border-color: #9c27b0;">
-                                        <i class="ri-map-pin-add-line"></i> Mobile Scanner
+                                        <i class="ri-map-pin-add-line"></i> <?php echo esc_html(self::t('qr_admin_devices_mobile_scanner', 'Mobiler Scanner')); ?>
                                     </button>
                                     <?php endif; ?>
                                     <button class="ppv-device-update-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #2196f3; border-color: #2196f3;">
@@ -432,8 +432,8 @@ trait PPV_QR_Devices_Trait {
                             const slotsText = remainingSlots === 1
                                 ? '<?php echo esc_js(self::t('one_more_device', '1 további készüléket')); ?>'
                                 : remainingSlots + ' <?php echo esc_js(self::t('more_devices', 'további készüléket')); ?>';
-                            statusHtml += '<br><span style="color: #2196f3; font-size: 12px; margin-top: 5px; display: inline-block;"><i class="ri-information-line"></i> <?php echo esc_js(self::t('can_add_more_devices', 'Még regisztrálhat')); ?> ' + slotsText + '. <?php echo esc_js(self::t('register_on_new_device', 'Nyissa meg ezt az oldalt az új készüléken.')); ?></span>';
-                            // Show copy link button
+                                statusHtml += '<br><span style="color: #2196f3; font-size: 12px; margin-top: 5px; display: inline-block;"><i class="ri-information-line"></i> <?php echo esc_js(self::t('qr_admin_devices_can_register_more', 'Sie können noch')); ?> ' + slotsText + '. <?php echo esc_js(self::t('qr_admin_devices_open_on_new', 'Öffnen Sie diese Seite auf dem neuen Gerät.')); ?></span>';
+                                }
                             $('#ppv-copy-link-btn').show();
                         } else {
                             $('#ppv-copy-link-btn').hide();
@@ -619,7 +619,7 @@ trait PPV_QR_Devices_Trait {
                 navigator.clipboard.writeText(currentUrl).then(() => {
                     // Show success feedback
                     const originalHtml = $btn.html();
-                    $btn.html('<i class="ri-check-line"></i> <?php echo esc_js(self::t('link_copied', 'Link másolva!')); ?>');
+                    $btn.html('<i class="ri-check-line"></i> <?php echo esc_js(self::t('qr_admin_devices_link_copied', 'Link kopiert!')); ?>');
                     $btn.css({ 'background': '#4caf50', 'color': 'white', 'border-color': '#4caf50' });
 
                     setTimeout(() => {
@@ -634,7 +634,7 @@ trait PPV_QR_Devices_Trait {
                     textArea.select();
                     document.execCommand('copy');
                     document.body.removeChild(textArea);
-                    alert('<?php echo esc_js(self::t('link_copied', 'Link másolva!')); ?>\n\n' + currentUrl);
+                    alert('<?php echo esc_js(self::t('qr_admin_devices_link_copied', 'Link kopiert!')); ?>\n\n' + currentUrl);
                 });
             });
 
@@ -858,4 +858,3 @@ trait PPV_QR_Devices_Trait {
     // 🏪 AJAX: SWITCH FILIALE
     // ============================================================
 }
-

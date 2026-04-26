@@ -35,7 +35,7 @@ trait PPV_QR_REST_Trait {
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
-            ppv_maybe_start_session();
+            @session_start();
         }
 
         // SECURITY: Verify filiale belongs to the handler's store (prevent IDOR)
@@ -254,7 +254,7 @@ trait PPV_QR_REST_Trait {
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => self::t('err_invalid_request', '❌ Érvénytelen kérés')
+                'message' => self::t('err_invalid_request', '❌ Ungültige Anfrage')
             ], 400);
         }
 
@@ -337,8 +337,8 @@ trait PPV_QR_REST_Trait {
 
             return new WP_REST_Response([
                 'success' => false,
-                'message' => self::t('err_store_closed', '⏰ Az üzlet jelenleg zárva van'),
-                'detail' => self::t('err_store_closed_detail', 'Scan nem lehetséges nyitvatartási időn kívül'),
+                'message' => self::t('err_store_closed', '⏰ Das Geschäft ist derzeit geschlossen'),
+                'detail' => self::t('err_store_closed_detail', 'Scan außerhalb der Geschäftszeiten nicht möglich'),
                 'store_name' => $store_name ?? 'PunktePass',
                 'opening_hours' => $opening_check['hours'],
                 'current_time' => $opening_check['current_time'] ?? date('H:i'),
@@ -350,7 +350,7 @@ trait PPV_QR_REST_Trait {
         if (!$user_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => self::t('err_invalid_qr', '❌ Érvénytelen QR'),
+                'message' => self::t('err_invalid_qr', '❌ Ungültiger QR-Code'),
                 'store_name' => $store->name ?? 'PunktePass',
                 'error_type' => 'invalid_qr'
             ], 400);
@@ -514,11 +514,11 @@ trait PPV_QR_REST_Trait {
                     ? $user_info->display_name
                     : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
-                $error_message = self::t('err_gps_too_far', '❌ Túl messze vagy az üzlettől ({distance}m). Maximum: {max}m');
+                $error_message = self::t('err_gps_too_far', '❌ Zu weit vom Geschäft entfernt ({distance}m). Maximum: {max}m');
                 $error_message = str_replace(['{distance}', '{max}'], [$distance, $max_allowed], $error_message);
 
                 if ($gps_reason === 'wrong_country') {
-                    $error_message = self::t('err_wrong_country', '❌ Rossz ország! A scan csak az üzlet országában működik.');
+                    $error_message = self::t('err_wrong_country', '❌ Falsches Land! Der Scan funktioniert nur im Land des Geschäfts.');
                 }
 
                 return new WP_REST_Response([
@@ -567,7 +567,7 @@ trait PPV_QR_REST_Trait {
 
                     return new WP_REST_Response([
                         'success' => false,
-                        'message' => self::t('err_gps_spoof', '❌ Gyanús GPS aktivitás észlelve. Kérjük, próbáld újra később.'),
+                        'message' => self::t('err_gps_spoof', '❌ Verdächtige GPS-Aktivität erkannt. Bitte versuchen Sie es später erneut.'),
                         'user_id' => $user_id,
                         'customer_name' => $customer_name ?: null,
                         'email' => $user_info->email ?? null,
@@ -954,39 +954,6 @@ trait PPV_QR_REST_Trait {
                     'message' => self::t('err_duplicate_scan', '⚠️ Scan bereits verarbeitet'),
                     'error_type' => 'duplicate_scan'
                 ], 429);
-            }
-
-            // 🕒 PER-STORE COOLDOWN (custom_settings.scan_cooldown_sec)
-            // A bolt kérhet egyedi cooldownt (pl. 10 perc = 600 sec) azonos user
-            // két szkene között. DEFAULT 0 = nincs cooldown — csak a fenti 10mp
-            // duplicate-guard érvényes.
-            // Demo módban kikapcsolva, mint a duplicate-check.
-            if (!$is_demo_mode && class_exists('PPV_Store_Setting')) {
-                $cooldown = intval(PPV_Store_Setting::get($store_id, 'scan_cooldown_sec', 0));
-                if ($cooldown > 0) {
-                    $last_row = $wpdb->get_row($wpdb->prepare("
-                        SELECT created FROM {$wpdb->prefix}ppv_points
-                        WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                        ORDER BY id DESC LIMIT 1
-                    ", $user_id, $store_id));
-
-                    if ($last_row && $last_row->created) {
-                        $last_ts = strtotime($last_row->created);
-                        $now_ts  = time();
-                        if ($last_ts + $cooldown > $now_ts) {
-                            $wait_sec = ($last_ts + $cooldown) - $now_ts;
-                            $wpdb->query('ROLLBACK');
-                            ppv_log("⏳ [PPV_QR] Cooldown block: user={$user_id}, store={$store_id}, wait={$wait_sec}s (cooldown={$cooldown}s)");
-                            return new WP_REST_Response([
-                                'success'      => false,
-                                'message'      => self::t('err_scan_cooldown', "⏳ Nächster Scan in {$wait_sec}s möglich"),
-                                'error_type'   => 'scan_cooldown',
-                                'wait_sec'     => $wait_sec,
-                                'cooldown_sec' => $cooldown
-                            ], 429);
-                        }
-                    }
-                }
             }
 
             $insert_result = $wpdb->insert("{$wpdb->prefix}ppv_points", [
@@ -1746,13 +1713,13 @@ trait PPV_QR_REST_Trait {
                 'created' => current_time('mysql')
             ]);
 
-            self::insert_log($store->id, $user, "Offline szinkronizálva: $qr", 'offline_sync');
+            self::insert_log($store->id, $user, "Offline synchronisiert: $qr", 'offline_sync');
             $synced++;
         }
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => self::t('offline_synced', '✅ Offline szinkronizálva'),
+            'message' => self::t('offline_synced', '✅ Offline synchronisiert'),
             'synced' => $synced,
             'duplicates' => $duplicates,
             'duplicate_count' => count($duplicates)
@@ -1789,7 +1756,7 @@ trait PPV_QR_REST_Trait {
         if (!$store) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Token hiányzik vagy ismeretlen bolt'
+                'message' => self::t('qr_admin_err_token_missing', 'Token fehlt oder unbekannter Shop')
             ], 400);
         }
 
@@ -1867,7 +1834,7 @@ trait PPV_QR_REST_Trait {
                 }
             }
 
-            self::insert_log($store->id, 0, "Kampány létrehozva minden filiálénál: {$created_count} db", 'campaign_create_all');
+            self::insert_log($store->id, 0, "Kampagne für alle Filialen erstellt: {$created_count} Stk.", 'campaign_create_all');
 
             return new WP_REST_Response([
                 'success' => true,
@@ -1893,7 +1860,7 @@ trait PPV_QR_REST_Trait {
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => '✅ Kampány sikeresen létrehozva',
+            'message' => self::t('qr_admin_campaign_created', '✅ Kampagne erfolgreich erstellt'),
             'fields'  => $fields,
         ], 200);
     }
@@ -1934,7 +1901,7 @@ trait PPV_QR_REST_Trait {
         if (empty($store_ids)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Token hiányzik vagy ismeretlen bolt'
+                'message' => self::t('qr_admin_err_token_missing', 'Token fehlt oder unbekannter Shop')
             ], 400);
         }
 
@@ -2018,7 +1985,7 @@ trait PPV_QR_REST_Trait {
         if (empty($id)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => self::t('err_missing_data', '❌ Hiányzó adat')
+                'message' => self::t('err_missing_data', '❌ Fehlende Daten')
             ], 400);
         }
 
@@ -2027,7 +1994,7 @@ trait PPV_QR_REST_Trait {
         if (!$store) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Token hiányzik vagy ismeretlen bolt'
+                'message' => self::t('qr_admin_err_token_missing', 'Token fehlt oder unbekannter Shop')
             ], 400);
         }
 
@@ -2036,7 +2003,7 @@ trait PPV_QR_REST_Trait {
             'store_id' => $store->id
         ]);
 
-        self::insert_log($store->id, 0, "Kampány törölve: ID {$id}", 'campaign_delete');
+        self::insert_log($store->id, 0, "Kampagne gelöscht: ID {$id}", 'campaign_delete');
 
         // 📡 Ably: Notify real-time about deleted campaign
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
@@ -2048,7 +2015,7 @@ trait PPV_QR_REST_Trait {
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => self::t('campaign_deleted', '🗑️ Kampány törölve!')
+            'message' => self::t('campaign_deleted', '🗑️ Kampagne gelöscht!')
         ], 200);
     }
 
@@ -2078,7 +2045,7 @@ trait PPV_QR_REST_Trait {
         if (empty($id)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => '❌ Kampány ID hiányzik'
+                'message' => self::t('qr_admin_err_campaign_id_missing', '❌ Kampagnen-ID fehlt')
             ], 400);
         }
 
@@ -2087,7 +2054,7 @@ trait PPV_QR_REST_Trait {
         if (!$store) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Token hiányzik vagy ismeretlen bolt'
+                'message' => self::t('qr_admin_err_token_missing', 'Token fehlt oder unbekannter Shop')
             ], 400);
         }
 
@@ -2192,7 +2159,7 @@ trait PPV_QR_REST_Trait {
                 }
             }
 
-            self::insert_log($store->id, 0, "Kampány frissítve minden filiálénál: {$updated_count} frissítve, {$created_count} létrehozva", 'campaign_update_all');
+            self::insert_log($store->id, 0, "Kampagne für alle Filialen aktualisiert: {$updated_count} aktualisiert, {$created_count} erstellt", 'campaign_update_all');
 
             return new WP_REST_Response([
                 'success' => true,
@@ -2209,7 +2176,7 @@ trait PPV_QR_REST_Trait {
             'store_id'  => $store->id,
         ]);
 
-        self::insert_log($store->id, 0, "Kampány frissítve: ID {$id}", 'campaign_update');
+        self::insert_log($store->id, 0, "Kampagne aktualisiert: ID {$id}", 'campaign_update');
 
         // 📡 Ably: Notify real-time about updated campaign
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
@@ -2223,7 +2190,7 @@ trait PPV_QR_REST_Trait {
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => '✅ Kampány sikeresen frissítve',
+            'message' => self::t('qr_admin_campaign_updated', '✅ Kampagne erfolgreich aktualisiert'),
             'fields'  => $fields,
         ], 200);
     }
@@ -2241,7 +2208,7 @@ trait PPV_QR_REST_Trait {
         if (empty($id)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => self::t('err_missing_data', '❌ Hiányzó adat')
+                'message' => self::t('err_missing_data', '❌ Fehlende Daten')
             ], 400);
         }
 
@@ -2250,7 +2217,7 @@ trait PPV_QR_REST_Trait {
         if (!$store) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Token hiányzik vagy ismeretlen bolt'
+                'message' => self::t('qr_admin_err_token_missing', 'Token fehlt oder unbekannter Shop')
             ], 400);
         }
 
@@ -2262,11 +2229,11 @@ trait PPV_QR_REST_Trait {
             'store_id' => $store->id
         ]);
 
-        self::insert_log($store->id, 0, "Kampány archivált: ID {$id}", 'campaign_archive');
+        self::insert_log($store->id, 0, "Kampagne archiviert: ID {$id}", 'campaign_archive');
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => self::t('archived_success', '📦 Archiválva')
+            'message' => self::t('archived_success', '📦 Archiviert')
         ], 200);
     }
 
@@ -2816,4 +2783,3 @@ trait PPV_QR_REST_Trait {
         ];
     }
 }
-

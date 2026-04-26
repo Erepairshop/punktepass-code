@@ -302,12 +302,12 @@ trait PPV_QR_Users_Trait {
                             setTimeout(function(){ location.reload(); }, 1500);
                         } else {
                             $error.text(response.data?.message || '<?php echo esc_js(self::t('create_error', 'Fehler beim Erstellen')); ?>').show();
-                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Létrehozás')); ?>');
+                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Erstellen')); ?>');
                         }
                     },
                     error: function(){
                         $error.text('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>').show();
-                        $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Létrehozás')); ?>');
+                        $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Erstellen')); ?>');
                     }
                 });
             });
