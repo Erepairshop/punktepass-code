@@ -348,18 +348,15 @@ try {
                     } else if (Notification.permission === 'denied') {
                         showDiagChip('DENIED - Android Settings -> App -> Notifications -> Allow');
                     } else {
-                        // Default permission: auto-prompt + register on user_dashboard,
-                        // fall back to opt-in banner elsewhere.
-                        var path = (location.pathname || '').toLowerCase();
-                        var autoPaths = ['/user_dashboard', '/user-dashboard', '/qr_center', '/profil', '/profile', '/einstellungen', '/settings'];
-                        var shouldAutoPrompt = autoPaths.some(function(p){ return path.indexOf(p) !== -1; });
-                        if (shouldAutoPrompt) {
-                            showDiagChip('default - auto-prompt on ' + path);
+                        // Default permission for any logged-in user → auto-prompt + register.
+                        // Skip only if user explicitly dismissed the opt-in.
+                        if (isPushDismissedRecently()) {
+                            showDiagChip('default - dismissed recently');
+                            showPushOptIn();
+                        } else {
+                            showDiagChip('default - auto-prompt');
                             const ok = await registerToken();
                             showDiagChip('auto-register=' + (ok ? 'OK' : 'FAIL'));
-                        } else {
-                            showDiagChip('default - banner shown');
-                            showPushOptIn();
                         }
                     }
                 } else {
