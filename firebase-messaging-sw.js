@@ -1,5 +1,10 @@
-// Firebase Messaging Service Worker v4 - 2026-04-27
+// Firebase Messaging Service Worker v5 - 2026-04-27
 // This file must be at the root of the domain
+
+// Take over immediately so new SW versions activate without waiting for
+// all TWA tabs to close.
+self.addEventListener('install', (e) => { self.skipWaiting(); });
+self.addEventListener('activate', (e) => { e.waitUntil(self.clients.claim()); });
 
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
