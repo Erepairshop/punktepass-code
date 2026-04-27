@@ -646,7 +646,19 @@ class PPV_Push {
         $data['created_at'] = current_time('mysql');
         unset($data['updated_at']);
 
-        return $wpdb->insert($table, $data);
+        $insert_result = $wpdb->insert($table, $data);
+
+        // Deactivate previous tokens for this user (web platform only) to avoid
+        // double-push when the same browser holds multiple subscriptions across
+        // different service workers.
+        if ($insert_result && $platform === 'web') {
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET is_active = 0 WHERE user_id = %d AND platform = 'web' AND device_token != %s AND is_active = 1",
+                $user_id, $device_token
+            ));
+        }
+
+        return $insert_result;
     }
 
     /**
