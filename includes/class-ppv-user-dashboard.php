@@ -1199,6 +1199,75 @@ private static function get_today_hours($opening_hours, $country = null) {
 public static function render_dashboard() {
     echo '<script>document.body.classList.add("ppv-user-dashboard");</script>';
 
+    // Silent push auto-activation (mirrors User Settings activate() flow).
+    // Only runs once per session for users who haven't been registered yet.
+    self::ensure_session();
+    $_uid = !empty($_SESSION['ppv_user_id']) ? intval($_SESSION['ppv_user_id']) : 0;
+    $_lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+    if ($_uid > 0) {
+        ?>
+        <script>
+        (function(){
+            if (typeof Notification === 'undefined') return;
+            if (Notification.permission === 'denied') return;
+            if (localStorage.getItem('ppv_fcm_token') && localStorage.getItem('ppv_fcm_registered')) {
+                var ts = parseInt(localStorage.getItem('ppv_fcm_registered') || '0', 10);
+                if (Date.now() - ts < 24*60*60*1000) return; // already registered recently
+            }
+
+            var firebaseConfig = {
+                apiKey: "AIzaSyBB4-sQb-ZlMEDj4LVGYSenB8b8R_mUuOI",
+                authDomain: "punktepass.firebaseapp.com",
+                projectId: "punktepass",
+                storageBucket: "punktepass.firebasestorage.app",
+                messagingSenderId: "373165045072",
+                appId: "1:373165045072:web:1ef83f576e6fc222a7a855"
+            };
+            var vapidKey = 'BCCTa3Fuxw0ZHzNsUf_pkuYsajMCwp69kCSxvV6x9lpYNDkz4MkRM4Kezp8s48qyxXo5GVu8TBcIs3Ih42Vci1Y';
+            var PPV_UID = <?php echo intval($_uid); ?>;
+            var PPV_LANG = <?php echo json_encode($_lang); ?>;
+
+            function loadScript(src){
+                return new Promise(function(res, rej){
+                    var s = document.createElement('script');
+                    s.src = src; s.onload = res; s.onerror = rej;
+                    document.head.appendChild(s);
+                });
+            }
+
+            async function activate(){
+                try {
+                    var p = await Notification.requestPermission();
+                    if (p !== 'granted') return;
+                    if (typeof firebase === 'undefined') {
+                        await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+                        await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+                    }
+                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                    var swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+                    var token = await firebase.messaging().getToken({ vapidKey: vapidKey, serviceWorkerRegistration: swReg });
+                    if (!token) return;
+                    var resp = await fetch('/wp-json/punktepass/v1/push/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ token: token, platform: 'web', user_id: PPV_UID, language: PPV_LANG, device_name: 'PunktePass App' })
+                    });
+                    var d = await resp.json();
+                    if (d && d.success) {
+                        localStorage.setItem('ppv_fcm_token', token);
+                        localStorage.setItem('ppv_fcm_registered', String(Date.now()));
+                    }
+                } catch(e) { console.log('[PPV dashboard push]', e); }
+            }
+
+            // Defer 1.5s so dashboard render isn't blocked
+            setTimeout(activate, 1500);
+        })();
+        </script>
+        <?php
+    }
+
     // Bottom nav is rendered separately outside .ppv-standalone-wrap
     // to avoid transform-based containing blocks breaking position:fixed
     return '<div id="ppv-dashboard-root"></div>';
