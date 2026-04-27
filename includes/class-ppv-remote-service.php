@@ -13,12 +13,11 @@ class PPV_Remote_Service {
     public static function hooks() {
         add_action('init', [__CLASS__, 'ensure_tables'], 5);
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_telemetry']);
-        // Fallback: direct footer print for pages that bypass enqueue
-        add_action('wp_footer', [__CLASS__, 'print_footer_telemetry'], 999);
-        // PP standalone pages: use output buffer to inject before </body>
-        add_action('init', [__CLASS__, 'start_output_buffer'], 1);
-        add_action('shutdown', [__CLASS__, 'flush_output_buffer'], 1);
+        // TELEMETRY DISABLED 2026-04-27 — gyanús token-hiba a /formular/admin oldalon
+        // add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_telemetry']);
+        // add_action('wp_footer', [__CLASS__, 'print_footer_telemetry'], 999);
+        // add_action('init', [__CLASS__, 'start_output_buffer'], 1);
+        // add_action('shutdown', [__CLASS__, 'flush_output_buffer'], 1);
         // AJAX nopriv fallback (in case REST blocked by auth filter)
         add_action('wp_ajax_ppv_client_error', [__CLASS__, 'ajax_log_error']);
         add_action('wp_ajax_nopriv_ppv_client_error', [__CLASS__, 'ajax_log_error']);
