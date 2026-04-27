@@ -332,7 +332,7 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $prefix = $wpdb->prefix;
 
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            ppv_maybe_start_session();
+            @session_start();
         }
 
         // Load translations
@@ -428,8 +428,7 @@ else { window.addEventListener('load', function() { setTimeout(ppvInitGoogle, 50
         $reward_desc = esc_attr($store->repair_reward_description ?? '10 Euro Rabatt auf Ihre nächste Reparatur');
         $required_points = intval($store->repair_required_points ?? 4);
         $raw_title = $store->repair_form_title ?? '';
-        $default_titles = ['', 'Reparaturauftrag', 'Szervizmegrendelés', 'Repair Order', 'Comandă de service', 'Ordine di riparazione'];
-        $form_title = esc_attr(in_array($raw_title, $default_titles, true) ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
+        $form_title = esc_attr(($raw_title === '' || $raw_title === 'Reparaturauftrag') ? PPV_Lang::t('repair_admin_form_title_ph') : $raw_title);
         $form_subtitle = esc_attr($store->repair_form_subtitle ?? '');
         $service_type = esc_attr($store->repair_service_type ?? 'Allgemein');
         $reward_type = esc_attr($store->repair_reward_type ?? 'discount_fixed');
@@ -3184,8 +3183,8 @@ echo '</div></div>
         // Set Termin Modal (for widget-submitted repairs without appointment)
         echo '<div class="ra-modal-overlay" id="ra-set-termin-modal">
     <div class="ra-modal" style="max-width:460px">
-        <h3 id="ra-st-title" style="display:flex;align-items:center;gap:8px;margin:0 0 4px"><i class="ri-calendar-todo-line" style="color:#dc2626"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_needed', 'Termin vereinbaren')) . '</h3>
-        <p id="ra-st-desc" style="font-size:13px;color:#64748b;margin:0 0 16px">' . esc_html(PPV_Lang::t('repair_admin_termin_needed_desc', 'Dieser Auftrag wurde über das Widget eingereicht. Bitte vereinbaren Sie einen Termin mit dem Kunden.')) . '</p>
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0 0 4px"><i class="ri-calendar-todo-line" style="color:#dc2626"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_needed', 'Termin vereinbaren')) . '</h3>
+        <p style="font-size:13px;color:#64748b;margin:0 0 16px">' . esc_html(PPV_Lang::t('repair_admin_termin_needed_desc', 'Dieser Auftrag wurde über das Widget eingereicht. Bitte vereinbaren Sie einen Termin mit dem Kunden.')) . '</p>
 
         <div id="ra-st-customer-info" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:16px">
             <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">' . esc_html(PPV_Lang::t('repair_admin_customer_data', 'Kundendaten')) . '</div>
@@ -3216,9 +3215,6 @@ echo '</div></div>
 
         <div style="display:flex;gap:10px;margin-top:16px">
             <button type="button" class="ra-btn ra-btn-outline" style="flex:1" id="ra-st-cancel">' . esc_html(PPV_Lang::t('repair_admin_cancel')) . '</button>
-            <button type="button" class="ra-btn ra-btn-danger ra-btn-sm" style="display:none" id="ra-st-delete">
-                <i class="ri-delete-bin-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_delete', 'Termin löschen')) . '
-            </button>
             <button type="button" class="ra-btn ra-btn-primary" style="flex:2;background:#dc2626" id="ra-st-submit">
                 <i class="ri-calendar-check-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_confirm')) . '
             </button>
@@ -4196,11 +4192,6 @@ echo '</div></div>
         'no_termin_confirm' => PPV_Lang::t('repair_admin_no_termin_confirm'),
         'no_termin_success' => PPV_Lang::t('repair_admin_no_termin_success'),
         'termin_needed' => PPV_Lang::t('repair_admin_termin_needed'),
-        'termin_needed_desc' => PPV_Lang::t('repair_admin_termin_needed_desc'),
-        'termin_edit' => PPV_Lang::t('repair_admin_termin_edit', 'Termin ändern'),
-        'termin_edit_desc' => PPV_Lang::t('repair_admin_termin_edit_desc', 'Ändern Sie den bestehenden Termin für diesen Auftrag.'),
-        'termin_delete' => PPV_Lang::t('repair_admin_termin_delete', 'Termin löschen'),
-        'termin_deleted' => PPV_Lang::t('repair_admin_termin_deleted', 'Termin gelöscht'),
         'termin_add' => PPV_Lang::t('repair_admin_termin_add'),
         'only_done' => PPV_Lang::t('repair_admin_only_done'),
         'finish_inv' => PPV_Lang::t('repair_admin_finish_invoice'),
@@ -4539,21 +4530,15 @@ echo '</div></div>
                     var paBtn=card.querySelector(".ra-btn-parts-arrived");
                     if(paBtn)paBtn.remove();
                     // Add termin badge only if termin was set
-                    if(!noTermin&&tDate){
-                        var badgesRow=card.querySelector(".ra-card-badges");
-                        if(!badgesRow){
-                            badgesRow=document.createElement("div");
-                            badgesRow.className="ra-card-badges";
-                            var actionsEl=card.querySelector(".ra-repair-actions");
-                            if(actionsEl)card.insertBefore(badgesRow,actionsEl);
+                    if(!noTermin){
+                        var body=card.querySelector(".ra-repair-body");
+                        if(body&&tDate){
+                            var tBadge=document.createElement("div");
+                            tBadge.className="ra-termin-badge";
+                            var dParts=tDate.split("-");
+                            tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
+                            body.appendChild(tBadge);
                         }
-                        var tBadge=document.createElement("div");
-                        tBadge.className="ra-termin-badge";
-                        tBadge.dataset.repairId=terminRepairId;
-                        tBadge.dataset.terminAt=tDate+(tTime?" "+tTime+":00":" 00:00:00");
-                        var dParts=tDate.split("-");
-                        tBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
-                        badgesRow.appendChild(tBadge);
                     }
                 }
                 terminRepairId=null;
@@ -4568,10 +4553,10 @@ echo '</div></div>
         });
     });
 
-    /* ===== Set Termin (widget badge click + existing termin edit) ===== */
+    /* ===== Set Termin (widget badge click) ===== */
     var stModal=document.getElementById("ra-set-termin-modal"),stRepairId=null;
     document.getElementById("ra-repairs-list").addEventListener("click",function(e){
-        var badge=e.target.closest(".ra-termin-needed-badge")||e.target.closest(".ra-termin-add-badge")||e.target.closest(".ra-termin-badge");
+        var badge=e.target.closest(".ra-termin-needed-badge")||e.target.closest(".ra-termin-add-badge");
         if(!badge)return;
         var card=badge.closest(".ra-repair-card");
         if(!card)return;
@@ -4585,72 +4570,16 @@ echo '</div></div>
         var dev=((card.dataset.brand||"")+" "+(card.dataset.model||"")).trim();
         document.getElementById("ra-st-device").textContent=dev?("\uD83D\uDCF1 "+dev):"";
         document.getElementById("ra-st-problem").textContent=card.dataset.problem||"";
-        // Check if editing existing termin
-        var existingTermin=badge.dataset.terminAt||"";
-        var stTitle=document.getElementById("ra-st-title");
-        var stDesc=document.getElementById("ra-st-desc");
-        if(existingTermin){
-            // Editing existing termin - pre-fill with current values
-            stTitle.innerHTML=\'<i class="ri-calendar-check-line" style="color:#059669"></i> \'+(L.termin_edit||"Termin ändern");
-            stDesc.textContent=L.termin_edit_desc||"Ändern Sie den bestehenden Termin für diesen Auftrag.";
-            document.getElementById("ra-st-date").value=existingTermin.substring(0,10);
-            var exTime=existingTermin.substring(11,16);
-            document.getElementById("ra-st-time").value=(exTime&&exTime!=="00:00")?exTime:"10:00";
-        } else {
-            // New termin - default tomorrow 10:00
-            stTitle.innerHTML=\'<i class="ri-calendar-todo-line" style="color:#dc2626"></i> \'+(L.termin_needed||"Termin vereinbaren");
-            stDesc.textContent=L.termin_needed_desc||"Bitte vereinbaren Sie einen Termin mit dem Kunden.";
-            var tmr=new Date();tmr.setDate(tmr.getDate()+1);
-            document.getElementById("ra-st-date").value=tmr.toISOString().split("T")[0];
-            document.getElementById("ra-st-time").value="10:00";
-        }
+        // Default: tomorrow 10:00
+        var tmr=new Date();tmr.setDate(tmr.getDate()+1);
+        document.getElementById("ra-st-date").value=tmr.toISOString().split("T")[0];
+        document.getElementById("ra-st-time").value="10:00";
         document.getElementById("ra-st-message").value="";
         document.getElementById("ra-st-send-email").checked=true;
-        // Show/hide delete button based on edit mode
-        document.getElementById("ra-st-delete").style.display=existingTermin?"":"none";
         stModal.classList.add("show");
     });
     document.getElementById("ra-st-cancel").addEventListener("click",function(){stModal.classList.remove("show");stRepairId=null});
     stModal.addEventListener("click",function(e){if(e.target===stModal){stModal.classList.remove("show");stRepairId=null}});
-    // Delete termin handler
-    document.getElementById("ra-st-delete").addEventListener("click",function(){
-        if(!stRepairId)return;
-        var btn=this;btn.disabled=true;
-        btn.innerHTML=\'<i class="ri-loader-4-line ri-spin"></i>\';
-        var fd=new FormData();
-        fd.append("action","ppv_repair_delete_termin");
-        fd.append("nonce",NONCE);
-        fd.append("repair_id",stRepairId);
-        fetch(AJAX,{method:"POST",body:fd,credentials:"same-origin"})
-        .then(function(r){return r.json()})
-        .then(function(data){
-            btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-delete-bin-line"></i> \'+(L.termin_delete||"Termin löschen");
-            if(data.success){
-                toast(L.termin_deleted||"Termin gelöscht");
-                stModal.classList.remove("show");
-                var card=document.querySelector(\'.ra-repair-card[data-id="\'+stRepairId+\'"]\');
-                if(card){
-                    var tb=card.querySelector(".ra-termin-badge");
-                    if(tb){
-                        // Replace with add-termin badge
-                        tb.className="ra-termin-add-badge";
-                        tb.removeAttribute("data-termin-at");
-                        tb.dataset.repairId=stRepairId;
-                        tb.innerHTML=\'<i class="ri-calendar-todo-line"></i> \'+(L.termin_add||"+ Termin");
-                    }
-                }
-                stRepairId=null;
-            }else{
-                toast(data.data&&data.data.message?data.data.message:(L.error||"Fehler"));
-            }
-        })
-        .catch(function(){
-            btn.disabled=false;
-            btn.innerHTML=\'<i class="ri-delete-bin-line"></i> \'+(L.termin_delete||"Termin löschen");
-            toast(L.connection_error||"Verbindungsfehler");
-        });
-    });
     document.getElementById("ra-st-submit").addEventListener("click",function(){
         if(!stRepairId)return;
         var tDate=document.getElementById("ra-st-date").value;
@@ -4676,33 +4605,15 @@ echo '</div></div>
             if(data.success){
                 toast(L.termin_success||"Termin gesetzt");
                 stModal.classList.remove("show");
-                // Replace or update badge on card
+                // Replace badge on card
                 var card=document.querySelector(\'.ra-repair-card[data-id="\'+stRepairId+\'"]\');
                 if(card){
-                    var nb=card.querySelector(".ra-termin-needed-badge")||card.querySelector(".ra-termin-add-badge")||card.querySelector(".ra-termin-badge");
+                    var nb=card.querySelector(".ra-termin-needed-badge")||card.querySelector(".ra-termin-add-badge");
                     if(nb){
                         var dParts=tDate.split("-");
                         nb.className="ra-termin-badge";
-                        nb.style.animation="";
-                        nb.dataset.repairId=stRepairId;
-                        nb.dataset.terminAt=tDate+(tTime?" "+tTime+":00":" 00:00:00");
+                        nb.style.cursor="";nb.style.animation="";
                         nb.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
-                    } else {
-                        // No badge yet, create one in the badges row
-                        var badgesRow=card.querySelector(".ra-card-badges");
-                        if(!badgesRow){
-                            badgesRow=document.createElement("div");
-                            badgesRow.className="ra-card-badges";
-                            var actionsEl=card.querySelector(".ra-repair-actions");
-                            if(actionsEl)card.insertBefore(badgesRow,actionsEl);
-                        }
-                        var dParts=tDate.split("-");
-                        var newBadge=document.createElement("div");
-                        newBadge.className="ra-termin-badge";
-                        newBadge.dataset.repairId=stRepairId;
-                        newBadge.dataset.terminAt=tDate+(tTime?" "+tTime+":00":" 00:00:00");
-                        newBadge.innerHTML=\'<i class="ri-calendar-check-line"></i> \'+dParts[2]+"."+dParts[1]+"."+dParts[0]+(tTime?" "+tTime:"");
-                        badgesRow.appendChild(newBadge);
                     }
                 }
                 stRepairId=null;
@@ -5042,9 +4953,8 @@ echo '</div></div>
         var badges="";
         if(isWidget)badges+=\'<div class="ra-widget-badge"><i class="ri-global-line"></i> Widget</div>\';
         if(invoiceBadgeHtml)badges+=invoiceBadgeHtml;
-        if(r.termin_at){
-            var tIsPast=new Date(r.termin_at.replace(/-/g,"/"))<=new Date();
-            badges+=\'<div class="ra-termin-badge\'+(tIsPast?" ra-termin-past":"")+\'" data-repair-id="\'+r.id+\'" data-termin-at="\'+esc(r.termin_at)+\'"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\';
+        if(r.termin_at&&new Date(r.termin_at.replace(/-/g,"/"))>new Date()){
+            badges+=\'<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> \'+new Date(r.termin_at.replace(/-/g,"/")).toLocaleDateString("de-DE")+\'</div>\';
         } else if(r.status!=="done"&&r.status!=="delivered"&&r.status!=="cancelled"){
             if(isWidget&&!r.termin_at){
                 badges+=\'<div class="ra-termin-needed-badge" data-repair-id="\'+r.id+\'"><i class="ri-calendar-todo-line"></i> \'+(L.termin_needed||"Termin vereinbaren")+\'</div>\';
@@ -9726,9 +9636,8 @@ echo '</div></div>
         $is_widget_source = (!empty($cf_data['source_channel']) && $cf_data['source_channel'] === 'widget');
         if ($is_widget_source) $badges .= '<div class="ra-widget-badge"><i class="ri-global-line"></i> Widget</div>';
         if ($invoice_badge_html) $badges .= $invoice_badge_html;
-        if (!empty($r->termin_at)) {
-            $t_is_past = strtotime($r->termin_at) <= time();
-            $badges .= '<div class="ra-termin-badge' . ($t_is_past ? ' ra-termin-past' : '') . '" data-repair-id="' . intval($r->id) . '" data-termin-at="' . esc_attr($r->termin_at) . '"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>';
+        if (!empty($r->termin_at) && strtotime($r->termin_at) > time()) {
+            $badges .= '<div class="ra-termin-badge"><i class="ri-calendar-check-line"></i> ' . date('d.m.Y', strtotime($r->termin_at)) . (date('H:i', strtotime($r->termin_at)) !== '00:00' ? ' ' . date('H:i', strtotime($r->termin_at)) : '') . '</div>';
         } elseif (empty($r->termin_at) && !in_array($r->status, ['done', 'delivered', 'cancelled'])) {
             if ($is_widget_source) {
                 $badges .= '<div class="ra-termin-needed-badge" data-repair-id="' . intval($r->id) . '"><i class="ri-calendar-todo-line"></i> ' . esc_html(PPV_Lang::t('repair_admin_termin_needed', 'Termin vereinbaren')) . '</div>';
@@ -9837,4 +9746,3 @@ echo '</div></div>
         . '</div>';
     }
 }
-
