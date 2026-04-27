@@ -884,7 +884,6 @@ class PPV_Push {
                         'icon' => $web_icon,
                         'badge' => '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
                         'image' => $message['notification']['image'] ?? null,
-                        'requireInteraction' => false,
                         'tag' => 'punktepass-' . substr(md5($notification_base['title'] . $notification_base['body']), 0, 8)
                     ],
                     'fcm_options' => [

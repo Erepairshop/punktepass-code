@@ -16,19 +16,26 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages
+// Handle background messages.
+// IMPORTANT: When the FCM payload contains a `notification` field (webpush.notification),
+// the FCM SDK already auto-displays it. If we ALSO call showNotification we get DOUBLE
+// notifications. Only show manually for data-only payloads.
 messaging.onBackgroundMessage((payload) => {
     console.log('[FCM SW] Background message received:', payload);
 
-    const notificationTitle = payload.notification?.title || 'PunktePass';
+    if (payload.notification) {
+        // Browser auto-displays — skip manual show.
+        return;
+    }
+
+    const notificationTitle = payload.data?.title || 'PunktePass';
     const notificationOptions = {
-        body: payload.notification?.body || '',
+        body: payload.data?.body || '',
         icon: '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
         badge: '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
-        tag: 'punktepass-notification',
+        tag: payload.data?.tag || ('punktepass-' + Date.now()),
         data: payload.data
     };
-
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
