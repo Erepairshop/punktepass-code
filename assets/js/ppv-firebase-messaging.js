@@ -3,6 +3,20 @@
  * Uses Firebase JS SDK to get FCM tokens that work with FCM V1 API
  */
 
+// TEMP: prove file is loaded — visible red chip in top-left, no deps
+try {
+    var _earlyChip = function(){
+        var d = document.createElement('div');
+        d.id = 'ppv-load-mark';
+        d.style.cssText = 'position:fixed;top:5px;left:5px;background:#f00;color:#fff;font:bold 11px monospace;padding:3px 6px;z-index:99999;border-radius:3px;';
+        d.textContent = '[fcm-js loaded ' + new Date().toLocaleTimeString() + ']';
+        d.onclick = function(){ d.remove(); };
+        if (document.body) document.body.appendChild(d);
+        else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(d); });
+    };
+    _earlyChip();
+} catch(e) {}
+
 (function() {
     'use strict';
 
@@ -289,32 +303,61 @@
         });
     }
 
+    // Diagnostic chip (TEMP) — visible on screen so user can debug TWA push state
+    function showDiagChip(msg) {
+        try {
+            var el = document.getElementById('ppv-push-diag');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'ppv-push-diag';
+                el.style.cssText = 'position:fixed;top:50px;left:5px;background:rgba(0,0,0,0.85);color:#0f0;font:bold 10px monospace;padding:4px 6px;z-index:99998;border-radius:3px;max-width:90vw;';
+                document.body.appendChild(el);
+                el.addEventListener('click', function(){ el.remove(); });
+            }
+            el.textContent = '[push] ' + msg;
+        } catch(e) {}
+    }
+
     // Auto-initialize when user is logged in
     document.addEventListener('DOMContentLoaded', async function() {
+        showDiagChip('DOM ready uid=' + getCurrentUserId() + ' fb=' + (typeof firebase));
         // Only init if user is logged in and Firebase SDK is available
         if (getCurrentUserId() && typeof firebase !== 'undefined') {
             console.log('[PPV FCM] Auto-initializing for logged-in user');
 
             // Wait a bit for page to fully load
             setTimeout(async () => {
+                showDiagChip('init... perm=' + Notification.permission);
                 if (await initFirebase()) {
                     setupMessageHandler();
 
                     await getMessagingServiceWorkerRegistration();
+                    showDiagChip('SW ok perm=' + Notification.permission);
 
                     // Check if already granted - then just refresh token
                     if (Notification.permission === 'granted') {
                         const lastRegistered = localStorage.getItem('ppv_fcm_registered');
                         const oneDay = 24 * 60 * 60 * 1000;
                         if (!lastRegistered || (Date.now() - parseInt(lastRegistered)) > oneDay) {
-                            registerToken();
+                            showDiagChip('granted, registerToken...');
+                            const ok = await registerToken();
+                            showDiagChip('register=' + (ok ? 'OK' : 'FAIL'));
+                        } else {
+                            showDiagChip('granted, recently registered');
                         }
+                    } else if (Notification.permission === 'denied') {
+                        showDiagChip('DENIED - Android Settings -> App -> Notifications -> Allow');
                     } else {
                         // Show opt-in banner for users who haven't decided yet
+                        showDiagChip('default - banner shown');
                         showPushOptIn();
                     }
+                } else {
+                    showDiagChip('initFirebase FAILED');
                 }
             }, 2000);
+        } else {
+            showDiagChip('skip: no userId or firebase undefined');
         }
     });
 

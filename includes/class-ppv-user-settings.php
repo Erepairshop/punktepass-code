@@ -753,9 +753,18 @@ class PPV_User_Settings {
                         if (!cb) return;
                         function setMsg(t,c){ if(!st) return; st.textContent = t || ''; st.style.color = c || '#888'; }
 
+                        var T = <?php echo json_encode([
+                            'unsupported' => self::t('push_unsupported'),
+                            'activating' => self::t('push_activating'),
+                            'activated' => self::t('push_activated'),
+                            'denied' => self::t('push_denied'),
+                            'deactivated' => self::t('push_deactivated'),
+                            'android_hint' => self::t('push_android_hint'),
+                        ]); ?>;
+
                         if (typeof Notification === 'undefined') {
                             cb.disabled = true;
-                            setMsg('Push nicht unterstützt.', '#888');
+                            setMsg(T.unsupported, '#888');
                             return;
                         }
 
@@ -780,11 +789,11 @@ class PPV_User_Settings {
                         }
 
                         async function activate(){
-                            setMsg('Aktiviere…', '#666');
+                            setMsg(T.activating, '#666');
                             try {
                                 var p = await Notification.requestPermission();
                                 if (p !== 'granted') {
-                                    setMsg('❌ Berechtigung verweigert.', '#f44');
+                                    setMsg(T.denied, '#f44');
                                     cb.checked = false;
                                     return false;
                                 }
@@ -804,7 +813,7 @@ class PPV_User_Settings {
                                 var d = await resp.json();
                                 if (d.success) {
                                     localStorage.setItem('ppv_fcm_token', token);
-                                    setMsg('✅ Aktiviert.', '#4caf50');
+                                    setMsg(T.activated, '#4caf50');
                                     return true;
                                 }
                                 setMsg('❌ ' + (d.message || 'FAIL'), '#f44');
@@ -830,19 +839,20 @@ class PPV_User_Settings {
                                     });
                                 }
                                 localStorage.removeItem('ppv_fcm_token');
-                                setMsg('Deaktiviert.', '#888');
+                                setMsg(T.deactivated, '#888');
                             } catch(e) {
-                                setMsg('Deaktiviert (lokal).', '#888');
+                                setMsg(T.deactivated, '#888');
                             }
                         }
 
-                        // Initial state hint
+                        // Initial state hint + auto-activate
                         if (Notification.permission === 'denied') {
                             cb.checked = false;
                             cb.disabled = true;
-                            setMsg('⚠️ In Android-Einstellungen → App → PunktePass → Benachrichtigungen aktivieren, dann hier einschalten.', '#ff9800');
+                            setMsg(T.android_hint, '#ff9800');
                         } else if (cb.checked && !localStorage.getItem('ppv_fcm_token')) {
-                            setMsg('Toggle einmal aus/an, um zu aktivieren.', '#888');
+                            // Auto-activate: checkbox already on but no token registered yet
+                            activate();
                         }
 
                         cb.addEventListener('change', async function(){
