@@ -220,10 +220,15 @@
     /**
      * Check if push permission is needed
      */
+    // Bump this when we want all "Spater"/dismissed users to see the banner again.
+    // 2026-04-27: bump 1->2 to re-prompt all unregistered users (TWA POST_NOTIFICATIONS rollout).
+    var PUSH_PROMPT_VERSION = 2;
     function needsPushPermission() {
         if (!('Notification' in window)) return false;
         if (Notification.permission === 'granted') return false;
         if (Notification.permission === 'denied') return false;
+        var seenVersion = parseInt(localStorage.getItem('ppv_push_optin_version') || '0', 10);
+        if (seenVersion < PUSH_PROMPT_VERSION) return true; // ignore dismiss flag, re-prompt
         if (isPushDismissedRecently()) return false;
         return true;
     }
@@ -279,6 +284,7 @@
         // Dismiss button
         document.getElementById('ppv-push-dismiss').addEventListener('click', function() {
             localStorage.setItem('ppv_push_dismissed', Date.now().toString());
+            localStorage.setItem('ppv_push_optin_version', String(PUSH_PROMPT_VERSION));
             banner.remove();
         });
     }
