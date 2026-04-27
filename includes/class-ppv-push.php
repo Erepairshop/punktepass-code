@@ -679,9 +679,18 @@ class PPV_Push {
     /**
      * Send to specific token
      */
-    public static function send_to_token($token, $payload) {
+    public static function send_to_token($token, $payload, $platform = null) {
         if (!self::is_enabled()) {
             return ['success' => false, 'message' => 'FCM not configured'];
+        }
+
+        // Auto-detect platform from DB if not provided
+        if ($platform === null) {
+            global $wpdb;
+            $platform = $wpdb->get_var($wpdb->prepare(
+                "SELECT platform FROM {$wpdb->prefix}ppv_push_subscriptions WHERE device_token = %s LIMIT 1",
+                $token
+            )) ?: 'web';
         }
 
         $notification = [
@@ -704,7 +713,8 @@ class PPV_Push {
             'notification' => $notification,
             'data' => $payload['data'] ?? [],
             'priority' => 'high',
-            'content_available' => true
+            'content_available' => true,
+            'platform' => $platform,
         ];
 
         return self::send_fcm_request($message);
@@ -724,7 +734,7 @@ class PPV_Push {
         $invalid_tokens = [];
 
         foreach ($subscriptions as $sub) {
-            $result = self::send_to_token($sub->device_token, $payload);
+            $result = self::send_to_token($sub->device_token, $payload, $sub->platform ?? null);
             if ($result['success']) {
                 $sent++;
                 self::update_last_used($sub->device_token);
@@ -852,31 +862,13 @@ class PPV_Push {
             ? $message['notification']['icon']
             : '/icons/icon-192x192.png';
 
+        $platform = $message['platform'] ?? 'web';
+
         $v1_message = [
             'message' => [
                 'token' => $message['to'],
                 'notification' => $notification_base,
                 'data' => array_map('strval', $message['data'] ?? []),
-                'android' => [
-                    'priority' => 'high',
-                    'notification' => [
-                        'sound' => 'default',
-                        'channel_id' => 'punktepass_notifications',
-                        'image' => $message['notification']['image'] ?? null
-                    ]
-                ],
-                'apns' => [
-                    'payload' => [
-                        'aps' => [
-                            'sound' => 'default',
-                            'badge' => 1,
-                            'mutable-content' => 1
-                        ]
-                    ],
-                    'fcm_options' => [
-                        'image' => $message['notification']['image'] ?? null
-                    ]
-                ],
                 'webpush' => [
                     'notification' => [
                         'title' => $notification_base['title'],
@@ -893,11 +885,39 @@ class PPV_Push {
             ]
         ];
 
+        // Only attach android/apns blocks for native platforms.
+        // Web tokens (TWA Chrome WebView too) handle display via webpush only;
+        // including android.notification causes a duplicate "P" notification.
+        if ($platform === 'android') {
+            $v1_message['message']['android'] = [
+                'priority' => 'high',
+                'notification' => [
+                    'sound' => 'default',
+                    'channel_id' => 'punktepass_notifications',
+                    'image' => $message['notification']['image'] ?? null
+                ]
+            ];
+        }
+        if ($platform === 'ios') {
+            $v1_message['message']['apns'] = [
+                'payload' => [
+                    'aps' => [
+                        'sound' => 'default',
+                        'badge' => 1,
+                        'mutable-content' => 1
+                    ]
+                ],
+                'fcm_options' => [
+                    'image' => $message['notification']['image'] ?? null
+                ]
+            ];
+        }
+
         // Remove null values from android/apns/webpush to avoid API errors
-        if (empty($v1_message['message']['android']['notification']['image'])) {
+        if (isset($v1_message['message']['android']['notification']['image']) && empty($v1_message['message']['android']['notification']['image'])) {
             unset($v1_message['message']['android']['notification']['image']);
         }
-        if (empty($v1_message['message']['apns']['fcm_options']['image'])) {
+        if (isset($v1_message['message']['apns']['fcm_options']['image']) && empty($v1_message['message']['apns']['fcm_options']['image'])) {
             unset($v1_message['message']['apns']['fcm_options']);
         }
         if (empty($v1_message['message']['webpush']['notification']['image'])) {
