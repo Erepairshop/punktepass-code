@@ -746,6 +746,93 @@ class PPV_User_Settings {
                         <span><?php echo self::t('push_notifications'); ?></span>
                     </label>
 
+                    <!-- Push aktivierung (Web/TWA) — appears only if not yet registered/granted -->
+                    <div id="ppv-push-activate-row" style="margin:6px 0 12px 0;display:none;">
+                        <button type="button" id="ppv-push-activate-btn" class="ppv-btn" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:10px 16px;border:0;border-radius:8px;font-weight:600;cursor:pointer;">
+                            🔔 <?php echo esc_html(self::t('push_activate_now', 'Push jetzt aktivieren')); ?>
+                        </button>
+                        <span id="ppv-push-status-msg" style="display:block;font-size:12px;color:#888;margin-top:6px;"></span>
+                    </div>
+                    <script>
+                    (function(){
+                        var row = document.getElementById('ppv-push-activate-row');
+                        var msg = document.getElementById('ppv-push-status-msg');
+                        var btn = document.getElementById('ppv-push-activate-btn');
+                        if (!row || !btn) return;
+                        function setMsg(t){ if(msg) msg.textContent = t; }
+
+                        // Show button only if Notification API present and user has not yet granted
+                        if (typeof Notification === 'undefined') { return; }
+                        if (Notification.permission === 'granted') {
+                            // Check if backend has token; if yes, hide. If no, still show button to register.
+                            if (localStorage.getItem('ppv_fcm_token')) return;
+                        }
+                        if (Notification.permission === 'denied') {
+                            row.style.display = 'block';
+                            btn.disabled = true;
+                            btn.style.opacity = '0.5';
+                            setMsg(<?php echo json_encode(self::t('push_denied_hint', 'In Android-Einstellungen → App → PunktePass → Benachrichtigungen aktivieren.')); ?>);
+                            return;
+                        }
+                        row.style.display = 'block';
+
+                        var firebaseConfig = {
+                            apiKey: "AIzaSyBB4-sQb-ZlMEDj4LVGYSenB8b8R_mUuOI",
+                            authDomain: "punktepass.firebaseapp.com",
+                            projectId: "punktepass",
+                            storageBucket: "punktepass.firebasestorage.app",
+                            messagingSenderId: "373165045072",
+                            appId: "1:373165045072:web:1ef83f576e6fc222a7a855"
+                        };
+                        var vapidKey = 'BCCTa3Fuxw0ZHzNsUf_pkuYsajMCwp69kCSxvV6x9lpYNDkz4MkRM4Kezp8s48qyxXo5GVu8TBcIs3Ih42Vci1Y';
+
+                        function loadScript(src){
+                            return new Promise(function(res, rej){
+                                var s = document.createElement('script');
+                                s.src = src; s.onload = res; s.onerror = rej;
+                                document.head.appendChild(s);
+                            });
+                        }
+
+                        btn.addEventListener('click', async function(){
+                            btn.disabled = true;
+                            setMsg('...');
+                            try {
+                                var p = await Notification.requestPermission();
+                                if (p !== 'granted') {
+                                    setMsg(<?php echo json_encode(self::t('push_perm_denied', 'Berechtigung verweigert.')); ?>);
+                                    btn.disabled = false; return;
+                                }
+                                if (typeof firebase === 'undefined') {
+                                    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+                                    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+                                }
+                                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                                var swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+                                var token = await firebase.messaging().getToken({ vapidKey: vapidKey, serviceWorkerRegistration: swReg });
+                                var resp = await fetch('/wp-json/punktepass/v1/push/register', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ token: token, platform: 'web', user_id: <?php echo intval($user->id ?? 0); ?>, language: <?php echo json_encode($lang ?? 'de'); ?>, device_name: 'PunktePass App' })
+                                });
+                                var d = await resp.json();
+                                if (d.success) {
+                                    localStorage.setItem('ppv_fcm_token', token);
+                                    btn.style.display = 'none';
+                                    setMsg('✅ ' + <?php echo json_encode(self::t('push_activated', 'Push aktiviert! Du erhältst Benachrichtigungen.')); ?>);
+                                } else {
+                                    setMsg('❌ ' + (d.message || 'FAIL'));
+                                    btn.disabled = false;
+                                }
+                            } catch (e) {
+                                setMsg('❌ ' + (e.message || e));
+                                btn.disabled = false;
+                            }
+                        });
+                    })();
+                    </script>
+
                     <label class="ppv-checkbox">
                         <input type="checkbox" name="promo_notifications" <?php checked($promo_notif); ?>>
                         <span><?php echo self::t('promo_notifications'); ?></span>

@@ -67,6 +67,74 @@ trait PPV_QR_Devices_Trait {
         <!-- PPV-DEBUG-VERSION-MARKER (only when ?ppv_debug=1) -->
         <div style="position:fixed;top:5px;right:5px;background:#f44;color:#fff;font:bold 10px monospace;padding:3px 6px;z-index:99999;border-radius:3px;">DBG <?php echo @date('H:i:s', filemtime(__FILE__)); ?></div>
         <?php endif; ?>
+
+        <!-- TEMP PUSH DEBUG BAR + ACTIVATE BUTTON (Geräte tab inline) -->
+        <?php
+        // Resolve user id server-side (handler may not have wp user)
+        $_ppv_uid = 0;
+        if (!empty($_SESSION['ppv_user_id'])) $_ppv_uid = intval($_SESSION['ppv_user_id']);
+        $_ppv_lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+        ?>
+        <div id="ppv-push-debug-bar" style="margin:8px 0;padding:12px;background:#000;color:#0f0;font:bold 12px monospace;border:2px solid #0f0;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            <span id="ppv-push-state" style="flex:1;min-width:200px;">PUSH: init... uid=<?php echo $_ppv_uid; ?></span>
+            <button id="ppv-push-force-btn" type="button" style="background:#f44;color:#fff;border:0;padding:8px 14px;font:bold 13px sans-serif;border-radius:4px;cursor:pointer;">🔔 Push aktivieren</button>
+        </div>
+        <!-- Firebase SDK inline -->
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+        <script>
+        (function(){
+            var bar = document.getElementById('ppv-push-state');
+            function s(m){ if(bar) bar.textContent = 'PUSH: ' + m; console.log('[PUSH]', m); }
+            window._ppvDbg = s;
+            window.addEventListener('error', function(e){ s('JS ERR: ' + (e.message||'?').substring(0,80)); });
+
+            var PPV_UID = <?php echo $_ppv_uid; ?>;
+            var PPV_LANG = "<?php echo esc_js($_ppv_lang); ?>";
+            var firebaseConfig = {
+                apiKey: "AIzaSyBB4-sQb-ZlMEDj4LVGYSenB8b8R_mUuOI",
+                authDomain: "punktepass.firebaseapp.com",
+                projectId: "punktepass",
+                storageBucket: "punktepass.firebasestorage.app",
+                messagingSenderId: "373165045072",
+                appId: "1:373165045072:web:1ef83f576e6fc222a7a855"
+            };
+            var vapidKey = 'BCCTa3Fuxw0ZHzNsUf_pkuYsajMCwp69kCSxvV6x9lpYNDkz4MkRM4Kezp8s48qyxXo5GVu8TBcIs3Ih42Vci1Y';
+
+            async function activate() {
+                if (typeof Notification === 'undefined') { s('Notification API missing'); return; }
+                s('requestPermission...');
+                var p = await Notification.requestPermission();
+                s('perm=' + p);
+                if (p !== 'granted') return;
+                if (typeof firebase === 'undefined' || !firebase.initializeApp) {
+                    s('firebase nem toltodott be (CDN block?)'); return;
+                }
+                try {
+                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                    var swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+                    s('SW reg ok');
+                    var msg = firebase.messaging();
+                    var token = await msg.getToken({ vapidKey: vapidKey, serviceWorkerRegistration: swReg });
+                    s('token=' + token.substring(0,20) + '...');
+                    var resp = await fetch('/wp-json/punktepass/v1/push/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ token: token, platform: 'web', user_id: PPV_UID, language: PPV_LANG, device_name: 'PunktePass TWA' })
+                    });
+                    var d = await resp.json();
+                    s('register=' + (d.success ? 'OK kapsz push-t!' : ('FAIL: ' + (d.message || resp.status))));
+                } catch(e) { s('err: ' + e.message); }
+            }
+            // initial state line (firebase already loaded by inline script tags above)
+            setTimeout(function(){
+                s('perm=' + Notification.permission + ' uid=' + PPV_UID + ' fb=' + (typeof firebase));
+            }, 300);
+            var b = document.getElementById('ppv-push-force-btn');
+            if (b) b.addEventListener('click', activate);
+        })();
+        </script>
         <div class="ppv-user-devices">
             <div class="ppv-devices-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>

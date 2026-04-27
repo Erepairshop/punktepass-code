@@ -1139,6 +1139,7 @@ class PPV_QR {
         // 🎨 Enqueue QR Center CSS
         wp_enqueue_style('ppv-qr', PPV_PLUGIN_URL . 'assets/css/ppv-qr.css', ['ppv-components'], PPV_Core::asset_version());
 
+
         // ⛔ PERMISSION CHECK: Only handlers and scanners can access
         if (!class_exists('PPV_Permissions')) {
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
