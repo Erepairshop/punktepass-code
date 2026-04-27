@@ -1,4 +1,4 @@
-// Firebase Messaging Service Worker v3 - 2026-04-27
+// Firebase Messaging Service Worker v4 - 2026-04-27
 // This file must be at the root of the domain
 
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
@@ -17,26 +17,28 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Handle background messages.
-// IMPORTANT: When the FCM payload contains a `notification` field (webpush.notification),
-// the FCM SDK already auto-displays it. If we ALSO call showNotification we get DOUBLE
-// notifications. Only show manually for data-only payloads.
+// In TWA the FCM SDK does NOT auto-display, so we must always call
+// showNotification. Use a stable tag from the payload (or hash of title+body)
+// so any duplicates from auto-display would collapse into one.
 messaging.onBackgroundMessage((payload) => {
     console.log('[FCM SW] Background message received:', payload);
 
-    if (payload.notification) {
-        // Browser auto-displays — skip manual show.
-        return;
-    }
+    const title = payload.notification?.title || payload.data?.title || 'PunktePass';
+    const body = payload.notification?.body || payload.data?.body || '';
+    const stableTag = payload.notification?.tag
+        || payload.fcmOptions?.tag
+        || ('pp-' + (title + '|' + body).split('').reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0, 0));
 
-    const notificationTitle = payload.data?.title || 'PunktePass';
     const notificationOptions = {
-        body: payload.data?.body || '',
-        icon: '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
+        body: body,
+        icon: payload.notification?.icon || '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
         badge: '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
-        tag: payload.data?.tag || ('punktepass-' + Date.now()),
-        data: payload.data
+        image: payload.notification?.image,
+        tag: stableTag,
+        renotify: false,
+        data: payload.data || {}
     };
-    return self.registration.showNotification(notificationTitle, notificationOptions);
+    return self.registration.showNotification(title, notificationOptions);
 });
 
 // Handle notification click
