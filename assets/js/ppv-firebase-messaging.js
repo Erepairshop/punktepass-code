@@ -348,9 +348,19 @@ try {
                     } else if (Notification.permission === 'denied') {
                         showDiagChip('DENIED - Android Settings -> App -> Notifications -> Allow');
                     } else {
-                        // Show opt-in banner for users who haven't decided yet
-                        showDiagChip('default - banner shown');
-                        showPushOptIn();
+                        // Default permission: auto-prompt + register on user_dashboard,
+                        // fall back to opt-in banner elsewhere.
+                        var path = (location.pathname || '').toLowerCase();
+                        var autoPaths = ['/user_dashboard', '/user-dashboard', '/qr_center', '/profil', '/profile', '/einstellungen', '/settings'];
+                        var shouldAutoPrompt = autoPaths.some(function(p){ return path.indexOf(p) !== -1; });
+                        if (shouldAutoPrompt) {
+                            showDiagChip('default - auto-prompt on ' + path);
+                            const ok = await registerToken();
+                            showDiagChip('auto-register=' + (ok ? 'OK' : 'FAIL'));
+                        } else {
+                            showDiagChip('default - banner shown');
+                            showPushOptIn();
+                        }
                     }
                 } else {
                     showDiagChip('initFirebase FAILED');
