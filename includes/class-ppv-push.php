@@ -879,7 +879,6 @@ class PPV_Push {
         $v1_message = [
             'message' => [
                 'token' => $message['to'],
-                'notification' => $notification_base,
                 'data' => array_map('strval', $message['data'] ?? []),
                 'webpush' => [
                     'notification' => [
@@ -896,6 +895,12 @@ class PPV_Push {
                 ]
             ]
         ];
+
+        // For native platforms, the top-level notification field IS needed
+        // (FCM SDK auto-displays). Add it back only for ios/android tokens.
+        if ($platform === 'android' || $platform === 'ios') {
+            $v1_message['message']['notification'] = $notification_base;
+        }
 
         // Only attach android/apns blocks for native platforms.
         // Web tokens (TWA Chrome WebView too) handle display via webpush only;
