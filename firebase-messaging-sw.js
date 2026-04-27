@@ -1,10 +1,5 @@
-// Firebase Messaging Service Worker v5 - 2026-04-27
+// Firebase Messaging Service Worker
 // This file must be at the root of the domain
-
-// Take over immediately so new SW versions activate without waiting for
-// all TWA tabs to close.
-self.addEventListener('install', (e) => { self.skipWaiting(); });
-self.addEventListener('activate', (e) => { e.waitUntil(self.clients.claim()); });
 
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
@@ -21,29 +16,20 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages.
-// In TWA the FCM SDK does NOT auto-display, so we must always call
-// showNotification. Use a stable tag from the payload (or hash of title+body)
-// so any duplicates from auto-display would collapse into one.
+// Handle background messages
 messaging.onBackgroundMessage((payload) => {
     console.log('[FCM SW] Background message received:', payload);
 
-    const title = payload.notification?.title || payload.data?.title || 'PunktePass';
-    const body = payload.notification?.body || payload.data?.body || '';
-    const stableTag = payload.notification?.tag
-        || payload.fcmOptions?.tag
-        || ('pp-' + (title + '|' + body).split('').reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0, 0));
-
+    const notificationTitle = payload.notification?.title || 'PunktePass';
     const notificationOptions = {
-        body: body,
-        icon: payload.notification?.icon || '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
+        body: payload.notification?.body || '',
+        icon: '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
         badge: '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
-        image: payload.notification?.image,
-        tag: stableTag,
-        renotify: false,
-        data: payload.data || {}
+        tag: 'punktepass-notification',
+        data: payload.data
     };
-    return self.registration.showNotification(title, notificationOptions);
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Handle notification click
