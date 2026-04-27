@@ -855,6 +855,7 @@ class PPV_Push {
         $v1_message = [
             'message' => [
                 'token' => $message['to'],
+                'notification' => $notification_base,
                 'data' => array_map('strval', $message['data'] ?? []),
                 'android' => [
                     'priority' => 'high',

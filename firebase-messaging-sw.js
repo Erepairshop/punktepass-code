@@ -1,4 +1,4 @@
-// Firebase Messaging Service Worker
+// Firebase Messaging Service Worker v3 - 2026-04-27
 // This file must be at the root of the domain
 
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
