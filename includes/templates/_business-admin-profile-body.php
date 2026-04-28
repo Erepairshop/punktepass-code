@@ -53,8 +53,8 @@ $is_eu = isset($eu_countries[$current_country]);
 
 <div class="bz-card" style="padding:14px;">
   <h1 class="bz-h1" style="margin:0;"><?php echo esc_html($adv->business_name); ?></h1>
-  <?php if (!empty($_GET['saved'])): ?><div class="bz-msg ok" style="margin-top:10px;">✓ Mentve</div><?php endif; ?>
-  <?php if (!empty($_GET['welcome'])): ?><div class="bz-msg ok" style="margin-top:10px;">🎉 Töltsd ki a profilod hogy megjelenj a térképen!</div><?php endif; ?>
+  <?php if (!empty($_GET['saved'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_saved_msg')); ?></div><?php endif; ?>
+  <?php if (!empty($_GET['welcome'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_profile_welcome_msg')); ?></div><?php endif; ?>
 </div>
 
 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
@@ -63,13 +63,13 @@ $is_eu = isset($eu_countries[$current_country]);
 
   <!-- ALAP -->
   <details class="bz-section" open>
-    <summary><i class="ri-store-2-line head-ic"></i> Alap adatok <span class="ck <?php echo $adv->business_name ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-store-2-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_section_basic')); ?> <span class="ck <?php echo $adv->business_name ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
-      <label class="bz-label">Cégnév</label>
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_company_name')); ?></label>
       <input type="text" name="business_name" class="bz-input" value="<?php echo esc_attr($adv->business_name); ?>" required style="margin-bottom:10px;">
-      <label class="bz-label">Kategória</label>
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_category')); ?></label>
       <select name="category" class="bz-select">
-        <?php foreach (['food'=>'🍔 Étterem/Food','cafe'=>'☕ Café','retail'=>'🛍 Bolt','service'=>'🔧 Szerviz','beauty'=>'💇 Szépség','auto'=>'🚗 Autó','health'=>'⚕️ Egészség','other'=>'📦 Egyéb'] as $k=>$v): ?>
+        <?php foreach (['food'=>PPV_Lang::t('biz_profile_cat_food'),'cafe'=>PPV_Lang::t('biz_profile_cat_cafe'),'retail'=>PPV_Lang::t('biz_profile_cat_retail'),'service'=>PPV_Lang::t('biz_profile_cat_service'),'beauty'=>PPV_Lang::t('biz_profile_cat_beauty'),'auto'=>PPV_Lang::t('biz_profile_cat_auto'),'health'=>PPV_Lang::t('biz_profile_cat_health'),'other'=>PPV_Lang::t('biz_profile_cat_other')] as $k=>$v): ?>
           <option value="<?php echo $k; ?>" <?php selected($adv->category, $k); ?>><?php echo esc_html($v); ?></option>
         <?php endforeach; ?>
       </select>
@@ -78,14 +78,14 @@ $is_eu = isset($eu_countries[$current_country]);
 
   <!-- LOGO -->
   <details class="bz-section" <?php echo empty($adv->logo_url) ? 'open' : ''; ?>>
-    <summary><i class="ri-image-line head-ic"></i> Logo <span class="ck <?php echo $adv->logo_url ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-image-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_section_logo')); ?> <span class="ck <?php echo $adv->logo_url ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <div style="display:flex; align-items:center; gap:14px;">
         <div id="logoPreview" style="width:72px; height:72px; border-radius:14px; background:<?php echo $adv->logo_url ? "url('".esc_url($adv->logo_url)."') center/cover" : '#f3f4f6'; ?>; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:24px; border:1px solid var(--border);">
           <?php if (!$adv->logo_url): ?><i class="ri-image-line"></i><?php endif; ?>
         </div>
         <label class="bz-btn secondary" style="cursor:pointer;">
-          <i class="ri-upload-2-line"></i> <?php echo $adv->logo_url ? 'Csere' : 'Feltöltés'; ?>
+          <i class="ri-upload-2-line"></i> <?php echo esc_html($adv->logo_url ? PPV_Lang::t('biz_replace') : PPV_Lang::t('biz_upload')); ?>
           <input type="file" name="logo_file" accept="image/*" style="display:none;" onchange="previewLogo(this)">
         </label>
       </div>
@@ -94,7 +94,7 @@ $is_eu = isset($eu_countries[$current_country]);
 
   <!-- GALÉRIA -->
   <details class="bz-section">
-    <summary><i class="ri-gallery-line head-ic"></i> Galéria <span style="font-weight:400; color:var(--muted); font-size:12px;">(<?php echo count($gallery); ?>/8)</span><span class="ck <?php echo count($gallery) > 0 ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-gallery-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_section_gallery')); ?> <span style="font-weight:400; color:var(--muted); font-size:12px;">(<?php echo count($gallery); ?>/8)</span><span class="ck <?php echo count($gallery) > 0 ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <div id="galleryGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(80px, 1fr)); gap:6px; margin-bottom:10px;">
         <?php foreach ($gallery as $img): ?>
@@ -104,12 +104,12 @@ $is_eu = isset($eu_countries[$current_country]);
               <input type="checkbox" name="gallery_remove[]" value="<?php echo esc_attr($img); ?>" style="display:none;" onchange="this.parentElement.parentElement.style.opacity = this.checked ? 0.3 : 1; this.parentElement.parentElement.querySelector('.gal-removed').style.display = this.checked ? 'flex' : 'none';">
               <i class="ri-close-line"></i>
             </label>
-            <div class="gal-removed" style="display:none; position:absolute; inset:0; background:rgba(220,38,38,.85); color:#fff; align-items:center; justify-content:center; font-size:10px; font-weight:600;">TÖRÖLVE</div>
+            <div class="gal-removed" style="display:none; position:absolute; inset:0; background:rgba(220,38,38,.85); color:#fff; align-items:center; justify-content:center; font-size:10px; font-weight:600;"><?php echo esc_html(PPV_Lang::t('biz_profile_gallery_removed')); ?></div>
           </div>
         <?php endforeach; ?>
       </div>
       <label class="bz-btn secondary" style="cursor:pointer; font-size:13px;">
-        <i class="ri-add-line"></i> Új képek
+        <i class="ri-add-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_gallery_new_images')); ?>
         <input type="file" name="gallery_files[]" accept="image/*" multiple style="display:none;" onchange="previewGallery(this)">
       </label>
       <div id="galleryNew" style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;"></div>
@@ -119,18 +119,18 @@ $is_eu = isset($eu_countries[$current_country]);
   <!-- ELÉRHETŐSÉG -->
   <?php $contact_filled = !empty($adv->phone) || !empty($adv->whatsapp) || !empty($adv->website); ?>
   <details class="bz-section">
-    <summary><i class="ri-phone-line head-ic"></i> Elérhetőség <span class="ck <?php echo $contact_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-phone-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_section_contact')); ?> <span class="ck <?php echo $contact_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
-      <label class="bz-label">Telefon</label><input type="text" name="phone" class="bz-input" value="<?php echo esc_attr($adv->phone); ?>" style="margin-bottom:8px;">
-      <label class="bz-label">WhatsApp</label><input type="text" name="whatsapp" class="bz-input" value="<?php echo esc_attr($adv->whatsapp); ?>" style="margin-bottom:8px;">
-      <label class="bz-label">Weboldal</label><input type="url" name="website" class="bz-input" value="<?php echo esc_attr($adv->website); ?>">
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_phone')); ?></label><input type="text" name="phone" class="bz-input" value="<?php echo esc_attr($adv->phone); ?>" style="margin-bottom:8px;">
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_whatsapp')); ?></label><input type="text" name="whatsapp" class="bz-input" value="<?php echo esc_attr($adv->whatsapp); ?>" style="margin-bottom:8px;">
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_website')); ?></label><input type="url" name="website" class="bz-input" value="<?php echo esc_attr($adv->website); ?>">
     </div>
   </details>
 
   <!-- SOCIAL -->
   <?php $social_filled = !empty(array_filter($social)); ?>
   <details class="bz-section">
-    <summary><i class="ri-share-line head-ic"></i> Közösségi <span class="ck <?php echo $social_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-share-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_section_social')); ?> <span class="ck <?php echo $social_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <?php foreach ($social_keys as $key => [$name, $icon, $color, $ph]): ?>
         <div class="soc-row">
@@ -149,24 +149,24 @@ $is_eu = isset($eu_countries[$current_country]);
     if (is_array($decoded)) $hours = $decoded;
   }
   $days = [
-    'mon' => ['Hétfő', 'Mo'],
-    'tue' => ['Kedd', 'Di'],
-    'wed' => ['Szerda', 'Mi'],
-    'thu' => ['Csütörtök', 'Do'],
-    'fri' => ['Péntek', 'Fr'],
-    'sat' => ['Szombat', 'Sa'],
-    'sun' => ['Vasárnap', 'So'],
+    'mon' => [PPV_Lang::t('biz_profile_day_mon'), 'Mo'],
+    'tue' => [PPV_Lang::t('biz_profile_day_tue'), 'Di'],
+    'wed' => [PPV_Lang::t('biz_profile_day_wed'), 'Mi'],
+    'thu' => [PPV_Lang::t('biz_profile_day_thu'), 'Do'],
+    'fri' => [PPV_Lang::t('biz_profile_day_fri'), 'Fr'],
+    'sat' => [PPV_Lang::t('biz_profile_day_sat'), 'Sa'],
+    'sun' => [PPV_Lang::t('biz_profile_day_sun'), 'So'],
   ];
   $hours_filled = !empty($hours) && count(array_filter($hours, fn($d) => !empty($d))) > 0;
   ?>
   <details class="bz-section">
-    <summary><i class="ri-time-line head-ic"></i> Nyitvatartás <span class="ck <?php echo $hours_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-time-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_section_hours')); ?> <span class="ck <?php echo $hours_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
-        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="presetHours('weekday')"><i class="ri-flashlight-line"></i> H-P 9-18</button>
-        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="presetHours('all')"><i class="ri-flashlight-line"></i> Minden nap 9-18</button>
-        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="copyMonToAll()"><i class="ri-file-copy-line"></i> H → Minden</button>
-        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="clearAllHours()"><i class="ri-eraser-line"></i> Töröl</button>
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="presetHours('weekday')"><i class="ri-flashlight-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_hours_preset_weekday')); ?></button>
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="presetHours('all')"><i class="ri-flashlight-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_hours_preset_all')); ?></button>
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="copyMonToAll()"><i class="ri-file-copy-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_hours_copy_mon')); ?></button>
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="clearAllHours()"><i class="ri-eraser-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_hours_clear')); ?></button>
       </div>
       <div id="hoursList">
         <?php foreach ($days as $code => [$name_hu, $name_de]):
@@ -174,13 +174,13 @@ $is_eu = isset($eu_countries[$current_country]);
           $is_closed = !empty($d['closed']);
         ?>
         <div class="hr-day" data-day="<?php echo $code; ?>" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; background:<?php echo $is_closed ? '#fef2f2' : '#f9fafb'; ?>; margin-bottom:6px;">
-          <div style="flex:0 0 70px; font-weight:600; font-size:13px;"><?php echo $name_hu; ?></div>
+          <div style="flex:0 0 70px; font-weight:600; font-size:13px;"><?php echo esc_html($name_hu); ?></div>
           <input type="time" name="hours[<?php echo $code; ?>][open]" value="<?php echo esc_attr($d['open'] ?? ''); ?>" class="hr-open" style="padding:6px 8px; border:1px solid var(--border); border-radius:6px; font:inherit; font-size:13px; <?php echo $is_closed ? 'opacity:.4;' : ''; ?>" <?php disabled($is_closed); ?>>
           <span style="color:var(--muted);">–</span>
           <input type="time" name="hours[<?php echo $code; ?>][close]" value="<?php echo esc_attr($d['close'] ?? ''); ?>" class="hr-close" style="padding:6px 8px; border:1px solid var(--border); border-radius:6px; font:inherit; font-size:13px; <?php echo $is_closed ? 'opacity:.4;' : ''; ?>" <?php disabled($is_closed); ?>>
           <label style="display:flex; align-items:center; gap:4px; margin-left:auto; font-size:12px; cursor:pointer; color:#dc2626; font-weight:600;">
             <input type="checkbox" name="hours[<?php echo $code; ?>][closed]" value="1" class="hr-closed" <?php checked($is_closed); ?> onchange="toggleClosed(this)">
-            <span>Zárva</span>
+            <span><?php echo esc_html(PPV_Lang::t('biz_profile_hours_closed')); ?></span>
           </label>
         </div>
         <?php endforeach; ?>
@@ -191,43 +191,43 @@ $is_eu = isset($eu_countries[$current_country]);
   <!-- CÍM + GPS -->
   <?php $loc_filled = !empty($adv->lat) && !empty($adv->lng); ?>
   <details class="bz-section" <?php echo !$loc_filled ? 'open' : ''; ?>>
-    <summary><i class="ri-map-pin-line head-ic"></i> Cím + helyszín <span class="ck <?php echo $loc_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-map-pin-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_section_location')); ?> <span class="ck <?php echo $loc_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <div class="bz-grid" style="margin-bottom:8px;">
-        <div><label class="bz-label">Utca, házszám</label><input type="text" name="address" class="bz-input" value="<?php echo esc_attr($adv->address); ?>"></div>
-        <div><label class="bz-label">Város</label><input type="text" name="city" class="bz-input" value="<?php echo esc_attr($adv->city); ?>"></div>
+        <div><label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_address')); ?></label><input type="text" name="address" class="bz-input" value="<?php echo esc_attr($adv->address); ?>"></div>
+        <div><label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_city')); ?></label><input type="text" name="city" class="bz-input" value="<?php echo esc_attr($adv->city); ?>"></div>
       </div>
       <div class="bz-grid" style="margin-bottom:8px;">
         <div>
-          <label class="bz-label">Ország</label>
+          <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_country')); ?></label>
           <select name="country_select" id="countrySelect" class="bz-select" onchange="onCountryChange()">
-            <option value="">— Válassz —</option>
+            <option value=""><?php echo esc_html(PPV_Lang::t('biz_profile_country_choose')); ?></option>
             <?php foreach ($eu_countries as $code=>$name): ?>
               <option value="<?php echo $code; ?>" <?php selected($current_country, $code); ?>><?php echo esc_html($name); ?></option>
             <?php endforeach; ?>
-            <option value="__other" <?php echo (!$is_eu && $current_country) ? 'selected' : ''; ?>>Egyéb (kézi)</option>
+            <option value="__other" <?php echo (!$is_eu && $current_country) ? 'selected' : ''; ?>><?php echo esc_html(PPV_Lang::t('biz_profile_country_other')); ?></option>
           </select>
-          <input type="text" name="country_manual" id="countryManual" class="bz-input" placeholder="Add meg az ország nevét/kódját" value="<?php echo esc_attr(!$is_eu ? $current_country : ''); ?>" style="display:<?php echo (!$is_eu && $current_country) ? '' : 'none'; ?>; margin-top:6px;">
+          <input type="text" name="country_manual" id="countryManual" class="bz-input" placeholder="<?php echo esc_attr(PPV_Lang::t('biz_profile_country_manual_ph')); ?>" value="<?php echo esc_attr(!$is_eu ? $current_country : ''); ?>" style="display:<?php echo (!$is_eu && $current_country) ? '' : 'none'; ?>; margin-top:6px;">
         </div>
-        <div><label class="bz-label">Irányítószám</label><input type="text" name="postcode" class="bz-input" value="<?php echo esc_attr($adv->postcode); ?>"></div>
+        <div><label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_postcode')); ?></label><input type="text" name="postcode" class="bz-input" value="<?php echo esc_attr($adv->postcode); ?>"></div>
       </div>
       <div class="bz-grid" style="margin-bottom:8px;">
-        <div><label class="bz-label">Szélesség (lat)</label><input type="text" name="lat" class="bz-input" value="<?php echo esc_attr($adv->lat); ?>" id="latInput" readonly style="background:#f3f4f6;"></div>
-        <div><label class="bz-label">Hosszúság (lng)</label><input type="text" name="lng" class="bz-input" value="<?php echo esc_attr($adv->lng); ?>" id="lngInput" readonly style="background:#f3f4f6;"></div>
+        <div><label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_lat')); ?></label><input type="text" name="lat" class="bz-input" value="<?php echo esc_attr($adv->lat); ?>" id="latInput" readonly style="background:#f3f4f6;"></div>
+        <div><label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_profile_lng')); ?></label><input type="text" name="lng" class="bz-input" value="<?php echo esc_attr($adv->lng); ?>" id="lngInput" readonly style="background:#f3f4f6;"></div>
       </div>
       <div style="display:flex; gap:6px; flex-wrap:wrap;">
-        <button type="button" id="geoBtn" class="bz-btn secondary" style="font-size:13px;"><i class="ri-search-line"></i> Cím → GPS</button>
-        <button type="button" id="manualBtn" class="bz-btn secondary" style="font-size:13px;"><i class="ri-pushpin-line"></i> Pin térképen</button>
-        <button type="button" id="clearGpsBtn" class="bz-btn secondary" style="font-size:13px; color:#dc2626; border-color:#fecaca;" onclick="clearGps()"><i class="ri-delete-bin-line"></i> GPS törlés</button>
+        <button type="button" id="geoBtn" class="bz-btn secondary" style="font-size:13px;"><i class="ri-search-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_geo_btn')); ?></button>
+        <button type="button" id="manualBtn" class="bz-btn secondary" style="font-size:13px;"><i class="ri-pushpin-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_pin_btn')); ?></button>
+        <button type="button" id="clearGpsBtn" class="bz-btn secondary" style="font-size:13px; color:#dc2626; border-color:#fecaca;" onclick="clearGps()"><i class="ri-delete-bin-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_clear_gps')); ?></button>
       </div>
       <div id="mapWrap" style="display:none; margin-top:10px;">
-        <div style="font-size:11px; color:var(--muted); margin-bottom:6px;"><i class="ri-information-line"></i> Húzd a pin-t vagy kattints a pontos helyre</div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:6px;"><i class="ri-information-line"></i> <?php echo esc_html(PPV_Lang::t('biz_profile_pin_hint')); ?></div>
         <div id="pickMap" style="width:100%; height:300px; border-radius:10px; overflow:hidden; border:1px solid var(--border);"></div>
       </div>
     </div>
   </details>
 
-  <button type="submit" class="bz-btn full" style="margin-top:12px;"><i class="ri-save-line"></i> Mentés</button>
+  <button type="submit" class="bz-btn full" style="margin-top:12px;"><i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('biz_save')); ?></button>
 </form>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -236,7 +236,7 @@ const latInput = document.getElementById('latInput');
 const lngInput = document.getElementById('lngInput');
 
 function clearGps() {
-  if (!confirm('Biztos törlöd a GPS koordinátákat? A hirdetésed eltűnik a térképről.')) return;
+  if (!confirm(<?php echo wp_json_encode(PPV_Lang::t('biz_profile_clear_gps_confirm')); ?>)) return;
   latInput.value = '';
   lngInput.value = '';
   if (pickMap && marker) {
@@ -329,8 +329,8 @@ document.getElementById('geoBtn').addEventListener('click', async function() {
     document.querySelector('[name=city]').value,
     country,
   ].filter(Boolean).join(', ');
-  if (!addr) return alert('Töltsd ki utca/város/ország');
-  this.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 1s linear infinite;"></i> Keresés...';
+  if (!addr) return alert(<?php echo wp_json_encode(PPV_Lang::t('biz_profile_geo_addr_required')); ?>);
+  this.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 1s linear infinite;"></i> ' + <?php echo wp_json_encode(PPV_Lang::t('biz_profile_geo_searching')); ?>;
   try {
     const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr) + '&limit=1');
     const d = await r.json();
@@ -343,10 +343,10 @@ document.getElementById('geoBtn').addEventListener('click', async function() {
         marker.setLngLat([d[0].lon, d[0].lat]);
       }
     } else {
-      alert('Nem találtam meg — használd a kézi térkép-pin gombot.');
-      this.innerHTML = '<i class="ri-search-line"></i> Cím → GPS';
+      alert(<?php echo wp_json_encode(PPV_Lang::t('biz_profile_geo_not_found')); ?>);
+      this.innerHTML = '<i class="ri-search-line"></i> ' + <?php echo wp_json_encode(PPV_Lang::t('biz_profile_geo_btn')); ?>;
     }
-  } catch(e) { alert(e.message); this.innerHTML = '<i class="ri-search-line"></i> Cím → GPS'; }
+  } catch(e) { alert(e.message); this.innerHTML = '<i class="ri-search-line"></i> ' + <?php echo wp_json_encode(PPV_Lang::t('biz_profile_geo_btn')); ?>; }
 });
 
 let pickMap = null, marker = null;

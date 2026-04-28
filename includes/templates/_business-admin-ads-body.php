@@ -14,12 +14,12 @@ if ($edit_id > 0) {
 }
 
 $ad_types = [
-  'discount_percent' => ['Akció (%)', 'ri-percent-line', '#dc2626'],
-  'discount_fixed'   => ['Akció (€)', 'ri-money-euro-circle-line', '#dc2626'],
-  'free_product'     => ['Ajándék',   'ri-gift-line', '#10b981'],
-  'coupon'           => ['Kupon kód', 'ri-coupon-line', '#f59e0b'],
-  'event'            => ['Esemény',   'ri-calendar-event-line', '#8b5cf6'],
-  'announcement'     => ['Hirdetmény','ri-megaphone-line', '#3b82f6'],
+  'discount_percent' => [PPV_Lang::t('biz_ads_type_discount_percent'), 'ri-percent-line', '#dc2626'],
+  'discount_fixed'   => [PPV_Lang::t('biz_ads_type_discount_fixed'),   'ri-money-euro-circle-line', '#dc2626'],
+  'free_product'     => [PPV_Lang::t('biz_ads_type_free_product'),     'ri-gift-line', '#10b981'],
+  'coupon'           => [PPV_Lang::t('biz_ads_type_coupon'),           'ri-coupon-line', '#f59e0b'],
+  'event'            => [PPV_Lang::t('biz_ads_type_event'),            'ri-calendar-event-line', '#8b5cf6'],
+  'announcement'     => [PPV_Lang::t('biz_ads_type_announcement'),     'ri-megaphone-line', '#3b82f6'],
 ];
 $current_type = $edit->ad_type ?? 'discount_percent';
 $current_vis = $edit->visibility ?? 'public';
@@ -52,11 +52,11 @@ $current_badge = $edit->badge ?? '';
 </style>
 
 <div class="bz-card" style="padding:14px;">
-  <h1 class="bz-h1" style="margin:0;"><i class="ri-megaphone-fill"></i> Hirdetések <span style="font-size:13px; font-weight:500; color:var(--muted);">(<?php echo count($ads); ?>/<?php echo $tier_info['ads']; ?>)</span></h1>
-  <?php if (!empty($_GET['saved'])): ?><div class="bz-msg ok" style="margin-top:10px;">✓ Mentve</div><?php endif; ?>
-  <?php if (!empty($_GET['err']) && $_GET['err'] === 'tier_limit'): ?><div class="bz-msg err" style="margin-top:10px;">⚠️ Tier-limit elérve (<?php echo $tier_info['ads']; ?>). Töröld a régieket vagy bővíts.</div><?php endif; ?>
+  <h1 class="bz-h1" style="margin:0;"><i class="ri-megaphone-fill"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_title')); ?> <span style="font-size:13px; font-weight:500; color:var(--muted);">(<?php echo count($ads); ?>/<?php echo $tier_info['ads']; ?>)</span></h1>
+  <?php if (!empty($_GET['saved'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_saved_msg')); ?></div><?php endif; ?>
+  <?php if (!empty($_GET['err']) && $_GET['err'] === 'tier_limit'): ?><div class="bz-msg err" style="margin-top:10px;"><?php echo esc_html(sprintf(PPV_Lang::t('biz_ads_tier_limit_msg'), $tier_info['ads'])); ?></div><?php endif; ?>
   <?php if (!$edit_id && $can_create): ?>
-    <a href="?edit=new" class="bz-btn full" style="margin-top:12px;"><i class="ri-add-line"></i> Új hirdetés</a>
+    <a href="?edit=new" class="bz-btn full" style="margin-top:12px;"><i class="ri-add-line"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_new_btn')); ?></a>
   <?php endif; ?>
 </div>
 
@@ -70,7 +70,7 @@ $current_badge = $edit->badge ?? '';
 
   <!-- TÍPUS -->
   <details class="bz-section" open>
-    <summary><i class="ri-price-tag-3-line head-ic"></i> Típus<i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-price-tag-3-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_section_type')); ?><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px;">
         <?php foreach ($ad_types as $key => [$label, $icon, $color]): ?>
@@ -85,42 +85,42 @@ $current_badge = $edit->badge ?? '';
 
   <!-- TARTALOM -->
   <details class="bz-section" open>
-    <summary><i class="ri-edit-line head-ic"></i> Tartalom<i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-edit-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_section_content')); ?><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
-      <label class="bz-label">Cím (max 60)</label>
-      <input type="text" name="title" id="adTitle" class="bz-input" maxlength="60" value="<?php echo esc_attr($edit->title ?? ''); ?>" oninput="updateCount('adTitle', 'adTitleCount', 60)" placeholder="pl. Nyitó akció — minden -20%">
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_title_label')); ?></label>
+      <input type="text" name="title" id="adTitle" class="bz-input" maxlength="60" value="<?php echo esc_attr($edit->title ?? ''); ?>" oninput="updateCount('adTitle', 'adTitleCount', 60)" placeholder="<?php echo esc_attr(PPV_Lang::t('biz_ads_title_ph')); ?>">
       <div class="char-count" id="adTitleCount">0 / 60</div>
 
-      <label class="bz-label" style="margin-top:10px;">Rövid leírás (max 200)</label>
-      <textarea name="body" id="adBody" class="bz-textarea" maxlength="200" oninput="updateCount('adBody', 'adBodyCount', 200)" placeholder="1-2 mondat hogy mit kínálsz"><?php echo esc_textarea($edit->body ?? ''); ?></textarea>
+      <label class="bz-label" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_ads_body_label')); ?></label>
+      <textarea name="body" id="adBody" class="bz-textarea" maxlength="200" oninput="updateCount('adBody', 'adBodyCount', 200)" placeholder="<?php echo esc_attr(PPV_Lang::t('biz_ads_body_ph')); ?>"><?php echo esc_textarea($edit->body ?? ''); ?></textarea>
       <div class="char-count" id="adBodyCount">0 / 200</div>
 
       <!-- Promó érték (típusfüggő) -->
       <div id="promoFieldWrap" style="margin-top:10px;">
-        <label class="bz-label" id="promoLabel">Promó érték</label>
+        <label class="bz-label" id="promoLabel"><?php echo esc_html(PPV_Lang::t('biz_ads_promo_label')); ?></label>
         <input type="text" name="promo_value" id="promoValue" class="bz-input" value="<?php echo esc_attr($edit->promo_value ?? ''); ?>">
         <div class="char-count" id="promoHint" style="text-align:left;">—</div>
       </div>
 
       <!-- Kupon kód (csak coupon típusnál) -->
       <div id="couponWrap" style="margin-top:10px; display:<?php echo $current_type === 'coupon' ? '' : 'none'; ?>;">
-        <label class="bz-label">Kupon kód (opcionális)</label>
-        <input type="text" name="coupon_code" class="bz-input" maxlength="20" value="<?php echo esc_attr($edit->coupon_code ?? ''); ?>" placeholder="pl. NYAR2025" style="text-transform:uppercase; letter-spacing:1px; font-family:monospace;">
-        <div class="char-count" style="text-align:left;">A user bemutatja a kódot — csak akkor szükséges ha kasszában rögzíted</div>
+        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_coupon_label')); ?></label>
+        <input type="text" name="coupon_code" class="bz-input" maxlength="20" value="<?php echo esc_attr($edit->coupon_code ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('biz_ads_coupon_ph')); ?>" style="text-transform:uppercase; letter-spacing:1px; font-family:monospace;">
+        <div class="char-count" style="text-align:left;"><?php echo esc_html(PPV_Lang::t('biz_ads_coupon_hint')); ?></div>
       </div>
     </div>
   </details>
 
   <!-- BORÍTÓ KÉP -->
   <details class="bz-section" <?php echo empty($edit->image_url) ? 'open' : ''; ?>>
-    <summary><i class="ri-image-line head-ic"></i> Borító kép<i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-image-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_section_image')); ?><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <div style="display:flex; align-items:center; gap:14px;">
         <div id="adImagePreview" style="width:140px; height:90px; border-radius:10px; background:<?php echo !empty($edit->image_url) ? "url('".esc_url($edit->image_url)."') center/cover" : '#f3f4f6'; ?>; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:24px; border:1px solid var(--border);">
           <?php if (empty($edit->image_url)): ?><i class="ri-image-line"></i><?php endif; ?>
         </div>
         <label class="bz-btn secondary" style="cursor:pointer;">
-          <i class="ri-upload-2-line"></i> <?php echo !empty($edit->image_url) ? 'Csere' : 'Feltöltés'; ?>
+          <i class="ri-upload-2-line"></i> <?php echo esc_html(!empty($edit->image_url) ? PPV_Lang::t('biz_replace') : PPV_Lang::t('biz_upload')); ?>
           <input type="file" name="image_file" accept="image/*" style="display:none;" onchange="previewAdImage(this)">
         </label>
       </div>
@@ -129,44 +129,44 @@ $current_badge = $edit->badge ?? '';
 
   <!-- LÁTHATÓSÁG + LIMIT -->
   <details class="bz-section" open>
-    <summary><i class="ri-eye-line head-ic"></i> Láthatóság + limit<i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-eye-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_section_visibility')); ?><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
-      <label class="bz-label">Ki látja?</label>
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_visibility_label')); ?></label>
       <div class="vis-radio" style="margin-bottom:12px;">
         <label>
           <input type="radio" name="visibility" value="public" <?php checked($current_vis, 'public'); ?>>
           <div class="vis-card">
-            <div class="h"><i class="ri-global-line"></i> Nyilvános</div>
-            <div class="d">Bárki látja a térképen</div>
+            <div class="h"><i class="ri-global-line"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_vis_public_h')); ?></div>
+            <div class="d"><?php echo esc_html(PPV_Lang::t('biz_ads_vis_public_d')); ?></div>
           </div>
         </label>
         <label>
           <input type="radio" name="visibility" value="followers" <?php checked($current_vis, 'followers'); ?>>
           <div class="vis-card">
-            <div class="h"><i class="ri-vip-crown-line"></i> Csak követőknek</div>
-            <div class="d">Csak followers látja teljesen</div>
+            <div class="h"><i class="ri-vip-crown-line"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_vis_followers_h')); ?></div>
+            <div class="d"><?php echo esc_html(PPV_Lang::t('biz_ads_vis_followers_d')); ?></div>
           </div>
         </label>
       </div>
 
       <div style="margin-bottom:12px;">
-        <label class="bz-label">Egy user hányszor kaphatja meg?</label>
+        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_per_user_label')); ?></label>
         <select name="per_user_limit" class="bz-select">
-          <option value="lifetime" <?php selected($current_pul, 'lifetime'); ?>>Csak 1× élethosszig</option>
-          <option value="daily"    <?php selected($current_pul, 'daily'); ?>>1× naponta</option>
-          <option value="weekly"   <?php selected($current_pul, 'weekly'); ?>>1× hetente</option>
-          <option value="monthly"  <?php selected($current_pul, 'monthly'); ?>>1× havonta</option>
-          <option value="none"     <?php selected($current_pul, 'none'); ?>>Korlátlan (bármennyi)</option>
+          <option value="lifetime" <?php selected($current_pul, 'lifetime'); ?>><?php echo esc_html(PPV_Lang::t('biz_ads_per_user_lifetime')); ?></option>
+          <option value="daily"    <?php selected($current_pul, 'daily'); ?>><?php echo esc_html(PPV_Lang::t('biz_ads_per_user_daily')); ?></option>
+          <option value="weekly"   <?php selected($current_pul, 'weekly'); ?>><?php echo esc_html(PPV_Lang::t('biz_ads_per_user_weekly')); ?></option>
+          <option value="monthly"  <?php selected($current_pul, 'monthly'); ?>><?php echo esc_html(PPV_Lang::t('biz_ads_per_user_monthly')); ?></option>
+          <option value="none"     <?php selected($current_pul, 'none'); ?>><?php echo esc_html(PPV_Lang::t('biz_ads_per_user_none')); ?></option>
         </select>
-        <div class="char-count" style="text-align:left;">Ugyanaz a user max ennyiszer válthatja be</div>
+        <div class="char-count" style="text-align:left;"><?php echo esc_html(PPV_Lang::t('biz_ads_per_user_hint')); ?></div>
       </div>
 
       <details style="background:#f9fafb; border-radius:8px; padding:8px 12px;">
-        <summary style="cursor:pointer; font-size:12px; font-weight:600; color:var(--muted); list-style:none;"><i class="ri-settings-3-line"></i> Speciális: készlet-limit</summary>
+        <summary style="cursor:pointer; font-size:12px; font-weight:600; color:var(--muted); list-style:none;"><i class="ri-settings-3-line"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_advanced_stock')); ?></summary>
         <div style="padding-top:10px;">
-          <label class="bz-label">Maximum hány user kaphatja meg összesen?</label>
-          <input type="number" name="max_claims" class="bz-input" min="0" value="<?php echo esc_attr($edit->max_claims ?? ''); ?>" placeholder="Üres = nincs limit">
-          <div class="char-count" style="text-align:left;">pl. ha csak 50 darab készleted van. Üresen hagyhatod, ha nincs felső korlát.</div>
+          <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_max_claims_label')); ?></label>
+          <input type="number" name="max_claims" class="bz-input" min="0" value="<?php echo esc_attr($edit->max_claims ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('biz_ads_max_claims_ph')); ?>">
+          <div class="char-count" style="text-align:left;"><?php echo esc_html(PPV_Lang::t('biz_ads_max_claims_hint')); ?></div>
         </div>
       </details>
     </div>
@@ -174,41 +174,41 @@ $current_badge = $edit->badge ?? '';
 
   <!-- ÉRVÉNYESSÉG -->
   <details class="bz-section">
-    <summary><i class="ri-calendar-line head-ic"></i> Érvényesség<i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-calendar-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_section_validity')); ?><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
       <div class="bz-grid">
-        <div><label class="bz-label">Kezdet</label><input type="datetime-local" name="valid_from" class="bz-input" value="<?php echo esc_attr($edit ? str_replace(' ','T',substr($edit->valid_from ?? '',0,16)) : ''); ?>"></div>
-        <div><label class="bz-label">Vég</label><input type="datetime-local" name="valid_to" class="bz-input" value="<?php echo esc_attr($edit ? str_replace(' ','T',substr($edit->valid_to ?? '',0,16)) : ''); ?>"></div>
+        <div><label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_valid_from')); ?></label><input type="datetime-local" name="valid_from" class="bz-input" value="<?php echo esc_attr($edit ? str_replace(' ','T',substr($edit->valid_from ?? '',0,16)) : ''); ?>"></div>
+        <div><label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_valid_to')); ?></label><input type="datetime-local" name="valid_to" class="bz-input" value="<?php echo esc_attr($edit ? str_replace(' ','T',substr($edit->valid_to ?? '',0,16)) : ''); ?>"></div>
       </div>
     </div>
   </details>
 
   <!-- BADGE + EXTRA -->
   <details class="bz-section">
-    <summary><i class="ri-flag-line head-ic"></i> Badge + extra<i class="ri-arrow-down-s-line arr"></i></summary>
+    <summary><i class="ri-flag-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_section_badge')); ?><i class="ri-arrow-down-s-line arr"></i></summary>
     <div class="bz-content">
-      <label class="bz-label">Kiemelő címke (opcionális)</label>
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_badge_label')); ?></label>
       <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
-        <span class="badge-chip empty <?php echo !$current_badge ? 'active' : ''; ?>" onclick="setBadge('')">Nincs</span>
-        <span class="badge-chip b-new <?php echo $current_badge === 'NEW' ? 'active' : ''; ?>" onclick="setBadge('NEW')">ÚJ</span>
-        <span class="badge-chip b-sale <?php echo $current_badge === 'SALE' ? 'active' : ''; ?>" onclick="setBadge('SALE')">AKCIÓ</span>
-        <span class="badge-chip b-limited <?php echo $current_badge === 'LIMITED' ? 'active' : ''; ?>" onclick="setBadge('LIMITED')">LIMITÁLT</span>
-        <span class="badge-chip b-ending <?php echo $current_badge === 'ENDING' ? 'active' : ''; ?>" onclick="setBadge('ENDING')">VÉGE</span>
+        <span class="badge-chip empty <?php echo !$current_badge ? 'active' : ''; ?>" onclick="setBadge('')"><?php echo esc_html(PPV_Lang::t('biz_ads_badge_none')); ?></span>
+        <span class="badge-chip b-new <?php echo $current_badge === 'NEW' ? 'active' : ''; ?>" onclick="setBadge('NEW')"><?php echo esc_html(PPV_Lang::t('biz_ads_badge_new')); ?></span>
+        <span class="badge-chip b-sale <?php echo $current_badge === 'SALE' ? 'active' : ''; ?>" onclick="setBadge('SALE')"><?php echo esc_html(PPV_Lang::t('biz_ads_badge_sale')); ?></span>
+        <span class="badge-chip b-limited <?php echo $current_badge === 'LIMITED' ? 'active' : ''; ?>" onclick="setBadge('LIMITED')"><?php echo esc_html(PPV_Lang::t('biz_ads_badge_limited')); ?></span>
+        <span class="badge-chip b-ending <?php echo $current_badge === 'ENDING' ? 'active' : ''; ?>" onclick="setBadge('ENDING')"><?php echo esc_html(PPV_Lang::t('biz_ads_badge_ending')); ?></span>
       </div>
 
-      <label class="bz-label">CTA URL (opcionális)</label>
+      <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_cta_url_label')); ?></label>
       <input type="url" name="cta_url" class="bz-input" value="<?php echo esc_attr($edit->cta_url ?? ''); ?>" placeholder="https://...">
 
       <label style="display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer;">
         <input type="checkbox" name="is_active" value="1" <?php checked($edit ? $edit->is_active : 1, 1); ?>>
-        <span style="font-weight:600;">Aktív</span>
+        <span style="font-weight:600;"><?php echo esc_html(PPV_Lang::t('biz_ads_active_label')); ?></span>
       </label>
     </div>
   </details>
 
   <div style="display:flex; gap:8px; margin-top:12px;">
-    <button type="submit" class="bz-btn" style="flex:1;"><i class="ri-save-line"></i> Mentés</button>
-    <a href="<?php echo esc_url(home_url('/business/admin/ads')); ?>" class="bz-btn secondary">Mégse</a>
+    <button type="submit" class="bz-btn" style="flex:1;"><i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('biz_save')); ?></button>
+    <a href="<?php echo esc_url(home_url('/business/admin/ads')); ?>" class="bz-btn secondary"><?php echo esc_html(PPV_Lang::t('biz_cancel')); ?></a>
   </div>
 </form>
 
@@ -229,14 +229,14 @@ function selectType(t, el) {
     el.style.setProperty('--chip-shadow', color + '30');
   }
   // Update promo label/placeholder dynamically
-  const cfg = {
-    discount_percent: { label: 'Kedvezmény mértéke (%)', ph: 'pl. 20', hint: 'Számot adj meg, % nélkül' },
-    discount_fixed:   { label: 'Kedvezmény (€)', ph: 'pl. 5', hint: 'Számot adj meg, € nélkül' },
-    free_product:     { label: 'Ingyen termék neve', ph: 'pl. 1 kávé minden 5 után', hint: 'Mit kap ingyen?' },
-    coupon:           { label: 'Promó leírása', ph: 'pl. 30% minden pizzára', hint: 'Mit ér a kupon kód?' },
-    event:            { label: 'Esemény dátum + helyszín', ph: 'pl. 2026-05-12 18:00 — Bistro', hint: 'Mikor és hol?' },
-    announcement:     { label: 'Hirdetés szöveg (rövid)', ph: 'pl. Új menü minden szombaton', hint: 'Csak rövid összefoglaló' },
-  };
+  const cfg = <?php echo wp_json_encode([
+    'discount_percent' => ['label' => PPV_Lang::t('biz_ads_promo_pct_label'),    'ph' => PPV_Lang::t('biz_ads_promo_pct_ph'),    'hint' => PPV_Lang::t('biz_ads_promo_pct_hint')],
+    'discount_fixed'   => ['label' => PPV_Lang::t('biz_ads_promo_eur_label'),    'ph' => PPV_Lang::t('biz_ads_promo_eur_ph'),    'hint' => PPV_Lang::t('biz_ads_promo_eur_hint')],
+    'free_product'     => ['label' => PPV_Lang::t('biz_ads_promo_free_label'),   'ph' => PPV_Lang::t('biz_ads_promo_free_ph'),   'hint' => PPV_Lang::t('biz_ads_promo_free_hint')],
+    'coupon'           => ['label' => PPV_Lang::t('biz_ads_promo_coupon_label'), 'ph' => PPV_Lang::t('biz_ads_promo_coupon_ph'), 'hint' => PPV_Lang::t('biz_ads_promo_coupon_hint')],
+    'event'            => ['label' => PPV_Lang::t('biz_ads_promo_event_label'),  'ph' => PPV_Lang::t('biz_ads_promo_event_ph'),  'hint' => PPV_Lang::t('biz_ads_promo_event_hint')],
+    'announcement'     => ['label' => PPV_Lang::t('biz_ads_promo_ann_label'),    'ph' => PPV_Lang::t('biz_ads_promo_ann_ph'),    'hint' => PPV_Lang::t('biz_ads_promo_ann_hint')],
+  ]); ?>;
   const c = cfg[t] || cfg.announcement;
   document.getElementById('promoLabel').textContent = c.label;
   document.getElementById('promoValue').placeholder = c.ph;
@@ -273,12 +273,12 @@ selectType(document.getElementById('adType').value, document.querySelector('.typ
 
 <?php if (!$edit_id): ?>
 <div class="bz-card">
-  <h2 class="bz-h2"><i class="ri-list-check"></i> Aktuális hirdetéseid</h2>
+  <h2 class="bz-h2"><i class="ri-list-check"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_list_title')); ?></h2>
   <?php if (empty($ads)): ?>
-    <p style="color:var(--muted); font-size:13px;">Még nincs hirdetésed. Hozz létre egyet fent.</p>
+    <p style="color:var(--muted); font-size:13px;"><?php echo esc_html(PPV_Lang::t('biz_ads_list_empty')); ?></p>
   <?php else: ?>
     <?php foreach ($ads as $a):
-      $type_label = $ad_types[$a->ad_type ?? 'announcement'][0] ?? 'Hirdetés';
+      $type_label = $ad_types[$a->ad_type ?? 'announcement'][0] ?? PPV_Lang::t('biz_ads_type_announcement');
       $type_icon = $ad_types[$a->ad_type ?? 'announcement'][1] ?? 'ri-megaphone-line';
       $type_color = $ad_types[$a->ad_type ?? 'announcement'][2] ?? '#6b7280';
     ?>
@@ -290,14 +290,14 @@ selectType(document.getElementById('adType').value, document.querySelector('.typ
       <?php endif; ?>
       <div style="flex:1; min-width:0;">
         <div style="font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-          <?php echo esc_html($a->title ?: $a->title_de ?: '(üres)'); ?>
+          <?php echo esc_html($a->title ?: $a->title_de ?: PPV_Lang::t('biz_ads_empty_title')); ?>
           <?php if ($a->badge): ?><span style="font-size:9px; padding:1px 5px; border-radius:4px; background:#fef3c7; color:#92400e; margin-left:4px;"><?php echo esc_html($a->badge); ?></span><?php endif; ?>
         </div>
         <div style="font-size:11px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
           <span><i class="<?php echo $type_icon; ?>" style="color:<?php echo $type_color; ?>;"></i> <?php echo esc_html($type_label); ?></span>
           <span><i class="ri-eye-line"></i> <?php echo (int)$a->impressions; ?></span>
           <span><i class="ri-cursor-line"></i> <?php echo (int)$a->clicks; ?></span>
-          <span><?php echo $a->is_active ? '<span style="color:#16a34a;">● Aktív</span>' : '<span style="color:#9ca3af;">○ Inaktív</span>'; ?></span>
+          <span><?php echo $a->is_active ? '<span style="color:#16a34a;">● ' . esc_html(PPV_Lang::t('biz_ads_active_label')) . '</span>' : '<span style="color:#9ca3af;">○ ' . esc_html(PPV_Lang::t('biz_ads_inactive_label')) . '</span>'; ?></span>
         </div>
       </div>
       <a href="?edit=<?php echo (int)$a->id; ?>" class="bz-btn secondary" style="padding:6px 10px; font-size:12px;"><i class="ri-edit-line"></i></a>

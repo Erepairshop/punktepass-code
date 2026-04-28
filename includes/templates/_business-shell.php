@@ -103,11 +103,11 @@ document.addEventListener('click', function(e) {
 <?php
 $current_path = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
 $nav_items = [
-  ['url' => '/business/admin', 'label' => 'Dashboard', 'icon' => 'ri-dashboard-line'],
-  ['url' => '/business/admin/profile', 'label' => 'Profil', 'icon' => 'ri-user-settings-line'],
-  ['url' => '/business/admin/ads', 'label' => 'Werbung', 'icon' => 'ri-megaphone-line'],
-  ['url' => '/business/admin/push', 'label' => 'Push', 'icon' => 'ri-notification-3-line'],
-  ['url' => '/business/admin/stats', 'label' => 'Statistik', 'icon' => 'ri-bar-chart-line'],
+  ['url' => '/business/admin', 'label' => PPV_Lang::t('biz_nav_dashboard'), 'icon' => 'ri-dashboard-line'],
+  ['url' => '/business/admin/profile', 'label' => PPV_Lang::t('biz_nav_profile'), 'icon' => 'ri-user-settings-line'],
+  ['url' => '/business/admin/ads', 'label' => PPV_Lang::t('biz_nav_ads'), 'icon' => 'ri-megaphone-line'],
+  ['url' => '/business/admin/push', 'label' => PPV_Lang::t('biz_nav_push'), 'icon' => 'ri-notification-3-line'],
+  ['url' => '/business/admin/stats', 'label' => PPV_Lang::t('biz_nav_stats'), 'icon' => 'ri-bar-chart-line'],
 ];
 function bz_is_active($url, $current) {
   $u = trim(parse_url($url, PHP_URL_PATH), '/');
@@ -116,9 +116,9 @@ function bz_is_active($url, $current) {
 }
 ?>
 <div class="bz-header">
-  <div class="bz-brand"><i class="ri-megaphone-fill"></i> Business</div>
+  <div class="bz-brand"><i class="ri-megaphone-fill"></i> <?php echo esc_html(PPV_Lang::t('biz_nav_brand')); ?></div>
   <?php if ($adv): ?>
-  <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="bz-mobile-logout" title="Kilépés"><i class="ri-logout-box-r-line"></i></a>
+  <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="bz-mobile-logout" title="<?php echo esc_attr(PPV_Lang::t('biz_nav_logout_tooltip')); ?>"><i class="ri-logout-box-r-line"></i></a>
   <?php endif; ?>
   <div class="bz-lang-switch">
     <?php foreach (['de'=>'DE','hu'=>'HU','ro'=>'RO','en'=>'EN'] as $code => $label): ?>
@@ -128,12 +128,12 @@ function bz_is_active($url, $current) {
   <nav class="bz-nav">
     <?php if ($adv): ?>
       <?php foreach ($nav_items as $item): ?>
-        <a href="<?php echo esc_url(home_url($item['url'])); ?>" class="<?php echo bz_is_active($item['url'], $current_path) ? 'active' : ''; ?>"><?php echo esc_html__($item['label'], 'punktepass'); ?></a>
+        <a href="<?php echo esc_url(home_url($item['url'])); ?>" class="<?php echo bz_is_active($item['url'], $current_path) ? 'active' : ''; ?>"><?php echo esc_html($item['label']); ?></a>
       <?php endforeach; ?>
-      <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="logout" title="Kilépés"><i class="ri-logout-box-r-line"></i></a>
+      <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="logout" title="<?php echo esc_attr(PPV_Lang::t('biz_nav_logout_tooltip')); ?>"><i class="ri-logout-box-r-line"></i></a>
     <?php else: ?>
-      <a href="<?php echo esc_url(home_url('/business/login')); ?>"><?php echo esc_html__('Bejelentkezés', 'punktepass'); ?></a>
-      <a href="<?php echo esc_url(home_url('/business/register')); ?>"><?php echo esc_html__('Regisztráció', 'punktepass'); ?></a>
+      <a href="<?php echo esc_url(home_url('/business/login')); ?>"><?php echo esc_html(PPV_Lang::t('biz_nav_login')); ?></a>
+      <a href="<?php echo esc_url(home_url('/business/register')); ?>"><?php echo esc_html(PPV_Lang::t('biz_nav_register')); ?></a>
     <?php endif; ?>
   </nav>
 </div>
@@ -146,7 +146,7 @@ function bz_is_active($url, $current) {
     <?php foreach ($nav_items as $item): ?>
       <a href="<?php echo esc_url(home_url($item['url'])); ?>" class="b <?php echo bz_is_active($item['url'], $current_path) ? 'active' : ''; ?>">
         <i class="<?php echo esc_attr($item['icon']); ?>"></i>
-        <span><?php echo esc_html__($item['label'], 'punktepass'); ?></span>
+        <span><?php echo esc_html($item['label']); ?></span>
       </a>
     <?php endforeach; ?>
   </div>
