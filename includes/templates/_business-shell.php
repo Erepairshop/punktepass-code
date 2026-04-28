@@ -28,6 +28,10 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:va
 .bz-nav a { padding:6px 10px; border-radius:8px; font-size:13px; font-weight:500; opacity:.9; transition:background .15s; }
 .bz-nav a:hover, .bz-nav a:focus { background:rgba(255,255,255,.15); opacity:1; }
 .bz-nav .logout { opacity:.7; }
+.bz-lang-switch { display:flex; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px; }
+.bz-lang { background:transparent; border:none; color:#fff; padding:5px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; opacity:.7; transition:all .15s; letter-spacing:.5px; }
+.bz-lang:hover { opacity:1; }
+.bz-lang.active { background:rgba(255,255,255,.25); opacity:1; }
 .bz-wrap { max-width:1100px; margin:16px auto; padding:0 12px; }
 .bz-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
 .bz-grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
@@ -74,8 +78,20 @@ table.bz-table th, table.bz-table td { padding:10px 8px; border-bottom:1px solid
 }
 @media (max-width:380px) {
   .bz-grid { grid-template-columns:1fr; }
+  .bz-lang-switch { padding:1px; }
+  .bz-lang { padding:4px 6px; font-size:10px; }
+  .bz-brand { font-size:14px; }
 }
 </style>
+<script>
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.bz-lang');
+  if (!btn) return;
+  const lang = btn.dataset.lang;
+  document.cookie = 'ppv_lang=' + lang + ';path=/;max-age=' + (60*60*24*365);
+  location.reload();
+});
+</script>
 </head>
 <body>
 <?php
@@ -95,6 +111,11 @@ function bz_is_active($url, $current) {
 ?>
 <div class="bz-header">
   <div class="bz-brand"><i class="ri-megaphone-fill"></i> Business</div>
+  <div class="bz-lang-switch">
+    <?php foreach (['de'=>'DE','hu'=>'HU','ro'=>'RO','en'=>'EN'] as $code => $label): ?>
+      <button type="button" class="bz-lang <?php echo $lang === $code ? 'active' : ''; ?>" data-lang="<?php echo $code; ?>"><?php echo $label; ?></button>
+    <?php endforeach; ?>
+  </div>
   <nav class="bz-nav">
     <?php if ($adv): ?>
       <?php foreach ($nav_items as $item): ?>
