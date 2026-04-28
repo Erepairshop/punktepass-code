@@ -227,7 +227,7 @@ function locateMe() {
         : 'Helymeghatározás sikertelen: ' + err.message;
       alert(msg);
     },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    { enableHighAccuracy: true, timeout: 30000, maximumAge: 300000 }
   );
 }
 document.getElementById('km-locate').addEventListener('click', function(e) {
