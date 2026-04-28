@@ -28,6 +28,18 @@ $L = $labels[$lang] ?? $labels['de'];
 html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-serif; }
 #map { height:100vh; width:100vw; }
 .km-bar { position:fixed; top:10px; left:10px; right:10px; z-index:9999; padding:10px 12px; background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.18); display:flex; gap:8px; align-items:center; }
+.km-suggestions { position:fixed; top:64px; left:10px; right:10px; z-index:9998; background:#fff; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.18); max-height:50vh; overflow:auto; display:none; }
+.km-suggestions.open { display:block; }
+.km-sugg-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background .12s; }
+.km-sugg-item:last-child { border-bottom:none; }
+.km-sugg-item:active, .km-sugg-item:hover { background:#f8fafc; }
+.km-sugg-icon { width:32px; height:32px; border-radius:8px; background:#dbeafe; color:#1e40af; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; }
+.km-sugg-icon.advertiser { background:#fef3c7; color:#92400e; }
+.km-sugg-body { flex:1; min-width:0; }
+.km-sugg-name { font-weight:600; font-size:14px; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sugg-addr { font-size:12px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sugg-empty { padding:14px; color:#9ca3af; font-size:13px; text-align:center; }
+.km-sugg-mark { background:#fef3c7; border-radius:3px; padding:0 2px; }
 .km-bar input, .km-bar select { padding:8px 10px; border:none; border-radius:6px; font:inherit; background:#f3f4f6; }
 .km-bar input { flex:1; min-width:120px; }
 .km-bar strong { font-size:18px; }
@@ -146,6 +158,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
     <option value="advertiser">📣 Akciók</option>
   </select>
 </div>
+<div id="km-suggestions" class="km-suggestions"></div>
 <div id="km-sheet" class="km-sheet"></div>
 <div id="km-lightbox" class="km-lightbox" onclick="closeLightbox(event)">
   <button class="km-lightbox-close" onclick="closeLightbox(event)" aria-label="Close"><i class="ri-close-line"></i></button>
@@ -185,20 +198,24 @@ function locateMe() {
   const btn = document.getElementById('km-locate');
   if (!navigator.geolocation) {
     btn.classList.add('error');
-    btn.textContent = '✕';
+    btn.innerHTML = '<i class="ri-close-line"></i>';
     alert('A böngésző nem támogatja a geolocation-t.');
     return;
   }
-  btn.textContent = '⏳';
+  btn.classList.add('loading');
+  btn.classList.remove('active','error');
+  btn.innerHTML = '<i class="ri-loader-4-line"></i>';
   navigator.geolocation.getCurrentPosition(
     p => {
       showUser(p.coords.latitude, p.coords.longitude);
+      btn.classList.remove('loading','error');
       btn.classList.add('active');
-      btn.textContent = '📍';
+      btn.innerHTML = '<i class="ri-focus-3-fill"></i>';
     },
     err => {
+      btn.classList.remove('loading','active');
       btn.classList.add('error');
-      btn.textContent = '⚠️';
+      btn.innerHTML = '<i class="ri-error-warning-line"></i>';
       const msg = err.code === 1
         ? 'Engedélyezd a helyhozzáférést a böngésző beállításában (PunktePass app → Berechtigungen → Standort) és frissítsd az oldalt.'
         : 'Helymeghatározás sikertelen: ' + err.message;
@@ -209,8 +226,6 @@ function locateMe() {
 }
 document.getElementById('km-locate').addEventListener('click', function(e) {
   e.preventDefault();
-  console.log('[map] locate clicked');
-  alert('Klikk OK, geolocation kérés indul...');
   locateMe();
 });
 // Try automatically once on load (silent)
@@ -240,14 +255,20 @@ function makePinEl(f) {
   return div;
 }
 
+function matchesQuery(f, q) {
+  if (!q) return true;
+  const hay = ((f.name||'') + ' ' + (f.address||'') + ' ' + (f.city||'')).toLowerCase();
+  return hay.includes(q);
+}
+
 function renderPins() {
   pinMarkers.forEach(m => m.remove());
   pinMarkers = [];
   const cat = document.getElementById('km-cat').value;
-  const q = (document.getElementById('km-search').value || '').toLowerCase();
+  const q = (document.getElementById('km-search').value || '').toLowerCase().trim();
   allFeatures.forEach(f => {
     if (cat && f.type !== cat) return;
-    if (q && !f.name.toLowerCase().includes(q)) return;
+    if (!matchesQuery(f, q)) return;
     const el = makePinEl(f);
     const m = new maplibregl.Marker({ element: el, anchor:'center' })
       .setLngLat([f.lng, f.lat]).addTo(map);
@@ -256,7 +277,50 @@ function renderPins() {
     el.addEventListener('touchend', handler);
     pinMarkers.push(m);
   });
+  renderSuggestions(q);
 }
+
+function highlight(text, q) {
+  if (!q) return escapeHtml(text||'');
+  const t = String(text||'');
+  const idx = t.toLowerCase().indexOf(q);
+  if (idx < 0) return escapeHtml(t);
+  return escapeHtml(t.slice(0,idx)) + '<span class="km-sugg-mark">' + escapeHtml(t.slice(idx,idx+q.length)) + '</span>' + escapeHtml(t.slice(idx+q.length));
+}
+
+function renderSuggestions(q) {
+  const panel = document.getElementById('km-suggestions');
+  if (!q) { panel.classList.remove('open'); panel.innerHTML = ''; return; }
+  const cat = document.getElementById('km-cat').value;
+  const matches = allFeatures.filter(f => (!cat || f.type === cat) && matchesQuery(f, q)).slice(0, 12);
+  if (!matches.length) {
+    panel.innerHTML = '<div class="km-sugg-empty">' + (T.no_results || 'Nincs találat') + '</div>';
+    panel.classList.add('open');
+    return;
+  }
+  panel.innerHTML = matches.map(f => {
+    const iconCls = f.type === 'advertiser' ? 'advertiser' : '';
+    const iconHtml = f.type === 'advertiser' ? '<i class="ri-megaphone-fill"></i>' : '<i class="ri-store-2-fill"></i>';
+    const addrParts = [f.address, f.city].filter(Boolean).join(', ');
+    return `<div class="km-sugg-item" onclick="pickSuggestion('${f.type}',${f.id})">
+      <div class="km-sugg-icon ${iconCls}">${iconHtml}</div>
+      <div class="km-sugg-body">
+        <div class="km-sugg-name">${highlight(f.name, q)}</div>
+        ${addrParts ? `<div class="km-sugg-addr">${highlight(addrParts, q)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  panel.classList.add('open');
+}
+
+window.pickSuggestion = function(type, id) {
+  const f = allFeatures.find(x => x.id === id && x.type === type);
+  if (!f) return;
+  document.getElementById('km-suggestions').classList.remove('open');
+  document.getElementById('km-search').blur();
+  map.flyTo({ center:[f.lng, f.lat], zoom:15, duration:600 });
+  setTimeout(() => openSheet(f), 350);
+};
 
 async function openSheet(f) {
   const sheet = document.getElementById('km-sheet');
@@ -591,6 +655,15 @@ document.getElementById('km-lightbox').addEventListener('touchend', e => {
 
 document.getElementById('km-cat').addEventListener('change', renderPins);
 document.getElementById('km-search').addEventListener('input', renderPins);
+document.getElementById('km-search').addEventListener('focus', () => {
+  const q = (document.getElementById('km-search').value || '').toLowerCase().trim();
+  if (q) renderSuggestions(q);
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#km-suggestions') && !e.target.closest('#km-search')) {
+    document.getElementById('km-suggestions').classList.remove('open');
+  }
+});
 loadFeatures();
 
 // Close sheet on map click (Leaflet)
