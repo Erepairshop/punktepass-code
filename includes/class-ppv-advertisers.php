@@ -377,6 +377,23 @@ class PPV_Advertisers {
             }
         }
 
+        // Country: from select OR manual input
+        $country_select = sanitize_text_field($_POST['country_select'] ?? '');
+        $country_manual = sanitize_text_field($_POST['country_manual'] ?? '');
+        $country = ($country_select === '__other') ? $country_manual : $country_select;
+
+        // Social links
+        $social_in = $_POST['social'] ?? [];
+        $social = [];
+        if (is_array($social_in)) {
+            foreach ($social_in as $k => $v) {
+                $url = trim($v);
+                if (!$url) continue;
+                if (!preg_match('#^https?://#i', $url)) $url = 'https://' . $url;
+                $social[sanitize_key($k)] = esc_url_raw($url);
+            }
+        }
+
         $data = [
             'business_name' => sanitize_text_field($_POST['business_name'] ?? ''),
             'phone'    => sanitize_text_field($_POST['phone'] ?? ''),
@@ -384,13 +401,14 @@ class PPV_Advertisers {
             'website'  => esc_url_raw($_POST['website'] ?? ''),
             'address'  => sanitize_text_field($_POST['address'] ?? ''),
             'city'     => sanitize_text_field($_POST['city'] ?? ''),
-            'country'  => sanitize_text_field($_POST['country'] ?? ''),
+            'country'  => $country,
             'postcode' => sanitize_text_field($_POST['postcode'] ?? ''),
             'lat'      => is_numeric($_POST['lat'] ?? null) ? floatval($_POST['lat']) : null,
             'lng'      => is_numeric($_POST['lng'] ?? null) ? floatval($_POST['lng']) : null,
             'category' => sanitize_text_field($_POST['category'] ?? 'other'),
             'logo_url' => $logo_url,
             'gallery'  => wp_json_encode(array_values($gallery)),
+            'social'   => wp_json_encode($social),
         ];
         $wpdb->update($wpdb->prefix . 'ppv_advertisers', $data, ['id' => $adv_id]);
         wp_redirect(home_url('/business/admin/profile?saved=1'));
