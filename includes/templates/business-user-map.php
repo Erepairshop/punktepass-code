@@ -5,10 +5,10 @@ header('Pragma: no-cache');
 header('Expires: 0');
 $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
 $labels = [
-    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote'],
-    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','follow'=>'Követés','following'=>'Követed','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.','points_here'=>'Pontot gyűjthetsz','offers'=>'Aktuális ajánlatok'],
-    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','follow'=>'Urmărește','following'=>'Urmărești','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.','points_here'=>'Adună puncte','offers'=>'Oferte curente'],
-    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','follow'=>'Follow','following'=>'Following','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.','points_here'=>'Earn points here','offers'=>'Current offers'],
+    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote','follow_banner'=>'Folge dem Geschäft, verpasse keine Aktionen','follow_banner_ad'=>'Folge, verpasse keine Aktionen & Gewinne'],
+    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','follow'=>'Követés','following'=>'Követed','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.','points_here'=>'Pontot gyűjthetsz','offers'=>'Aktuális ajánlatok','follow_banner'=>'Kövesd a boltot, ne maradj le akciókról','follow_banner_ad'=>'Kövess, ne maradj le akciókról és nyereményekről'],
+    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','follow'=>'Urmărește','following'=>'Urmărești','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.','points_here'=>'Adună puncte','offers'=>'Oferte curente','follow_banner'=>'Urmărește magazinul, nu rata oferte','follow_banner_ad'=>'Urmărește, nu rata oferte și premii'],
+    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','follow'=>'Follow','following'=>'Following','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.','points_here'=>'Earn points here','offers'=>'Current offers','follow_banner'=>'Follow the shop to never miss promotions','follow_banner_ad'=>'Follow to never miss promotions & prizes'],
 ];
 $L = $labels[$lang] ?? $labels['de'];
 ?>
@@ -19,6 +19,7 @@ $L = $labels[$lang] ?? $labels['de'];
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?php echo esc_html($L['title']); ?> — PunktePass</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
 <link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-core.css">
 <link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-components.css">
 <link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-handler.css">
@@ -48,7 +49,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-sheet { position:absolute; left:0; right:0; bottom:-100%; max-height:75vh; overflow:auto; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -8px 32px rgba(0,0,0,.25); transition:bottom .3s ease; z-index:20; }
 .km-sheet.open { bottom:0; }
 .km-sheet-grab { width:48px; height:5px; background:#d1d5db; border-radius:3px; margin:8px auto; }
-.km-cover { height:120px; background:linear-gradient(135deg,#6366f1,#8b5cf6) center/cover; }
+.km-cover { height:48px; background:linear-gradient(135deg,#6366f1,#8b5cf6) center/cover; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:600; padding:0 14px; text-align:center; }
 .km-cover.advertiser { background:linear-gradient(135deg,#f59e0b,#dc2626); }
 .km-card-head { padding:0 18px; margin-top:-40px; display:flex; gap:12px; align-items:flex-end; }
 .km-card-logo { width:80px; height:80px; border-radius:16px; background:#fff center/cover; border:4px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.12); }
@@ -93,6 +94,20 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .mc-reward-meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; font-size:12px; color:#78350f; }
 .mc-reward-meta span { background:rgba(255,255,255,.6); padding:2px 8px; border-radius:6px; }
 .mc-vip-pill { display:inline-flex; gap:4px; align-items:center; background:linear-gradient(135deg,#fce7f3,#fbcfe8); color:#9d174d; padding:4px 10px; border-radius:99px; font-size:12px; font-weight:600; margin-top:4px; }
+.mc-vip-table { width:100%; border-collapse:collapse; margin-top:8px; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.mc-vip-table th, .mc-vip-table td { padding:8px 6px; text-align:center; font-size:12px; border-bottom:1px solid #f3f4f6; }
+.mc-vip-table th { background:#f9fafb; color:#6b7280; font-weight:600; text-transform:uppercase; font-size:10px; letter-spacing:.4px; }
+.mc-vip-table th i, .mc-vip-table td i { font-size:14px; }
+.mc-vip-table th.bronze { color:#cd7f32; }
+.mc-vip-table th.silver { color:#94a3b8; }
+.mc-vip-table th.gold { color:#daa520; }
+.mc-vip-table th.platinum { color:#6b7280; }
+.mc-vip-table td.bronze { color:#cd7f32; font-weight:700; }
+.mc-vip-table td.silver { color:#94a3b8; font-weight:700; }
+.mc-vip-table td.gold { color:#daa520; font-weight:700; }
+.mc-vip-table td.platinum { color:#6b7280; font-weight:700; }
+.mc-vip-table td.row-label { background:linear-gradient(90deg,#fef3c7,transparent); color:#92400e; font-weight:600; text-align:left; padding-left:12px; }
+.mc-vip-table td.mult { background:linear-gradient(135deg,#fce7f3,#fbcfe8); color:#9d174d; font-weight:700; font-size:14px; }
 .mc-h3 { margin:0 0 6px; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; font-weight:600; }
 .mc-tabs { display:flex; gap:6px; padding:0 18px 8px; flex-wrap:wrap; }
 .mc-tab { padding:5px 12px; background:#eef2ff; color:#4338ca; border-radius:99px; font-size:12px; font-weight:500; }
@@ -223,10 +238,14 @@ async function openSheet(f) {
   const followLabel = f.following ? ('✓ ' + T.following) : ('➕ ' + T.follow);
   const followClass = f.following ? 'fol active' : 'fol';
 
+  const followBanner = isLoyalty
+    ? '<i class="ri-notification-3-fill" style="margin-right:4px;"></i> ' + (T.follow_banner || 'Kövesd a boltot, ne maradj le akciókról')
+    : '<i class="ri-megaphone-fill" style="margin-right:4px;"></i> ' + (T.follow_banner_ad || 'Kövesd, ne maradj le akciókról és nyereményekről');
+
   // Skeleton render first
   sheet.innerHTML = `
     <div class="km-sheet-grab" onclick="closeSheet()"></div>
-    <div class="km-cover ${f.type}"></div>
+    <div class="km-cover ${f.type}">${followBanner}</div>
     <div class="km-card-head">
       <div class="km-card-logo" style="background-image:url('${f.logo || ''}')"></div>
     </div>
@@ -355,29 +374,29 @@ function renderLoyaltyRich(s) {
     : `<span class="mc-status closed">${Lt.closed}</span>`;
 
   const galleryM = (s.gallery && s.gallery.length) ? `
-    <div class="mc-section" style="padding:0 18px;">
+    <div style="padding:0 18px;">
       <div class="mc-gallery">
         ${s.gallery.map(img => `<img src="${escapeHtml(img)}" loading="lazy">`).join('')}
       </div>
     </div>` : '';
 
-  const socialM = (s.social && (s.social.facebook||s.social.instagram||s.social.tiktok)) ? `
+  const socialM = (s.social && (s.social.facebook||s.social.instagram||s.social.tiktok) || s.website || s.public_email) ? `
     <div class="mc-social">
-      ${s.social.facebook  ? `<a href="${escapeHtml(s.social.facebook)}"  target="_blank" title="Facebook">📘</a>`  : ''}
-      ${s.social.instagram ? `<a href="${escapeHtml(s.social.instagram)}" target="_blank" title="Instagram">📷</a>` : ''}
-      ${s.social.tiktok    ? `<a href="${escapeHtml(s.social.tiktok)}"    target="_blank" title="TikTok">🎵</a>`     : ''}
-      ${s.website ? `<a href="${escapeHtml(s.website)}" target="_blank" title="Web">🌐</a>` : ''}
-      ${s.public_email ? `<a href="mailto:${escapeHtml(s.public_email)}" title="Email">✉️</a>` : ''}
+      ${s.social && s.social.facebook  ? `<a href="${escapeHtml(s.social.facebook)}"  target="_blank" title="Facebook"><i class="ri-facebook-circle-fill" style="color:#1877f2;"></i></a>` : ''}
+      ${s.social && s.social.instagram ? `<a href="${escapeHtml(s.social.instagram)}" target="_blank" title="Instagram"><i class="ri-instagram-fill" style="color:#e4405f;"></i></a>` : ''}
+      ${s.social && s.social.tiktok    ? `<a href="${escapeHtml(s.social.tiktok)}"    target="_blank" title="TikTok"><i class="ri-tiktok-fill" style="color:#000;"></i></a>` : ''}
+      ${s.website     ? `<a href="${escapeHtml(s.website)}"     target="_blank" title="Web"><i class="ri-global-line"></i></a>` : ''}
+      ${s.public_email? `<a href="mailto:${escapeHtml(s.public_email)}" title="Email"><i class="ri-mail-line"></i></a>` : ''}
     </div>` : '';
 
   const sloganM = s.slogan ? `<p style="margin:6px 0 0;color:#6b7280;font-style:italic;font-size:13px;">${escapeHtml(s.slogan)}</p>` : '';
-  const hoursM = s.open_hours_today ? `<div class="mc-row"><span class="ic">🕐</span><span>${escapeHtml(s.open_hours_today)}</span></div>` : '';
-  const addrM = s.address ? `<div class="mc-row"><span class="ic">📍</span><span>${escapeHtml(s.address)} ${escapeHtml(s.plz||'')} ${escapeHtml(s.city||'')}</span></div>` : '';
-  const phoneM = s.phone ? `<div class="mc-row"><span class="ic">📞</span><a href="tel:${escapeHtml(s.phone)}" style="color:#3b82f6;text-decoration:none;">${escapeHtml(s.phone)}</a></div>` : '';
+  const hoursM = s.open_hours_today ? `<div class="mc-row"><i class="ic ri-time-line"></i><span>${escapeHtml(s.open_hours_today)}</span></div>` : '';
+  const addrM = s.address ? `<div class="mc-row"><i class="ic ri-map-pin-line"></i><span>${escapeHtml(s.address)} ${escapeHtml(s.plz||'')} ${escapeHtml(s.city||'')}</span></div>` : '';
+  const phoneM = s.phone ? `<div class="mc-row"><i class="ic ri-phone-line"></i><a href="tel:${escapeHtml(s.phone)}" style="color:#3b82f6;text-decoration:none;">${escapeHtml(s.phone)}</a></div>` : '';
 
   const rewardsM = (s.rewards||[]).length ? `
     <div class="mc-section">
-      <div class="mc-h3">🎁 ${Lt.rewards} (${s.rewards.length})</div>
+      <div class="mc-h3"><i class="ri-gift-line"></i> ${Lt.rewards} (${s.rewards.length})</div>
       <div class="mc-rewards">
         ${s.rewards.map(r => {
           const v = parseFloat(r.action_value||0).toFixed(0);
@@ -393,27 +412,52 @@ function renderLoyaltyRich(s) {
               <span class="mc-reward-pts">${r.required_points} ${Lt.points}</span>
             </div>
             <div class="mc-reward-meta">
-              <span>🎁 ${rt}</span>
-              <span>+${r.points_given||0}/scan</span>
-              ${end ? `<span>📅 ${end}</span>` : ''}
+              <span><i class="ri-gift-fill"></i> ${rt}</span>
+              <span><i class="ri-coin-line"></i> +${r.points_given||0}/scan</span>
+              ${end ? `<span><i class="ri-calendar-line"></i> ${end}</span>` : ''}
             </div>
           </div>`;
         }).join('')}
       </div>
     </div>` : '';
 
-  const vipPills = s.vip ? (function() {
+  const vipTable = s.vip ? (function() {
     const v = s.vip;
-    const pills = [];
-    if (v.fix && v.fix.enabled) pills.push(`<span class="mc-vip-pill">👑 Fix: +${v.fix.bronze}/+${v.fix.silver}/+${v.fix.gold}/+${v.fix.platinum}</span>`);
-    if (v.streak && v.streak.enabled) {
-      const m = v.streak.type === 'double' ? '2x' : v.streak.type === 'triple' ? '3x' : '+';
-      pills.push(`<span class="mc-vip-pill">🔥 ${v.streak.count}. scan: ${m}</span>`);
+    const rows = [];
+    if (v.fix && v.fix.enabled) {
+      rows.push(`<tr>
+        <td class="row-label"><i class="ri-add-circle-line"></i> Fix</td>
+        <td class="bronze">+${v.fix.bronze}</td>
+        <td class="silver">+${v.fix.silver}</td>
+        <td class="gold">+${v.fix.gold}</td>
+        <td class="platinum">+${v.fix.platinum}</td>
+      </tr>`);
     }
-    return pills.length ? `<div class="mc-section"><div class="mc-h3">${Lt.vip}</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${pills.join('')}</div></div>` : '';
+    if (v.streak && v.streak.enabled) {
+      const m = v.streak.type === 'double' ? '2x' : v.streak.type === 'triple' ? '3x' : null;
+      rows.push(m
+        ? `<tr><td class="row-label"><i class="ri-fire-line"></i> ${v.streak.count}. scan</td><td class="mult" colspan="4">${m}</td></tr>`
+        : `<tr><td class="row-label"><i class="ri-fire-line"></i> ${v.streak.count}. scan</td><td class="bronze">+${v.streak.bronze}</td><td class="silver">+${v.streak.silver}</td><td class="gold">+${v.streak.gold}</td><td class="platinum">+${v.streak.platinum}</td></tr>`);
+    }
+    return rows.length ? `
+      <div class="mc-section">
+        <div class="mc-h3"><i class="ri-vip-crown-fill"></i> ${Lt.vip}</div>
+        <table class="mc-vip-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="bronze"><i class="ri-medal-line"></i><div>Bronze</div></th>
+              <th class="silver"><i class="ri-medal-line"></i><div>Silver</div></th>
+              <th class="gold"><i class="ri-medal-fill"></i><div>Gold</div></th>
+              <th class="platinum"><i class="ri-vip-crown-fill"></i><div>Platin</div></th>
+            </tr>
+          </thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </div>` : '';
   })() : '';
 
-  const ratingM = s.rating_count > 0 ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:13px;"><span style="color:#fbbf24;">⭐</span> <strong>${(s.rating_avg||0).toFixed(1)}</strong> <span style="color:#9ca3af;">(${s.rating_count})</span></div>` : '';
+  const ratingM = s.rating_count > 0 ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:13px;"><i class="ri-star-fill" style="color:#fbbf24;"></i> <strong>${(s.rating_avg||0).toFixed(1)}</strong> <span style="color:#9ca3af;">(${s.rating_count})</span></div>` : '';
 
   el.innerHTML = `
     <div style="padding:0 18px 8px;">
@@ -429,7 +473,7 @@ function renderLoyaltyRich(s) {
       ${socialM}
     </div>
     ${rewardsM}
-    ${vipPills}
+    ${vipTable}
   `;
 }
 
