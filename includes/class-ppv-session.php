@@ -554,7 +554,7 @@ add_action('template_redirect', function() {
 
     // Not logged in -> redirect to login
     if (!$user_id) {
-        $login_url = home_url('/einloggen/');
+        $login_url = home_url('/login');
         wp_redirect($login_url);
         exit;
     }
