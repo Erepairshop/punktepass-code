@@ -1092,6 +1092,22 @@ public static function render_landing_page($atts) {
             ]);
         }
 
+        // 🔹 ADVERTISER FALLBACK — check ppv_advertisers table
+        $adv = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, password_hash, business_name FROM {$prefix}ppv_advertisers WHERE owner_email = %s AND is_active = 1 LIMIT 1",
+            $login
+        ));
+        if ($adv && password_verify($password, $adv->password_hash)) {
+            if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+            $_SESSION['ppv_advertiser_id'] = (int)$adv->id;
+            ppv_log("📣 [PPV_Login] Advertiser logged in (#{$adv->id} {$adv->business_name})");
+            wp_send_json_success([
+                'message' => PPV_Lang::t('login_success'),
+                'role' => 'advertiser',
+                'redirect' => home_url('/business/admin'),
+            ]);
+        }
+
         // 🔹 LOGIN FAILED
         ppv_log("❌ [PPV_Login] Failed login attempt for: {$login}");
         wp_send_json_error(['message' => PPV_Lang::t('login_error_invalid')]);
