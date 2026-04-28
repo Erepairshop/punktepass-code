@@ -300,7 +300,7 @@ class PPV_Advertisers {
 
         self::start_session();
         $_SESSION['ppv_advertiser_id'] = $id;
-        wp_redirect(home_url('/business/admin/profile?welcome=1'));
+        wp_redirect(home_url('/business/admin/?welcome=1'));
         exit;
     }
 

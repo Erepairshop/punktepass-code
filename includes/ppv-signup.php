@@ -578,7 +578,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
             $_SESSION['ppv_advertiser_id'] = $adv_id;
             wp_send_json_success([
                 'message' => 'Sikeres advertiser regisztráció! 30 nap ingyen trial.',
-                'redirect' => home_url('/business/admin/profile?welcome=1'),
+                'redirect' => home_url('/business/admin/?welcome=1'),
                 'user_type' => 'advertiser',
             ]);
             return;
@@ -829,7 +829,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                 $_SESSION['ppv_advertiser_id'] = (int)$exists;
                 wp_send_json_success([
                     'message' => 'Belépés Google-lel.',
-                    'redirect' => home_url('/business/admin/profile'),
+                    'redirect' => home_url('/business/admin/'),
                 ]);
                 return;
             }
@@ -853,7 +853,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
             $_SESSION['ppv_advertiser_id'] = $adv_id;
             wp_send_json_success([
                 'message' => 'Sikeres Google regisztráció! 30 nap ingyen.',
-                'redirect' => home_url('/business/admin/profile?welcome=1'),
+                'redirect' => home_url('/business/admin/?welcome=1'),
             ]);
             return;
         }
