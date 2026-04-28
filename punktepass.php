@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
 // ========================================
 // 🔧 CORE CONSTANTS
 // ========================================
-define('PPV_VERSION', '1.0.6');
+define('PPV_VERSION', '1.0.7');
 define('PPV_PLUGIN_FILE', __FILE__);
 define('PPV_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PPV_PLUGIN_URL', plugin_dir_url(__FILE__));

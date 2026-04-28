@@ -2262,7 +2262,7 @@ async function initUserDashboard() {
     <div class="ppv-dashboard-netto">
       <div class="ppv-dashboard-inner">
 
-        <section class="ppv-qr-banner" id="ppv-show-qr">
+        <section class="ppv-qr-banner ppv-qr-banner-sticky" id="ppv-show-qr">
           <div class="ppv-qr-text">
             <i class="ri-qr-code-line"></i>
             <div>
@@ -2274,6 +2274,11 @@ async function initUserDashboard() {
             <i class="ri-download-line"></i> ${T.show_qr}
           </button>
         </section>
+
+        <iframe class="ppv-dashboard-map" src="/karte/?embed=1" allow="geolocation" loading="lazy" style="width:100%; height:calc(100vh - 220px); min-height:520px; border:none; border-radius:14px; margin-top:12px; background:#f3f4f6;"></iframe>
+        <style>
+          .ppv-qr-banner-sticky { position:sticky; top:8px; z-index:30; }
+        </style>
 
         <div class="ppv-qr-overlay" id="ppv-qr-overlay"></div>
 
@@ -2339,10 +2344,6 @@ async function initUserDashboard() {
           <div class="ppv-qr-status" id="ppv-qr-status"></div>
         </div>
 
-        <section class="ppv-store-section">
-          <h3 class="ppv-section-title"><i class="ri-store-2-fill"></i> ${T.nearby}</h3>
-          <div id="ppv-store-list" class="ppv-store-list"></div>
-        </section>
       </div>
     </div>
   `;
