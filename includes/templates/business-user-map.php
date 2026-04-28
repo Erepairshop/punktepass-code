@@ -66,7 +66,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-sheet { position:absolute; left:0; right:0; bottom:-100%; max-height:75vh; overflow:auto; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -8px 32px rgba(0,0,0,.25); transition:bottom .3s ease; z-index:20; }
 .km-sheet.open { bottom:0; }
 .km-sheet-grab { width:48px; height:5px; background:#d1d5db; border-radius:3px; margin:8px auto; }
-.km-cover { height:48px; background:linear-gradient(135deg,#6366f1,#8b5cf6) center/cover; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:600; padding:0 14px; text-align:center; }
+.km-cover { height:48px; background:linear-gradient(135deg,#6366f1,#8b5cf6) center/cover; display:flex; align-items:center; justify-content:flex-end; color:#fff; font-size:12px; font-weight:600; padding:0 16px 0 110px; text-align:right; line-height:1.2; }
 .km-cover.advertiser { background:linear-gradient(135deg,#f59e0b,#dc2626); }
 .km-card-head { padding:0 18px; margin-top:-40px; display:flex; gap:12px; align-items:flex-end; }
 .km-card-logo { width:80px; height:80px; border-radius:16px; background:#fff center/cover no-repeat; border:4px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; overflow:hidden; }
