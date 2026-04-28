@@ -15,7 +15,7 @@ $L = $labels[$lang] ?? $labels['de'];
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?php echo esc_html($L['title']); ?> — PunktePass</title>
-<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 * { box-sizing:border-box; }
 html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-serif; }
@@ -24,7 +24,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-bar input, .km-bar select { padding:8px 10px; border:none; border-radius:6px; font:inherit; background:#f3f4f6; }
 .km-bar input { flex:1; min-width:120px; }
 .km-bar strong { font-size:18px; }
-.km-locate-btn { position:absolute; bottom:18px; right:18px; z-index:10; width:48px; height:48px; border-radius:50%; background:#fff; border:none; box-shadow:0 4px 12px rgba(0,0,0,.2); cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center; }
+.km-locate-btn { position:fixed; bottom:90px; right:18px; z-index:9999; width:56px; height:56px; border-radius:50%; background:#3b82f6; color:#fff; border:none; box-shadow:0 4px 16px rgba(0,0,0,.35); cursor:pointer; font-size:24px; display:flex; align-items:center; justify-content:center; }
 .km-locate-btn:hover { background:#f3f4f6; }
 .km-locate-btn.active { color:#3b82f6; }
 .km-locate-btn.error { color:#dc2626; }
@@ -81,30 +81,27 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 </div>
 <button class="km-locate-btn" id="km-locate" title="📍 Helyzetem">📍</button>
 <div id="km-sheet" class="km-sheet"></div>
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>window.__mapDbg = 'HTML loaded ' + Date.now();</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+window.addEventListener('error', function(e) {
+  document.body.innerHTML += '<div style="position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:99999;font:12px monospace;">JS ERROR: ' + (e.message || e.error) + ' @ ' + (e.filename||'') + ':' + (e.lineno||'') + '</div>';
+});
 const L = <?php echo wp_json_encode($L); ?>;
 const LANG = <?php echo wp_json_encode($lang); ?>;
 const DEFAULT_CENTER = [22.4633, 47.6822]; // Carei, RO
 
-const map = new maplibregl.Map({
-  container: 'map',
-  style: 'https://tiles.openfreemap.org/styles/liberty',
-  center: DEFAULT_CENTER,
-  zoom: 12,
-  attributionControl: { compact: true },
-  pitchWithRotate: false,
-  dragRotate: false,
-});
-map.addControl(new maplibregl.NavigationControl({ visualizePitch: false, showCompass: false }), 'right');
+const map = L.map('map', { zoomControl: true }).setView([DEFAULT_CENTER[1], DEFAULT_CENTER[0]], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap',
+  maxZoom: 19,
+}).addTo(map);
 
 let userMarker = null;
 function showUser(lat, lng) {
-  const el = document.createElement('div');
-  el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.3);';
-  if (userMarker) userMarker.remove();
-  userMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
-  map.flyTo({ center: [lng, lat], zoom: 14 });
+  if (userMarker) map.removeLayer(userMarker);
+  userMarker = L.circleMarker([lat, lng], { radius:9, color:'#3b82f6', fillColor:'#60a5fa', fillOpacity:0.9, weight:3 }).addTo(map);
+  map.setView([lat, lng], 14);
 }
 function locateMe() {
   const btn = document.getElementById('km-locate');
@@ -132,9 +129,14 @@ function locateMe() {
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
   );
 }
-document.getElementById('km-locate').addEventListener('click', locateMe);
-// Try automatically once on load
-locateMe();
+document.getElementById('km-locate').addEventListener('click', function(e) {
+  e.preventDefault();
+  console.log('[map] locate clicked');
+  alert('Klikk OK, geolocation kérés indul...');
+  locateMe();
+});
+// Try automatically once on load (silent)
+setTimeout(locateMe, 500);
 
 let allFeatures = [];
 let pinMarkers = [];
@@ -145,31 +147,29 @@ async function loadFeatures() {
     const d = await r.json();
     allFeatures = d.features || [];
     if (allFeatures.length && !userMarker) {
-      map.flyTo({ center: [allFeatures[0].lng, allFeatures[0].lat], zoom: 12 });
+      map.setView([allFeatures[0].lat, allFeatures[0].lng], 12);
     }
     renderPins();
   } catch (e) { console.error(e); }
 }
 
-function makePinEl(f) {
-  const div = document.createElement('div');
-  div.className = 'km-pin ' + f.type + (f.featured ? ' featured' : '');
+function makePinHtml(f) {
   const ico = f.type === 'loyalty' ? '🎁' : '📣';
-  div.innerHTML = `<div class="ring">${f.logo ? `<img src="${f.logo}">` : `<span class="ico">${ico}</span>`}</div>`;
-  return div;
+  const inner = f.logo ? `<img src="${f.logo}" style="width:100%;height:100%;object-fit:cover">` : `<span class="ico">${ico}</span>`;
+  return `<div class="km-pin ${f.type}${f.featured?' featured':''}"><div class="ring">${inner}</div></div>`;
 }
 
 function renderPins() {
-  pinMarkers.forEach(m => m.remove());
+  pinMarkers.forEach(m => map.removeLayer(m));
   pinMarkers = [];
   const cat = document.getElementById('km-cat').value;
   const q = (document.getElementById('km-search').value || '').toLowerCase();
   allFeatures.forEach(f => {
     if (cat && f.type !== cat) return;
     if (q && !f.name.toLowerCase().includes(q)) return;
-    const m = new maplibregl.Marker({ element: makePinEl(f), anchor:'center' })
-      .setLngLat([f.lng, f.lat]).addTo(map);
-    m.getElement().addEventListener('click', () => openSheet(f));
+    const icon = L.divIcon({ className:'', html: makePinHtml(f), iconSize:[48,48], iconAnchor:[24,24] });
+    const m = L.marker([f.lat, f.lng], { icon }).addTo(map);
+    m.on('click', () => openSheet(f));
     pinMarkers.push(m);
   });
 }
@@ -227,7 +227,7 @@ document.getElementById('km-cat').addEventListener('change', renderPins);
 document.getElementById('km-search').addEventListener('input', renderPins);
 loadFeatures();
 
-// Close sheet on map click
+// Close sheet on map click (Leaflet)
 map.on('click', () => closeSheet());
 </script>
 </body>

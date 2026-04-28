@@ -2333,7 +2333,7 @@ async function initUserDashboard() {
         </div>
 
         <section class="ppv-store-map-section" style="margin-top:8px;">
-          <iframe src="/karte/?embed=1" allow="geolocation" allowfullscreen referrerpolicy="origin" style="width:100%;height:calc(100vh - 140px);min-height:480px;border:none;border-radius:12px;display:block;" title="${T.nearby}"></iframe>
+          <iframe src="/karte/?embed=1&v=${Date.now()}" allow="geolocation" allowfullscreen referrerpolicy="origin" style="width:100%;height:calc(100vh - 140px);min-height:480px;border:none;border-radius:12px;display:block;" title="${T.nearby}"></iframe>
         </section>
       </div>
     </div>
