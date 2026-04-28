@@ -438,23 +438,49 @@ class PPV_Advertisers {
         $adv_id = self::current_advertiser_id();
         if (!$adv_id) wp_die('Auth required.');
 
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+
         global $wpdb;
         $ad_id = intval($_POST['ad_id'] ?? 0);
+
+        $existing_image = '';
+        if ($ad_id > 0) {
+            $existing_image = (string)$wpdb->get_var($wpdb->prepare(
+                "SELECT image_url FROM {$wpdb->prefix}ppv_ads WHERE id = %d", $ad_id
+            ));
+        }
+        $image_url = $existing_image;
+        if (!empty($_FILES['image_file']['name'])) {
+            $att_id = media_handle_upload('image_file', 0);
+            if (!is_wp_error($att_id)) {
+                $image_url = wp_get_attachment_url($att_id);
+            }
+        }
+
+        $visibility = in_array($_POST['visibility'] ?? '', ['public','followers'], true) ? $_POST['visibility'] : 'public';
+        $ad_type = sanitize_text_field($_POST['ad_type'] ?? 'discount_percent');
+        $per_user_limit = in_array($_POST['per_user_limit'] ?? '', ['lifetime','daily','weekly','monthly','none'], true) ? $_POST['per_user_limit'] : 'lifetime';
+        $max_claims_in = $_POST['max_claims'] ?? '';
+        $max_claims = ($max_claims_in === '' || $max_claims_in === null) ? null : max(0, (int)$max_claims_in);
+
         $data = [
             'advertiser_id' => $adv_id,
-            'title_de' => sanitize_text_field($_POST['title_de'] ?? ''),
-            'title_hu' => sanitize_text_field($_POST['title_hu'] ?? ''),
-            'title_ro' => sanitize_text_field($_POST['title_ro'] ?? ''),
-            'title_en' => sanitize_text_field($_POST['title_en'] ?? ''),
-            'body_de'  => wp_kses_post($_POST['body_de'] ?? ''),
-            'body_hu'  => wp_kses_post($_POST['body_hu'] ?? ''),
-            'body_ro'  => wp_kses_post($_POST['body_ro'] ?? ''),
-            'body_en'  => wp_kses_post($_POST['body_en'] ?? ''),
-            'image_url'=> esc_url_raw($_POST['image_url'] ?? ''),
-            'cta_url'  => esc_url_raw($_POST['cta_url'] ?? ''),
+            'ad_type'    => $ad_type,
+            'visibility' => $visibility,
+            'title'      => sanitize_text_field($_POST['title'] ?? ''),
+            'body'       => wp_kses_post($_POST['body'] ?? ''),
+            'promo_value'=> sanitize_text_field($_POST['promo_value'] ?? ''),
+            'coupon_code'=> strtoupper(preg_replace('/[^A-Z0-9_-]/i', '', $_POST['coupon_code'] ?? '')),
+            'badge'      => sanitize_text_field($_POST['badge'] ?? ''),
+            'max_claims' => $max_claims,
+            'per_user_limit' => $per_user_limit,
+            'image_url'  => $image_url,
+            'cta_url'    => esc_url_raw($_POST['cta_url'] ?? ''),
             'valid_from' => sanitize_text_field($_POST['valid_from'] ?? '') ?: null,
             'valid_to'   => sanitize_text_field($_POST['valid_to'] ?? '') ?: null,
-            'followers_only' => !empty($_POST['followers_only']) ? 1 : 0,
+            'followers_only' => $visibility === 'followers' ? 1 : 0,
             'is_active' => !empty($_POST['is_active']) ? 1 : 0,
         ];
         if ($ad_id > 0) {
