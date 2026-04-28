@@ -58,6 +58,9 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-pin:hover .ring { transform:scale(1.12); }
 .km-pin .ring img { width:100%; height:100%; object-fit:cover; }
 .km-pin .ring .ico { font-size:22px; }
+.km-pin .ring .name-init { font-size:11px; font-weight:800; color:#fff; line-height:1; text-align:center; padding:2px; letter-spacing:.3px; text-shadow:0 1px 2px rgba(0,0,0,.3); }
+.km-pin.loyalty .ring.no-logo { background:linear-gradient(135deg,#6366f1,#8b5cf6); border-color:#fff; }
+.km-pin.advertiser .ring.no-logo { background:linear-gradient(135deg,#f59e0b,#d97706); border-color:#fff; }
 .km-pin .badge { position:absolute; top:-4px; right:-4px; background:var(--c); color:#fff; font-size:10px; padding:2px 5px; border-radius:8px; font-weight:700; }
 /* card */
 .km-sheet { position:absolute; left:0; right:0; bottom:-100%; max-height:75vh; overflow:auto; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -8px 32px rgba(0,0,0,.25); transition:bottom .3s ease; z-index:20; }
@@ -249,12 +252,29 @@ async function loadFeatures() {
   } catch (e) { console.error(e); }
 }
 
+function shortName(name) {
+  const t = String(name||'').trim();
+  if (!t) return '?';
+  if (t.length <= 8) return t;
+  const words = t.split(/\s+/);
+  if (words.length >= 2) {
+    return words.slice(0,2).map(w => w.slice(0,4)).join(' ');
+  }
+  return t.slice(0,7) + '…';
+}
+
 function makePinEl(f) {
-  const ico = f.type === 'loyalty' ? '🎁' : '📣';
   const div = document.createElement('div');
   div.className = 'km-pin ' + f.type + (f.featured ? ' featured' : '');
   div.style.pointerEvents = 'auto';
-  div.innerHTML = `<div class="ring" style="pointer-events:auto;">${f.logo ? `<img src="${f.logo}" style="width:100%;height:100%;object-fit:cover;pointer-events:none">` : `<span class="ico" style="pointer-events:none">${ico}</span>`}</div>`;
+  div.title = f.name || '';
+  let inner;
+  if (f.logo) {
+    inner = `<div class="ring" style="pointer-events:auto;"><img src="${f.logo}" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></div>`;
+  } else {
+    inner = `<div class="ring no-logo" style="pointer-events:auto;"><span class="name-init" style="pointer-events:none">${escapeHtml(shortName(f.name))}</span></div>`;
+  }
+  div.innerHTML = inner;
   return div;
 }
 
