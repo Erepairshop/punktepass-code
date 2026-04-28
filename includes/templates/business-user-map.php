@@ -84,10 +84,15 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 <script>window.__mapDbg = 'HTML loaded ' + Date.now();</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+if (typeof L === 'undefined') {
+  document.body.innerHTML = '<div style="padding:20px;background:red;color:white">Leaflet is undefined! script tag did not provide L global.</div>';
+}
+</script>
+<script>
 window.addEventListener('error', function(e) {
   document.body.innerHTML += '<div style="position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:99999;font:12px monospace;">JS ERROR: ' + (e.message || e.error) + ' @ ' + (e.filename||'') + ':' + (e.lineno||'') + '</div>';
 });
-const L = <?php echo wp_json_encode($L); ?>;
+const T = <?php echo wp_json_encode($L); ?>;
 const LANG = <?php echo wp_json_encode($lang); ?>;
 const DEFAULT_CENTER = [22.4633, 47.6822]; // Carei, RO
 
@@ -178,8 +183,8 @@ function openSheet(f) {
   const sheet = document.getElementById('km-sheet');
   const isLoyalty = f.type === 'loyalty';
   const tagClass = isLoyalty ? 'loyalty' : 'advertiser';
-  const tagLabel = isLoyalty ? '🎁 ' + L.points_here : '📣 ' + L.offers;
-  const followLabel = f.following ? ('✓ ' + L.following) : ('➕ ' + L.follow);
+  const tagLabel = isLoyalty ? '🎁 ' + T.points_here : '📣 ' + T.offers;
+  const followLabel = f.following ? ('✓ ' + T.following) : ('➕ ' + T.follow);
   const followClass = f.following ? 'fol active' : 'fol';
   sheet.innerHTML = `
     <div class="km-sheet-grab" onclick="closeSheet()"></div>
@@ -193,9 +198,9 @@ function openSheet(f) {
       ${f.address ? f.address : ''}
     </div>
     <div class="km-card-actions">
-      ${f.phone ? `<a class="call" href="tel:${f.phone}">📞 ${L.call}</a>` : ''}
-      ${f.whatsapp ? `<a class="wa" href="https://wa.me/${f.whatsapp.replace(/[^0-9]/g,'')}">💬 ${L.whatsapp}</a>` : ''}
-      <a class="dir" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}">🗺 ${L.directions}</a>
+      ${f.phone ? `<a class="call" href="tel:${f.phone}">📞 ${T.call}</a>` : ''}
+      ${f.whatsapp ? `<a class="wa" href="https://wa.me/${f.whatsapp.replace(/[^0-9]/g,'')}">💬 ${T.whatsapp}</a>` : ''}
+      <a class="dir" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}">🗺 ${T.directions}</a>
       <button class="${followClass}" onclick="toggleFollow('${f.type}',${f.id},this)">${followLabel}</button>
     </div>
   `;
@@ -215,7 +220,7 @@ window.toggleFollow = async function(type, id, btn) {
     const d = await r.json();
     if (d.ok) {
       btn.classList.toggle('active', d.following);
-      btn.innerHTML = d.following ? ('✓ ' + L.following) : ('➕ ' + L.follow);
+      btn.innerHTML = d.following ? ('✓ ' + T.following) : ('➕ ' + T.follow);
       const f = allFeatures.find(x => x.id === id && x.type === type);
       if (f) f.following = d.following;
     }
