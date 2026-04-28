@@ -24,6 +24,10 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-bar input, .km-bar select { padding:8px 10px; border:none; border-radius:6px; font:inherit; background:#f3f4f6; }
 .km-bar input { flex:1; min-width:120px; }
 .km-bar strong { font-size:18px; }
+.km-locate-btn { position:absolute; bottom:18px; right:18px; z-index:10; width:48px; height:48px; border-radius:50%; background:#fff; border:none; box-shadow:0 4px 12px rgba(0,0,0,.2); cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center; }
+.km-locate-btn:hover { background:#f3f4f6; }
+.km-locate-btn.active { color:#3b82f6; }
+.km-locate-btn.error { color:#dc2626; }
 /* pin */
 .km-pin { width:48px; height:48px; cursor:pointer; }
 .km-pin.loyalty { --c: #3b82f6; }
@@ -75,6 +79,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
     <option value="advertiser">📣 Akciók</option>
   </select>
 </div>
+<button class="km-locate-btn" id="km-locate" title="📍 Helyzetem">📍</button>
 <div id="km-sheet" class="km-sheet"></div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
@@ -101,9 +106,35 @@ function showUser(lat, lng) {
   userMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
   map.flyTo({ center: [lng, lat], zoom: 14 });
 }
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(p => showUser(p.coords.latitude, p.coords.longitude));
+function locateMe() {
+  const btn = document.getElementById('km-locate');
+  if (!navigator.geolocation) {
+    btn.classList.add('error');
+    btn.textContent = '✕';
+    alert('A böngésző nem támogatja a geolocation-t.');
+    return;
+  }
+  btn.textContent = '⏳';
+  navigator.geolocation.getCurrentPosition(
+    p => {
+      showUser(p.coords.latitude, p.coords.longitude);
+      btn.classList.add('active');
+      btn.textContent = '📍';
+    },
+    err => {
+      btn.classList.add('error');
+      btn.textContent = '⚠️';
+      const msg = err.code === 1
+        ? 'Engedélyezd a helyhozzáférést a böngésző beállításában (PunktePass app → Berechtigungen → Standort) és frissítsd az oldalt.'
+        : 'Helymeghatározás sikertelen: ' + err.message;
+      alert(msg);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
 }
+document.getElementById('km-locate').addEventListener('click', locateMe);
+// Try automatically once on load
+locateMe();
 
 let allFeatures = [];
 let pinMarkers = [];
