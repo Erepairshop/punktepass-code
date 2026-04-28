@@ -218,6 +218,7 @@ $is_eu = isset($eu_countries[$current_country]);
       <div style="display:flex; gap:6px; flex-wrap:wrap;">
         <button type="button" id="geoBtn" class="bz-btn secondary" style="font-size:13px;"><i class="ri-search-line"></i> Cím → GPS</button>
         <button type="button" id="manualBtn" class="bz-btn secondary" style="font-size:13px;"><i class="ri-pushpin-line"></i> Pin térképen</button>
+        <button type="button" id="clearGpsBtn" class="bz-btn secondary" style="font-size:13px; color:#dc2626; border-color:#fecaca;" onclick="clearGps()"><i class="ri-delete-bin-line"></i> GPS törlés</button>
       </div>
       <div id="mapWrap" style="display:none; margin-top:10px;">
         <div style="font-size:11px; color:var(--muted); margin-bottom:6px;"><i class="ri-information-line"></i> Húzd a pin-t vagy kattints a pontos helyre</div>
@@ -233,6 +234,16 @@ $is_eu = isset($eu_countries[$current_country]);
 <script>
 const latInput = document.getElementById('latInput');
 const lngInput = document.getElementById('lngInput');
+
+function clearGps() {
+  if (!confirm('Biztos törlöd a GPS koordinátákat? A hirdetésed eltűnik a térképről.')) return;
+  latInput.value = '';
+  lngInput.value = '';
+  if (pickMap && marker) {
+    marker.remove();
+    marker = null;
+  }
+}
 
 function onCountryChange() {
   const sel = document.getElementById('countrySelect');
