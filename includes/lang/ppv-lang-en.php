@@ -463,6 +463,14 @@ return [
 'signup_type_customer_desc' => 'Collect points',
 'signup_type_vendor' => 'Vendor',
 'signup_type_vendor_desc' => '30-day trial',
+'signup_choose_type' => 'What would you like to use?',
+'signup_choose_sub' => 'Pick the option that fits your business',
+'signup_loyalty_title' => 'Loyalty / Reward Program',
+'signup_loyalty_desc' => 'Collect points, scan QR, rewards — full system with 30-day trial.',
+'signup_ad_title' => 'Advertising',
+'signup_ad_desc' => 'Show on map, push to followers, ads — only 5 €/month, 30 days free.',
+'signup_business_name' => 'Company name',
+'signup_business_name_placeholder' => 'e.g. Erik Bistro',
 
 // BUTTONS
 'signup_google_btn' => 'Register with Google',

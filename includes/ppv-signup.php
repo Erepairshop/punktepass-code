@@ -264,14 +264,14 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                         <div id="ppv-vendor-choice" class="vc-overlay" style="display:none;">
                           <div class="vc-modal">
                             <button type="button" class="vc-close" id="vc-close" aria-label="Close"><i class="ri-close-line"></i></button>
-                            <h3 class="vc-title"><?php echo esc_html(PPV_Lang::t('signup_choose_type') ?: 'Was möchten Sie nutzen?'); ?></h3>
-                            <p class="vc-sub"><?php echo esc_html(PPV_Lang::t('signup_choose_sub') ?: 'Wählen Sie das passende Angebot für Ihr Geschäft'); ?></p>
+                            <h3 class="vc-title"><?php echo esc_html(PPV_Lang::t('signup_choose_type')); ?></h3>
+                            <p class="vc-sub"><?php echo esc_html(PPV_Lang::t('signup_choose_sub')); ?></p>
 
                             <button type="button" class="vc-card vc-loyalty" id="vc-pick-loyalty">
                               <div class="vc-card-icon"><i class="ri-gift-2-fill"></i></div>
                               <div class="vc-card-body">
-                                <div class="vc-card-title"><?php echo esc_html(PPV_Lang::t('signup_loyalty_title') ?: 'Loyalty / Treueprogramm'); ?></div>
-                                <div class="vc-card-desc"><?php echo esc_html(PPV_Lang::t('signup_loyalty_desc') ?: 'Punkte sammeln, QR scannen, Belohnungen — komplettes System mit 30 Tage Trial.'); ?></div>
+                                <div class="vc-card-title"><?php echo esc_html(PPV_Lang::t('signup_loyalty_title')); ?></div>
+                                <div class="vc-card-desc"><?php echo esc_html(PPV_Lang::t('signup_loyalty_desc')); ?></div>
                               </div>
                               <i class="ri-arrow-right-s-line vc-card-arrow"></i>
                             </button>
@@ -279,8 +279,8 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                             <button type="button" class="vc-card vc-ad" id="vc-pick-ad">
                               <div class="vc-card-icon ad"><i class="ri-megaphone-fill"></i></div>
                               <div class="vc-card-body">
-                                <div class="vc-card-title"><?php echo esc_html(PPV_Lang::t('signup_ad_title') ?: 'Werbung / Hirdetés'); ?></div>
-                                <div class="vc-card-desc"><?php echo esc_html(PPV_Lang::t('signup_ad_desc') ?: 'Auf Karte erscheinen, Push an Follower, Anzeigen — nur 5 €/Monat.'); ?></div>
+                                <div class="vc-card-title"><?php echo esc_html(PPV_Lang::t('signup_ad_title')); ?></div>
+                                <div class="vc-card-desc"><?php echo esc_html(PPV_Lang::t('signup_ad_desc')); ?></div>
                               </div>
                               <i class="ri-arrow-right-s-line vc-card-arrow"></i>
                             </button>
@@ -323,9 +323,9 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
 
                             <!-- Business name (advertiser only) -->
                             <div class="su-input-group" id="ppv-business-name-group" style="display:none;">
-                                <label for="ppv-business-name"><i class="ri-store-2-line"></i> Cégnév / Firmenname</label>
+                                <label for="ppv-business-name"><i class="ri-store-2-line"></i> <?php echo esc_html(PPV_Lang::t('signup_business_name')); ?></label>
                                 <div class="su-input-wrap">
-                                    <input type="text" id="ppv-business-name" name="business_name" class="su-input" placeholder="pl. Erik Bistro" maxlength="80">
+                                    <input type="text" id="ppv-business-name" name="business_name" class="su-input" placeholder="<?php echo esc_attr(PPV_Lang::t('signup_business_name_placeholder')); ?>" maxlength="80">
                                 </div>
                             </div>
 

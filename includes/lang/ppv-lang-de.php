@@ -471,6 +471,14 @@ return [
 'signup_type_customer_desc' => 'Punkte sammeln',
 'signup_type_vendor' => 'Händler',
 'signup_type_vendor_desc' => '30 Tage Test',
+'signup_choose_type' => 'Was möchten Sie nutzen?',
+'signup_choose_sub' => 'Wählen Sie das passende Angebot für Ihr Geschäft',
+'signup_loyalty_title' => 'Loyalty / Treueprogramm',
+'signup_loyalty_desc' => 'Punkte sammeln, QR scannen, Belohnungen — komplettes System mit 30 Tage Trial.',
+'signup_ad_title' => 'Werbung / Anzeige',
+'signup_ad_desc' => 'Auf Karte erscheinen, Push an Follower, Anzeigen — nur 5 €/Monat, 30 Tage gratis.',
+'signup_business_name' => 'Firmenname',
+'signup_business_name_placeholder' => 'z.B. Bistro Müller',
 
 // BUTTONS
 'signup_google_btn' => 'Mit Google registrieren',

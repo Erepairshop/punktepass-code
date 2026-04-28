@@ -509,6 +509,14 @@ return [
 'signup_type_customer_desc' => 'Colectează puncte',
 'signup_type_vendor' => 'Comerciant',
 'signup_type_vendor_desc' => '30 zile test',
+'signup_choose_type' => 'Ce dorești să utilizezi?',
+'signup_choose_sub' => 'Alege oferta potrivită pentru afacerea ta',
+'signup_loyalty_title' => 'Loyalty / Program de fidelitate',
+'signup_loyalty_desc' => 'Colectare puncte, scanare QR, recompense — sistem complet cu 30 zile gratuit.',
+'signup_ad_title' => 'Reclamă / Publicitate',
+'signup_ad_desc' => 'Apariție pe hartă, push către urmăritori, reclame — doar 5 €/lună, 30 zile gratis.',
+'signup_business_name' => 'Numele firmei',
+'signup_business_name_placeholder' => 'ex. Bistro Erik',
 
 // BUTTONS
 'signup_google_btn' => 'Înregistrare cu Google',

@@ -496,6 +496,14 @@ return [
 'signup_type_customer_desc' => 'Pontgyűjtés',
 'signup_type_vendor' => 'Kereskedő',
 'signup_type_vendor_desc' => '30 napos teszt',
+'signup_choose_type' => 'Mit szeretnél használni?',
+'signup_choose_sub' => 'Válaszd ki az üzletednek megfelelő ajánlatot',
+'signup_loyalty_title' => 'Loyalty / Hűségrendszer',
+'signup_loyalty_desc' => 'Pontgyűjtés, QR szkennelés, jutalmak — komplett rendszer 30 napos próbával.',
+'signup_ad_title' => 'Hirdetés / Reklám',
+'signup_ad_desc' => 'Megjelenés a térképen, push követőknek, hirdetések — csak 5 €/hó, 30 nap ingyen.',
+'signup_business_name' => 'Cégnév',
+'signup_business_name_placeholder' => 'pl. Erik Bisztró',
 
 // BUTTONS
 'signup_google_btn' => 'Regisztráció Google-lal',
