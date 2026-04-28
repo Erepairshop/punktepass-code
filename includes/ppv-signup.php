@@ -260,6 +260,49 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                             </div>
                         </div>
 
+                        <!-- Vendor sub-choice modal: Loyalty vs Werbung -->
+                        <div id="ppv-vendor-choice" class="vc-overlay" style="display:none;">
+                          <div class="vc-modal">
+                            <button type="button" class="vc-close" id="vc-close" aria-label="Close"><i class="ri-close-line"></i></button>
+                            <h3 class="vc-title"><?php echo esc_html(PPV_Lang::t('signup_choose_type') ?: 'Was möchten Sie nutzen?'); ?></h3>
+                            <p class="vc-sub"><?php echo esc_html(PPV_Lang::t('signup_choose_sub') ?: 'Wählen Sie das passende Angebot für Ihr Geschäft'); ?></p>
+
+                            <button type="button" class="vc-card vc-loyalty" id="vc-pick-loyalty">
+                              <div class="vc-card-icon"><i class="ri-gift-2-fill"></i></div>
+                              <div class="vc-card-body">
+                                <div class="vc-card-title"><?php echo esc_html(PPV_Lang::t('signup_loyalty_title') ?: 'Loyalty / Treueprogramm'); ?></div>
+                                <div class="vc-card-desc"><?php echo esc_html(PPV_Lang::t('signup_loyalty_desc') ?: 'Punkte sammeln, QR scannen, Belohnungen — komplettes System mit 30 Tage Trial.'); ?></div>
+                              </div>
+                              <i class="ri-arrow-right-s-line vc-card-arrow"></i>
+                            </button>
+
+                            <button type="button" class="vc-card vc-ad" id="vc-pick-ad">
+                              <div class="vc-card-icon ad"><i class="ri-megaphone-fill"></i></div>
+                              <div class="vc-card-body">
+                                <div class="vc-card-title"><?php echo esc_html(PPV_Lang::t('signup_ad_title') ?: 'Werbung / Hirdetés'); ?></div>
+                                <div class="vc-card-desc"><?php echo esc_html(PPV_Lang::t('signup_ad_desc') ?: 'Auf Karte erscheinen, Push an Follower, Anzeigen — nur 5 €/Monat.'); ?></div>
+                              </div>
+                              <i class="ri-arrow-right-s-line vc-card-arrow"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <style>
+                          .vc-overlay { position:fixed; inset:0; background:rgba(15,23,42,.6); backdrop-filter:blur(4px); z-index:99998; display:flex; align-items:center; justify-content:center; padding:16px; }
+                          .vc-modal { width:100%; max-width:440px; background:#fff; border-radius:18px; padding:24px 22px 18px; box-shadow:0 20px 60px rgba(0,0,0,.3); position:relative; max-height:90vh; overflow:auto; }
+                          .vc-close { position:absolute; top:10px; right:10px; width:36px; height:36px; border-radius:50%; background:#f3f4f6; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:20px; color:#6b7280; }
+                          .vc-title { margin:0 0 4px; font-size:19px; font-weight:700; color:#111827; }
+                          .vc-sub { margin:0 0 18px; color:#6b7280; font-size:13px; }
+                          .vc-card { display:flex; align-items:center; gap:14px; width:100%; text-align:left; padding:16px; margin-bottom:12px; border:2px solid #e5e7eb; border-radius:14px; background:#fff; cursor:pointer; transition:all .18s ease; }
+                          .vc-card:hover { border-color:#6366f1; transform:translateY(-1px); box-shadow:0 6px 18px rgba(99,102,241,.15); }
+                          .vc-card-icon { width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+                          .vc-card-icon.ad { background:linear-gradient(135deg,#f59e0b,#d97706); }
+                          .vc-card-body { flex:1; min-width:0; }
+                          .vc-card-title { font-weight:700; color:#111827; font-size:15px; margin-bottom:2px; }
+                          .vc-card-desc { color:#6b7280; font-size:12.5px; line-height:1.4; }
+                          .vc-card-arrow { color:#9ca3af; font-size:22px; flex-shrink:0; }
+                          .vc-card.vc-ad:hover { border-color:#f59e0b; box-shadow:0 6px 18px rgba(245,158,11,.18); }
+                        </style>
+
                         <!-- Google Signup -->
                         <button type="button" id="ppv-google-signup-btn" class="su-google-btn">
                             <svg width="18" height="18" viewBox="0 0 48 48">
@@ -277,6 +320,14 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                         <!-- Signup Form -->
                         <form id="ppv-signup-form" class="su-form" autocomplete="off">
                             <input type="hidden" name="user_type" id="ppv-user-type" value="user">
+
+                            <!-- Business name (advertiser only) -->
+                            <div class="su-input-group" id="ppv-business-name-group" style="display:none;">
+                                <label for="ppv-business-name"><i class="ri-store-2-line"></i> Cégnév / Firmenname</label>
+                                <div class="su-input-wrap">
+                                    <input type="text" id="ppv-business-name" name="business_name" class="su-input" placeholder="pl. Erik Bistro" maxlength="80">
+                                </div>
+                            </div>
 
                             <!-- Email -->
                             <div class="su-input-group">
@@ -391,12 +442,49 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                     return;
                 }
 
+                const overlay = document.getElementById('ppv-vendor-choice');
+                const pickLoyalty = document.getElementById('vc-pick-loyalty');
+                const pickAd = document.getElementById('vc-pick-ad');
+                const closeBtn = document.getElementById('vc-close');
+
+                function openVendorChoice() {
+                    if (overlay) overlay.style.display = 'flex';
+                }
+                function closeVendorChoice() {
+                    if (overlay) overlay.style.display = 'none';
+                    // Revert tab to user if no choice made
+                    tabs.forEach(function(t) { t.classList.toggle('active', t.dataset.type === 'user'); });
+                    hiddenInput.value = 'user';
+                }
+
                 tabs.forEach(function(tab) {
                     tab.addEventListener('click', function() {
                         tabs.forEach(function(t) { t.classList.remove('active'); });
                         tab.classList.add('active');
                         hiddenInput.value = tab.dataset.type;
+                        if (tab.dataset.type === 'vendor') openVendorChoice();
                     });
+                });
+
+                if (closeBtn) closeBtn.addEventListener('click', closeVendorChoice);
+                if (overlay) overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeVendorChoice();
+                });
+                const bizGroup = document.getElementById('ppv-business-name-group');
+                function setAdvertiserMode(on) {
+                  if (bizGroup) bizGroup.style.display = on ? '' : 'none';
+                  const inp = document.getElementById('ppv-business-name');
+                  if (inp) inp.required = !!on;
+                }
+                if (pickLoyalty) pickLoyalty.addEventListener('click', function() {
+                    hiddenInput.value = 'vendor';
+                    setAdvertiserMode(false);
+                    if (overlay) overlay.style.display = 'none';
+                });
+                if (pickAd) pickAd.addEventListener('click', function() {
+                    hiddenInput.value = 'advertiser';
+                    setAdvertiserMode(true);
+                    if (overlay) overlay.style.display = 'none';
                 });
             }
 
@@ -444,6 +532,45 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
         $terms = isset($_POST['terms']) && $_POST['terms'] === 'true';
         $privacy = isset($_POST['privacy']) && $_POST['privacy'] === 'true';
         $user_type = sanitize_text_field($_POST['user_type'] ?? 'user'); // NEW!
+
+        // Advertiser branch — separate registration in ppv_advertisers table
+        if ($user_type === 'advertiser') {
+            $business_name = sanitize_text_field($_POST['business_name'] ?? '');
+            if (!is_email($email) || strlen($password) < 6 || strlen($business_name) < 2) {
+                wp_send_json_error(['message' => 'Hiányzó adatok (cégnév, email, jelszó min 6).']);
+                return;
+            }
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$prefix}ppv_advertisers WHERE owner_email = %s", $email
+            ));
+            if ($exists) {
+                wp_send_json_error(['message' => 'Ez az email már regisztrálva van advertiser-ként.']);
+                return;
+            }
+            $slug = sanitize_title($business_name) . '-' . substr(md5($email . microtime()), 0, 6);
+            $wpdb->insert($prefix . 'ppv_advertisers', [
+                'slug' => $slug,
+                'business_name' => $business_name,
+                'owner_email' => $email,
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'tier' => 'basic',
+                'subscription_status' => 'trial',
+                'subscription_until' => date('Y-m-d', strtotime('+30 days')),
+                'push_month_reset_at' => date('Y-m-d', strtotime('first day of next month')),
+            ]);
+            $adv_id = $wpdb->insert_id;
+            if (!$adv_id) {
+                wp_send_json_error(['message' => 'Adatbázis hiba: ' . $wpdb->last_error]);
+                return;
+            }
+            $_SESSION['ppv_advertiser_id'] = $adv_id;
+            wp_send_json_success([
+                'message' => 'Sikeres advertiser regisztráció! 30 nap ingyen trial.',
+                'redirect' => home_url('/business/admin/profile?welcome=1'),
+                'user_type' => 'advertiser',
+            ]);
+            return;
+        }
 
         ppv_log("📧 Email: {$email}");
         ppv_log("👤 User Type: {$user_type}");
@@ -673,6 +800,49 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
 
         if (empty($email) || empty($google_id)) {
             wp_send_json_error(['message' => PPV_Lang::t('signup_google_error')]);
+            return;
+        }
+
+        // Advertiser branch — Google signup creates ppv_advertisers entry directly
+        if ($user_type === 'advertiser') {
+            $business_name = sanitize_text_field($_POST['business_name'] ?? '');
+            if (strlen($business_name) < 2) {
+                wp_send_json_error(['message' => 'Add meg a cégnevet a Google regisztráció előtt.']);
+                return;
+            }
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$prefix}ppv_advertisers WHERE owner_email = %s", $email
+            ));
+            if ($exists) {
+                $_SESSION['ppv_advertiser_id'] = (int)$exists;
+                wp_send_json_success([
+                    'message' => 'Belépés Google-lel.',
+                    'redirect' => home_url('/business/admin/profile'),
+                ]);
+                return;
+            }
+            $slug = sanitize_title($business_name) . '-' . substr(md5($email . microtime()), 0, 6);
+            $rand_pass = wp_generate_password(32);
+            $wpdb->insert($prefix . 'ppv_advertisers', [
+                'slug' => $slug,
+                'business_name' => $business_name,
+                'owner_email' => $email,
+                'password_hash' => password_hash($rand_pass, PASSWORD_DEFAULT),
+                'tier' => 'basic',
+                'subscription_status' => 'trial',
+                'subscription_until' => date('Y-m-d', strtotime('+30 days')),
+                'push_month_reset_at' => date('Y-m-d', strtotime('first day of next month')),
+            ]);
+            $adv_id = $wpdb->insert_id;
+            if (!$adv_id) {
+                wp_send_json_error(['message' => 'Adatbázis hiba: ' . $wpdb->last_error]);
+                return;
+            }
+            $_SESSION['ppv_advertiser_id'] = $adv_id;
+            wp_send_json_success([
+                'message' => 'Sikeres Google regisztráció! 30 nap ingyen.',
+                'redirect' => home_url('/business/admin/profile?welcome=1'),
+            ]);
             return;
         }
 

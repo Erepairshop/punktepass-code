@@ -353,6 +353,13 @@
         $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>' + t('registering') + '</span>');
 
         var userType = $('#ppv-user-type').val() || 'user';
+        var businessName = $('#ppv-business-name').val() || '';
+
+        if (userType === 'advertiser' && businessName.trim().length < 2) {
+            showAlert('Add meg a cégnevet előbb', 'error');
+            resetGoogleButton($btn);
+            return;
+        }
 
         $.ajax({
             url: ppvSignup.ajaxurl,
@@ -361,7 +368,8 @@
                 action: 'ppv_google_signup',
                 nonce: ppvSignup.nonce,
                 credential: response.credential,
-                user_type: userType
+                user_type: userType,
+                business_name: businessName
             },
             success: function(res) {
                 if (res.success) {
@@ -454,6 +462,13 @@
             $btnLoader.show();
             hideAlert();
 
+            var businessName = $('#ppv-business-name').val() || '';
+            if (userType === 'advertiser' && businessName.trim().length < 2) {
+                showAlert('Add meg a cégnevet', 'error');
+                resetSubmitButton($btn, $btnText, $btnLoader);
+                return;
+            }
+
             $.ajax({
                 url: ppvSignup.ajaxurl,
                 type: 'POST',
@@ -465,7 +480,8 @@
                     password_confirm: passwordConfirm,
                     terms: terms,
                     privacy: privacy,
-                    user_type: userType
+                    user_type: userType,
+                    business_name: businessName
                 },
                 success: function(res) {
                     if (res.success) {
