@@ -66,7 +66,10 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-cover { height:48px; background:linear-gradient(135deg,#6366f1,#8b5cf6) center/cover; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:600; padding:0 14px; text-align:center; }
 .km-cover.advertiser { background:linear-gradient(135deg,#f59e0b,#dc2626); }
 .km-card-head { padding:0 18px; margin-top:-40px; display:flex; gap:12px; align-items:flex-end; }
-.km-card-logo { width:80px; height:80px; border-radius:16px; background:#fff center/cover; border:4px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.12); }
+.km-card-logo { width:80px; height:80px; border-radius:16px; background:#fff center/cover no-repeat; border:4px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.km-card-logo.no-logo { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; padding:6px; }
+.km-card-logo.no-logo.advertiser { background:linear-gradient(135deg,#f59e0b,#d97706); }
+.km-card-logo .km-logo-text { font-weight:700; font-size:13px; line-height:1.15; text-align:center; word-break:break-word; hyphens:auto; max-height:100%; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
 .km-card-title { padding:10px 18px 8px; font-size:20px; font-weight:700; display:flex; align-items:center; gap:10px; justify-content:space-between; position:sticky; top:0; background:#fff; z-index:5; box-shadow:0 1px 0 rgba(0,0,0,.04); }
 .km-card-title .name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .km-fol-pill { flex-shrink:0; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:999px; border:none; cursor:pointer; font-size:12px; font-weight:700; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; box-shadow:0 4px 12px rgba(99,102,241,.35); transition:transform .15s ease; white-space:nowrap; }
@@ -341,7 +344,9 @@ async function openSheet(f) {
     <div class="km-sheet-grab" onclick="closeSheet()"></div>
     <div class="km-cover ${f.type}">${followBanner}</div>
     <div class="km-card-head">
-      <div class="km-card-logo" style="background-image:url('${f.logo || ''}')"></div>
+      ${f.logo
+        ? `<div class="km-card-logo" style="background-image:url('${f.logo}')"></div>`
+        : `<div class="km-card-logo no-logo ${f.type}"><span class="km-logo-text">${escapeHtml(f.name||'')}</span></div>`}
     </div>
     <div class="km-card-title">
       <span class="name">${f.name}</span>
