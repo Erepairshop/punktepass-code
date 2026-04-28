@@ -1,5 +1,8 @@
 <?php
 if (!defined('ABSPATH')) exit;
+header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
 $labels = [
     'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote'],
@@ -69,6 +72,30 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-offer .body { padding:10px 12px; }
 .km-offer h4 { margin:0 0 4px; font-size:14px; }
 .km-offer p { margin:0; font-size:12px; color:#6b7280; }
+
+/* Modern info card */
+.mc-status { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:99px; font-size:12px; font-weight:600; }
+.mc-status.open { background:#dcfce7; color:#166534; }
+.mc-status.closed { background:#fee2e2; color:#991b1b; }
+.mc-status::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+.mc-section { padding:14px 18px; border-top:1px solid #f3f4f6; }
+.mc-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; padding:6px 0; }
+.mc-row .ic { font-size:16px; color:#9ca3af; }
+.mc-gallery { display:flex; gap:8px; overflow-x:auto; padding:12px 0 4px; scroll-snap-type:x mandatory; }
+.mc-gallery img { flex:0 0 auto; width:100px; height:100px; border-radius:10px; object-fit:cover; scroll-snap-align:start; }
+.mc-social { display:flex; gap:8px; margin-top:8px; }
+.mc-social a { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#f3f4f6; color:#374151; text-decoration:none; font-size:18px; }
+.mc-social a:hover { background:#e5e7eb; }
+.mc-rewards { display:flex; flex-direction:column; gap:8px; }
+.mc-reward { background:linear-gradient(135deg, #fef3c7, #fde68a); border-radius:10px; padding:10px 12px; }
+.mc-reward-title { display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:14px; color:#92400e; }
+.mc-reward-pts { background:#f59e0b; color:#fff; padding:3px 8px; border-radius:99px; font-size:11px; font-weight:700; }
+.mc-reward-meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; font-size:12px; color:#78350f; }
+.mc-reward-meta span { background:rgba(255,255,255,.6); padding:2px 8px; border-radius:6px; }
+.mc-vip-pill { display:inline-flex; gap:4px; align-items:center; background:linear-gradient(135deg,#fce7f3,#fbcfe8); color:#9d174d; padding:4px 10px; border-radius:99px; font-size:12px; font-weight:600; margin-top:4px; }
+.mc-h3 { margin:0 0 6px; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; font-weight:600; }
+.mc-tabs { display:flex; gap:6px; padding:0 18px 8px; flex-wrap:wrap; }
+.mc-tab { padding:5px 12px; background:#eef2ff; color:#4338ca; border-radius:99px; font-size:12px; font-weight:500; }
 </style>
 </head>
 <body>
@@ -223,8 +250,10 @@ async function openSheet(f) {
     try {
       const r = await fetch('/wp-json/ppv/v1/stores/list-optimized', { credentials: 'include' });
       const d = await r.json();
-      const store = (d.stores || []).find(s => s.id == f.id);
+      const list = Array.isArray(d) ? d : (d.stores || []);
+      const store = list.find(s => s.id == f.id);
       if (store) renderLoyaltyRich(store);
+      else { document.getElementById('km-rich-content').innerHTML = '<div style="color:#dc2626">Bolt adatok nem találhatók ('+f.id+')</div>'; }
     } catch(e) { console.error(e); }
   } else {
     // Fetch advertiser ads
@@ -320,19 +349,87 @@ function renderLoyaltyRich(s) {
     </div>` : '';
   })() : '';
 
-  el.innerHTML = `
-    <div class="ppv-store-card-enhanced" data-store-id="${s.id}" style="margin:0;background:transparent;box-shadow:none;border:none;">
-      ${slogan}
-      <div class="ppv-store-badges">${status}</div>
-      ${gallery}
-      ${social}
-      <div class="ppv-store-meta" style="margin-top:8px;">
-        ${hours}
-        ${addr}
+  // Modern light-theme rendering
+  const statusM = s.open_now
+    ? `<span class="mc-status open">${Lt.open}</span>`
+    : `<span class="mc-status closed">${Lt.closed}</span>`;
+
+  const galleryM = (s.gallery && s.gallery.length) ? `
+    <div class="mc-section" style="padding:0 18px;">
+      <div class="mc-gallery">
+        ${s.gallery.map(img => `<img src="${escapeHtml(img)}" loading="lazy">`).join('')}
       </div>
-      ${rewards}
-      ${vipTbl}
+    </div>` : '';
+
+  const socialM = (s.social && (s.social.facebook||s.social.instagram||s.social.tiktok)) ? `
+    <div class="mc-social">
+      ${s.social.facebook  ? `<a href="${escapeHtml(s.social.facebook)}"  target="_blank" title="Facebook">📘</a>`  : ''}
+      ${s.social.instagram ? `<a href="${escapeHtml(s.social.instagram)}" target="_blank" title="Instagram">📷</a>` : ''}
+      ${s.social.tiktok    ? `<a href="${escapeHtml(s.social.tiktok)}"    target="_blank" title="TikTok">🎵</a>`     : ''}
+      ${s.website ? `<a href="${escapeHtml(s.website)}" target="_blank" title="Web">🌐</a>` : ''}
+      ${s.public_email ? `<a href="mailto:${escapeHtml(s.public_email)}" title="Email">✉️</a>` : ''}
+    </div>` : '';
+
+  const sloganM = s.slogan ? `<p style="margin:6px 0 0;color:#6b7280;font-style:italic;font-size:13px;">${escapeHtml(s.slogan)}</p>` : '';
+  const hoursM = s.open_hours_today ? `<div class="mc-row"><span class="ic">🕐</span><span>${escapeHtml(s.open_hours_today)}</span></div>` : '';
+  const addrM = s.address ? `<div class="mc-row"><span class="ic">📍</span><span>${escapeHtml(s.address)} ${escapeHtml(s.plz||'')} ${escapeHtml(s.city||'')}</span></div>` : '';
+  const phoneM = s.phone ? `<div class="mc-row"><span class="ic">📞</span><a href="tel:${escapeHtml(s.phone)}" style="color:#3b82f6;text-decoration:none;">${escapeHtml(s.phone)}</a></div>` : '';
+
+  const rewardsM = (s.rewards||[]).length ? `
+    <div class="mc-section">
+      <div class="mc-h3">🎁 ${Lt.rewards} (${s.rewards.length})</div>
+      <div class="mc-rewards">
+        ${s.rewards.map(r => {
+          const v = parseFloat(r.action_value||0).toFixed(0);
+          let rt = '';
+          if (r.action_type === 'discount_percent') rt = `${v}%`;
+          else if (r.action_type === 'discount_fixed') rt = cur === '€' ? `${cur}${v}` : `${v} ${cur}`;
+          else if (r.action_type === 'free_product') rt = escapeHtml(r.free_product || 'gratis');
+          else rt = `${v}`;
+          const end = r.end_date ? r.end_date.substring(0,10).split('-').reverse().join('.') : null;
+          return `<div class="mc-reward">
+            <div class="mc-reward-title">
+              <span>${escapeHtml(r.title)}</span>
+              <span class="mc-reward-pts">${r.required_points} ${Lt.points}</span>
+            </div>
+            <div class="mc-reward-meta">
+              <span>🎁 ${rt}</span>
+              <span>+${r.points_given||0}/scan</span>
+              ${end ? `<span>📅 ${end}</span>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  const vipPills = s.vip ? (function() {
+    const v = s.vip;
+    const pills = [];
+    if (v.fix && v.fix.enabled) pills.push(`<span class="mc-vip-pill">👑 Fix: +${v.fix.bronze}/+${v.fix.silver}/+${v.fix.gold}/+${v.fix.platinum}</span>`);
+    if (v.streak && v.streak.enabled) {
+      const m = v.streak.type === 'double' ? '2x' : v.streak.type === 'triple' ? '3x' : '+';
+      pills.push(`<span class="mc-vip-pill">🔥 ${v.streak.count}. scan: ${m}</span>`);
+    }
+    return pills.length ? `<div class="mc-section"><div class="mc-h3">${Lt.vip}</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${pills.join('')}</div></div>` : '';
+  })() : '';
+
+  const ratingM = s.rating_count > 0 ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:13px;"><span style="color:#fbbf24;">⭐</span> <strong>${(s.rating_avg||0).toFixed(1)}</strong> <span style="color:#9ca3af;">(${s.rating_count})</span></div>` : '';
+
+  el.innerHTML = `
+    <div style="padding:0 18px 8px;">
+      ${statusM}
+      ${ratingM}
+      ${sloganM}
     </div>
+    ${galleryM}
+    <div class="mc-section">
+      ${hoursM}
+      ${addrM}
+      ${phoneM}
+      ${socialM}
+    </div>
+    ${rewardsM}
+    ${vipPills}
   `;
 }
 
