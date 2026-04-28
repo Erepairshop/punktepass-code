@@ -30,8 +30,8 @@ $current_badge = $edit->badge ?? '';
 .type-chip { padding:10px 12px; border:2px solid var(--border); border-radius:10px; cursor:pointer; text-align:center; transition:all .15s; background:#fff; }
 .type-chip i { font-size:22px; display:block; margin-bottom:3px; }
 .type-chip span { font-size:11px; font-weight:600; }
-.type-chip.active { transform:translateY(-1px); }
 .type-chip:hover { background:#f9fafb; }
+.type-chip.active { transform:translateY(-1px); border-color:var(--chip-color, #6366f1); background:var(--chip-bg, rgba(99,102,241,.08)); box-shadow:0 4px 12px var(--chip-shadow, rgba(99,102,241,.18)); }
 .vis-radio { display:flex; gap:8px; }
 .vis-radio label { flex:1; cursor:pointer; }
 .vis-radio input { display:none; }
@@ -74,7 +74,7 @@ $current_badge = $edit->badge ?? '';
     <div class="bz-content">
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px;">
         <?php foreach ($ad_types as $key => [$label, $icon, $color]): ?>
-          <div class="type-chip <?php echo $current_type === $key ? 'active' : ''; ?>" data-type="<?php echo $key; ?>" onclick="selectType('<?php echo $key; ?>', this)" style="<?php echo $current_type === $key ? "border-color:$color; background:".$color."10;" : ''; ?>">
+          <div class="type-chip <?php echo $current_type === $key ? 'active' : ''; ?>" data-type="<?php echo $key; ?>" data-color="<?php echo esc_attr($color); ?>" onclick="selectType('<?php echo $key; ?>', this)">
             <i class="<?php echo $icon; ?>" style="color:<?php echo $color; ?>;"></i>
             <span><?php echo esc_html($label); ?></span>
           </div>
@@ -211,8 +211,19 @@ $current_badge = $edit->badge ?? '';
 <script>
 function selectType(t, el) {
   document.getElementById('adType').value = t;
-  document.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  document.querySelectorAll('.type-chip').forEach(c => {
+    c.classList.remove('active');
+    c.style.removeProperty('--chip-color');
+    c.style.removeProperty('--chip-bg');
+    c.style.removeProperty('--chip-shadow');
+  });
+  if (el) {
+    el.classList.add('active');
+    const color = el.dataset.color || '#6366f1';
+    el.style.setProperty('--chip-color', color);
+    el.style.setProperty('--chip-bg', color + '14');
+    el.style.setProperty('--chip-shadow', color + '30');
+  }
   // Update promo label/placeholder dynamically
   const cfg = {
     discount_percent: { label: 'Kedvezmény mértéke (%)', ph: 'pl. 20', hint: 'Számot adj meg, % nélkül' },
