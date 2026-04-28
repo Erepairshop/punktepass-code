@@ -27,11 +27,16 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:va
 .bz-nav { display:flex; gap:4px; }
 .bz-nav a { padding:6px 10px; border-radius:8px; font-size:13px; font-weight:500; opacity:.9; transition:background .15s; }
 .bz-nav a:hover, .bz-nav a:focus { background:rgba(255,255,255,.15); opacity:1; }
-.bz-nav .logout { opacity:.7; }
+.bz-nav .logout { opacity:.85; background:rgba(239,68,68,.2); border-radius:8px; padding:6px 10px; }
+.bz-nav .logout:hover { background:rgba(239,68,68,.35); opacity:1; }
+.bz-nav .logout i { font-size:16px; }
 .bz-lang-switch { display:flex; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px; }
 .bz-lang { background:transparent; border:none; color:#fff; padding:5px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; opacity:.7; transition:all .15s; letter-spacing:.5px; }
 .bz-lang:hover { opacity:1; }
 .bz-lang.active { background:rgba(255,255,255,.25); opacity:1; }
+.bz-mobile-logout { display:none; width:34px; height:34px; align-items:center; justify-content:center; border-radius:8px; background:rgba(239,68,68,.25); color:#fff; text-decoration:none; }
+.bz-mobile-logout:active { background:rgba(239,68,68,.45); }
+.bz-mobile-logout i { font-size:18px; }
 .bz-wrap { max-width:1100px; margin:16px auto; padding:0 12px; }
 .bz-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
 .bz-grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
@@ -70,6 +75,7 @@ table.bz-table th, table.bz-table td { padding:10px 8px; border-bottom:1px solid
   .bz-brand i { font-size:18px; }
   .bz-nav { display:none; }
   .bz-bottom-nav { display:block; }
+  .bz-mobile-logout { display:flex; }
   .bz-wrap { padding:0 10px 80px; margin-top:10px; }
   .bz-card { padding:14px; border-radius:12px; }
   .bz-h1 { font-size:18px; }
@@ -111,6 +117,9 @@ function bz_is_active($url, $current) {
 ?>
 <div class="bz-header">
   <div class="bz-brand"><i class="ri-megaphone-fill"></i> Business</div>
+  <?php if ($adv): ?>
+  <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="bz-mobile-logout" title="Kilépés"><i class="ri-logout-box-r-line"></i></a>
+  <?php endif; ?>
   <div class="bz-lang-switch">
     <?php foreach (['de'=>'DE','hu'=>'HU','ro'=>'RO','en'=>'EN'] as $code => $label): ?>
       <button type="button" class="bz-lang <?php echo $lang === $code ? 'active' : ''; ?>" data-lang="<?php echo $code; ?>"><?php echo $label; ?></button>
@@ -121,7 +130,7 @@ function bz_is_active($url, $current) {
       <?php foreach ($nav_items as $item): ?>
         <a href="<?php echo esc_url(home_url($item['url'])); ?>" class="<?php echo bz_is_active($item['url'], $current_path) ? 'active' : ''; ?>"><?php echo esc_html__($item['label'], 'punktepass'); ?></a>
       <?php endforeach; ?>
-      <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="logout"><i class="ri-logout-box-line"></i></a>
+      <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="logout" title="Kilépés"><i class="ri-logout-box-r-line"></i></a>
     <?php else: ?>
       <a href="<?php echo esc_url(home_url('/business/login')); ?>"><?php echo esc_html__('Bejelentkezés', 'punktepass'); ?></a>
       <a href="<?php echo esc_url(home_url('/business/register')); ?>"><?php echo esc_html__('Regisztráció', 'punktepass'); ?></a>

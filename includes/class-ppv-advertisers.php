@@ -254,7 +254,9 @@ class PPV_Advertisers {
     public static function do_logout() {
         self::start_session();
         unset($_SESSION['ppv_advertiser_id']);
-        wp_redirect(home_url('/business/login'));
+        // Also clear regular user session in case of dual-role login
+        unset($_SESSION['ppv_user_id'], $_SESSION['ppv_user_type'], $_SESSION['ppv_user_email']);
+        wp_redirect(home_url('/login'));
         exit;
     }
     public static function render_admin_dashboard() {

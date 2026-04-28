@@ -605,6 +605,11 @@ function initLogin() {
                 },
                 success: function(res) {
                     if (res.success) {
+                        // Multi-role: show role picker modal
+                        if (res.data && Array.isArray(res.data.roles) && res.data.roles.length > 1) {
+                            showRolePicker(res.data.roles, res.data.business_name || '');
+                            return;
+                        }
                         showAlert(res.data.message, 'success');
 
                         // Add success animation
@@ -1039,6 +1044,46 @@ function initLogin() {
         });
     }
 
-
+// ============================================================
+// 🔹 ROLE PICKER MODAL — when same email matches both user and advertiser
+// ============================================================
+function showRolePicker(roles, businessName) {
+    // Build modal once
+    let modal = document.getElementById('ppv-role-picker');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'ppv-role-picker';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,.7); backdrop-filter:blur(6px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;';
+        modal.innerHTML = `
+          <div style="width:100%; max-width:420px; background:#fff; border-radius:18px; padding:24px 22px 18px; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+            <h3 style="margin:0 0 6px; font-size:19px; font-weight:700; color:#111827;">Hova szeretnél menni?</h3>
+            <p style="margin:0 0 16px; color:#6b7280; font-size:13px;">Két fiókod is van ezzel az email-lel${businessName ? ' — '+businessName : ''}. Válaszd ki, hogyan jelentkezel be most.</p>
+            <button id="ppv-role-user" style="display:flex; align-items:center; gap:14px; width:100%; padding:14px; margin-bottom:10px; border:2px solid #e5e7eb; border-radius:14px; background:#fff; cursor:pointer; text-align:left; transition:all .18s;">
+              <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#3b82f6,#06b6d4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;"><i class="ri-user-line"></i></div>
+              <div style="flex:1;">
+                <div style="font-weight:700; color:#111827; font-size:15px;">Vásárlói nézet</div>
+                <div style="color:#6b7280; font-size:12px;">Pontok, kuponok, profil — User dashboard</div>
+              </div>
+              <i class="ri-arrow-right-s-line" style="color:#9ca3af; font-size:22px;"></i>
+            </button>
+            <button id="ppv-role-adv" style="display:flex; align-items:center; gap:14px; width:100%; padding:14px; border:2px solid #e5e7eb; border-radius:14px; background:#fff; cursor:pointer; text-align:left; transition:all .18s;">
+              <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;"><i class="ri-megaphone-fill"></i></div>
+              <div style="flex:1;">
+                <div style="font-weight:700; color:#111827; font-size:15px;">Hirdető admin</div>
+                <div style="color:#6b7280; font-size:12px;">Profilom, hirdetések, push — Business</div>
+              </div>
+              <i class="ri-arrow-right-s-line" style="color:#9ca3af; font-size:22px;"></i>
+            </button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    document.getElementById('ppv-role-user').onclick = () => {
+        window.location.href = '/user_dashboard';
+    };
+    document.getElementById('ppv-role-adv').onclick = () => {
+        window.location.href = '/business/admin';
+    };
+}
 
 })(jQuery);

@@ -654,7 +654,30 @@ public static function render_landing_page($atts) {
             "SELECT * FROM {$prefix}ppv_users WHERE email=%s OR username=%s LIMIT 1",
             $login, $login
         ));
-        
+
+        // 🔹 ADVERTISER pre-check — same email might exist in ppv_advertisers too
+        $adv_pre = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, password_hash, business_name FROM {$prefix}ppv_advertisers WHERE owner_email = %s AND is_active = 1 LIMIT 1",
+            $login
+        ));
+        $user_match = ($user && !empty($user->password) && password_verify($password, $user->password));
+        $adv_match  = ($adv_pre && password_verify($password, $adv_pre->password_hash));
+
+        // Both passwords match → role picker
+        if ($user_match && $adv_match) {
+            if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+            $_SESSION['ppv_user_id'] = (int)$user->id;
+            $_SESSION['ppv_user_type'] = $user->user_type ?? 'user';
+            $_SESSION['ppv_user_email'] = $user->email;
+            $_SESSION['ppv_advertiser_id'] = (int)$adv_pre->id;
+            ppv_log("✅ [PPV_Login] Dual login (user #{$user->id} + advertiser #{$adv_pre->id}) — role picker shown");
+            wp_send_json_success([
+                'message' => PPV_Lang::t('login_success'),
+                'roles' => ['user', 'advertiser'],
+                'business_name' => $adv_pre->business_name,
+                'redirect' => home_url('/user_dashboard'), // fallback
+            ]);
+        }
         if ($user && password_verify($password, $user->password)) {
             // 🔒 Security: Regenerate session ID to prevent session fixation
             if (session_status() === PHP_SESSION_ACTIVE) {
