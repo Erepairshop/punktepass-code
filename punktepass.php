@@ -407,6 +407,7 @@ $core_modules = [
     'includes/class-ppv-remote-service.php',
     'includes/class-ppv-device-fingerprint.php',
     'includes/class-ppv-push.php',
+    'includes/class-ppv-advertisers.php',
     'includes/class-ppv-weekly-report.php',
     'includes/class-ppv-whatsapp.php',
     // Standalone Shell (lightweight page rendering without WP theme)

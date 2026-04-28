@@ -475,6 +475,15 @@ class PPV_Core {
             ppv_log("✅ [PPV_Core] Migration 2.7 completed - User settings columns added");
             update_option('ppv_db_migration_version', '2.7');
         }
+
+        // Migration 2.8: Advertisers system (independent of loyalty)
+        if (version_compare($migration_version, '2.8', '<')) {
+            if (class_exists('PPV_Advertisers')) {
+                PPV_Advertisers::run_migrations();
+                ppv_log("✅ [PPV_Core] Migration 2.8 completed - Advertisers tables created");
+                update_option('ppv_db_migration_version', '2.8');
+            }
+        }
     }
 
     /**
