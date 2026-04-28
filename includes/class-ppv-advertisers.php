@@ -517,6 +517,11 @@ class PPV_Advertisers {
                 'radius' => ['type' => 'number', 'default' => 50],
             ],
         ]);
+        register_rest_route('punktepass/v1', '/advertiser/(?P<id>\d+)', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_advertiser_detail'],
+            'permission_callback' => '__return_true',
+        ]);
         register_rest_route('punktepass/v1', '/follow', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_follow'],
@@ -531,26 +536,24 @@ class PPV_Advertisers {
         $radius = max(1, min(500, (float)$req->get_param('radius')));
         $user_id = !empty($_SESSION['ppv_user_id']) ? (int)$_SESSION['ppv_user_id'] : 0;
 
-        // Loyalty stores (ppv_stores) — table assumed to have lat/lng/logo/name/slug
-        $store_cols_sql = "SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores";
-        $store_cols = array_column($wpdb->get_results($store_cols_sql), 'Field');
-        $has_geo = in_array('lat', $store_cols) && in_array('lng', $store_cols);
+        // Loyalty stores — only active + non-expired subscription
+        $stores = $wpdb->get_results(
+            "SELECT id, name, latitude AS lat, longitude AS lng, logo, address, city, phone
+             FROM {$wpdb->prefix}ppv_stores
+             WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+               AND active = 1
+               AND (subscription_expires_at IS NULL OR subscription_expires_at > NOW())
+               AND (trial_ends_at IS NULL OR subscription_status != 'trial' OR trial_ends_at > NOW())
+             LIMIT 1000"
+        );
 
-        $stores = [];
-        if ($has_geo) {
-            $stores = $wpdb->get_results(
-                "SELECT id, name, slug, lat, lng, logo, address, city, phone, whatsapp
-                 FROM {$wpdb->prefix}ppv_stores
-                 WHERE lat IS NOT NULL AND lng IS NOT NULL AND status = 'active'
-                 LIMIT 1000"
-            );
-        }
-
-        // Advertisers
+        // Advertisers — only active + non-expired subscription/trial
         $advertisers = $wpdb->get_results(
             "SELECT id, business_name AS name, slug, lat, lng, logo_url AS logo, address, city, phone, whatsapp, category, featured, tier
              FROM {$wpdb->prefix}ppv_advertisers
              WHERE is_active = 1 AND lat IS NOT NULL AND lng IS NOT NULL
+               AND subscription_status IN ('trial', 'active')
+               AND (subscription_until IS NULL OR subscription_until >= CURDATE())
              LIMIT 1000"
         );
 
@@ -559,14 +562,14 @@ class PPV_Advertisers {
             $features[] = [
                 'type'   => 'loyalty',
                 'id'     => (int)$s->id,
-                'slug'   => $s->slug,
+                'slug'   => '',
                 'name'   => $s->name,
                 'lat'    => (float)$s->lat,
                 'lng'    => (float)$s->lng,
                 'logo'   => $s->logo ?? '',
                 'address'=> trim(($s->address ?? '') . ', ' . ($s->city ?? ''), ', '),
                 'phone'  => $s->phone ?? '',
-                'whatsapp' => $s->whatsapp ?? '',
+                'whatsapp' => '',
                 'following' => $user_id ? self::is_following_store($user_id, (int)$s->id) : false,
             ];
         }
@@ -589,6 +592,50 @@ class PPV_Advertisers {
             ];
         }
         return rest_ensure_response(['features' => $features]);
+    }
+
+    public static function rest_advertiser_detail($req) {
+        global $wpdb;
+        $id = (int)$req['id'];
+        $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+        $adv = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d AND is_active = 1", $id
+        ));
+        if (!$adv) return new WP_Error('not_found', 'Not found', ['status' => 404]);
+
+        $ads = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_ads
+             WHERE advertiser_id = %d AND is_active = 1
+               AND (valid_from IS NULL OR valid_from <= NOW())
+               AND (valid_to IS NULL OR valid_to >= NOW())
+             ORDER BY id DESC", $id
+        ));
+
+        $description = $adv->{'description_' . $lang} ?: $adv->description_de;
+        $payload = [
+            'id' => (int)$adv->id,
+            'name' => $adv->business_name,
+            'description' => $description,
+            'logo' => $adv->logo_url,
+            'cover' => $adv->cover_url,
+            'phone' => $adv->phone,
+            'whatsapp' => $adv->whatsapp,
+            'website' => $adv->website,
+            'address' => trim(($adv->address ?? '') . ', ' . ($adv->city ?? ''), ', '),
+            'category' => $adv->category,
+            'tier' => $adv->tier,
+            'ads' => array_map(function($a) use ($lang) {
+                return [
+                    'id' => (int)$a->id,
+                    'title' => $a->{'title_' . $lang} ?: $a->title_de,
+                    'body'  => $a->{'body_' . $lang}  ?: $a->body_de,
+                    'image_url' => $a->image_url,
+                    'cta_url' => $a->cta_url,
+                    'followers_only' => (bool)$a->followers_only,
+                ];
+            }, $ads),
+        ];
+        return rest_ensure_response($payload);
     }
 
     public static function rest_follow($req) {

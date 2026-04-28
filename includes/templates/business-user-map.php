@@ -15,12 +15,15 @@ $L = $labels[$lang] ?? $labels['de'];
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?php echo esc_html($L['title']); ?> — PunktePass</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-core.css">
+<link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-components.css">
+<link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-handler.css">
 <style>
 * { box-sizing:border-box; }
 html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-serif; }
 #map { height:100vh; width:100vw; }
-.km-bar { position:absolute; top:10px; left:10px; right:10px; z-index:10; padding:8px 10px; background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.12); display:flex; gap:8px; align-items:center; }
+.km-bar { position:fixed; top:10px; left:10px; right:10px; z-index:9999; padding:10px 12px; background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.18); display:flex; gap:8px; align-items:center; }
 .km-bar input, .km-bar select { padding:8px 10px; border:none; border-radius:6px; font:inherit; background:#f3f4f6; }
 .km-bar input { flex:1; min-width:120px; }
 .km-bar strong { font-size:18px; }
@@ -82,12 +85,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 <button class="km-locate-btn" id="km-locate" title="📍 Helyzetem">📍</button>
 <div id="km-sheet" class="km-sheet"></div>
 <script>window.__mapDbg = 'HTML loaded ' + Date.now();</script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-if (typeof L === 'undefined') {
-  document.body.innerHTML = '<div style="padding:20px;background:red;color:white">Leaflet is undefined! script tag did not provide L global.</div>';
-}
-</script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 window.addEventListener('error', function(e) {
   document.body.innerHTML += '<div style="position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:99999;font:12px monospace;">JS ERROR: ' + (e.message || e.error) + ' @ ' + (e.filename||'') + ':' + (e.lineno||'') + '</div>';
@@ -96,17 +94,22 @@ const T = <?php echo wp_json_encode($L); ?>;
 const LANG = <?php echo wp_json_encode($lang); ?>;
 const DEFAULT_CENTER = [22.4633, 47.6822]; // Carei, RO
 
-const map = L.map('map', { zoomControl: true }).setView([DEFAULT_CENTER[1], DEFAULT_CENTER[0]], 12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap',
-  maxZoom: 19,
-}).addTo(map);
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/positron',
+  center: DEFAULT_CENTER,
+  zoom: 12,
+  attributionControl: { compact: true },
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
 let userMarker = null;
 function showUser(lat, lng) {
-  if (userMarker) map.removeLayer(userMarker);
-  userMarker = L.circleMarker([lat, lng], { radius:9, color:'#3b82f6', fillColor:'#60a5fa', fillOpacity:0.9, weight:3 }).addTo(map);
-  map.setView([lat, lng], 14);
+  const el = document.createElement('div');
+  el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.3);';
+  if (userMarker) userMarker.remove();
+  userMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+  map.flyTo({ center:[lng, lat], zoom: 14 });
 }
 function locateMe() {
   const btn = document.getElementById('km-locate');
@@ -152,40 +155,48 @@ async function loadFeatures() {
     const d = await r.json();
     allFeatures = d.features || [];
     if (allFeatures.length && !userMarker) {
-      map.setView([allFeatures[0].lat, allFeatures[0].lng], 12);
+      map.flyTo({ center: [allFeatures[0].lng, allFeatures[0].lat], zoom: 12 });
     }
     renderPins();
   } catch (e) { console.error(e); }
 }
 
-function makePinHtml(f) {
+function makePinEl(f) {
   const ico = f.type === 'loyalty' ? '🎁' : '📣';
-  const inner = f.logo ? `<img src="${f.logo}" style="width:100%;height:100%;object-fit:cover">` : `<span class="ico">${ico}</span>`;
-  return `<div class="km-pin ${f.type}${f.featured?' featured':''}"><div class="ring">${inner}</div></div>`;
+  const div = document.createElement('div');
+  div.className = 'km-pin ' + f.type + (f.featured ? ' featured' : '');
+  div.style.pointerEvents = 'auto';
+  div.innerHTML = `<div class="ring" style="pointer-events:auto;">${f.logo ? `<img src="${f.logo}" style="width:100%;height:100%;object-fit:cover;pointer-events:none">` : `<span class="ico" style="pointer-events:none">${ico}</span>`}</div>`;
+  return div;
 }
 
 function renderPins() {
-  pinMarkers.forEach(m => map.removeLayer(m));
+  pinMarkers.forEach(m => m.remove());
   pinMarkers = [];
   const cat = document.getElementById('km-cat').value;
   const q = (document.getElementById('km-search').value || '').toLowerCase();
   allFeatures.forEach(f => {
     if (cat && f.type !== cat) return;
     if (q && !f.name.toLowerCase().includes(q)) return;
-    const icon = L.divIcon({ className:'', html: makePinHtml(f), iconSize:[48,48], iconAnchor:[24,24] });
-    const m = L.marker([f.lat, f.lng], { icon }).addTo(map);
-    m.on('click', () => openSheet(f));
+    const el = makePinEl(f);
+    const m = new maplibregl.Marker({ element: el, anchor:'center' })
+      .setLngLat([f.lng, f.lat]).addTo(map);
+    const handler = (ev) => { ev.stopPropagation(); ev.preventDefault(); openSheet(f); };
+    el.addEventListener('click', handler);
+    el.addEventListener('touchend', handler);
     pinMarkers.push(m);
   });
 }
 
-function openSheet(f) {
+async function openSheet(f) {
   const sheet = document.getElementById('km-sheet');
   const isLoyalty = f.type === 'loyalty';
   const tagClass = isLoyalty ? 'loyalty' : 'advertiser';
   const tagLabel = isLoyalty ? '🎁 ' + T.points_here : '📣 ' + T.offers;
   const followLabel = f.following ? ('✓ ' + T.following) : ('➕ ' + T.follow);
   const followClass = f.following ? 'fol active' : 'fol';
+
+  // Skeleton render first
   sheet.innerHTML = `
     <div class="km-sheet-grab" onclick="closeSheet()"></div>
     <div class="km-cover ${f.type}"></div>
@@ -197,6 +208,7 @@ function openSheet(f) {
       <span class="km-card-tag ${tagClass}">${tagLabel}</span>
       ${f.address ? f.address : ''}
     </div>
+    <div id="km-rich-content" style="padding:0 18px;color:#6b7280;font-size:13px;">⏳</div>
     <div class="km-card-actions">
       ${f.phone ? `<a class="call" href="tel:${f.phone}">📞 ${T.call}</a>` : ''}
       ${f.whatsapp ? `<a class="wa" href="https://wa.me/${f.whatsapp.replace(/[^0-9]/g,'')}">💬 ${T.whatsapp}</a>` : ''}
@@ -205,6 +217,137 @@ function openSheet(f) {
     </div>
   `;
   sheet.classList.add('open');
+
+  // Lazy-fetch rich data
+  if (isLoyalty) {
+    try {
+      const r = await fetch('/wp-json/ppv/v1/stores/list-optimized', { credentials: 'include' });
+      const d = await r.json();
+      const store = (d.stores || []).find(s => s.id == f.id);
+      if (store) renderLoyaltyRich(store);
+    } catch(e) { console.error(e); }
+  } else {
+    // Fetch advertiser ads
+    try {
+      const r = await fetch('/wp-json/punktepass/v1/advertiser/' + f.id, { credentials: 'include' });
+      const d = await r.json();
+      if (d && d.ads) renderAdvertiserRich(d);
+    } catch(e) { console.error(e); }
+  }
+}
+
+function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderLoyaltyRich(s) {
+  const el = document.getElementById('km-rich-content');
+  if (!el) return;
+  const currencyMap = { 'DE': '€', 'HU': 'Ft', 'RO': 'RON' };
+  const cur = currencyMap[s.country] || '€';
+  const lang = LANG;
+  const Tloc = {
+    de: { open:'Geöffnet', closed:'Geschlossen', rewards:'Belohnungen', points:'Punkte', required:'Benötigt', reward:'Belohnung', perscan:'Pro Scan', valid:'Gültig bis', vip:'VIP-Bonus', call:'Anrufen', email:'E-Mail', web:'Webseite', route:'Route' },
+    hu: { open:'Nyitva', closed:'Zárva', rewards:'Jutalmak', points:'pont', required:'Szükséges', reward:'Jutalom', perscan:'Scan/Beolvasás', valid:'Érvényes', vip:'VIP-Bónusz', call:'Hívás', email:'Email', web:'Weboldal', route:'Útvonal' },
+    ro: { open:'Deschis', closed:'Închis', rewards:'Recompense', points:'puncte', required:'Necesar', reward:'Recompensă', perscan:'Pe scan', valid:'Valid', vip:'Bonus VIP', call:'Sună', email:'Email', web:'Site web', route:'Direcții' },
+    en: { open:'Open', closed:'Closed', rewards:'Rewards', points:'pts', required:'Required', reward:'Reward', perscan:'Per scan', valid:'Valid', vip:'VIP Bonus', call:'Call', email:'Email', web:'Website', route:'Route' },
+  };
+  const Lt = Tloc[lang] || Tloc.de;
+
+  const status = s.open_now
+    ? `<span class="ppv-status-badge ppv-open"><i class="ri-checkbox-blank-circle-fill"></i> ${Lt.open}</span>`
+    : `<span class="ppv-status-badge ppv-closed"><i class="ri-checkbox-blank-circle-fill"></i> ${Lt.closed}</span>`;
+  const slogan = s.slogan ? `<p class="ppv-store-slogan">${escapeHtml(s.slogan)}</p>` : '';
+  const hours = s.open_hours_today ? `<span class="ppv-hours"><i class="ri-time-line"></i> ${escapeHtml(s.open_hours_today)}</span>` : '';
+  const addr = s.address ? `<span class="ppv-address"><i class="ri-map-pin-line"></i> ${escapeHtml(s.address)} ${escapeHtml(s.plz||'')} ${escapeHtml(s.city||'')}</span>` : '';
+
+  const gallery = (s.gallery && s.gallery.length) ? `
+    <div class="ppv-gallery-thumbs">
+      ${s.gallery.map(img => `<img src="${escapeHtml(img)}" class="ppv-gallery-thumb" loading="lazy">`).join('')}
+    </div>` : '';
+
+  const social = (s.social && (s.social.facebook||s.social.instagram||s.social.tiktok)) ? `
+    <div class="ppv-social-links">
+      ${s.social.facebook ? `<a href="${escapeHtml(s.social.facebook)}" target="_blank" class="ppv-social-btn ppv-fb"><i class="ri-facebook-circle-fill"></i></a>` : ''}
+      ${s.social.instagram ? `<a href="${escapeHtml(s.social.instagram)}" target="_blank" class="ppv-social-btn ppv-ig"><i class="ri-instagram-fill"></i></a>` : ''}
+      ${s.social.tiktok ? `<a href="${escapeHtml(s.social.tiktok)}" target="_blank" class="ppv-social-btn ppv-tk"><i class="ri-tiktok-fill"></i></a>` : ''}
+    </div>` : '';
+
+  const rewards = (s.rewards||[]).length ? `
+    <div class="ppv-store-rewards">
+      <div class="ppv-rewards-header"><h5 style="margin:0;font-weight:600;color:#00e6ff;"><i class="ri-gift-line"></i> ${Lt.rewards}</h5></div>
+      <div class="ppv-rewards-list">
+        ${s.rewards.map(r => {
+          const v = parseFloat(r.action_value).toFixed(0);
+          let rt = '';
+          if (r.action_type === 'discount_percent') rt = `${v}%`;
+          else if (r.action_type === 'discount_fixed') rt = cur === '€' ? `${cur}${v}` : `${v} ${cur}`;
+          else if (r.action_type === 'free_product') rt = escapeHtml(r.free_product || 'gratis');
+          else rt = `${v} ${Lt.points}`;
+          const end = r.end_date ? r.end_date.substring(0,10).split('-').reverse().join('.') : null;
+          return `<div class="ppv-reward-mini">
+            <div class="ppv-reward-header">
+              <strong>${escapeHtml(r.title)}</strong>
+              <span class="ppv-reward-badge">${r.required_points} ${Lt.points}</span>
+            </div>
+            <div class="ppv-reward-details">
+              <div class="ppv-reward-row"><span class="ppv-reward-label"><i class="ri-gift-fill"></i> ${Lt.reward}</span><span class="ppv-reward-value"><strong style="color:#34d399;">${rt}</strong></span></div>
+              <div class="ppv-reward-row"><span class="ppv-reward-label"><i class="ri-coins-line"></i> ${Lt.perscan}</span><span class="ppv-reward-value"><strong style="color:#00e6ff;">+${r.points_given||0} ${Lt.points}</strong></span></div>
+              ${end ? `<div class="ppv-reward-row"><span class="ppv-reward-label"><i class="ri-calendar-line"></i> ${Lt.valid}</span><span class="ppv-reward-value"><strong style="color:#fbbf24;">${end}</strong></span></div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  const vipTbl = s.vip ? (function() {
+    const v = s.vip;
+    const rows = [];
+    if (v.fix && v.fix.enabled) {
+      rows.push(`<tr class="ppv-vip-table-row">
+        <td class="ppv-vip-label-cell"><i class="ri-add-circle-line"></i> Fix</td>
+        <td class="ppv-vip-cell bronze">+${v.fix.bronze}</td><td class="ppv-vip-cell silver">+${v.fix.silver}</td>
+        <td class="ppv-vip-cell gold">+${v.fix.gold}</td><td class="ppv-vip-cell platinum">+${v.fix.platinum}</td>
+      </tr>`);
+    }
+    if (v.streak && v.streak.enabled) {
+      const m = v.streak.type === 'double' ? '2x' : v.streak.type === 'triple' ? '3x' : null;
+      rows.push(m
+        ? `<tr class="ppv-vip-table-row"><td class="ppv-vip-label-cell"><i class="ri-fire-line"></i> ${v.streak.count}.</td><td class="ppv-vip-cell ppv-vip-multiplier" colspan="4">${m}</td></tr>`
+        : `<tr class="ppv-vip-table-row"><td class="ppv-vip-label-cell"><i class="ri-fire-line"></i> ${v.streak.count}.</td><td class="ppv-vip-cell bronze">+${v.streak.bronze}</td><td class="ppv-vip-cell silver">+${v.streak.silver}</td><td class="ppv-vip-cell gold">+${v.streak.gold}</td><td class="ppv-vip-cell platinum">+${v.streak.platinum}</td></tr>`);
+    }
+    return rows.length ? `<div class="ppv-store-vip-table">
+      <div class="ppv-vip-table-title"><i class="ri-vip-crown-fill"></i> ${Lt.vip}</div>
+      <table class="ppv-vip-mini-table"><thead><tr><th></th><th class="ppv-vip-th bronze">Bronze</th><th class="ppv-vip-th silver">Silver</th><th class="ppv-vip-th gold">Gold</th><th class="ppv-vip-th platinum">Platin</th></tr></thead><tbody>${rows.join('')}</tbody></table>
+    </div>` : '';
+  })() : '';
+
+  el.innerHTML = `
+    <div class="ppv-store-card-enhanced" data-store-id="${s.id}" style="margin:0;background:transparent;box-shadow:none;border:none;">
+      ${slogan}
+      <div class="ppv-store-badges">${status}</div>
+      ${gallery}
+      ${social}
+      <div class="ppv-store-meta" style="margin-top:8px;">
+        ${hours}
+        ${addr}
+      </div>
+      ${rewards}
+      ${vipTbl}
+    </div>
+  `;
+}
+
+function renderAdvertiserRich(d) {
+  const el = document.getElementById('km-rich-content');
+  if (!el) return;
+  const desc = d.description ? `<p>${d.description}</p>` : '';
+  const ads = (d.ads || []).map(a => `
+    <div style="background:#f9fafb;border-radius:8px;padding:10px;margin-top:8px;">
+      ${a.image_url ? `<img src="${a.image_url}" style="width:100%;border-radius:6px;max-height:120px;object-fit:cover;margin-bottom:6px;">` : ''}
+      <strong>${a.title}</strong>
+      <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">${a.body || ''}</p>
+    </div>
+  `).join('');
+  el.innerHTML = desc + ads;
 }
 window.closeSheet = function() { document.getElementById('km-sheet').classList.remove('open'); };
 window.toggleFollow = async function(type, id, btn) {

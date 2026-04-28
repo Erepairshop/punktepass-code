@@ -2262,9 +2262,16 @@ async function initUserDashboard() {
     <div class="ppv-dashboard-netto">
       <div class="ppv-dashboard-inner">
 
-        <section class="ppv-qr-banner ppv-qr-banner-compact" id="ppv-show-qr" style="padding:8px 12px;">
-          <button class="ppv-btn-qr" type="button" style="width:100%;">
-            <i class="ri-qr-code-line"></i> ${T.show_qr}
+        <section class="ppv-qr-banner" id="ppv-show-qr">
+          <div class="ppv-qr-text">
+            <i class="ri-qr-code-line"></i>
+            <div>
+              <h3>${T.collect_here}</h3>
+              <p>${T.show_in_store}</p>
+            </div>
+          </div>
+          <button class="ppv-btn-qr" type="button">
+            <i class="ri-download-line"></i> ${T.show_qr}
           </button>
         </section>
 
@@ -2332,8 +2339,9 @@ async function initUserDashboard() {
           <div class="ppv-qr-status" id="ppv-qr-status"></div>
         </div>
 
-        <section class="ppv-store-map-section" style="margin-top:8px;">
-          <iframe src="/karte/?embed=1&v=${Date.now()}" allow="geolocation" allowfullscreen referrerpolicy="origin" style="width:100%;height:calc(100vh - 140px);min-height:480px;border:none;border-radius:12px;display:block;" title="${T.nearby}"></iframe>
+        <section class="ppv-store-section">
+          <h3 class="ppv-section-title"><i class="ri-store-2-fill"></i> ${T.nearby}</h3>
+          <div id="ppv-store-list" class="ppv-store-list"></div>
         </section>
       </div>
     </div>
