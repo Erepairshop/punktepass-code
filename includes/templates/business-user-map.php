@@ -53,7 +53,12 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-cover.advertiser { background:linear-gradient(135deg,#f59e0b,#dc2626); }
 .km-card-head { padding:0 18px; margin-top:-40px; display:flex; gap:12px; align-items:flex-end; }
 .km-card-logo { width:80px; height:80px; border-radius:16px; background:#fff center/cover; border:4px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.12); }
-.km-card-title { padding:8px 18px 6px; font-size:20px; font-weight:700; }
+.km-card-title { padding:8px 18px 6px; font-size:20px; font-weight:700; display:flex; align-items:center; gap:10px; justify-content:space-between; }
+.km-card-title .name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.km-fol-pill { flex-shrink:0; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:999px; border:none; cursor:pointer; font-size:12px; font-weight:700; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; box-shadow:0 4px 12px rgba(99,102,241,.35); transition:transform .15s ease; white-space:nowrap; }
+.km-fol-pill:active { transform:scale(.94); }
+.km-fol-pill i { font-size:15px; line-height:1; }
+.km-fol-pill.active { background:linear-gradient(135deg,#10b981,#059669); box-shadow:0 4px 12px rgba(16,185,129,.35); }
 .km-card-sub { padding:0 18px; color:#6b7280; font-size:13px; }
 .km-card-tag { display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; margin:0 4px 4px 0; }
 .km-card-tag.loyalty { background:#dbeafe; color:#1e3a8a; }
@@ -244,7 +249,7 @@ async function openSheet(f) {
   const followLabel = f.following
     ? '<i class="ri-check-line"></i><span>' + T.following + '</span>'
     : '<i class="ri-heart-add-line"></i><span>' + T.follow + '</span>';
-  const followClass = f.following ? 'fol active' : 'fol';
+  const followClass = f.following ? 'km-fol-pill active' : 'km-fol-pill';
 
   const followBanner = isLoyalty
     ? '<i class="ri-notification-3-fill" style="margin-right:4px;"></i> ' + (T.follow_banner || 'Kövesd a boltot, ne maradj le akciókról')
@@ -257,7 +262,10 @@ async function openSheet(f) {
     <div class="km-card-head">
       <div class="km-card-logo" style="background-image:url('${f.logo || ''}')"></div>
     </div>
-    <div class="km-card-title">${f.name}</div>
+    <div class="km-card-title">
+      <span class="name">${f.name}</span>
+      <button class="${followClass}" onclick="toggleFollow('${f.type}',${f.id},this)">${followLabel}</button>
+    </div>
     <div class="km-card-sub">
       <span class="km-card-tag ${tagClass}">${tagLabel}</span>
       ${f.address ? f.address : ''}
@@ -267,7 +275,6 @@ async function openSheet(f) {
       ${f.phone ? `<a class="call" href="tel:${f.phone}"><i class="ri-phone-fill"></i><span>${T.call}</span></a>` : ''}
       ${f.whatsapp ? `<a class="wa" href="https://wa.me/${f.whatsapp.replace(/[^0-9]/g,'')}"><i class="ri-whatsapp-fill"></i><span>${T.whatsapp}</span></a>` : ''}
       <a class="dir" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}"><i class="ri-route-fill"></i><span>${T.directions}</span></a>
-      <button class="${followClass}" onclick="toggleFollow('${f.type}',${f.id},this)">${followLabel}</button>
     </div>
   `;
   sheet.classList.add('open');
@@ -512,7 +519,9 @@ window.toggleFollow = async function(type, id, btn) {
     const d = await r.json();
     if (d.ok) {
       btn.classList.toggle('active', d.following);
-      btn.innerHTML = d.following ? ('✓ ' + T.following) : ('➕ ' + T.follow);
+      btn.innerHTML = d.following
+        ? '<i class="ri-check-line"></i><span>' + T.following + '</span>'
+        : '<i class="ri-heart-add-line"></i><span>' + T.follow + '</span>';
       const f = allFeatures.find(x => x.id === id && x.type === type);
       if (f) f.following = d.following;
     }
