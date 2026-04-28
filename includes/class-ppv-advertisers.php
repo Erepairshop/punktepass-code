@@ -183,6 +183,21 @@ class PPV_Advertisers {
         $route = get_query_var('ppv_business');
         if (!$route) return;
 
+        // No-cache headers for ALL business pages — prevents LiteSpeed / Cloudflare / browser caching
+        // The /business/* admin area is per-user dynamic content, never cacheable
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Cache-Control: post-check=0, pre-check=0', false);
+            header('Pragma: no-cache');
+            header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+            // LiteSpeed-specific
+            header('X-LiteSpeed-Cache-Control: no-cache, no-store, private');
+            header('X-LiteSpeed-Tag: no-cache');
+            // Cloudflare-specific
+            header('CDN-Cache-Control: no-store');
+            header('Cloudflare-CDN-Cache-Control: no-store');
+        }
+
         switch ($route) {
             case 'register':       self::render_register(); break;
             case 'login':          self::render_login(); break;
