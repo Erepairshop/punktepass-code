@@ -73,6 +73,7 @@ class PPV_Advertisers {
             category VARCHAR(60) NULL COMMENT 'food|cafe|service|retail|beauty|auto|health|other',
             logo_url VARCHAR(500) NULL,
             cover_url VARCHAR(500) NULL,
+            gallery TEXT NULL COMMENT 'JSON array of image URLs',
             description_de TEXT NULL,
             description_hu TEXT NULL,
             description_ro TEXT NULL,
@@ -328,7 +329,54 @@ class PPV_Advertisers {
         $adv_id = self::current_advertiser_id();
         if (!$adv_id) wp_die('Auth required.');
 
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+
         global $wpdb;
+        $current = $wpdb->get_row($wpdb->prepare("SELECT logo_url, gallery FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d", $adv_id));
+
+        // Logo upload (replaces previous if new file)
+        $logo_url = $current->logo_url ?? '';
+        if (!empty($_FILES['logo_file']['name'])) {
+            $att_id = media_handle_upload('logo_file', 0);
+            if (!is_wp_error($att_id)) {
+                $logo_url = wp_get_attachment_url($att_id);
+            }
+        }
+
+        // Gallery: existing kept + new appended (up to 8 total)
+        $gallery = [];
+        if (!empty($current->gallery)) {
+            $decoded = json_decode($current->gallery, true);
+            if (is_array($decoded)) $gallery = $decoded;
+        }
+        // Remove items user wanted to delete
+        $remove = $_POST['gallery_remove'] ?? [];
+        if (is_array($remove)) {
+            $gallery = array_values(array_filter($gallery, fn($u) => !in_array($u, $remove, true)));
+        }
+        // Add new uploads
+        if (!empty($_FILES['gallery_files']['name'][0])) {
+            $files = $_FILES['gallery_files'];
+            $count = count($files['name']);
+            for ($i = 0; $i < $count && count($gallery) < 8; $i++) {
+                if ($files['error'][$i] !== UPLOAD_ERR_OK) continue;
+                $_FILES['__one'] = [
+                    'name' => $files['name'][$i],
+                    'type' => $files['type'][$i],
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'error' => $files['error'][$i],
+                    'size' => $files['size'][$i],
+                ];
+                $att_id = media_handle_upload('__one', 0);
+                if (!is_wp_error($att_id)) {
+                    $gallery[] = wp_get_attachment_url($att_id);
+                }
+                unset($_FILES['__one']);
+            }
+        }
+
         $data = [
             'business_name' => sanitize_text_field($_POST['business_name'] ?? ''),
             'phone'    => sanitize_text_field($_POST['phone'] ?? ''),
@@ -341,12 +389,8 @@ class PPV_Advertisers {
             'lat'      => is_numeric($_POST['lat'] ?? null) ? floatval($_POST['lat']) : null,
             'lng'      => is_numeric($_POST['lng'] ?? null) ? floatval($_POST['lng']) : null,
             'category' => sanitize_text_field($_POST['category'] ?? 'other'),
-            'logo_url' => esc_url_raw($_POST['logo_url'] ?? ''),
-            'cover_url'=> esc_url_raw($_POST['cover_url'] ?? ''),
-            'description_de' => wp_kses_post($_POST['description_de'] ?? ''),
-            'description_hu' => wp_kses_post($_POST['description_hu'] ?? ''),
-            'description_ro' => wp_kses_post($_POST['description_ro'] ?? ''),
-            'description_en' => wp_kses_post($_POST['description_en'] ?? ''),
+            'logo_url' => $logo_url,
+            'gallery'  => wp_json_encode(array_values($gallery)),
         ];
         $wpdb->update($wpdb->prefix . 'ppv_advertisers', $data, ['id' => $adv_id]);
         wp_redirect(home_url('/business/admin/profile?saved=1'));
