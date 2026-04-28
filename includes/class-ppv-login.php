@@ -1093,19 +1093,27 @@ public static function render_landing_page($atts) {
         }
 
         // 🔹 ADVERTISER FALLBACK — check ppv_advertisers table
+        ppv_log("🔍 [PPV_Login] Falling back to advertiser check for: {$login}");
         $adv = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, password_hash, business_name FROM {$prefix}ppv_advertisers WHERE owner_email = %s AND is_active = 1 LIMIT 1",
+            "SELECT id, password_hash, business_name, is_active FROM {$prefix}ppv_advertisers WHERE owner_email = %s LIMIT 1",
             $login
         ));
-        if ($adv && password_verify($password, $adv->password_hash)) {
-            if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
-            $_SESSION['ppv_advertiser_id'] = (int)$adv->id;
-            ppv_log("📣 [PPV_Login] Advertiser logged in (#{$adv->id} {$adv->business_name})");
-            wp_send_json_success([
-                'message' => PPV_Lang::t('login_success'),
-                'role' => 'advertiser',
-                'redirect' => home_url('/business/admin'),
-            ]);
+        if (!$adv) {
+            ppv_log("🔍 [PPV_Login] No advertiser row found for email: {$login}");
+        } else {
+            ppv_log("🔍 [PPV_Login] Advertiser row found #{$adv->id}, is_active={$adv->is_active}, hash_len=" . strlen($adv->password_hash));
+            $verify = password_verify($password, $adv->password_hash);
+            ppv_log("🔍 [PPV_Login] password_verify result: " . ($verify ? 'TRUE' : 'FALSE'));
+            if ($verify && (int)$adv->is_active === 1) {
+                if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+                $_SESSION['ppv_advertiser_id'] = (int)$adv->id;
+                ppv_log("✅ [PPV_Login] Advertiser logged in (#{$adv->id} {$adv->business_name})");
+                wp_send_json_success([
+                    'message' => PPV_Lang::t('login_success'),
+                    'role' => 'advertiser',
+                    'redirect' => home_url('/business/admin'),
+                ]);
+            }
         }
 
         // 🔹 LOGIN FAILED
