@@ -382,6 +382,23 @@ class PPV_Advertisers {
         $country_manual = sanitize_text_field($_POST['country_manual'] ?? '');
         $country = ($country_select === '__other') ? $country_manual : $country_select;
 
+        // Opening hours
+        $hours_in = $_POST['hours'] ?? [];
+        $hours = [];
+        if (is_array($hours_in)) {
+            foreach ($hours_in as $day => $h) {
+                $day = sanitize_key($day);
+                $closed = !empty($h['closed']);
+                $open = preg_match('/^\d{2}:\d{2}$/', $h['open'] ?? '') ? $h['open'] : '';
+                $close = preg_match('/^\d{2}:\d{2}$/', $h['close'] ?? '') ? $h['close'] : '';
+                if ($closed) {
+                    $hours[$day] = ['closed' => true];
+                } elseif ($open && $close) {
+                    $hours[$day] = ['open' => $open, 'close' => $close];
+                }
+            }
+        }
+
         // Social links
         $social_in = $_POST['social'] ?? [];
         $social = [];
@@ -409,6 +426,7 @@ class PPV_Advertisers {
             'logo_url' => $logo_url,
             'gallery'  => wp_json_encode(array_values($gallery)),
             'social'   => wp_json_encode($social),
+            'opening_hours' => wp_json_encode($hours),
         ];
         $wpdb->update($wpdb->prefix . 'ppv_advertisers', $data, ['id' => $adv_id]);
         wp_redirect(home_url('/business/admin/profile?saved=1'));

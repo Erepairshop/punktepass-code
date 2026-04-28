@@ -141,6 +141,53 @@ $is_eu = isset($eu_countries[$current_country]);
     </div>
   </details>
 
+  <!-- NYITVATARTÁS -->
+  <?php
+  $hours = [];
+  if (!empty($adv->opening_hours)) {
+    $decoded = json_decode($adv->opening_hours, true);
+    if (is_array($decoded)) $hours = $decoded;
+  }
+  $days = [
+    'mon' => ['Hétfő', 'Mo'],
+    'tue' => ['Kedd', 'Di'],
+    'wed' => ['Szerda', 'Mi'],
+    'thu' => ['Csütörtök', 'Do'],
+    'fri' => ['Péntek', 'Fr'],
+    'sat' => ['Szombat', 'Sa'],
+    'sun' => ['Vasárnap', 'So'],
+  ];
+  $hours_filled = !empty($hours) && count(array_filter($hours, fn($d) => !empty($d))) > 0;
+  ?>
+  <details class="bz-section">
+    <summary><i class="ri-time-line head-ic"></i> Nyitvatartás <span class="ck <?php echo $hours_filled ? 'show' : ''; ?>"><i class="ri-checkbox-circle-fill"></i></span><i class="ri-arrow-down-s-line arr"></i></summary>
+    <div class="bz-content">
+      <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="presetHours('weekday')"><i class="ri-flashlight-line"></i> H-P 9-18</button>
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="presetHours('all')"><i class="ri-flashlight-line"></i> Minden nap 9-18</button>
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="copyMonToAll()"><i class="ri-file-copy-line"></i> H → Minden</button>
+        <button type="button" class="bz-btn secondary" style="font-size:12px; padding:6px 10px;" onclick="clearAllHours()"><i class="ri-eraser-line"></i> Töröl</button>
+      </div>
+      <div id="hoursList">
+        <?php foreach ($days as $code => [$name_hu, $name_de]):
+          $d = $hours[$code] ?? ['open' => '', 'close' => '', 'closed' => false];
+          $is_closed = !empty($d['closed']);
+        ?>
+        <div class="hr-day" data-day="<?php echo $code; ?>" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; background:<?php echo $is_closed ? '#fef2f2' : '#f9fafb'; ?>; margin-bottom:6px;">
+          <div style="flex:0 0 70px; font-weight:600; font-size:13px;"><?php echo $name_hu; ?></div>
+          <input type="time" name="hours[<?php echo $code; ?>][open]" value="<?php echo esc_attr($d['open'] ?? ''); ?>" class="hr-open" style="padding:6px 8px; border:1px solid var(--border); border-radius:6px; font:inherit; font-size:13px; <?php echo $is_closed ? 'opacity:.4;' : ''; ?>" <?php disabled($is_closed); ?>>
+          <span style="color:var(--muted);">–</span>
+          <input type="time" name="hours[<?php echo $code; ?>][close]" value="<?php echo esc_attr($d['close'] ?? ''); ?>" class="hr-close" style="padding:6px 8px; border:1px solid var(--border); border-radius:6px; font:inherit; font-size:13px; <?php echo $is_closed ? 'opacity:.4;' : ''; ?>" <?php disabled($is_closed); ?>>
+          <label style="display:flex; align-items:center; gap:4px; margin-left:auto; font-size:12px; cursor:pointer; color:#dc2626; font-weight:600;">
+            <input type="checkbox" name="hours[<?php echo $code; ?>][closed]" value="1" class="hr-closed" <?php checked($is_closed); ?> onchange="toggleClosed(this)">
+            <span>Zárva</span>
+          </label>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </details>
+
   <!-- CÍM + GPS -->
   <?php $loc_filled = !empty($adv->lat) && !empty($adv->lng); ?>
   <details class="bz-section" <?php echo !$loc_filled ? 'open' : ''; ?>>
@@ -197,6 +244,48 @@ function onCountryChange() {
     man.style.display = 'none';
     man.required = false;
   }
+}
+
+function toggleClosed(cb) {
+  const day = cb.closest('.hr-day');
+  const opens = day.querySelectorAll('input[type=time]');
+  opens.forEach(i => { i.disabled = cb.checked; i.style.opacity = cb.checked ? .4 : 1; });
+  day.style.background = cb.checked ? '#fef2f2' : '#f9fafb';
+}
+function presetHours(kind) {
+  document.querySelectorAll('.hr-day').forEach(row => {
+    const d = row.dataset.day;
+    const cb = row.querySelector('.hr-closed');
+    const op = row.querySelector('.hr-open');
+    const cl = row.querySelector('.hr-close');
+    let open = false;
+    if (kind === 'weekday') open = !['sat','sun'].includes(d);
+    if (kind === 'all') open = true;
+    cb.checked = !open;
+    if (open) { op.value = '09:00'; cl.value = '18:00'; }
+    toggleClosed(cb);
+  });
+}
+function copyMonToAll() {
+  const mon = document.querySelector('.hr-day[data-day=mon]');
+  const op = mon.querySelector('.hr-open').value;
+  const cl = mon.querySelector('.hr-close').value;
+  const closed = mon.querySelector('.hr-closed').checked;
+  document.querySelectorAll('.hr-day').forEach(row => {
+    if (row.dataset.day === 'mon') return;
+    row.querySelector('.hr-open').value = op;
+    row.querySelector('.hr-close').value = cl;
+    row.querySelector('.hr-closed').checked = closed;
+    toggleClosed(row.querySelector('.hr-closed'));
+  });
+}
+function clearAllHours() {
+  document.querySelectorAll('.hr-day').forEach(row => {
+    row.querySelector('.hr-open').value = '';
+    row.querySelector('.hr-close').value = '';
+    row.querySelector('.hr-closed').checked = false;
+    toggleClosed(row.querySelector('.hr-closed'));
+  });
 }
 
 function previewLogo(input) {
