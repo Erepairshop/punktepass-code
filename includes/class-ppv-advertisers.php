@@ -39,8 +39,11 @@ class PPV_Advertisers {
         add_action('admin_post_ppv_advertiser_login', [__CLASS__, 'handle_login']);
         add_action('admin_post_nopriv_ppv_advertiser_login', [__CLASS__, 'handle_login']);
         add_action('admin_post_ppv_advertiser_save_profile', [__CLASS__, 'handle_save_profile']);
+        add_action('admin_post_nopriv_ppv_advertiser_save_profile', [__CLASS__, 'handle_save_profile']);
         add_action('admin_post_ppv_advertiser_save_ad', [__CLASS__, 'handle_save_ad']);
+        add_action('admin_post_nopriv_ppv_advertiser_save_ad', [__CLASS__, 'handle_save_ad']);
         add_action('admin_post_ppv_advertiser_send_push', [__CLASS__, 'handle_send_push']);
+        add_action('admin_post_nopriv_ppv_advertiser_send_push', [__CLASS__, 'handle_send_push']);
         add_action('admin_post_nopriv_ppv_advertiser_follow', [__CLASS__, 'handle_follow']);
         add_action('admin_post_ppv_advertiser_follow', [__CLASS__, 'handle_follow']);
         add_action('template_redirect', [__CLASS__, 'route_dispatcher']);
