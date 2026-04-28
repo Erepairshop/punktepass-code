@@ -536,8 +536,19 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
         // Advertiser branch — separate registration in ppv_advertisers table
         if ($user_type === 'advertiser') {
             $business_name = sanitize_text_field($_POST['business_name'] ?? '');
-            if (!is_email($email) || strlen($password) < 6 || strlen($business_name) < 2) {
-                wp_send_json_error(['message' => 'Hiányzó adatok (cégnév, email, jelszó min 6).']);
+            ppv_log("🔹 [PPV_Signup] Advertiser register: email='{$email}' biz='{$business_name}' pw_len=" . strlen($password));
+            $missing = [];
+            if (!is_email($email)) $missing[] = 'email (érvénytelen)';
+            if (strlen($password) < 6) $missing[] = 'jelszó (min 6 karakter, kapott: ' . strlen($password) . ')';
+            if (strlen($business_name) < 2) $missing[] = 'cégnév (kapott: "' . $business_name . '")';
+            if ($missing) {
+                wp_send_json_error(['message' => 'Hiányzó/hibás: ' . implode(', ', $missing)]);
+                return;
+            }
+            // Check table exists
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$prefix}ppv_advertisers'");
+            if (!$table_exists) {
+                wp_send_json_error(['message' => 'ppv_advertisers tábla nem létezik. Aktiváld újra a plugint vagy futtasd a migrációkat.']);
                 return;
             }
             $exists = $wpdb->get_var($wpdb->prepare(
