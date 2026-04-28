@@ -152,5 +152,18 @@ function bz_is_active($url, $current) {
   </div>
 </nav>
 <?php endif; ?>
+<?php
+// AI Support widget — context-aware for advertisers
+if ($adv && class_exists('PPV_AI_Support')) {
+    $GLOBALS['ppv_ai_context'] = [
+        'mode' => 'business_admin',
+        'advertiser_id' => $adv->id,
+        'business_name' => $adv->business_name,
+        'tier' => $adv->tier ?? 'basic',
+        'subscription_status' => $adv->subscription_status ?? 'trial',
+    ];
+    PPV_AI_Support::render_widget();
+}
+?>
 </body>
 </html>

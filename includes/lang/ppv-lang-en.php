@@ -2230,7 +2230,7 @@ return [
 
 // --- Register ---
 'biz_register_title' => '📣 Sign up free for 30 days',
-'biz_register_subtitle' => 'No loyalty / point system — just an ad on the map + push to followers. <strong>€5/month</strong> base plan, first 30 days free.',
+'biz_register_subtitle' => 'No loyalty / point system — just an ad on the map + push to followers. <strong>%s</strong> base plan, first 30 days free.',
 'biz_register_company' => 'Company name',
 'biz_register_email' => 'Email',
 'biz_register_password' => 'Password (min 6 characters)',

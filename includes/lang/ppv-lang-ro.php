@@ -2336,7 +2336,7 @@ return [
 
 // --- Înregistrare ---
 'biz_register_title' => '📣 Înregistrează-te 30 de zile gratuit',
-'biz_register_subtitle' => 'Nu este sistem de loyalty / puncte — doar reclamă pe hartă + Push către urmăritori. <strong>5 €/lună</strong> pachet de bază, primele 30 de zile gratis.',
+'biz_register_subtitle' => 'Nu este sistem de loyalty / puncte — doar reclamă pe hartă + Push către urmăritori. <strong>%s</strong> pachet de bază, primele 30 de zile gratis.',
 'biz_register_company' => 'Nume firmă',
 'biz_register_email' => 'Email',
 'biz_register_password' => 'Parolă (min. 6 caractere)',

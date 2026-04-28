@@ -26,9 +26,9 @@ class PPV_Advertisers {
     const TIER_PRO   = 'pro';
 
     const TIERS = [
-        self::TIER_BASIC => ['price_eur' => 5,  'ads' => 1,  'push_per_month' => 4,  'featured' => 0],
-        self::TIER_PLUS  => ['price_eur' => 9,  'ads' => 3,  'push_per_month' => 8,  'featured' => 0],
-        self::TIER_PRO   => ['price_eur' => 19, 'ads' => 10, 'push_per_month' => 16, 'featured' => 1],
+        self::TIER_BASIC => ['price_eur' => 7,  'price_ron' => 35,  'ads' => 1,  'push_per_month' => 4,  'featured' => 0],
+        self::TIER_PLUS  => ['price_eur' => 12, 'price_ron' => 60,  'ads' => 3,  'push_per_month' => 8,  'featured' => 0],
+        self::TIER_PRO   => ['price_eur' => 22, 'price_ron' => 110, 'ads' => 10, 'push_per_month' => 16, 'featured' => 1],
     ];
 
     public static function init() {

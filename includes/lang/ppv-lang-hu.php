@@ -2329,7 +2329,7 @@ return [
 
 // --- Regisztráció ---
 'biz_register_title' => '📣 Regisztrálj 30 napig ingyen',
-'biz_register_subtitle' => 'Nem loyalty / pont-rendszer — csak hirdetés a térképen + Push követőknek. <strong>5 €/hó</strong> alapcsomag, az első 30 nap ingyen.',
+'biz_register_subtitle' => 'Nem loyalty / pont-rendszer — csak hirdetés a térképen + Push követőknek. <strong>%s</strong> alapcsomag, az első 30 nap ingyen.',
 'biz_register_company' => 'Cégnév',
 'biz_register_email' => 'Email',
 'biz_register_password' => 'Jelszó (min 6 karakter)',

@@ -2350,7 +2350,7 @@ return [
 
 // --- Register ---
 'biz_register_title' => '📣 30 Tage gratis registrieren',
-'biz_register_subtitle' => 'Kein Loyalty- / Punkte-System — nur Werbung auf der Karte + Push an Follower. <strong>5 €/Monat</strong> Basispaket, die ersten 30 Tage gratis.',
+'biz_register_subtitle' => 'Kein Loyalty- / Punkte-System — nur Werbung auf der Karte + Push an Follower. <strong>%s</strong> Basispaket, die ersten 30 Tage gratis.',
 'biz_register_company' => 'Firmenname',
 'biz_register_email' => 'E-Mail',
 'biz_register_password' => 'Passwort (min. 6 Zeichen)',
