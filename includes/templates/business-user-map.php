@@ -58,13 +58,19 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-card-tag { display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; margin:0 4px 4px 0; }
 .km-card-tag.loyalty { background:#dbeafe; color:#1e3a8a; }
 .km-card-tag.advertiser { background:#fef3c7; color:#92400e; }
-.km-card-actions { display:flex; gap:8px; padding:14px 18px; flex-wrap:wrap; }
-.km-card-actions a, .km-card-actions button { flex:1 1 30%; padding:10px 12px; border-radius:10px; text-align:center; font-weight:600; font-size:13px; text-decoration:none; border:none; cursor:pointer; }
-.km-card-actions .call { background:#10b981; color:#fff; }
-.km-card-actions .wa   { background:#25d366; color:#fff; }
-.km-card-actions .dir  { background:#3b82f6; color:#fff; }
-.km-card-actions .fol  { background:#6366f1; color:#fff; }
-.km-card-actions .fol.active { background:#10b981; }
+.km-card-actions { position:sticky; bottom:0; display:flex; gap:6px; padding:10px 14px calc(10px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.96); backdrop-filter:blur(8px); border-top:1px solid #f1f5f9; }
+.km-card-actions a, .km-card-actions button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 4px; border-radius:12px; text-decoration:none; border:none; cursor:pointer; font-size:10px; font-weight:600; line-height:1.1; background:#f8fafc; color:#475569; transition:transform .15s ease, background .15s ease; }
+.km-card-actions a:active, .km-card-actions button:active { transform:scale(.94); }
+.km-card-actions a i, .km-card-actions button i { font-size:18px; line-height:1; }
+.km-card-actions .call { color:#059669; }
+.km-card-actions .call i { color:#10b981; }
+.km-card-actions .wa { color:#1ea952; }
+.km-card-actions .wa i { color:#25d366; }
+.km-card-actions .dir { color:#2563eb; }
+.km-card-actions .dir i { color:#3b82f6; }
+.km-card-actions .fol { color:#fff; background:linear-gradient(135deg,#6366f1,#8b5cf6); }
+.km-card-actions .fol i { color:#fff; }
+.km-card-actions .fol.active { background:linear-gradient(135deg,#10b981,#059669); }
 .km-card-body { padding:0 18px 24px; color:#374151; }
 .km-offers { padding:0 18px 18px; }
 .km-offers .row { display:flex; overflow-x:auto; gap:10px; scroll-snap-type:x mandatory; padding:6px 0; }
@@ -235,7 +241,9 @@ async function openSheet(f) {
   const isLoyalty = f.type === 'loyalty';
   const tagClass = isLoyalty ? 'loyalty' : 'advertiser';
   const tagLabel = isLoyalty ? '🎁 ' + T.points_here : '📣 ' + T.offers;
-  const followLabel = f.following ? ('✓ ' + T.following) : ('➕ ' + T.follow);
+  const followLabel = f.following
+    ? '<i class="ri-check-line"></i><span>' + T.following + '</span>'
+    : '<i class="ri-heart-add-line"></i><span>' + T.follow + '</span>';
   const followClass = f.following ? 'fol active' : 'fol';
 
   const followBanner = isLoyalty
@@ -256,9 +264,9 @@ async function openSheet(f) {
     </div>
     <div id="km-rich-content" style="padding:0 18px;color:#6b7280;font-size:13px;">⏳</div>
     <div class="km-card-actions">
-      ${f.phone ? `<a class="call" href="tel:${f.phone}">📞 ${T.call}</a>` : ''}
-      ${f.whatsapp ? `<a class="wa" href="https://wa.me/${f.whatsapp.replace(/[^0-9]/g,'')}">💬 ${T.whatsapp}</a>` : ''}
-      <a class="dir" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}">🗺 ${T.directions}</a>
+      ${f.phone ? `<a class="call" href="tel:${f.phone}"><i class="ri-phone-fill"></i><span>${T.call}</span></a>` : ''}
+      ${f.whatsapp ? `<a class="wa" href="https://wa.me/${f.whatsapp.replace(/[^0-9]/g,'')}"><i class="ri-whatsapp-fill"></i><span>${T.whatsapp}</span></a>` : ''}
+      <a class="dir" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}"><i class="ri-route-fill"></i><span>${T.directions}</span></a>
       <button class="${followClass}" onclick="toggleFollow('${f.type}',${f.id},this)">${followLabel}</button>
     </div>
   `;
