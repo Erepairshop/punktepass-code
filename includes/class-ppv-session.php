@@ -525,6 +525,9 @@ add_action('template_redirect', function() {
     $uri = $_SERVER['REQUEST_URI'] ?? '';
     if (strpos($uri, '/wp-json/') !== false) return;
 
+    // Skip business advertiser pages — they have their own auth (PPV_Advertisers)
+    if (stripos($uri, '/business/') !== false) return;
+
     // Check if this is a protected user page
     $protected_pages = ['/belohnungen', '/meine-punkte', '/punkte', '/einstellungen', '/settings', '/profile', '/user-dashboard', '/dashboard'];
     $is_protected = false;
