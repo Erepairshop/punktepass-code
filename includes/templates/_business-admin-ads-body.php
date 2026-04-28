@@ -149,22 +149,26 @@ $current_badge = $edit->badge ?? '';
         </label>
       </div>
 
-      <div class="bz-grid">
-        <div>
-          <label class="bz-label">Max. beváltás (összesen)</label>
-          <input type="number" name="max_claims" class="bz-input" min="0" value="<?php echo esc_attr($edit->max_claims ?? ''); ?>" placeholder="Üres = korlátlan">
-        </div>
-        <div>
-          <label class="bz-label">Per-user limit</label>
-          <select name="per_user_limit" class="bz-select">
-            <option value="lifetime" <?php selected($current_pul, 'lifetime'); ?>>1× élethosszig</option>
-            <option value="daily"    <?php selected($current_pul, 'daily'); ?>>1× naponta</option>
-            <option value="weekly"   <?php selected($current_pul, 'weekly'); ?>>1× hetente</option>
-            <option value="monthly"  <?php selected($current_pul, 'monthly'); ?>>1× havonta</option>
-            <option value="none"     <?php selected($current_pul, 'none'); ?>>Korlátlan</option>
-          </select>
-        </div>
+      <div style="margin-bottom:12px;">
+        <label class="bz-label">Egy user hányszor kaphatja meg?</label>
+        <select name="per_user_limit" class="bz-select">
+          <option value="lifetime" <?php selected($current_pul, 'lifetime'); ?>>Csak 1× élethosszig</option>
+          <option value="daily"    <?php selected($current_pul, 'daily'); ?>>1× naponta</option>
+          <option value="weekly"   <?php selected($current_pul, 'weekly'); ?>>1× hetente</option>
+          <option value="monthly"  <?php selected($current_pul, 'monthly'); ?>>1× havonta</option>
+          <option value="none"     <?php selected($current_pul, 'none'); ?>>Korlátlan (bármennyi)</option>
+        </select>
+        <div class="char-count" style="text-align:left;">Ugyanaz a user max ennyiszer válthatja be</div>
       </div>
+
+      <details style="background:#f9fafb; border-radius:8px; padding:8px 12px;">
+        <summary style="cursor:pointer; font-size:12px; font-weight:600; color:var(--muted); list-style:none;"><i class="ri-settings-3-line"></i> Speciális: készlet-limit</summary>
+        <div style="padding-top:10px;">
+          <label class="bz-label">Maximum hány user kaphatja meg összesen?</label>
+          <input type="number" name="max_claims" class="bz-input" min="0" value="<?php echo esc_attr($edit->max_claims ?? ''); ?>" placeholder="Üres = nincs limit">
+          <div class="char-count" style="text-align:left;">pl. ha csak 50 darab készleted van. Üresen hagyhatod, ha nincs felső korlát.</div>
+        </div>
+      </details>
     </div>
   </details>
 
