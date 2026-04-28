@@ -1,30 +1,11 @@
 <?php
 if (!defined('ABSPATH')) exit;
-
-global $wpdb;
 $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
-$advertisers = PPV_Advertisers::get_active_ads_for_map($lang);
-$pins = [];
-foreach ($advertisers as $a) {
-    $pins[] = [
-        'id'   => (int)$a->id,
-        'slug' => $a->slug,
-        'name' => $a->business_name,
-        'lat'  => (float)$a->lat,
-        'lng'  => (float)$a->lng,
-        'cat'  => $a->category ?? 'other',
-        'logo' => $a->logo_url,
-        'tier' => $a->tier,
-        'feat' => (int)$a->featured,
-    ];
-}
-$pins_json = wp_json_encode($pins);
-
 $labels = [
-    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','followers'=>'Folgen','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.'],
-    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','followers'=>'Követés','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.'],
-    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','followers'=>'Urmărește','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.'],
-    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','followers'=>'Follow','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.'],
+    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote'],
+    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','follow'=>'Követés','following'=>'Követed','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.','points_here'=>'Pontot gyűjthetsz','offers'=>'Aktuális ajánlatok'],
+    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','follow'=>'Urmărește','following'=>'Urmărești','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.','points_here'=>'Adună puncte','offers'=>'Oferte curente'],
+    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','follow'=>'Follow','following'=>'Following','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.','points_here'=>'Earn points here','offers'=>'Current offers'],
 ];
 $L = $labels[$lang] ?? $labels['de'];
 ?>
@@ -32,110 +13,191 @@ $L = $labels[$lang] ?? $labels['de'];
 <html lang="<?php echo esc_attr($lang); ?>">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?php echo esc_html($L['title']); ?> — PunktePass</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <style>
 * { box-sizing:border-box; }
-html,body { margin:0; height:100%; font:14px/1.5 system-ui,sans-serif; }
-.km-bar { padding:10px 16px; background:#fff; border-bottom:1px solid #e5e7eb; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.km-bar input, .km-bar select { padding:8px 10px; border:1px solid #e5e7eb; border-radius:6px; font:inherit; }
-#map { height:calc(100vh - 60px); }
-.km-popup { min-width:220px; }
-.km-popup .logo { width:48px; height:48px; border-radius:8px; object-fit:cover; vertical-align:middle; margin-right:8px; }
-.km-popup h3 { margin:6px 0; font-size:15px; display:inline-block; vertical-align:middle; }
-.km-popup .actions { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; }
-.km-popup .actions a { padding:6px 10px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:600; }
-.km-popup .actions a.call { background:#10b981; color:#fff; }
-.km-popup .actions a.wa { background:#25d366; color:#fff; }
-.km-popup .actions a.dir { background:#3b82f6; color:#fff; }
-.km-popup .actions a.fol { background:#6366f1; color:#fff; }
-.km-popup .desc { font-size:12px; color:#6b7280; margin-top:4px; max-height:60px; overflow:hidden; }
-.km-feat { background:gold; padding:2px 6px; font-size:10px; border-radius:4px; vertical-align:middle; margin-left:4px; }
+html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-serif; }
+#map { height:100vh; width:100vw; }
+.km-bar { position:absolute; top:10px; left:10px; right:10px; z-index:10; padding:8px 10px; background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.12); display:flex; gap:8px; align-items:center; }
+.km-bar input, .km-bar select { padding:8px 10px; border:none; border-radius:6px; font:inherit; background:#f3f4f6; }
+.km-bar input { flex:1; min-width:120px; }
+.km-bar strong { font-size:18px; }
+/* pin */
+.km-pin { width:48px; height:48px; cursor:pointer; }
+.km-pin.loyalty { --c: #3b82f6; }
+.km-pin.advertiser { --c: #f59e0b; }
+.km-pin.featured  { --c: #facc15; }
+.km-pin .ring { width:48px; height:48px; border-radius:50%; background:#fff; border:3px solid var(--c); box-shadow:0 4px 12px rgba(0,0,0,.25); overflow:hidden; display:flex; align-items:center; justify-content:center; transition:transform .15s; }
+.km-pin:hover .ring { transform:scale(1.12); }
+.km-pin .ring img { width:100%; height:100%; object-fit:cover; }
+.km-pin .ring .ico { font-size:22px; }
+.km-pin .badge { position:absolute; top:-4px; right:-4px; background:var(--c); color:#fff; font-size:10px; padding:2px 5px; border-radius:8px; font-weight:700; }
+/* card */
+.km-sheet { position:absolute; left:0; right:0; bottom:-100%; max-height:75vh; overflow:auto; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -8px 32px rgba(0,0,0,.25); transition:bottom .3s ease; z-index:20; }
+.km-sheet.open { bottom:0; }
+.km-sheet-grab { width:48px; height:5px; background:#d1d5db; border-radius:3px; margin:8px auto; }
+.km-cover { height:120px; background:linear-gradient(135deg,#6366f1,#8b5cf6) center/cover; }
+.km-cover.advertiser { background:linear-gradient(135deg,#f59e0b,#dc2626); }
+.km-card-head { padding:0 18px; margin-top:-40px; display:flex; gap:12px; align-items:flex-end; }
+.km-card-logo { width:80px; height:80px; border-radius:16px; background:#fff center/cover; border:4px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.12); }
+.km-card-title { padding:8px 18px 6px; font-size:20px; font-weight:700; }
+.km-card-sub { padding:0 18px; color:#6b7280; font-size:13px; }
+.km-card-tag { display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; margin:0 4px 4px 0; }
+.km-card-tag.loyalty { background:#dbeafe; color:#1e3a8a; }
+.km-card-tag.advertiser { background:#fef3c7; color:#92400e; }
+.km-card-actions { display:flex; gap:8px; padding:14px 18px; flex-wrap:wrap; }
+.km-card-actions a, .km-card-actions button { flex:1 1 30%; padding:10px 12px; border-radius:10px; text-align:center; font-weight:600; font-size:13px; text-decoration:none; border:none; cursor:pointer; }
+.km-card-actions .call { background:#10b981; color:#fff; }
+.km-card-actions .wa   { background:#25d366; color:#fff; }
+.km-card-actions .dir  { background:#3b82f6; color:#fff; }
+.km-card-actions .fol  { background:#6366f1; color:#fff; }
+.km-card-actions .fol.active { background:#10b981; }
+.km-card-body { padding:0 18px 24px; color:#374151; }
+.km-offers { padding:0 18px 18px; }
+.km-offers .row { display:flex; overflow-x:auto; gap:10px; scroll-snap-type:x mandatory; padding:6px 0; }
+.km-offer { flex:0 0 80%; scroll-snap-align:start; background:#f9fafb; border-radius:12px; overflow:hidden; }
+.km-offer img { width:100%; height:120px; object-fit:cover; }
+.km-offer .body { padding:10px 12px; }
+.km-offer h4 { margin:0 0 4px; font-size:14px; }
+.km-offer p { margin:0; font-size:12px; color:#6b7280; }
 </style>
 </head>
 <body>
+<div id="map"></div>
 <div class="km-bar">
-  <strong style="margin-right:8px;">📍 <?php echo esc_html($L['title']); ?></strong>
-  <input type="text" id="km-search" placeholder="<?php echo esc_attr($L['search']); ?>" style="flex:1; min-width:140px;">
+  <strong>📍</strong>
+  <input type="text" id="km-search" placeholder="<?php echo esc_attr($L['search']); ?>">
   <select id="km-cat">
     <option value=""><?php echo esc_html($L['filter_all']); ?></option>
-    <option value="food">🍔 Food / Étterem</option>
-    <option value="cafe">☕ Café</option>
-    <option value="retail">🛍 Retail</option>
-    <option value="service">🔧 Service</option>
-    <option value="beauty">💇 Beauty</option>
-    <option value="auto">🚗 Auto</option>
-    <option value="health">⚕️ Health</option>
+    <option value="loyalty">🎁 Loyalty</option>
+    <option value="advertiser">📣 Akciók</option>
   </select>
 </div>
-<div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div id="km-sheet" class="km-sheet"></div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
-const PINS = <?php echo $pins_json; ?>;
+const L = <?php echo wp_json_encode($L); ?>;
 const LANG = <?php echo wp_json_encode($lang); ?>;
-const L_LABEL = <?php echo wp_json_encode($L); ?>;
+const DEFAULT_CENTER = [22.4633, 47.6822]; // Carei, RO
 
-// Default center: Carei area (or Bucharest fallback)
-const initLat = PINS.length ? PINS[0].lat : 47.7;
-const initLng = PINS.length ? PINS[0].lng : 22.5;
-const map = L.map('map').setView([initLat, initLng], 12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap',
-  maxZoom: 19,
-}).addTo(map);
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/liberty',
+  center: DEFAULT_CENTER,
+  zoom: 12,
+  attributionControl: { compact: true },
+  pitchWithRotate: false,
+  dragRotate: false,
+});
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: false, showCompass: false }), 'right');
 
-let markers = [];
-
-// Try geolocation
+let userMarker = null;
+function showUser(lat, lng) {
+  const el = document.createElement('div');
+  el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.3);';
+  if (userMarker) userMarker.remove();
+  userMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+  map.flyTo({ center: [lng, lat], zoom: 14 });
+}
 if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(p => {
-    map.setView([p.coords.latitude, p.coords.longitude], 14);
-    L.circleMarker([p.coords.latitude, p.coords.longitude], { radius:8, color:'#3b82f6', fillColor:'#60a5fa', fillOpacity:0.7 }).addTo(map);
-  });
+  navigator.geolocation.getCurrentPosition(p => showUser(p.coords.latitude, p.coords.longitude));
 }
 
-function renderPins(filter) {
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
+let allFeatures = [];
+let pinMarkers = [];
+
+async function loadFeatures() {
+  try {
+    const r = await fetch('/wp-json/punktepass/v1/map/nearby', { credentials: 'include' });
+    const d = await r.json();
+    allFeatures = d.features || [];
+    if (allFeatures.length && !userMarker) {
+      map.flyTo({ center: [allFeatures[0].lng, allFeatures[0].lat], zoom: 12 });
+    }
+    renderPins();
+  } catch (e) { console.error(e); }
+}
+
+function makePinEl(f) {
+  const div = document.createElement('div');
+  div.className = 'km-pin ' + f.type + (f.featured ? ' featured' : '');
+  const ico = f.type === 'loyalty' ? '🎁' : '📣';
+  div.innerHTML = `<div class="ring">${f.logo ? `<img src="${f.logo}">` : `<span class="ico">${ico}</span>`}</div>`;
+  return div;
+}
+
+function renderPins() {
+  pinMarkers.forEach(m => m.remove());
+  pinMarkers = [];
   const cat = document.getElementById('km-cat').value;
   const q = (document.getElementById('km-search').value || '').toLowerCase();
-  PINS.forEach(p => {
-    if (cat && p.cat !== cat) return;
-    if (q && !p.name.toLowerCase().includes(q)) return;
-    const icon = L.divIcon({
-      className:'',
-      html: `<div style="width:42px;height:42px;border-radius:50%;background:#fff;border:3px solid ${p.feat?'gold':'#6366f1'};box-shadow:0 2px 6px rgba(0,0,0,.3);overflow:hidden;display:flex;align-items:center;justify-content:center;">${p.logo?`<img src="${p.logo}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:20px;">📍</span>'}</div>`,
-      iconSize:[42,42],
-      iconAnchor:[21,21],
-    });
-    const marker = L.marker([p.lat, p.lng], { icon }).addTo(map);
-    marker.on('click', () => loadPopup(marker, p));
-    markers.push(marker);
+  allFeatures.forEach(f => {
+    if (cat && f.type !== cat) return;
+    if (q && !f.name.toLowerCase().includes(q)) return;
+    const m = new maplibregl.Marker({ element: makePinEl(f), anchor:'center' })
+      .setLngLat([f.lng, f.lat]).addTo(map);
+    m.getElement().addEventListener('click', () => openSheet(f));
+    pinMarkers.push(m);
   });
 }
 
-function loadPopup(marker, p) {
-  const featTag = p.feat ? `<span class="km-feat">⭐ Featured</span>` : '';
-  const logo = p.logo ? `<img src="${p.logo}" class="logo" alt="">` : '';
-  const callA = `<a class="call" href="/business/${p.slug}">${L_LABEL.call}</a>`;
-  const dirA  = `<a class="dir" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">${L_LABEL.directions}</a>`;
-  const html = `<div class="km-popup">
-    ${logo}<h3>${p.name}</h3>${featTag}
-    <div class="actions">${callA} ${dirA}
-      <a href="/business/${p.slug}" style="background:#6366f1;color:#fff;">${L_LABEL.followers} →</a>
+function openSheet(f) {
+  const sheet = document.getElementById('km-sheet');
+  const isLoyalty = f.type === 'loyalty';
+  const tagClass = isLoyalty ? 'loyalty' : 'advertiser';
+  const tagLabel = isLoyalty ? '🎁 ' + L.points_here : '📣 ' + L.offers;
+  const followLabel = f.following ? ('✓ ' + L.following) : ('➕ ' + L.follow);
+  const followClass = f.following ? 'fol active' : 'fol';
+  sheet.innerHTML = `
+    <div class="km-sheet-grab" onclick="closeSheet()"></div>
+    <div class="km-cover ${f.type}"></div>
+    <div class="km-card-head">
+      <div class="km-card-logo" style="background-image:url('${f.logo || ''}')"></div>
     </div>
-  </div>`;
-  marker.bindPopup(html).openPopup();
+    <div class="km-card-title">${f.name}</div>
+    <div class="km-card-sub">
+      <span class="km-card-tag ${tagClass}">${tagLabel}</span>
+      ${f.address ? f.address : ''}
+    </div>
+    <div class="km-card-actions">
+      ${f.phone ? `<a class="call" href="tel:${f.phone}">📞 ${L.call}</a>` : ''}
+      ${f.whatsapp ? `<a class="wa" href="https://wa.me/${f.whatsapp.replace(/[^0-9]/g,'')}">💬 ${L.whatsapp}</a>` : ''}
+      <a class="dir" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}">🗺 ${L.directions}</a>
+      <button class="${followClass}" onclick="toggleFollow('${f.type}',${f.id},this)">${followLabel}</button>
+    </div>
+  `;
+  sheet.classList.add('open');
 }
+window.closeSheet = function() { document.getElementById('km-sheet').classList.remove('open'); };
+window.toggleFollow = async function(type, id, btn) {
+  const wasFollowing = btn.classList.contains('active');
+  const action = wasFollowing ? 'unfollow' : 'follow';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/wp-json/punktepass/v1/follow', {
+      method:'POST', credentials:'include',
+      headers: {'Content-Type':'application/json', 'X-WP-Nonce': window.wpRestNonce || ''},
+      body: JSON.stringify({ type, target_id: id, action }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      btn.classList.toggle('active', d.following);
+      btn.innerHTML = d.following ? ('✓ ' + L.following) : ('➕ ' + L.follow);
+      const f = allFeatures.find(x => x.id === id && x.type === type);
+      if (f) f.following = d.following;
+    }
+  } catch(e) { alert(e.message); }
+  btn.disabled = false;
+};
 
-document.getElementById('km-cat').addEventListener('change', () => renderPins());
-document.getElementById('km-search').addEventListener('input', () => renderPins());
-renderPins();
+document.getElementById('km-cat').addEventListener('change', renderPins);
+document.getElementById('km-search').addEventListener('input', renderPins);
+loadFeatures();
 
-if (PINS.length === 0) {
-  document.getElementById('map').innerHTML = '<div style="padding:40px; text-align:center; color:#6b7280;"><h2>📍 ' + L_LABEL.no_pins + '</h2></div>';
-}
+// Close sheet on map click
+map.on('click', () => closeSheet());
 </script>
 </body>
 </html>

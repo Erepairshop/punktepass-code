@@ -33,6 +33,7 @@ class PPV_Advertisers {
 
     public static function init() {
         add_action('init', [__CLASS__, 'register_routes']);
+        add_action('rest_api_init', [__CLASS__, 'register_rest']);
         add_action('admin_post_ppv_advertiser_register', [__CLASS__, 'handle_register']);
         add_action('admin_post_nopriv_ppv_advertiser_register', [__CLASS__, 'handle_register']);
         add_action('admin_post_ppv_advertiser_login', [__CLASS__, 'handle_login']);
@@ -121,6 +122,20 @@ class PPV_Advertisers {
             KEY idx_valid (valid_from, valid_to)
         ) {$charset};";
         dbDelta($sql2);
+
+        // Loyalty store followers — same shape, parallel to ad followers
+        $store_followers = $wpdb->prefix . 'ppv_store_followers';
+        $sql_sf = "CREATE TABLE IF NOT EXISTS {$store_followers} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id BIGINT(20) UNSIGNED NOT NULL,
+            store_id BIGINT(20) UNSIGNED NOT NULL,
+            push_enabled TINYINT(1) DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uniq_user_store (user_id, store_id),
+            KEY idx_store (store_id, push_enabled)
+        ) {$charset};";
+        dbDelta($sql_sf);
 
         $followers = $wpdb->prefix . 'ppv_advertiser_followers';
         $sql3 = "CREATE TABLE IF NOT EXISTS {$followers} (
@@ -486,6 +501,132 @@ class PPV_Advertisers {
              WHERE {$where}
              ORDER BY a.featured DESC, a.id DESC"
         );
+    }
+
+    /** ============================================================
+     * REST API
+     * ============================================================ */
+    public static function register_rest() {
+        register_rest_route('punktepass/v1', '/map/nearby', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_map_nearby'],
+            'permission_callback' => '__return_true',
+            'args' => [
+                'lat'    => ['type' => 'number', 'required' => false],
+                'lng'    => ['type' => 'number', 'required' => false],
+                'radius' => ['type' => 'number', 'default' => 50],
+            ],
+        ]);
+        register_rest_route('punktepass/v1', '/follow', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_follow'],
+            'permission_callback' => '__return_true',
+        ]);
+    }
+
+    public static function rest_map_nearby($req) {
+        global $wpdb;
+        $lat = $req->get_param('lat');
+        $lng = $req->get_param('lng');
+        $radius = max(1, min(500, (float)$req->get_param('radius')));
+        $user_id = !empty($_SESSION['ppv_user_id']) ? (int)$_SESSION['ppv_user_id'] : 0;
+
+        // Loyalty stores (ppv_stores) — table assumed to have lat/lng/logo/name/slug
+        $store_cols_sql = "SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores";
+        $store_cols = array_column($wpdb->get_results($store_cols_sql), 'Field');
+        $has_geo = in_array('lat', $store_cols) && in_array('lng', $store_cols);
+
+        $stores = [];
+        if ($has_geo) {
+            $stores = $wpdb->get_results(
+                "SELECT id, name, slug, lat, lng, logo, address, city, phone, whatsapp
+                 FROM {$wpdb->prefix}ppv_stores
+                 WHERE lat IS NOT NULL AND lng IS NOT NULL AND status = 'active'
+                 LIMIT 1000"
+            );
+        }
+
+        // Advertisers
+        $advertisers = $wpdb->get_results(
+            "SELECT id, business_name AS name, slug, lat, lng, logo_url AS logo, address, city, phone, whatsapp, category, featured, tier
+             FROM {$wpdb->prefix}ppv_advertisers
+             WHERE is_active = 1 AND lat IS NOT NULL AND lng IS NOT NULL
+             LIMIT 1000"
+        );
+
+        $features = [];
+        foreach ($stores as $s) {
+            $features[] = [
+                'type'   => 'loyalty',
+                'id'     => (int)$s->id,
+                'slug'   => $s->slug,
+                'name'   => $s->name,
+                'lat'    => (float)$s->lat,
+                'lng'    => (float)$s->lng,
+                'logo'   => $s->logo ?? '',
+                'address'=> trim(($s->address ?? '') . ', ' . ($s->city ?? ''), ', '),
+                'phone'  => $s->phone ?? '',
+                'whatsapp' => $s->whatsapp ?? '',
+                'following' => $user_id ? self::is_following_store($user_id, (int)$s->id) : false,
+            ];
+        }
+        foreach ($advertisers as $a) {
+            $features[] = [
+                'type'   => 'advertiser',
+                'id'     => (int)$a->id,
+                'slug'   => $a->slug,
+                'name'   => $a->name,
+                'lat'    => (float)$a->lat,
+                'lng'    => (float)$a->lng,
+                'logo'   => $a->logo,
+                'address'=> trim(($a->address ?? '') . ', ' . ($a->city ?? ''), ', '),
+                'phone'  => $a->phone,
+                'whatsapp'=> $a->whatsapp,
+                'category' => $a->category,
+                'featured' => (int)$a->featured,
+                'tier'   => $a->tier,
+                'following' => $user_id ? self::is_following($user_id, (int)$a->id) : false,
+            ];
+        }
+        return rest_ensure_response(['features' => $features]);
+    }
+
+    public static function rest_follow($req) {
+        $user_id = !empty($_SESSION['ppv_user_id']) ? (int)$_SESSION['ppv_user_id'] : 0;
+        if (!$user_id) {
+            return new WP_Error('not_logged_in', 'Bejelentkezés szükséges.', ['status' => 401]);
+        }
+        $type = $req->get_param('type');
+        $target_id = (int)$req->get_param('target_id');
+        $action = $req->get_param('action') ?: 'follow';
+
+        global $wpdb;
+        if ($type === 'loyalty') {
+            $table = $wpdb->prefix . 'ppv_store_followers';
+            $col = 'store_id';
+        } else {
+            $table = $wpdb->prefix . 'ppv_advertiser_followers';
+            $col = 'advertiser_id';
+        }
+        if ($action === 'unfollow') {
+            $wpdb->delete($table, ['user_id' => $user_id, $col => $target_id]);
+            return ['ok' => true, 'following' => false];
+        }
+        $exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$table} WHERE user_id = %d AND {$col} = %d", $user_id, $target_id
+        ));
+        if (!$exists) {
+            $wpdb->insert($table, ['user_id' => $user_id, $col => $target_id, 'push_enabled' => 1]);
+        }
+        return ['ok' => true, 'following' => true];
+    }
+
+    public static function is_following_store($user_id, $store_id) {
+        global $wpdb;
+        return (bool)$wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_store_followers WHERE user_id = %d AND store_id = %d",
+            $user_id, $store_id
+        ));
     }
 
     public static function is_following($user_id, $advertiser_id) {
