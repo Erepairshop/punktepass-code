@@ -53,7 +53,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-cover.advertiser { background:linear-gradient(135deg,#f59e0b,#dc2626); }
 .km-card-head { padding:0 18px; margin-top:-40px; display:flex; gap:12px; align-items:flex-end; }
 .km-card-logo { width:80px; height:80px; border-radius:16px; background:#fff center/cover; border:4px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.12); }
-.km-card-title { padding:8px 18px 6px; font-size:20px; font-weight:700; display:flex; align-items:center; gap:10px; justify-content:space-between; }
+.km-card-title { padding:10px 18px 8px; font-size:20px; font-weight:700; display:flex; align-items:center; gap:10px; justify-content:space-between; position:sticky; top:0; background:#fff; z-index:5; box-shadow:0 1px 0 rgba(0,0,0,.04); }
 .km-card-title .name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .km-fol-pill { flex-shrink:0; display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:999px; border:none; cursor:pointer; font-size:12px; font-weight:700; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; box-shadow:0 4px 12px rgba(99,102,241,.35); transition:transform .15s ease; white-space:nowrap; }
 .km-fol-pill:active { transform:scale(.94); }
@@ -94,7 +94,16 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .mc-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; padding:6px 0; }
 .mc-row .ic { font-size:16px; color:#9ca3af; }
 .mc-gallery { display:flex; gap:8px; overflow-x:auto; padding:12px 0 4px; scroll-snap-type:x mandatory; }
-.mc-gallery img { flex:0 0 auto; width:100px; height:100px; border-radius:10px; object-fit:cover; scroll-snap-align:start; }
+.mc-gallery img { flex:0 0 auto; width:100px; height:100px; border-radius:10px; object-fit:cover; scroll-snap-align:start; cursor:pointer; transition:transform .15s ease; }
+.mc-gallery img:active { transform:scale(.95); }
+.km-lightbox { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:99999; display:none; align-items:center; justify-content:center; touch-action:none; }
+.km-lightbox.open { display:flex; }
+.km-lightbox-img { max-width:96vw; max-height:88vh; border-radius:8px; box-shadow:0 12px 48px rgba(0,0,0,.6); user-select:none; -webkit-user-drag:none; }
+.km-lightbox-close { position:absolute; top:max(12px,env(safe-area-inset-top)); right:14px; width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,.15); backdrop-filter:blur(8px); border:none; color:#fff; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.km-lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.15); backdrop-filter:blur(8px); border:none; color:#fff; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.km-lightbox-nav.prev { left:12px; }
+.km-lightbox-nav.next { right:12px; }
+.km-lightbox-counter { position:absolute; bottom:max(20px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); color:#fff; font-size:13px; font-weight:600; background:rgba(0,0,0,.5); padding:6px 14px; border-radius:999px; }
 .mc-social { display:flex; gap:8px; margin-top:8px; }
 .mc-social a { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#f3f4f6; color:#374151; text-decoration:none; font-size:18px; }
 .mc-social a:hover { background:#e5e7eb; }
@@ -137,6 +146,13 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 </div>
 <button class="km-locate-btn" id="km-locate" title="📍 Helyzetem">📍</button>
 <div id="km-sheet" class="km-sheet"></div>
+<div id="km-lightbox" class="km-lightbox" onclick="closeLightbox(event)">
+  <button class="km-lightbox-close" onclick="closeLightbox(event)" aria-label="Close"><i class="ri-close-line"></i></button>
+  <button class="km-lightbox-nav prev" onclick="lightboxNav(event,-1)" aria-label="Previous"><i class="ri-arrow-left-s-line"></i></button>
+  <img id="km-lightbox-img" class="km-lightbox-img" src="" alt="">
+  <button class="km-lightbox-nav next" onclick="lightboxNav(event,1)" aria-label="Next"><i class="ri-arrow-right-s-line"></i></button>
+  <div id="km-lightbox-counter" class="km-lightbox-counter">1 / 1</div>
+</div>
 <script>window.__mapDbg = 'HTML loaded ' + Date.now();</script>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
@@ -388,12 +404,14 @@ function renderLoyaltyRich(s) {
     ? `<span class="mc-status open">${Lt.open}</span>`
     : `<span class="mc-status closed">${Lt.closed}</span>`;
 
-  const galleryM = (s.gallery && s.gallery.length) ? `
+  const galleryImages = (s.gallery || []).map(escapeHtml);
+  const galleryM = galleryImages.length ? `
     <div style="padding:0 18px;">
       <div class="mc-gallery">
-        ${s.gallery.map(img => `<img src="${escapeHtml(img)}" loading="lazy">`).join('')}
+        ${galleryImages.map((img, i) => `<img src="${img}" loading="lazy" data-gallery-idx="${i}" onclick="openLightbox(${i})">`).join('')}
       </div>
     </div>` : '';
+  window.__kmGallery = galleryImages;
 
   const socialM = (s.social && (s.social.facebook||s.social.instagram||s.social.tiktok) || s.website || s.public_email) ? `
     <div class="mc-social">
@@ -528,6 +546,47 @@ window.toggleFollow = async function(type, id, btn) {
   } catch(e) { alert(e.message); }
   btn.disabled = false;
 };
+
+window.__kmLightboxIdx = 0;
+window.openLightbox = function(idx) {
+  const imgs = window.__kmGallery || [];
+  if (!imgs.length) return;
+  window.__kmLightboxIdx = idx;
+  document.getElementById('km-lightbox-img').src = imgs[idx];
+  document.getElementById('km-lightbox-counter').textContent = (idx+1) + ' / ' + imgs.length;
+  const lb = document.getElementById('km-lightbox');
+  lb.classList.add('open');
+  const navs = lb.querySelectorAll('.km-lightbox-nav');
+  navs.forEach(n => n.style.display = imgs.length > 1 ? 'flex' : 'none');
+};
+window.closeLightbox = function(e) {
+  if (e && e.target && e.target.id === 'km-lightbox-img') return;
+  document.getElementById('km-lightbox').classList.remove('open');
+};
+window.lightboxNav = function(e, dir) {
+  if (e) e.stopPropagation();
+  const imgs = window.__kmGallery || [];
+  if (!imgs.length) return;
+  window.__kmLightboxIdx = (window.__kmLightboxIdx + dir + imgs.length) % imgs.length;
+  document.getElementById('km-lightbox-img').src = imgs[window.__kmLightboxIdx];
+  document.getElementById('km-lightbox-counter').textContent = (window.__kmLightboxIdx+1) + ' / ' + imgs.length;
+};
+document.addEventListener('keydown', (e) => {
+  const lb = document.getElementById('km-lightbox');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  else if (e.key === 'ArrowLeft') lightboxNav(null, -1);
+  else if (e.key === 'ArrowRight') lightboxNav(null, 1);
+});
+// Touch swipe
+let lbTouchX = null;
+document.getElementById('km-lightbox').addEventListener('touchstart', e => { lbTouchX = e.touches[0].clientX; }, {passive:true});
+document.getElementById('km-lightbox').addEventListener('touchend', e => {
+  if (lbTouchX === null) return;
+  const dx = e.changedTouches[0].clientX - lbTouchX;
+  if (Math.abs(dx) > 50) lightboxNav(null, dx < 0 ? 1 : -1);
+  lbTouchX = null;
+}, {passive:true});
 
 document.getElementById('km-cat').addEventListener('change', renderPins);
 document.getElementById('km-search').addEventListener('input', renderPins);
