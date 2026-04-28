@@ -31,10 +31,12 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-bar input, .km-bar select { padding:8px 10px; border:none; border-radius:6px; font:inherit; background:#f3f4f6; }
 .km-bar input { flex:1; min-width:120px; }
 .km-bar strong { font-size:18px; }
-.km-locate-btn { position:fixed; bottom:90px; right:18px; z-index:9999; width:56px; height:56px; border-radius:50%; background:#3b82f6; color:#fff; border:none; box-shadow:0 4px 16px rgba(0,0,0,.35); cursor:pointer; font-size:24px; display:flex; align-items:center; justify-content:center; }
-.km-locate-btn:hover { background:#f3f4f6; }
-.km-locate-btn.active { color:#3b82f6; }
-.km-locate-btn.error { color:#dc2626; }
+.km-locate-btn { width:36px; height:36px; border-radius:8px; background:#3b82f6; color:#fff; border:none; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:transform .15s ease, background .15s ease; }
+.km-locate-btn:active { transform:scale(.92); }
+.km-locate-btn.active { background:#10b981; }
+.km-locate-btn.error { background:#dc2626; }
+.km-locate-btn.loading i { animation:km-spin 1s linear infinite; }
+@keyframes km-spin { to { transform:rotate(360deg); } }
 /* pin */
 .km-pin { width:48px; height:48px; cursor:pointer; }
 .km-pin.loyalty { --c: #3b82f6; }
@@ -136,7 +138,7 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 <body>
 <div id="map"></div>
 <div class="km-bar">
-  <strong>📍</strong>
+  <button class="km-locate-btn" id="km-locate" title="<?php echo esc_attr($L['my_location'] ?? 'Helyzetem'); ?>" aria-label="Helyzetem"><i class="ri-focus-3-line"></i></button>
   <input type="text" id="km-search" placeholder="<?php echo esc_attr($L['search']); ?>">
   <select id="km-cat">
     <option value=""><?php echo esc_html($L['filter_all']); ?></option>
@@ -144,7 +146,6 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
     <option value="advertiser">📣 Akciók</option>
   </select>
 </div>
-<button class="km-locate-btn" id="km-locate" title="📍 Helyzetem">📍</button>
 <div id="km-sheet" class="km-sheet"></div>
 <div id="km-lightbox" class="km-lightbox" onclick="closeLightbox(event)">
   <button class="km-lightbox-close" onclick="closeLightbox(event)" aria-label="Close"><i class="ri-close-line"></i></button>
