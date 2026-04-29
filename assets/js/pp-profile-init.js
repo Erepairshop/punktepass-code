@@ -6,6 +6,13 @@
 (function() {
     'use strict';
 
+    // Fallback for ppvLog if ppv-debug.js not loaded on this page
+    if (typeof window.ppvLog === 'undefined') {
+        window.ppvLog = function() {};
+        window.ppvLog.warn = function() {};
+        window.ppvLog.error = function() {};
+    }
+
     // Guard against multiple loads
     if (window.PPV_PROFILE_LOADED) {
         ppvLog('[Profile-Init] Already loaded, skipping');
