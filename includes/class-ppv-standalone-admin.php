@@ -342,6 +342,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/contracts') {
             require_once __DIR__ . '/admin/standalone/contracts.php';
             PPV_Standalone_Contracts::render();
+        } elseif ($path === '/admin/advertisers') {
+            require_once __DIR__ . '/admin/standalone/advertisers.php';
+            PPV_Standalone_Advertisers::render();
         } elseif ($path === '/admin/email-sender') {
             require_once __DIR__ . '/admin/standalone/email-sender.php';
             PPV_Standalone_Email_Sender::render();
@@ -354,6 +357,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/push-sender') {
             require_once __DIR__ . '/admin/standalone/push-sender.php';
             PPV_Standalone_Push_Sender::render();
+        } elseif ($path === '/admin/flyer-requests') {
+            require_once __DIR__ . '/admin/standalone/flyer-requests.php';
+            PPV_Standalone_FlyerRequests::render();
         } elseif ($path === '/admin/client-errors') {
             require_once __DIR__ . '/admin/standalone/client-errors.php';
             PPV_Standalone_ClientErrors::render();
@@ -1645,11 +1651,17 @@ class PPV_Standalone_Admin {
                     <a href="/admin/contracts" class="<?php echo $current_page === 'contracts' ? 'active' : ''; ?>">
                         <i class="ri-file-text-line"></i> Szerződések
                     </a>
+                    <a href="/admin/advertisers" class="<?php echo $current_page === 'advertisers' ? 'active' : ''; ?>">
+                        <i class="ri-megaphone-line"></i> Hirdetők (Werber)
+                    </a>
                     <a href="/admin/email-sender" class="<?php echo $current_page === 'email-sender' ? 'active' : ''; ?>">
                         <i class="ri-mail-send-line"></i> Email Sender
                     </a>
                     <a href="/admin/push-sender" class="<?php echo $current_page === 'push-sender' ? 'active' : ''; ?>">
                         <i class="ri-notification-3-line"></i> Push Sender
+                    </a>
+                    <a href="/admin/flyer-requests" class="<?php echo $current_page === 'flyer-requests' ? 'active' : ''; ?>">
+                        <i class="ri-printer-line"></i> Flyer kérések
                     </a>
                     <a href="/admin/client-errors" class="<?php echo $current_page === 'client-errors' ? 'active' : ''; ?>">
                         <i class="ri-error-warning-line"></i> Client Errors
