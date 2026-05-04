@@ -143,7 +143,6 @@ class PPV_Standalone_Advertisers {
                 <h1><i class="ri-megaphone-line"></i> Hirdetők (Werber)</h1>
                 <div><a href="/admin"><i class="ri-arrow-left-line"></i> Vissza a Dashboardra</a></div>
             </header>
-        <?php
         <style>
             .adv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 16px 0; }
             .adv-stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; }
