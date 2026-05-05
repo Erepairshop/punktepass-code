@@ -23,14 +23,15 @@ $adv  = PPV_Advertisers::current_advertiser();
 <html lang="<?php echo esc_attr($lang); ?>">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?php echo esc_html($body_title ?? 'PunktePass Business'); ?></title>
 <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
 :root { --pp:#6366f1; --pp2:#8b5cf6; --bg:#f9fafb; --card:#fff; --text:#111827; --muted:#6b7280; --border:#e5e7eb; }
 * { box-sizing:border-box; }
+html, body { max-width:100%; overflow-x:hidden; }
 body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); padding-bottom:env(safe-area-inset-bottom); }
-.bz-header { background:linear-gradient(135deg,var(--pp),var(--pp2)); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.bz-header { background:linear-gradient(135deg,var(--pp),var(--pp2)); color:#fff; padding:12px 16px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; position:sticky; top:0; z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); }
 .bz-header a { color:#fff; text-decoration:none; }
 .bz-brand { font-weight:700; font-size:16px; display:flex; align-items:center; gap:8px; }
 .bz-brand i { font-size:20px; }
@@ -98,12 +99,17 @@ table.bz-table th, table.bz-table td { padding:10px 8px; border-bottom:1px solid
 .bz-bottom-nav-inner { display:flex; gap:2px; max-width:600px; margin:0 auto; }
 
 @media (max-width:720px) {
-  .bz-header { padding:10px 14px; }
-  .bz-brand { font-size:15px; }
+  .bz-header { padding:8px 10px; gap:6px; }
+  .bz-brand { font-size:14px; min-width:0; flex-shrink:1; }
   .bz-brand i { font-size:18px; }
   .bz-nav { display:none; }
   .bz-bottom-nav { display:block; }
-  .bz-mobile-logout { display:flex; }
+  .bz-mobile-logout { display:flex; width:30px; height:30px; flex-shrink:0; }
+  .bz-mobile-logout i { font-size:16px; }
+  .bz-lang-switch { margin-left:0; padding:1px; flex-shrink:0; }
+  .bz-lang { padding:4px 6px; font-size:10px; }
+  .bz-filiale-switch { margin-left:0; flex-basis:100%; min-width:0; }
+  .bz-filiale-switch select { font-size:12px; padding:6px 8px; max-width:100%; flex:1; min-width:0; text-overflow:ellipsis; }
   .bz-wrap { padding:0 10px 80px; margin-top:10px; }
   .bz-card { padding:14px; border-radius:12px; }
   .bz-h1 { font-size:18px; }
@@ -112,9 +118,8 @@ table.bz-table th, table.bz-table td { padding:10px 8px; border-bottom:1px solid
 }
 @media (max-width:380px) {
   .bz-grid { grid-template-columns:1fr; }
-  .bz-lang-switch { padding:1px; }
-  .bz-lang { padding:4px 6px; font-size:10px; }
-  .bz-brand { font-size:14px; }
+  .bz-brand { font-size:13px; }
+  .bz-brand i { font-size:16px; }
 }
 </style>
 <script>
