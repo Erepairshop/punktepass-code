@@ -1125,6 +1125,7 @@ class PPV_QR {
 <?php if (class_exists('PPV_Bottom_Nav')): ?>
 <script><?php echo PPV_Bottom_Nav::inline_js(); ?></script>
 <?php endif; ?>
+<?php @include __DIR__ . '/templates/_ppv-push-stack.php'; ?>
 </body>
 </html>
 <?php

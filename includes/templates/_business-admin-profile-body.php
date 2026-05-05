@@ -1,6 +1,15 @@
 <?php
 if (!defined('ABSPATH')) exit;
-$adv = PPV_Advertisers::current_advertiser();
+$active_filiale_id = PPV_Advertisers::current_filiale_id();
+$adv = PPV_Advertisers::get_filiale($active_filiale_id);
+if (!$adv) $adv = PPV_Advertisers::current_advertiser(); // Fallback
+
+$is_parent = empty($adv->parent_advertiser_id);
+$label = $adv->filiale_label;
+if ($is_parent) {
+    $label = $label ? $label . ' (parent)' : '(parent)';
+}
+
 
 $social = [];
 if (!empty($adv->social)) {
@@ -53,8 +62,17 @@ $is_eu = isset($eu_countries[$current_country]);
 
 <div class="bz-card" style="padding:14px;">
   <h1 class="bz-h1" style="margin:0;"><?php echo esc_html($adv->business_name); ?></h1>
+  <?php if (!empty($label)): ?>
+    <small style="color:var(--muted); font-weight:500;">Aktív filiale: <?php echo esc_html($label); ?></small>
+  <?php endif; ?>
   <?php if (!empty($_GET['saved'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_saved_msg')); ?></div><?php endif; ?>
   <?php if (!empty($_GET['welcome'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_profile_welcome_msg')); ?></div><?php endif; ?>
+  <?php if (!empty($_GET['err'])):
+      $err_key_map = ['name_taken'=>'biz_err_name_taken','address_taken'=>'biz_err_address_taken','pin_too_close'=>'biz_err_pin_too_close'];
+      $err_key = $err_key_map[$_GET['err']] ?? null;
+      if ($err_key): ?>
+      <div class="bz-msg err" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t($err_key)); ?></div>
+  <?php endif; endif; ?>
 </div>
 
 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">

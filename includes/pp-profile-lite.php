@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 /**
- * PunktePass – Admin Profil Handler (v2.0 i18n - PRODUCTION FIXED)
- * ✅ DE, HU, RO Language Support
- * ✅ Custom PPV Login Support
+ * PunktePass â€“ Admin Profil Handler (v2.0 i18n - PRODUCTION FIXED)
+ * âœ… DE, HU, RO Language Support
+ * âœ… Custom PPV Login Support
  */
 
 if (!defined('ABSPATH')) exit;
@@ -19,7 +19,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         public static function hooks() {
             add_action('init', [__CLASS__, 'maybe_render_standalone'], 1);
             add_action('wp_head', [__CLASS__, 'add_turbo_no_cache_meta'], 1);
-            add_action('init', [__CLASS__, 'track_handler_activity_on_page_load'], 20); // 📊 Track handler activity
+            add_action('init', [__CLASS__, 'track_handler_activity_on_page_load'], 20); // ðŸ“Š Track handler activity
             add_action('wp_ajax_ppv_get_strings', [__CLASS__, 'ajax_get_strings']);
             add_action('wp_ajax_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
             add_action('wp_ajax_nopriv_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
@@ -29,15 +29,15 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_shortcode('pp_store_profile', [__CLASS__, 'render_form']);
             add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
             add_action('wp_ajax_ppv_save_profile', [__CLASS__, 'ajax_save_profile']);
-            add_action('wp_ajax_nopriv_ppv_save_profile', [__CLASS__, 'ajax_save_profile']); // ✅ PPV session auth
+            add_action('wp_ajax_nopriv_ppv_save_profile', [__CLASS__, 'ajax_save_profile']); // âœ… PPV session auth
             add_action('wp_ajax_ppv_delete_media', [__CLASS__, 'ajax_delete_media']);
-            add_action('wp_ajax_nopriv_ppv_delete_media', [__CLASS__, 'ajax_delete_media']); // ✅ PPV session auth
+            add_action('wp_ajax_nopriv_ppv_delete_media', [__CLASS__, 'ajax_delete_media']); // âœ… PPV session auth
             add_action('wp_ajax_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']);
-            add_action('wp_ajax_nopriv_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']); // ✅ PPV session auth
+            add_action('wp_ajax_nopriv_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']); // âœ… PPV session auth
             add_action('wp_ajax_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']);
-            add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // ✅ PPV session auth
+            add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // âœ… PPV session auth
             add_action('wp_ajax_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']);
-            add_action('wp_ajax_nopriv_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']); // ✅ PPV session auth
+            add_action('wp_ajax_nopriv_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']); // âœ… PPV session auth
 
             // Filiale Vacation
             add_action('wp_ajax_ppv_save_filiale_vacation', [__CLASS__, 'ajax_save_filiale_vacation']);
@@ -91,15 +91,15 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         // ==================== AUTH CHECK ====================
         private static function check_auth() {
             if (is_user_logged_in()) {
-                // 📊 Track handler activity if this WP user is also a handler
+                // ðŸ“Š Track handler activity if this WP user is also a handler
                 self::maybe_track_wp_user_handler_activity();
                 return ['valid' => true, 'type' => 'wp_user', 'user_id' => get_current_user_id()];
             }
 
-            // 🏪 FILIALE SUPPORT: Use session-aware store ID
+            // ðŸª FILIALE SUPPORT: Use session-aware store ID
             if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_current_filiale_id'])) {
                 $store_id = self::get_store_id();
-                // 📊 Track handler activity
+                // ðŸ“Š Track handler activity
                 self::track_handler_activity($store_id);
                 return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => $store_id, 'is_pos' => !empty($_SESSION['ppv_is_pos'])];
             }
@@ -112,7 +112,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 global $wpdb;
                 $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s LIMIT 1", sanitize_text_field($_COOKIE['ppv_pos_token'])));
                 if ($store) {
-                    // 📊 Track handler activity
+                    // ðŸ“Š Track handler activity
                     self::track_handler_activity(intval($store->id));
                     return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($store->id), 'store' => $store];
                 }
@@ -130,7 +130,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         }
 
         /** ============================================================
-         *  📊 TRACK WP USER HANDLER ACTIVITY (if WP user is also a handler)
+         *  ðŸ“Š TRACK WP USER HANDLER ACTIVITY (if WP user is also a handler)
          * ============================================================ */
         private static function maybe_track_wp_user_handler_activity() {
             global $wpdb;
@@ -155,14 +155,14 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         }
 
         /** ============================================================
-         *  🔐 GET STORE ID (with FILIALE support)
+         *  ðŸ” GET STORE ID (with FILIALE support)
          * ============================================================ */
         private static function get_store_id() {
             global $wpdb;
 
             self::ensure_session();
 
-            // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            // ðŸª FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
             if (!empty($_SESSION['ppv_current_filiale_id'])) {
                 return intval($_SESSION['ppv_current_filiale_id']);
             }
@@ -193,7 +193,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         }
 
         /** ============================================================
-         *  📊 TRACK HANDLER ACTIVITY (throttled to every 5 minutes)
+         *  ðŸ“Š TRACK HANDLER ACTIVITY (throttled to every 5 minutes)
          * ============================================================ */
         private static function track_handler_activity($store_id) {
             if (!$store_id) {
@@ -225,11 +225,11 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             // Save throttle timestamp in session
             $_SESSION[$session_key] = $now;
 
-            ppv_log("📊 [PPV_Profile] Updated last_active_at for handler #{$store_id}");
+            ppv_log("ðŸ“Š [PPV_Profile] Updated last_active_at for handler #{$store_id}");
         }
 
         /** ============================================================
-         *  📊 TRACK HANDLER ACTIVITY ON PAGE LOAD (called via init hook)
+         *  ðŸ“Š TRACK HANDLER ACTIVITY ON PAGE LOAD (called via init hook)
          * ============================================================ */
         public static function track_handler_activity_on_page_load() {
             // Start session if needed
@@ -263,7 +263,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         }
 
         /** ============================================================
-         *  🏢 GET FILIALEN FOR VENDOR (parent + children stores)
+         *  ðŸ¢ GET FILIALEN FOR VENDOR (parent + children stores)
          * ============================================================ */
         private static function get_filialen_for_vendor() {
             global $wpdb;
@@ -298,7 +298,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         }
 
         // ============================================================
-        // 🚀 STANDALONE RENDERING (bypasses WordPress theme)
+        // ðŸš€ STANDALONE RENDERING (bypasses WordPress theme)
         // ============================================================
 
         public static function maybe_render_standalone() {
@@ -332,7 +332,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             $version    = PPV_Core::asset_version();
             $site_url   = get_site_url();
 
-            // ─── Language ───
+            // â”€â”€â”€ Language â”€â”€â”€
             if (class_exists('PPV_Lang')) {
                 $lang    = PPV_Lang::$active ?: 'de';
                 $strings = PPV_Lang::$strings ?: [];
@@ -341,16 +341,16 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 $strings = [];
             }
 
-            // ─── Theme ───
+            // â”€â”€â”€ Theme â”€â”€â”€
             $theme_cookie = $_COOKIE['ppv_theme'] ?? ($_COOKIE['ppv_handler_theme'] ?? 'light');
             $is_dark = ($theme_cookie === 'dark');
 
-            // ─── Page content (render_form echoes, capture with ob) ───
+            // â”€â”€â”€ Page content (render_form echoes, capture with ob) â”€â”€â”€
             ob_start();
             self::render_form();
             $page_html = ob_get_clean();
 
-            // ─── Localized data for JS modules ───
+            // â”€â”€â”€ Localized data for JS modules â”€â”€â”€
             $profile_data = [
                 'ajaxUrl'       => admin_url('admin-ajax.php'),
                 'nonce'         => wp_create_nonce(self::NONCE_ACTION),
@@ -359,7 +359,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 'googleMapsKey' => defined('PPV_GOOGLE_MAPS_KEY') ? PPV_GOOGLE_MAPS_KEY : '',
             ];
 
-            // ─── Global header ───
+            // â”€â”€â”€ Global header â”€â”€â”€
             $global_header = '';
             if (class_exists('PPV_User_Dashboard')) {
                 ob_start();
@@ -367,7 +367,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 $global_header = ob_get_clean();
             }
 
-            // ─── Bottom nav context + HTML ───
+            // â”€â”€â”€ Bottom nav context + HTML â”€â”€â”€
             $bottom_nav_context = '';
             if (class_exists('PPV_Bottom_Nav')) {
                 ob_start();
@@ -376,7 +376,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 $bottom_nav_context = ob_get_clean();
             }
 
-            // ─── Body classes ───
+            // â”€â”€â”€ Body classes â”€â”€â”€
             $body_classes = ['ppv-standalone', 'ppv-app-mode', 'ppv-handler-mode'];
             $body_classes[] = $is_dark ? 'ppv-dark' : 'ppv-light';
             $body_class = implode(' ', $body_classes);
@@ -404,6 +404,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-global-header.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-handler.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-profile.css?v=<?php echo esc_attr($version); ?>">
+    <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-profile-modern.css?v=<?php echo esc_attr($version); ?>">
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-bottom-nav.css?v=<?php echo esc_attr($version); ?>">
 <?php if ($is_dark): ?>
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-theme-dark-colors.css?v=<?php echo esc_attr($version); ?>">
@@ -450,7 +451,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 return;
             }
 
-            // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+            // ðŸ”¹ ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
             wp_enqueue_style(
                 'ppv-theme-light',
                 PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
@@ -472,7 +473,7 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
             $js_base = PPV_PLUGIN_URL . 'assets/js/';
             $js_dir = PPV_PLUGIN_DIR . 'assets/js/';
 
-            // 0. Debug logger (MUST load first — all modules reference window.ppvLog)
+            // 0. Debug logger (MUST load first â€” all modules reference window.ppvLog)
             wp_enqueue_script('ppv-debug', $js_base . 'ppv-debug.js', [], filemtime($js_dir . 'ppv-debug.js'), true);
 
             // 1. Core module (state, helpers, Turbo cache fix)
@@ -506,7 +507,7 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
         public static function render_form() {
             self::ensure_session();
 
-            // ✅ FIX: Send no-cache headers to bypass server-level caching (LiteSpeed, Cloudflare, etc.)
+            // âœ… FIX: Send no-cache headers to bypass server-level caching (LiteSpeed, Cloudflare, etc.)
             if (!headers_sent()) {
                 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
                 header('Cache-Control: post-check=0, pre-check=0', false);
@@ -514,10 +515,10 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
                 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
             }
 
-            // ✅ SCANNER USERS: Don't show profile/onboarding page
+            // âœ… SCANNER USERS: Don't show profile/onboarding page
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
                 echo '<div class="ppv-alert ppv-alert-info" style="padding: 20px; text-align: center;">
-                    ℹ️ Diese Seite ist nur für Händler verfügbar.
+                    â„¹ï¸ Diese Seite ist nur fÃ¼r HÃ¤ndler verfÃ¼gbar.
                 </div>';
                 return;
             }
@@ -539,19 +540,19 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
                     </div>
                     <div class="ppv-header-right">
                         <div class="ppv-store-status">
-                            <span class="ppv-status-badge" id="ppv-status">🟢 <?php echo esc_html(PPV_Lang::t('status_active')); ?></span>
-                            <span class="ppv-last-updated" id="ppv-last-updated">—</span>
+                            <span class="ppv-status-badge" id="ppv-status">ðŸŸ¢ <?php echo esc_html(PPV_Lang::t('status_active')); ?></span>
+                            <span class="ppv-last-updated" id="ppv-last-updated">â€”</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="ppv-tabs-nav">
-                    <button class="ppv-tab-btn active" data-tab="general" data-i18n="tab_general">📋 <?php echo esc_html(PPV_Lang::t('tab_general')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="hours" data-i18n="tab_hours">🕒 <?php echo esc_html(PPV_Lang::t('tab_hours')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="media" data-i18n="tab_media">🖼️ <?php echo esc_html(PPV_Lang::t('tab_media')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="contact" data-i18n="tab_contact">📞 <?php echo esc_html(PPV_Lang::t('tab_contact')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="marketing" data-i18n="tab_marketing">⚡ <?php echo esc_html(PPV_Lang::t('tab_marketing')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="settings" data-i18n="tab_settings">⚙️ <?php echo esc_html(PPV_Lang::t('tab_settings')); ?></button>
+                    <button class="ppv-tab-btn active" data-tab="general" data-i18n="tab_general">ðŸ“‹ <?php echo esc_html(PPV_Lang::t('tab_general')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="hours" data-i18n="tab_hours">ðŸ•’ <?php echo esc_html(PPV_Lang::t('tab_hours')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="media" data-i18n="tab_media">ðŸ–¼ï¸ <?php echo esc_html(PPV_Lang::t('tab_media')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="contact" data-i18n="tab_contact">ðŸ“ž <?php echo esc_html(PPV_Lang::t('tab_contact')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="marketing" data-i18n="tab_marketing">âš¡ <?php echo esc_html(PPV_Lang::t('tab_marketing')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="settings" data-i18n="tab_settings">âš™ï¸ <?php echo esc_html(PPV_Lang::t('tab_settings')); ?></button>
                 </div>
 
                 <div id="ppv-alert-zone"></div>
@@ -568,7 +569,7 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
                     <?php echo self::render_tab_settings($store); ?>
 
                     <div class="ppv-form-footer">
-                        <button type="submit" class="ppv-btn ppv-btn-primary" id="ppv-submit-btn">💾 <span data-i18n="save"><?php echo esc_html(PPV_Lang::t('save')); ?></span></button>
+                        <button type="submit" class="ppv-btn ppv-btn-primary" id="ppv-submit-btn">ðŸ’¾ <span data-i18n="save"><?php echo esc_html(PPV_Lang::t('save')); ?></span></button>
                         <span class="ppv-save-indicator" id="ppv-save-indicator"></span>
                     </div>
                 </form>
@@ -580,10 +581,10 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
 
        
 /**
- * ✅ TELJES render_tab_general() FÜGGVÉNY
- * - Összes meglévő mező
- * - 3 ÚJ mező: Ország, Adószám, ÁFA
- * - Fordítások (i18n) mindenütt
+ * âœ… TELJES render_tab_general() FÃœGGVÃ‰NY
+ * - Ã–sszes meglÃ©vÅ‘ mezÅ‘
+ * - 3 ÃšJ mezÅ‘: OrszÃ¡g, AdÃ³szÃ¡m, ÃFA
+ * - FordÃ­tÃ¡sok (i18n) mindenÃ¼tt
  */
 
 private static function render_tab_general($store) {
@@ -625,22 +626,22 @@ private static function render_tab_general($store) {
         <hr>
 
         <!-- ============================================================
-             ✅ ÚJ SZEKCIÓ: ORSZÁG ÉS ADÓ INFORMÁCIÓK
+             âœ… ÃšJ SZEKCIÃ“: ORSZÃG Ã‰S ADÃ“ INFORMÃCIÃ“K
              ============================================================ -->
         <h3 data-i18n="country_tax_section"><?php echo esc_html(PPV_Lang::t('country_tax_section')); ?></h3>
 
-        <!-- ORSZÁG KIVÁLASZTÁS -->
+        <!-- ORSZÃG KIVÃLASZTÃS -->
         <div class="ppv-form-group">
             <label data-i18n="country" style="font-weight: 600;"><?php echo esc_html(PPV_Lang::t('country')); ?> *</label>
             <select name="country" required>
                 <option value="">-- <?php echo esc_html(PPV_Lang::t('country_select')); ?> --</option>
-                <option value="DE" <?php selected($store->country ?? '', 'DE'); ?> data-i18n="country_de">🇩🇪 <?php echo esc_html(PPV_Lang::t('country_de')); ?></option>
-                <option value="HU" <?php selected($store->country ?? '', 'HU'); ?> data-i18n="country_hu">🇭🇺 <?php echo esc_html(PPV_Lang::t('country_hu')); ?></option>
-                <option value="RO" <?php selected($store->country ?? '', 'RO'); ?> data-i18n="country_ro">🇷🇴 <?php echo esc_html(PPV_Lang::t('country_ro')); ?></option>
+                <option value="DE" <?php selected($store->country ?? '', 'DE'); ?> data-i18n="country_de">ðŸ‡©ðŸ‡ª <?php echo esc_html(PPV_Lang::t('country_de')); ?></option>
+                <option value="HU" <?php selected($store->country ?? '', 'HU'); ?> data-i18n="country_hu">ðŸ‡­ðŸ‡º <?php echo esc_html(PPV_Lang::t('country_hu')); ?></option>
+                <option value="RO" <?php selected($store->country ?? '', 'RO'); ?> data-i18n="country_ro">ðŸ‡·ðŸ‡´ <?php echo esc_html(PPV_Lang::t('country_ro')); ?></option>
             </select>
         </div>
 
-        <!-- ADÓSZÁM (TAX ID) -->
+        <!-- ADÃ“SZÃM (TAX ID) -->
         <div class="ppv-form-group">
             <label data-i18n="tax_id" style="font-weight: 600;"><?php echo esc_html(PPV_Lang::t('tax_id')); ?></label>
             <input type="text" name="tax_id" value="<?php echo esc_attr($store->tax_id ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('tax_id_placeholder')); ?>">
@@ -649,7 +650,7 @@ private static function render_tab_general($store) {
             </small>
         </div>
 
-        <!-- ÁFA STATUS CHECKBOX -->
+        <!-- ÃFA STATUS CHECKBOX -->
         <div class="ppv-checkbox-group">
             <label class="ppv-checkbox">
                 <input type="checkbox" name="is_taxable" value="1" <?php checked($store->is_taxable ?? 1, 1); ?>>
@@ -661,7 +662,7 @@ private static function render_tab_general($store) {
         <hr>
 
         <!-- ============================================================
-             MEGLÉVŐ: CÍM ADATOK
+             MEGLÃ‰VÅ: CÃM ADATOK
              ============================================================ -->
         <h3 data-i18n="address_section"><?php echo esc_html(PPV_Lang::t('address_section')); ?></h3>
 
@@ -686,7 +687,7 @@ private static function render_tab_general($store) {
         <hr>
 
         <!-- ============================================================
-             MEGLÉVŐ: HELYKOORDINÁTÁK (LOCATION)
+             MEGLÃ‰VÅ: HELYKOORDINÃTÃK (LOCATION)
              ============================================================ -->
         <h3 data-i18n="location_section"><?php echo esc_html(PPV_Lang::t('location_section')); ?></h3>
 
@@ -705,7 +706,7 @@ private static function render_tab_general($store) {
         <!-- GEOCODE BUTTON -->
         <div class="ppv-form-group">
             <button type="button" id="ppv-geocode-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%; margin-top: 10px;" data-i18n="geocode_button">
-                🗺️ <?php echo esc_html(PPV_Lang::t('geocode_button')); ?>
+                ðŸ—ºï¸ <?php echo esc_html(PPV_Lang::t('geocode_button')); ?>
             </button>
         </div>
 
@@ -715,7 +716,7 @@ private static function render_tab_general($store) {
         <hr>
 
         <!-- ============================================================
-             MEGLÉVŐ: CÉGINFORMÁCIÓK (COMPANY)
+             MEGLÃ‰VÅ: CÃ‰GINFORMÃCIÃ“K (COMPANY)
              ============================================================ -->
         <h3 data-i18n="company_section"><?php echo esc_html(PPV_Lang::t('company_section')); ?></h3>
 
@@ -814,9 +815,9 @@ if (!empty($store->gallery)) {
     if (is_array($gallery)) {
         foreach ($gallery as $image_url) {
             echo '<div class="ppv-gallery-item" style="position: relative; display: inline-block; width: 100%;">';
-            // ✅ OPTIMIZED: Added loading="lazy" for performance
+            // âœ… OPTIMIZED: Added loading="lazy" for performance
             echo '<img src="' . esc_url($image_url) . '" alt="Gallery" loading="lazy" style="width: 100%; height: auto; border-radius: 4px;">';
-            echo '<button type="button" class="ppv-gallery-delete-btn" data-image-url="' . esc_attr($image_url) . '" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; padding: 0; line-height: 1;">×</button>';
+            echo '<button type="button" class="ppv-gallery-delete-btn" data-image-url="' . esc_attr($image_url) . '" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; padding: 0; line-height: 1;">Ã—</button>';
             echo '</div>';
         }
     }
@@ -840,7 +841,7 @@ if (!empty($store->gallery)) {
                 </div>
 
                 <div class="ppv-form-group">
-                    <label data-i18n="public_email"><?php echo esc_html(PPV_Lang::t('public_email') ?: 'Öffentliche E-Mail'); ?></label>
+                    <label data-i18n="public_email"><?php echo esc_html(PPV_Lang::t('public_email') ?: 'Ã–ffentliche E-Mail'); ?></label>
                     <input type="email" name="public_email" value="<?php echo esc_attr($store->public_email ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('public_email_placeholder') ?: 'Wird auf Store-Karte angezeigt'); ?>">
                     <small class="ppv-field-hint" style="color: #888; font-size: 12px; margin-top: 4px; display: block;">
                         <?php echo esc_html(PPV_Lang::t('public_email_hint') ?: 'Diese E-Mail wird Kunden auf Ihrer Store-Karte angezeigt (nicht Ihre Login-E-Mail)'); ?>
@@ -895,13 +896,112 @@ if (!empty($store->gallery)) {
                 </p>
 
                 <!-- ============================================================
+                     PUSH NOTIFICATIONS (HÃ¤ndler Marketing)
+                     ============================================================ -->
+                <?php
+                $push_enabled = class_exists('PPV_Push') && PPV_Push::is_enabled();
+                $push_remaining = $push_enabled ? PPV_Push::get_weekly_remaining($store->id) : 0;
+                $push_customers = $push_enabled ? PPV_Push::get_customer_subscription_count($store->id) : 0;
+                $push_last_sent = $push_enabled ? PPV_Push::get_last_send_date($store->id) : null;
+                ?>
+                <div class="ppv-marketing-card" id="push-notification-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.02)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 24px;">ðŸ””</span>
+                                <span data-i18n="push_marketing_title"><?php echo esc_html(PPV_Lang::t('push_marketing_title') ?: 'Push Benachrichtigungen'); ?></span>
+                                <?php if ($push_enabled && $push_remaining > 0): ?>
+                                <span style="background: #6366f1; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo $push_remaining; ?>/<?php echo PPV_Push::WEEKLY_LIMIT; ?> <?php echo esc_html(PPV_Lang::t('this_week') ?: 'diese Woche'); ?></span>
+                                <?php elseif ($push_enabled): ?>
+                                <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo esc_html(PPV_Lang::t('limit_reached') ?: 'Limit erreicht'); ?></span>
+                                <?php endif; ?>
+                            </h3>
+                            <small style="color: #888;" data-i18n="push_marketing_desc"><?php echo esc_html(PPV_Lang::t('push_marketing_desc') ?: 'Senden Sie wÃ¶chentlich eine Nachricht an Ihre Kunden'); ?></small>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 24px; font-weight: bold; color: #6366f1;"><?php echo $push_customers; ?></span>
+                            <small style="display: block; color: #888;"><?php echo esc_html(PPV_Lang::t('subscribers') ?: 'Abonnenten'); ?></small>
+                        </div>
+                    </div>
+
+                    <?php if (!$push_enabled): ?>
+                    <div style="padding: 15px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px;">
+                        <p style="margin: 0; color: #ff9800; font-size: 13px;">
+                            <strong>âš ï¸ <?php echo esc_html(PPV_Lang::t('push_not_configured') ?: 'Push-Benachrichtigungen sind nicht konfiguriert'); ?></strong>
+                        </p>
+                    </div>
+                    <?php elseif ($push_customers === 0): ?>
+                    <div style="padding: 15px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px;">
+                        <p style="margin: 0; color: #6366f1; font-size: 13px;">
+                            <strong>ðŸ“± <?php echo esc_html(PPV_Lang::t('push_no_subscribers') ?: 'Noch keine Abonnenten'); ?></strong><br>
+                            <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('push_no_subscribers_hint') ?: 'Kunden die bei Ihnen scannen, kÃ¶nnen Push-Benachrichtigungen abonnieren.'); ?></span>
+                        </p>
+                    </div>
+                    <?php else: ?>
+                    <!-- Push Form -->
+                    <?php
+                    // Check if both names exist and are different
+                    $has_shop_name = !empty($store->name);
+                    $has_company_name = !empty($store->company_name);
+                    $has_both_names = $has_shop_name && $has_company_name && ($store->name !== $store->company_name);
+                    $default_sender = $store->company_name ?: $store->name ?: 'Shop';
+                    ?>
+                    <div id="push-form-container" style="<?php echo $push_remaining <= 0 ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                        <!-- Store Name (sender selection) -->
+                        <div style="margin-bottom: 12px; padding: 10px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px;">
+                            <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html(PPV_Lang::t('push_sender') ?: 'Absender'); ?></label>
+                            <?php if ($has_both_names): ?>
+                            <select id="push-sender-name" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; background: rgba(0,0,0,0.2); color: #6366f1; font-size: 14px; font-weight: 600; cursor: pointer;">
+                                <option value="<?php echo esc_attr($store->company_name); ?>"><?php echo esc_html($store->company_name); ?> (<?php echo esc_html(PPV_Lang::t('company_name') ?: 'Firmenname'); ?>)</option>
+                                <option value="<?php echo esc_attr($store->name); ?>"><?php echo esc_html($store->name); ?> (<?php echo esc_html(PPV_Lang::t('shop_name') ?: 'GeschÃ¤ftsname'); ?>)</option>
+                            </select>
+                            <?php else: ?>
+                            <input type="hidden" id="push-sender-name" value="<?php echo esc_attr($default_sender); ?>">
+                            <span style="font-size: 14px; font-weight: 600; color: #6366f1;"><?php echo esc_html($default_sender); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_title') ?: 'Titel'); ?> <span style="color: #888;">(max. 50)</span></label>
+                            <input type="text" id="push-title" maxlength="50" placeholder="<?php echo esc_attr(PPV_Lang::t('push_title_placeholder') ?: 'z.B. Neue Aktion!'); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: #f1f5f9; font-size: 14px;">
+                            <small style="color: #64748b;"><span id="push-title-count">0</span>/50</small>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_message') ?: 'Nachricht'); ?> <span style="color: #888;">(max. 200)</span></label>
+                            <textarea id="push-body" maxlength="200" rows="3" placeholder="<?php echo esc_attr(PPV_Lang::t('push_message_placeholder') ?: 'Ihre Nachricht an die Kunden...'); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: #f1f5f9; font-size: 14px; resize: vertical;"></textarea>
+                            <small style="color: #64748b;"><span id="push-body-count">0</span>/200</small>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <small style="color: #64748b;">
+                                <?php if ($push_last_sent): ?>
+                                <?php echo esc_html(PPV_Lang::t('last_sent') ?: 'Zuletzt gesendet'); ?>: <?php echo date('d.m.Y H:i', strtotime($push_last_sent)); ?>
+                                <?php endif; ?>
+                            </small>
+                            <button type="button" id="push-send-btn" class="ppv-btn-primary" style="background: #6366f1; border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;" <?php echo $push_remaining <= 0 ? 'disabled' : ''; ?>>
+                                <span>ðŸš€</span>
+                                <span><?php echo esc_html(PPV_Lang::t('send_push') ?: 'Push senden'); ?></span>
+                            </button>
+                        </div>
+                        <div id="push-result" style="margin-top: 10px; display: none;"></div>
+                    </div>
+                    <?php if ($push_remaining <= 0): ?>
+                    <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; text-align: center;">
+                        <p style="margin: 0; color: #ff9800; font-size: 13px;">
+                            â³ <?php echo esc_html(PPV_Lang::t('push_limit_reached_msg') ?: 'Sie haben diese Woche bereits eine Push-Nachricht gesendet.'); ?><br>
+                            <strong><?php echo esc_html(PPV_Lang::t('next_available') ?: 'NÃ¤chste MÃ¶glichkeit'); ?>: <?php echo PPV_Push::get_next_available_date($store->id); ?></strong>
+                        </p>
+                    </div>
+                    <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <!-- ============================================================
                      GOOGLE REVIEW REQUEST
                      ============================================================ -->
                 <div class="ppv-marketing-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
                     <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <div>
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">⭐</span>
+                                <span style="font-size: 24px;">â­</span>
                                 <span data-i18n="google_review_title"><?php echo esc_html(PPV_Lang::t('google_review_title')); ?></span>
                             </h3>
                             <small style="color: #888;" data-i18n="google_review_desc"><?php echo esc_html(PPV_Lang::t('google_review_desc')); ?></small>
@@ -934,7 +1034,7 @@ if (!empty($store->gallery)) {
                         <!-- How it works collapsible -->
                         <details class="ppv-how-it-works" style="margin-top: 15px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; overflow: hidden;">
                             <summary style="padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #3b82f6; list-style: none;">
-                                <span style="font-size: 16px;">💡</span>
+                                <span style="font-size: 16px;">ðŸ’¡</span>
                                 <span data-i18n="google_review_how_it_works"><?php echo esc_html(PPV_Lang::t('google_review_how_it_works')); ?></span>
                                 <svg style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </summary>
@@ -962,6 +1062,8 @@ if (!empty($store->gallery)) {
                     </div>
                 </div>
 
+                <!-- FLYER BONUS card moved to /business/admin dashboard (see _business-admin-dashboard-body.php) -->
+
                 <!-- ============================================================
                      BIRTHDAY BONUS
                      ============================================================ -->
@@ -969,7 +1071,7 @@ if (!empty($store->gallery)) {
                     <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <div>
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">🎂</span>
+                                <span style="font-size: 24px;">ðŸŽ‚</span>
                                 <span data-i18n="birthday_bonus_title"><?php echo esc_html(PPV_Lang::t('birthday_bonus_title')); ?></span>
                             </h3>
                             <small style="color: #888;" data-i18n="birthday_bonus_desc"><?php echo esc_html(PPV_Lang::t('birthday_bonus_desc')); ?></small>
@@ -1010,7 +1112,7 @@ if (!empty($store->gallery)) {
                     <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <div>
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">👋</span>
+                                <span style="font-size: 24px;">ðŸ‘‹</span>
                                 <span data-i18n="comeback_title"><?php echo esc_html(PPV_Lang::t('comeback_title')); ?></span>
                             </h3>
                             <small style="color: #888;" data-i18n="comeback_desc"><?php echo esc_html(PPV_Lang::t('comeback_desc')); ?></small>
@@ -1054,105 +1156,6 @@ if (!empty($store->gallery)) {
                 </div>
 
                 <!-- ============================================================
-                     PUSH NOTIFICATIONS (Händler Marketing)
-                     ============================================================ -->
-                <?php
-                $push_enabled = class_exists('PPV_Push') && PPV_Push::is_enabled();
-                $push_remaining = $push_enabled ? PPV_Push::get_weekly_remaining($store->id) : 0;
-                $push_customers = $push_enabled ? PPV_Push::get_customer_subscription_count($store->id) : 0;
-                $push_last_sent = $push_enabled ? PPV_Push::get_last_send_date($store->id) : null;
-                ?>
-                <div class="ppv-marketing-card" id="push-notification-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.02)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <div>
-                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">🔔</span>
-                                <span data-i18n="push_marketing_title"><?php echo esc_html(PPV_Lang::t('push_marketing_title') ?: 'Push Benachrichtigungen'); ?></span>
-                                <?php if ($push_enabled && $push_remaining > 0): ?>
-                                <span style="background: #6366f1; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo $push_remaining; ?>/<?php echo PPV_Push::WEEKLY_LIMIT; ?> <?php echo esc_html(PPV_Lang::t('this_week') ?: 'diese Woche'); ?></span>
-                                <?php elseif ($push_enabled): ?>
-                                <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo esc_html(PPV_Lang::t('limit_reached') ?: 'Limit erreicht'); ?></span>
-                                <?php endif; ?>
-                            </h3>
-                            <small style="color: #888;" data-i18n="push_marketing_desc"><?php echo esc_html(PPV_Lang::t('push_marketing_desc') ?: 'Senden Sie wöchentlich eine Nachricht an Ihre Kunden'); ?></small>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="font-size: 24px; font-weight: bold; color: #6366f1;"><?php echo $push_customers; ?></span>
-                            <small style="display: block; color: #888;"><?php echo esc_html(PPV_Lang::t('subscribers') ?: 'Abonnenten'); ?></small>
-                        </div>
-                    </div>
-
-                    <?php if (!$push_enabled): ?>
-                    <div style="padding: 15px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px;">
-                        <p style="margin: 0; color: #ff9800; font-size: 13px;">
-                            <strong>⚠️ <?php echo esc_html(PPV_Lang::t('push_not_configured') ?: 'Push-Benachrichtigungen sind nicht konfiguriert'); ?></strong>
-                        </p>
-                    </div>
-                    <?php elseif ($push_customers === 0): ?>
-                    <div style="padding: 15px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px;">
-                        <p style="margin: 0; color: #6366f1; font-size: 13px;">
-                            <strong>📱 <?php echo esc_html(PPV_Lang::t('push_no_subscribers') ?: 'Noch keine Abonnenten'); ?></strong><br>
-                            <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('push_no_subscribers_hint') ?: 'Kunden die bei Ihnen scannen, können Push-Benachrichtigungen abonnieren.'); ?></span>
-                        </p>
-                    </div>
-                    <?php else: ?>
-                    <!-- Push Form -->
-                    <?php
-                    // Check if both names exist and are different
-                    $has_shop_name = !empty($store->name);
-                    $has_company_name = !empty($store->company_name);
-                    $has_both_names = $has_shop_name && $has_company_name && ($store->name !== $store->company_name);
-                    $default_sender = $store->company_name ?: $store->name ?: 'Shop';
-                    ?>
-                    <div id="push-form-container" style="<?php echo $push_remaining <= 0 ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
-                        <!-- Store Name (sender selection) -->
-                        <div style="margin-bottom: 12px; padding: 10px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px;">
-                            <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html(PPV_Lang::t('push_sender') ?: 'Absender'); ?></label>
-                            <?php if ($has_both_names): ?>
-                            <select id="push-sender-name" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; background: rgba(0,0,0,0.2); color: #6366f1; font-size: 14px; font-weight: 600; cursor: pointer;">
-                                <option value="<?php echo esc_attr($store->company_name); ?>"><?php echo esc_html($store->company_name); ?> (<?php echo esc_html(PPV_Lang::t('company_name') ?: 'Firmenname'); ?>)</option>
-                                <option value="<?php echo esc_attr($store->name); ?>"><?php echo esc_html($store->name); ?> (<?php echo esc_html(PPV_Lang::t('shop_name') ?: 'Geschäftsname'); ?>)</option>
-                            </select>
-                            <?php else: ?>
-                            <input type="hidden" id="push-sender-name" value="<?php echo esc_attr($default_sender); ?>">
-                            <span style="font-size: 14px; font-weight: 600; color: #6366f1;"><?php echo esc_html($default_sender); ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_title') ?: 'Titel'); ?> <span style="color: #888;">(max. 50)</span></label>
-                            <input type="text" id="push-title" maxlength="50" placeholder="<?php echo esc_attr(PPV_Lang::t('push_title_placeholder') ?: 'z.B. Neue Aktion!'); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: #f1f5f9; font-size: 14px;">
-                            <small style="color: #64748b;"><span id="push-title-count">0</span>/50</small>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><?php echo esc_html(PPV_Lang::t('push_message') ?: 'Nachricht'); ?> <span style="color: #888;">(max. 200)</span></label>
-                            <textarea id="push-body" maxlength="200" rows="3" placeholder="<?php echo esc_attr(PPV_Lang::t('push_message_placeholder') ?: 'Ihre Nachricht an die Kunden...'); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: #f1f5f9; font-size: 14px; resize: vertical;"></textarea>
-                            <small style="color: #64748b;"><span id="push-body-count">0</span>/200</small>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                            <small style="color: #64748b;">
-                                <?php if ($push_last_sent): ?>
-                                <?php echo esc_html(PPV_Lang::t('last_sent') ?: 'Zuletzt gesendet'); ?>: <?php echo date('d.m.Y H:i', strtotime($push_last_sent)); ?>
-                                <?php endif; ?>
-                            </small>
-                            <button type="button" id="push-send-btn" class="ppv-btn-primary" style="background: #6366f1; border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;" <?php echo $push_remaining <= 0 ? 'disabled' : ''; ?>>
-                                <span>🚀</span>
-                                <span><?php echo esc_html(PPV_Lang::t('send_push') ?: 'Push senden'); ?></span>
-                            </button>
-                        </div>
-                        <div id="push-result" style="margin-top: 10px; display: none;"></div>
-                    </div>
-                    <?php if ($push_remaining <= 0): ?>
-                    <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; text-align: center;">
-                        <p style="margin: 0; color: #ff9800; font-size: 13px;">
-                            ⏳ <?php echo esc_html(PPV_Lang::t('push_limit_reached_msg') ?: 'Sie haben diese Woche bereits eine Push-Nachricht gesendet.'); ?><br>
-                            <strong><?php echo esc_html(PPV_Lang::t('next_available') ?: 'Nächste Möglichkeit'); ?>: <?php echo PPV_Push::get_next_available_date($store->id); ?></strong>
-                        </p>
-                    </div>
-                    <?php endif; ?>
-                    <?php endif; ?>
-                </div>
-
-                <!-- ============================================================
                      REFERRAL PROGRAM
                      ============================================================ -->
                 <?php
@@ -1174,12 +1177,12 @@ if (!empty($store->gallery)) {
                     <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <div>
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">🎁</span>
+                                <span style="font-size: 24px;">ðŸŽ</span>
                                 <span><?php echo PPV_Lang::t('referral_admin_title') ?: 'Referral Program'; ?></span>
                                 <?php if (!$referral_activated_at): ?>
                                     <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo PPV_Lang::t('referral_admin_not_started') ?: 'NEU'; ?></span>
                                 <?php elseif (!$grace_period_over): ?>
-                                    <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">⏳ <?php echo $grace_days_remaining; ?> <?php echo PPV_Lang::t('days') ?: 'Tage'; ?></span>
+                                    <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">â³ <?php echo $grace_days_remaining; ?> <?php echo PPV_Lang::t('days') ?: 'Tage'; ?></span>
                                 <?php elseif (!empty($store->referral_enabled)): ?>
                                     <span style="background: #ff6b6b; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo strtoupper(PPV_Lang::t('referral_admin_active') ?: 'AKTIV'); ?></span>
                                 <?php endif; ?>
@@ -1196,9 +1199,9 @@ if (!empty($store->gallery)) {
                     <!-- Not yet activated - show activation prompt -->
                     <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 20px; text-align: center;">
                         <p style="color: #f1f5f9; margin: 0 0 15px;">
-                            <strong>🚀 <?php echo PPV_Lang::t('referral_admin_start_title') ?: 'Referral Program starten'; ?></strong><br>
+                            <strong>ðŸš€ <?php echo PPV_Lang::t('referral_admin_start_title') ?: 'Referral Program starten'; ?></strong><br>
                             <span style="color: #888; font-size: 13px;">
-                                <?php echo sprintf(PPV_Lang::t('referral_admin_start_desc') ?: 'Nach der Aktivierung beginnt eine %d-tägige Sammelphase. In dieser Zeit werden alle bestehenden Kunden erfasst, damit nur echte Neukunden als Referrals zählen.', $referral_grace_days); ?>
+                                <?php echo sprintf(PPV_Lang::t('referral_admin_start_desc') ?: 'Nach der Aktivierung beginnt eine %d-tÃ¤gige Sammelphase. In dieser Zeit werden alle bestehenden Kunden erfasst, damit nur echte Neukunden als Referrals zÃ¤hlen.', $referral_grace_days); ?>
                             </span>
                         </p>
                         <button type="button" id="activate-referral-btn" class="ppv-btn" style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); border: none; color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
@@ -1210,7 +1213,7 @@ if (!empty($store->gallery)) {
                     <!-- Grace period active -->
                     <div style="background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; padding: 15px;">
                         <p style="margin: 0; color: #ff9800;">
-                            <strong>⏳ <?php echo PPV_Lang::t('referral_admin_grace_title') ?: 'Sammelphase läuft'; ?></strong><br>
+                            <strong>â³ <?php echo PPV_Lang::t('referral_admin_grace_title') ?: 'Sammelphase lÃ¤uft'; ?></strong><br>
                             <span style="color: #888;">
                                 <?php echo sprintf(PPV_Lang::t('referral_admin_grace_remaining') ?: 'Noch %d Tage bis das Referral Program aktiviert werden kann.', $grace_days_remaining); ?><br>
                                 <?php echo PPV_Lang::t('referral_admin_grace_desc') ?: 'In dieser Zeit werden bestehende Kunden erfasst.'; ?>
@@ -1237,25 +1240,25 @@ if (!empty($store->gallery)) {
 
                         <!-- Reward Type Selection -->
                         <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">🎁 <?php echo PPV_Lang::t('referral_admin_reward_type') ?: 'Belohnung konfigurieren'; ?></h4>
+                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">ðŸŽ <?php echo PPV_Lang::t('referral_admin_reward_type') ?: 'Belohnung konfigurieren'; ?></h4>
                             <p style="color: #888; font-size: 12px; margin-bottom: 15px;"><?php echo PPV_Lang::t('referral_section_subtitle') ?: 'Was bekommen Werber und Geworbener?'; ?></p>
 
                             <div class="ppv-form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
                                 <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? 'points') === 'points' ? '#ff6b6b' : 'transparent'; ?>;">
                                     <input type="radio" name="referral_reward_type" value="points" <?php checked($store->referral_reward_type ?? 'points', 'points'); ?> style="display: none;" onchange="updateReferralRewardUI()">
-                                    <span style="font-size: 24px;">⭐</span>
+                                    <span style="font-size: 24px;">â­</span>
                                     <strong style="color: #f1f5f9;"><?php echo PPV_Lang::t('referral_admin_reward_points') ?: 'Punkte'; ?></strong>
                                 </label>
 
                                 <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? '') === 'euro' ? '#ff6b6b' : 'transparent'; ?>;">
                                     <input type="radio" name="referral_reward_type" value="euro" <?php checked($store->referral_reward_type ?? '', 'euro'); ?> style="display: none;" onchange="updateReferralRewardUI()">
-                                    <span style="font-size: 24px;">💶</span>
+                                    <span style="font-size: 24px;">ðŸ’¶</span>
                                     <strong style="color: #f1f5f9;"><?php echo PPV_Lang::t('referral_admin_reward_euro') ?: 'Euro'; ?></strong>
                                 </label>
 
                                 <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? '') === 'gift' ? '#ff6b6b' : 'transparent'; ?>;">
                                     <input type="radio" name="referral_reward_type" value="gift" <?php checked($store->referral_reward_type ?? '', 'gift'); ?> style="display: none;" onchange="updateReferralRewardUI()">
-                                    <span style="font-size: 24px;">🎀</span>
+                                    <span style="font-size: 24px;">ðŸŽ€</span>
                                     <strong style="color: #f1f5f9;"><?php echo PPV_Lang::t('referral_admin_reward_gift') ?: 'Geschenk'; ?></strong>
                                 </label>
                             </div>
@@ -1272,7 +1275,7 @@ if (!empty($store->gallery)) {
                                 <label><?php echo PPV_Lang::t('referral_admin_euro_value') ?: 'Euro Rabatt'; ?></label>
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <input type="number" name="referral_reward_value_euro" value="<?php echo esc_attr($store->referral_reward_value ?? 5); ?>" min="1" max="50" style="width: 80px;">
-                                    <span style="color: #888;">€</span>
+                                    <span style="color: #888;">â‚¬</span>
                                 </div>
                             </div>
 
@@ -1288,8 +1291,8 @@ if (!empty($store->gallery)) {
                             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                                 <input type="checkbox" name="referral_manual_approval" value="1" <?php checked($store->referral_manual_approval ?? 0, 1); ?> style="width: 18px; height: 18px;">
                                 <span>
-                                    <strong style="color: #f1f5f9;">🔍 <?php echo PPV_Lang::t('referral_admin_manual_approval') ?: 'Manuelle Freigabe'; ?></strong><br>
-                                    <small style="color: #888;"><?php echo PPV_Lang::t('referral_admin_manual_desc') ?: 'Jeden neuen Referral vor der Belohnung prüfen'; ?></small>
+                                    <strong style="color: #f1f5f9;">ðŸ” <?php echo PPV_Lang::t('referral_admin_manual_approval') ?: 'Manuelle Freigabe'; ?></strong><br>
+                                    <small style="color: #888;"><?php echo PPV_Lang::t('referral_admin_manual_desc') ?: 'Jeden neuen Referral vor der Belohnung prÃ¼fen'; ?></small>
                                 </span>
                             </label>
                         </div>
@@ -1308,7 +1311,7 @@ if (!empty($store->gallery)) {
                         ));
                         ?>
                         <div style="background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); border-radius: 8px; padding: 15px;">
-                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">📊 <?php echo PPV_Lang::t('referral_admin_stats') ?: 'Referral Statistik'; ?></h4>
+                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">ðŸ“Š <?php echo PPV_Lang::t('referral_admin_stats') ?: 'Referral Statistik'; ?></h4>
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
                                 <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
                                     <div style="font-size: 24px; font-weight: bold; color: #f1f5f9;"><?php echo intval($referral_stats->total ?? 0); ?></div>
@@ -1335,7 +1338,7 @@ if (!empty($store->gallery)) {
                     <!-- How it works collapsible (always visible) -->
                     <details class="ppv-how-it-works" style="margin-top: 15px; background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); border-radius: 10px; overflow: hidden;">
                         <summary style="padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #ff6b6b; list-style: none;">
-                            <span style="font-size: 16px;">💡</span>
+                            <span style="font-size: 16px;">ðŸ’¡</span>
                             <span data-i18n="referral_how_it_works"><?php echo esc_html(PPV_Lang::t('referral_how_it_works') ?: 'So funktioniert\'s'); ?></span>
                             <svg style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </summary>
@@ -1343,11 +1346,11 @@ if (!empty($store->gallery)) {
                             <div style="display: flex; flex-direction: column; gap: 10px;">
                                 <div style="display: flex; align-items: flex-start; gap: 10px;">
                                     <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">1</span>
-                                    <span data-i18n="referral_step1"><?php echo esc_html(PPV_Lang::t('referral_step1') ?: 'Ein Kunde teilt seinen persönlichen Empfehlungslink oder QR-Code mit Freunden und Familie.'); ?></span>
+                                    <span data-i18n="referral_step1"><?php echo esc_html(PPV_Lang::t('referral_step1') ?: 'Ein Kunde teilt seinen persÃ¶nlichen Empfehlungslink oder QR-Code mit Freunden und Familie.'); ?></span>
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 10px;">
                                     <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">2</span>
-                                    <span data-i18n="referral_step2"><?php echo esc_html(PPV_Lang::t('referral_step2') ?: 'Der geworbene Neukunde registriert sich über den Link und sammelt seine ersten Punkte.'); ?></span>
+                                    <span data-i18n="referral_step2"><?php echo esc_html(PPV_Lang::t('referral_step2') ?: 'Der geworbene Neukunde registriert sich Ã¼ber den Link und sammelt seine ersten Punkte.'); ?></span>
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 10px;">
                                     <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">3</span>
@@ -1361,7 +1364,7 @@ if (!empty($store->gallery)) {
                 <!-- Info box -->
                 <div class="ppv-info-box" style="background: rgba(0, 230, 255, 0.05); border: 1px solid rgba(0, 230, 255, 0.2); border-radius: 8px; padding: 15px; margin-top: 20px;">
                     <p style="margin: 0; color: #00e6ff; font-size: 13px;">
-                        <strong>💡 <?php echo esc_html(PPV_Lang::t('marketing_tip_title')); ?></strong><br>
+                        <strong>ðŸ’¡ <?php echo esc_html(PPV_Lang::t('marketing_tip_title')); ?></strong><br>
                         <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('marketing_tip_text')); ?></span>
                     </p>
                 </div>
@@ -1405,7 +1408,7 @@ if (!empty($store->gallery)) {
                 const activateBtn = document.getElementById('activate-referral-btn');
                 if (activateBtn) {
                     activateBtn.addEventListener('click', function() {
-                        if (!confirm('Grace Period starten? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+                        if (!confirm('Grace Period starten? Diese Aktion kann nicht rÃ¼ckgÃ¤ngig gemacht werden.')) return;
 
                         this.disabled = true;
                         this.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Wird aktiviert...';
@@ -1504,15 +1507,15 @@ if (!empty($store->gallery)) {
                         const email = testEmailInput.value.trim();
                         if (!email) {
                             testResult.style.display = 'block';
-                            testResult.innerHTML = '<span style="color: #ef4444;">⚠️ Kérlek add meg az email címet!</span>';
+                            testResult.innerHTML = '<span style="color: #ef4444;">âš ï¸ KÃ©rlek add meg az email cÃ­met!</span>';
                             return;
                         }
 
                         // Disable button and show loading
                         testBtn.disabled = true;
-                        testBtn.innerHTML = '⏳ Küldés...';
+                        testBtn.innerHTML = 'â³ KÃ¼ldÃ©s...';
                         testResult.style.display = 'block';
-                        testResult.innerHTML = '<span style="color: #888;">Email küldése folyamatban...</span>';
+                        testResult.innerHTML = '<span style="color: #888;">Email kÃ¼ldÃ©se folyamatban...</span>';
 
                         // Get store ID from form
                         const storeIdInput = document.querySelector('input[name="store_id"]');
@@ -1529,22 +1532,22 @@ if (!empty($store->gallery)) {
                         .then(response => response.json())
                         .then(data => {
                             testBtn.disabled = false;
-                            testBtn.innerHTML = '📧 <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt küldés'); ?>';
+                            testBtn.innerHTML = 'ðŸ“§ <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt kÃ¼ldÃ©s'); ?>';
 
                             if (data.success) {
-                                testResult.innerHTML = '<span style="color: #22c55e;">✅ ' + data.data.message + '</span>';
+                                testResult.innerHTML = '<span style="color: #22c55e;">âœ… ' + data.data.message + '</span>';
                             } else {
                                 let errorMsg = data.data.message || 'Ismeretlen hiba';
                                 if (data.data.error) {
                                     errorMsg += '<br><small style="color: #888;">Hiba: ' + data.data.error + '</small>';
                                 }
-                                testResult.innerHTML = '<span style="color: #ef4444;">❌ ' + errorMsg + '</span>';
+                                testResult.innerHTML = '<span style="color: #ef4444;">âŒ ' + errorMsg + '</span>';
                             }
                         })
                         .catch(error => {
                             testBtn.disabled = false;
-                            testBtn.innerHTML = '📧 <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt küldés'); ?>';
-                            testResult.innerHTML = '<span style="color: #ef4444;">❌ Hálózati hiba: ' + error.message + '</span>';
+                            testBtn.innerHTML = 'ðŸ“§ <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt kÃ¼ldÃ©s'); ?>';
+                            testResult.innerHTML = '<span style="color: #ef4444;">âŒ HÃ¡lÃ³zati hiba: ' + error.message + '</span>';
                         });
                     });
                 }
@@ -1578,7 +1581,7 @@ if (!empty($store->gallery)) {
 
                         if (!title || !body) {
                             pushResult.style.display = 'block';
-                            pushResult.innerHTML = '<span style="color: #ef4444; padding: 8px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">⚠️ Bitte Titel und Nachricht eingeben!</span>';
+                            pushResult.innerHTML = '<span style="color: #ef4444; padding: 8px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">âš ï¸ Bitte Titel und Nachricht eingeben!</span>';
                             return;
                         }
 
@@ -1588,7 +1591,7 @@ if (!empty($store->gallery)) {
                         }
 
                         pushSendBtn.disabled = true;
-                        pushSendBtn.innerHTML = '<span>⏳</span><span>Wird gesendet...</span>';
+                        pushSendBtn.innerHTML = '<span>â³</span><span>Wird gesendet...</span>';
                         pushResult.style.display = 'block';
                         pushResult.innerHTML = '<span style="color: #888; padding: 8px; display: block;">Push wird gesendet...</span>';
 
@@ -1605,9 +1608,9 @@ if (!empty($store->gallery)) {
                         })
                         .then(response => response.json())
                         .then(data => {
-                            pushSendBtn.innerHTML = '<span>🚀</span><span>Push senden</span>';
+                            pushSendBtn.innerHTML = '<span>ðŸš€</span><span>Push senden</span>';
                             if (data.success) {
-                                pushResult.innerHTML = '<span style="color: #22c55e; padding: 10px; background: rgba(34,197,94,0.1); border-radius: 6px; display: block;">✅ ' + data.message + '</span>';
+                                pushResult.innerHTML = '<span style="color: #22c55e; padding: 10px; background: rgba(34,197,94,0.1); border-radius: 6px; display: block;">âœ… ' + data.message + '</span>';
                                 // Disable form after successful send
                                 const formContainer = document.getElementById('push-form-container');
                                 if (formContainer) {
@@ -1622,13 +1625,13 @@ if (!empty($store->gallery)) {
                                 if (pushBodyCount) pushBodyCount.textContent = '0';
                             } else {
                                 pushSendBtn.disabled = false;
-                                pushResult.innerHTML = '<span style="color: #ef4444; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">❌ ' + (data.message || 'Fehler beim Senden') + '</span>';
+                                pushResult.innerHTML = '<span style="color: #ef4444; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">âŒ ' + (data.message || 'Fehler beim Senden') + '</span>';
                             }
                         })
                         .catch(error => {
                             pushSendBtn.disabled = false;
-                            pushSendBtn.innerHTML = '<span>🚀</span><span>Push senden</span>';
-                            pushResult.innerHTML = '<span style="color: #ef4444; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">❌ Netzwerkfehler: ' + error.message + '</span>';
+                            pushSendBtn.innerHTML = '<span>ðŸš€</span><span>Push senden</span>';
+                            pushResult.innerHTML = '<span style="color: #ef4444; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 6px; display: block;">âŒ Netzwerkfehler: ' + error.message + '</span>';
                         });
                     });
                 }
@@ -1639,9 +1642,9 @@ if (!empty($store->gallery)) {
                 const logoPreview = document.getElementById('ppv-logo-preview');
                 if (deleteLogoBtn && deleteLogoInput && logoPreview) {
                     deleteLogoBtn.addEventListener('click', function() {
-                        if (confirm('Möchten Sie das Logo wirklich löschen?')) {
+                        if (confirm('MÃ¶chten Sie das Logo wirklich lÃ¶schen?')) {
                             deleteLogoInput.value = '1';
-                            logoPreview.innerHTML = '<span style="color: #64748b; font-size: 13px;">Logo wird beim Speichern gelöscht</span>';
+                            logoPreview.innerHTML = '<span style="color: #64748b; font-size: 13px;">Logo wird beim Speichern gelÃ¶scht</span>';
                         }
                     });
                 }
@@ -1708,13 +1711,13 @@ if (!empty($store->gallery)) {
                 [data-theme="dark"] .ppv-vacation-form-wrapper input { background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.3); color: #e2e8f0; }
                 </style>
 
-                <!-- 🏢 FILIALE VACATION DROPDOWN SELECTOR -->
+                <!-- ðŸ¢ FILIALE VACATION DROPDOWN SELECTOR -->
                 <div class="ppv-vacation-selector">
                     <label for="ppv-vacation-filiale-select" style="font-size: 13px; font-weight: 600; color: var(--color-text-secondary, #64748b); margin-bottom: 6px; display: block;">
-                        <?php echo esc_html(PPV_Lang::t('select_filiale') ?? 'Fiók kiválasztása'); ?>
+                        <?php echo esc_html(PPV_Lang::t('select_filiale') ?? 'FiÃ³k kivÃ¡lasztÃ¡sa'); ?>
                     </label>
                     <select id="ppv-vacation-filiale-select">
-                        <option value="all"><?php echo esc_html(PPV_Lang::t('all_branches') ?? 'Összes filiale'); ?></option>
+                        <option value="all"><?php echo esc_html(PPV_Lang::t('all_branches') ?? 'Ã–sszes filiale'); ?></option>
                         <?php foreach ($filialen as $fil): ?>
                         <option value="<?php echo intval($fil->id); ?>"
                                 data-vacation-enabled="<?php echo !empty($fil->vacation_enabled) ? '1' : '0'; ?>"
@@ -1760,11 +1763,11 @@ if (!empty($store->gallery)) {
                     </div>
 
                     <div class="ppv-vacation-all-hint" id="ppv-vacation-all-hint" style="display: none;">
-                        <?php echo esc_html(PPV_Lang::t('vacation_apply_all_hint') ?? 'A beállítások az összes filiáléra alkalmazásra kerülnek'); ?>
+                        <?php echo esc_html(PPV_Lang::t('vacation_apply_all_hint') ?? 'A beÃ¡llÃ­tÃ¡sok az Ã¶sszes filiÃ¡lÃ©ra alkalmazÃ¡sra kerÃ¼lnek'); ?>
                     </div>
 
                     <button type="button" class="ppv-btn ppv-btn-small ppv-save-filiale-vacation" id="ppv-save-vacation-btn" style="margin-top: 12px;">
-                        <i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('save') ?? 'Mentés'); ?>
+                        <i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('save') ?? 'MentÃ©s'); ?>
                     </button>
                 </div>
 
@@ -1854,7 +1857,7 @@ if (!empty($store->gallery)) {
                         Promise.all(savePromises)
                             .then(function(results) {
                                 saveBtn.disabled = false;
-                                saveBtn.innerHTML = '<i class="ri-save-line"></i> Mentés';
+                                saveBtn.innerHTML = '<i class="ri-save-line"></i> MentÃ©s';
 
                                 var allSuccess = results.every(function(r) { return r.success; });
                                 if (allSuccess) {
@@ -1868,15 +1871,15 @@ if (!empty($store->gallery)) {
                                             fil.vacation_message = msgInput.value;
                                         }
                                     });
-                                    alert(selectedValue === 'all' ? 'Összes fiók mentve!' : 'Mentve!');
+                                    alert(selectedValue === 'all' ? 'Ã–sszes fiÃ³k mentve!' : 'Mentve!');
                                 } else {
-                                    alert('Hiba történt');
+                                    alert('Hiba tÃ¶rtÃ©nt');
                                 }
                             })
                             .catch(function() {
                                 saveBtn.disabled = false;
-                                saveBtn.innerHTML = '<i class="ri-save-line"></i> Mentés';
-                                alert('Hiba történt');
+                                saveBtn.innerHTML = '<i class="ri-save-line"></i> MentÃ©s';
+                                alert('Hiba tÃ¶rtÃ©nt');
                             });
                     }
 
@@ -1947,18 +1950,18 @@ if (!empty($store->gallery)) {
                 <!-- Inline vacation toggle handler (fallback) -->
                 <script>
                 (function() {
-                    console.log('🏖️ Inline vacation script loaded');
+                    console.log('ðŸ–ï¸ Inline vacation script loaded');
 
                     function initVacationToggle() {
                         var toggle = document.getElementById('ppv-vacation-enabled');
                         var fields = document.querySelector('.ppv-vacation-fields');
 
-                        console.log('🏖️ Toggle element:', toggle);
-                        console.log('🏖️ Fields element:', fields);
+                        console.log('ðŸ–ï¸ Toggle element:', toggle);
+                        console.log('ðŸ–ï¸ Fields element:', fields);
 
                         if (toggle && fields) {
                             toggle.onchange = function() {
-                                console.log('🏖️ Toggle changed to:', this.checked);
+                                console.log('ðŸ–ï¸ Toggle changed to:', this.checked);
                                 fields.style.opacity = this.checked ? '1' : '0.5';
                                 fields.style.pointerEvents = this.checked ? 'auto' : 'none';
 
@@ -1972,7 +1975,7 @@ if (!empty($store->gallery)) {
                                     }
                                 }
                             };
-                            console.log('🏖️ Event handler attached!');
+                            console.log('ðŸ–ï¸ Event handler attached!');
                         }
                     }
 
@@ -2025,7 +2028,7 @@ if (!empty($store->gallery)) {
                 <!-- ============================================================
                      ACCOUNT SETTINGS - EMAIL & PASSWORD CHANGE
                      ============================================================ -->
-                <h3>📧 <?php echo esc_html(PPV_Lang::t('account_settings', 'Fiók beállítások')); ?></h3>
+                <h3>ðŸ“§ <?php echo esc_html(PPV_Lang::t('account_settings', 'FiÃ³k beÃ¡llÃ­tÃ¡sok')); ?></h3>
 
                 <!-- Current Email Display -->
                 <?php
@@ -2036,31 +2039,31 @@ if (!empty($store->gallery)) {
                 <!-- Email Change Section -->
                 <div class="ppv-form-group ppv-account-section" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
                     <label style="font-weight: bold; margin-bottom: 10px; display: block;">
-                        📧 <?php echo esc_html(PPV_Lang::t('email_change', 'E-mail cím módosítása')); ?>
+                        ðŸ“§ <?php echo esc_html(PPV_Lang::t('email_change', 'E-mail cÃ­m mÃ³dosÃ­tÃ¡sa')); ?>
                     </label>
                     <p class="ppv-help" style="margin-bottom: 12px; color: #888;">
-                        <?php echo esc_html(PPV_Lang::t('email_change_help', 'Jelenlegi e-mail cím:')); ?> <strong><?php echo esc_html($current_email); ?></strong>
+                        <?php echo esc_html(PPV_Lang::t('email_change_help', 'Jelenlegi e-mail cÃ­m:')); ?> <strong><?php echo esc_html($current_email); ?></strong>
                     </p>
-                    <input type="email" id="ppv-new-email" placeholder="<?php echo esc_attr(PPV_Lang::t('new_email_placeholder', 'Új e-mail cím')); ?>" style="margin-bottom: 10px;">
-                    <input type="email" id="ppv-confirm-email" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_email_placeholder', 'Új e-mail cím megerősítése')); ?>" style="margin-bottom: 10px;">
+                    <input type="email" id="ppv-new-email" placeholder="<?php echo esc_attr(PPV_Lang::t('new_email_placeholder', 'Ãšj e-mail cÃ­m')); ?>" style="margin-bottom: 10px;">
+                    <input type="email" id="ppv-confirm-email" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_email_placeholder', 'Ãšj e-mail cÃ­m megerÅ‘sÃ­tÃ©se')); ?>" style="margin-bottom: 10px;">
                     <button type="button" id="ppv-change-email-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
-                        📧 <?php echo esc_html(PPV_Lang::t('change_email_btn', 'E-mail cím módosítása')); ?>
+                        ðŸ“§ <?php echo esc_html(PPV_Lang::t('change_email_btn', 'E-mail cÃ­m mÃ³dosÃ­tÃ¡sa')); ?>
                     </button>
                 </div>
 
                 <!-- Password Change Section -->
                 <div class="ppv-form-group ppv-account-section" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
                     <label style="font-weight: bold; margin-bottom: 10px; display: block;">
-                        🔐 <?php echo esc_html(PPV_Lang::t('password_change', 'Jelszó módosítása')); ?>
+                        ðŸ” <?php echo esc_html(PPV_Lang::t('password_change', 'JelszÃ³ mÃ³dosÃ­tÃ¡sa')); ?>
                     </label>
                     <p class="ppv-help" style="margin-bottom: 12px; color: #888;">
-                        <?php echo esc_html(PPV_Lang::t('password_change_help', 'Adja meg a jelenlegi és az új jelszót.')); ?>
+                        <?php echo esc_html(PPV_Lang::t('password_change_help', 'Adja meg a jelenlegi Ã©s az Ãºj jelszÃ³t.')); ?>
                     </p>
-                    <input type="password" id="ppv-current-password" placeholder="<?php echo esc_attr(PPV_Lang::t('current_password_placeholder', 'Jelenlegi jelszó')); ?>" style="margin-bottom: 10px;">
-                    <input type="password" id="ppv-new-password" placeholder="<?php echo esc_attr(PPV_Lang::t('new_password_placeholder', 'Új jelszó')); ?>" style="margin-bottom: 10px;">
-                    <input type="password" id="ppv-confirm-password" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_password_placeholder', 'Új jelszó megerősítése')); ?>" style="margin-bottom: 10px;">
+                    <input type="password" id="ppv-current-password" placeholder="<?php echo esc_attr(PPV_Lang::t('current_password_placeholder', 'Jelenlegi jelszÃ³')); ?>" style="margin-bottom: 10px;">
+                    <input type="password" id="ppv-new-password" placeholder="<?php echo esc_attr(PPV_Lang::t('new_password_placeholder', 'Ãšj jelszÃ³')); ?>" style="margin-bottom: 10px;">
+                    <input type="password" id="ppv-confirm-password" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_password_placeholder', 'Ãšj jelszÃ³ megerÅ‘sÃ­tÃ©se')); ?>" style="margin-bottom: 10px;">
                     <button type="button" id="ppv-change-password-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
-                        🔐 <?php echo esc_html(PPV_Lang::t('change_password_btn', 'Jelszó módosítása')); ?>
+                        ðŸ” <?php echo esc_html(PPV_Lang::t('change_password_btn', 'JelszÃ³ mÃ³dosÃ­tÃ¡sa')); ?>
                     </button>
                 </div>
             </div>
@@ -2072,21 +2075,21 @@ if (!empty($store->gallery)) {
         private static function get_current_store() {
             global $wpdb;
 
-            // ✅ FIX: Flush WordPress object cache to ensure fresh data
+            // âœ… FIX: Flush WordPress object cache to ensure fresh data
             wp_cache_flush();
             $wpdb->flush();
 
-            // 🏪 FILIALE SUPPORT: Use session-aware store ID
+            // ðŸª FILIALE SUPPORT: Use session-aware store ID
             $store_id = self::get_store_id();
 
-            ppv_log("📖 [DEBUG] get_current_store() - store_id: {$store_id}");
-            ppv_log("📖 [DEBUG] Session ppv_store_id: " . ($_SESSION['ppv_store_id'] ?? 'NULL'));
-            ppv_log("📖 [DEBUG] Session ppv_current_filiale_id: " . ($_SESSION['ppv_current_filiale_id'] ?? 'NULL'));
+            ppv_log("ðŸ“– [DEBUG] get_current_store() - store_id: {$store_id}");
+            ppv_log("ðŸ“– [DEBUG] Session ppv_store_id: " . ($_SESSION['ppv_store_id'] ?? 'NULL'));
+            ppv_log("ðŸ“– [DEBUG] Session ppv_current_filiale_id: " . ($_SESSION['ppv_current_filiale_id'] ?? 'NULL'));
 
             if ($store_id) {
                 // SQL_NO_CACHE ensures MySQL doesn't return cached results
                 $store = $wpdb->get_row($wpdb->prepare("SELECT SQL_NO_CACHE * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
-                ppv_log("📖 [DEBUG] Loaded store name: " . ($store->name ?? 'NULL'));
+                ppv_log("ðŸ“– [DEBUG] Loaded store name: " . ($store->name ?? 'NULL'));
                 return $store;
             }
 
@@ -2107,7 +2110,7 @@ if (!empty($store->gallery)) {
         }
 
 public static function ajax_save_profile() {
-    global $wpdb; // ✅ FIX: Declare $wpdb at the start of the function
+    global $wpdb; // âœ… FIX: Declare $wpdb at the start of the function
 
     if (!isset($_POST[self::NONCE_NAME])) {
         wp_send_json_error(['msg' => 'Nonce missing']);
@@ -2124,7 +2127,7 @@ public static function ajax_save_profile() {
         wp_send_json_error(['msg' => PPV_Lang::t('error')]);
     }
 
-    // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+    // ðŸª FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
     $store_id = self::get_store_id();
 
     if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
@@ -2134,7 +2137,7 @@ public static function ajax_save_profile() {
     $upload_dir = wp_upload_dir();
     $gallery_files = [];
 
-    // ✅ FIX: Get existing store data to preserve logo/gallery if not uploading new
+    // âœ… FIX: Get existing store data to preserve logo/gallery if not uploading new
     $existing_store = $wpdb->get_row($wpdb->prepare(
         "SELECT logo, gallery FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
         $store_id
@@ -2142,7 +2145,7 @@ public static function ajax_save_profile() {
 
     // Logo upload or delete
     if (!empty($_POST['delete_logo']) && $_POST['delete_logo'] === '1') {
-        // 🗑️ Delete logo
+        // ðŸ—‘ï¸ Delete logo
         $_POST['logo'] = '';
     } elseif (!empty($_FILES['logo']['name'])) {
         $tmp_file = $_FILES['logo']['tmp_name'];
@@ -2153,13 +2156,13 @@ public static function ajax_save_profile() {
             $_POST['logo'] = $upload_dir['url'] . '/' . $filename;
         }
     } else {
-        // ✅ FIX: Preserve existing logo if no new upload
+        // âœ… FIX: Preserve existing logo if no new upload
         $_POST['logo'] = $existing_store->logo ?? '';
     }
 
     // Gallery upload
     if (!empty($_FILES['gallery']['name'][0])) {
-        // ✅ FIX: Get existing gallery to merge with new uploads
+        // âœ… FIX: Get existing gallery to merge with new uploads
         $existing_gallery = json_decode($existing_store->gallery ?? '[]', true) ?: [];
 
         foreach ($_FILES['gallery']['name'] as $key => $filename) {
@@ -2173,13 +2176,13 @@ public static function ajax_save_profile() {
             }
         }
 
-        // ✅ FIX: Merge new uploads with existing gallery (append new images)
+        // âœ… FIX: Merge new uploads with existing gallery (append new images)
         $gallery_files = array_merge($existing_gallery, $gallery_files);
     }
 
 
     // ============================================================
-    // ✅ OPENING HOURS - FELDOLGOZÁS
+    // âœ… OPENING HOURS - FELDOLGOZÃS
     // ============================================================
     $opening_hours = [];
     $days = ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'];
@@ -2196,7 +2199,7 @@ public static function ajax_save_profile() {
         ];
     }
     // ============================================================
-    // ✅ ÖSSZES MEZŐ - TAX_ID ÉS IS_TAXABLE BENNE!
+    // âœ… Ã–SSZES MEZÅ - TAX_ID Ã‰S IS_TAXABLE BENNE!
     // ============================================================
     $update_data = [
         'name' => sanitize_text_field($_POST['store_name'] ?? ''),
@@ -2211,11 +2214,11 @@ public static function ajax_save_profile() {
         'plz' => sanitize_text_field($_POST['plz'] ?? ''),
         'city' => sanitize_text_field($_POST['city'] ?? ''),
 
-        // ✅ COMPANY FIELDS (were missing!)
+        // âœ… COMPANY FIELDS (were missing!)
         'company_name' => sanitize_text_field($_POST['company_name'] ?? ''),
         'contact_person' => sanitize_text_field($_POST['contact_person'] ?? ''),
 
-        // ✅ ÚJ MEZŐK:
+        // âœ… ÃšJ MEZÅK:
         'tax_id' => sanitize_text_field($_POST['tax_id'] ?? ''),
         'is_taxable' => !empty($_POST['is_taxable']) ? 1 : 0,
         
@@ -2237,12 +2240,12 @@ public static function ajax_save_profile() {
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
-// ✅ FIX: Preserve existing gallery if no new uploads
+// âœ… FIX: Preserve existing gallery if no new uploads
         'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($existing_store->gallery ?? ''),
     'opening_hours' => json_encode($opening_hours),
 
         // ============================================================
-        // ✅ MARKETING AUTOMATION FIELDS
+        // âœ… MARKETING AUTOMATION FIELDS
         // ============================================================
         // Google Review
         'google_review_enabled' => !empty($_POST['google_review_enabled']) ? 1 : 0,
@@ -2264,13 +2267,13 @@ public static function ajax_save_profile() {
         'comeback_message' => sanitize_text_field($_POST['comeback_message'] ?? ''),
 
         // ============================================================
-        // ✅ WHATSAPP CLOUD API - Only enable/disable toggle
+        // âœ… WHATSAPP CLOUD API - Only enable/disable toggle
         // API settings are managed in /admin/whatsapp
         // ============================================================
         'whatsapp_enabled' => !empty($_POST['whatsapp_enabled']) ? 1 : 0,
 
         // ============================================================
-        // ✅ REFERRAL PROGRAM FIELDS
+        // âœ… REFERRAL PROGRAM FIELDS
         // ============================================================
         'referral_enabled' => !empty($_POST['referral_enabled']) ? 1 : 0,
         'referral_grace_days' => max(7, min(180, intval($_POST['referral_grace_days'] ?? 60))),
@@ -2280,7 +2283,7 @@ public static function ajax_save_profile() {
         'referral_manual_approval' => !empty($_POST['referral_manual_approval']) ? 1 : 0,
 ];
 
-// ✅ Format specifierek az összes mezőhöz
+// âœ… Format specifierek az Ã¶sszes mezÅ‘hÃ¶z
 $format_specs = [
     '%s',  // name
     '%s',  // country
@@ -2340,11 +2343,11 @@ $format_specs = [
     '%d',  // referral_manual_approval
 ];
 
-ppv_log("💾 [DEBUG] Saving store ID: {$store_id}");
-ppv_log("💾 [DEBUG] Country: " . ($update_data['country'] ?? 'NULL'));
-ppv_log("💾 [DEBUG] Store Name: " . ($update_data['name'] ?? 'NULL'));
-ppv_log("💾 [DEBUG] Session store_id: " . ($_SESSION['ppv_store_id'] ?? 'NULL'));
-ppv_log("💾 [DEBUG] Session filiale_id: " . ($_SESSION['ppv_current_filiale_id'] ?? 'NULL'));
+ppv_log("ðŸ’¾ [DEBUG] Saving store ID: {$store_id}");
+ppv_log("ðŸ’¾ [DEBUG] Country: " . ($update_data['country'] ?? 'NULL'));
+ppv_log("ðŸ’¾ [DEBUG] Store Name: " . ($update_data['name'] ?? 'NULL'));
+ppv_log("ðŸ’¾ [DEBUG] Session store_id: " . ($_SESSION['ppv_store_id'] ?? 'NULL'));
+ppv_log("ðŸ’¾ [DEBUG] Session filiale_id: " . ($_SESSION['ppv_current_filiale_id'] ?? 'NULL'));
 
 $result = $wpdb->update(
     $wpdb->prefix . 'ppv_stores',
@@ -2354,14 +2357,14 @@ $result = $wpdb->update(
     ['%d']
 );
 
-ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK (rows: ' . $result . ')' : 'FAILED'));
-ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
-ppv_log("💾 [DEBUG] Vacation enabled: " . ($update_data['vacation_enabled'] ?? 'NULL'));
-ppv_log("💾 [DEBUG] Vacation from: " . ($update_data['vacation_from'] ?? 'NULL'));
-ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
+ppv_log("ðŸ’¾ [DEBUG] Update result: " . ($result !== false ? 'OK (rows: ' . $result . ')' : 'FAILED'));
+ppv_log("ðŸ’¾ [DEBUG] Last SQL error: " . $wpdb->last_error);
+ppv_log("ðŸ’¾ [DEBUG] Vacation enabled: " . ($update_data['vacation_enabled'] ?? 'NULL'));
+ppv_log("ðŸ’¾ [DEBUG] Vacation from: " . ($update_data['vacation_from'] ?? 'NULL'));
+ppv_log("ðŸ’¾ [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
 
     if ($result !== false) {
-        // ✅ FIX: Return updated store data so JS can refresh form fields without reload
+        // âœ… FIX: Return updated store data so JS can refresh form fields without reload
         $updated_store = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $store_id
@@ -2370,7 +2373,7 @@ ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
         wp_send_json_success([
             'msg' => PPV_Lang::t('profile_saved_success'),
             'store_id' => $store_id,
-            'store' => $updated_store  // ✅ This enables updateFormFields() in JS
+            'store' => $updated_store  // âœ… This enables updateFormFields() in JS
         ]);
     } else {
         $error_msg = PPV_Lang::t('profile_save_error');
@@ -2399,7 +2402,7 @@ ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
 
             $draft_data = $_POST['draft'] ?? [];
 
-            // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+            // ðŸª FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
             $store_id = self::get_store_id();
 
             if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
@@ -2428,7 +2431,7 @@ ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
                 wp_send_json_error(['msg' => 'Not authenticated']);
             }
 
-            // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+            // ðŸª FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
             $store_id = self::get_store_id();
             $image_url = sanitize_text_field($_POST['image_url'] ?? '');
 
@@ -2466,14 +2469,14 @@ ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
             );
 
             if ($result !== false) {
-                wp_send_json_success(['msg' => 'Törölt']);
+                wp_send_json_success(['msg' => 'TÃ¶rÃ¶lt']);
             } else {
                 wp_send_json_error(['msg' => 'Hiba']);
             }
         }
 
         public static function ajax_delete_media() {
-        // Nonce ellenőrzés
+        // Nonce ellenÅ‘rzÃ©s
             if (!isset($_POST[self::NONCE_NAME])) {
                 wp_send_json_error(['msg' => 'Nonce missing']);
                 return;
@@ -2509,8 +2512,8 @@ ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
             }
         }
 /**
- * 🗺️ GEOCODE ADDRESS - FIX (Romania/Hungary support)
- * Egyszerűen másold be ezt a függvényt a PHP fájlba
+ * ðŸ—ºï¸ GEOCODE ADDRESS - FIX (Romania/Hungary support)
+ * EgyszerÅ±en mÃ¡sold be ezt a fÃ¼ggvÃ©nyt a PHP fÃ¡jlba
  */
 
 public static function ajax_geocode_address() {
@@ -2532,10 +2535,10 @@ public static function ajax_geocode_address() {
     $country = sanitize_text_field($_POST['country'] ?? 'DE');
 
 if (empty($address) || empty($city) || empty($country)) {
-    wp_send_json_error(['msg' => 'Cím, város és ország szükséges!']);
+    wp_send_json_error(['msg' => 'CÃ­m, vÃ¡ros Ã©s orszÃ¡g szÃ¼ksÃ©ges!']);
     return;
 }
-    // ✅ ORSZÁG NEVEI
+    // âœ… ORSZÃG NEVEI
     $country_names = [
         'DE' => 'Deutschland',
         'HU' => 'Hungary',
@@ -2543,25 +2546,25 @@ if (empty($address) || empty($city) || empty($country)) {
     ];
     $country_name = $country_names[$country] ?? 'Germany';
 
-    // ✅ TISZTÍTÁS: Remove extra commas from address field
-    // Utca mezőben lehet "Siedlungsring, 51" -> "Siedlungsring 51"
+    // âœ… TISZTÃTÃS: Remove extra commas from address field
+    // Utca mezÅ‘ben lehet "Siedlungsring, 51" -> "Siedlungsring 51"
     $address_clean = str_replace(',', '', $address);
 
-    // ✅ JOBB FORMÁTUM (vessző, ország)
+    // âœ… JOBB FORMÃTUM (vesszÅ‘, orszÃ¡g)
     $full_address = "{$address_clean}, {$plz} {$city}, {$country_name}";
 
-    ppv_log("🔍 [PPV_GEOCODE] Keresés: {$full_address}");
+    ppv_log("ðŸ” [PPV_GEOCODE] KeresÃ©s: {$full_address}");
 
     $google_api_key = defined('PPV_GOOGLE_MAPS_KEY') ? PPV_GOOGLE_MAPS_KEY : '';
 
 
 // ============================================================
-// 1️⃣ GOOGLE MAPS GEOCODING (Erőteljes keresés)
+// 1ï¸âƒ£ GOOGLE MAPS GEOCODING (ErÅ‘teljes keresÃ©s)
 // ============================================================
 if ($google_api_key) {
-    ppv_log("🔍 [PPV_GEOCODE] Google Maps API keresés iniciálva");
+    ppv_log("ðŸ” [PPV_GEOCODE] Google Maps API keresÃ©s iniciÃ¡lva");
     
-    // Több keresési variáns
+    // TÃ¶bb keresÃ©si variÃ¡ns
     $search_variants = [
         $full_address, // Teljes: "Siedlungsring 51, 89415 Lauingen, Deutschland"
         "{$address_clean}, {$plz} {$city}, {$country_name}",
@@ -2570,7 +2573,7 @@ if ($google_api_key) {
     ];
 
     foreach ($search_variants as $search_query) {
-        ppv_log("  → Variáns: {$search_query}");
+        ppv_log("  â†’ VariÃ¡ns: {$search_query}");
         
         $url = 'https://maps.googleapis.com/maps/api/geocode/json';
         $response = wp_remote_get(
@@ -2586,7 +2589,7 @@ if ($google_api_key) {
         if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             $data = json_decode(wp_remote_retrieve_body($response), true);
             
-            ppv_log("  ✓ Status: " . ($data['status'] ?? 'unknown'));
+            ppv_log("  âœ“ Status: " . ($data['status'] ?? 'unknown'));
 
             if ($data['status'] === 'OK' && !empty($data['results'])) {
                 $first = $data['results'][0];
@@ -2603,7 +2606,7 @@ if ($google_api_key) {
                     }
                 }
 
-                ppv_log("✅ [PPV_GEOCODE] Google Maps MEGTALÁLTA: {$lat}, {$lon} ({$detected_country})");
+                ppv_log("âœ… [PPV_GEOCODE] Google Maps MEGTALÃLTA: {$lat}, {$lon} ({$detected_country})");
 
                 wp_send_json_success([
                     'lat' => round($lat, 4),
@@ -2617,11 +2620,11 @@ if ($google_api_key) {
         }
     }
     
-ppv_log("⚠️ [PPV_GEOCODE] Google Maps utca: NINCS TALÁLAT - fallback városra");
+ppv_log("âš ï¸ [PPV_GEOCODE] Google Maps utca: NINCS TALÃLAT - fallback vÃ¡rosra");
 
-// FALLBACK: Csak város keresése
+// FALLBACK: Csak vÃ¡ros keresÃ©se
 $city_search = "{$city}, {$country_name}";
-ppv_log("🔍 [PPV_GEOCODE] Fallback keresés: {$city_search}");
+ppv_log("ðŸ” [PPV_GEOCODE] Fallback keresÃ©s: {$city_search}");
 
 $url = 'https://maps.googleapis.com/maps/api/geocode/json';
 $response = wp_remote_get(
@@ -2651,30 +2654,30 @@ if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 2
             }
         }
 
-        ppv_log("✅ [PPV_GEOCODE] Város MEGTALÁLVA: {$lat}, {$lon}");
+        ppv_log("âœ… [PPV_GEOCODE] VÃ¡ros MEGTALÃLVA: {$lat}, {$lon}");
 
-        // 🔴 FONTOS: flag hogy manuálisra kell váltani
+        // ðŸ”´ FONTOS: flag hogy manuÃ¡lisra kell vÃ¡ltani
         wp_send_json_success([
             'lat' => round($lat, 4),
             'lon' => round($lon, 4),
             'country' => $detected_country,
             'display_name' => $first['formatted_address'] ?? $city_search,
             'source' => 'google_maps_city',
-            'open_manual_map' => true  // ← FONTOS!
+            'open_manual_map' => true  // â† FONTOS!
         ]);
         return;
     }
 }
 
-ppv_log("❌ [PPV_GEOCODE] Város sem találva!");
+ppv_log("âŒ [PPV_GEOCODE] VÃ¡ros sem talÃ¡lva!");
 }
 
 
 // ============================================================
-// 2️⃣ OPENSTREETMAP (Nominatim) - FALLBACK (Multistep search)
+// 2ï¸âƒ£ OPENSTREETMAP (Nominatim) - FALLBACK (Multistep search)
 // ============================================================
 
-// ✅ COUNTRY-SPECIFIC BOUNDING BOXES (optional, improves accuracy)
+// âœ… COUNTRY-SPECIFIC BOUNDING BOXES (optional, improves accuracy)
 $bounding_boxes = [
     'DE' => '5.8,47.2,15.1,55.1',      // Germany
     'RO' => '20.2,43.6,29.8,48.3',     // Romania
@@ -2686,18 +2689,18 @@ $search_variants = [
     // 1. Teljes: "Siedlungsring 51, 89415 Lauingen, Deutschland"
     "{$address_clean}, {$plz} {$city}, {$country_name}",
 
-    // 2. "Strada" forma (román címekhez)
+    // 2. "Strada" forma (romÃ¡n cÃ­mekhez)
     str_replace(['Str.', 'str.'], 'Strada', "{$address_clean}, {$plz} {$city}, {$country_name}"),
 
-    // 3. PLZ nélkül: "Siedlungsring 51, Lauingen, Deutschland"
+    // 3. PLZ nÃ©lkÃ¼l: "Siedlungsring 51, Lauingen, Deutschland"
     "{$address_clean}, {$city}, {$country_name}",
 
-    // 4. Vezetéknév nélkül: "51, Lauingen, Deutschland"
+    // 4. VezetÃ©knÃ©v nÃ©lkÃ¼l: "51, Lauingen, Deutschland"
     preg_replace('/^Str\.\s*/', '', $address_clean) . ", {$city}, {$country_name}",
 ];
 
 foreach ($search_variants as $idx => $search_query) {
-    ppv_log("🔍 [PPV_GEOCODE] Keresési variáns #" . ($idx + 1) . ": {$search_query}");
+    ppv_log("ðŸ” [PPV_GEOCODE] KeresÃ©si variÃ¡ns #" . ($idx + 1) . ": {$search_query}");
 
     $url = 'https://nominatim.openstreetmap.org/search';
 
@@ -2709,11 +2712,11 @@ foreach ($search_variants as $idx => $search_query) {
         'addressdetails' => 1,
     ];
 
-    // ✅ Add bounding box only if country-specific box exists
+    // âœ… Add bounding box only if country-specific box exists
     if ($viewbox) {
         $query_args['bounded'] = 1;
         $query_args['viewbox'] = $viewbox;
-        ppv_log("   🗺️ Bounding box: {$viewbox}");
+        ppv_log("   ðŸ—ºï¸ Bounding box: {$viewbox}");
     }
 
     $response = wp_remote_get(
@@ -2730,17 +2733,17 @@ foreach ($search_variants as $idx => $search_query) {
     if (!is_wp_error($response)) {
         $results = json_decode(wp_remote_retrieve_body($response), true);
         
-        ppv_log("📍 [PPV_GEOCODE] Variáns #" . ($idx + 1) . " találatok: " . count($results ?? []) . "");
+        ppv_log("ðŸ“ [PPV_GEOCODE] VariÃ¡ns #" . ($idx + 1) . " talÃ¡latok: " . count($results ?? []) . "");
         
         if (!empty($results)) {
-            // Legjobb találat: házszámos street vagy épület
+            // Legjobb talÃ¡lat: hÃ¡zszÃ¡mos street vagy Ã©pÃ¼let
             $best = null;
             
             foreach ($results as $result) {
                 $type = $result['addresstype'] ?? '';
                 $importance = floatval($result['importance'] ?? 0);
                 
-                // Prioritás: house > building > street
+                // PrioritÃ¡s: house > building > street
                 if ($type === 'house' || $type === 'building') {
                     if (!$best || $importance > floatval($best['importance'] ?? 0)) {
                         $best = $result;
@@ -2748,7 +2751,7 @@ foreach ($search_variants as $idx => $search_query) {
                 }
             }
             
-            // Ha nincs house/building, próbáljunk street-et
+            // Ha nincs house/building, prÃ³bÃ¡ljunk street-et
             if (!$best) {
                 foreach ($results as $result) {
                     if ($result['addresstype'] === 'street') {
@@ -2758,7 +2761,7 @@ foreach ($search_variants as $idx => $search_query) {
                 }
             }
             
-            // Ha még sincs, első találat
+            // Ha mÃ©g sincs, elsÅ‘ talÃ¡lat
             if (!$best) {
                 $best = $results[0];
             }
@@ -2775,7 +2778,7 @@ foreach ($search_variants as $idx => $search_query) {
                     }
                 }
 
-                ppv_log("✅ [PPV_GEOCODE] Nominatim MEGTALÁLVA (variáns #" . ($idx + 1) . "): {$lat}, {$lon} ({$detected_country})");
+                ppv_log("âœ… [PPV_GEOCODE] Nominatim MEGTALÃLVA (variÃ¡ns #" . ($idx + 1) . "): {$lat}, {$lon} ({$detected_country})");
                 ppv_log("   Display: " . ($best['display_name'] ?? 'N/A'));
 
                 wp_send_json_success([
@@ -2790,17 +2793,17 @@ foreach ($search_variants as $idx => $search_query) {
         }
     }
     
-    // Kis késleltetés az API-hoz
+    // Kis kÃ©sleltetÃ©s az API-hoz
     usleep(500000);
 }
 
-ppv_log("❌ [PPV_GEOCODE] Egyik variáns sem találta meg: {$full_address}");
-wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan írni (pl. teljes utcanévvel).']);
+ppv_log("âŒ [PPV_GEOCODE] Egyik variÃ¡ns sem talÃ¡lta meg: {$full_address}");
+wp_send_json_error(['msg' => 'A cÃ­m nem talÃ¡lhatÃ³! PrÃ³bÃ¡ld meg mÃ¡shogyan Ã­rni (pl. teljes utcanÃ©vvel).']);
 }
 
         /**
          * ============================================================
-         * 🔒 RESET TRUSTED DEVICE FINGERPRINT
+         * ðŸ”’ RESET TRUSTED DEVICE FINGERPRINT
          * ============================================================
          */
         public static function ajax_reset_trusted_device() {
@@ -2808,7 +2811,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             $auth = self::check_auth();
             if (!$auth['valid']) {
-                wp_send_json_error(['message' => 'Nincs jogosultság']);
+                wp_send_json_error(['message' => 'Nincs jogosultsÃ¡g']);
                 return;
             }
 
@@ -2829,15 +2832,15 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             if ($result !== false) {
                 ppv_log("[PPV_DEVICES] Trusted device reset for store #{$store_id}");
-                wp_send_json_success(['message' => 'Megbízható eszköz visszaállítva']);
+                wp_send_json_success(['message' => 'MegbÃ­zhatÃ³ eszkÃ¶z visszaÃ¡llÃ­tva']);
             } else {
-                wp_send_json_error(['message' => 'Hiba történt']);
+                wp_send_json_error(['message' => 'Hiba tÃ¶rtÃ©nt']);
             }
         }
 
         /**
          * ============================================================
-         * 🏖️ SAVE FILIALE VACATION SETTINGS
+         * ðŸ–ï¸ SAVE FILIALE VACATION SETTINGS
          * ============================================================
          */
         public static function ajax_save_filiale_vacation() {
@@ -2845,20 +2848,20 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             $auth = self::check_auth();
             if (!$auth['valid']) {
-                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                wp_send_json_error(['msg' => 'Nincs jogosultsÃ¡g']);
                 return;
             }
 
             $target_store_id = intval($_POST['store_id'] ?? 0);
             if (!$target_store_id) {
-                wp_send_json_error(['msg' => 'Store ID hiányzik']);
+                wp_send_json_error(['msg' => 'Store ID hiÃ¡nyzik']);
                 return;
             }
 
             // Verify the user has access to this store (parent or child)
             $vendor_store_id = intval($_SESSION['ppv_store_id'] ?? $_SESSION['ppv_vendor_store_id'] ?? 0);
             if (!$vendor_store_id) {
-                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                wp_send_json_error(['msg' => 'Nincs jogosultsÃ¡g']);
                 return;
             }
 
@@ -2871,7 +2874,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             ", $target_store_id, $vendor_store_id, $vendor_store_id));
 
             if (!$is_valid) {
-                wp_send_json_error(['msg' => 'Nincs jogosultság ehhez a bolthoz']);
+                wp_send_json_error(['msg' => 'Nincs jogosultsÃ¡g ehhez a bolthoz']);
                 return;
             }
 
@@ -2898,13 +2901,13 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 ppv_log("[PPV_VACATION] Vacation settings updated for store #{$target_store_id}");
                 wp_send_json_success(['msg' => PPV_Lang::t('profile_saved_success') ?? 'Mentve!']);
             } else {
-                wp_send_json_error(['msg' => 'Hiba a mentés során']);
+                wp_send_json_error(['msg' => 'Hiba a mentÃ©s sorÃ¡n']);
             }
         }
 
         /**
          * ============================================================
-         * 🎁 ACTIVATE REFERRAL GRACE PERIOD
+         * ðŸŽ ACTIVATE REFERRAL GRACE PERIOD
          * ============================================================
          */
         public static function ajax_activate_referral_grace_period() {
@@ -2912,7 +2915,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             $auth = self::check_auth();
             if (!$auth['valid']) {
-                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                wp_send_json_error(['msg' => 'Nincs jogosultsÃ¡g']);
                 return;
             }
 
@@ -2954,7 +2957,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
         /**
          * ============================================================
-         * 📧 CHANGE EMAIL
+         * ðŸ“§ CHANGE EMAIL
          * ============================================================
          */
         public static function ajax_change_email() {
@@ -2963,7 +2966,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             $auth = self::check_auth();
             if (!$auth['valid']) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_no_permission', 'Nincs jogosultság')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_permission', 'Nincs jogosultsÃ¡g')]);
                 return;
             }
 
@@ -2974,7 +2977,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             // Must have at least one valid identifier
             if (!$wp_user_id && !$ppv_user_id && !$store_id) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'FelhasznÃ¡lÃ³ nem talÃ¡lhatÃ³')]);
                 return;
             }
 
@@ -2983,23 +2986,23 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             // Validation
             if (empty($new_email)) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_email_required', 'E-mail cím megadása kötelező')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_required', 'E-mail cÃ­m megadÃ¡sa kÃ¶telezÅ‘')]);
                 return;
             }
 
             if (!is_email($new_email)) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_email_invalid', 'Érvénytelen e-mail cím')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_invalid', 'Ã‰rvÃ©nytelen e-mail cÃ­m')]);
                 return;
             }
 
             if ($new_email !== $confirm_email) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_email_mismatch', 'Az e-mail címek nem egyeznek')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_mismatch', 'Az e-mail cÃ­mek nem egyeznek')]);
                 return;
             }
 
             // Check if email already exists in WordPress users
             if ($wp_user_id && email_exists($new_email) && email_exists($new_email) !== $wp_user_id) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cÃ­m mÃ¡r foglalt')]);
                 return;
             }
 
@@ -3010,7 +3013,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     $new_email, $store_id
                 ));
                 if ($existing_store) {
-                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cÃ­m mÃ¡r foglalt')]);
                     return;
                 }
             }
@@ -3022,7 +3025,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     $new_email, $ppv_user_id
                 ));
                 if ($existing_ppv_user) {
-                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cÃ­m mÃ¡r foglalt')]);
                     return;
                 }
             }
@@ -3072,15 +3075,15 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             if ($updated) {
                 ppv_log("[PPV_ACCOUNT] Email changed to: {$new_email} (wp:{$wp_user_id}, ppv:{$ppv_user_id}, store:{$store_id})");
-                wp_send_json_success(['msg' => PPV_Lang::t('email_changed_success', 'E-mail cím sikeresen módosítva!')]);
+                wp_send_json_success(['msg' => PPV_Lang::t('email_changed_success', 'E-mail cÃ­m sikeresen mÃ³dosÃ­tva!')]);
             } else {
-                wp_send_json_error(['msg' => PPV_Lang::t('error', 'Hiba történt')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error', 'Hiba tÃ¶rtÃ©nt')]);
             }
         }
 
         /**
          * ============================================================
-         * 🔐 CHANGE PASSWORD
+         * ðŸ” CHANGE PASSWORD
          * ============================================================
          */
         public static function ajax_change_password() {
@@ -3089,7 +3092,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             $auth = self::check_auth();
             if (!$auth['valid']) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_no_permission', 'Nincs jogosultság')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_permission', 'Nincs jogosultsÃ¡g')]);
                 return;
             }
 
@@ -3099,22 +3102,22 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             // Validation
             if (empty($current_password)) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_required', 'Jelenlegi jelszó megadása kötelező')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_required', 'Jelenlegi jelszÃ³ megadÃ¡sa kÃ¶telezÅ‘')]);
                 return;
             }
 
             if (empty($new_password)) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_new_password_required', 'Új jelszó megadása kötelező')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_new_password_required', 'Ãšj jelszÃ³ megadÃ¡sa kÃ¶telezÅ‘')]);
                 return;
             }
 
             if (strlen($new_password) < 6) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_password_too_short', 'A jelszó legalább 6 karakter legyen')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_password_too_short', 'A jelszÃ³ legalÃ¡bb 6 karakter legyen')]);
                 return;
             }
 
             if ($new_password !== $confirm_password) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_password_mismatch', 'Az új jelszavak nem egyeznek')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_password_mismatch', 'Az Ãºj jelszavak nem egyeznek')]);
                 return;
             }
 
@@ -3122,7 +3125,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             $new_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
             // ============================================================
-            // 🏪 HANDLER/VENDOR: Update ppv_stores password
+            // ðŸª HANDLER/VENDOR: Update ppv_stores password
             // ============================================================
             $store_id = self::get_store_id();
             if ($store_id) {
@@ -3135,7 +3138,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 if ($store && !empty($store->password)) {
                     // Verify current password against store
                     if (!password_verify($current_password, $store->password)) {
-                        wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
+                        wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszÃ³ helytelen')]);
                         return;
                     }
 
@@ -3153,7 +3156,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             }
 
             // ============================================================
-            // 👤 PPV USER: Update ppv_users password (if has password)
+            // ðŸ‘¤ PPV USER: Update ppv_users password (if has password)
             // ============================================================
             $ppv_user_id = intval($_SESSION['ppv_user_id'] ?? 0);
             if ($ppv_user_id > 0) {
@@ -3166,7 +3169,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     // If user has password (not vendor with empty password), verify it
                     if (!empty($ppv_user->password) && !$password_updated) {
                         if (!password_verify($current_password, $ppv_user->password)) {
-                            wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
+                            wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszÃ³ helytelen')]);
                             return;
                         }
                     }
@@ -3185,7 +3188,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             }
 
             // ============================================================
-            // 🔑 WORDPRESS USER: Update wp_users password
+            // ðŸ”‘ WORDPRESS USER: Update wp_users password
             // ============================================================
             if (is_user_logged_in()) {
                 $wp_user_id = get_current_user_id();
@@ -3194,7 +3197,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 if ($wp_user) {
                     // If no PPV password was verified yet, verify against WP
                     if (!$password_updated && !wp_check_password($current_password, $wp_user->user_pass, $wp_user_id)) {
-                        wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
+                        wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszÃ³ helytelen')]);
                         return;
                     }
 
@@ -3211,9 +3214,9 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             if ($password_updated) {
                 ppv_log("[PPV_ACCOUNT] Password changed successfully (store:{$store_id}, ppv_user:{$ppv_user_id})");
-                wp_send_json_success(['msg' => PPV_Lang::t('password_changed_success', 'Jelszó sikeresen módosítva!')]);
+                wp_send_json_success(['msg' => PPV_Lang::t('password_changed_success', 'JelszÃ³ sikeresen mÃ³dosÃ­tva!')]);
             } else {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'FelhasznÃ¡lÃ³ nem talÃ¡lhatÃ³')]);
             }
         }
     }

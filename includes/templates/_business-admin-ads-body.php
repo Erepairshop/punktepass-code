@@ -2,16 +2,45 @@
 if (!defined('ABSPATH')) exit;
 $adv = PPV_Advertisers::current_advertiser();
 global $wpdb;
+
+// -- FAZIS 5 START --
+// Join with filialen table to get the filiale_label for the ad list
 $ads = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND is_active = 1 ORDER BY id DESC", $adv->id
+    "SELECT a.*, f.filiale_label
+     FROM {$wpdb->prefix}ppv_ads a
+     LEFT JOIN {$wpdb->prefix}ppv_advertisers f ON a.filiale_id = f.id
+     WHERE a.advertiser_id = %d AND a.is_active = 1
+     ORDER BY a.id DESC",
+    $adv->id
 ));
-$tier_info = PPV_Advertisers::TIERS[$adv->tier] ?? ['ads'=>1];
+
+$tier_info = PPV_Advertisers::TIERS[$adv->tier] ?? ['ads' => 1];
 $can_create = count($ads) < $tier_info['ads'];
 $edit_id = isset($_GET['edit']) ? ($_GET['edit'] === 'new' ? -1 : (int)$_GET['edit']) : 0;
 $edit = null;
+
 if ($edit_id > 0) {
     $edit = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_ads WHERE id = %d AND advertiser_id = %d", $edit_id, $adv->id));
 }
+
+// Get all active filiales that DO NOT have an active ad yet
+$parent_id = $adv->parent_advertiser_id ?: $adv->id;
+$active_filiale_ad_ids = $wpdb->get_col($wpdb->prepare(
+    "SELECT DISTINCT filiale_id FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND filiale_id IS NOT NULL AND is_active = 1",
+    $parent_id
+));
+$placeholders = !empty($active_filiale_ad_ids) ? implode(',', array_fill(0, count($active_filiale_ad_ids), '%d')) : '0';
+$available_filialen = $wpdb->get_results($wpdb->prepare(
+    "SELECT id, filiale_label FROM {$wpdb->prefix}ppv_advertisers WHERE parent_advertiser_id = %d AND is_active = 1 AND id NOT IN ({$placeholders})",
+    $parent_id, ...$active_filiale_ad_ids
+));
+
+// Check if the main account itself has an ad
+$parent_has_ad = $wpdb->get_var($wpdb->prepare(
+    "SELECT id FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND filiale_id IS NULL AND is_active = 1 LIMIT 1",
+    $parent_id
+));
+// -- FAZIS 5 END --
 
 $ad_types = [
   'coupon'           => [PPV_Lang::t('biz_ads_type_coupon'),           'ri-coupon-line', '#f59e0b'],
@@ -51,6 +80,7 @@ $current_badge = $edit->badge ?? '';
 .badge-chip.b-ending { background:#ede9fe; color:#6b21a8; }
 .badge-chip.active { border-color:#000; }
 .badge-chip.empty { background:#f3f4f6; color:var(--muted); }
+.ad-filiale-badge { background: #e0e7ff; color: #3730a3; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-left: 8px; }
 </style>
 
 <div class="bz-card" style="padding:14px;">
@@ -58,18 +88,51 @@ $current_badge = $edit->badge ?? '';
   <?php if (!empty($_GET['saved'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_saved_msg')); ?></div><?php endif; ?>
   <?php if (!empty($_GET['deleted'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_ads_deleted_msg')); ?></div><?php endif; ?>
   <?php if (!empty($_GET['err']) && $_GET['err'] === 'tier_limit'): ?><div class="bz-msg err" style="margin-top:10px;"><?php echo esc_html(sprintf(PPV_Lang::t('biz_ads_tier_limit_msg'), $tier_info['ads'])); ?></div><?php endif; ?>
+  <?php if (!empty($_GET['err']) && $_GET['err'] === 'filiale_ad_exists'): ?><div class="bz-msg err" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_ad_filiale_ad_exists')); ?></div><?php endif; ?>
+
   <?php if (!$edit_id && $can_create): ?>
-    <a href="?edit=new" class="bz-btn full" style="margin-top:12px;"><i class="ri-add-line"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_new_btn')); ?></a>
+    <?php if (!$parent_has_ad || !empty($available_filialen)): ?>
+        <a href="?edit=new" class="bz-btn full" style="margin-top:12px;"><i class="ri-add-line"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_new_btn')); ?></a>
+    <?php else: ?>
+        <div class="bz-msg info" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_ad_no_free_filiale')); ?></div>
+    <?php endif; ?>
   <?php endif; ?>
 </div>
 
 <?php if ($edit_id !== 0): ?>
+
+<?php // FAZIS 5: If creating new ad and no filiale is available, show message and hide form.
+if ($edit_id === -1 && empty($available_filialen) && $parent_has_ad) { ?>
+    <div class="bz-card">
+        <div class="bz-msg info"><?php echo esc_html(PPV_Lang::t('biz_ad_no_free_filiale')); ?></div>
+        <a href="<?php echo esc_url(home_url('/business/admin/ads')); ?>" class="bz-btn secondary" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_back')); ?></a>
+    </div>
+<?php return; } ?>
+
 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
   <?php wp_nonce_field('ppv_advertiser_save_ad'); ?>
   <input type="hidden" name="action" value="ppv_advertiser_save_ad">
   <input type="hidden" name="ad_id" value="<?php echo $edit ? (int)$edit->id : 0; ?>">
   <input type="hidden" name="ad_type" id="adType" value="<?php echo esc_attr($current_type); ?>">
   <input type="hidden" name="badge" id="badgeInput" value="<?php echo esc_attr($current_badge); ?>">
+
+  <?php // -- FAZIS 5 START: Filiale selector --
+  if ($edit_id === -1) : ?>
+  <details class="bz-section" open>
+    <summary><i class="ri-git-branch-line head-ic"></i> <?php echo esc_html(PPV_Lang::t('biz_ad_select_filiale_label')); ?><i class="ri-arrow-down-s-line arr"></i></summary>
+    <div class="bz-content">
+        <select name="filiale_id" class="bz-select">
+            <?php if (!$parent_has_ad): ?>
+                <option value="0"><?php echo esc_html(PPV_Lang::t('biz_ad_for_parent_badge') ?: 'Parent'); ?></option>
+            <?php endif; ?>
+            <?php foreach($available_filialen as $filiale): ?>
+                <option value="<?php echo (int)$filiale->id; ?>"><?php echo esc_html($filiale->filiale_label); ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+  </details>
+  <?php endif; // -- FAZIS 5 END -- ?>
+
 
   <!-- TÍPUS -->
   <details class="bz-section" open>
@@ -293,6 +356,9 @@ selectType(document.getElementById('adType').value, document.querySelector('.typ
       $type_label = $ad_types[$a->ad_type ?? 'announcement'][0] ?? PPV_Lang::t('biz_ads_type_announcement');
       $type_icon = $ad_types[$a->ad_type ?? 'announcement'][1] ?? 'ri-megaphone-line';
       $type_color = $ad_types[$a->ad_type ?? 'announcement'][2] ?? '#6b7280';
+      $filiale_badge_text = !empty($a->filiale_label)
+          ? sprintf(PPV_Lang::t('biz_ad_for_filiale_badge'), $a->filiale_label)
+          : sprintf(PPV_Lang::t('biz_ad_for_filiale_badge'), 'Parent');
     ?>
     <div style="display:flex; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; align-items:center;">
       <?php if ($a->image_url): ?>
@@ -303,6 +369,7 @@ selectType(document.getElementById('adType').value, document.querySelector('.typ
       <div style="flex:1; min-width:0;">
         <div style="font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
           <?php echo esc_html($a->title ?: $a->title_de ?: PPV_Lang::t('biz_ads_empty_title')); ?>
+          <span class="ad-filiale-badge"><?php echo esc_html($filiale_badge_text); ?></span>
           <?php if ($a->badge): ?><span style="font-size:9px; padding:1px 5px; border-radius:4px; background:#fef3c7; color:#92400e; margin-left:4px;"><?php echo esc_html($a->badge); ?></span><?php endif; ?>
         </div>
         <div style="font-size:11px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">

@@ -1180,6 +1180,7 @@ private static function get_today_hours($opening_hours, $country = null) {
 <?php echo $bottom_nav_context; ?>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?v=<?php echo esc_attr($version); ?>"></script>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-global.js?v=<?php echo esc_attr($version); ?>"></script>
+<?php @include __DIR__ . '/templates/_ppv-push-stack.php'; ?>
 <script src="<?php echo esc_url($plugin_url); ?>assets/js/vendor/qrcode-generator.min.js"></script>
 <?php if ($ably_enabled): ?>
 <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>

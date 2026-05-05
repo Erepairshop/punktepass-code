@@ -484,6 +484,33 @@ class PPV_Core {
                 update_option('ppv_db_migration_version', '2.8');
             }
         }
+
+        // Migration 2.9: Flyer requests table (PunktePass Flyer feature)
+        if (version_compare($migration_version, '2.9', '<')) {
+            if (class_exists('PPV_Advertisers') && method_exists('PPV_Advertisers', 'create_flyer_requests_table')) {
+                PPV_Advertisers::create_flyer_requests_table();
+                ppv_log("✅ [PPV_Core] Migration 2.9 completed - ppv_flyer_requests table created");
+            }
+            update_option('ppv_db_migration_version', '2.9');
+        }
+
+        // Migration 3.0: Add advertiser_id column to flyer-requests (flyer feature moved to business advertiser admin)
+        if (version_compare($migration_version, '3.0', '<')) {
+            $table = $wpdb->prefix . 'ppv_flyer_requests';
+            $exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
+            if ($exists) {
+                $col = $wpdb->get_var("SHOW COLUMNS FROM {$table} LIKE 'advertiser_id'");
+                if (!$col) {
+                    $wpdb->query("ALTER TABLE {$table} ADD COLUMN advertiser_id BIGINT(20) UNSIGNED NULL DEFAULT NULL AFTER store_id");
+                    $wpdb->query("ALTER TABLE {$table} ADD INDEX idx_advertiser (advertiser_id)");
+                    ppv_log("✅ [PPV_Core] Migration 3.0 - added advertiser_id column to ppv_flyer_requests");
+                }
+            } elseif (class_exists('PPV_Advertisers') && method_exists('PPV_Advertisers', 'create_flyer_requests_table')) {
+                PPV_Advertisers::create_flyer_requests_table();
+                ppv_log("✅ [PPV_Core] Migration 3.0 - created ppv_flyer_requests table (with advertiser_id)");
+            }
+            update_option('ppv_db_migration_version', '3.0');
+        }
     }
 
     /**

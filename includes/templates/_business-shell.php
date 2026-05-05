@@ -1,4 +1,14 @@
 <?php
+if (isset($_GET['ppv_active_filiale_id'])) {
+    if (class_exists('PPV_Filiale')) {
+        PPV_Filiale::set_current_filiale((int)$_GET['ppv_active_filiale_id']);
+    }
+    // Redirect to remove the GET parameter from the URL
+    $redirect_url = strtok($_SERVER['REQUEST_URI'], '?');
+    wp_redirect($redirect_url);
+    exit;
+}
+
 /**
  * Shared shell wrapper for /business/* pages.
  * Renders <html> with head + nav, then includes $body_template once.
@@ -30,10 +40,28 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:va
 .bz-nav .logout { opacity:.85; background:rgba(239,68,68,.2); border-radius:8px; padding:6px 10px; }
 .bz-nav .logout:hover { background:rgba(239,68,68,.35); opacity:1; }
 .bz-nav .logout i { font-size:16px; }
-.bz-lang-switch { display:flex; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px; }
+.bz-lang-switch { display:flex; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px; margin-left: auto; }
 .bz-lang { background:transparent; border:none; color:#fff; padding:5px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; opacity:.7; transition:all .15s; letter-spacing:.5px; }
 .bz-lang:hover { opacity:1; }
 .bz-lang.active { background:rgba(255,255,255,.25); opacity:1; }
+.bz-filiale-switch { display:flex; align-items:center; gap:6px; margin-left:12px; }
+.bz-filiale-switch i { font-size:18px; opacity:.8; }
+.bz-filiale-switch select {
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:7px 12px;
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+}
+.bz-filiale-switch select:hover { background:rgba(255,255,255,.2); }
+.bz-filiale-switch select option {
+    background:#3730a3; /* A darker purple for dropdown items */
+    color:#fff;
+    font-weight:400;
+}
 .bz-mobile-logout { display:none; width:34px; height:34px; align-items:center; justify-content:center; border-radius:8px; background:rgba(239,68,68,.25); color:#fff; text-decoration:none; }
 .bz-mobile-logout:active { background:rgba(239,68,68,.45); }
 .bz-mobile-logout i { font-size:18px; }
@@ -116,26 +144,70 @@ function bz_is_active($url, $current) {
 }
 ?>
 <div class="bz-header">
-  <div class="bz-brand"><i class="ri-megaphone-fill"></i> <?php echo esc_html(PPV_Lang::t('biz_nav_brand')); ?></div>
-  <?php if ($adv): ?>
-  <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="bz-mobile-logout" title="<?php echo esc_attr(PPV_Lang::t('biz_nav_logout_tooltip')); ?>"><i class="ri-logout-box-r-line"></i></a>
-  <?php endif; ?>
-  <div class="bz-lang-switch">
-    <?php foreach (['de'=>'DE','hu'=>'HU','ro'=>'RO','en'=>'EN'] as $code => $label): ?>
-      <button type="button" class="bz-lang <?php echo $lang === $code ? 'active' : ''; ?>" data-lang="<?php echo $code; ?>"><?php echo $label; ?></button>
-    <?php endforeach; ?>
-  </div>
-  <nav class="bz-nav">
+    <div class="bz-brand"><i class="ri-megaphone-fill"></i> <?php echo esc_html(PPV_Lang::t('biz_nav_brand')); ?></div>
+
     <?php if ($adv): ?>
-      <?php foreach ($nav_items as $item): ?>
-        <a href="<?php echo esc_url(home_url($item['url'])); ?>" class="<?php echo bz_is_active($item['url'], $current_path) ? 'active' : ''; ?>"><?php echo esc_html($item['label']); ?></a>
-      <?php endforeach; ?>
-      <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="logout" title="<?php echo esc_attr(PPV_Lang::t('biz_nav_logout_tooltip')); ?>"><i class="ri-logout-box-r-line"></i></a>
-    <?php else: ?>
-      <a href="<?php echo esc_url(home_url('/business/login')); ?>"><?php echo esc_html(PPV_Lang::t('biz_nav_login')); ?></a>
-      <a href="<?php echo esc_url(home_url('/business/register')); ?>"><?php echo esc_html(PPV_Lang::t('biz_nav_register')); ?></a>
+        <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="bz-mobile-logout" title="<?php echo esc_attr(PPV_Lang::t('biz_nav_logout_tooltip')); ?>"><i class="ri-logout-box-r-line"></i></a>
     <?php endif; ?>
-  </nav>
+
+    <div class="bz-lang-switch">
+        <?php foreach (['de'=>'DE','hu'=>'HU','ro'=>'RO','en'=>'EN'] as $code => $label): ?>
+            <button type="button" class="bz-lang <?php echo $lang === $code ? 'active' : ''; ?>" data-lang="<?php echo $code; ?>"><?php echo $label; ?></button>
+        <?php endforeach; ?>
+    </div>
+
+    <?php
+    // Filiale Switcher
+    if ($adv && class_exists('PPV_Filiale')) {
+        $current_store_id = $adv->id;
+        $parent_id = PPV_Filiale::get_parent_id($current_store_id);
+        $filialen = PPV_Filiale::get_filialen($parent_id);
+        $filiale_count = count($filialen);
+        $active_filiale_id = PPV_Filiale::get_current_filiale() ?: $parent_id;
+
+        if ($filiale_count > 1) { // Only show if there are multiple branches
+    ?>
+    <div class="bz-filiale-switch">
+        <i class="ri-store-2-line" title="<?php echo esc_attr(PPV_Lang::t('biz_filiale_active_picker', 'Aktive Filiale')); ?>"></i>
+        <select onchange="if(this.value) window.location.href = '?ppv_active_filiale_id=' + this.value">
+            <?php
+            $parent_store_name = '';
+            foreach ($filialen as $f) {
+                if ($f->id == $parent_id) {
+                    $parent_store_name = $f->name;
+                    break;
+                }
+            }
+
+            foreach ($filialen as $filiale) {
+                $is_parent = !$filiale->parent_store_id;
+                // Use business_name for parent, and parent_name - filiale_name for children
+                $label = $is_parent
+                    ? ($filiale->name . ' (' . PPV_Lang::t('main_location', 'Fő telephely') . ')')
+                    : ($parent_store_name . ' — ' . $filiale->name);
+            ?>
+                <option value="<?php echo esc_attr($filiale->id); ?>" <?php selected($active_filiale_id, $filiale->id); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php } ?>
+        </select>
+    </div>
+    <?php
+        }
+    }
+    ?>
+
+    <nav class="bz-nav">
+        <?php if ($adv): ?>
+            <?php foreach ($nav_items as $item): ?>
+                <a href="<?php echo esc_url(home_url($item['url'])); ?>" class="<?php echo bz_is_active($item['url'], $current_path) ? 'active' : ''; ?>"><?php echo esc_html($item['label']); ?></a>
+            <?php endforeach; ?>
+            <a href="<?php echo esc_url(home_url('/business/logout')); ?>" class="logout" title="<?php echo esc_attr(PPV_Lang::t('biz_nav_logout_tooltip')); ?>"><i class="ri-logout-box-r-line"></i></a>
+        <?php else: ?>
+            <a href="<?php echo esc_url(home_url('/business/login')); ?>"><?php echo esc_html(PPV_Lang::t('biz_nav_login')); ?></a>
+            <a href="<?php echo esc_url(home_url('/business/register')); ?>"><?php echo esc_html(PPV_Lang::t('biz_nav_register')); ?></a>
+        <?php endif; ?>
+    </nav>
 </div>
 <div class="bz-wrap">
 <?php require $body_template; ?>

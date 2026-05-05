@@ -5,10 +5,10 @@ header('Pragma: no-cache');
 header('Expires: 0');
 $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
 $labels = [
-    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote','follow_banner'=>'Folge dem Geschäft, verpasse keine Aktionen','follow_banner_ad'=>'Folge, verpasse keine Aktionen & Gewinne'],
-    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','follow'=>'Követés','following'=>'Követed','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.','points_here'=>'Pontot gyűjthetsz','offers'=>'Aktuális ajánlatok','follow_banner'=>'Kövesd a boltot, ne maradj le akciókról','follow_banner_ad'=>'Kövess, ne maradj le akciókról és nyereményekről'],
-    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','follow'=>'Urmărește','following'=>'Urmărești','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.','points_here'=>'Adună puncte','offers'=>'Oferte curente','follow_banner'=>'Urmărește magazinul, nu rata oferte','follow_banner_ad'=>'Urmărește, nu rata oferte și premii'],
-    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','follow'=>'Follow','following'=>'Following','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.','points_here'=>'Earn points here','offers'=>'Current offers','follow_banner'=>'Follow the shop to never miss promotions','follow_banner_ad'=>'Follow to never miss promotions & prizes'],
+    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote','follow_banner'=>'Folge dem Geschäft, verpasse keine Aktionen','follow_banner_ad'=>'Folge, verpasse keine Aktionen & Gewinne','redeem'=>'Einlösen','remaining'=>'übrig','sold_out'=>'Vergriffen','sold_out_msg'=>'Leider sind alle Gutscheine vergriffen.'],
+    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','follow'=>'Követés','following'=>'Követed','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.','points_here'=>'Pontot gyűjthetsz','offers'=>'Aktuális ajánlatok','follow_banner'=>'Kövesd a boltot, ne maradj le akciókról','follow_banner_ad'=>'Kövess, ne maradj le akciókról és nyereményekről','redeem'=>'Beváltás','remaining'=>'maradt','sold_out'=>'Kifogyott','sold_out_msg'=>'Sajnos minden kupon elfogyott.'],
+    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','follow'=>'Urmărește','following'=>'Urmărești','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.','points_here'=>'Adună puncte','offers'=>'Oferte curente','follow_banner'=>'Urmărește magazinul, nu rata oferte','follow_banner_ad'=>'Urmărește, nu rata oferte și premii','redeem'=>'Răscumpărare','remaining'=>'rămase','sold_out'=>'Epuizate','sold_out_msg'=>'Toate cupoanele au fost epuizate.'],
+    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','follow'=>'Follow','following'=>'Following','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.','points_here'=>'Earn points here','offers'=>'Current offers','follow_banner'=>'Follow the shop to never miss promotions','follow_banner_ad'=>'Follow to never miss promotions & prizes','redeem'=>'Redeem','remaining'=>'left','sold_out'=>'Sold out','sold_out_msg'=>'All coupons have been claimed.'],
 ];
 $L = $labels[$lang] ?? $labels['de'];
 ?>
@@ -172,6 +172,23 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
   <img id="km-lightbox-img" class="km-lightbox-img" src="" alt="">
   <button class="km-lightbox-nav next" onclick="lightboxNav(event,1)" aria-label="Next"><i class="ri-arrow-right-s-line"></i></button>
   <div id="km-lightbox-counter" class="km-lightbox-counter">1 / 1</div>
+</div>
+
+<!-- COUPON-MODAL — shown when user clicks "Beváltás" on a map ad. Displays the coupon code big enough for the shop owner to verify. -->
+<div id="km-coupon-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target.id==='km-coupon-modal') closeCouponModal()">
+  <div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.4);text-align:center;">
+    <button onclick="closeCouponModal()" style="position:absolute;top:18px;right:24px;width:36px;height:36px;border-radius:50%;background:#f3f4f6;border:none;font-size:22px;cursor:pointer;">×</button>
+    <div style="font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;" data-i18n="coupon_modal_show_to_shop"><?php echo esc_html(PPV_Lang::t('coupon_modal_show_to_shop') ?: 'Mutasd fel a boltban'); ?></div>
+    <div id="km-coupon-shop" style="font-size:18px;font-weight:700;color:#1e1b4b;margin-bottom:4px;"></div>
+    <div id="km-coupon-title" style="font-size:14px;color:#374151;margin-bottom:14px;"></div>
+    <div id="km-coupon-promo" style="display:inline-block;background:#ef4444;color:#fff;padding:6px 14px;border-radius:999px;font-size:14px;font-weight:700;margin-bottom:14px;"></div>
+    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:18px;border-radius:12px;margin:12px 0;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;opacity:0.85;margin-bottom:6px;" data-i18n="coupon_modal_code_label"><?php echo esc_html(PPV_Lang::t('coupon_modal_code_label') ?: 'Beváltási kód'); ?></div>
+      <div id="km-coupon-code" style="font-size:32px;font-weight:900;letter-spacing:0.15em;font-family:monospace;word-break:break-all;"></div>
+    </div>
+    <div id="km-coupon-body" style="font-size:13px;color:#6b7280;margin:10px 0;"></div>
+    <div style="font-size:12px;color:#92400e;background:#fef3c7;padding:10px;border-radius:8px;margin-top:14px;" data-i18n="coupon_modal_show_to_shop_help"><?php echo esc_html(PPV_Lang::t('coupon_modal_show_to_shop_help') ?: 'A boltos láthatja és érvényesíti a kódot.'); ?></div>
+  </div>
 </div>
 <script>window.__mapDbg = 'HTML loaded ' + Date.now();</script>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -604,13 +621,34 @@ function renderAdvertiserRich(d) {
   const el = document.getElementById('km-rich-content');
   if (!el) return;
   const desc = d.description ? `<p>${d.description}</p>` : '';
-  const ads = (d.ads || []).map(a => `
+  const ads = (d.ads || []).map(a => {
+    const title = (a.title || '').trim() || '—';
+    const body  = (a.body  || '').trim();
+    const promo = a.promo_value ? `<span style="display:inline-block;background:#ef4444;color:#fff;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:6px;">${escapeHtml(a.promo_value)}</span>` : '';
+    const folOnly = a.followers_only ? `<span style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;margin-left:6px;">⭐ Follower</span>` : '';
+    const hasCoupon = a.coupon_code && (a.coupon_code + '').trim().length > 0;
+    const soldOut = (a.max_claims !== null && a.max_claims !== undefined) && (a.remaining === 0);
+    const remainBadge = (a.max_claims !== null && a.max_claims !== undefined)
+      ? `<span style="display:inline-block;background:${soldOut?'#dc2626':'#10b981'};color:#fff;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;margin-left:6px;">${soldOut ? (T.sold_out||'Kifogyott') : (a.remaining + '/' + a.max_claims + ' ' + (T.remaining||'maradt'))}</span>`
+      : '';
+    let redeemBtn = '';
+    if (hasCoupon && !soldOut) {
+      const argShop  = JSON.stringify(d.name || '').replace(/"/g,'&quot;');
+      const argTitle = JSON.stringify(title).replace(/"/g,'&quot;');
+      const argBody  = JSON.stringify(body).replace(/"/g,'&quot;');
+      const argPromo = JSON.stringify(a.promo_value || '').replace(/"/g,'&quot;');
+      redeemBtn = `<button onclick="claimCoupon(${a.id}, ${argShop}, ${argTitle}, ${argBody}, ${argPromo})" style="margin-top:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="ri-coupon-3-line"></i> ${T.redeem || 'Beváltás'}</button>`;
+    } else if (hasCoupon && soldOut) {
+      redeemBtn = `<div style="margin-top:8px;background:#fee2e2;color:#991b1b;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;text-align:center;">${T.sold_out_msg || 'Sajnos minden kupon elfogyott.'}</div>`;
+    }
+    return `
     <div style="background:#f9fafb;border-radius:8px;padding:10px;margin-top:8px;">
-      ${a.image_url ? `<img src="${a.image_url}" style="width:100%;border-radius:6px;max-height:120px;object-fit:cover;margin-bottom:6px;">` : ''}
-      <strong>${a.title}</strong>
-      <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">${a.body || ''}</p>
-    </div>
-  `).join('');
+      ${a.image_url ? `<img src="${escapeHtml(a.image_url)}" style="width:100%;border-radius:6px;max-height:120px;object-fit:cover;margin-bottom:6px;">` : ''}
+      <strong>${escapeHtml(title)}</strong>${promo}${folOnly}${remainBadge}
+      ${body ? `<p style="margin:4px 0 0;color:#6b7280;font-size:12px;">${escapeHtml(body)}</p>` : ''}
+      ${redeemBtn}
+    </div>`;
+  }).join('');
   el.innerHTML = desc + ads;
 }
 window.closeSheet = function() { document.getElementById('km-sheet').classList.remove('open'); };
@@ -660,6 +698,40 @@ window.lightboxNav = function(e, dir) {
   window.__kmLightboxIdx = (window.__kmLightboxIdx + dir + imgs.length) % imgs.length;
   document.getElementById('km-lightbox-img').src = imgs[window.__kmLightboxIdx];
   document.getElementById('km-lightbox-counter').textContent = (window.__kmLightboxIdx+1) + ' / ' + imgs.length;
+};
+
+// Coupon claim — atomically reserves one of the limited coupons, then opens modal with code
+window.claimCoupon = async function(adId, shopName, title, body, promoValue) {
+  try {
+    const r = await fetch('/wp-json/punktepass/v1/coupon-claim', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ ad_id: adId })
+    });
+    if (r.status === 410) {
+      alert(T.sold_out_msg || 'Sajnos minden kupon elfogyott.');
+      return;
+    }
+    if (!r.ok) { alert('Hiba: ' + r.status); return; }
+    const d = await r.json();
+    if (!d.ok) { alert('Hiba: ' + (d.message || 'unknown')); return; }
+    showCouponModal(adId, shopName, title, body, d.coupon_code, promoValue, d.remaining);
+  } catch (e) { alert('Hiba: ' + e.message); }
+};
+
+// Coupon modal — shown when user taps "Beváltás" on a map ad
+window.showCouponModal = function(adId, shopName, title, body, code, promoValue, remaining) {
+  document.getElementById('km-coupon-shop').textContent = shopName || '';
+  document.getElementById('km-coupon-title').textContent = title || '';
+  document.getElementById('km-coupon-code').textContent = code || '';
+  document.getElementById('km-coupon-body').textContent = body || '';
+  const promoEl = document.getElementById('km-coupon-promo');
+  if (promoValue) { promoEl.textContent = promoValue; promoEl.style.display = 'inline-block'; }
+  else { promoEl.style.display = 'none'; }
+  document.getElementById('km-coupon-modal').style.display = 'flex';
+};
+window.closeCouponModal = function() {
+  document.getElementById('km-coupon-modal').style.display = 'none';
 };
 document.addEventListener('keydown', (e) => {
   const lb = document.getElementById('km-lightbox');

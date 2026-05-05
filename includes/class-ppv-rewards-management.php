@@ -1640,6 +1640,26 @@ class PPV_Rewards_Management {
             }
         }
 
+        // 🔔 Push: Notify all followers of each affected store about the new reward
+        if (class_exists('PPV_Push')) {
+            foreach ($target_stores as $target_id) {
+                $store_row = $wpdb->get_row($wpdb->prepare(
+                    "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                    $target_id
+                ));
+                $store_name = $store_row->name ?? 'PunktePass';
+                PPV_Push::send_to_store_followers((int)$target_id, [
+                    'title' => '🎁 ' . $store_name,
+                    'body'  => $title . ' — ' . $points . ' pts',
+                    'data'  => [
+                        'type'     => 'store_reward',
+                        'store_id' => (int)$target_id,
+                        'url'      => '/belohnungen?store_id=' . (int)$target_id,
+                    ],
+                ]);
+            }
+        }
+
         return new WP_REST_Response([
             'success' => true,
             'message' => '✅ ' . $msg,

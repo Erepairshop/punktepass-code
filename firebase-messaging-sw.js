@@ -1,4 +1,4 @@
-// Firebase Messaging Service Worker v5 - 2026-04-27
+// Firebase Messaging Service Worker v6 - 2026-04-29 — data-only payload, no dup display
 // This file must be at the root of the domain
 
 // Take over immediately so new SW versions activate without waiting for
@@ -22,26 +22,26 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Handle background messages.
-// In TWA the FCM SDK does NOT auto-display, so we must always call
-// showNotification. Use a stable tag from the payload (or hash of title+body)
-// so any duplicates from auto-display would collapse into one.
+// Backend sends data-only payloads to web/TWA tokens (no `notification` field),
+// which means FCM SDK does NOT auto-display, only this SW does. Single display.
 messaging.onBackgroundMessage((payload) => {
     console.log('[FCM SW] Background message received:', payload);
 
-    const title = payload.notification?.title || payload.data?.title || 'PunktePass';
-    const body = payload.notification?.body || payload.data?.body || '';
-    const stableTag = payload.notification?.tag
-        || payload.fcmOptions?.tag
+    const data = payload.data || {};
+    const title = data.title || payload.notification?.title || 'PunktePass';
+    const body = data.body || payload.notification?.body || '';
+    const stableTag = data.tag
+        || payload.notification?.tag
         || ('pp-' + (title + '|' + body).split('').reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0, 0));
 
     const notificationOptions = {
         body: body,
-        icon: payload.notification?.icon || '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
-        badge: '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
-        image: payload.notification?.image,
+        icon: data.icon || payload.notification?.icon || '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
+        badge: data.badge || '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
+        image: data.image || payload.notification?.image,
         tag: stableTag,
         renotify: false,
-        data: payload.data || {}
+        data: data
     };
     return self.registration.showNotification(title, notificationOptions);
 });

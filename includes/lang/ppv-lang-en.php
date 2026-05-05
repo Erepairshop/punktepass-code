@@ -2296,4 +2296,45 @@ return [
 'flyer_success' => '✓ Thank you! You will receive the flyers by post in 4-6 days.',
 'flyer_error_required' => 'Please fill in all required fields.',
 'flyer_error_generic' => 'Error sending request. Please try again later.',
+    'biz_filiale_section_title' => 'Your Branches',
+    'biz_filiale_active_picker' => 'Active Branch',
+    'biz_filiale_add_btn' => '+ Add new branch',
+    'biz_filiale_price_line' => 'Current: %d branches × %s = %s/month',
+    'biz_filiale_ads_count' => '%d/1 ad',
+    'biz_filiale_no_filialen_yet' => 'No branches yet. Add one!',
+    'biz_filiale_push_limit' => '%d push/month',
+
+    // Filiale Management (Business Admin)
+    'biz_filiale_new_title' => 'Add New Branch',
+    'biz_filiale_new_submit' => 'Create Branch',
+    'biz_filiale_copy_from' => 'Copy data from another branch',
+    'biz_filiale_copy_select_placeholder' => '-- Select a branch --',
+    'biz_filiale_delete_btn' => 'Delete',
+    'biz_filiale_delete_confirm' => 'Are you sure you want to delete this branch? This action cannot be undone.',
+    'biz_filiale_created_msg' => '✓ Branch added successfully!',
+    'biz_filiale_deleted_msg' => '✓ Branch deleted!',
+    'biz_filiale_section_title' => 'Branches',
+    'biz_filiale_add_btn' => 'New Branch',
+    'biz_filiale_no_filialen_yet' => 'No branches yet.',
+    'biz_filiale_price_line' => 'Price for %d branches (base %s): %s',
+    'biz_filiale_push_limit' => 'Push notification limit: %d/month',
+    'main_location' => 'Main Location',
+    'biz_filiale_label' => 'Branch Name (e.g., "City Center")',
+    'biz_filiale_business_name' => 'Company Name',
+    'biz_filiale_ads_count' => '%d ads',
+    'biz_cancel' => 'Cancel',
+
+    // FAZIS 5 - Ads per filiale
+    'biz_ad_select_filiale_label' => 'For which branch?',
+    'biz_ad_no_free_filiale' => 'Every branch already has an advertisement',
+    'biz_ad_for_filiale_badge' => '→ %s',
+    'biz_ad_for_parent_badge' => 'Parent Profile',
+    'biz_ad_filiale_ad_exists' => 'An active advertisement already exists for this branch.',
+
+    'biz_push_scale_hint' => '💡 3+ branches = 8 pushes/mo · 7+ branches = 16 pushes/mo',
 ];
+
+
+// Business Admin Stats Filter
+'biz_stats_filter_label' => 'Branch:',
+'biz_stats_filter_all' => 'All',

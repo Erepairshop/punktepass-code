@@ -12,11 +12,20 @@
 (function() {
     'use strict';
 
+    // Fallback ppvLog if ppv-debug.js wasn't enqueued — prevents ReferenceError that kills the bridge
+    if (typeof window.ppvLog === 'undefined') {
+        window.ppvLog = function() {};
+        window.ppvLog.error = function() {};
+        window.ppvLog.warn = function() {};
+    }
+    var ppvLog = window.ppvLog;
+
     // Prevent multiple initializations
     if (window.PPVPushBridge) {
         ppvLog('[PPV Push] Bridge already initialized');
         return;
     }
+    function bridgeDiag(){}
 
     const PPVPushBridge = {
         initialized: false,
@@ -45,6 +54,10 @@
             if (this.initialized) return;
 
             this.platform = this.detectPlatform();
+            var uid = this.getCurrentUserId();
+            var hasWebkit = !!(window.webkit && window.webkit.messageHandlers);
+            var hasPushTokenHandler = !!(hasWebkit && window.webkit.messageHandlers['push-token']);
+            bridgeDiag('init: platform=' + this.platform + ' uid=' + uid + ' webkit=' + hasWebkit + ' tokHnd=' + hasPushTokenHandler);
             ppvLog('[PPV Push] Platform detected:', this.platform);
 
             // Set up event listeners based on platform
@@ -55,11 +68,16 @@
 
             // For iOS: Auto-request permission and token on init
             if (this.platform === 'ios') {
+                bridgeDiag('iOS path - permission+token in 1s');
                 ppvLog('[PPV Push] iOS detected, requesting permission...');
                 setTimeout(() => {
+                    bridgeDiag('iOS: calling requestPermission');
                     this.requestPermission();
                     // Also request token directly (in case permission was already granted)
-                    setTimeout(() => this.requestToken(), 500);
+                    setTimeout(() => {
+                        bridgeDiag('iOS: calling requestToken');
+                        this.requestToken();
+                    }, 500);
                 }, 1000);
             }
 
@@ -70,6 +88,15 @@
 
             this.initialized = true;
             ppvLog('[PPV Push] Bridge initialized');
+
+            // If we have a pending token from a previous session and user is now logged in, register it.
+            try {
+                const pending = localStorage.getItem('ppv_pending_push_token');
+                if (pending && this.getCurrentUserId()) {
+                    ppvLog('[PPV Push] Found pending token + userId on init — registering');
+                    this.registerToken(pending);
+                }
+            } catch(e) {}
         },
 
         /**
@@ -107,10 +134,14 @@
 
             // iOS native events (from PushNotifications.swift)
             window.addEventListener('push-token', function(e) {
+                var d = e.detail;
+                bridgeDiag('push-token event! detail=' + (typeof d === 'string' ? d.substring(0, 30) : typeof d));
                 ppvLog('[PPV Push] Received push-token event:', e.detail);
                 if (e.detail && e.detail !== 'ERROR GET TOKEN') {
                     self.token = e.detail;
                     self.registerToken(e.detail);
+                } else {
+                    bridgeDiag('push-token: ERROR or empty');
                 }
             });
 
@@ -240,11 +271,33 @@
             const userId = this.getCurrentUserId();
             const storeId = window.ppvStoreId || window.ppv_store_id || null;
             const language = window.ppvLang || document.documentElement.lang || 'de';
+            bridgeDiag('registerToken: uid=' + userId + ' platform=' + this.platform + ' tok=' + (token ? token.substring(0, 20) : 'null'));
 
             if (!userId) {
-                ppvLog('[PPV Push] No user ID available, skipping registration');
+                bridgeDiag('No userId — fetching /me...');
+                ppvLog('[PPV Push] No user ID yet — caching token + fetching /me');
+                try { localStorage.setItem('ppv_pending_push_token', token); } catch(e){}
+                const self = this;
+                // Try recovering user_id via REST (uses session cookie)
+                fetch('/wp-json/punktepass/v1/me', { credentials: 'include' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(data){
+                        var uid = data && data.user_id ? parseInt(data.user_id, 10) : 0;
+                        if (uid > 0) {
+                            window.ppvUserId = uid;
+                            bridgeDiag('/me OK uid=' + uid + ' — registering');
+                            self.registerToken(token);
+                        } else {
+                            bridgeDiag('/me returned 0 — user not logged in');
+                        }
+                    })
+                    .catch(function(err){
+                        bridgeDiag('/me FAIL: ' + (err && err.message ? err.message : err));
+                    });
                 return;
             }
+            // Clear any pending if we had one
+            try { localStorage.removeItem('ppv_pending_push_token'); } catch(e){}
 
             const data = {
                 token: token,
@@ -268,18 +321,20 @@
             .then(function(response) { return response.json(); })
             .then(function(result) {
                 if (result.success) {
+                    bridgeDiag('register OK ✓ id=' + (result.id || '?'));
                     ppvLog('[PPV Push] Token registered successfully');
                     self.token = token;
-                    // Store locally for reference
                     try {
                         localStorage.setItem('ppv_push_token', token);
                         localStorage.setItem('ppv_push_registered', Date.now().toString());
                     } catch (e) {}
                 } else {
+                    bridgeDiag('register FAIL: ' + (result.message || 'unknown'));
                     ppvLog.error('[PPV Push] Registration failed:', result.message);
                 }
             })
             .catch(function(error) {
+                bridgeDiag('register ERROR: ' + (error && error.message ? error.message : error));
                 ppvLog.error('[PPV Push] Registration error:', error);
             });
         },

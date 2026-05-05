@@ -49,6 +49,7 @@ class PPV_Advertisers {
         add_action('admin_post_nopriv_ppv_advertiser_send_push', [__CLASS__, 'handle_send_push']);
         add_action('admin_post_nopriv_ppv_advertiser_follow', [__CLASS__, 'handle_follow']);
         add_action('admin_post_ppv_advertiser_follow', [__CLASS__, 'handle_follow']);
+        add_action('admin_post_ppv_advertiser_filiale_create', [__CLASS__, 'handle_filiale_create']);
         add_action('template_redirect', [__CLASS__, 'route_dispatcher']);
     }
 
@@ -60,8 +61,11 @@ class PPV_Advertisers {
         $charset = $wpdb->get_charset_collate();
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-        $advertisers = $wpdb->prefix . 'ppv_advertisers';
-        $sql1 = "CREATE TABLE IF NOT EXISTS {$advertisers} (
+        $advertisers_table = $wpdb->prefix . 'ppv_advertisers';
+        $ads_table = $wpdb->prefix . 'ppv_ads';
+        $db_name = defined('DB_NAME') ? DB_NAME : null;
+
+        $sql1 = "CREATE TABLE IF NOT EXISTS {$advertisers_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             slug VARCHAR(100) NOT NULL,
             business_name VARCHAR(160) NOT NULL,
@@ -103,8 +107,7 @@ class PPV_Advertisers {
         ) {$charset};";
         dbDelta($sql1);
 
-        $ads = $wpdb->prefix . 'ppv_ads';
-        $sql2 = "CREATE TABLE IF NOT EXISTS {$ads} (
+        $sql2 = "CREATE TABLE IF NOT EXISTS {$ads_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             advertiser_id BIGINT(20) UNSIGNED NOT NULL,
             title_de VARCHAR(160) NULL,
@@ -130,11 +133,6 @@ class PPV_Advertisers {
         ) {$charset};";
         dbDelta($sql2);
 
-        // Idempotent ALTER for existing installs — claim_count counter (max_claims oszlop már létezik)
-        $wpdb->query("ALTER TABLE {$ads}
-            ADD COLUMN IF NOT EXISTS claim_count INT UNSIGNED DEFAULT 0");
-
-        // Loyalty store followers — same shape, parallel to ad followers
         $store_followers = $wpdb->prefix . 'ppv_store_followers';
         $sql_sf = "CREATE TABLE IF NOT EXISTS {$store_followers} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -161,6 +159,45 @@ class PPV_Advertisers {
         ) {$charset};";
         dbDelta($sql3);
 
+        // -- PHASE 1 MIGRATIONS (Filialen) --
+        if ($db_name) {
+            // Add parent_advertiser_id to wp_ppv_advertisers
+            if (empty($wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'parent_advertiser_id'", $db_name, $advertisers_table)))) {
+                $wpdb->query("ALTER TABLE {$advertisers_table} ADD COLUMN parent_advertiser_id BIGINT(20) UNSIGNED NULL DEFAULT NULL AFTER id");
+            }
+
+            // Add max_filialen to wp_ppv_advertisers
+            if (empty($wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'max_filialen'", $db_name, $advertisers_table)))) {
+                $wpdb->query("ALTER TABLE {$advertisers_table} ADD COLUMN max_filialen INT UNSIGNED DEFAULT 1");
+            }
+
+            // Add filiale_label to wp_ppv_advertisers
+            if (empty($wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'filiale_label'", $db_name, $advertisers_table)))) {
+                $wpdb->query("ALTER TABLE {$advertisers_table} ADD COLUMN filiale_label VARCHAR(120) NULL");
+            }
+
+            // Add index for parent_advertiser_id
+            if (empty($wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = 'idx_parent_advertiser'", $db_name, $advertisers_table)))) {
+                $wpdb->query("ALTER TABLE {$advertisers_table} ADD INDEX idx_parent_advertiser (parent_advertiser_id)");
+            }
+
+            // Add filiale_id to wp_ppv_ads
+            if (empty($wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'filiale_id'", $db_name, $ads_table)))) {
+                $wpdb->query("ALTER TABLE {$ads_table} ADD COLUMN filiale_id BIGINT(20) UNSIGNED NULL DEFAULT NULL AFTER advertiser_id");
+            }
+
+            // Add index for filiale_id
+            if (empty($wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = 'idx_filiale'", $db_name, $ads_table)))) {
+                $wpdb->query("ALTER TABLE {$ads_table} ADD INDEX idx_filiale (filiale_id)");
+            }
+        }
+        // --- End of Filialen Migrations ---
+
+
+        // Idempotent ALTER for existing installs — claim_count counter (max_claims oszlop már létezik)
+        $wpdb->query("ALTER TABLE {$ads_table}
+            ADD COLUMN IF NOT EXISTS claim_count INT UNSIGNED DEFAULT 0");
+
         ppv_log("✅ [PPV_Advertisers] Tables created/verified");
     }
 
@@ -176,6 +213,7 @@ class PPV_Advertisers {
         add_rewrite_rule('^business/admin/ads/?$', 'index.php?ppv_business=admin_ads', 'top');
         add_rewrite_rule('^business/admin/push/?$', 'index.php?ppv_business=admin_push', 'top');
         add_rewrite_rule('^business/admin/stats/?$', 'index.php?ppv_business=admin_stats', 'top');
+        add_rewrite_rule('^business/admin/filiale-new/?$', 'index.php?ppv_business=admin_filiale_new', 'top');
         add_rewrite_rule('^business/([^/]+)/?$', 'index.php?ppv_business=public&slug=$matches[1]', 'top');
         add_rewrite_rule('^karte/?$', 'index.php?ppv_business=karte', 'top');
 
@@ -214,6 +252,7 @@ class PPV_Advertisers {
             case 'admin_ads':      self::render_admin_ads(); break;
             case 'admin_push':     self::render_admin_push(); break;
             case 'admin_stats':    self::render_admin_stats(); break;
+            case 'admin_filiale_new': self::render_admin_filiale_new(); break;
             case 'public':         self::render_public_profile(get_query_var('slug')); break;
             case 'karte':          self::render_user_map(); break;
             default: return;
@@ -285,6 +324,10 @@ class PPV_Advertisers {
     public static function render_admin_stats() {
         self::require_login();
         require __DIR__ . '/templates/business-admin-stats.php';
+    }
+    public static function render_admin_filiale_new() {
+        self::require_login();
+        require __DIR__ . '/templates/business-admin-filiale-new.php';
     }
     public static function render_public_profile($slug) {
         require __DIR__ . '/templates/business-public.php';
@@ -362,15 +405,22 @@ class PPV_Advertisers {
 
     public static function handle_save_profile() {
         check_admin_referer('ppv_advertiser_save_profile');
-        $adv_id = self::current_advertiser_id();
-        if (!$adv_id) wp_die('Auth required.');
+        self::require_login();
+        $adv_id = self::current_filiale_id();
+        if (!$adv_id) {
+            wp_die('Authentication required.');
+        }
+
+        $parent_advertiser = self::current_advertiser();
+        $parent_id = $parent_advertiser->parent_advertiser_id ?: $parent_advertiser->id;
 
         require_once(ABSPATH . 'wp-admin/includes/file.php');
         require_once(ABSPATH . 'wp-admin/includes/media.php');
         require_once(ABSPATH . 'wp-admin/includes/image.php');
 
         global $wpdb;
-        $current = $wpdb->get_row($wpdb->prepare("SELECT logo_url, gallery FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d", $adv_id));
+        $table_name = $wpdb->prefix . 'ppv_advertisers';
+        $current = $wpdb->get_row($wpdb->prepare("SELECT logo_url, gallery FROM {$table_name} WHERE id = %d", $adv_id));
 
         // Logo upload (replaces previous if new file)
         $logo_url = $current->logo_url ?? '';
@@ -453,13 +503,19 @@ class PPV_Advertisers {
         $lat     = is_numeric($_POST['lat'] ?? null) ? floatval($_POST['lat']) : null;
         $lng     = is_numeric($_POST['lng'] ?? null) ? floatval($_POST['lng']) : null;
 
-        // 🛡️ Anti-trial-abuse: same business name reused by a different advertiser → block.
+        $collision_clause = $wpdb->prepare(
+            " AND ((T.parent_advertiser_id IS NULL AND T.id != %d) OR (T.parent_advertiser_id IS NOT NULL AND T.parent_advertiser_id != %d))",
+            $parent_id, $parent_id
+        );
+
+        // 🛡️ Anti-collision: business name
         if (strlen(trim($business_name_in)) >= 2) {
             $name_norm = mb_strtolower(preg_replace('/\s+/', ' ', trim($business_name_in)));
             $name_collision = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_advertisers
-                 WHERE id <> %d
-                   AND LOWER(REPLACE(REPLACE(TRIM(business_name), '  ', ' '), '   ', ' ')) = %s
+                "SELECT T.id FROM {$table_name} T
+                 WHERE T.id <> %d
+                   AND LOWER(REPLACE(REPLACE(TRIM(T.business_name), '  ', ' '), '   ', ' ')) = %s
+                 {$collision_clause}
                  LIMIT 1",
                 $adv_id, $name_norm
             ));
@@ -469,13 +525,14 @@ class PPV_Advertisers {
             }
         }
 
-        // 🛡️ Anti-duplicate-pin: block exact-same address (same advertiser-id excluded) and pins within ~10m.
+        // 🛡️ Anti-collision: address
         $addr_norm = mb_strtolower(preg_replace('/\s+/', ' ', trim($address . ' ' . $city)));
         if (strlen($addr_norm) >= 6) {
             $addr_collision = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_advertisers
-                 WHERE id <> %d
-                   AND LOWER(REPLACE(REPLACE(TRIM(CONCAT_WS(' ', address, city)), '  ', ' '), '   ', ' ')) = %s
+                "SELECT T.id FROM {$table_name} T
+                 WHERE T.id <> %d
+                   AND LOWER(REPLACE(REPLACE(TRIM(CONCAT_WS(' ', T.address, T.city)), '  ', ' '), '   ', ' ')) = %s
+                 {$collision_clause}
                  LIMIT 1",
                 $adv_id, $addr_norm
             ));
@@ -484,11 +541,12 @@ class PPV_Advertisers {
                 exit;
             }
         }
-        // GPS within ~10m (~0.0001° at EU latitudes; we use a slightly conservative 0.00009°)
+        
+        // 🛡️ Anti-collision: GPS pin (ellenőrzés MINDEN más pin-nel, saját fiókon belül is)
         if ($lat !== null && $lng !== null) {
             $gps_collision = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_advertisers
-                 WHERE id <> %d AND lat IS NOT NULL AND lng IS NOT NULL
+                "SELECT id FROM {$table_name}
+                 WHERE id != %d AND lat IS NOT NULL AND lng IS NOT NULL
                    AND ABS(lat - %f) < 0.00009 AND ABS(lng - %f) < 0.00009
                  LIMIT 1",
                 $adv_id, $lat, $lng
@@ -516,7 +574,7 @@ class PPV_Advertisers {
             'social'   => wp_json_encode($social),
             'opening_hours' => wp_json_encode($hours),
         ];
-        $wpdb->update($wpdb->prefix . 'ppv_advertisers', $data, ['id' => $adv_id]);
+        $wpdb->update($table_name, $data, ['id' => $adv_id]);
         wp_redirect(home_url('/business/admin/profile?saved=1'));
         exit;
     }
@@ -532,6 +590,29 @@ class PPV_Advertisers {
 
         global $wpdb;
         $ad_id = intval($_POST['ad_id'] ?? 0);
+        
+        // -- FAZIS 5 START --
+        $filiale_id = isset($_POST['filiale_id']) ? (int)$_POST['filiale_id'] : null;
+        if ($filiale_id === 0) {
+            $filiale_id = null;
+        }
+        
+        // Find parent advertiser ID
+        $advertiser = self::current_advertiser();
+        $parent_id = $advertiser->parent_advertiser_id ?: $advertiser->id;
+
+        // Race condition check: only for new ads
+        if (!$ad_id && $filiale_id) {
+            $existing_ad_for_filiale = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_ads WHERE filiale_id = %d AND is_active = 1",
+                $filiale_id
+            ));
+            if ($existing_ad_for_filiale) {
+                wp_redirect(home_url('/business/admin/ads?err=filiale_ad_exists'));
+                exit;
+            }
+        }
+        // -- FAZIS 5 END --
 
         $existing_image = '';
         if ($ad_id > 0) {
@@ -555,7 +636,8 @@ class PPV_Advertisers {
         $max_claims = ($max_claims_in === '' || $max_claims_in === null) ? null : max(0, (int)$max_claims_in);
 
         $data = [
-            'advertiser_id' => $adv_id,
+            'advertiser_id' => $parent_id, // Always associate with parent
+            'filiale_id' => $filiale_id, // Can be null
             'ad_type'    => $ad_type,
             'visibility' => $visibility,
             'title'      => sanitize_text_field($_POST['title'] ?? ''),
@@ -572,20 +654,30 @@ class PPV_Advertisers {
             'followers_only' => $visibility === 'followers' ? 1 : 0,
             'is_active' => !empty($_POST['is_active']) ? 1 : 0,
         ];
+
         if ($ad_id > 0) {
             // Verify ownership
             $owner = $wpdb->get_var($wpdb->prepare(
                 "SELECT advertiser_id FROM {$wpdb->prefix}ppv_ads WHERE id = %d", $ad_id
             ));
-            if ((int)$owner !== $adv_id) wp_die('Not your ad.');
+            if ((int)$owner !== $parent_id) wp_die('Not your ad.');
+            
+            // Filiale cannot be changed after creation
+            unset($data['filiale_id']);
+
             $wpdb->update($wpdb->prefix . 'ppv_ads', $data, ['id' => $ad_id]);
         } else {
-            // Tier ad limit
+            // Tier ad limit check (this logic might need adjustment depending on how tiers are counted per-parent vs per-filiale)
             $current_count = (int)$wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND is_active = 1", $adv_id
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND is_active = 1", $parent_id
             ));
-            $tier = $wpdb->get_var($wpdb->prepare("SELECT tier FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d", $adv_id));
-            $max = self::TIERS[$tier]['ads'] ?? 1;
+            $tier = $wpdb->get_var($wpdb->prepare("SELECT tier FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d", $parent_id));
+            
+            // This is a simplified check. A more complex one might be needed.
+            // For now, we assume the total number of ads for the parent account is limited.
+            $max_filialen = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_advertisers WHERE (id = %d OR parent_advertiser_id = %d) AND is_active = 1", $parent_id, $parent_id));
+            $max = $max_filialen; // 1 ad per filiale/parent
+
             if ($current_count >= $max) {
                 wp_redirect(home_url('/business/admin/ads?err=tier_limit'));
                 exit;
@@ -711,6 +803,86 @@ class PPV_Advertisers {
         exit;
     }
 
+    public static function handle_filiale_create() {
+        // 1. Security and Auth
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'ppv_advertiser_filiale_create_nonce')) {
+            wp_die('Nonce verification failed.', 'Security Check', ['response' => 403]);
+        }
+
+        $parent_advertiser = self::current_advertiser();
+        if (!$parent_advertiser) {
+            wp_redirect(home_url('/business/login?err=auth'));
+            exit;
+        }
+        
+        $parent_id = $parent_advertiser->parent_advertiser_id ?: $parent_advertiser->id;
+
+        // 2. Validation
+        $filiale_label = sanitize_text_field($_POST['filiale_label'] ?? '');
+        $business_name = sanitize_text_field($_POST['business_name'] ?? '');
+        $address = sanitize_text_field($_POST['address'] ?? '');
+        $city = sanitize_text_field($_POST['city'] ?? '');
+
+        if (empty($filiale_label) || empty($business_name) || empty($address) || empty($city)) {
+            wp_redirect(home_url('/business/admin/filiale-new?err=missing_fields'));
+            exit;
+        }
+
+        // 3. Database Insert
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_advertisers';
+
+        // Inherit some fields from parent
+        $parent_data = $wpdb->get_row($wpdb->prepare("SELECT owner_email, password_hash, tier, subscription_status, subscription_until, category FROM {$table} WHERE id = %d", $parent_id));
+
+        $data = [
+            'parent_advertiser_id' => $parent_id,
+            'filiale_label' => $filiale_label,
+            'slug' => sanitize_title($business_name . '-' . $filiale_label) . '-' . substr(wp_generate_uuid4(), 0, 8),
+            'business_name' => $business_name,
+            'address' => $address,
+            'city' => $city,
+            'postcode' => sanitize_text_field($_POST['postcode'] ?? ''),
+            'country' => sanitize_text_field($_POST['country'] ?? $parent_advertiser->country),
+            'phone' => sanitize_text_field($_POST['phone'] ?? ''),
+            'lat' => !empty($_POST['lat']) && is_numeric($_POST['lat']) ? floatval($_POST['lat']) : null,
+            'lng' => !empty($_POST['lng']) && is_numeric($_POST['lng']) ? floatval($_POST['lng']) : null,
+            'owner_email' => $parent_data->owner_email,
+            'password_hash' => $parent_data->password_hash,
+            'tier' => $parent_data->tier,
+            'subscription_status' => $parent_data->subscription_status,
+            'subscription_until' => $parent_data->subscription_until,
+            'is_active' => 1,
+            'category' => $parent_data->category,
+        ];
+        
+        // Anti-collision: GPS-pin check (ellenőrzés MINDEN más pin-nel)
+        if ($data['lat'] && $data['lng']) {
+             $gps_collision = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_advertisers
+                 WHERE lat IS NOT NULL AND lng IS NOT NULL
+                   AND ABS(lat - %f) < 0.00009 AND ABS(lng - %f) < 0.00009
+                 LIMIT 1",
+                $data['lat'], $data['lng']
+            ));
+            if ($gps_collision) {
+                wp_redirect(home_url('/business/admin/filiale-new?err=pin_too_close'));
+                exit;
+            }
+        }
+
+        $result = $wpdb->insert($table, $data);
+
+        if ($result === false) {
+            wp_redirect(home_url('/business/admin/filiale-new?err=db_error&msg=' . urlencode($wpdb->last_error)));
+            exit;
+        }
+
+        // 4. Redirect
+        wp_redirect(home_url('/business/admin/?filiale_created=1'));
+        exit;
+    }
+
     /** ============================================================
      * HELPERS
      * ============================================================ */
@@ -769,6 +941,14 @@ class PPV_Advertisers {
             'permission_callback' => '__return_true',
         ]);
 
+        register_rest_route('punktepass/v1', '/filiale-delete', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_filiale_delete'],
+            'permission_callback' => function() {
+                return self::current_advertiser_id() > 0;
+            }
+        ]);
+
         // Flyer request endpoint (advertiser-only — moved from handler admin to business advertiser admin)
         register_rest_route('punktepass/v1', '/flyer-request', [
             'methods' => 'POST',
@@ -787,6 +967,56 @@ class PPV_Advertisers {
                 return current_user_can('manage_options');
             },
         ]);
+    }
+
+    public static function rest_filiale_delete($request) {
+        global $wpdb;
+        $params = $request->get_json_params();
+        $target_id = isset($params['target_id']) ? intval($params['target_id']) : 0;
+
+        if ($target_id <= 0) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Invalid target ID.'], 400);
+        }
+
+        $current_adv = self::current_advertiser();
+        if (!$current_adv) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Authentication required.'], 401);
+        }
+
+        // Determine the root parent ID of the logged-in user
+        $parent_id = $current_adv->parent_advertiser_id ?: $current_adv->id;
+        
+        // Prevent deleting the main account
+        if ($target_id === $parent_id) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Cannot delete the main account.'], 403);
+        }
+
+        // Fetch the filiale to be deleted to verify ownership
+        $filiale_to_delete = $wpdb->get_row($wpdb->prepare("SELECT id, parent_advertiser_id FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d", $target_id));
+
+        if (!$filiale_to_delete) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Filiale not found.'], 404);
+        }
+
+        // Ensure the filiale to be deleted belongs to the same parent account
+        if ((int)$filiale_to_delete->parent_advertiser_id !== $parent_id) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Permission denied. Not a child of your account.'], 403);
+        }
+
+        // Perform soft delete
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_advertisers',
+            ['is_active' => 0],
+            ['id' => $target_id],
+            ['%d'],
+            ['%d']
+        );
+
+        if ($result === false) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Database error during deletion.'], 500);
+        }
+
+        return new WP_REST_Response(['success' => true, 'message' => 'Filiale marked as inactive.'], 200);
     }
 
     /**
@@ -1027,14 +1257,14 @@ class PPV_Advertisers {
              LIMIT 1000"
         );
 
-        // Advertisers — only active + non-expired subscription/trial
+        // Advertisers — FÁZIS 7: minden filiale (parent+child) külön pin, ha van lat/lng.
         $advertisers = $wpdb->get_results(
-            "SELECT id, business_name AS name, slug, lat, lng, logo_url AS logo, address, city, phone, whatsapp, category, featured, tier
+            "SELECT id, business_name, filiale_label, slug, lat, lng, logo_url AS logo, address, city, phone, whatsapp, category, featured, tier
              FROM {$wpdb->prefix}ppv_advertisers
              WHERE is_active = 1 AND lat IS NOT NULL AND lng IS NOT NULL
                AND subscription_status IN ('trial', 'active')
                AND (subscription_until IS NULL OR subscription_until >= CURDATE())
-             LIMIT 1000"
+             LIMIT 2000"
         );
 
         $features = [];
@@ -1054,11 +1284,17 @@ class PPV_Advertisers {
             ];
         }
         foreach ($advertisers as $a) {
+            // FÁZIS 7: ha van filiale_label, hozzáfűzzük a névhez.
+            $business_name = $a->business_name;
+            if (!empty($a->filiale_label)) {
+                $business_name .= ' — ' . $a->filiale_label;
+            }
+
             $features[] = [
                 'type'   => 'advertiser',
                 'id'     => (int)$a->id,
                 'slug'   => $a->slug,
-                'name'   => $a->name,
+                'name'   => $business_name,
                 'lat'    => (float)$a->lat,
                 'lng'    => (float)$a->lng,
                 'logo'   => $a->logo,
@@ -1083,9 +1319,10 @@ class PPV_Advertisers {
         ));
         if (!$adv) return new WP_Error('not_found', 'Not found', ['status' => 404]);
 
+        // FÁZIS 7: A hirdetéseket a kiválasztott filiáléhoz (vagy szülőhöz) szűrjük a kapott ID alapján.
         $ads = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}ppv_ads
-             WHERE advertiser_id = %d AND is_active = 1
+             WHERE filiale_id = %d AND is_active = 1
                AND (valid_from IS NULL OR valid_from <= NOW())
                AND (valid_to IS NULL OR valid_to >= NOW())
              ORDER BY id DESC", $id
@@ -1199,6 +1436,75 @@ class PPV_Advertisers {
             "SELECT id FROM {$wpdb->prefix}ppv_advertiser_followers WHERE user_id = %d AND advertiser_id = %d",
             $user_id, $advertiser_id
         ));
+    }
+
+    /** ============================================================
+     * FILIALE HELPERS
+     * ============================================================ */
+
+    /**
+     * Visszaadja az aktív filiálé ID-t, vagy a szülő advertiser ID-t ha nincs beállítva.
+     * @return int
+     */
+    public static function current_filiale_id() {
+        self::start_session();
+        if (!empty($_SESSION['ppv_active_filiale_id'])) {
+            return intval($_SESSION['ppv_active_filiale_id']);
+        }
+        return self::current_advertiser_id();
+    }
+
+    /**
+     * Lekér egy filiálét (ami egy advertiser-sor) ID alapján.
+     * @param int $id
+     * @return object|null
+     */
+    public static function get_filiale($id) {
+        if (!$id) return null;
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d", $id));
+    }
+
+    /**
+     * Megszámolja, hány aktív filiáléja van egy szülő advertisernek (a szülőt is beleértve).
+     * @param int $parent_id
+     * @return int
+     */
+    public static function count_filialen($parent_id) {
+        if (!$parent_id) return 0;
+        global $wpdb;
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_advertisers WHERE (parent_advertiser_id = %d OR id = %d) AND is_active = 1",
+            $parent_id, $parent_id
+        ));
+    }
+
+    /**
+     * Kiszámolja a push üzenetek limitjét a filiálék száma alapján.
+     * @param int $parent_id
+     * @return int
+     */
+    public static function get_effective_push_limit($parent_id) {
+        $count = self::count_filialen($parent_id);
+        if ($count < 3) return 4;
+        if ($count >= 3 && $count <= 6) return 8;
+        return 16;
+    }
+
+    /**
+     * Kiszámolja a havidíjat a filiálék száma alapján.
+     * @param int $parent_id
+     * @param string $country_code 'DE', 'RO', etc.
+     * @return float
+     */
+    public static function get_effective_price($parent_id, $country_code = 'DE') {
+        $count = self::count_filialen($parent_id);
+        $base_tier = self::TIERS[self::TIER_BASIC];
+        $base_price = (strtoupper($country_code) === 'RO') ? $base_tier['price_ron'] : $base_tier['price_eur'];
+        
+        $effective_count = max(1, $count);
+        
+        return $base_price * $effective_count;
     }
 }
 

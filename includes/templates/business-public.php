@@ -14,17 +14,19 @@ if (!$adv) {
 }
 
 $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
-$desc = $adv->{'description_' . $lang} ?: $adv->description_de;
+$desc = (string)($adv->{'description_' . $lang} ?: $adv->description_de ?: '');
 
 $ads = $wpdb->get_results($wpdb->prepare(
     "SELECT * FROM {$wpdb->prefix}ppv_ads
-     WHERE advertiser_id = %d AND is_active = 1
+     WHERE filiale_id = %d AND is_active = 1
        AND (valid_from IS NULL OR valid_from <= NOW())
        AND (valid_to IS NULL OR valid_to >= NOW())
      ORDER BY id DESC", $adv->id
 ));
 
-session_start();
+// Impression tracking removed — only clicks count (pin-click + Részletek button).
+
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 $user_id = !empty($_SESSION['ppv_user_id']) ? (int)$_SESSION['ppv_user_id'] : 0;
 $is_following = $user_id ? PPV_Advertisers::is_following($user_id, $adv->id) : false;
 ?>
@@ -61,7 +63,7 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
 <div class="bp-head">
   <div class="bp-logo"></div>
   <div class="bp-name"><?php echo esc_html($adv->business_name); ?></div>
-  <div class="bp-cat"><?php echo esc_html($adv->category); ?> • <?php echo esc_html(trim($adv->city . ', ' . $adv->country, ', ')); ?></div>
+  <div class="bp-cat"><?php echo esc_html((string)($adv->category ?? '')); ?> • <?php echo esc_html(trim((string)($adv->city ?? '') . ', ' . (string)($adv->country ?? ''), ', ')); ?></div>
   <div class="bp-actions">
     <?php if ($adv->phone): ?><a href="tel:<?php echo esc_attr($adv->phone); ?>" class="bp-btn green">📞 <?php echo esc_html($adv->phone); ?></a><?php endif; ?>
     <?php if ($adv->whatsapp): ?><a href="https://wa.me/<?php echo esc_attr(preg_replace('/[^0-9]/','',$adv->whatsapp)); ?>" class="bp-btn wa">💬 WhatsApp</a><?php endif; ?>
@@ -86,8 +88,10 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
     <p style="color:#6b7280;">Még nincs aktív hirdetés.</p>
   <?php else: ?>
     <?php foreach ($ads as $ad):
-      $title = $ad->{'title_' . $lang} ?: $ad->title_de;
-      $body  = $ad->{'body_' . $lang} ?: $ad->body_de;
+      // Fallback: per-lang → de → simple `title`/`body` (új form csak ezt tölti)
+      $title = (string)($ad->{'title_' . $lang} ?: ($ad->title_de ?: ($ad->title ?? '')));
+      $body  = (string)($ad->{'body_' . $lang}  ?: ($ad->body_de  ?: ($ad->body  ?? '')));
+      $promo_value = $ad->promo_value ?? '';
     ?>
       <div class="bp-ad">
         <?php if ($ad->image_url): ?><img src="<?php echo esc_url($ad->image_url); ?>" alt=""><?php endif; ?>
@@ -95,7 +99,7 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
           <?php if ($ad->followers_only): ?><span class="bp-ad-fol">⭐ Csak követőknek</span><?php endif; ?>
         </h3>
         <p><?php echo wp_kses_post(wpautop($body)); ?></p>
-        <?php if ($ad->cta_url): ?><a href="<?php echo esc_url($ad->cta_url); ?>" class="bp-btn primary">Részletek →</a><?php endif; ?>
+        <?php if ($ad->cta_url): ?><a href="<?php echo esc_url(home_url('/wp-json/punktepass/v1/ad-click/' . (int)$ad->id . '?to=' . urlencode($ad->cta_url))); ?>" class="bp-btn primary" rel="noopener">Részletek →</a><?php endif; ?>
       </div>
     <?php endforeach; ?>
   <?php endif; ?>

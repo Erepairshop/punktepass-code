@@ -2395,4 +2395,45 @@ return [
 'flyer_success' => '✓ Köszönjük! 4-6 napon belül megkapod a postán.',
 'flyer_error_required' => 'Kérjük töltsd ki az összes kötelező mezőt.',
 'flyer_error_generic' => 'Hiba a küldés során. Próbáld újra később.',
+    'biz_filiale_section_title' => 'Filialéid',
+    'biz_filiale_active_picker' => 'Aktív filiálé',
+    'biz_filiale_add_btn' => '+ Új filiale hozzáadása',
+    'biz_filiale_price_line' => 'Most: %d filialé × %s = %s/hó',
+    'biz_filiale_ads_count' => '%d/1 hirdetés',
+    'biz_filiale_no_filialen_yet' => 'Még nincsenek fiókok. Adj hozzá egyet!',
+    'biz_filiale_push_limit' => '%d push/hó',
+
+    // Filiale Management (Business Admin)
+    'biz_filiale_new_title' => 'Új fiók hozzáadása',
+    'biz_filiale_new_submit' => 'Fiók létrehozása',
+    'biz_filiale_copy_from' => 'Adatok másolása másik fiókból',
+    'biz_filiale_copy_select_placeholder' => '-- Fiók választása --',
+    'biz_filiale_delete_btn' => 'Törlés',
+    'biz_filiale_delete_confirm' => 'Biztosan törölni szeretnéd ezt a fiókot? A művelet nem vonható vissza.',
+    'biz_filiale_created_msg' => '✓ Fiók sikeresen hozzáadva!',
+    'biz_filiale_deleted_msg' => '✓ Fiók törölve!',
+    'biz_filiale_section_title' => 'Fiókok',
+    'biz_filiale_add_btn' => 'Új fiók',
+    'biz_filiale_no_filialen_yet' => 'Még nincsenek fiókok.',
+    'biz_filiale_price_line' => 'Ár %d fiókért (alap %s): %s',
+    'biz_filiale_push_limit' => 'Push üzenet limit: %d/hó',
+    'main_location' => 'Fő telephely',
+    'biz_filiale_label' => 'Fiók neve (pl. "Pécs Pláza")',
+    'biz_filiale_business_name' => 'Cégnév',
+    'biz_filiale_ads_count' => '%d hirdetés',
+    'biz_cancel' => 'Mégsem',
+
+    // FAZIS 5 - Ads per filiale
+    'biz_ad_select_filiale_label' => 'Melyik filialéhoz?',
+    'biz_ad_no_free_filiale' => 'Minden filialénak van már egy hirdetése',
+    'biz_ad_for_filiale_badge' => '→ %s',
+    'biz_ad_for_parent_badge' => 'Fő profil',
+    'biz_ad_filiale_ad_exists' => 'Ehhez a fiókhoz már létezik aktív hirdetés.',
+
+    'biz_push_scale_hint' => '💡 3+ fiók = 8 push/hó · 7+ fiók = 16 push/hó',
 ];
+
+
+// Business Admin Stats Filter
+'biz_stats_filter_label' => 'Fiók:',
+'biz_stats_filter_all' => 'Mind',

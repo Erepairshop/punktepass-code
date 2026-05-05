@@ -740,3 +740,12 @@ html, body {
     outline: 2px solid var(--su-primary);
     outline-offset: 2px;
 }
+
+/* Google One-Tap / GIS prompt iframe — keep above any page chrome */
+#credential_picker_container,
+#credential_picker_iframe,
+iframe[src*="accounts.google.com/gsi"],
+div[id^="credential_picker"] {
+    z-index: 2147483647 !important;
+    position: fixed !important;
+}

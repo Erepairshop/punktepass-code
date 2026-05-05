@@ -2416,5 +2416,46 @@ return [
 'flyer_success' => '✓ Vielen Dank! Sie erhalten die Flyer in 4-6 Tagen per Post.',
 'flyer_error_required' => 'Bitte alle Pflichtfelder ausfüllen.',
 'flyer_error_generic' => 'Fehler beim Senden. Bitte versuchen Sie es später erneut.',
+    'biz_filiale_section_title' => 'Deine Filialen',
+    'biz_filiale_active_picker' => 'Aktive Filiale',
+    'biz_filiale_add_btn' => '+ Neue Filiale hinzufügen',
+    'biz_filiale_price_line' => 'Aktuell: %d Filialen × %s = %s/Monat',
+    'biz_filiale_ads_count' => '%d/1 Anzeige',
+    'biz_filiale_no_filialen_yet' => 'Noch keine Filialen. Füge eine hinzu!',
+    'biz_filiale_push_limit' => '%d Push/Monat',
+
+    // Filiale Management (Business Admin)
+    'biz_filiale_new_title' => 'Neue Filiale hinzufügen',
+    'biz_filiale_new_submit' => 'Filiale erstellen',
+    'biz_filiale_copy_from' => 'Daten von einer anderen Filiale übernehmen',
+    'biz_filiale_copy_select_placeholder' => '-- Filiale auswählen --',
+    'biz_filiale_delete_btn' => 'Löschen',
+    'biz_filiale_delete_confirm' => 'Sind Sie sicher, dass Sie diese Filiale löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+    'biz_filiale_created_msg' => '✓ Filiale erfolgreich hinzugefügt!',
+    'biz_filiale_deleted_msg' => '✓ Filiale gelöscht!',
+    'biz_filiale_section_title' => 'Filialen',
+    'biz_filiale_add_btn' => 'Neue Filiale',
+    'biz_filiale_no_filialen_yet' => 'Noch keine Filialen vorhanden.',
+    'biz_filiale_price_line' => 'Preis für %d Filialen (Basis %s): %s',
+    'biz_filiale_push_limit' => 'Push-Nachrichten Limit: %d/Monat',
+    'main_location' => 'Hauptstandort',
+    'biz_filiale_label' => 'Filialen-Name (z.B. "Berlin Mitte")',
+    'biz_filiale_business_name' => 'Firmenname',
+    'biz_filiale_ads_count' => '%d Anzeigen',
+    'biz_cancel' => 'Abbrechen',
+
+    // FAZIS 5 - Ads per filiale
+    'biz_ad_select_filiale_label' => 'Für welche Filiale?',
+    'biz_ad_no_free_filiale' => 'Jede Filiale hat bereits eine Anzeige',
+    'biz_ad_for_filiale_badge' => '→ %s',
+    'biz_ad_for_parent_badge' => 'Hauptprofil',
+    'biz_ad_filiale_ad_exists' => 'Für diese Filiale existiert bereits eine aktive Anzeige.',
+
+    'biz_push_scale_hint' => '💡 3+ Filialen = 8 Push/Monat · 7+ Filialen = 16 Push/Monat',
 ];
 
+
+
+// Business Admin Stats Filter
+'biz_stats_filter_label' => 'Filiale:',
+'biz_stats_filter_all' => 'Alle',

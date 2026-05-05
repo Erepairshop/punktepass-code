@@ -1182,6 +1182,17 @@ trait PPV_QR_REST_Trait {
                 'comeback_bonus' => $comeback_bonus_applied, // 👋 Comeback bonus
                 'success' => true,
             ]);
+
+            // 🔔 Auto-follow store on first scan: ensures the user receives push notifications
+            // from this handler (handler push admin sends to ppv_store_followers).
+            // Uses INSERT IGNORE → no-op if user already follows; preserves push_enabled toggle if user later disables.
+            if ($user_id && $store_id) {
+                $wpdb->query($wpdb->prepare(
+                    "INSERT IGNORE INTO {$wpdb->prefix}ppv_store_followers (user_id, store_id, push_enabled, created_at)
+                     VALUES (%d, %d, 1, NOW())",
+                    $user_id, $store_id
+                ));
+            }
         }
 
         // Build response message with bonus info

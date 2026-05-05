@@ -1,5 +1,14 @@
 <?php
 if (!defined('ABSPATH')) exit;
+
+// Display success/error messages
+if (isset($_GET['filiale_created']) && $_GET['filiale_created'] == 1) {
+    echo '<div class="bz-alert success" style="margin-bottom:15px;">' . PPV_Lang::t('biz_filiale_created_msg', '✓ Filiale sikeresen hozzáadva!') . '</div>';
+}
+if (isset($_GET['filiale_deleted']) && $_GET['filiale_deleted'] == 1) {
+    echo '<div class="bz-alert" style="margin-bottom:15px;">' . PPV_Lang::t('biz_filiale_deleted_msg', '✓ Filiale törölve!') . '</div>';
+}
+
 $adv = PPV_Advertisers::current_advertiser();
 global $wpdb;
 $ad_count = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND is_active=1", $adv->id));
@@ -8,6 +17,110 @@ $tier = $adv->tier;
 $tier_info = PPV_Advertisers::TIERS[$tier] ?? ['ads'=>1,'push_per_month'=>4];
 $days_left = $adv->subscription_until ? max(0, (strtotime($adv->subscription_until) - time()) / 86400) : 0;
 ?>
+<?php
+if ($adv && class_exists('PPV_Advertisers')) {
+    $parent_id = $adv->parent_advertiser_id ?: $adv->id;
+    
+    // Get all filialen for the parent
+    $filialen = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, business_name, filiale_label, address, city, postcode, parent_advertiser_id FROM {$wpdb->prefix}ppv_advertisers WHERE (parent_advertiser_id = %d OR id = %d) AND is_active = 1 ORDER BY parent_advertiser_id, id ASC",
+        $parent_id, $parent_id
+    ));
+
+    $filiale_count = count($filialen);
+?>
+<div class="bz-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <h2 class="bz-h2" style="margin:0;"><i class="ri-store-2-line"></i> <?php echo PPV_Lang::t('biz_filiale_section_title'); ?></h2>
+        <a href="<?php echo esc_url(home_url('/business/admin/filiale-new')); ?>" class="bz-btn secondary" style="padding: 6px 12px; font-size: 13px;">
+            <i class="ri-add-line"></i> <?php echo PPV_Lang::t('biz_filiale_add_btn'); ?>
+        </a>
+    </div>
+    
+    <?php if ($filiale_count > 0): ?>
+        <ul style="list-style:none; padding:0; margin:0 0 16px; display:flex; flex-direction:column; gap:10px;">
+            <?php foreach ($filialen as $filiale): 
+                $is_parent = !$filiale->parent_advertiser_id;
+                $ad_count_filiale = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND is_active=1", $filiale->id));
+                $full_address = implode(', ', array_filter([$filiale->address, $filiale->postcode, $filiale->city]));
+            ?>
+            <li style="display:flex; align-items:center; gap:12px; padding:10px; border-radius:8px; <?php echo $is_parent ? 'border:1px solid var(--pp); background:rgba(99,102,241,.05);' : 'border:1px solid var(--border);'; ?>">
+                <div style="flex:1;">
+                    <strong style="font-weight:600;"><?php echo esc_html($filiale->business_name); ?><?php if ($is_parent) echo ' (' . PPV_Lang::t('main_location', 'Fő telephely') . ')'; ?></strong>
+                    <div style="font-size:12px; color:var(--muted);"><?php echo esc_html($full_address); ?></div>
+                </div>
+                <span class="bz-tag basic"><?php echo sprintf(PPV_Lang::t('biz_filiale_ads_count'), $ad_count_filiale); ?></span>
+                <?php if (!$is_parent): ?>
+                <button type="button" class="bz-btn danger ghost filiale-delete-btn" data-filiale-id="<?php echo esc_attr($filiale->id); ?>" title="<?php echo PPV_Lang::t('biz_filiale_delete_btn', 'Törlés'); ?>">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+                <?php endif; ?>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php else: ?>
+        <p><?php echo PPV_Lang::t('biz_filiale_no_filialen_yet'); ?></p>
+    <?php endif; ?>
+
+    <div style="padding-top:12px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); text-align:right;">
+        <?php
+        if ($filiale_count > 0 && class_exists('PPV_Advertisers')) {
+            $price = PPV_Advertisers::get_effective_price($parent_id, $adv->country ?? 'DE');
+            $push_limit = PPV_Advertisers::get_effective_push_limit($parent_id);
+            $country_code = strtoupper($adv->country ?? 'DE');
+            $currency = ($country_code === 'RO') ? 'RON' : '€';
+            $base_price = ($country_code === 'RO') ? PPV_Advertisers::TIERS[PPV_Advertisers::TIER_BASIC]['price_ron'] : PPV_Advertisers::TIERS[PPV_Advertisers::TIER_BASIC]['price_eur'];
+
+            echo sprintf(
+                PPV_Lang::t('biz_filiale_price_line'), 
+                $filiale_count, 
+                number_format($base_price, 0) . '&nbsp;' . $currency, 
+                number_format($price, 0) . '&nbsp;' . $currency
+            );
+            echo '<br>';
+            echo sprintf(PPV_Lang::t('biz_filiale_push_limit'), $push_limit);
+        }
+        ?>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteButtons = document.querySelectorAll('.filiale-delete-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const filialeId = this.dataset.filialeId;
+            if (!filialeId) return;
+
+            if (confirm('<?php echo esc_js(PPV_Lang::t('biz_filiale_delete_confirm', 'Biztosan törölni szeretnéd ezt a fiókot? Ezt a műveletet nem lehet visszavonni.')); ?>')) {
+                fetch('<?php echo esc_url(rest_url('punktepass/v1/filiale-delete')); ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>'
+                    },
+                    body: JSON.stringify({ target_id: filialeId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = window.location.pathname + '?filiale_deleted=1';
+                    } else {
+                        alert('Hiba a törlés során: ' + (data.message || 'Ismeretlen hiba.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Hálózati hiba történt a törlés során.');
+                });
+            }
+        });
+    });
+});
+</script>
+
+<?php } ?>
 <?php
 $is_welcome = isset($_GET['welcome']);
 $profile_complete = !empty($adv->address) && !empty($adv->lat) && !empty($adv->lng);
@@ -80,3 +193,152 @@ $public_url = home_url('/business/' . $adv->slug);
     </div>
   </div>
 </div>
+
+<!-- ============================================================
+     FLYER BONUS — moved from handler /mein-profil to business advertiser admin
+     ============================================================ -->
+<div class="bz-card" id="flyer-bonus-card">
+  <h2 class="bz-h2"><i class="ri-printer-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_card_title')); ?></h2>
+  <p style="margin:0 0 12px; color:var(--muted); font-size:13px;"><?php echo esc_html(PPV_Lang::t('flyer_card_desc')); ?></p>
+
+  <div class="bz-grid" style="margin-bottom:12px;">
+    <a class="bz-btn secondary" href="<?php echo esc_url(PPV_PLUGIN_URL . 'assets/flyers/punktepass-flyer-de.png'); ?>" target="_blank" rel="noopener">
+      <i class="ri-download-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_de')); ?>
+    </a>
+    <a class="bz-btn secondary" href="<?php echo esc_url(PPV_PLUGIN_URL . 'assets/flyers/punktepass-flyer-ro.png'); ?>" target="_blank" rel="noopener">
+      <i class="ri-download-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_ro')); ?>
+    </a>
+    <button type="button" class="bz-btn secondary" disabled style="opacity:0.5; cursor:not-allowed;">
+      <i class="ri-time-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_hu')); ?>
+    </button>
+    <button type="button" class="bz-btn secondary" disabled style="opacity:0.5; cursor:not-allowed;">
+      <i class="ri-time-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_en')); ?>
+    </button>
+  </div>
+
+  <div style="margin-top:14px;">
+    <button type="button" id="flyer-request-toggle" class="bz-btn">
+      <i class="ri-mail-send-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_request_btn')); ?>
+    </button>
+    <small style="display:block; margin-top:6px; color:var(--muted);"><?php echo esc_html(PPV_Lang::t('flyer_delivery_info')); ?></small>
+  </div>
+
+  <form id="flyer-request-form" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid #e5e7eb;">
+    <h3 class="bz-h2" style="margin-bottom:10px;"><?php echo esc_html(PPV_Lang::t('flyer_request_form_title')); ?></h3>
+
+    <div class="bz-grid">
+      <div>
+        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('flyer_field_name')); ?> *</label>
+        <input type="text" name="name" class="bz-input" required maxlength="120">
+      </div>
+      <div>
+        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('flyer_field_business')); ?> *</label>
+        <input type="text" name="business_name" class="bz-input" required maxlength="120" value="<?php echo esc_attr($adv->business_name); ?>">
+      </div>
+    </div>
+
+    <label class="bz-label" style="margin-top:8px;"><?php echo esc_html(PPV_Lang::t('flyer_field_address')); ?> *</label>
+    <input type="text" name="address" class="bz-input" required maxlength="200">
+
+    <div class="bz-grid" style="margin-top:8px;">
+      <div>
+        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('flyer_field_postcode')); ?> *</label>
+        <input type="text" name="postcode" class="bz-input" required maxlength="20">
+      </div>
+      <div>
+        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('flyer_field_city')); ?> *</label>
+        <input type="text" name="city" class="bz-input" required maxlength="80">
+      </div>
+    </div>
+
+    <div class="bz-grid" style="margin-top:8px;">
+      <div>
+        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('flyer_field_country')); ?> *</label>
+        <select name="country" class="bz-input" required>
+          <option value="DE">Deutschland</option>
+          <option value="AT">Österreich</option>
+          <option value="CH">Schweiz</option>
+          <option value="HU">Magyarország</option>
+          <option value="RO">România</option>
+        </select>
+      </div>
+      <input type="hidden" name="quantity" value="1">
+    </div>
+
+    <label class="bz-label" style="margin-top:8px;"><?php echo esc_html(PPV_Lang::t('flyer_field_language')); ?></label>
+    <select name="language" class="bz-input">
+      <option value="de">Deutsch</option>
+      <option value="hu">Magyar</option>
+      <option value="ro">Română</option>
+      <option value="en">English</option>
+    </select>
+
+    <label class="bz-label" style="margin-top:8px;"><?php echo esc_html(PPV_Lang::t('flyer_field_message')); ?></label>
+    <textarea name="message" class="bz-textarea" maxlength="500" rows="3"></textarea>
+
+    <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button type="submit" class="bz-btn"><i class="ri-send-plane-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_submit')); ?></button>
+      <button type="button" id="flyer-request-cancel" class="bz-btn secondary"><?php echo esc_html(PPV_Lang::t('flyer_cancel')); ?></button>
+    </div>
+    <div id="flyer-request-error" class="bz-msg err" style="display:none; margin-top:10px;"></div>
+  </form>
+
+  <div id="flyer-request-success" style="display:none; margin-top:14px; padding:14px; background:#dcfce7; border:1px solid #86efac; border-radius:10px; color:#166534;">
+    <strong><?php echo esc_html(PPV_Lang::t('flyer_success')); ?></strong>
+  </div>
+</div>
+
+<script>
+(function(){
+  var toggleBtn = document.getElementById('flyer-request-toggle');
+  var form      = document.getElementById('flyer-request-form');
+  var cancelBtn = document.getElementById('flyer-request-cancel');
+  var success   = document.getElementById('flyer-request-success');
+  var errBox    = document.getElementById('flyer-request-error');
+  if (!toggleBtn || !form) return;
+
+  toggleBtn.addEventListener('click', function(){
+    form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none';
+    if (form.style.display === 'block') {
+      var firstField = form.querySelector('input[name="name"]');
+      if (firstField) firstField.focus();
+    }
+  });
+  cancelBtn.addEventListener('click', function(){ form.style.display = 'none'; errBox.style.display='none'; });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    errBox.style.display = 'none';
+    var fd = new FormData(form);
+    var payload = {};
+    fd.forEach(function(v,k){ payload[k] = v; });
+
+    var submitBtn = form.querySelector('button[type=submit]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.6'; }
+
+    fetch('<?php echo esc_url(rest_url('punktepass/v1/flyer-request')); ?>', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {'Content-Type':'application/json','X-WP-Nonce':'<?php echo esc_js(wp_create_nonce('wp_rest')); ?>'},
+      body: JSON.stringify(payload)
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, data:j}; }); })
+      .then(function(res){
+        if (res.ok && res.data && res.data.success) {
+          form.style.display = 'none';
+          toggleBtn.style.display = 'none';
+          success.style.display = 'block';
+        } else {
+          errBox.textContent = (res.data && res.data.message) ? res.data.message : '<?php echo esc_js(PPV_Lang::t('flyer_error_generic')); ?>';
+          errBox.style.display = 'block';
+        }
+      })
+      .catch(function(){
+        errBox.textContent = '<?php echo esc_js(PPV_Lang::t('flyer_error_generic')); ?>';
+        errBox.style.display = 'block';
+      })
+      .finally(function(){
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
+      });
+  });
+})();
+</script>

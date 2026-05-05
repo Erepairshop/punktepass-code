@@ -14,10 +14,6 @@ $price_str = in_array($lang, ['ro', 'hu'], true)
     <input type="hidden" name="action" value="ppv_advertiser_register">
     <div class="bz-grid">
       <div>
-        <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_register_company')); ?></label>
-        <input type="text" name="business_name" class="bz-input" required>
-      </div>
-      <div>
         <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_register_email')); ?></label>
         <input type="email" name="email" class="bz-input" required>
       </div>

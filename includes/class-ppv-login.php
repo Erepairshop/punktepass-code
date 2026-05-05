@@ -443,13 +443,21 @@ public static function render_landing_page($atts) {
 
                 <!-- CTA Links -->
                 <div class="lo-cta-section">
-                    <a href="/demo" target="_blank" class="lo-cta-btn lo-cta-demo">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
-                        <?php echo PPV_Lang::t('login_demo_button', 'So funktioniert PunktePass'); ?>
+                    <a href="/signup?vendor=ad" class="lo-cta-btn lo-cta-business">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9"/><line x1="9" y1="13" x2="9" y2="13"/><line x1="9" y1="17" x2="9" y2="17"/></svg>
+                        <?php echo PPV_Lang::t('login_business_register_cta', 'Werbe-Business – Jetzt registrieren'); ?>
+                    </a>
+                    <a href="/signup?vendor=loyalty" class="lo-cta-btn lo-cta-loyalty">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        <?php echo PPV_Lang::t('login_loyalty_register_cta', 'Loyalty Händler – Jetzt registrieren'); ?>
                     </a>
                     <a href="/formular" class="lo-cta-btn lo-cta-repair">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                         <?php echo PPV_Lang::t('login_repair_form_cta', 'Reparatur-Formularsystem'); ?>
+                    </a>
+                    <a href="/demo" target="_blank" class="lo-cta-btn lo-cta-demo">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
+                        <?php echo PPV_Lang::t('login_demo_button', 'So funktioniert PunktePass'); ?>
                     </a>
                 </div>
 

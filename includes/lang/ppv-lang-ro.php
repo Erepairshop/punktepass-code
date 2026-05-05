@@ -2402,4 +2402,45 @@ return [
 'flyer_success' => '✓ Mulțumim! Vei primi pliantele prin poștă în 4-6 zile.',
 'flyer_error_required' => 'Te rugăm să completezi toate câmpurile obligatorii.',
 'flyer_error_generic' => 'Eroare la trimitere. Încearcă din nou mai târziu.',
+    'biz_filiale_section_title' => 'Filialele tale',
+    'biz_filiale_active_picker' => 'Filială activă',
+    'biz_filiale_add_btn' => '+ Adaugă filială nouă',
+    'biz_filiale_price_line' => 'Acum: %d filiale × %s = %s/lună',
+    'biz_filiale_ads_count' => '%d/1 anunț',
+    'biz_filiale_no_filialen_yet' => 'Nicio filială încă. Adaugă una!',
+    'biz_filiale_push_limit' => '%d push/lună',
+
+    // Filiale Management (Business Admin)
+    'biz_filiale_new_title' => 'Adăugare filială nouă',
+    'biz_filiale_new_submit' => 'Creare filială',
+    'biz_filiale_copy_from' => 'Copiere date de la o altă filială',
+    'biz_filiale_copy_select_placeholder' => '-- Selectați o filială --',
+    'biz_filiale_delete_btn' => 'Ștergere',
+    'biz_filiale_delete_confirm' => 'Sunteți sigur că doriți să ștergeți această filială? Această acțiune nu poate fi anulată.',
+    'biz_filiale_created_msg' => '✓ Filială adăugată cu succes!',
+    'biz_filiale_deleted_msg' => '✓ Filială ștearsă!',
+    'biz_filiale_section_title' => 'Filiale',
+    'biz_filiale_add_btn' => 'Filială nouă',
+    'biz_filiale_no_filialen_yet' => 'Nu există încă filiale.',
+    'biz_filiale_price_line' => 'Preț pentru %d filiale (bază %s): %s',
+    'biz_filiale_push_limit' => 'Limită notificări push: %d/lună',
+    'main_location' => 'Locație principală',
+    'biz_filiale_label' => 'Nume filială (ex. "Centru")',
+    'biz_filiale_business_name' => 'Nume companie',
+    'biz_filiale_ads_count' => '%d anunțuri',
+    'biz_cancel' => 'Anulare',
+
+    // FAZIS 5 - Ads per filiale
+    'biz_ad_select_filiale_label' => 'Pentru ce filială?',
+    'biz_ad_no_free_filiale' => 'Fiecare filială are deja un anunț',
+    'biz_ad_for_filiale_badge' => '→ %s',
+    'biz_ad_for_parent_badge' => 'Profil principal',
+    'biz_ad_filiale_ad_exists' => 'Există deja un anunț activ pentru această filială.',
+
+    'biz_push_scale_hint' => '💡 3+ filiale = 8 push/lună · 7+ filiale = 16 push/lună',
 ];
+
+
+// Business Admin Stats Filter
+'biz_stats_filter_label' => 'Filiala:',
+'biz_stats_filter_all' => 'Toate',

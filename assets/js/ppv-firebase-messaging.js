@@ -3,20 +3,6 @@
  * Uses Firebase JS SDK to get FCM tokens that work with FCM V1 API
  */
 
-// TEMP: prove file is loaded — visible red chip in top-left, no deps
-try {
-    var _earlyChip = function(){
-        var d = document.createElement('div');
-        d.id = 'ppv-load-mark';
-        d.style.cssText = 'position:fixed;top:5px;left:5px;background:#f00;color:#fff;font:bold 11px monospace;padding:3px 6px;z-index:99999;border-radius:3px;';
-        d.textContent = '[fcm-js loaded ' + new Date().toLocaleTimeString() + ']';
-        d.onclick = function(){ d.remove(); };
-        if (document.body) document.body.appendChild(d);
-        else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(d); });
-    };
-    _earlyChip();
-} catch(e) {}
-
 (function() {
     'use strict';
 
@@ -236,7 +222,8 @@ try {
      */
     // Bump this when we want all "Spater"/dismissed users to see the banner again.
     // 2026-04-27: bump 1->2 to re-prompt all unregistered users (TWA POST_NOTIFICATIONS rollout).
-    var PUSH_PROMPT_VERSION = 2;
+    // 2026-04-29: bump 2->3 after duplicate-push fix + auto-register dashboard verification.
+    var PUSH_PROMPT_VERSION = 3;
     function needsPushPermission() {
         if (!('Notification' in window)) return false;
         if (Notification.permission === 'granted') return false;
@@ -303,23 +290,22 @@ try {
         });
     }
 
-    // Diagnostic chip (TEMP) — visible on screen so user can debug TWA push state
-    function showDiagChip(msg) {
-        try {
-            var el = document.getElementById('ppv-push-diag');
-            if (!el) {
-                el = document.createElement('div');
-                el.id = 'ppv-push-diag';
-                el.style.cssText = 'position:fixed;top:50px;left:5px;background:rgba(0,0,0,0.85);color:#0f0;font:bold 10px monospace;padding:4px 6px;z-index:99998;border-radius:3px;max-width:90vw;';
-                document.body.appendChild(el);
-                el.addEventListener('click', function(){ el.remove(); });
-            }
-            el.textContent = '[push] ' + msg;
-        } catch(e) {}
-    }
+    function showDiagChip(){}
 
     // Auto-initialize when user is logged in
     document.addEventListener('DOMContentLoaded', async function() {
+        // iOS native app (WKWebView) uses the native push-bridge for APNs-bound FCM tokens.
+        // Skip the web-Firebase flow entirely there to avoid registering a parallel `platform=web`
+        // token that would override the correct `platform=ios` registration.
+        if (window.webkit && window.webkit.messageHandlers) {
+            showDiagChip('iOS WKWebView - skip web FCM, native bridge handles');
+            return;
+        }
+        // Android native (Capacitor / generic Android bridge) — same reasoning.
+        if (window.Android || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
+            showDiagChip('Android native - skip web FCM, native bridge handles');
+            return;
+        }
         showDiagChip('DOM ready uid=' + getCurrentUserId() + ' fb=' + (typeof firebase));
         // Only init if user is logged in and Firebase SDK is available
         if (getCurrentUserId() && typeof firebase !== 'undefined') {

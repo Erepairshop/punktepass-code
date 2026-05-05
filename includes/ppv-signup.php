@@ -321,14 +321,6 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                         <form id="ppv-signup-form" class="su-form" autocomplete="off">
                             <input type="hidden" name="user_type" id="ppv-user-type" value="user">
 
-                            <!-- Business name (advertiser only) -->
-                            <div class="su-input-group" id="ppv-business-name-group" style="display:none;">
-                                <label for="ppv-business-name"><i class="ri-store-2-line"></i> <?php echo esc_html(PPV_Lang::t('signup_business_name')); ?></label>
-                                <div class="su-input-wrap">
-                                    <input type="text" id="ppv-business-name" name="business_name" class="su-input" placeholder="<?php echo esc_attr(PPV_Lang::t('signup_business_name_placeholder')); ?>" maxlength="80">
-                                </div>
-                            </div>
-
                             <!-- Email -->
                             <div class="su-input-group">
                                 <label for="ppv-email"><i class="ri-mail-line"></i> <?php echo PPV_Lang::t('signup_email_label'); ?></label>
@@ -470,12 +462,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                 if (overlay) overlay.addEventListener('click', function(e) {
                     if (e.target === overlay) closeVendorChoice();
                 });
-                const bizGroup = document.getElementById('ppv-business-name-group');
-                function setAdvertiserMode(on) {
-                  if (bizGroup) bizGroup.style.display = on ? '' : 'none';
-                  const inp = document.getElementById('ppv-business-name');
-                  if (inp) inp.required = !!on;
-                }
+                function setAdvertiserMode(on) { /* business name field removed */ }
                 if (pickLoyalty) pickLoyalty.addEventListener('click', function() {
                     hiddenInput.value = 'vendor';
                     setAdvertiserMode(false);
@@ -486,6 +473,28 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
                     setAdvertiserMode(true);
                     if (overlay) overlay.style.display = 'none';
                 });
+
+                // Auto-select via URL ?vendor=loyalty | ad (from login page CTA)
+                try {
+                    var preset = new URLSearchParams(window.location.search).get('vendor');
+                    if (preset === 'loyalty' || preset === 'ad') {
+                        var vendorTab = document.querySelector('.su-type-tab[data-type="vendor"]');
+                        if (vendorTab) {
+                            tabs.forEach(function(t) { t.classList.remove('active'); });
+                            vendorTab.classList.add('active');
+                            hiddenInput.value = 'vendor';
+                            // Skip overlay — apply preset directly
+                            if (preset === 'loyalty') {
+                                hiddenInput.value = 'vendor';
+                                setAdvertiserMode(false);
+                            } else {
+                                hiddenInput.value = 'advertiser';
+                                setAdvertiserMode(true);
+                            }
+                            if (overlay) overlay.style.display = 'none';
+                        }
+                    }
+                } catch (e) { /* noop */ }
             }
 
             if (document.readyState === 'loading') {
@@ -536,12 +545,14 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
         // Advertiser branch — separate registration in ppv_advertisers table
         if ($user_type === 'advertiser') {
             $business_name = sanitize_text_field($_POST['business_name'] ?? '');
+            if (strlen($business_name) < 2) {
+                $business_name = ucfirst(strtok($email, '@'));
+            }
             $post_keys = implode(',', array_keys($_POST));
             ppv_log("🔹 [PPV_Signup] Advertiser register: email='{$email}' biz='{$business_name}' pw_len=" . strlen($password) . " keys=[{$post_keys}]");
             $missing = [];
             if (!is_email($email)) $missing[] = 'email (érvénytelen)';
             if (strlen($password) < 6) $missing[] = 'jelszó (min 6 karakter, kapott: ' . strlen($password) . ')';
-            if (strlen($business_name) < 2) $missing[] = 'cégnév (kapott: "' . $business_name . '")';
             if ($missing) {
                 wp_send_json_error(['message' => 'Hiányzó/hibás: ' . implode(', ', $missing) . ' | $_POST kulcsok: [' . $post_keys . ']']);
                 return;
@@ -819,8 +830,7 @@ window.ppvSignupTranslations = <?php echo wp_json_encode([
         if ($user_type === 'advertiser') {
             $business_name = sanitize_text_field($_POST['business_name'] ?? '');
             if (strlen($business_name) < 2) {
-                wp_send_json_error(['message' => 'Add meg a cégnevet a Google regisztráció előtt.']);
-                return;
+                $business_name = ucfirst(strtok($email, '@'));
             }
             $exists = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$prefix}ppv_advertisers WHERE owner_email = %s", $email

@@ -165,6 +165,17 @@ class PPV_Push {
             'permission_callback' => [__CLASS__, 'verify_user_or_pos']
         ]);
 
+        // Lightweight "who am I" — used by the push bridge to recover userId on standalone pages
+        register_rest_route('punktepass/v1', '/me', [
+            'methods'  => 'GET',
+            'callback' => function() {
+                if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
+                $uid = !empty($_SESSION['ppv_user_id']) ? (int)$_SESSION['ppv_user_id'] : 0;
+                return new WP_REST_Response(['user_id' => $uid], 200);
+            },
+            'permission_callback' => '__return_true',
+        ]);
+
         // Unregister push token
         register_rest_route('punktepass/v1', '/push/unregister', [
             'methods'  => 'POST',
@@ -598,13 +609,17 @@ class PPV_Push {
     public static function get_customer_subscription_count($store_id) {
         global $wpdb;
 
-        // Count users who have points at this store AND have push subscriptions
+        // Count distinct users with active push subscriptions who EITHER follow this store
+        // (ppv_store_followers, push_enabled=1) OR have points at it (ppv_points = scanned).
         return (int)$wpdb->get_var($wpdb->prepare("
             SELECT COUNT(DISTINCT ps.user_id)
             FROM {$wpdb->prefix}ppv_push_subscriptions ps
-            INNER JOIN {$wpdb->prefix}ppv_points p ON ps.user_id = p.user_id
-            WHERE p.store_id = %d AND ps.is_active = 1
-        ", $store_id));
+            WHERE ps.is_active = 1
+              AND (
+                EXISTS (SELECT 1 FROM {$wpdb->prefix}ppv_store_followers f WHERE f.user_id = ps.user_id AND f.store_id = %d AND f.push_enabled = 1)
+                OR EXISTS (SELECT 1 FROM {$wpdb->prefix}ppv_points p WHERE p.user_id = ps.user_id AND p.store_id = %d)
+              )
+        ", $store_id, $store_id));
     }
 
     /** ============================================================
@@ -769,13 +784,19 @@ class PPV_Push {
     public static function send_to_store_customers($store_id, $payload) {
         global $wpdb;
 
-        // Get users who have points at this store AND have push subscriptions
+        // Reach users with active push subscriptions who EITHER follow this store
+        // (ppv_store_followers, push_enabled=1) OR have scanned at it (ppv_points).
+        // After 2026-04-29 every successful scan auto-inserts the user into ppv_store_followers,
+        // so the followers branch becomes the primary source over time.
         $user_ids = $wpdb->get_col($wpdb->prepare("
             SELECT DISTINCT ps.user_id
             FROM {$wpdb->prefix}ppv_push_subscriptions ps
-            INNER JOIN {$wpdb->prefix}ppv_points p ON ps.user_id = p.user_id
-            WHERE p.store_id = %d AND ps.is_active = 1
-        ", $store_id));
+            WHERE ps.is_active = 1
+              AND (
+                EXISTS (SELECT 1 FROM {$wpdb->prefix}ppv_store_followers f WHERE f.user_id = ps.user_id AND f.store_id = %d AND f.push_enabled = 1)
+                OR EXISTS (SELECT 1 FROM {$wpdb->prefix}ppv_points p WHERE p.user_id = ps.user_id AND p.store_id = %d)
+              )
+        ", $store_id, $store_id));
 
         $results = ['total_users' => count($user_ids), 'sent' => 0, 'failed' => 0];
 
@@ -784,6 +805,30 @@ class PPV_Push {
             $results['sent'] += $result['sent'] ?? 0;
         }
 
+        return $results;
+    }
+
+    /**
+     * Send push to all users who follow this loyalty store
+     * (uses ppv_store_followers, separate from ppv_points scan history)
+     */
+    public static function send_to_store_followers($store_id, $payload) {
+        global $wpdb;
+
+        $user_ids = $wpdb->get_col($wpdb->prepare("
+            SELECT DISTINCT f.user_id
+            FROM {$wpdb->prefix}ppv_store_followers f
+            INNER JOIN {$wpdb->prefix}ppv_push_subscriptions ps ON ps.user_id = f.user_id
+            WHERE f.store_id = %d
+              AND f.push_enabled = 1
+              AND ps.is_active = 1
+        ", $store_id));
+
+        $results = ['total_followers' => count($user_ids), 'sent' => 0];
+        foreach ($user_ids as $uid) {
+            $r = self::send_to_user((int)$uid, $payload);
+            $results['sent'] += (int)($r['sent'] ?? 0);
+        }
         return $results;
     }
 
@@ -876,20 +921,31 @@ class PPV_Push {
 
         $platform = $message['platform'] ?? 'web';
 
+        // Build full data payload — for web tokens this is the ONLY display source,
+        // since both `notification` and `webpush.notification` cause Chrome to auto-display
+        // in parallel with our SW's manual showNotification, producing duplicate "P" pushes.
+        // The SW reads title/body/icon/image/tag from `data` and shows it itself.
+        $stable_tag = 'pp-' . substr(md5($notification_base['title'] . '|' . $notification_base['body']), 0, 12);
+        $data_payload = array_merge(
+            array_map('strval', $message['data'] ?? []),
+            [
+                'title'    => (string)$notification_base['title'],
+                'body'     => (string)$notification_base['body'],
+                'icon'     => (string)$web_icon,
+                'badge'    => '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
+                'tag'      => $stable_tag,
+            ]
+        );
+        if (!empty($message['notification']['image'])) {
+            $data_payload['image'] = (string)$message['notification']['image'];
+        }
+
         $v1_message = [
             'message' => [
                 'token' => $message['to'],
-                'notification' => $notification_base,
-                'data' => array_map('strval', $message['data'] ?? []),
+                'data'  => $data_payload,
                 'webpush' => [
-                    'notification' => [
-                        'title' => $notification_base['title'],
-                        'body' => $notification_base['body'],
-                        'icon' => $web_icon,
-                        'badge' => '/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png',
-                        'image' => $message['notification']['image'] ?? null,
-                        'tag' => 'punktepass-' . substr(md5($notification_base['title'] . $notification_base['body']), 0, 8)
-                    ],
+                    // NO `notification` block here — the SW shows it from `data`.
                     'fcm_options' => [
                         'link' => '/'
                     ]
@@ -897,9 +953,12 @@ class PPV_Push {
             ]
         ];
 
-        // Only attach android/apns blocks for native platforms.
-        // Web tokens (TWA Chrome WebView too) handle display via webpush only;
-        // including android.notification causes a duplicate "P" notification.
+        // Native android/ios apps DO need top-level `notification` so FCM auto-displays
+        // via android.notification / apns.alert. Web tokens skip it.
+        if ($platform === 'android' || $platform === 'ios') {
+            $v1_message['message']['notification'] = $notification_base;
+        }
+
         if ($platform === 'android') {
             $v1_message['message']['android'] = [
                 'priority' => 'high',

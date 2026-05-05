@@ -395,20 +395,7 @@ self.addEventListener("sync", e => {
 });
 
 // ============================================================
-// 🔔 PUSH NOTIFICATIONS
+// 🔔 PUSH NOTIFICATIONS — handled exclusively by firebase-messaging-sw.js
+// (this root SW would otherwise fire a duplicate showNotification when its
+//  scope captures FCM payloads. Disabled to prevent the "2 push" bug.)
 // ============================================================
-self.addEventListener("push", e => {
-  try {
-    const data = e.data ? e.data.json() : {};
-
-    e.waitUntil(
-      self.registration.showNotification(data.title || "PunktePass", {
-        body: data.body || "Új esemény érkezett!",
-        icon: "/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png",
-        badge: "/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png",
-        tag: "punktepass-notification",
-        requireInteraction: false
-      }).catch(err => {})
-    );
-  } catch (err) {}
-});
