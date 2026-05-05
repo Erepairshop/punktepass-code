@@ -29,6 +29,21 @@ $parent_advertiser = $wpdb->get_row($wpdb->prepare("SELECT business_name FROM {$
     <h1 class="bz-h1"><i class="ri-store-2-line"></i> <?php echo PPV_Lang::t('biz_filiale_new_title', 'Új fiók hozzáadása'); ?></h1>
     <p style="margin-top:-8px; margin-bottom:16px; color:var(--muted); font-size:13px;">Itt adhatsz hozzá új telephelyet a fiókodhoz. A fiókok külön kezelhetők, de egy előfizetés alá tartoznak.</p>
 
+    <?php if (!empty($_GET['err'])):
+        $err = sanitize_text_field($_GET['err']);
+        $msg_map = [
+            'missing_fields' => 'Hiányzó kötelező mezők (név, cím, város, fiók-név mind kötelező).',
+            'pin_too_close' => 'A megadott GPS-koordinátához túl közel van egy másik fiók.',
+            'db_error' => 'Adatbázis hiba: ' . sanitize_text_field($_GET['msg'] ?? ''),
+            'auth' => 'Bejelentkezés szükséges.',
+        ];
+        $msg = $msg_map[$err] ?? "Hiba: {$err}";
+    ?>
+    <div class="bz-msg err" style="background:#fee2e2;color:#991b1b;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid #fecaca;">
+        <strong>⚠ <?php echo esc_html($msg); ?></strong>
+    </div>
+    <?php endif; ?>
+
     <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
         <input type="hidden" name="action" value="ppv_advertiser_filiale_create">
         <?php wp_nonce_field('ppv_advertiser_filiale_create_nonce'); ?>
