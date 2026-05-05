@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 $adv = PPV_Advertisers::current_advertiser();
 global $wpdb;
 $ads = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d ORDER BY id DESC", $adv->id
+    "SELECT * FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND is_active = 1 ORDER BY id DESC", $adv->id
 ));
 $tier_info = PPV_Advertisers::TIERS[$adv->tier] ?? ['ads'=>1];
 $can_create = count($ads) < $tier_info['ads'];
@@ -14,14 +14,16 @@ if ($edit_id > 0) {
 }
 
 $ad_types = [
+  'coupon'           => [PPV_Lang::t('biz_ads_type_coupon'),           'ri-coupon-line', '#f59e0b'],
   'discount_percent' => [PPV_Lang::t('biz_ads_type_discount_percent'), 'ri-percent-line', '#dc2626'],
   'discount_fixed'   => [PPV_Lang::t('biz_ads_type_discount_fixed'),   'ri-money-euro-circle-line', '#dc2626'],
   'free_product'     => [PPV_Lang::t('biz_ads_type_free_product'),     'ri-gift-line', '#10b981'],
-  'coupon'           => [PPV_Lang::t('biz_ads_type_coupon'),           'ri-coupon-line', '#f59e0b'],
-  'event'            => [PPV_Lang::t('biz_ads_type_event'),            'ri-calendar-event-line', '#8b5cf6'],
-  'announcement'     => [PPV_Lang::t('biz_ads_type_announcement'),     'ri-megaphone-line', '#3b82f6'],
+  'event'            => [PPV_Lang::t('biz_ads_type_event') ?: 'Esemény', 'ri-calendar-event-line', '#8b5cf6'],
+  'announcement'     => [PPV_Lang::t('biz_ads_type_announcement') ?: 'Hirdetmény', 'ri-megaphone-line', '#3b82f6'],
 ];
-$current_type = $edit->ad_type ?? 'discount_percent';
+$_legacy_type = $edit->ad_type ?? 'coupon';
+$_allowed_types = ['coupon','discount_percent','discount_fixed','free_product','event','announcement'];
+$current_type = in_array($_legacy_type, $_allowed_types, true) ? $_legacy_type : 'coupon';
 $current_vis = $edit->visibility ?? 'public';
 $current_pul = $edit->per_user_limit ?? 'lifetime';
 $current_badge = $edit->badge ?? '';
@@ -54,6 +56,7 @@ $current_badge = $edit->badge ?? '';
 <div class="bz-card" style="padding:14px;">
   <h1 class="bz-h1" style="margin:0;"><i class="ri-megaphone-fill"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_title')); ?> <span style="font-size:13px; font-weight:500; color:var(--muted);">(<?php echo count($ads); ?>/<?php echo $tier_info['ads']; ?>)</span></h1>
   <?php if (!empty($_GET['saved'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_saved_msg')); ?></div><?php endif; ?>
+  <?php if (!empty($_GET['deleted'])): ?><div class="bz-msg ok" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_ads_deleted_msg')); ?></div><?php endif; ?>
   <?php if (!empty($_GET['err']) && $_GET['err'] === 'tier_limit'): ?><div class="bz-msg err" style="margin-top:10px;"><?php echo esc_html(sprintf(PPV_Lang::t('biz_ads_tier_limit_msg'), $tier_info['ads'])); ?></div><?php endif; ?>
   <?php if (!$edit_id && $can_create): ?>
     <a href="?edit=new" class="bz-btn full" style="margin-top:12px;"><i class="ri-add-line"></i> <?php echo esc_html(PPV_Lang::t('biz_ads_new_btn')); ?></a>
@@ -107,6 +110,17 @@ $current_badge = $edit->badge ?? '';
         <label class="bz-label"><?php echo esc_html(PPV_Lang::t('biz_ads_coupon_label')); ?></label>
         <input type="text" name="coupon_code" class="bz-input" maxlength="20" value="<?php echo esc_attr($edit->coupon_code ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('biz_ads_coupon_ph')); ?>" style="text-transform:uppercase; letter-spacing:1px; font-family:monospace;">
         <div class="char-count" style="text-align:left;"><?php echo esc_html(PPV_Lang::t('biz_ads_coupon_hint')); ?></div>
+
+        <!-- Max claims — hány kupon osztható ki összesen (üres = végtelen) -->
+        <label class="bz-label" style="margin-top:10px;"><?php echo esc_html(PPV_Lang::t('biz_ads_max_claims_label') ?: 'Mennyi kupon osztható ki összesen?'); ?></label>
+        <input type="number" name="max_claims" min="1" step="1" class="bz-input" value="<?php echo esc_attr($edit->max_claims ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('biz_ads_max_claims_ph') ?: 'Üresen hagyva = végtelen'); ?>">
+        <div class="char-count" style="text-align:left;"><?php echo esc_html(PPV_Lang::t('biz_ads_max_claims_hint') ?: 'Pl. 50 — ennyien tudják beváltani. Üresen = nincs limit.'); ?></div>
+        <?php if (!empty($edit->id)): ?>
+          <div style="margin-top:8px; padding:8px 12px; background:rgba(99,102,241,0.08); border-radius:6px; font-size:13px;">
+            <strong><?php echo (int)($edit->claim_count ?? 0); ?></strong> / <?php echo (!empty($edit->max_claims) && (int)$edit->max_claims > 0) ? (int)$edit->max_claims : '∞'; ?>
+            <?php echo esc_html(PPV_Lang::t('biz_ads_claimed_so_far') ?: 'kupon kiosztva eddig'); ?>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
   </details>
@@ -230,14 +244,12 @@ function selectType(t, el) {
   }
   // Update promo label/placeholder dynamically
   const cfg = <?php echo wp_json_encode([
+    'coupon'           => ['label' => PPV_Lang::t('biz_ads_promo_coupon_label'), 'ph' => PPV_Lang::t('biz_ads_promo_coupon_ph'), 'hint' => PPV_Lang::t('biz_ads_promo_coupon_hint')],
     'discount_percent' => ['label' => PPV_Lang::t('biz_ads_promo_pct_label'),    'ph' => PPV_Lang::t('biz_ads_promo_pct_ph'),    'hint' => PPV_Lang::t('biz_ads_promo_pct_hint')],
     'discount_fixed'   => ['label' => PPV_Lang::t('biz_ads_promo_eur_label'),    'ph' => PPV_Lang::t('biz_ads_promo_eur_ph'),    'hint' => PPV_Lang::t('biz_ads_promo_eur_hint')],
     'free_product'     => ['label' => PPV_Lang::t('biz_ads_promo_free_label'),   'ph' => PPV_Lang::t('biz_ads_promo_free_ph'),   'hint' => PPV_Lang::t('biz_ads_promo_free_hint')],
-    'coupon'           => ['label' => PPV_Lang::t('biz_ads_promo_coupon_label'), 'ph' => PPV_Lang::t('biz_ads_promo_coupon_ph'), 'hint' => PPV_Lang::t('biz_ads_promo_coupon_hint')],
-    'event'            => ['label' => PPV_Lang::t('biz_ads_promo_event_label'),  'ph' => PPV_Lang::t('biz_ads_promo_event_ph'),  'hint' => PPV_Lang::t('biz_ads_promo_event_hint')],
-    'announcement'     => ['label' => PPV_Lang::t('biz_ads_promo_ann_label'),    'ph' => PPV_Lang::t('biz_ads_promo_ann_ph'),    'hint' => PPV_Lang::t('biz_ads_promo_ann_hint')],
   ]); ?>;
-  const c = cfg[t] || cfg.announcement;
+  const c = cfg[t] || cfg.coupon;
   document.getElementById('promoLabel').textContent = c.label;
   document.getElementById('promoValue').placeholder = c.ph;
   document.getElementById('promoHint').textContent = c.hint;
@@ -301,6 +313,12 @@ selectType(document.getElementById('adType').value, document.querySelector('.typ
         </div>
       </div>
       <a href="?edit=<?php echo (int)$a->id; ?>" class="bz-btn secondary" style="padding:6px 10px; font-size:12px;"><i class="ri-edit-line"></i></a>
+      <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:0;" onsubmit="return confirm('<?php echo esc_js(PPV_Lang::t('biz_ads_delete_confirm')); ?>');">
+        <?php wp_nonce_field('ppv_advertiser_delete_ad'); ?>
+        <input type="hidden" name="action" value="ppv_advertiser_delete_ad">
+        <input type="hidden" name="ad_id" value="<?php echo (int)$a->id; ?>">
+        <button type="submit" class="bz-btn secondary" style="padding:6px 10px; font-size:12px; color:#dc2626;" title="<?php echo esc_attr(PPV_Lang::t('biz_ads_delete_btn')); ?>"><i class="ri-delete-bin-line"></i></button>
+      </form>
     </div>
     <?php endforeach; ?>
   <?php endif; ?>
