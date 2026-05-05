@@ -2431,9 +2431,8 @@ return [
     'biz_ad_filiale_ad_exists' => 'Ehhez a fiókhoz már létezik aktív hirdetés.',
 
     'biz_push_scale_hint' => '💡 3+ fiók = 8 push/hó · 7+ fiók = 16 push/hó',
+
+    // Business Admin Stats Filter
+    'biz_stats_filter_label' => 'Fiók:',
+    'biz_stats_filter_all' => 'Mind',
 ];
-
-
-// Business Admin Stats Filter
-'biz_stats_filter_label' => 'Fiók:',
-'biz_stats_filter_all' => 'Mind',

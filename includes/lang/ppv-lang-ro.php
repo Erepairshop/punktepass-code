@@ -2438,9 +2438,8 @@ return [
     'biz_ad_filiale_ad_exists' => 'Există deja un anunț activ pentru această filială.',
 
     'biz_push_scale_hint' => '💡 3+ filiale = 8 push/lună · 7+ filiale = 16 push/lună',
+
+    // Business Admin Stats Filter
+    'biz_stats_filter_label' => 'Filiala:',
+    'biz_stats_filter_all' => 'Toate',
 ];
-
-
-// Business Admin Stats Filter
-'biz_stats_filter_label' => 'Filiala:',
-'biz_stats_filter_all' => 'Toate',

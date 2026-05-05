@@ -2332,9 +2332,8 @@ return [
     'biz_ad_filiale_ad_exists' => 'An active advertisement already exists for this branch.',
 
     'biz_push_scale_hint' => '💡 3+ branches = 8 pushes/mo · 7+ branches = 16 pushes/mo',
+
+    // Business Admin Stats Filter
+    'biz_stats_filter_label' => 'Branch:',
+    'biz_stats_filter_all' => 'All',
 ];
-
-
-// Business Admin Stats Filter
-'biz_stats_filter_label' => 'Branch:',
-'biz_stats_filter_all' => 'All',

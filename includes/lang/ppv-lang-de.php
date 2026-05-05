@@ -2452,10 +2452,8 @@ return [
     'biz_ad_filiale_ad_exists' => 'Für diese Filiale existiert bereits eine aktive Anzeige.',
 
     'biz_push_scale_hint' => '💡 3+ Filialen = 8 Push/Monat · 7+ Filialen = 16 Push/Monat',
+
+    // Business Admin Stats Filter
+    'biz_stats_filter_label' => 'Filiale:',
+    'biz_stats_filter_all' => 'Alle',
 ];
-
-
-
-// Business Admin Stats Filter
-'biz_stats_filter_label' => 'Filiale:',
-'biz_stats_filter_all' => 'Alle',
