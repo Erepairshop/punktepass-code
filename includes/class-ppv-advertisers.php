@@ -848,7 +848,9 @@ class PPV_Advertisers {
             'phone' => sanitize_text_field($_POST['phone'] ?? ''),
             'lat' => !empty($_POST['lat']) && is_numeric($_POST['lat']) ? floatval($_POST['lat']) : null,
             'lng' => !empty($_POST['lng']) && is_numeric($_POST['lng']) ? floatval($_POST['lng']) : null,
-            'owner_email' => $parent_data->owner_email,
+            // Filiale rows share the parent's password but need unique email (uniq_email constraint).
+            // Synthesize: parent-prefix+filiale-suffix@local.filiale.punktepass
+            'owner_email' => 'filiale+' . $parent_id . '-' . substr(md5($filiale_label . microtime()), 0, 8) . '@local.filiale.punktepass',
             'password_hash' => $parent_data->password_hash,
             'tier' => $parent_data->tier,
             'subscription_status' => $parent_data->subscription_status,

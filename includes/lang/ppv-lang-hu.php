@@ -2435,4 +2435,5 @@ return [
     // Business Admin Stats Filter
     'biz_stats_filter_label' => 'Fiók:',
     'biz_stats_filter_all' => 'Mind',
+    'biz_filiale_new_intro' => 'Itt adhatsz hozzá új telephelyet a fiókodhoz. A fiókok külön kezelhetők, de egy előfizetés alá tartoznak.',
 ];

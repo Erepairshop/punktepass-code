@@ -2456,4 +2456,5 @@ return [
     // Business Admin Stats Filter
     'biz_stats_filter_label' => 'Filiale:',
     'biz_stats_filter_all' => 'Alle',
+    'biz_filiale_new_intro' => 'Hier können Sie eine neue Filiale zu Ihrem Konto hinzufügen. Filialen werden separat verwaltet, gehören aber zu einem Abonnement.',
 ];

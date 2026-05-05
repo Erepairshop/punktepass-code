@@ -65,11 +65,13 @@ if ($adv && class_exists('PPV_Advertisers')) {
     <div style="padding-top:12px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); text-align:right;">
         <?php
         if ($filiale_count > 0 && class_exists('PPV_Advertisers')) {
-            $price = PPV_Advertisers::get_effective_price($parent_id, $adv->country ?? 'DE');
+            // Currency selection: use UI language (HU and RO langs → RON)
+            $ui_lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+            $use_ron = in_array($ui_lang, ['ro', 'hu'], true);
+            $currency = $use_ron ? 'RON' : '€';
+            $base_price = $use_ron ? PPV_Advertisers::TIERS[PPV_Advertisers::TIER_BASIC]['price_ron'] : PPV_Advertisers::TIERS[PPV_Advertisers::TIER_BASIC]['price_eur'];
+            $price = $base_price * max(1, $filiale_count);
             $push_limit = PPV_Advertisers::get_effective_push_limit($parent_id);
-            $country_code = strtoupper($adv->country ?? 'DE');
-            $currency = ($country_code === 'RO') ? 'RON' : '€';
-            $base_price = ($country_code === 'RO') ? PPV_Advertisers::TIERS[PPV_Advertisers::TIER_BASIC]['price_ron'] : PPV_Advertisers::TIERS[PPV_Advertisers::TIER_BASIC]['price_eur'];
 
             echo sprintf(
                 PPV_Lang::t('biz_filiale_price_line'), 

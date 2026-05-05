@@ -2336,4 +2336,5 @@ return [
     // Business Admin Stats Filter
     'biz_stats_filter_label' => 'Branch:',
     'biz_stats_filter_all' => 'All',
+    'biz_filiale_new_intro' => 'Here you can add a new branch to your account. Branches are managed separately but share one subscription.',
 ];

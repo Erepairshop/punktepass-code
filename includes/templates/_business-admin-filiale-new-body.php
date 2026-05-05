@@ -27,7 +27,7 @@ $parent_advertiser = $wpdb->get_row($wpdb->prepare("SELECT business_name FROM {$
 
 <div class="bz-card">
     <h1 class="bz-h1"><i class="ri-store-2-line"></i> <?php echo PPV_Lang::t('biz_filiale_new_title', 'Új fiók hozzáadása'); ?></h1>
-    <p style="margin-top:-8px; margin-bottom:16px; color:var(--muted); font-size:13px;">Itt adhatsz hozzá új telephelyet a fiókodhoz. A fiókok külön kezelhetők, de egy előfizetés alá tartoznak.</p>
+    <p style="margin-top:-8px; margin-bottom:16px; color:var(--muted); font-size:13px;"><?php echo PPV_Lang::t('biz_filiale_new_intro', 'Itt adhatsz hozzá új telephelyet a fiókodhoz. A fiókok külön kezelhetők, de egy előfizetés alá tartoznak.'); ?></p>
 
     <?php if (!empty($_GET['err'])):
         $err = sanitize_text_field($_GET['err']);

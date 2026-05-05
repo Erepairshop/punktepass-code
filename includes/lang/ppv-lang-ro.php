@@ -2442,4 +2442,5 @@ return [
     // Business Admin Stats Filter
     'biz_stats_filter_label' => 'Filiala:',
     'biz_stats_filter_all' => 'Toate',
+    'biz_filiale_new_intro' => 'Aici poți adăuga o nouă filială la contul tău. Filialele sunt gestionate separat, dar aparțin unui singur abonament.',
 ];
