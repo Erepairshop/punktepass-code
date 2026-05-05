@@ -229,12 +229,25 @@ class PPV_Repair_Email_Sender {
             exit;
         }
 
-        // Build HTML email
-        $html_message = self::build_html_email($message, $email_lang);
+        // Detect templates that already provide their own full HTML wrapper
+        // (e.g. PP Werbe). Those should NOT get the Reparaturverwaltung wrapper.
+        $msg_trim = ltrim($message);
+        $is_full_html = (
+            stripos($msg_trim, '<!DOCTYPE') === 0 ||
+            stripos($msg_trim, '<table') === 0 ||
+            stripos($msg_trim, '<html') === 0
+        );
 
-        // Headers
-        $from_labels = ['de' => 'Reparaturverwaltung', 'hu' => 'Javításkezelő', 'ro' => 'Gestionare Reparații'];
-        $from_label = $from_labels[$email_lang] ?? $from_labels['de'];
+        if ($is_full_html) {
+            $html_message = $message;
+            // Generic PunktePass label, no Reparaturverwaltung
+            $from_label = 'PunktePass';
+        } else {
+            // Build HTML email with Reparaturverwaltung wrapper (default)
+            $html_message = self::build_html_email($message, $email_lang);
+            $from_labels = ['de' => 'Reparaturverwaltung', 'hu' => 'Javításkezelő', 'ro' => 'Gestionare Reparații'];
+            $from_label = $from_labels[$email_lang] ?? $from_labels['de'];
+        }
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
             'From: Erik Borota - ' . $from_label . ' <info@punktepass.de>',
