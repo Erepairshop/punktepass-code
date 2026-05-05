@@ -990,8 +990,8 @@ class PPV_Advertisers {
         }
 
         // Determine the root parent ID of the logged-in user
-        $parent_id = $current_adv->parent_advertiser_id ?: $current_adv->id;
-        
+        $parent_id = (int)($current_adv->parent_advertiser_id ?: $current_adv->id);
+
         // Prevent deleting the main account
         if ($target_id === $parent_id) {
             return new WP_REST_Response(['success' => false, 'message' => 'Cannot delete the main account.'], 403);
