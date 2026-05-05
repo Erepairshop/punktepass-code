@@ -157,15 +157,19 @@ function bz_is_active($url, $current) {
     </div>
 
     <?php
-    // Filiale Switcher
-    if ($adv && class_exists('PPV_Filiale')) {
-        $current_store_id = $adv->id;
-        $parent_id = PPV_Filiale::get_parent_id($current_store_id);
-        $filialen = PPV_Filiale::get_filialen($parent_id);
+    // Filiale Switcher (advertiser system)
+    if ($adv && class_exists('PPV_Advertisers')) {
+        global $wpdb;
+        $parent_advertiser_id = $adv->parent_advertiser_id ?: $adv->id;
+        $filialen = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, business_name, filiale_label, parent_advertiser_id FROM {$wpdb->prefix}ppv_advertisers WHERE (id = %d OR parent_advertiser_id = %d) AND is_active = 1 ORDER BY parent_advertiser_id ASC, id ASC",
+            $parent_advertiser_id, $parent_advertiser_id
+        ));
         $filiale_count = count($filialen);
-        $active_filiale_id = PPV_Filiale::get_current_filiale() ?: $parent_id;
+        $active_filiale_id = PPV_Advertisers::current_filiale_id() ?: $parent_advertiser_id;
 
-        if ($filiale_count > 1) { // Only show if there are multiple branches
+        // Show picker even with 1 filiale (so user knows where it lives) + "+ Neu" button
+        if ($filiale_count >= 1) {
     ?>
     <div class="bz-filiale-switch">
         <i class="ri-store-2-line" title="<?php echo esc_attr(PPV_Lang::t('biz_filiale_active_picker', 'Aktive Filiale')); ?>"></i>
@@ -173,24 +177,20 @@ function bz_is_active($url, $current) {
             <?php
             $parent_store_name = '';
             foreach ($filialen as $f) {
-                if ($f->id == $parent_id) {
-                    $parent_store_name = $f->name;
-                    break;
-                }
+                if ($f->id == $parent_advertiser_id) { $parent_store_name = $f->business_name; break; }
             }
-
             foreach ($filialen as $filiale) {
-                $is_parent = !$filiale->parent_store_id;
-                // Use business_name for parent, and parent_name - filiale_name for children
+                $is_parent = !$filiale->parent_advertiser_id;
                 $label = $is_parent
-                    ? ($filiale->name . ' (' . PPV_Lang::t('main_location', 'Fő telephely') . ')')
-                    : ($parent_store_name . ' — ' . $filiale->name);
+                    ? ($filiale->business_name . ' (' . PPV_Lang::t('main_location', 'Fő telephely') . ')')
+                    : ($parent_store_name . ' — ' . ($filiale->filiale_label ?: $filiale->business_name));
             ?>
                 <option value="<?php echo esc_attr($filiale->id); ?>" <?php selected($active_filiale_id, $filiale->id); ?>>
                     <?php echo esc_html($label); ?>
                 </option>
             <?php } ?>
         </select>
+        <a href="<?php echo esc_url(home_url('/business/admin/filiale-new')); ?>" class="bz-filiale-new-btn" title="<?php echo esc_attr(PPV_Lang::t('biz_filiale_new_title', 'Új fiók')); ?>" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:rgba(0,128,0,0.15);color:#16a34a;text-decoration:none;font-weight:700;margin-left:6px;">+</a>
     </div>
     <?php
         }
