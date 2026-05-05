@@ -330,6 +330,11 @@ add_filter('rest_authentication_errors', function ($result) {
         return true;
     }
 
+    // Advertiser-session auth (business admin pages)
+    if (!empty($_SESSION['ppv_advertiser_id'])) {
+        return true;
+    }
+
     return new WP_Error('rest_forbidden', __('Du bist leider nicht berechtigt, diese Aktion durchzuführen.'), ['status' => 401]);
 });
 
