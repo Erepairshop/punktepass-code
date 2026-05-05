@@ -50,6 +50,7 @@ class PPV_Advertisers {
         add_action('admin_post_nopriv_ppv_advertiser_follow', [__CLASS__, 'handle_follow']);
         add_action('admin_post_ppv_advertiser_follow', [__CLASS__, 'handle_follow']);
         add_action('admin_post_ppv_advertiser_filiale_create', [__CLASS__, 'handle_filiale_create']);
+        add_action('admin_post_nopriv_ppv_advertiser_filiale_create', [__CLASS__, 'handle_filiale_create']);
         add_action('template_redirect', [__CLASS__, 'route_dispatcher']);
     }
 
