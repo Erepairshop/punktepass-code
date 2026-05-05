@@ -948,6 +948,9 @@ class PPV_Advertisers {
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_filiale_delete'],
             'permission_callback' => function() {
+                if (session_status() === PHP_SESSION_NONE) {
+                    if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
+                }
                 return self::current_advertiser_id() > 0;
             }
         ]);

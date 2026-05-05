@@ -86,37 +86,57 @@ if ($adv && class_exists('PPV_Advertisers')) {
     </div>
 </div>
 
+<div id="ppv-filiale-delete-modal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:12px;max-width:420px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit;">
+    <div style="font-size:16px;line-height:1.5;color:#111;margin-bottom:20px;" id="ppv-filiale-delete-msg"><?php echo esc_html(PPV_Lang::t('biz_filiale_delete_confirm', 'Biztosan törölni szeretnéd ezt a fiókot?')); ?></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" id="ppv-filiale-delete-cancel" style="padding:10px 18px;border:1px solid #d1d5db;background:#fff;color:#374151;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;"><?php echo esc_html(PPV_Lang::t('cancel', 'Mégse')); ?></button>
+      <button type="button" id="ppv-filiale-delete-confirm" style="padding:10px 18px;border:none;background:#dc2626;color:#fff;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;"><?php echo esc_html(PPV_Lang::t('biz_filiale_delete_btn', 'Törlés')); ?></button>
+    </div>
+  </div>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const deleteButtons = document.querySelectorAll('.filiale-delete-btn');
-    deleteButtons.forEach(button => {
+    const modal = document.getElementById('ppv-filiale-delete-modal');
+    const btnOk = document.getElementById('ppv-filiale-delete-confirm');
+    const btnCancel = document.getElementById('ppv-filiale-delete-cancel');
+    let pendingId = null;
+
+    const closeModal = () => { modal.style.display = 'none'; pendingId = null; };
+    btnCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    btnOk.addEventListener('click', function() {
+        if (!pendingId) return;
+        const id = pendingId;
+        closeModal();
+        fetch('<?php echo esc_url(rest_url('punktepass/v1/filiale-delete')); ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ target_id: id })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = window.location.pathname + '?filiale_deleted=1';
+            } else {
+                alert((data.message || 'Hiba'));
+            }
+        })
+        .catch(() => alert('Network error'));
+    });
+
+    document.querySelectorAll('.filiale-delete-btn').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             const filialeId = this.dataset.filialeId;
             if (!filialeId) return;
-
-            if (confirm('<?php echo esc_js(PPV_Lang::t('biz_filiale_delete_confirm', 'Biztosan törölni szeretnéd ezt a fiókot? Ezt a műveletet nem lehet visszavonni.')); ?>')) {
-                fetch('<?php echo esc_url(rest_url('punktepass/v1/filiale-delete')); ?>', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>'
-                    },
-                    body: JSON.stringify({ target_id: filialeId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = window.location.pathname + '?filiale_deleted=1';
-                    } else {
-                        alert('Hiba a törlés során: ' + (data.message || 'Ismeretlen hiba.'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Hálózati hiba történt a törlés során.');
-                });
-            }
+            pendingId = filialeId;
+            modal.style.display = 'flex';
         });
     });
 });
