@@ -280,6 +280,8 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/punktepass/v1/follow',
             '/wp-json/ppv/v1/anon-follow',
             '/wp-json/ppv/v1/anon-unfollow',
+            '/wp-json/ppv/v1/advertiser-review',
+            '/wp-json/ppv/v1/advertiser-reviews',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
@@ -350,6 +352,7 @@ $core_modules = [
     'includes/class-ppv-sessionbridge.php',
     'includes/class-ppv-anon-users.php',
     'includes/class-ppv-anon-follow.php',
+    'includes/class-ppv-advertiser-reviews.php',
     'includes/class-ppv-auth.php',
     'includes/class-ppv-lang.php',
     'includes/class-ppv-core.php',
