@@ -298,7 +298,7 @@ public static function check_already_logged_in() {
         ));
         if ($anon_exists) {
             ppv_log("🔄 [PPV_Login] Anon user redirect (id=-{$anon_id})");
-            wp_safe_redirect(home_url('/karte'));
+            wp_safe_redirect(home_url('/user_dashboard'));
             exit;
         }
     }
