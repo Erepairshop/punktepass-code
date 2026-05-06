@@ -44,8 +44,8 @@ window._ppvReview = {
 <link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-handler.css">
 <style>
 * { box-sizing:border-box; }
-html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-serif; }
-#map { height:100vh; width:100vw; }
+html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-serif; overflow:hidden; overscroll-behavior:none; }
+#map { position:fixed; inset:0; height:100dvh; width:100vw; }
 .km-bar { position:fixed; top:10px; left:10px; right:10px; z-index:9999; padding:10px 12px; background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.18); display:flex; gap:8px; align-items:center; }
 .km-suggestions { position:fixed; top:64px; left:10px; right:10px; z-index:9998; background:#fff; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.18); max-height:50vh; overflow:auto; display:none; }
 .km-suggestions.open { display:block; }
