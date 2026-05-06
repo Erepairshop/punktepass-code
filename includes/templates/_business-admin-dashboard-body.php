@@ -225,67 +225,165 @@ $public_url = home_url('/business/' . $adv->slug);
 <?php
 $adv_slug = $adv->slug ?? '';
 $adv_url  = home_url('/business/' . $adv_slug);
-$wa_text  = 'Hi! Wir sind jetzt auf PunktePass — folge uns für tägliche Aktionen, Coupons und Geschenke: ' . $adv_url;
+$mkt_lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+if (!in_array($mkt_lang, ['de','hu','ro','en'], true)) $mkt_lang = 'de';
+
+$_MKT_L = [
+    'de' => [
+        'card_title' => 'Marketing — Follower gewinnen',
+        'card_desc'  => 'Hier findest du alle Werkzeuge, um Kunden auf deine PunktePass-Seite zu bringen. Je mehr Kanäle du nutzt, desto mehr Follower bekommst du.',
+        'follow_link' => 'Dein Follow-Link',
+        'copy'       => 'Kopieren',
+        'copied'     => 'In die Zwischenablage kopiert!',
+        'link_hint'  => 'Teile diesen Link überall — auf Visitenkarten, im Schaufenster, im Newsletter.',
+        'wa_share'   => 'WhatsApp teilen',
+        'fb_share'   => 'Facebook teilen',
+        'social_title' => 'Social-Media-Bild (1080×1080)',
+        'social_desc'  => 'Lade dieses Bild herunter und poste es auf Instagram, Facebook oder als Story. QR-Code mit deinem Link ist eingebaut.',
+        'wa_msg'     => 'Hi! Wir sind jetzt auf PunktePass — folge uns für tägliche Aktionen, Coupons und Geschenke: ',
+        'tips_title' => 'Tipps: So gewinnst du in der ersten Woche 50–100 Follower',
+        'tip1'       => '<strong>Stammkunden-Liste:</strong> Schicke deinen WhatsApp-Kontakten den Follow-Link mit einer kurzen Nachricht. Höchste Conversion (30–50%).',
+        'tip2'       => '<strong>Schaufenster:</strong> Drucke den Flyer und klebe ihn ins Schaufenster. Auch Vorbeigehende sehen ihn 24/7.',
+        'tip3'       => '<strong>An der Kasse:</strong> Stelle den Flyer auf einen Plexi-Aufsteller direkt neben die Kasse. Frage Kunden aktiv, ob sie folgen möchten.',
+        'tip4'       => '<strong>Social Media:</strong> Poste das Social-Bild 1× pro Woche auf Instagram + Facebook + Story. Reichweite = deine bestehenden Follower.',
+        'tip5'       => '<strong>Erste Aktion ankündigen:</strong> Plane innerhalb der ersten Woche eine kleine Push-Aktion (z. B. „Heute -10% für alle Follower") — Kunden sehen sofort den Wert des Folgens.',
+        'flyer_title'=> 'Personalisierter Flyer',
+        'flyer_desc' => 'Lade deinen Flyer herunter, drucke ihn selbst aus und stelle ihn im Geschäft auf. Der QR-Code führt Kunden direkt auf deine Geschäftsseite — sie folgen dir mit 1 Tap.',
+        'slug_label' => 'Deine URL — wähle einen kurzen, einprägsamen Namen',
+        'slug_save'  => 'Speichern',
+        'slug_hint'  => '3–60 Zeichen, nur Kleinbuchstaben/Zahlen/Bindestriche.',
+        'flyer_de'   => 'Flyer DE (mein QR)',
+        'flyer_ro'   => 'Flyer RO (mein QR)',
+    ],
+    'hu' => [
+        'card_title' => 'Marketing — Követők szerzése',
+        'card_desc'  => 'Itt találod az összes eszközt, amivel a vendégeket a PunktePass oldaladra terelheted. Minél több csatornát használsz, annál több követőd lesz.',
+        'follow_link' => 'A követés-linked',
+        'copy'       => 'Másolás',
+        'copied'     => 'Vágólapra másolva!',
+        'link_hint'  => 'Oszd meg ezt a linket mindenhol — névjegyen, kirakatban, hírlevélben.',
+        'wa_share'   => 'WhatsApp megosztás',
+        'fb_share'   => 'Facebook megosztás',
+        'social_title' => 'Közösségi média kép (1080×1080)',
+        'social_desc'  => 'Töltsd le ezt a képet és tedd ki Instagramra, Facebookra vagy Story-ba. A QR-kód a linkeddel be van építve.',
+        'wa_msg'     => 'Szia! Mostantól PunktePass-on vagyunk — kövess minket napi akciókért, kuponokért és ajándékokért: ',
+        'tips_title' => 'Tippek: 50–100 követő az első héten',
+        'tip1'       => '<strong>Törzsvendég-lista:</strong> Küldd el a WhatsApp-kontaktjaidnak a követés-linket egy rövid üzenettel. Legmagasabb konverzió (30–50%).',
+        'tip2'       => '<strong>Kirakat:</strong> Nyomtasd ki a flyer-t és tedd ki a kirakatba. Az arrajárók is látják 24/7.',
+        'tip3'       => '<strong>Pultnál:</strong> Tedd ki a flyer-t plexi-állványon a kassza mellé. Aktívan kérdezd meg a vendéget, akar-e követni.',
+        'tip4'       => '<strong>Közösségi média:</strong> Posztold a social-képet hetente egyszer Instagramra + Facebookra + Story-ba. Reach = a meglévő követőid.',
+        'tip5'       => '<strong>Első akció bejelentése:</strong> Az első héten tervezz egy kis push-akciót (pl. „Ma -10% követőknek") — a vendégek azonnal látják a követés értelmét.',
+        'flyer_title'=> 'Személyre szabott flyer',
+        'flyer_desc' => 'Töltsd le a flyer-t, nyomtasd ki és tedd ki az üzletben. A QR-kód közvetlenül a te üzlet-oldaladra visz — a vendégek 1 koppintással követhetnek.',
+        'slug_label' => 'A te URL-ed — válassz egy rövid, könnyen megjegyezhető nevet',
+        'slug_save'  => 'Mentés',
+        'slug_hint'  => '3–60 karakter, csak kisbetű/szám/kötőjel.',
+        'flyer_de'   => 'Flyer DE (saját QR)',
+        'flyer_ro'   => 'Flyer RO (saját QR)',
+    ],
+    'ro' => [
+        'card_title' => 'Marketing — Câștigă urmăritori',
+        'card_desc'  => 'Aici găsești toate instrumentele pentru a aduce clienți pe pagina ta PunktePass. Cu cât folosești mai multe canale, cu atât ai mai mulți urmăritori.',
+        'follow_link' => 'Linkul tău de urmărire',
+        'copy'       => 'Copiază',
+        'copied'     => 'Copiat în clipboard!',
+        'link_hint'  => 'Distribuie acest link peste tot — cărți de vizită, vitrină, newsletter.',
+        'wa_share'   => 'Distribuie pe WhatsApp',
+        'fb_share'   => 'Distribuie pe Facebook',
+        'social_title' => 'Imagine social media (1080×1080)',
+        'social_desc'  => 'Descarcă această imagine și postează-o pe Instagram, Facebook sau ca Story. QR-codul cu linkul tău este inclus.',
+        'wa_msg'     => 'Salut! Suntem acum pe PunktePass — urmărește-ne pentru oferte zilnice, cupoane și cadouri: ',
+        'tips_title' => 'Sfaturi: 50–100 urmăritori în prima săptămână',
+        'tip1'       => '<strong>Lista clienți fideli:</strong> Trimite linkul de urmărire contactelor tale WhatsApp cu un mesaj scurt. Cea mai mare conversie (30–50%).',
+        'tip2'       => '<strong>Vitrina:</strong> Tipărește flyer-ul și lipește-l în vitrină. Și trecătorii îl văd 24/7.',
+        'tip3'       => '<strong>La casă:</strong> Pune flyer-ul pe un suport plexi lângă casă. Întreabă activ clienții dacă vor să te urmărească.',
+        'tip4'       => '<strong>Social Media:</strong> Postează imaginea social 1× pe săptămână pe Instagram + Facebook + Story. Reach = urmăritorii tăi existenți.',
+        'tip5'       => '<strong>Anunță prima ofertă:</strong> Planifică o ofertă-push mică în prima săptămână (ex. „Astăzi -10% pentru urmăritori") — clienții văd imediat valoarea urmăririi.',
+        'flyer_title'=> 'Flyer personalizat',
+        'flyer_desc' => 'Descarcă flyer-ul, tipărește-l singur și pune-l în magazin. QR-codul duce clienții direct pe pagina ta — urmăresc cu 1 atingere.',
+        'slug_label' => 'URL-ul tău — alege un nume scurt și ușor de reținut',
+        'slug_save'  => 'Salvează',
+        'slug_hint'  => '3–60 caractere, doar litere mici/cifre/cratime.',
+        'flyer_de'   => 'Flyer DE (QR-ul meu)',
+        'flyer_ro'   => 'Flyer RO (QR-ul meu)',
+    ],
+    'en' => [
+        'card_title' => 'Marketing — Get followers',
+        'card_desc'  => 'Here you find all tools to bring customers to your PunktePass page. The more channels you use, the more followers you get.',
+        'follow_link' => 'Your follow link',
+        'copy'       => 'Copy',
+        'copied'     => 'Copied to clipboard!',
+        'link_hint'  => 'Share this link everywhere — business cards, shop window, newsletter.',
+        'wa_share'   => 'Share on WhatsApp',
+        'fb_share'   => 'Share on Facebook',
+        'social_title' => 'Social media image (1080×1080)',
+        'social_desc'  => 'Download this image and post it on Instagram, Facebook or as a Story. QR code with your link is built-in.',
+        'wa_msg'     => 'Hi! We are now on PunktePass — follow us for daily offers, coupons and gifts: ',
+        'tips_title' => 'Tips: How to get 50–100 followers in the first week',
+        'tip1'       => '<strong>Loyal customer list:</strong> Send the follow link to your WhatsApp contacts with a short message. Highest conversion (30–50%).',
+        'tip2'       => '<strong>Shop window:</strong> Print the flyer and stick it in the shop window. Also passers-by see it 24/7.',
+        'tip3'       => '<strong>At the counter:</strong> Place the flyer on a plexi stand next to the register. Actively ask customers if they want to follow.',
+        'tip4'       => '<strong>Social Media:</strong> Post the social image 1× per week to Instagram + Facebook + Story. Reach = your existing followers.',
+        'tip5'       => '<strong>Announce first offer:</strong> Plan a small push offer in the first week (e.g. "Today -10% for followers") — customers see the value of following immediately.',
+        'flyer_title'=> 'Personalized flyer',
+        'flyer_desc' => 'Download your flyer, print it yourself and place it in the shop. The QR code takes customers directly to your business page — they follow you with 1 tap.',
+        'slug_label' => 'Your URL — pick a short, memorable name',
+        'slug_save'  => 'Save',
+        'slug_hint'  => '3–60 characters, only lowercase/digits/dashes.',
+        'flyer_de'   => 'Flyer DE (my QR)',
+        'flyer_ro'   => 'Flyer RO (my QR)',
+    ],
+];
+$MT = $_MKT_L[$mkt_lang];
+
+$wa_text  = $MT['wa_msg'] . $adv_url;
 $fb_url   = 'https://www.facebook.com/sharer/sharer.php?u=' . urlencode($adv_url);
 $wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
 ?>
 <div class="bz-card" id="marketing-toolkit-card">
-  <h2 class="bz-h2"><i class="ri-megaphone-line"></i> Marketing — Follower gewinnen</h2>
-  <p style="margin:0 0 16px; color:var(--muted); font-size:13px;">
-    Hier findest du alle Werkzeuge, um Kunden auf deine PunktePass-Seite zu bringen. Je mehr Kanäle du nutzt, desto mehr Follower bekommst du.
-  </p>
+  <h2 class="bz-h2"><i class="ri-megaphone-line"></i> <?php echo esc_html($MT['card_title']); ?></h2>
+  <p style="margin:0 0 16px; color:var(--muted); font-size:13px;"><?php echo esc_html($MT['card_desc']); ?></p>
 
-  <!-- Direct link copy -->
   <div style="background:#f1f5f9; border-radius:10px; padding:14px; margin-bottom:14px;">
     <label class="bz-label" style="display:block; margin-bottom:6px; font-weight:600;">
-      <i class="ri-link"></i> Dein Follow-Link
+      <i class="ri-link"></i> <?php echo esc_html($MT['follow_link']); ?>
     </label>
     <div style="display:flex; gap:6px; align-items:stretch;">
       <input type="text" id="ppv-mkt-url" class="bz-input" readonly value="<?php echo esc_attr($adv_url); ?>" style="flex:1; font-family:monospace; font-size:13px;">
-      <button type="button" id="ppv-mkt-copy" class="bz-btn"><i class="ri-file-copy-line"></i> Kopieren</button>
+      <button type="button" id="ppv-mkt-copy" class="bz-btn"><i class="ri-file-copy-line"></i> <?php echo esc_html($MT['copy']); ?></button>
     </div>
-    <small id="ppv-mkt-copy-msg" style="display:block; margin-top:6px; color:var(--muted); min-height:1em;">Teile diesen Link überall — auf Visitenkarten, im Schaufenster, im Newsletter.</small>
+    <small id="ppv-mkt-copy-msg" data-default="<?php echo esc_attr($MT['link_hint']); ?>" data-copied="<?php echo esc_attr($MT['copied']); ?>" style="display:block; margin-top:6px; color:var(--muted); min-height:1em;"><?php echo esc_html($MT['link_hint']); ?></small>
   </div>
 
-  <!-- 1-tap shares -->
   <div class="bz-grid" style="margin-bottom:14px;">
     <a class="bz-btn" href="<?php echo esc_url($wa_url); ?>" target="_blank" rel="noopener" style="background:#25d366; color:#fff;">
-      <i class="ri-whatsapp-fill"></i> WhatsApp teilen
+      <i class="ri-whatsapp-fill"></i> <?php echo esc_html($MT['wa_share']); ?>
     </a>
     <a class="bz-btn" href="<?php echo esc_url($fb_url); ?>" target="_blank" rel="noopener" style="background:#1877f2; color:#fff;">
-      <i class="ri-facebook-circle-fill"></i> Facebook teilen
+      <i class="ri-facebook-circle-fill"></i> <?php echo esc_html($MT['fb_share']); ?>
     </a>
   </div>
 
-  <!-- Social image -->
   <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:10px; padding:14px; margin-bottom:14px;">
-    <div style="color:#fff; font-weight:700; margin-bottom:4px;"><i class="ri-instagram-line"></i> Social-Media-Bild (1080×1080)</div>
-    <div style="color:#fff; font-size:12px; opacity:.95; margin-bottom:10px;">Lade dieses Bild herunter und poste es auf Instagram, Facebook oder als Story. QR-Code mit deinem Link ist eingebaut.</div>
+    <div style="color:#fff; font-weight:700; margin-bottom:4px;"><i class="ri-instagram-line"></i> <?php echo esc_html($MT['social_title']); ?></div>
+    <div style="color:#fff; font-size:12px; opacity:.95; margin-bottom:10px;"><?php echo esc_html($MT['social_desc']); ?></div>
     <div class="bz-grid">
-      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=de&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Social DE
+      <?php foreach (['de','hu','ro','en'] as $L): ?>
+      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=' . $L . '&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Social <?php echo strtoupper($L); ?>
       </a>
-      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=hu&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Social HU
-      </a>
-      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=ro&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Social RO
-      </a>
-      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=en&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Social EN
-      </a>
+      <?php endforeach; ?>
     </div>
   </div>
 
-  <!-- Tips -->
   <details style="background:#fef3c7; border-radius:10px; padding:14px; cursor:pointer;">
-    <summary style="font-weight:700; color:#92400e;"><i class="ri-lightbulb-line"></i> Tipps: So gewinnst du in der ersten Woche 50–100 Follower</summary>
+    <summary style="font-weight:700; color:#92400e;"><i class="ri-lightbulb-line"></i> <?php echo esc_html($MT['tips_title']); ?></summary>
     <ul style="margin:10px 0 0; padding-left:22px; color:#78350f; font-size:13px; line-height:1.7;">
-      <li><strong>Stammkunden-Liste:</strong> Schicke deinen WhatsApp-Kontakten (Bestand) den Follow-Link mit einer kurzen Nachricht. Höchste Conversion (30–50%).</li>
-      <li><strong>Schaufenster:</strong> Drucke den Flyer (DE) und klebe ihn ins Schaufenster. Auch Vorbeigehende sehen ihn 24/7.</li>
-      <li><strong>An der Kasse:</strong> Stelle den Flyer auf einen Plexi-Aufsteller direkt neben die Kasse. Frage Kunden aktiv, ob sie folgen möchten — 10 Sek. Aufwand.</li>
-      <li><strong>Social Media:</strong> Poste das Social-Bild 1× pro Woche auf Instagram + Facebook + Story. Reichweite = deine bestehenden Follower dort.</li>
-      <li><strong>Erste Aktion ankündigen:</strong> Plane innerhalb der ersten Woche eine kleine Push-Aktion (z. B. "Heute -10% für alle Follower") — Kunden sehen sofort den Wert des Folgens.</li>
+      <li><?php echo wp_kses_post($MT['tip1']); ?></li>
+      <li><?php echo wp_kses_post($MT['tip2']); ?></li>
+      <li><?php echo wp_kses_post($MT['tip3']); ?></li>
+      <li><?php echo wp_kses_post($MT['tip4']); ?></li>
+      <li><?php echo wp_kses_post($MT['tip5']); ?></li>
     </ul>
   </details>
 </div>
@@ -296,47 +394,47 @@ $wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
   var inp = document.getElementById('ppv-mkt-url');
   var msg = document.getElementById('ppv-mkt-copy-msg');
   if (btn && inp) {
+    var defaultText = msg.dataset.default || '';
+    var copiedText  = msg.dataset.copied  || 'Copied!';
     btn.addEventListener('click', async function(){
       try {
         await navigator.clipboard.writeText(inp.value);
-        msg.style.color = '#10b981';
-        msg.textContent = 'In die Zwischenablage kopiert!';
       } catch(e) {
         inp.select(); document.execCommand('copy');
-        msg.style.color = '#10b981';
-        msg.textContent = 'Kopiert!';
       }
-      setTimeout(function(){ msg.style.color='var(--muted)'; msg.textContent='Teile diesen Link überall — auf Visitenkarten, im Schaufenster, im Newsletter.'; }, 3000);
+      msg.style.color = '#10b981';
+      msg.textContent = copiedText;
+      setTimeout(function(){ msg.style.color='var(--muted)'; msg.textContent = defaultText; }, 3000);
     });
   }
 })();
 </script>
 
 <div class="bz-card" id="flyer-bonus-card">
-  <h2 class="bz-h2"><i class="ri-qr-code-line"></i> Personalisierter Flyer</h2>
-  <p style="margin:0 0 12px; color:var(--muted); font-size:13px;">Lade deinen Flyer herunter, drucke ihn selbst aus und stelle ihn im Geschäft auf. Der QR-Code führt Kunden direkt auf deine Geschäftsseite — sie folgen dir mit 1 Tap.</p>
+  <h2 class="bz-h2"><i class="ri-qr-code-line"></i> <?php echo esc_html($MT['flyer_title']); ?></h2>
+  <p style="margin:0 0 12px; color:var(--muted); font-size:13px;"><?php echo esc_html($MT['flyer_desc']); ?></p>
 
   <div id="ppv-slug-row" style="background:#f1f5f9; border-radius:10px; padding:12px; margin-bottom:12px;">
     <label class="bz-label" style="display:block; margin-bottom:6px; font-weight:600;">
-      <i class="ri-link"></i> Deine URL — wähle einen kurzen, einprägsamen Namen
+      <i class="ri-link"></i> <?php echo esc_html($MT['slug_label']); ?>
     </label>
     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
       <span style="color:#475569; font-size:14px; font-family:monospace;">punktepass.de/business/</span>
       <input type="text" id="ppv-slug-input" class="bz-input" value="<?php echo esc_attr($adv->slug ?? ''); ?>" maxlength="60" pattern="[a-z0-9-]+" style="flex:1; min-width:160px; font-family:monospace;">
       <button type="button" id="ppv-slug-save" class="bz-btn">
-        <i class="ri-save-line"></i> Speichern
+        <i class="ri-save-line"></i> <?php echo esc_html($MT['slug_save']); ?>
       </button>
     </div>
-    <small id="ppv-slug-msg" style="display:block; margin-top:6px; color:var(--muted); min-height:1em;">3–60 Zeichen, nur Kleinbuchstaben/Zahlen/Bindestriche.</small>
+    <small id="ppv-slug-msg" data-default="<?php echo esc_attr($MT['slug_hint']); ?>" style="display:block; margin-top:6px; color:var(--muted); min-height:1em;"><?php echo esc_html($MT['slug_hint']); ?></small>
   </div>
 
   <div style="padding:14px; background:linear-gradient(135deg,#f59e0b,#fbbf24); border-radius:10px;">
     <div class="bz-grid">
       <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=de&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Flyer DE (mein QR)
+        <i class="ri-download-line"></i> <?php echo esc_html($MT['flyer_de']); ?>
       </a>
       <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=ro&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Flyer RO (mein QR)
+        <i class="ri-download-line"></i> <?php echo esc_html($MT['flyer_ro']); ?>
       </a>
     </div>
   </div>
@@ -416,7 +514,8 @@ $wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
   btn.addEventListener('click', async function(){
     var v = (input.value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'');
     input.value = v;
-    if (v.length < 3 || v.length > 60) { msg.style.color = '#dc2626'; msg.textContent = '3-60 Zeichen, nur Kleinbuchstaben/Zahlen/Bindestriche.'; return; }
+    var defaultMsg = msg.dataset.default || '';
+    if (v.length < 3 || v.length > 60) { msg.style.color = '#dc2626'; msg.textContent = defaultMsg; return; }
     btn.disabled = true; msg.style.color = '#475569'; msg.textContent = '…';
     try {
       var r = await fetch('/wp-json/punktepass/v1/update-slug', {
