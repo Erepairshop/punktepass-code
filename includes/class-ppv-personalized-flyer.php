@@ -22,10 +22,10 @@ class PPV_Personalized_Flyer {
     /** Approximate QR rectangle (origin + size) on the base flyer.
      *  Calibrated for the 1054×1492 PunktePass flyer. The base QR sits
      *  bottom-right inside the yellow-bordered box. */
-    const QR_X      = 555;
-    const QR_Y      = 885;   // ~5mm lower than initial calibration
-    const QR_SIZE   = 460;
-    const NAME_Y    = 850;   // caption baseline above the QR (ignored if shop name empty)
+    const QR_X      = 569;   // ~2mm inset (was 555)
+    const QR_Y      = 899;   // ~2mm inset, plus 5mm down
+    const QR_SIZE   = 432;   // ~4mm smaller (2mm each side, was 460)
+    const NAME_Y    = 864;   // caption baseline above the QR (ignored if shop name empty)
 
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
