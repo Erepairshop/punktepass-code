@@ -75,15 +75,33 @@ wp_add_inline_script('ppv-reviews', "window.ppvReviews = {$__json};", 'before');
     );
 }
 
-  // Review mentés
+  // PP custom-session user id fallback (advertiser/loyalty users use $_SESSION,
+  // not WordPress login).
+  private static function current_user_id(){
+    $uid = (int) get_current_user_id();
+    if ($uid > 0) return $uid;
+    if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
+    if (!empty($_SESSION['ppv_user_id'])) return (int) $_SESSION['ppv_user_id'];
+    return 0;
+  }
+
+  // Review mentés — egy felhasználó max évente 1× értékelhet egy boltot.
+  // Visszaadja: true = OK, 'rate_limit' = friss review van (<365 nap), false = invalid.
   private static function save_review($store_id,$rating,$comment){
     global $wpdb;
     $p = $wpdb->prefix;
-    $user = get_current_user_id();
+    $user = self::current_user_id();
+    if ($user <= 0) return false;
     if ($rating<1 || $rating>5) return false;
 
-    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}pp_reviews WHERE store_id=%d AND user_id=%d",$store_id,$user));
-    if ($exists) return false;
+    $recent = $wpdb->get_var($wpdb->prepare(
+      "SELECT id FROM {$p}pp_reviews
+       WHERE store_id=%d AND user_id=%d
+       AND created_at > (NOW() - INTERVAL 365 DAY)
+       ORDER BY created_at DESC LIMIT 1",
+      $store_id, $user
+    ));
+    if ($recent) return 'rate_limit';
 
     $wpdb->insert("{$p}pp_reviews", [
       'store_id'=>$store_id,
@@ -100,14 +118,17 @@ wp_add_inline_script('ppv-reviews', "window.ppvReviews = {$__json};", 'before');
 
   public static function ajax_submit_review(){
     check_ajax_referer('ppv_review_nonce','nonce');
-    if (!is_user_logged_in()) wp_send_json_error(['msg'=>'Bitte einloggen']);
+    if (self::current_user_id() <= 0) wp_send_json_error(['msg'=>'Bitte einloggen']);
 
     $store_id = intval($_POST['store_id']);
     $rating   = intval($_POST['rating']);
     $comment  = sanitize_textarea_field($_POST['comment']);
 
     $ok = self::save_review($store_id,$rating,$comment);
-    if (!$ok) wp_send_json_error(['msg'=>'Schon bewertet oder ungültig']);
+    if ($ok === 'rate_limit') {
+      wp_send_json_error(['msg'=>'Du kannst diesen Shop nur einmal pro Jahr bewerten.']);
+    }
+    if (!$ok) wp_send_json_error(['msg'=>'Ungültige Bewertung.']);
     wp_send_json_success(['msg'=>'Danke für deine Bewertung!']);
   }
 

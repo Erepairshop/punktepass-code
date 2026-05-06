@@ -19,10 +19,17 @@ $L = $labels[$lang] ?? $labels['de'];
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?php echo esc_html($L['title']); ?> — PunktePass</title>
 <script>
+<?php
+  if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
+  $__rev_uid = (int) get_current_user_id();
+  if ($__rev_uid <= 0 && !empty($_SESSION['ppv_user_id'])) {
+      $__rev_uid = (int) $_SESSION['ppv_user_id'];
+  }
+?>
 window._ppvReview = {
   ajax: <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>,
   nonce: <?php echo wp_json_encode(wp_create_nonce('ppv_review_nonce')); ?>,
-  uid: <?php echo (int)get_current_user_id(); ?>,
+  uid: <?php echo (int) $__rev_uid; ?>,
   L: <?php echo wp_json_encode([
     'title'=>$L['rate_title'],'comment'=>$L['rate_comment'],'submit'=>$L['rate_submit'],
     'thanks'=>$L['rate_thanks'],'login'=>$L['rate_login'],'already'=>$L['rate_already'],
