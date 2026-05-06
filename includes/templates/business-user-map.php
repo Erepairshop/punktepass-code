@@ -44,10 +44,8 @@ window._ppvReview = {
 <link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-handler.css">
 <style>
 * { box-sizing:border-box; }
-html,body { margin:0; padding:0; font:14px/1.5 system-ui,-apple-system,sans-serif; overflow:hidden; overscroll-behavior:none; }
-html { height:100%; }
-body { position:fixed; inset:0; width:100%; height:100%; touch-action:none; -webkit-user-select:none; }
-#map { position:fixed; inset:0; height:100dvh; width:100vw; touch-action:pan-x pan-y; }
+html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-serif; }
+#map { height:100vh; width:100vw; }
 .km-bar { position:fixed; top:10px; left:10px; right:10px; z-index:9999; padding:10px 12px; background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.18); display:flex; gap:8px; align-items:center; }
 .km-suggestions { position:fixed; top:64px; left:10px; right:10px; z-index:9998; background:#fff; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.18); max-height:50vh; overflow:auto; display:none; }
 .km-suggestions.open { display:block; }
@@ -84,7 +82,7 @@ body { position:fixed; inset:0; width:100%; height:100%; touch-action:none; -web
 .km-pin.advertiser .ring.no-logo { background:linear-gradient(135deg,#f59e0b,#d97706); border-color:#fff; }
 .km-pin .badge { position:absolute; top:-4px; right:-4px; background:var(--c); color:#fff; font-size:10px; padding:2px 5px; border-radius:8px; font-weight:700; }
 /* card */
-.km-sheet { position:absolute; left:0; right:0; bottom:-100%; max-height:75vh; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -8px 32px rgba(0,0,0,.25); transition:bottom .3s ease; z-index:20; }
+.km-sheet { position:absolute; left:0; right:0; bottom:-100%; max-height:75vh; overflow:auto; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -8px 32px rgba(0,0,0,.25); transition:bottom .3s ease; z-index:20; }
 .km-sheet.open { bottom:0; }
 .km-sheet-grab { width:48px; height:5px; background:#d1d5db; border-radius:3px; margin:8px auto; }
 .km-cover { height:48px; background:linear-gradient(135deg,#6366f1,#8b5cf6) center/cover; display:flex; align-items:center; justify-content:flex-end; color:#fff; font-size:12px; font-weight:600; padding:0 16px 0 110px; text-align:right; line-height:1.2; }
