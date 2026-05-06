@@ -278,6 +278,8 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/punktepass/v1/user-devices/reject/',
             '/wp-json/punktepass/v1/map/nearby',
             '/wp-json/punktepass/v1/follow',
+            '/wp-json/ppv/v1/anon-follow',
+            '/wp-json/ppv/v1/anon-unfollow',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
