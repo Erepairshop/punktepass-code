@@ -37,10 +37,10 @@ $current_url = (is_ssl() ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $
 
 // i18n strings for follow CTA
 $L = [
-    'de' => ['rate'=>'','cta_idle'=>'➕ Folgen','cta_following'=>'✓ Du folgst — Push aktiv','cta_loading'=>'…','desc'=>'Verpasse keine neuen Sorten + Aktionen','thanks'=>'Danke! Du erhältst jetzt Push-Updates.','already'=>'Du folgst schon.','unfollow'=>'Folgen beenden','login_link'=>'Email hinzufügen für Coupons','push_blocked'=>'Push blockiert. Aktiviere Benachrichtigungen in den Einstellungen.','install_app_ios'=>'PunktePass App installieren','install_app_android'=>'App installieren','route'=>'🗺 Wegbeschreibung','offers'=>'📣 Aktuelle Angebote','no_offers'=>'Noch keine aktive Werbung.','details'=>'Details →','followers_only'=>'⭐ Nur für Follower'],
-    'hu' => ['rate'=>'','cta_idle'=>'➕ Követés','cta_following'=>'✓ Követed — Push aktív','cta_loading'=>'…','desc'=>'Ne maradj le új ízekről és akciókról','thanks'=>'Köszönjük! Mostantól megkapod a push-üzeneteket.','already'=>'Már követed.','unfollow'=>'Követés befejezése','login_link'=>'Email megadása kuponokhoz','push_blocked'=>'Push letiltva. Kapcsold be a beállításokban.','install_app_ios'=>'PunktePass App telepítése','install_app_android'=>'App telepítése','route'=>'🗺 Útvonal','offers'=>'📣 Aktuális ajánlatok','no_offers'=>'Még nincs aktív hirdetés.','details'=>'Részletek →','followers_only'=>'⭐ Csak követőknek'],
-    'ro' => ['rate'=>'','cta_idle'=>'➕ Urmărește','cta_following'=>'✓ Urmărești — Push activ','cta_loading'=>'…','desc'=>'Nu rata sortimente noi și oferte','thanks'=>'Mulțumim! Vei primi notificări push.','already'=>'Urmărești deja.','unfollow'=>'Oprește urmărirea','login_link'=>'Adaugă email pentru cupoane','push_blocked'=>'Push blocat. Activează notificările.','install_app_ios'=>'Instalează PunktePass','install_app_android'=>'Instalează aplicația','route'=>'🗺 Direcții','offers'=>'📣 Oferte curente','no_offers'=>'Încă nu sunt anunțuri active.','details'=>'Detalii →','followers_only'=>'⭐ Doar pentru urmăritori'],
-    'en' => ['rate'=>'','cta_idle'=>'➕ Follow','cta_following'=>'✓ Following — Push active','cta_loading'=>'…','desc'=>'Never miss new flavors + offers','thanks'=>'Thanks! You will now receive push updates.','already'=>'Already following.','unfollow'=>'Stop following','login_link'=>'Add email for coupons','push_blocked'=>'Push blocked. Enable notifications in settings.','install_app_ios'=>'Install PunktePass App','install_app_android'=>'Install app','route'=>'🗺 Directions','offers'=>'📣 Current offers','no_offers'=>'No active offers yet.','details'=>'Details →','followers_only'=>'⭐ Followers only'],
+    'de' => ['rate'=>'','cta_idle'=>'➕ Folgen','cta_following'=>'✓ Du folgst — Push aktiv','cta_loading'=>'…','desc'=>'Verpasse keine neuen Sorten + Aktionen','thanks'=>'Danke! Du erhältst jetzt Push-Updates.','already'=>'Du folgst schon.','unfollow'=>'Folgen beenden','login_link'=>'Email hinzufügen für Coupons','push_blocked'=>'Push blockiert. Aktiviere Benachrichtigungen in den Einstellungen.','install_app_ios'=>'PunktePass App installieren','install_app_android'=>'App installieren','route'=>'🗺 Wegbeschreibung','offers'=>'📣 Aktuelle Angebote','no_offers'=>'Noch keine aktive Werbung.','details'=>'Details →','followers_only'=>'⭐ Nur für Follower','hours_title'=>'🕒 Öffnungszeiten','open_now'=>'Geöffnet','closed_now'=>'Geschlossen','closed_day'=>'Geschlossen','website'=>'🌐 Webseite','address'=>'📍 Adresse','about'=>'ℹ️ Über uns','gallery'=>'🖼 Galerie','days'=>['mo'=>'Mo','di'=>'Di','mi'=>'Mi','do'=>'Do','fr'=>'Fr','sa'=>'Sa','so'=>'So']],
+    'hu' => ['rate'=>'','cta_idle'=>'➕ Követés','cta_following'=>'✓ Követed — Push aktív','cta_loading'=>'…','desc'=>'Ne maradj le új ízekről és akciókról','thanks'=>'Köszönjük! Mostantól megkapod a push-üzeneteket.','already'=>'Már követed.','unfollow'=>'Követés befejezése','login_link'=>'Email megadása kuponokhoz','push_blocked'=>'Push letiltva. Kapcsold be a beállításokban.','install_app_ios'=>'PunktePass App telepítése','install_app_android'=>'App telepítése','route'=>'🗺 Útvonal','offers'=>'📣 Aktuális ajánlatok','no_offers'=>'Még nincs aktív hirdetés.','details'=>'Részletek →','followers_only'=>'⭐ Csak követőknek','hours_title'=>'🕒 Nyitvatartás','open_now'=>'Nyitva','closed_now'=>'Zárva','closed_day'=>'Zárva','website'=>'🌐 Weboldal','address'=>'📍 Cím','about'=>'ℹ️ Rólunk','gallery'=>'🖼 Galéria','days'=>['mo'=>'H','di'=>'K','mi'=>'Sze','do'=>'Cs','fr'=>'P','sa'=>'Szo','so'=>'V']],
+    'ro' => ['rate'=>'','cta_idle'=>'➕ Urmărește','cta_following'=>'✓ Urmărești — Push activ','cta_loading'=>'…','desc'=>'Nu rata sortimente noi și oferte','thanks'=>'Mulțumim! Vei primi notificări push.','already'=>'Urmărești deja.','unfollow'=>'Oprește urmărirea','login_link'=>'Adaugă email pentru cupoane','push_blocked'=>'Push blocat. Activează notificările.','install_app_ios'=>'Instalează PunktePass','install_app_android'=>'Instalează aplicația','route'=>'🗺 Direcții','offers'=>'📣 Oferte curente','no_offers'=>'Încă nu sunt anunțuri active.','details'=>'Detalii →','followers_only'=>'⭐ Doar pentru urmăritori','hours_title'=>'🕒 Program','open_now'=>'Deschis','closed_now'=>'Închis','closed_day'=>'Închis','website'=>'🌐 Site web','address'=>'📍 Adresă','about'=>'ℹ️ Despre noi','gallery'=>'🖼 Galerie','days'=>['mo'=>'Lu','di'=>'Ma','mi'=>'Mi','do'=>'Jo','fr'=>'Vi','sa'=>'Sâ','so'=>'Du']],
+    'en' => ['rate'=>'','cta_idle'=>'➕ Follow','cta_following'=>'✓ Following — Push active','cta_loading'=>'…','desc'=>'Never miss new flavors + offers','thanks'=>'Thanks! You will now receive push updates.','already'=>'Already following.','unfollow'=>'Stop following','login_link'=>'Add email for coupons','push_blocked'=>'Push blocked. Enable notifications in settings.','install_app_ios'=>'Install PunktePass App','install_app_android'=>'Install app','route'=>'🗺 Directions','offers'=>'📣 Current offers','no_offers'=>'No active offers yet.','details'=>'Details →','followers_only'=>'⭐ Followers only','hours_title'=>'🕒 Opening hours','open_now'=>'Open','closed_now'=>'Closed','closed_day'=>'Closed','website'=>'🌐 Website','address'=>'📍 Address','about'=>'ℹ️ About','gallery'=>'🖼 Gallery','days'=>['mo'=>'Mon','di'=>'Tue','mi'=>'Wed','do'=>'Thu','fr'=>'Fri','sa'=>'Sat','so'=>'Sun']],
 ];
 $T = $L[$lang] ?? $L['de'];
 
@@ -112,7 +112,113 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
     <?php endif; ?>
   </div>
 </div>
-<?php if ($desc): ?><div class="bp-body"><?php echo wp_kses_post(wpautop($desc)); ?></div><?php endif; ?>
+<?php if ($desc): ?><div class="bp-body"><h2 style="margin:0 0 10px;font-size:18px;"><?php echo esc_html($T['about']); ?></h2><?php echo wp_kses_post(wpautop($desc)); ?></div><?php endif; ?>
+
+<?php
+// Parse JSON-encoded fields once, with safe defaults.
+$hours_data = !empty($adv->opening_hours) ? json_decode($adv->opening_hours, true) : null;
+$gallery    = !empty($adv->gallery) ? json_decode($adv->gallery, true) : null;
+$social     = !empty($adv->social) ? json_decode($adv->social, true) : null;
+
+// Derive open-now status from local time + opening_hours JSON shape.
+$open_now = null; // null = unknown / no hours data
+if (is_array($hours_data)) {
+    $tz_str = function_exists('wp_timezone_string') ? wp_timezone_string() : 'Europe/Berlin';
+    try { $now = new DateTime('now', new DateTimeZone($tz_str)); } catch (Exception $e) { $now = new DateTime('now'); }
+    $day_keys = ['mo','di','mi','do','fr','sa','so'];
+    $cur = $day_keys[((int)$now->format('N')) - 1] ?? null;
+    if ($cur && isset($hours_data[$cur])) {
+        $d = $hours_data[$cur];
+        if (!empty($d['closed'])) {
+            $open_now = false;
+        } elseif (!empty($d['von']) && !empty($d['bis'])) {
+            $cur_t = (int) $now->format('Hi');
+            $von_t = (int) str_replace(':', '', $d['von']);
+            $bis_t = (int) str_replace(':', '', $d['bis']);
+            $open_now = ($cur_t >= $von_t && $cur_t <= $bis_t);
+        }
+    }
+}
+
+$full_address = trim(implode(', ', array_filter([
+    (string)($adv->address ?? ''),
+    trim((string)($adv->postcode ?? '') . ' ' . (string)($adv->city ?? '')),
+    (string)($adv->country ?? ''),
+])), ', ');
+?>
+
+<?php if (is_array($hours_data)): ?>
+<div class="bp-body" style="margin-top:12px;">
+  <h2 style="margin:0 0 10px;font-size:18px;"><?php echo esc_html($T['hours_title']); ?>
+    <?php if ($open_now === true): ?>
+      <span style="background:#10b981;color:#fff;padding:2px 10px;border-radius:999px;font-size:12px;margin-left:6px;">● <?php echo esc_html($T['open_now']); ?></span>
+    <?php elseif ($open_now === false): ?>
+      <span style="background:#ef4444;color:#fff;padding:2px 10px;border-radius:999px;font-size:12px;margin-left:6px;">● <?php echo esc_html($T['closed_now']); ?></span>
+    <?php endif; ?>
+  </h2>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <?php foreach (['mo','di','mi','do','fr','sa','so'] as $k):
+      $d = $hours_data[$k] ?? null;
+      $is_today = isset($cur) && $cur === $k;
+    ?>
+      <tr style="<?php echo $is_today ? 'background:#fef3c7;font-weight:600;' : ''; ?>">
+        <td style="padding:6px 10px;width:40%;"><?php echo esc_html($T['days'][$k] ?? $k); ?></td>
+        <td style="padding:6px 10px;color:#6b7280;">
+          <?php if (!$d || !empty($d['closed']) || empty($d['von'])): ?>
+            <?php echo esc_html($T['closed_day']); ?>
+          <?php else: ?>
+            <?php echo esc_html($d['von'] . ' – ' . $d['bis']); ?>
+          <?php endif; ?>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  </table>
+</div>
+<?php endif; ?>
+
+<?php if ($full_address): ?>
+<div class="bp-body" style="margin-top:12px;">
+  <h2 style="margin:0 0 8px;font-size:18px;"><?php echo esc_html($T['address']); ?></h2>
+  <p style="margin:0;color:#444;"><?php echo esc_html($full_address); ?></p>
+</div>
+<?php endif; ?>
+
+<?php
+$social_links = [];
+if (is_array($social)) {
+    $social_meta = [
+        'facebook'  => ['Facebook',  '#1877f2'],
+        'instagram' => ['Instagram', '#e1306c'],
+        'tiktok'    => ['TikTok',    '#000000'],
+        'youtube'   => ['YouTube',   '#ff0000'],
+    ];
+    foreach ($social_meta as $key => [$label, $color]) {
+        if (!empty($social[$key])) $social_links[] = ['label'=>$label, 'color'=>$color, 'url'=>$social[$key]];
+    }
+}
+if (!empty($adv->website)) $social_links[] = ['label'=>$T['website'], 'color'=>'#6366f1', 'url'=>$adv->website];
+?>
+<?php if (!empty($social_links)): ?>
+<div class="bp-body" style="margin-top:12px;">
+  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+    <?php foreach ($social_links as $sl): ?>
+      <a href="<?php echo esc_url($sl['url']); ?>" target="_blank" rel="noopener" style="background:<?php echo esc_attr($sl['color']); ?>;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;"><?php echo esc_html($sl['label']); ?></a>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php endif; ?>
+
+<?php if (is_array($gallery) && !empty($gallery)): ?>
+<div class="bp-body" style="margin-top:12px;">
+  <h2 style="margin:0 0 10px;font-size:18px;"><?php echo esc_html($T['gallery']); ?></h2>
+  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;">
+    <?php foreach ($gallery as $g): if (empty($g)) continue; ?>
+      <a href="<?php echo esc_url($g); ?>" target="_blank" rel="noopener"><img src="<?php echo esc_url($g); ?>" alt="" style="height:140px;border-radius:10px;object-fit:cover;flex-shrink:0;"></a>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="bp-ads">
   <h2 style="margin:20px 0 12px;"><?php echo esc_html($T['offers']); ?></h2>
   <?php if (empty($ads)): ?>
