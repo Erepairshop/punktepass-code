@@ -737,8 +737,73 @@ function renderAdvertiserRich(d) {
       ${redeemBtn}
     </div>`;
   }).join('');
-  el.innerHTML = desc + ads;
+
+  // Rating block (display + 1×/year submit form). Mirrors loyalty store flow.
+  const adRating = d.rating_count > 0
+    ? `<div style="display:inline-flex;align-items:center;gap:4px;margin:6px 0 8px;font-size:14px;"><i class="ri-star-fill" style="color:#fbbf24;"></i> <strong>${(d.rating_avg||0).toFixed(1)}</strong> <span style="color:#9ca3af;">(${d.rating_count})</span></div>`
+    : '';
+
+  const ARL = (window._ppvReview && window._ppvReview.L) || {};
+  const adRevId = 'ppv-adv-rev-' + d.id;
+  const adReview = `
+    <div class="mc-section" id="${adRevId}" style="border-top:1px solid #f1f5f9;padding-top:12px;margin-top:12px;">
+      <div class="mc-h3" style="margin-bottom:8px;"><i class="ri-star-half-line"></i> ${escapeHtml(ARL.title||'Bewertung')}</div>
+      <div class="ppv-adv-rev-stars" data-rating="0" style="font-size:28px;color:#d1d5db;display:flex;gap:6px;cursor:pointer;user-select:none;">
+        ${[1,2,3,4,5].map(n=>`<i class="ri-star-fill" data-n="${n}" onclick="ppvSetAdvStar('${adRevId}',${n})"></i>`).join('')}
+      </div>
+      <textarea class="ppv-adv-rev-comment" placeholder="${escapeHtml(ARL.comment||'')}" rows="2" style="width:100%;margin-top:8px;border:1px solid #e5e7eb;border-radius:8px;padding:8px;font:inherit;resize:vertical;"></textarea>
+      <button onclick="ppvSubmitAdvReview('${adRevId}', '${escapeHtml(d.slug||'')}', this)" style="margin-top:8px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <i class="ri-send-plane-fill"></i> ${escapeHtml(ARL.submit||'Senden')}
+      </button>
+      <div class="ppv-adv-rev-msg" style="margin-top:6px;font-size:12px;color:#6b7280;min-height:1em;"></div>
+    </div>
+  `;
+
+  el.innerHTML = adRating + desc + ads + adReview;
 }
+
+window.ppvSetAdvStar = function(blockId, n) {
+  const block = document.getElementById(blockId);
+  if (!block) return;
+  const wrap = block.querySelector('.ppv-adv-rev-stars');
+  wrap.dataset.rating = String(n);
+  wrap.querySelectorAll('i').forEach(i => {
+    i.style.color = (parseInt(i.dataset.n,10) <= n) ? '#fbbf24' : '#d1d5db';
+  });
+};
+
+window.ppvSubmitAdvReview = async function(blockId, slug, btn) {
+  const block = document.getElementById(blockId);
+  if (!block || !slug) return;
+  const ARL = (window._ppvReview && window._ppvReview.L) || {};
+  const msgEl = block.querySelector('.ppv-adv-rev-msg');
+  const wrap = block.querySelector('.ppv-adv-rev-stars');
+  const rating = parseInt(wrap.dataset.rating || '0', 10);
+  const comment = (block.querySelector('.ppv-adv-rev-comment').value || '').trim();
+  if (rating < 1 || rating > 5) { msgEl.style.color='#dc2626'; msgEl.textContent = ARL.choose || 'Pick 1-5 stars'; return; }
+  btn.disabled = true; msgEl.style.color = '#6b7280'; msgEl.textContent = '…';
+  try {
+    const r = await fetch('/wp-json/ppv/v1/advertiser-review', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, rating: rating, comment: comment })
+    });
+    const j = await r.json();
+    if (j && j.success) {
+      msgEl.style.color = '#059669';
+      msgEl.textContent = ARL.thanks || 'Thanks!';
+      block.querySelector('.ppv-adv-rev-comment').value = '';
+    } else {
+      msgEl.style.color = '#dc2626';
+      msgEl.textContent = (j && j.msg === 'rate_limit') ? (ARL.already || 'Already rated.') : (j && j.msg) ? j.msg : 'Error';
+    }
+  } catch(e) {
+    msgEl.style.color = '#dc2626';
+    msgEl.textContent = String(e);
+  } finally {
+    btn.disabled = false;
+  }
+};
 window.closeSheet = function() { document.getElementById('km-sheet').classList.remove('open'); };
 window.toggleFollow = async function(type, id, btn) {
   const wasFollowing = btn.classList.contains('active');

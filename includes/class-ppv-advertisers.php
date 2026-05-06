@@ -1289,12 +1289,29 @@ class PPV_Advertisers {
                 'following' => $user_id ? self::is_following_store($user_id, (int)$s->id) : false,
             ];
         }
+        // Bulk-load review aggregates for the advertisers in one query.
+        $adv_ratings = [];
+        if (!empty($advertisers)) {
+            $ids = array_map(fn($a) => (int)$a->id, $advertisers);
+            $place = implode(',', array_fill(0, count($ids), '%d'));
+            $rows  = $wpdb->get_results($wpdb->prepare(
+                "SELECT advertiser_id, ROUND(AVG(rating),1) avg_r, COUNT(*) cnt
+                 FROM {$wpdb->prefix}pp_advertiser_reviews
+                 WHERE advertiser_id IN ({$place})
+                 GROUP BY advertiser_id",
+                ...$ids
+            ));
+            foreach ($rows ?: [] as $r) {
+                $adv_ratings[(int)$r->advertiser_id] = ['avg' => (float)$r->avg_r, 'count' => (int)$r->cnt];
+            }
+        }
+
         foreach ($advertisers as $a) {
-            // FÁZIS 7: ha van filiale_label, hozzáfűzzük a névhez.
             $business_name = $a->business_name;
             if (!empty($a->filiale_label)) {
                 $business_name .= ' — ' . $a->filiale_label;
             }
+            $r = $adv_ratings[(int)$a->id] ?? ['avg' => null, 'count' => 0];
 
             $features[] = [
                 'type'   => 'advertiser',
@@ -1310,6 +1327,8 @@ class PPV_Advertisers {
                 'category' => $a->category,
                 'featured' => (int)$a->featured,
                 'tier'   => $a->tier,
+                'rating_avg'   => $r['avg'],
+                'rating_count' => $r['count'],
                 'following' => $user_id ? self::is_following($user_id, (int)$a->id) : false,
             ];
         }
@@ -1361,8 +1380,10 @@ class PPV_Advertisers {
         }
 
         $description = $adv->{'description_' . $lang} ?: $adv->description_de;
+        $rev_agg = class_exists('PPV_Advertiser_Reviews') ? PPV_Advertiser_Reviews::aggregate((int)$adv->id) : ['avg'=>null,'count'=>0];
         $payload = [
             'id' => (int)$adv->id,
+            'slug' => $adv->slug,
             'name' => $adv->business_name,
             'description' => $description,
             'logo' => $adv->logo_url,
@@ -1373,6 +1394,8 @@ class PPV_Advertisers {
             'address' => trim(($adv->address ?? '') . ', ' . ($adv->city ?? ''), ', '),
             'category' => $adv->category,
             'tier' => $adv->tier,
+            'rating_avg'   => $rev_agg['avg'],
+            'rating_count' => (int)$rev_agg['count'],
             'ads' => array_map(function($a) use ($lang) {
                 // Fallback chain: per-language → German default → simple `title`/`body` (legacy/new form)
                 $title = $a->{'title_' . $lang} ?: ($a->title_de ?: ($a->title ?? ''));
