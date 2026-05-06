@@ -737,6 +737,34 @@ class PPV_Advertisers {
             exit;
         }
 
+        // Time window: only between 08:00 and 21:59 local (Europe/Berlin).
+        // Push outside this window is annoying — protects subscribers from
+        // unfollow-spam.
+        try {
+            $tz = new DateTimeZone(function_exists('wp_timezone_string') ? wp_timezone_string() : 'Europe/Berlin');
+            $now_local = new DateTime('now', $tz);
+            $hour = (int) $now_local->format('G');
+        } catch (Exception $e) {
+            $hour = (int) date('G');
+        }
+        if ($hour < 8 || $hour >= 22) {
+            wp_redirect(home_url('/business/admin/push?err=window'));
+            exit;
+        }
+
+        // Per-advertiser cooldown between pushes. Scales with the monthly
+        // quota: low quota (≤10/month) → 72h (3 days). High quota (≥16/month,
+        // typically multi-filiale plans) → 24h (1 push/day).
+        $min_gap_hours = ($tier_cap >= 16) ? 24 : 72;
+        if (!empty($adv->last_push_at)) {
+            $since = time() - strtotime($adv->last_push_at);
+            if ($since < $min_gap_hours * 3600) {
+                $wait_hours = ceil(($min_gap_hours * 3600 - $since) / 3600);
+                wp_redirect(home_url('/business/admin/push?err=cooldown&wait=' . $wait_hours));
+                exit;
+            }
+        }
+
         $title = sanitize_text_field($_POST['title'] ?? '');
         $body  = sanitize_text_field($_POST['body'] ?? '');
         if (!$title || !$body) {
@@ -772,7 +800,10 @@ class PPV_Advertisers {
             }
         }
         $wpdb->update($wpdb->prefix . 'ppv_advertisers',
-            ['push_used_this_month' => $adv->push_used_this_month + 1],
+            [
+                'push_used_this_month' => $adv->push_used_this_month + 1,
+                'last_push_at'         => current_time('mysql'),
+            ],
             ['id' => $adv_id]
         );
 

@@ -16,6 +16,47 @@ $days_until_reset = max(0, (int)ceil(($reset_ts - time()) / 86400));
   <?php if (!empty($_GET['sent'])): ?><div class="bz-msg ok"><?php echo esc_html(sprintf(PPV_Lang::t('biz_push_sent_msg'), (int)$_GET['sent'])); ?></div><?php endif; ?>
   <?php if (!empty($_GET['err']) && $_GET['err']==='cap'): ?><div class="bz-msg err"><?php echo esc_html(sprintf(PPV_Lang::t('biz_push_err_cap'), $effective_push_limit)); ?> — <?php echo esc_html(sprintf(PPV_Lang::t('biz_push_next_send'), $reset_date)); ?> (<?php echo esc_html(sprintf(PPV_Lang::t('biz_push_days_left'), $days_until_reset)); ?>)</div><?php endif; ?>
   <?php if (!empty($_GET['err']) && $_GET['err']==='empty'): ?><div class="bz-msg err"><?php echo esc_html(PPV_Lang::t('biz_push_err_empty')); ?></div><?php endif; ?>
+  <?php
+    $push_lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+    if (!in_array($push_lang, ['de','hu','ro','en'], true)) $push_lang = 'de';
+  ?>
+  <?php if (!empty($_GET['err']) && $_GET['err']==='window'):
+    $win_msg = [
+      'de' => '⏰ Push nur zwischen 08:00 und 22:00 Uhr erlaubt — bitte versuche es später noch einmal.',
+      'hu' => '⏰ Push csak 08:00 és 22:00 között küldhető — próbáld meg később.',
+      'ro' => '⏰ Push permis doar între 08:00 și 22:00 — încearcă mai târziu.',
+      'en' => '⏰ Push only allowed between 08:00 and 22:00 — please try again later.',
+    ];
+  ?>
+    <div class="bz-msg err"><?php echo esc_html($win_msg[$push_lang]); ?></div>
+  <?php endif; ?>
+  <?php if (!empty($_GET['err']) && $_GET['err']==='cooldown'):
+    $wait = max(1, (int)($_GET['wait'] ?? 0));
+    $cd_msg = [
+      'de' => '⏳ Du hast vor kurzem schon eine Push gesendet. Nächste Push in ~%dh möglich. (Schutz vor zu viel Push für deine Follower.)',
+      'hu' => '⏳ Nemrég már küldtél push-t. Következő push ~%d óra múlva. (Védelem a túl gyakori értesítések ellen.)',
+      'ro' => '⏳ Ai trimis recent o notificare push. Următoarea push în ~%dh. (Protecție împotriva spamului către urmăritori.)',
+      'en' => '⏳ You sent a push recently. Next push possible in ~%dh. (Protects your followers from too many notifications.)',
+    ];
+  ?>
+    <div class="bz-msg err"><?php echo esc_html(sprintf($cd_msg[$push_lang], $wait)); ?></div>
+  <?php endif; ?>
+
+  <?php
+    // Soft hint: warn the user about the cooldown rules BEFORE they fill the form
+    $tier_cap = PPV_Advertisers::TIERS[$adv->tier]['push_per_month'] ?? 4;
+    $gap_h    = ($tier_cap >= 16) ? 24 : 72;
+    $gap_label = ($gap_h === 24) ? '24h' : '3 ' . ['de'=>'Tage','hu'=>'nap','ro'=>'zile','en'=>'days'][$push_lang];
+    $hint_msg = [
+      'de' => '<strong>Push-Regeln:</strong> nur zwischen 08:00–22:00, mindestens %s zwischen Pushes.',
+      'hu' => '<strong>Push-szabályok:</strong> csak 08:00–22:00 között, legalább %s a push-ok között.',
+      'ro' => '<strong>Reguli push:</strong> doar între 08:00–22:00, minim %s între notificări.',
+      'en' => '<strong>Push rules:</strong> only 08:00–22:00, at least %s between pushes.',
+    ];
+  ?>
+  <div class="bz-msg" style="background:#eef2ff; color:#3730a3; padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:13px;">
+    <?php echo wp_kses_post(sprintf($hint_msg[$push_lang], esc_html($gap_label))); ?>
+  </div>
   <p><?php echo wp_kses_post(sprintf(PPV_Lang::t('biz_push_followers_line'), $followers, $remaining)); ?></p>
   <?php if ($followers === 0): ?>
     <div class="bz-msg" style="background:#fef3c7; color:#92400e; padding:8px 12px; border-radius:6px; margin-bottom:10px;">
