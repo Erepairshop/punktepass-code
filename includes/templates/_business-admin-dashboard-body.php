@@ -220,42 +220,18 @@ $public_url = home_url('/business/' . $adv->slug);
      FLYER BONUS — moved from handler /mein-profil to business advertiser admin
      ============================================================ -->
 <div class="bz-card" id="flyer-bonus-card">
-  <h2 class="bz-h2"><i class="ri-printer-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_card_title')); ?></h2>
-  <p style="margin:0 0 12px; color:var(--muted); font-size:13px;"><?php echo esc_html(PPV_Lang::t('flyer_card_desc')); ?></p>
+  <h2 class="bz-h2"><i class="ri-qr-code-line"></i> Personalisierter Flyer</h2>
+  <p style="margin:0 0 12px; color:var(--muted); font-size:13px;">Lade deinen Flyer herunter, drucke ihn selbst aus und stelle ihn im Geschäft auf. Der QR-Code führt Kunden direkt auf deine Geschäftsseite — sie folgen dir mit 1 Tap.</p>
 
-  <div class="bz-grid" style="margin-bottom:12px;">
-    <a class="bz-btn secondary" href="<?php echo esc_url(PPV_PLUGIN_URL . 'assets/flyers/punktepass-flyer-de.png'); ?>" target="_blank" rel="noopener">
-      <i class="ri-download-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_de')); ?>
-    </a>
-    <a class="bz-btn secondary" href="<?php echo esc_url(PPV_PLUGIN_URL . 'assets/flyers/punktepass-flyer-ro.png'); ?>" target="_blank" rel="noopener">
-      <i class="ri-download-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_ro')); ?>
-    </a>
-    <button type="button" class="bz-btn secondary" disabled style="opacity:0.5; cursor:not-allowed;">
-      <i class="ri-time-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_hu')); ?>
-    </button>
-    <button type="button" class="bz-btn secondary" disabled style="opacity:0.5; cursor:not-allowed;">
-      <i class="ri-time-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_download_en')); ?>
-    </button>
-  </div>
-
-  <div style="margin-top:14px; padding:12px; background:linear-gradient(135deg,#f59e0b,#fbbf24); border-radius:10px;">
-    <div style="color:#fff; font-weight:700; margin-bottom:6px;"><i class="ri-qr-code-line"></i> Personalisierter Flyer (mit deinem QR-Code)</div>
-    <div style="color:#fff; font-size:12px; opacity:.95; margin-bottom:10px;">QR führt direkt zu deiner Geschäftsseite — Kunden folgen mit 1 Tap.</div>
+  <div style="padding:14px; background:linear-gradient(135deg,#f59e0b,#fbbf24); border-radius:10px;">
     <div class="bz-grid">
-      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=de')); ?>" target="_blank" rel="noopener">
+      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=de&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
         <i class="ri-download-line"></i> Flyer DE (mein QR)
       </a>
-      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=ro')); ?>" target="_blank" rel="noopener">
+      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=ro&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
         <i class="ri-download-line"></i> Flyer RO (mein QR)
       </a>
     </div>
-  </div>
-
-  <div style="margin-top:14px;">
-    <button type="button" id="flyer-request-toggle" class="bz-btn">
-      <i class="ri-mail-send-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_request_btn')); ?>
-    </button>
-    <small style="display:block; margin-top:6px; color:var(--muted);"><?php echo esc_html(PPV_Lang::t('flyer_delivery_info')); ?></small>
   </div>
 
   <form id="flyer-request-form" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid #e5e7eb;">
