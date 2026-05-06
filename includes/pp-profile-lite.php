@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * PunktePass â€“ Admin Profil Handler (v2.0 i18n - PRODUCTION FIXED)
  * âœ… DE, HU, RO Language Support
