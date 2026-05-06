@@ -19,13 +19,16 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_Personalized_Flyer {
 
-    /** Approximate QR rectangle (origin + size) on the base flyer.
-     *  Calibrated for the 1054×1492 PunktePass flyer. The base QR sits
-     *  bottom-right inside the yellow-bordered box. */
-    const QR_X      = 569;   // ~2mm inset (was 555)
-    const QR_Y      = 878;   // shifted ~3mm up (was 899)
-    const QR_SIZE   = 432;   // ~4mm smaller (2mm each side, was 460)
-    const NAME_Y    = 843;   // caption baseline above the QR (ignored if shop name empty)
+    /** Per-language flyer calibration (file basename + QR rectangle + URL Y).
+     *  Each flyer has a large white rectangular zone at the bottom designed
+     *  to host the QR code + URL caption. Coordinates calibrated against
+     *  flyer_neu_<lang>.png in assets/flyers/. */
+    const FLYER_CONFIG = [
+        'de' => ['file' => 'flyer_neu_de.png', 'qr_x' => 312, 'qr_y' => 802, 'qr_size' => 400, 'url_y' => 1232, 'w' => 1024, 'h' => 1536],
+        'hu' => ['file' => 'flyer_neu_hu.png', 'qr_x' => 337, 'qr_y' => 833, 'qr_size' => 380, 'url_y' => 1243, 'w' => 1054, 'h' => 1492],
+        'ro' => ['file' => 'flyer_neu_ro.png', 'qr_x' => 337, 'qr_y' => 809, 'qr_size' => 380, 'url_y' => 1219, 'w' => 1054, 'h' => 1492],
+        'en' => ['file' => 'flyer_neu_en.png', 'qr_x' => 327, 'qr_y' => 762, 'qr_size' => 400, 'url_y' => 1192, 'w' => 1054, 'h' => 1492],
+    ];
 
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
@@ -55,7 +58,7 @@ class PPV_Personalized_Flyer {
     public static function rest_render($req) {
         global $wpdb;
         $lang = strtolower(sanitize_text_field($req->get_param('lang')));
-        if (!in_array($lang, ['de', 'ro'], true)) $lang = 'de';
+        if (!array_key_exists($lang, self::FLYER_CONFIG)) $lang = 'de';
 
         if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
         $slug = sanitize_text_field((string) $req->get_param('slug'));
@@ -91,6 +94,9 @@ class PPV_Personalized_Flyer {
 
     /** Returns absolute filesystem path of the cached personalized flyer. */
     public static function generate($adv, $lang) {
+        if (!array_key_exists($lang, self::FLYER_CONFIG)) $lang = 'de';
+        $cfg = self::FLYER_CONFIG[$lang];
+
         $upload = wp_upload_dir();
         $dir = trailingslashit($upload['basedir']) . 'punktepass_flyers/';
         if (!file_exists($dir)) wp_mkdir_p($dir);
@@ -100,67 +106,59 @@ class PPV_Personalized_Flyer {
             return $cache_path;
         }
 
-        $base = PPV_PLUGIN_DIR . 'assets/flyers/punktepass-flyer-' . $lang . '.png';
-        if (!file_exists($base)) $base = PPV_PLUGIN_DIR . 'assets/flyers/punktepass-flyer-de.png';
+        $base = PPV_PLUGIN_DIR . 'assets/flyers/' . $cfg['file'];
+        if (!file_exists($base)) $base = PPV_PLUGIN_DIR . 'assets/flyers/flyer_neu_de.png';
         if (!file_exists($base)) return false;
 
         $img = @imagecreatefrompng($base);
         if (!$img) return false;
 
         $target_url = home_url('/business/' . $adv->slug);
-        $qr_png = self::fetch_qr_png($target_url, self::QR_SIZE);
+        $qr_size = (int) $cfg['qr_size'];
+        $qr_x    = (int) $cfg['qr_x'];
+        $qr_y    = (int) $cfg['qr_y'];
+
+        $qr_png = self::fetch_qr_png($target_url, $qr_size);
         if (!$qr_png) { imagedestroy($img); return false; }
         $qr_img = @imagecreatefromstring($qr_png);
         if (!$qr_img) { imagedestroy($img); return false; }
 
-        // White background panel behind the QR so it scans cleanly even if the
-        // base art has subtle texture under it.
-        $pad = 14;
-        $white = imagecolorallocate($img, 255, 255, 255);
-        imagefilledrectangle(
-            $img,
-            self::QR_X - $pad, self::QR_Y - $pad,
-            self::QR_X + self::QR_SIZE + $pad, self::QR_Y + self::QR_SIZE + $pad,
-            $white
-        );
-
         imagecopyresampled(
             $img, $qr_img,
-            self::QR_X, self::QR_Y, 0, 0,
-            self::QR_SIZE, self::QR_SIZE,
+            $qr_x, $qr_y, 0, 0,
+            $qr_size, $qr_size,
             imagesx($qr_img), imagesy($qr_img)
         );
+        imagedestroy($qr_img);
 
-        // Draw URL caption BELOW the QR so customers can also type it manually
-        // if QR scanning fails. Format: punktepass.de/business/<slug>
+        // URL caption centered under the QR within the white zone.
         $url_caption = 'punktepass.de/business/' . $adv->slug;
         $color_dark  = imagecolorallocate($img, 17, 24, 39);
         $font_path   = PPV_PLUGIN_DIR . 'assets/fonts/Inter-Bold.ttf';
-        $caption_y   = self::QR_Y + self::QR_SIZE + 28;
+        $caption_y   = (int) $cfg['url_y'];
+
         if (file_exists($font_path) && function_exists('imagettftext')) {
-            // Auto-size font so the URL fits within the QR width (best effort).
-            $size = 18;
+            $size = 26;
+            $max_width = $qr_size + 80;
             $bbox = @imagettfbbox($size, 0, $font_path, $url_caption);
             if ($bbox) {
                 $w = abs($bbox[2] - $bbox[0]);
-                while ($w > self::QR_SIZE + 20 && $size > 10) {
-                    $size--;
+                while ($w > $max_width && $size > 12) {
+                    $size -= 2;
                     $bbox = imagettfbbox($size, 0, $font_path, $url_caption);
                     $w = abs($bbox[2] - $bbox[0]);
                 }
-                $tx = self::QR_X + (self::QR_SIZE - $w) / 2;
+                $tx = $qr_x + ($qr_size - $w) / 2;
                 @imagettftext($img, $size, 0, (int)$tx, $caption_y, $color_dark, $font_path, $url_caption);
             }
         } else {
-            // Fallback to bitmap font (less elegant but always works)
             $w = imagefontwidth(4) * strlen($url_caption);
-            $tx = self::QR_X + (self::QR_SIZE - $w) / 2;
+            $tx = $qr_x + ($qr_size - $w) / 2;
             imagestring($img, 4, (int)$tx, $caption_y - 14, $url_caption, $color_dark);
         }
 
         imagepng($img, $cache_path, 6);
         imagedestroy($img);
-        imagedestroy($qr_img);
         return $cache_path;
     }
 

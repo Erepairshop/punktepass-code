@@ -430,12 +430,11 @@ $wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
 
   <div style="padding:14px; background:linear-gradient(135deg,#f59e0b,#fbbf24); border-radius:10px;">
     <div class="bz-grid">
-      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=de&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> <?php echo esc_html($MT['flyer_de']); ?>
+      <?php foreach (['de','hu','ro','en'] as $L): ?>
+      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=' . $L . '&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Flyer <?php echo strtoupper($L); ?>
       </a>
-      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=ro&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> <?php echo esc_html($MT['flyer_ro']); ?>
-      </a>
+      <?php endforeach; ?>
     </div>
   </div>
 
