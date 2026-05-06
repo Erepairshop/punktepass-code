@@ -37,10 +37,10 @@ $current_url = (is_ssl() ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $
 
 // i18n strings for follow CTA
 $L = [
-    'de' => ['rate'=>'','cta_idle'=>'🔔 Folgen + Push aktivieren','cta_following'=>'✓ Du folgst — Push aktiv','cta_loading'=>'…','desc'=>'Verpasse keine neuen Sorten + Aktionen','thanks'=>'Danke! Du erhältst jetzt Push-Updates.','already'=>'Du folgst schon.','unfollow'=>'Folgen beenden','login_link'=>'Email hinzufügen für Coupons','push_blocked'=>'Push blockiert. Aktiviere Benachrichtigungen in den Einstellungen.','install_app_ios'=>'PunktePass App installieren','install_app_android'=>'App installieren'],
-    'hu' => ['rate'=>'','cta_idle'=>'🔔 Követés + Push bekapcsolása','cta_following'=>'✓ Követed — Push aktív','cta_loading'=>'…','desc'=>'Ne maradj le új ízekről és akciókról','thanks'=>'Köszönjük! Mostantól megkapod a push-üzeneteket.','already'=>'Már követed.','unfollow'=>'Követés befejezése','login_link'=>'Email megadása kuponokhoz','push_blocked'=>'Push letiltva. Kapcsold be a beállításokban.','install_app_ios'=>'PunktePass App telepítése','install_app_android'=>'App telepítése'],
-    'ro' => ['rate'=>'','cta_idle'=>'🔔 Urmărește + Activează Push','cta_following'=>'✓ Urmărești — Push activ','cta_loading'=>'…','desc'=>'Nu rata sortimente noi și oferte','thanks'=>'Mulțumim! Vei primi notificări push.','already'=>'Urmărești deja.','unfollow'=>'Oprește urmărirea','login_link'=>'Adaugă email pentru cupoane','push_blocked'=>'Push blocat. Activează notificările.','install_app_ios'=>'Instalează PunktePass','install_app_android'=>'Instalează aplicația'],
-    'en' => ['rate'=>'','cta_idle'=>'🔔 Follow + Enable Push','cta_following'=>'✓ Following — Push active','cta_loading'=>'…','desc'=>'Never miss new flavors + offers','thanks'=>'Thanks! You will now receive push updates.','already'=>'Already following.','unfollow'=>'Stop following','login_link'=>'Add email for coupons','push_blocked'=>'Push blocked. Enable notifications in settings.','install_app_ios'=>'Install PunktePass App','install_app_android'=>'Install app'],
+    'de' => ['rate'=>'','cta_idle'=>'➕ Folgen','cta_following'=>'✓ Du folgst — Push aktiv','cta_loading'=>'…','desc'=>'Verpasse keine neuen Sorten + Aktionen','thanks'=>'Danke! Du erhältst jetzt Push-Updates.','already'=>'Du folgst schon.','unfollow'=>'Folgen beenden','login_link'=>'Email hinzufügen für Coupons','push_blocked'=>'Push blockiert. Aktiviere Benachrichtigungen in den Einstellungen.','install_app_ios'=>'PunktePass App installieren','install_app_android'=>'App installieren','route'=>'🗺 Wegbeschreibung','offers'=>'📣 Aktuelle Angebote','no_offers'=>'Noch keine aktive Werbung.','details'=>'Details →','followers_only'=>'⭐ Nur für Follower'],
+    'hu' => ['rate'=>'','cta_idle'=>'➕ Követés','cta_following'=>'✓ Követed — Push aktív','cta_loading'=>'…','desc'=>'Ne maradj le új ízekről és akciókról','thanks'=>'Köszönjük! Mostantól megkapod a push-üzeneteket.','already'=>'Már követed.','unfollow'=>'Követés befejezése','login_link'=>'Email megadása kuponokhoz','push_blocked'=>'Push letiltva. Kapcsold be a beállításokban.','install_app_ios'=>'PunktePass App telepítése','install_app_android'=>'App telepítése','route'=>'🗺 Útvonal','offers'=>'📣 Aktuális ajánlatok','no_offers'=>'Még nincs aktív hirdetés.','details'=>'Részletek →','followers_only'=>'⭐ Csak követőknek'],
+    'ro' => ['rate'=>'','cta_idle'=>'➕ Urmărește','cta_following'=>'✓ Urmărești — Push activ','cta_loading'=>'…','desc'=>'Nu rata sortimente noi și oferte','thanks'=>'Mulțumim! Vei primi notificări push.','already'=>'Urmărești deja.','unfollow'=>'Oprește urmărirea','login_link'=>'Adaugă email pentru cupoane','push_blocked'=>'Push blocat. Activează notificările.','install_app_ios'=>'Instalează PunktePass','install_app_android'=>'Instalează aplicația','route'=>'🗺 Direcții','offers'=>'📣 Oferte curente','no_offers'=>'Încă nu sunt anunțuri active.','details'=>'Detalii →','followers_only'=>'⭐ Doar pentru urmăritori'],
+    'en' => ['rate'=>'','cta_idle'=>'➕ Follow','cta_following'=>'✓ Following — Push active','cta_loading'=>'…','desc'=>'Never miss new flavors + offers','thanks'=>'Thanks! You will now receive push updates.','already'=>'Already following.','unfollow'=>'Stop following','login_link'=>'Add email for coupons','push_blocked'=>'Push blocked. Enable notifications in settings.','install_app_ios'=>'Install PunktePass App','install_app_android'=>'Install app','route'=>'🗺 Directions','offers'=>'📣 Current offers','no_offers'=>'No active offers yet.','details'=>'Details →','followers_only'=>'⭐ Followers only'],
 ];
 $T = $L[$lang] ?? $L['de'];
 
@@ -95,7 +95,7 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
   <div class="bp-actions">
     <?php if ($adv->phone): ?><a href="tel:<?php echo esc_attr($adv->phone); ?>" class="bp-btn green">📞 <?php echo esc_html($adv->phone); ?></a><?php endif; ?>
     <?php if ($adv->whatsapp): ?><a href="https://wa.me/<?php echo esc_attr(preg_replace('/[^0-9]/','',$adv->whatsapp)); ?>" class="bp-btn wa">💬 WhatsApp</a><?php endif; ?>
-    <?php if ($adv->lat && $adv->lng): ?><a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=<?php echo $adv->lat; ?>,<?php echo $adv->lng; ?>" class="bp-btn gray">🗺 Útvonal</a><?php endif; ?>
+    <?php if ($adv->lat && $adv->lng): ?><a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=<?php echo $adv->lat; ?>,<?php echo $adv->lng; ?>" class="bp-btn gray"><?php echo esc_html($T['route']); ?></a><?php endif; ?>
   </div>
 
   <!-- Anonymous-friendly follow + push CTA. Big, prominent, single-tap. -->
@@ -114,9 +114,9 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
 </div>
 <?php if ($desc): ?><div class="bp-body"><?php echo wp_kses_post(wpautop($desc)); ?></div><?php endif; ?>
 <div class="bp-ads">
-  <h2 style="margin:20px 0 12px;">📣 Aktuális ajánlatok</h2>
+  <h2 style="margin:20px 0 12px;"><?php echo esc_html($T['offers']); ?></h2>
   <?php if (empty($ads)): ?>
-    <p style="color:#6b7280;">Még nincs aktív hirdetés.</p>
+    <p style="color:#6b7280;"><?php echo esc_html($T['no_offers']); ?></p>
   <?php else: ?>
     <?php foreach ($ads as $ad):
       // Fallback: per-lang → de → simple `title`/`body` (új form csak ezt tölti)
@@ -127,10 +127,10 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
       <div class="bp-ad">
         <?php if ($ad->image_url): ?><img src="<?php echo esc_url($ad->image_url); ?>" alt=""><?php endif; ?>
         <h3><?php echo esc_html($title); ?>
-          <?php if ($ad->followers_only): ?><span class="bp-ad-fol">⭐ Csak követőknek</span><?php endif; ?>
+          <?php if ($ad->followers_only): ?><span class="bp-ad-fol"><?php echo esc_html($T['followers_only']); ?></span><?php endif; ?>
         </h3>
         <p><?php echo wp_kses_post(wpautop($body)); ?></p>
-        <?php if ($ad->cta_url): ?><a href="<?php echo esc_url(home_url('/wp-json/punktepass/v1/ad-click/' . (int)$ad->id . '?to=' . urlencode($ad->cta_url))); ?>" class="bp-btn primary" rel="noopener">Részletek →</a><?php endif; ?>
+        <?php if ($ad->cta_url): ?><a href="<?php echo esc_url(home_url('/wp-json/punktepass/v1/ad-click/' . (int)$ad->id . '?to=' . urlencode($ad->cta_url))); ?>" class="bp-btn primary" rel="noopener"><?php echo esc_html($T['details']); ?></a><?php endif; ?>
       </div>
     <?php endforeach; ?>
   <?php endif; ?>
