@@ -285,6 +285,24 @@ public static function check_already_logged_in() {
         }
     }
 
+    // 👤 ANON user (negative session id, set by PPV_Anon_Users::maybe_resume_anon)
+    // — recognize them so they don't see the registration screen on app launch.
+    // They followed at least one shop, so we treat the cookie as enough auth
+    // for the user dashboard. No data leak: anon rows have no email/PII.
+    if (!empty($_SESSION['ppv_user_id']) && (int)$_SESSION['ppv_user_id'] < 0) {
+        global $wpdb;
+        $anon_id = -((int)$_SESSION['ppv_user_id']);
+        $anon_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_anon_users WHERE id = %d LIMIT 1",
+            $anon_id
+        ));
+        if ($anon_exists) {
+            ppv_log("🔄 [PPV_Login] Anon user redirect (id=-{$anon_id})");
+            wp_safe_redirect(home_url('/karte'));
+            exit;
+        }
+    }
+
     // 🔐 USER already logged in (only if no store association)
     if (!empty($_SESSION['ppv_user_id']) && ($_SESSION['ppv_user_type'] ?? '') === 'user') {
         // ✅ FIX: Verify user actually exists in database before redirect

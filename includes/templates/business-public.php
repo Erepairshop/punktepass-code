@@ -43,6 +43,15 @@ $L = [
     'en' => ['rate'=>'','cta_idle'=>'🔔 Follow + Enable Push','cta_following'=>'✓ Following — Push active','cta_loading'=>'…','desc'=>'Never miss new flavors + offers','thanks'=>'Thanks! You will now receive push updates.','already'=>'Already following.','unfollow'=>'Stop following','login_link'=>'Add email for coupons','push_blocked'=>'Push blocked. Enable notifications in settings.','install_app_ios'=>'Install PunktePass App','install_app_android'=>'Install app'],
 ];
 $T = $L[$lang] ?? $L['de'];
+
+// Post-follow modal copy ("install the app for more")
+$post_modal = [
+    'de' => ['title' => 'Geschafft! Du folgst jetzt.', 'body' => 'Lade die kostenlose PunktePass App, um Aktionen, Coupons und mehr zu erhalten.', 'cta' => '📱 App herunterladen', 'skip' => 'Später'],
+    'hu' => ['title' => 'Kész! Most már követed.', 'body' => 'Töltsd le az ingyenes PunktePass alkalmazást akciókért, kuponokért és többért.', 'cta' => '📱 Alkalmazás letöltése', 'skip' => 'Később'],
+    'ro' => ['title' => 'Gata! Urmărești acum.', 'body' => 'Descarcă aplicația PunktePass gratuită pentru oferte, cupoane și mai mult.', 'cta' => '📱 Descarcă aplicația', 'skip' => 'Mai târziu'],
+    'en' => ['title' => 'Done! You are now following.', 'body' => 'Get the free PunktePass app for offers, coupons and more.', 'cta' => '📱 Get the app', 'skip' => 'Later'],
+];
+$PM = $post_modal[$lang] ?? $post_modal['de'];
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo esc_attr($lang); ?>">
@@ -127,6 +136,36 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
   <?php endif; ?>
 </div>
 
+<!-- Post-follow modal: shown after a successful follow + push activation,
+     deep-linking the user to the right app store. -->
+<div id="bp-app-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#fff;border-radius:16px;max-width:380px;width:100%;padding:24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <div style="font-size:42px;line-height:1;margin-bottom:8px;">🎉</div>
+    <div style="font-size:18px;font-weight:700;color:#111;margin-bottom:8px;"><?php echo esc_html($PM['title']); ?></div>
+    <div style="font-size:14px;color:#444;margin-bottom:18px;line-height:1.45;"><?php echo esc_html($PM['body']); ?></div>
+    <a id="bp-app-cta" href="#" style="display:block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:14px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;margin-bottom:8px;"><?php echo esc_html($PM['cta']); ?></a>
+    <button type="button" id="bp-app-skip" style="background:none;border:none;color:#9ca3af;font-size:13px;cursor:pointer;padding:6px;"><?php echo esc_html($PM['skip']); ?></button>
+  </div>
+</div>
+
+<script>
+// Detect platform; pick the right store URL.
+function ppvAppStoreUrl(){
+  var ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/.test(ua)) return 'https://apps.apple.com/app/punktepass/id6755680197';
+  if (/Android/.test(ua))         return 'https://play.google.com/store/apps/details?id=de.punktepass.twa';
+  return 'https://punktepass.de/'; // desktop fallback → marketing page
+}
+function ppvShowAppModal(){
+  var modal = document.getElementById('bp-app-modal');
+  if (!modal) return;
+  var cta = document.getElementById('bp-app-cta');
+  var skip = document.getElementById('bp-app-skip');
+  if (cta) cta.href = ppvAppStoreUrl();
+  modal.style.display = 'flex';
+  if (skip) skip.onclick = function(){ modal.style.display = 'none'; };
+}
+</script>
 <script>
 // Firebase Web SDK config (mirror of class-ppv-user-settings.php and
 // firebase-messaging-sw.js — keep in sync if those change).
@@ -153,30 +192,60 @@ function ppvLoadScript(src){
 // run inside /anon-follow, so $_SESSION['ppv_user_id'] is set by the time we
 // hit /push/register. The endpoint reads user_id from session as a fallback.
 async function ppvRegisterPushToken(lang) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return null;
-    if (!('serviceWorker' in navigator)) return null;
+    var dbg = function(stage, val){ try { console.log('[PPV-Push]', stage, val); } catch(e){} };
+    if (!('Notification' in window)) throw new Error('Notification API unavailable');
+    if (Notification.permission !== 'granted') throw new Error('Notification permission ' + Notification.permission);
+    if (!('serviceWorker' in navigator)) throw new Error('serviceWorker unavailable');
+
     if (typeof firebase === 'undefined') {
+        dbg('loading firebase SDK');
         await ppvLoadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
         await ppvLoadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
     }
     if (!firebase.apps.length) firebase.initializeApp(ppvFirebaseConfig);
-    var swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
-    var token = await firebase.messaging().getToken({ vapidKey: ppvVapidKey, serviceWorkerRegistration: swReg });
-    if (!token) return null;
+
+    dbg('registering SW');
+    var swReg;
     try {
-        var resp = await fetch('/wp-json/punktepass/v1/push/register', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token, platform: 'web', language: lang || 'de', device_name: 'Web (PunktePass /business)' })
+        swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+    } catch(e) { throw new Error('SW reg fail: ' + (e.message||e)); }
+
+    // Wait for the SW to be activated — Chrome rejects PushManager.subscribe()
+    // unless the SW reached "activated" state.
+    if (swReg.installing || swReg.waiting) {
+        dbg('waiting for SW activation');
+        await new Promise(function(resolve){
+            var sw = swReg.installing || swReg.waiting;
+            if (!sw) return resolve();
+            sw.addEventListener('statechange', function(){
+                if (sw.state === 'activated') resolve();
+            });
+            // Safety net
+            setTimeout(resolve, 8000);
         });
-        var d = await resp.json();
-        if (d && d.success) {
-            try { localStorage.setItem('ppv_fcm_token', token); } catch(e){}
-            return token;
-        }
-    } catch(e) { /* non-fatal */ }
-    return null;
+    }
+    // Belt-and-braces: also wait on the global ready promise.
+    try { await navigator.serviceWorker.ready; } catch(e){}
+
+    dbg('getting FCM token');
+    var token;
+    try {
+        token = await firebase.messaging().getToken({ vapidKey: ppvVapidKey, serviceWorkerRegistration: swReg });
+    } catch(e) { throw new Error('getToken fail: ' + (e.message||e)); }
+    if (!token) throw new Error('getToken returned empty');
+    dbg('got token len=' + token.length);
+
+    var resp = await fetch('/wp-json/punktepass/v1/push/register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, platform: 'web', language: lang || 'de', device_name: 'Web (PunktePass /business)' })
+    });
+    var d = await resp.json();
+    dbg('register resp', d);
+    if (!d || !d.success) throw new Error('register fail: ' + JSON.stringify(d));
+    try { localStorage.setItem('ppv_fcm_token', token); } catch(e){}
+    return token;
 }
 
 // Follow + push activation flow. One tap on the big yellow button:
@@ -235,8 +304,15 @@ async function ppvRegisterPushToken(lang) {
       // Now register an FCM token so the backend can actually deliver pushes.
       // Done after the follow REST call so the anon user/session exists.
       if (perm === 'granted') {
-        ppvRegisterPushToken(<?php echo wp_json_encode($lang); ?>).catch(function(){});
+        ppvRegisterPushToken(<?php echo wp_json_encode($lang); ?>).then(function(t){
+          if (msg) { msg.style.color = '#fff'; msg.textContent = T.thanks + ' (push: OK)'; }
+        }).catch(function(err){
+          if (msg) { msg.style.color = '#fee'; msg.textContent = 'Push: ' + (err && err.message ? err.message : err); }
+        });
       }
+      // Show "install the app for more" modal a moment after the success state
+      // settles, so the user sees their follow confirmed first.
+      setTimeout(function(){ if (typeof ppvShowAppModal === 'function') ppvShowAppModal(); }, 900);
     } catch (e) {
       setUi('idle', String(e));
     }
@@ -256,6 +332,24 @@ async function ppvRegisterPushToken(lang) {
   }
 
   btn.addEventListener('click', () => following ? unfollowShop() : followShop());
+
+  // Auto-retry push token registration if user is already following and
+  // browser already has notification permission, but no FCM token recorded
+  // locally. Catches "tapped follow but token reg silently failed" cases.
+  (async function maybeRetryPushReg(){
+    if (!following) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    let already = null;
+    try { already = localStorage.getItem('ppv_fcm_token'); } catch(e){}
+    if (already) return;
+    if (msg) { msg.style.color = '#fff'; msg.textContent = 'Push registrierung läuft…'; }
+    try {
+      await ppvRegisterPushToken(<?php echo wp_json_encode($lang); ?>);
+      if (msg) { msg.style.color = '#fff'; msg.textContent = T.thanks + ' (push: OK)'; }
+    } catch(err) {
+      if (msg) { msg.style.color = '#fee'; msg.textContent = 'Push: ' + (err && err.message ? err.message : err); }
+    }
+  })();
 })();
 
 // Android: surface PWA install prompt as a custom inline banner if the
