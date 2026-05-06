@@ -874,6 +874,41 @@ class PPV_SEO {
             }
         }
 
+        // Loyalty stores (/shop/<slug>) — only paying active merchants are
+        // included. Trial accounts are excluded so unfinished pages don't
+        // pollute the index. Cancellation removes the row's active flag and
+        // it disappears from this query immediately.
+        $loyalty = $wpdb->get_results(
+            "SELECT store_slug, name, logo, last_updated
+             FROM {$prefix}ppv_stores
+             WHERE active = 1
+             AND visible = 1
+             AND subscription_status = 'active'
+             AND store_slug IS NOT NULL
+             AND store_slug != ''
+             ORDER BY name ASC"
+        );
+
+        foreach ($loyalty as $store) {
+            $url = $site_url . '/shop/' . $store->store_slug;
+            echo '  <url>' . "\n";
+            echo '    <loc>' . esc_url($url) . '</loc>' . "\n";
+            if (!empty($store->last_updated)) {
+                echo '    <lastmod>' . esc_html(substr($store->last_updated, 0, 10)) . '</lastmod>' . "\n";
+            }
+            echo '    <changefreq>weekly</changefreq>' . "\n";
+            echo '    <priority>0.7</priority>' . "\n";
+
+            if (!empty($store->logo)) {
+                echo '    <image:image>' . "\n";
+                echo '      <image:loc>' . esc_url($store->logo) . '</image:loc>' . "\n";
+                echo '      <image:title>' . esc_html($store->name) . '</image:title>' . "\n";
+                echo '    </image:image>' . "\n";
+            }
+
+            echo '  </url>' . "\n";
+        }
+
         echo '</urlset>';
     }
 
@@ -899,6 +934,11 @@ class PPV_SEO {
         $output .= "# Allow formular pages\n";
         $output .= "Allow: /formular\n";
         $output .= "Allow: /formular/*\n\n";
+
+        // Allow loyalty store pages
+        $output .= "# Allow loyalty store pages\n";
+        $output .= "Allow: /shop\n";
+        $output .= "Allow: /shop/*\n\n";
 
         // Disallow admin and status pages (private)
         $output .= "# Disallow private pages\n";

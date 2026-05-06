@@ -73,7 +73,7 @@ class PPV_Store_Page {
         global $wpdb;
 
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE store_slug = %s AND active = 1 LIMIT 1",
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE store_slug = %s LIMIT 1",
             $slug
         ));
 
@@ -83,6 +83,13 @@ class PPV_Store_Page {
                 esc_html__('404 – Store nicht gefunden', 'punktepass'),
                 ['response' => 404]
             );
+        }
+
+        // Inactive (canceled or disabled) → 301 redirect to homepage so Google
+        // transfers link equity instead of accumulating 404s.
+        if (empty($store->active) || empty($store->visible)) {
+            wp_redirect(home_url('/'), 301);
+            exit;
         }
 
         self::render_page($store);
@@ -108,8 +115,15 @@ class PPV_Store_Page {
         // Opening hours human-readable
         $hours_html = self::render_opening_hours_html($store->opening_hours ?? '');
 
+        // Trial subscription pages are NOT indexed — only paying merchants
+        // get sitemap inclusion + indexable status. Mirrors advertiser logic.
+        $is_indexable = (($store->subscription_status ?? '') === 'active');
+
         status_header(200);
         header('Content-Type: text/html; charset=UTF-8');
+        if (!$is_indexable) {
+            header('X-Robots-Tag: noindex, nofollow');
+        }
 
         ?><!DOCTYPE html>
 <html lang="<?php echo esc_attr($lang); ?>">
@@ -118,6 +132,9 @@ class PPV_Store_Page {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?php echo $store_name; ?> – PunktePass</title>
 <meta name="description" content="<?php echo esc_attr($meta_desc); ?>">
+<?php if (!$is_indexable): ?>
+<meta name="robots" content="noindex, nofollow">
+<?php endif; ?>
 <link rel="canonical" href="<?php echo $store_url; ?>">
 
 <?php
