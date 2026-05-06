@@ -5,10 +5,10 @@ header('Pragma: no-cache');
 header('Expires: 0');
 $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
 $labels = [
-    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote','follow_banner'=>'Folge dem Geschäft, verpasse keine Aktionen','follow_banner_ad'=>'Folge, verpasse keine Aktionen & Gewinne','redeem'=>'Einlösen','remaining'=>'übrig','sold_out'=>'Vergriffen','sold_out_msg'=>'Leider sind alle Gutscheine vergriffen.'],
-    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','follow'=>'Követés','following'=>'Követed','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.','points_here'=>'Pontot gyűjthetsz','offers'=>'Aktuális ajánlatok','follow_banner'=>'Kövesd a boltot, ne maradj le akciókról','follow_banner_ad'=>'Kövess, ne maradj le akciókról és nyereményekről','redeem'=>'Beváltás','remaining'=>'maradt','sold_out'=>'Kifogyott','sold_out_msg'=>'Sajnos minden kupon elfogyott.'],
-    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','follow'=>'Urmărește','following'=>'Urmărești','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.','points_here'=>'Adună puncte','offers'=>'Oferte curente','follow_banner'=>'Urmărește magazinul, nu rata oferte','follow_banner_ad'=>'Urmărește, nu rata oferte și premii','redeem'=>'Răscumpărare','remaining'=>'rămase','sold_out'=>'Epuizate','sold_out_msg'=>'Toate cupoanele au fost epuizate.'],
-    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','follow'=>'Follow','following'=>'Following','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.','points_here'=>'Earn points here','offers'=>'Current offers','follow_banner'=>'Follow the shop to never miss promotions','follow_banner_ad'=>'Follow to never miss promotions & prizes','redeem'=>'Redeem','remaining'=>'left','sold_out'=>'Sold out','sold_out_msg'=>'All coupons have been claimed.'],
+    'de' => ['title'=>'Karte','search'=>'Suchen…','filter_all'=>'Alle','follow'=>'Folgen','following'=>'Folgst du','call'=>'Anrufen','whatsapp'=>'WhatsApp','directions'=>'Wegbeschreibung','no_pins'=>'Keine Geschäfte in dieser Region.','points_here'=>'Punkte sammeln hier','offers'=>'Aktuelle Angebote','follow_banner'=>'Folge dem Geschäft, verpasse keine Aktionen','follow_banner_ad'=>'Folge, verpasse keine Aktionen & Gewinne','redeem'=>'Einlösen','remaining'=>'übrig','sold_out'=>'Vergriffen','sold_out_msg'=>'Leider sind alle Gutscheine vergriffen.','rate_title'=>'Geschäft bewerten','rate_comment'=>'Kommentar (optional)','rate_submit'=>'Bewertung senden','rate_thanks'=>'Danke für deine Bewertung!','rate_login'=>'Bitte logge dich ein um zu bewerten.','rate_already'=>'Du hast schon bewertet.','rate_choose'=>'Bitte wähle 1–5 Sterne.'],
+    'hu' => ['title'=>'Térkép','search'=>'Keresés…','filter_all'=>'Mind','follow'=>'Követés','following'=>'Követed','call'=>'Hívás','whatsapp'=>'WhatsApp','directions'=>'Útvonal','no_pins'=>'Nincs üzlet ebben a régióban.','points_here'=>'Pontot gyűjthetsz','offers'=>'Aktuális ajánlatok','follow_banner'=>'Kövesd a boltot, ne maradj le akciókról','follow_banner_ad'=>'Kövess, ne maradj le akciókról és nyereményekről','redeem'=>'Beváltás','remaining'=>'maradt','sold_out'=>'Kifogyott','sold_out_msg'=>'Sajnos minden kupon elfogyott.','rate_title'=>'Üzlet értékelése','rate_comment'=>'Megjegyzés (opcionális)','rate_submit'=>'Értékelés küldése','rate_thanks'=>'Köszönjük az értékelést!','rate_login'=>'Az értékeléshez jelentkezz be.','rate_already'=>'Már értékelted ezt az üzletet.','rate_choose'=>'Válassz 1–5 csillagot.'],
+    'ro' => ['title'=>'Hartă','search'=>'Caută…','filter_all'=>'Toate','follow'=>'Urmărește','following'=>'Urmărești','call'=>'Sună','whatsapp'=>'WhatsApp','directions'=>'Direcții','no_pins'=>'Nu sunt magazine în această regiune.','points_here'=>'Adună puncte','offers'=>'Oferte curente','follow_banner'=>'Urmărește magazinul, nu rata oferte','follow_banner_ad'=>'Urmărește, nu rata oferte și premii','redeem'=>'Răscumpărare','remaining'=>'rămase','sold_out'=>'Epuizate','sold_out_msg'=>'Toate cupoanele au fost epuizate.','rate_title'=>'Evaluează magazinul','rate_comment'=>'Comentariu (opțional)','rate_submit'=>'Trimite evaluarea','rate_thanks'=>'Mulțumim pentru evaluare!','rate_login'=>'Te rugăm să te conectezi pentru a evalua.','rate_already'=>'Ai evaluat deja acest magazin.','rate_choose'=>'Alege 1–5 stele.'],
+    'en' => ['title'=>'Map','search'=>'Search…','filter_all'=>'All','follow'=>'Follow','following'=>'Following','call'=>'Call','whatsapp'=>'WhatsApp','directions'=>'Directions','no_pins'=>'No shops in this area yet.','points_here'=>'Earn points here','offers'=>'Current offers','follow_banner'=>'Follow the shop to never miss promotions','follow_banner_ad'=>'Follow to never miss promotions & prizes','redeem'=>'Redeem','remaining'=>'left','sold_out'=>'Sold out','sold_out_msg'=>'All coupons have been claimed.','rate_title'=>'Rate this shop','rate_comment'=>'Comment (optional)','rate_submit'=>'Submit review','rate_thanks'=>'Thanks for your review!','rate_login'=>'Please log in to leave a review.','rate_already'=>'You have already reviewed this shop.','rate_choose'=>'Please pick 1–5 stars.'],
 ];
 $L = $labels[$lang] ?? $labels['de'];
 ?>
@@ -18,6 +18,18 @@ $L = $labels[$lang] ?? $labels['de'];
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?php echo esc_html($L['title']); ?> — PunktePass</title>
+<script>
+window._ppvReview = {
+  ajax: <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>,
+  nonce: <?php echo wp_json_encode(wp_create_nonce('ppv_review_nonce')); ?>,
+  uid: <?php echo (int)get_current_user_id(); ?>,
+  L: <?php echo wp_json_encode([
+    'title'=>$L['rate_title'],'comment'=>$L['rate_comment'],'submit'=>$L['rate_submit'],
+    'thanks'=>$L['rate_thanks'],'login'=>$L['rate_login'],'already'=>$L['rate_already'],
+    'choose'=>$L['rate_choose'],
+  ]); ?>
+};
+</script>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
 <link rel="stylesheet" href="/wp-content/plugins/punktepass/assets/css/ppv-core.css">
@@ -599,6 +611,22 @@ function renderLoyaltyRich(s) {
 
   const ratingM = s.rating_count > 0 ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:13px;"><i class="ri-star-fill" style="color:#fbbf24;"></i> <strong>${(s.rating_avg||0).toFixed(1)}</strong> <span style="color:#9ca3af;">(${s.rating_count})</span></div>` : '';
 
+  const RL = (window._ppvReview && window._ppvReview.L) || {};
+  const reviewBlockId = 'ppv-rev-' + s.id;
+  const reviewM = `
+    <div class="mc-section" id="${reviewBlockId}" style="border-top:1px solid #f1f5f9;padding-top:12px;margin-top:12px;">
+      <div class="mc-h3" style="margin-bottom:8px;"><i class="ri-star-half-line"></i> ${escapeHtml(RL.title||'')}</div>
+      <div class="ppv-rev-stars" data-rating="0" style="font-size:28px;color:#d1d5db;display:flex;gap:6px;cursor:pointer;user-select:none;">
+        ${[1,2,3,4,5].map(n=>`<i class="ri-star-fill" data-n="${n}" onclick="ppvSetStar('${reviewBlockId}',${n})"></i>`).join('')}
+      </div>
+      <textarea class="ppv-rev-comment" placeholder="${escapeHtml(RL.comment||'')}" rows="2" style="width:100%;margin-top:8px;border:1px solid #e5e7eb;border-radius:8px;padding:8px;font:inherit;resize:vertical;"></textarea>
+      <button onclick="ppvSubmitReview('${reviewBlockId}', ${s.id}, this)" style="margin-top:8px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <i class="ri-send-plane-fill"></i> ${escapeHtml(RL.submit||'')}
+      </button>
+      <div class="ppv-rev-msg" style="margin-top:6px;font-size:12px;color:#6b7280;min-height:1em;"></div>
+    </div>
+  `;
+
   el.innerHTML = `
     <div style="padding:0 18px 8px;">
       ${statusM}
@@ -614,8 +642,61 @@ function renderLoyaltyRich(s) {
     </div>
     ${rewardsM}
     ${vipTable}
+    ${reviewM}
   `;
 }
+
+window.ppvSetStar = function(blockId, n) {
+  const block = document.getElementById(blockId);
+  if (!block) return;
+  const wrap = block.querySelector('.ppv-rev-stars');
+  wrap.dataset.rating = String(n);
+  wrap.querySelectorAll('i').forEach(i => {
+    i.style.color = (parseInt(i.dataset.n,10) <= n) ? '#fbbf24' : '#d1d5db';
+  });
+};
+
+window.ppvSubmitReview = async function(blockId, storeId, btn) {
+  const block = document.getElementById(blockId);
+  if (!block) return;
+  const cfg = window._ppvReview || {};
+  const RL = cfg.L || {};
+  const msgEl = block.querySelector('.ppv-rev-msg');
+  const wrap = block.querySelector('.ppv-rev-stars');
+  const rating = parseInt(wrap.dataset.rating || '0', 10);
+  const comment = (block.querySelector('.ppv-rev-comment').value || '').trim();
+
+  if (!cfg.uid) { msgEl.style.color='#dc2626'; msgEl.textContent = RL.login || 'Login required'; return; }
+  if (rating < 1 || rating > 5) { msgEl.style.color='#dc2626'; msgEl.textContent = RL.choose || 'Pick 1-5 stars'; return; }
+
+  btn.disabled = true;
+  msgEl.style.color = '#6b7280';
+  msgEl.textContent = '…';
+
+  try {
+    const fd = new FormData();
+    fd.append('action', 'ppv_submit_review');
+    fd.append('nonce', cfg.nonce);
+    fd.append('store_id', storeId);
+    fd.append('rating', rating);
+    fd.append('comment', comment);
+    const r = await fetch(cfg.ajax, { method: 'POST', credentials: 'include', body: fd });
+    const j = await r.json();
+    if (j && j.success) {
+      msgEl.style.color = '#059669';
+      msgEl.textContent = RL.thanks || 'Thanks!';
+      block.querySelector('.ppv-rev-comment').value = '';
+    } else {
+      msgEl.style.color = '#dc2626';
+      msgEl.textContent = (j && j.data && j.data.msg) ? j.data.msg : (RL.already || 'Error');
+    }
+  } catch(e) {
+    msgEl.style.color = '#dc2626';
+    msgEl.textContent = String(e);
+  } finally {
+    btn.disabled = false;
+  }
+};
 
 function renderAdvertiserRich(d) {
   const el = document.getElementById('km-rich-content');
