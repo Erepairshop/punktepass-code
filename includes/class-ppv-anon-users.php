@@ -71,8 +71,9 @@ class PPV_Anon_Users {
             $_SESSION['ppv_user_id'] = (int) $row->upgraded_to_user_id;
         } else {
             if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
-            $_SESSION['ppv_user_id'] = -((int) $row->id); // negative => anon marker
-            $_SESSION['ppv_is_anon'] = true;
+            $_SESSION['ppv_user_id']   = -((int) $row->id); // negative => anon marker
+            $_SESSION['ppv_user_type'] = 'user'; // satisfy existing dashboard auth checks
+            $_SESSION['ppv_is_anon']   = true;
         }
 
         $wpdb->update(

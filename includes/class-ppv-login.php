@@ -285,22 +285,15 @@ public static function check_already_logged_in() {
         }
     }
 
-    // 👤 ANON user (negative session id, set by PPV_Anon_Users::maybe_resume_anon)
-    // — recognize them so they don't see the registration screen on app launch.
-    // They followed at least one shop, so we treat the cookie as enough auth
-    // for the user dashboard. No data leak: anon rows have no email/PII.
+    // 👤 ANON user: do NOT auto-redirect to /user_dashboard yet — that triggers
+    // a redirect loop on prod because downstream auth checks reject negative
+    // user_ids. Instead, just keep the session active and let the user navigate
+    // manually (login page is fine). Re-enable once dashboard has anon support.
+    // Defensive cleanup: if the named-user block below runs against a negative
+    // id it would clear the session — skip that block for anons.
     if (!empty($_SESSION['ppv_user_id']) && (int)$_SESSION['ppv_user_id'] < 0) {
-        global $wpdb;
-        $anon_id = -((int)$_SESSION['ppv_user_id']);
-        $anon_exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}ppv_anon_users WHERE id = %d LIMIT 1",
-            $anon_id
-        ));
-        if ($anon_exists) {
-            ppv_log("🔄 [PPV_Login] Anon user redirect (id=-{$anon_id})");
-            wp_safe_redirect(home_url('/user_dashboard'));
-            exit;
-        }
+        ppv_log("🔍 [PPV_Login] anon session detected ({$_SESSION['ppv_user_id']}) — staying on login page");
+        return;
     }
 
     // 🔐 USER already logged in (only if no store association)
