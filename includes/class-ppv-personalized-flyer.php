@@ -23,9 +23,9 @@ class PPV_Personalized_Flyer {
      *  Calibrated for the 1054×1492 PunktePass flyer. The base QR sits
      *  bottom-right inside the yellow-bordered box. */
     const QR_X      = 555;
-    const QR_Y      = 850;
+    const QR_Y      = 885;   // ~5mm lower than initial calibration
     const QR_SIZE   = 460;
-    const NAME_Y    = 815;   // caption baseline above the QR (ignored if shop name empty)
+    const NAME_Y    = 850;   // caption baseline above the QR (ignored if shop name empty)
 
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
@@ -35,12 +35,14 @@ class PPV_Personalized_Flyer {
         register_rest_route('ppv/v1', '/personalized-flyer', [
             'methods'             => 'GET',
             'callback'            => [__CLASS__, 'rest_render'],
-            'permission_callback' => function () {
-                if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
-                return !empty($_SESSION['ppv_advertiser_id']);
-            },
+            // Public: slug-based lookup. The flyer is a marketing asset, no
+            // sensitive data — making it auth-free lets advertisers share the
+            // download URL directly (and the admin button still works without
+            // depending on global REST auth).
+            'permission_callback' => '__return_true',
             'args' => [
                 'lang' => ['type' => 'string', 'default' => 'de'],
+                'slug' => ['type' => 'string', 'required' => false],
             ],
         ]);
     }
@@ -50,11 +52,21 @@ class PPV_Personalized_Flyer {
         $lang = strtolower(sanitize_text_field($req->get_param('lang')));
         if (!in_array($lang, ['de', 'ro'], true)) $lang = 'de';
 
-        $adv_id = (int) $_SESSION['ppv_advertiser_id'];
-        $adv = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, slug, business_name FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d LIMIT 1",
-            $adv_id
-        ));
+        if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
+        $slug = sanitize_text_field((string) $req->get_param('slug'));
+        $adv = null;
+        if ($slug) {
+            $adv = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, slug, business_name FROM {$wpdb->prefix}ppv_advertisers WHERE slug = %s LIMIT 1",
+                $slug
+            ));
+        } elseif (!empty($_SESSION['ppv_advertiser_id'])) {
+            $adv_id = (int) $_SESSION['ppv_advertiser_id'];
+            $adv = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, slug, business_name FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d LIMIT 1",
+                $adv_id
+            ));
+        }
         if (!$adv || empty($adv->slug)) {
             return new WP_REST_Response(['success' => false, 'msg' => 'advertiser slug missing'], 400);
         }
