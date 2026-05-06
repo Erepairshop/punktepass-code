@@ -23,9 +23,9 @@ class PPV_Personalized_Flyer {
      *  Calibrated for the 1054×1492 PunktePass flyer. The base QR sits
      *  bottom-right inside the yellow-bordered box. */
     const QR_X      = 569;   // ~2mm inset (was 555)
-    const QR_Y      = 899;   // ~2mm inset, plus 5mm down
+    const QR_Y      = 878;   // shifted ~3mm up (was 899)
     const QR_SIZE   = 432;   // ~4mm smaller (2mm each side, was 460)
-    const NAME_Y    = 864;   // caption baseline above the QR (ignored if shop name empty)
+    const NAME_Y    = 843;   // caption baseline above the QR (ignored if shop name empty)
 
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
@@ -126,21 +126,31 @@ class PPV_Personalized_Flyer {
             imagesx($qr_img), imagesy($qr_img)
         );
 
-        // Draw business name above the QR — best-effort; fonts may not be
-        // perfect across hosts but readable. Skip silently if anything fails.
-        if (!empty($adv->business_name)) {
-            $shop_name = mb_substr((string)$adv->business_name, 0, 32);
-            $color_dark = imagecolorallocate($img, 17, 24, 39);
-            $font_path = PPV_PLUGIN_DIR . 'assets/fonts/Inter-Bold.ttf';
-            if (file_exists($font_path) && function_exists('imagettftext')) {
-                @imagettftext(
-                    $img, 26, 0,
-                    self::QR_X, self::NAME_Y,
-                    $color_dark, $font_path, $shop_name
-                );
-            } else {
-                imagestring($img, 5, self::QR_X, self::NAME_Y - 24, $shop_name, $color_dark);
+        // Draw URL caption BELOW the QR so customers can also type it manually
+        // if QR scanning fails. Format: punktepass.de/business/<slug>
+        $url_caption = 'punktepass.de/business/' . $adv->slug;
+        $color_dark  = imagecolorallocate($img, 17, 24, 39);
+        $font_path   = PPV_PLUGIN_DIR . 'assets/fonts/Inter-Bold.ttf';
+        $caption_y   = self::QR_Y + self::QR_SIZE + 28;
+        if (file_exists($font_path) && function_exists('imagettftext')) {
+            // Auto-size font so the URL fits within the QR width (best effort).
+            $size = 18;
+            $bbox = @imagettfbbox($size, 0, $font_path, $url_caption);
+            if ($bbox) {
+                $w = abs($bbox[2] - $bbox[0]);
+                while ($w > self::QR_SIZE + 20 && $size > 10) {
+                    $size--;
+                    $bbox = imagettfbbox($size, 0, $font_path, $url_caption);
+                    $w = abs($bbox[2] - $bbox[0]);
+                }
+                $tx = self::QR_X + (self::QR_SIZE - $w) / 2;
+                @imagettftext($img, $size, 0, (int)$tx, $caption_y, $color_dark, $font_path, $url_caption);
             }
+        } else {
+            // Fallback to bitmap font (less elegant but always works)
+            $w = imagefontwidth(4) * strlen($url_caption);
+            $tx = self::QR_X + (self::QR_SIZE - $w) / 2;
+            imagestring($img, 4, (int)$tx, $caption_y - 14, $url_caption, $color_dark);
         }
 
         imagepng($img, $cache_path, 6);

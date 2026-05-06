@@ -358,7 +358,7 @@ class PPV_Advertisers {
         // Auto-generate a placeholder business name from email local-part — user fills it in profile.
         $email_local = strstr($email, '@', true) ?: $email;
         $name = ucfirst(preg_replace('/[^a-z0-9]+/', ' ', strtolower($email_local)));
-        $slug = sanitize_title($name) . '-' . substr(md5($email . microtime()), 0, 6);
+        $slug = self::make_unique_slug($name);
 
         // 2026-05-05: minden piacra 3 hónap (90 nap) ingyenes próba — egységes ajánlat.
         $signup_lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : '';
@@ -839,7 +839,7 @@ class PPV_Advertisers {
         $data = [
             'parent_advertiser_id' => $parent_id,
             'filiale_label' => $filiale_label,
-            'slug' => sanitize_title($business_name . '-' . $filiale_label) . '-' . substr(wp_generate_uuid4(), 0, 8),
+            'slug' => self::make_unique_slug($business_name . ' ' . $filiale_label),
             'business_name' => $business_name,
             'address' => $address,
             'city' => $city,
@@ -944,6 +944,15 @@ class PPV_Advertisers {
             'permission_callback' => '__return_true',
         ]);
 
+        register_rest_route('punktepass/v1', '/update-slug', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_update_slug'],
+            'permission_callback' => function() {
+                if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
+                return !empty($_SESSION['ppv_advertiser_id']);
+            },
+        ]);
+
         register_rest_route('punktepass/v1', '/filiale-delete', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_filiale_delete'],
@@ -973,6 +982,68 @@ class PPV_Advertisers {
                 return current_user_can('manage_options');
             },
         ]);
+    }
+
+    /** Reserved root-level / WP / PP-specific slugs that must never be assigned. */
+    const RESERVED_SLUGS = [
+        'admin','login','logout','signup','register','wp-admin','wp-content','wp-json',
+        'business','shop','formular','blog','karte','user_dashboard','user-dashboard',
+        'dashboard','agent','qr-center','meine-punkte','punkte','belohnungen','settings',
+        'einstellungen','profile','demo','landing','impressum','datenschutz','agb','kontakt',
+        'about','home','partner','support','api','public','assets','test','example',
+    ];
+
+    /**
+     * Returns a unique advertiser slug derived from $base. Strips diacritics +
+     * non-alphanumeric, lowercases, collapses to dashes, then disambiguates by
+     * appending -2, -3, ... only on actual collision. No random suffix.
+     */
+    public static function make_unique_slug($base, $exclude_id = 0) {
+        global $wpdb;
+        $slug = sanitize_title($base);
+        if (empty($slug)) $slug = 'shop';
+        $slug = trim(preg_replace('/-+/', '-', $slug), '-');
+        if (in_array($slug, self::RESERVED_SLUGS, true)) $slug .= '-shop';
+
+        $orig = $slug;
+        $i = 2;
+        while (true) {
+            $exists_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_advertisers WHERE slug = %s LIMIT 1",
+                $slug
+            ));
+            if (!$exists_id || (int)$exists_id === (int)$exclude_id) break;
+            $slug = $orig . '-' . $i;
+            $i++;
+            if ($i > 200) { $slug = $orig . '-' . substr(md5(microtime()), 0, 4); break; }
+        }
+        return $slug;
+    }
+
+    /** REST: update the current advertiser's slug. */
+    public static function rest_update_slug($req) {
+        if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
+        $adv_id = !empty($_SESSION['ppv_advertiser_id']) ? (int) $_SESSION['ppv_advertiser_id'] : 0;
+        if ($adv_id <= 0) return new WP_REST_Response(['success'=>false,'msg'=>'auth'], 401);
+
+        $params = $req->get_json_params();
+        $proposed = sanitize_title((string)($params['slug'] ?? ''));
+        if (strlen($proposed) < 3 || strlen($proposed) > 60) {
+            return new WP_REST_Response(['success'=>false,'msg'=>'length'], 400);
+        }
+        if (in_array($proposed, self::RESERVED_SLUGS, true)) {
+            return new WP_REST_Response(['success'=>false,'msg'=>'reserved'], 400);
+        }
+        global $wpdb;
+        $other = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_advertisers WHERE slug = %s AND id != %d LIMIT 1",
+            $proposed, $adv_id
+        ));
+        if ($other > 0) {
+            return new WP_REST_Response(['success'=>false,'msg'=>'taken'], 409);
+        }
+        $wpdb->update($wpdb->prefix . 'ppv_advertisers', ['slug' => $proposed], ['id' => $adv_id]);
+        return new WP_REST_Response(['success'=>true,'slug'=>$proposed], 200);
     }
 
     public static function rest_filiale_delete($request) {

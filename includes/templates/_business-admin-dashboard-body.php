@@ -223,6 +223,20 @@ $public_url = home_url('/business/' . $adv->slug);
   <h2 class="bz-h2"><i class="ri-qr-code-line"></i> Personalisierter Flyer</h2>
   <p style="margin:0 0 12px; color:var(--muted); font-size:13px;">Lade deinen Flyer herunter, drucke ihn selbst aus und stelle ihn im Geschäft auf. Der QR-Code führt Kunden direkt auf deine Geschäftsseite — sie folgen dir mit 1 Tap.</p>
 
+  <div id="ppv-slug-row" style="background:#f1f5f9; border-radius:10px; padding:12px; margin-bottom:12px;">
+    <label class="bz-label" style="display:block; margin-bottom:6px; font-weight:600;">
+      <i class="ri-link"></i> Deine URL — wähle einen kurzen, einprägsamen Namen
+    </label>
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <span style="color:#475569; font-size:14px; font-family:monospace;">punktepass.de/business/</span>
+      <input type="text" id="ppv-slug-input" class="bz-input" value="<?php echo esc_attr($adv->slug ?? ''); ?>" maxlength="60" pattern="[a-z0-9-]+" style="flex:1; min-width:160px; font-family:monospace;">
+      <button type="button" id="ppv-slug-save" class="bz-btn">
+        <i class="ri-save-line"></i> Speichern
+      </button>
+    </div>
+    <small id="ppv-slug-msg" style="display:block; margin-top:6px; color:var(--muted); min-height:1em;">3–60 Zeichen, nur Kleinbuchstaben/Zahlen/Bindestriche.</small>
+  </div>
+
   <div style="padding:14px; background:linear-gradient(135deg,#f59e0b,#fbbf24); border-radius:10px;">
     <div class="bz-grid">
       <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=de&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
@@ -300,6 +314,42 @@ $public_url = home_url('/business/' . $adv->slug);
 </div>
 
 <script>
+// Slug edit handler
+(function(){
+  var input = document.getElementById('ppv-slug-input');
+  var btn   = document.getElementById('ppv-slug-save');
+  var msg   = document.getElementById('ppv-slug-msg');
+  if (!btn || !input) return;
+  btn.addEventListener('click', async function(){
+    var v = (input.value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'');
+    input.value = v;
+    if (v.length < 3 || v.length > 60) { msg.style.color = '#dc2626'; msg.textContent = '3-60 Zeichen, nur Kleinbuchstaben/Zahlen/Bindestriche.'; return; }
+    btn.disabled = true; msg.style.color = '#475569'; msg.textContent = '…';
+    try {
+      var r = await fetch('/wp-json/punktepass/v1/update-slug', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({slug: v})
+      });
+      var j = await r.json();
+      if (j && j.success) {
+        msg.style.color = '#10b981'; msg.textContent = 'Gespeichert! Neue URL: punktepass.de/business/' + j.slug;
+        // refresh download links so the flyer URL uses the new slug
+        document.querySelectorAll('a[href*="personalized-flyer"]').forEach(function(a){
+          a.href = a.href.replace(/slug=[^&]*/, 'slug=' + encodeURIComponent(j.slug));
+        });
+      } else {
+        msg.style.color = '#dc2626';
+        if (j && j.msg === 'taken')    msg.textContent = 'Diese URL ist bereits vergeben.';
+        else if (j && j.msg === 'reserved') msg.textContent = 'Dieser Name ist reserviert.';
+        else if (j && j.msg === 'length')   msg.textContent = '3-60 Zeichen erforderlich.';
+        else msg.textContent = (j && j.msg) ? j.msg : 'Fehler.';
+      }
+    } catch(e) { msg.style.color = '#dc2626'; msg.textContent = String(e); }
+    finally { btn.disabled = false; }
+  });
+})();
+
 (function(){
   var toggleBtn = document.getElementById('flyer-request-toggle');
   var form      = document.getElementById('flyer-request-form');
