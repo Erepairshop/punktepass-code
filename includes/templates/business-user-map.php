@@ -217,16 +217,52 @@ window.addEventListener('error', function(e) {
 });
 const T = <?php echo wp_json_encode($L); ?>;
 const LANG = <?php echo wp_json_encode($lang); ?>;
-const DEFAULT_CENTER = [22.4633, 47.6822]; // Carei, RO
+// Map starting view: prefer the user's last saved center → then geolocation
+// → then a Central-Europe fallback. Avoid a single "home town" default that
+// looked random to users outside that town.
+const FALLBACK_CENTER = [10.45, 48.58]; // Lauingen, DE (PunktePass HQ)
+const FALLBACK_ZOOM   = 11;
+let initialCenter = FALLBACK_CENTER;
+let initialZoom   = FALLBACK_ZOOM;
+try {
+  const saved = JSON.parse(localStorage.getItem('ppv_map_view') || 'null');
+  if (saved && Array.isArray(saved.center) && typeof saved.zoom === 'number') {
+    initialCenter = saved.center;
+    initialZoom   = saved.zoom;
+  }
+} catch (e) {}
 
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/positron',
-  center: DEFAULT_CENTER,
-  zoom: 12,
+  center: initialCenter,
+  zoom: initialZoom,
   attributionControl: { compact: true },
 });
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+// Persist last view so the next visit opens where the user left off.
+map.on('moveend', function () {
+  const c = map.getCenter();
+  try {
+    localStorage.setItem('ppv_map_view', JSON.stringify({
+      center: [c.lng, c.lat],
+      zoom: map.getZoom(),
+    }));
+  } catch (e) {}
+});
+
+// First-time visit: silently try geolocation (only if user already granted
+// permission, no prompt). If granted, fly to user; otherwise stay at fallback.
+if (!localStorage.getItem('ppv_map_view') && 'geolocation' in navigator && 'permissions' in navigator) {
+  navigator.permissions.query({ name: 'geolocation' }).then(function (p) {
+    if (p.state === 'granted') {
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 13, duration: 800 });
+      });
+    }
+  }).catch(function () {});
+}
 
 let userMarker = null;
 function showUser(lat, lng) {
