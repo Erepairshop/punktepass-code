@@ -353,6 +353,7 @@ $core_modules = [
     'includes/class-ppv-anon-users.php',
     'includes/class-ppv-anon-follow.php',
     'includes/class-ppv-advertiser-reviews.php',
+    'includes/class-ppv-personalized-flyer.php',
     'includes/class-ppv-auth.php',
     'includes/class-ppv-lang.php',
     'includes/class-ppv-core.php',

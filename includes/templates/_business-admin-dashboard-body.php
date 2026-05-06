@@ -238,6 +238,19 @@ $public_url = home_url('/business/' . $adv->slug);
     </button>
   </div>
 
+  <div style="margin-top:14px; padding:12px; background:linear-gradient(135deg,#f59e0b,#fbbf24); border-radius:10px;">
+    <div style="color:#fff; font-weight:700; margin-bottom:6px;"><i class="ri-qr-code-line"></i> Personalisierter Flyer (mit deinem QR-Code)</div>
+    <div style="color:#fff; font-size:12px; opacity:.95; margin-bottom:10px;">QR führt direkt zu deiner Geschäftsseite — Kunden folgen mit 1 Tap.</div>
+    <div class="bz-grid">
+      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=de')); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Flyer DE (mein QR)
+      </a>
+      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=ro')); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Flyer RO (mein QR)
+      </a>
+    </div>
+  </div>
+
   <div style="margin-top:14px;">
     <button type="button" id="flyer-request-toggle" class="bz-btn">
       <i class="ri-mail-send-line"></i> <?php echo esc_html(PPV_Lang::t('flyer_request_btn')); ?>
