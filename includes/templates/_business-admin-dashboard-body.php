@@ -219,6 +219,99 @@ $public_url = home_url('/business/' . $adv->slug);
 <!-- ============================================================
      FLYER BONUS — moved from handler /mein-profil to business advertiser admin
      ============================================================ -->
+<!-- ============================================================
+     MARKETING TOOLKIT — minden tool egyhelyen a follower-szerzéshez
+     ============================================================ -->
+<?php
+$adv_slug = $adv->slug ?? '';
+$adv_url  = home_url('/business/' . $adv_slug);
+$wa_text  = 'Hi! Wir sind jetzt auf PunktePass — folge uns für tägliche Aktionen, Coupons und Geschenke: ' . $adv_url;
+$fb_url   = 'https://www.facebook.com/sharer/sharer.php?u=' . urlencode($adv_url);
+$wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
+?>
+<div class="bz-card" id="marketing-toolkit-card">
+  <h2 class="bz-h2"><i class="ri-megaphone-line"></i> Marketing — Follower gewinnen</h2>
+  <p style="margin:0 0 16px; color:var(--muted); font-size:13px;">
+    Hier findest du alle Werkzeuge, um Kunden auf deine PunktePass-Seite zu bringen. Je mehr Kanäle du nutzt, desto mehr Follower bekommst du.
+  </p>
+
+  <!-- Direct link copy -->
+  <div style="background:#f1f5f9; border-radius:10px; padding:14px; margin-bottom:14px;">
+    <label class="bz-label" style="display:block; margin-bottom:6px; font-weight:600;">
+      <i class="ri-link"></i> Dein Follow-Link
+    </label>
+    <div style="display:flex; gap:6px; align-items:stretch;">
+      <input type="text" id="ppv-mkt-url" class="bz-input" readonly value="<?php echo esc_attr($adv_url); ?>" style="flex:1; font-family:monospace; font-size:13px;">
+      <button type="button" id="ppv-mkt-copy" class="bz-btn"><i class="ri-file-copy-line"></i> Kopieren</button>
+    </div>
+    <small id="ppv-mkt-copy-msg" style="display:block; margin-top:6px; color:var(--muted); min-height:1em;">Teile diesen Link überall — auf Visitenkarten, im Schaufenster, im Newsletter.</small>
+  </div>
+
+  <!-- 1-tap shares -->
+  <div class="bz-grid" style="margin-bottom:14px;">
+    <a class="bz-btn" href="<?php echo esc_url($wa_url); ?>" target="_blank" rel="noopener" style="background:#25d366; color:#fff;">
+      <i class="ri-whatsapp-fill"></i> WhatsApp teilen
+    </a>
+    <a class="bz-btn" href="<?php echo esc_url($fb_url); ?>" target="_blank" rel="noopener" style="background:#1877f2; color:#fff;">
+      <i class="ri-facebook-circle-fill"></i> Facebook teilen
+    </a>
+  </div>
+
+  <!-- Social image -->
+  <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:10px; padding:14px; margin-bottom:14px;">
+    <div style="color:#fff; font-weight:700; margin-bottom:4px;"><i class="ri-instagram-line"></i> Social-Media-Bild (1080×1080)</div>
+    <div style="color:#fff; font-size:12px; opacity:.95; margin-bottom:10px;">Lade dieses Bild herunter und poste es auf Instagram, Facebook oder als Story. QR-Code mit deinem Link ist eingebaut.</div>
+    <div class="bz-grid">
+      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=de&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Social DE
+      </a>
+      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=hu&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Social HU
+      </a>
+      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=ro&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Social RO
+      </a>
+      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=en&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
+        <i class="ri-download-line"></i> Social EN
+      </a>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <details style="background:#fef3c7; border-radius:10px; padding:14px; cursor:pointer;">
+    <summary style="font-weight:700; color:#92400e;"><i class="ri-lightbulb-line"></i> Tipps: So gewinnst du in der ersten Woche 50–100 Follower</summary>
+    <ul style="margin:10px 0 0; padding-left:22px; color:#78350f; font-size:13px; line-height:1.7;">
+      <li><strong>Stammkunden-Liste:</strong> Schicke deinen WhatsApp-Kontakten (Bestand) den Follow-Link mit einer kurzen Nachricht. Höchste Conversion (30–50%).</li>
+      <li><strong>Schaufenster:</strong> Drucke den Flyer (DE) und klebe ihn ins Schaufenster. Auch Vorbeigehende sehen ihn 24/7.</li>
+      <li><strong>An der Kasse:</strong> Stelle den Flyer auf einen Plexi-Aufsteller direkt neben die Kasse. Frage Kunden aktiv, ob sie folgen möchten — 10 Sek. Aufwand.</li>
+      <li><strong>Social Media:</strong> Poste das Social-Bild 1× pro Woche auf Instagram + Facebook + Story. Reichweite = deine bestehenden Follower dort.</li>
+      <li><strong>Erste Aktion ankündigen:</strong> Plane innerhalb der ersten Woche eine kleine Push-Aktion (z. B. "Heute -10% für alle Follower") — Kunden sehen sofort den Wert des Folgens.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+(function(){
+  var btn = document.getElementById('ppv-mkt-copy');
+  var inp = document.getElementById('ppv-mkt-url');
+  var msg = document.getElementById('ppv-mkt-copy-msg');
+  if (btn && inp) {
+    btn.addEventListener('click', async function(){
+      try {
+        await navigator.clipboard.writeText(inp.value);
+        msg.style.color = '#10b981';
+        msg.textContent = 'In die Zwischenablage kopiert!';
+      } catch(e) {
+        inp.select(); document.execCommand('copy');
+        msg.style.color = '#10b981';
+        msg.textContent = 'Kopiert!';
+      }
+      setTimeout(function(){ msg.style.color='var(--muted)'; msg.textContent='Teile diesen Link überall — auf Visitenkarten, im Schaufenster, im Newsletter.'; }, 3000);
+    });
+  }
+})();
+</script>
+
 <div class="bz-card" id="flyer-bonus-card">
   <h2 class="bz-h2"><i class="ri-qr-code-line"></i> Personalisierter Flyer</h2>
   <p style="margin:0 0 12px; color:var(--muted); font-size:13px;">Lade deinen Flyer herunter, drucke ihn selbst aus und stelle ihn im Geschäft auf. Der QR-Code führt Kunden direkt auf deine Geschäftsseite — sie folgen dir mit 1 Tap.</p>

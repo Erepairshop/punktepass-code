@@ -282,6 +282,8 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/ppv/v1/anon-unfollow',
             '/wp-json/ppv/v1/advertiser-review',
             '/wp-json/ppv/v1/advertiser-reviews',
+            '/wp-json/ppv/v1/personalized-flyer',
+            '/wp-json/ppv/v1/social-image',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
