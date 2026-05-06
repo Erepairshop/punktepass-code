@@ -128,6 +128,57 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
 </div>
 
 <script>
+// Firebase Web SDK config (mirror of class-ppv-user-settings.php and
+// firebase-messaging-sw.js — keep in sync if those change).
+var ppvFirebaseConfig = {
+    apiKey: "AIzaSyBB4-sQb-ZlMEDj4LVGYSenB8b8R_mUuOI",
+    authDomain: "punktepass.firebaseapp.com",
+    projectId: "punktepass",
+    storageBucket: "punktepass.firebasestorage.app",
+    messagingSenderId: "373165045072",
+    appId: "1:373165045072:web:1ef83f576e6fc222a7a855"
+};
+var ppvVapidKey = 'BCCTa3Fuxw0ZHzNsUf_pkuYsajMCwp69kCSxvV6x9lpYNDkz4MkRM4Kezp8s48qyxXo5GVu8TBcIs3Ih42Vci1Y';
+
+function ppvLoadScript(src){
+    return new Promise(function(res, rej){
+        var s = document.createElement('script');
+        s.src = src; s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+    });
+}
+
+// Register an FCM device token with the existing /push/register endpoint.
+// If we have only an anon session here, the backend get-or-create has already
+// run inside /anon-follow, so $_SESSION['ppv_user_id'] is set by the time we
+// hit /push/register. The endpoint reads user_id from session as a fallback.
+async function ppvRegisterPushToken(lang) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return null;
+    if (!('serviceWorker' in navigator)) return null;
+    if (typeof firebase === 'undefined') {
+        await ppvLoadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+        await ppvLoadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+    }
+    if (!firebase.apps.length) firebase.initializeApp(ppvFirebaseConfig);
+    var swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+    var token = await firebase.messaging().getToken({ vapidKey: ppvVapidKey, serviceWorkerRegistration: swReg });
+    if (!token) return null;
+    try {
+        var resp = await fetch('/wp-json/punktepass/v1/push/register', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token, platform: 'web', language: lang || 'de', device_name: 'Web (PunktePass /business)' })
+        });
+        var d = await resp.json();
+        if (d && d.success) {
+            try { localStorage.setItem('ppv_fcm_token', token); } catch(e){}
+            return token;
+        }
+    } catch(e) { /* non-fatal */ }
+    return null;
+}
+
 // Follow + push activation flow. One tap on the big yellow button:
 //   1) Ask browser for Notification permission (if not yet granted).
 //   2) POST /wp-json/ppv/v1/anon-follow → backend creates anon user + cookie
@@ -181,8 +232,11 @@ body { margin:0; font:14px/1.5 system-ui,-apple-system,sans-serif; background:#f
       let note = T.thanks;
       if (perm === 'denied') note = T.push_blocked;
       setUi('following', note);
-      // Trigger FCM subscription if available (existing PP push bridge wakes up here).
-      if (window.ppvActivatePush) { try { window.ppvActivatePush(); } catch(e){} }
+      // Now register an FCM token so the backend can actually deliver pushes.
+      // Done after the follow REST call so the anon user/session exists.
+      if (perm === 'granted') {
+        ppvRegisterPushToken(<?php echo wp_json_encode($lang); ?>).catch(function(){});
+      }
     } catch (e) {
       setUi('idle', String(e));
     }
