@@ -285,14 +285,19 @@ public static function check_already_logged_in() {
         }
     }
 
-    // 👤 ANON user: do NOT auto-redirect to /user_dashboard yet — that triggers
-    // a redirect loop on prod because downstream auth checks reject negative
-    // user_ids. Instead, just keep the session active and let the user navigate
-    // manually (login page is fine). Re-enable once dashboard has anon support.
-    // Defensive cleanup: if the named-user block below runs against a negative
-    // id it would clear the session — skip that block for anons.
-    if (!empty($_SESSION['ppv_user_id']) && (int)$_SESSION['ppv_user_id'] < 0) {
-        ppv_log("🔍 [PPV_Login] anon session detected ({$_SESSION['ppv_user_id']}) — staying on login page");
+    // 👤 ANON user (negative id from PPV_Anon_Users): silently promote to a
+    // real wp_ppv_users row with a placeholder email so the existing dashboard
+    // pipelines treat them like a normal user. Then redirect to dashboard.
+    // The user can edit the placeholder email later in profile.
+    if (!empty($_SESSION['ppv_user_id']) && (int)$_SESSION['ppv_user_id'] < 0 && class_exists('PPV_Anon_Users')) {
+        $promoted = PPV_Anon_Users::auto_promote_to_placeholder();
+        if ($promoted > 0) {
+            ppv_log("✅ [PPV_Login] anon -> named auto-promote, new id={$promoted}");
+            wp_safe_redirect(home_url('/user_dashboard'));
+            exit;
+        }
+        // Promotion failed → fall through, show login page normally.
+        ppv_log("⚠️ [PPV_Login] anon auto-promote failed, showing login page");
         return;
     }
 

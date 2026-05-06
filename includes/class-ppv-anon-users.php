@@ -145,6 +145,50 @@ class PPV_Anon_Users {
     }
 
     /**
+     * Auto-promote the current anon to a real wp_ppv_users row with a
+     * placeholder email. Used at app first launch so the existing
+     * dashboard / push pipelines can treat them as a normal user. The
+     * placeholder email can be replaced later by the user from the profile.
+     *
+     * Returns the new positive ppv_users.id, or 0 on failure / not anon.
+     */
+    public static function auto_promote_to_placeholder() {
+        global $wpdb;
+        $current = self::current_id();
+        if ($current >= 0) return 0;
+
+        $anon_row_id = -$current;
+        $anon = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::TABLE . " WHERE id = %d LIMIT 1",
+            $anon_row_id
+        ));
+        if (!$anon) return 0;
+        if (!empty($anon->upgraded_to_user_id)) {
+            // Already promoted earlier — just rebind session and return.
+            $_SESSION['ppv_user_id']   = (int) $anon->upgraded_to_user_id;
+            $_SESSION['ppv_user_type'] = 'user';
+            unset($_SESSION['ppv_is_anon']);
+            return (int) $anon->upgraded_to_user_id;
+        }
+
+        $email = 'anon_' . substr($anon->uuid, 0, 12) . '@anon.punktepass.de';
+        $now   = current_time('mysql');
+        $wpdb->insert($wpdb->prefix . 'ppv_users', [
+            'email'      => $email,
+            'username'   => 'anon_' . substr($anon->uuid, 0, 8),
+            'language'   => $anon->language ?: 'de',
+            'user_type'  => 'user',
+            'active'     => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $new_id = (int) $wpdb->insert_id;
+        if ($new_id <= 0) return 0;
+
+        return self::upgrade_to_named($new_id) ? $new_id : 0;
+    }
+
+    /**
      * Promote the current anon to a real wp_users row. Called from the
      * email-magic-link verification flow. Returns true if successful.
      *
