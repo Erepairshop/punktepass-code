@@ -879,7 +879,7 @@ PROMPT;
         $result = PPV_AI_Engine::chat_with_history(
             $system_prompt,
             $messages,
-            ['model' => 'gpt-4o-mini']
+            ['model' => 'claude-sonnet-4-6']
         );
 
         if (is_wp_error($result)) {
