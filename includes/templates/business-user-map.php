@@ -69,7 +69,8 @@ html,body { margin:0; height:100%; font:14px/1.5 system-ui,-apple-system,sans-se
 .km-locate-btn.loading i { animation:km-spin 1s linear infinite; }
 @keyframes km-spin { to { transform:rotate(360deg); } }
 /* pin */
-.km-pin { width:48px; height:48px; cursor:pointer; }
+.km-pin { width:48px; height:48px; cursor:pointer; --decluster-x:0px; --decluster-y:0px; }
+.km-pin .ring { translate: var(--decluster-x) var(--decluster-y); }
 .km-pin.loyalty { --c: #3b82f6; }
 .km-pin.advertiser { --c: #f59e0b; }
 .km-pin.featured  { --c: #facc15; }
@@ -373,7 +374,43 @@ function renderPins() {
     pinMarkers.push(m);
   });
   renderSuggestions(q);
+  declusterPins();
 }
+
+// De-cluster overlapping markers visually only — original lat/lng stays intact
+// so directions/route still work with the real coordinates.
+function declusterPins() {
+  if (!pinMarkers.length) return;
+  const cellPx = 32; // markers within 32px on screen are considered overlapping
+  const clusters = new Map();
+  pinMarkers.forEach(m => {
+    const ll = m.getLngLat();
+    const p = map.project([ll.lng, ll.lat]);
+    const key = Math.round(p.x / cellPx) + '_' + Math.round(p.y / cellPx);
+    if (!clusters.has(key)) clusters.set(key, []);
+    clusters.get(key).push(m);
+  });
+  clusters.forEach(group => {
+    if (group.length <= 1) {
+      group[0].getElement().style.setProperty('--decluster-x', '0px');
+      group[0].getElement().style.setProperty('--decluster-y', '0px');
+      return;
+    }
+    // Arrange overlapping markers on a circle around the true center.
+    const radius = 24 + (group.length - 2) * 4; // bigger circle if 3+
+    group.forEach((m, idx) => {
+      const angle = (idx / group.length) * 2 * Math.PI - Math.PI / 2; // start at top
+      const dx = Math.cos(angle) * radius;
+      const dy = Math.sin(angle) * radius;
+      const el = m.getElement();
+      el.style.setProperty('--decluster-x', dx.toFixed(1) + 'px');
+      el.style.setProperty('--decluster-y', dy.toFixed(1) + 'px');
+    });
+  });
+}
+
+map.on('zoomend', declusterPins);
+map.on('moveend', declusterPins);
 
 function highlight(text, q) {
   if (!q) return escapeHtml(text||'');
