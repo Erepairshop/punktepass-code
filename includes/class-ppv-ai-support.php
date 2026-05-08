@@ -838,16 +838,18 @@ PROMPT;
                     $parent_id, $parent_id
                 ));
 
-                // Trial countdown — use trial_ends_at if set, else created_at + 30 days
+                // Trial countdown — subscription_until is the authoritative trial-end column (90 days at signup)
                 $trial_info = '';
                 if (($adv->subscription_status ?? '') === 'trial') {
-                    $end_ts = !empty($adv->trial_ends_at) ? strtotime($adv->trial_ends_at) : null;
-                    if (!$end_ts && !empty($adv->created_at)) {
-                        $end_ts = strtotime($adv->created_at) + 30 * 86400;
+                    $end_ts = null;
+                    if (!empty($adv->subscription_until)) {
+                        $end_ts = strtotime($adv->subscription_until);
+                    } elseif (!empty($adv->trial_ends_at)) {
+                        $end_ts = strtotime($adv->trial_ends_at);
                     }
                     if ($end_ts) {
                         $days_left = max(0, (int)ceil(($end_ts - time()) / 86400));
-                        $trial_info = ", trial_days_left={$days_left}";
+                        $trial_info = ", trial_days_left={$days_left}, trial_ends=" . date('Y-m-d', $end_ts);
                     }
                 }
 
