@@ -50,6 +50,15 @@ class PPV_AI_Support {
             if (!empty($store) && !empty($store->id)) return true;
         }
 
+        // Advertisers (Business Admin) — session key set in PPV_Advertisers
+        if (!empty($_SESSION['ppv_advertiser_id'])) {
+            return true;
+        }
+        if (class_exists('PPV_Advertisers') && method_exists('PPV_Advertisers', 'current_advertiser')) {
+            $adv = PPV_Advertisers::current_advertiser();
+            if (!empty($adv) && !empty($adv->id)) return true;
+        }
+
         return false;
     }
 
