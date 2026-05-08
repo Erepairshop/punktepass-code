@@ -838,12 +838,17 @@ PROMPT;
                     $parent_id, $parent_id
                 ));
 
-                // Trial countdown
+                // Trial countdown — use trial_ends_at if set, else created_at + 30 days
                 $trial_info = '';
-                if (($adv->subscription_status ?? '') === 'trial' && !empty($adv->trial_ends_at)) {
-                    $secs = strtotime($adv->trial_ends_at) - time();
-                    $days_left = max(0, (int)ceil($secs / 86400));
-                    $trial_info = ", trial_days_left={$days_left}";
+                if (($adv->subscription_status ?? '') === 'trial') {
+                    $end_ts = !empty($adv->trial_ends_at) ? strtotime($adv->trial_ends_at) : null;
+                    if (!$end_ts && !empty($adv->created_at)) {
+                        $end_ts = strtotime($adv->created_at) + 30 * 86400;
+                    }
+                    if ($end_ts) {
+                        $days_left = max(0, (int)ceil(($end_ts - time()) / 86400));
+                        $trial_info = ", trial_days_left={$days_left}";
+                    }
                 }
 
                 // Active ad count
