@@ -377,6 +377,8 @@ function renderPins() {
   declusterPins();
 }
 
+let clusterMarkers = [];
+
 // De-cluster overlapping markers visually only — original lat/lng stays intact
 // so directions/route still work with the real coordinates.
 function declusterPins() {
@@ -390,22 +392,51 @@ function declusterPins() {
     if (!clusters.has(key)) clusters.set(key, []);
     clusters.get(key).push(m);
   });
+  // First: clear all visual offsets + show all markers
+  pinMarkers.forEach(m => {
+    const el = m.getElement();
+    el.style.setProperty('--decluster-x', '0px');
+    el.style.setProperty('--decluster-y', '0px');
+    el.style.display = '';
+  });
+  // Remove any old cluster-bubbles
+  clusterMarkers.forEach(c => c.remove());
+  clusterMarkers = [];
+
   clusters.forEach(group => {
-    if (group.length <= 1) {
-      group[0].getElement().style.setProperty('--decluster-x', '0px');
-      group[0].getElement().style.setProperty('--decluster-y', '0px');
+    if (group.length <= 1) return;
+    if (group.length <= 4) {
+      // Circle layout for 2-4 pins
+      const radius = 24 + (group.length - 2) * 4;
+      group.forEach((m, idx) => {
+        const angle = (idx / group.length) * 2 * Math.PI - Math.PI / 2;
+        const dx = Math.cos(angle) * radius;
+        const dy = Math.sin(angle) * radius;
+        const el = m.getElement();
+        el.style.setProperty('--decluster-x', dx.toFixed(1) + 'px');
+        el.style.setProperty('--decluster-y', dy.toFixed(1) + 'px');
+      });
       return;
     }
-    // Arrange overlapping markers on a circle around the true center.
-    const radius = 24 + (group.length - 2) * 4; // bigger circle if 3+
-    group.forEach((m, idx) => {
-      const angle = (idx / group.length) * 2 * Math.PI - Math.PI / 2; // start at top
-      const dx = Math.cos(angle) * radius;
-      const dy = Math.sin(angle) * radius;
-      const el = m.getElement();
-      el.style.setProperty('--decluster-x', dx.toFixed(1) + 'px');
-      el.style.setProperty('--decluster-y', dy.toFixed(1) + 'px');
+    // 5+ pins: hide individuals, show single cluster bubble with count, click to zoom
+    let avgLng = 0, avgLat = 0;
+    group.forEach(m => {
+      const ll = m.getLngLat();
+      avgLng += ll.lng; avgLat += ll.lat;
+      m.getElement().style.display = 'none';
     });
+    avgLng /= group.length; avgLat /= group.length;
+    const bubble = document.createElement('div');
+    bubble.className = 'km-cluster-bubble';
+    bubble.textContent = group.length;
+    bubble.style.cssText = 'width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;box-shadow:0 4px 12px rgba(0,0,0,.3);border:3px solid #fff;cursor:pointer;';
+    bubble.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      map.flyTo({ center:[avgLng, avgLat], zoom: Math.min(map.getZoom() + 2, 18), duration: 500 });
+    });
+    const cm = new maplibregl.Marker({ element: bubble, anchor: 'center' })
+      .setLngLat([avgLng, avgLat]).addTo(map);
+    clusterMarkers.push(cm);
   });
 }
 
