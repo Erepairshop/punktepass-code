@@ -825,7 +825,72 @@ PROMPT;
         if ($context === 'business_admin' && class_exists('PPV_Advertisers')) {
             $adv = PPV_Advertisers::current_advertiser();
             if ($adv) {
-                $advertiser_info = "Advertiser: {$adv->business_name} (ID #{$adv->id}), tier={$adv->tier}, status={$adv->subscription_status}";
+                global $wpdb;
+                $parent_id = $adv->parent_advertiser_id ?: $adv->id;
+
+                // Filiale count (parent + children)
+                $filiale_count = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_advertisers WHERE (id = %d OR parent_advertiser_id = %d) AND is_active = 1",
+                    $parent_id, $parent_id
+                ));
+                $filialen_list = $wpdb->get_results($wpdb->prepare(
+                    "SELECT id, filiale_label, business_name, address, city, country FROM {$wpdb->prefix}ppv_advertisers WHERE (id = %d OR parent_advertiser_id = %d) AND is_active = 1 ORDER BY id",
+                    $parent_id, $parent_id
+                ));
+
+                // Trial countdown
+                $trial_info = '';
+                if (($adv->subscription_status ?? '') === 'trial' && !empty($adv->trial_ends_at)) {
+                    $secs = strtotime($adv->trial_ends_at) - time();
+                    $days_left = max(0, (int)ceil($secs / 86400));
+                    $trial_info = ", trial_days_left={$days_left}";
+                }
+
+                // Active ad count
+                $ad_count = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_ads WHERE advertiser_id = %d AND is_active = 1",
+                    $parent_id
+                ));
+                $ad_max = 3 + $filiale_count;
+
+                // Follower count
+                $follower_count = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_follows WHERE advertiser_id = %d",
+                    $parent_id
+                ));
+
+                // Push usage this month
+                $push_used = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_push_log WHERE advertiser_id = %d AND sent_at >= DATE_FORMAT(NOW(), '%%Y-%%m-01')",
+                    $parent_id
+                ));
+                $push_max = 4 + ($filiale_count - 1); // base 4 + filialen scaling
+
+                // Profile completeness flags
+                $has_logo = !empty($adv->logo_url);
+                $has_gallery = !empty($adv->gallery) && $adv->gallery !== '[]' && $adv->gallery !== '{}';
+                $has_hours = !empty($adv->opening_hours) && $adv->opening_hours !== '[]' && $adv->opening_hours !== '{}';
+                $has_gps = !empty($adv->latitude) && floatval($adv->latitude) != 0;
+                $has_phone = !empty($adv->phone);
+                $has_socials = !empty($adv->socials) && $adv->socials !== '[]' && $adv->socials !== '{}';
+
+                $advertiser_info = "Advertiser: {$adv->business_name} (ID #{$adv->id}), tier={$adv->tier}, status={$adv->subscription_status}{$trial_info}\n";
+                $advertiser_info .= "Filiale-count: {$filiale_count} (total locations including parent)\n";
+                if (!empty($filialen_list)) {
+                    $advertiser_info .= "Filialen list:\n";
+                    foreach ($filialen_list as $f) {
+                        $label = $f->filiale_label ?: '(main)';
+                        $advertiser_info .= "  • #{$f->id} {$label} — {$f->business_name}, {$f->address}, {$f->city} ({$f->country})\n";
+                    }
+                }
+                $advertiser_info .= "Ads: {$ad_count}/{$ad_max} active (limit = 3 + filiale_count)\n";
+                $advertiser_info .= "Followers: {$follower_count}\n";
+                $advertiser_info .= "Push this month: {$push_used}/{$push_max}\n";
+                $advertiser_info .= "Profile address: " . ($adv->address ?: '(not set)') . ", " . ($adv->city ?: '') . ", " . ($adv->country ?: '') . "\n";
+                $advertiser_info .= "Phone: " . ($adv->phone ?: '(not set)') . "\n";
+                $advertiser_info .= "Profile completeness: logo=" . ($has_logo?'yes':'NO') . ", gallery=" . ($has_gallery?'yes':'NO') . ", hours=" . ($has_hours?'yes':'NO') . ", gps=" . ($has_gps?'yes':'NO') . ", phone=" . ($has_phone?'yes':'NO') . ", socials=" . ($has_socials?'yes':'NO') . "\n";
+                $advertiser_info .= "Category: " . ($adv->category ?: '(not set)') . "\n";
+                $advertiser_info .= "\nUse this concrete data when answering. Example: if user asks 'Wie viele Anzeigen kann ich erstellen?' → say exact number based on their filiale count. If profile incomplete, mention what's missing.";
             }
         }
 
