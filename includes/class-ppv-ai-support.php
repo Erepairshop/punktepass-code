@@ -542,7 +542,7 @@ RESPOND ONLY IN {$lang_name}. No markdown (no **, ##) — plain text only. Use b
 
 PunktePass Business is the ADVERTISING side of PunktePass — separate from the loyalty/points system.
 • Loyalty Händler = sells with QR scanner, gives points, runs reward programs (different system)
-• Business Advertiser = pays €10/month per filiale (35 RON for HU/RO users) to appear on the /user_dashboard map and run ads/coupons
+• Business Advertiser = pays €10/month per filiale (35 RON for HU/RO users) to appear on the user homepage map and run ads/coupons
 • 30-day free trial — all features unlocked during trial
 
 === /business/admin OVERVIEW ===
@@ -582,9 +582,45 @@ Five sections (bottom nav on mobile, top nav on desktop):
 
 5. **Statistik** — Analytics: views, clicks, follower growth
 
-=== /user_dashboard (USER HOMEPAGE) ===
+=== SHOP SLUG PAGE (the page customers see) ===
 
-The /user_dashboard is the main page for end-users / customers. It shows ALL active advertisers + loyalty stores as map pins.
+When you publish your business, PunktePass auto-generates a public shop page at `/business/<your-slug>` (e.g. /business/cafe-pecs-plaza). This is YOUR public landing page — it's what the flyer QR opens, what your share-link points to, and where new customers land.
+
+What's on the slug page:
+• Cover banner + headline "Folge uns, verpasse nichts!"
+• Logo + business name + category badge
+• Big gradient "Folgen / Követés" button (the conversion goal)
+• Gallery (up to 8 images, lightbox)
+• Status (open/closed) + opening hours today
+• Address with "Wegbeschreibung" link → opens Google Maps
+• Phone with click-to-call, WhatsApp, all socials
+• Active rewards/coupons preview (if logged in user → can claim)
+• VIP table if applicable
+• Reviews section
+
+Why this is your most important asset:
+• The flyer QR points HERE (not to the general map)
+• Your social-share link is `https://punktepass.de/business/<slug>` — copy from Dashboard
+• Each filiale has its own slug → unique landing page per location
+• Google indexes these pages → you get free SEO traffic for "café Pécs Plaza" type searches
+
+=== ANONYMOUS FOLLOW FLOW (CRITICAL — the magic of PunktePass) ===
+
+When a customer scans the flyer QR and lands on /business/<slug>:
+1. They tap the big "Folgen / Követés" button
+2. **NO REGISTRATION REQUIRED** — the system auto-creates an anonymous user (cookie + session). Zero friction. No email. No password.
+3. The follow is registered → they get push rights → they're now in the advertiser's follower list
+4. Page flips to "Du folgst jetzt {Firma}!" + "App installieren" CTA
+5. User taps the app-install button → PWA install prompt OR App Store / Play Store link
+6. After install, app opens at the **felhasználói főoldal** (user homepage) → see all stores on the map, including the ones they follow on top
+
+This means: a printed flyer → QR → 1 tap → instant follower. No signup wall. This is why PunktePass converts so much better than Instagram (where signup gate kills conversion).
+
+If the anonymous user later signs up properly (email + password), the follower record migrates seamlessly — same followed shops, same coupon history.
+
+=== FELHASZNÁLÓI FŐOLDAL (USER HOMEPAGE / TÉRKÉP) ===
+
+After app install or web login, the user lands on the **felhasználói főoldal** (the user homepage) — this shows ALL active advertisers + loyalty stores as map pins.
 • Loyalty pins: blue (gift icon)
 • Advertiser pins: orange (megaphone icon)
 • Click pin → bottom-sheet popup with: cover banner ("Kövesd a boltot, ne maradj le akciókról"), logo (or firma name if no logo), follow button (gradient pill next to title), gallery with lightbox, status (open/closed), opening hours today, address, phone, social links, rewards list, VIP table, action bar (call / whatsapp / directions)
@@ -596,12 +632,12 @@ The /user_dashboard is the main page for end-users / customers. It shows ALL act
 
 PunktePass Business supports MULTIPLE BRANCHES (Filialen) under a single subscription:
 • ONE main account (parent advertiser) + UNLIMITED filialen (child branches), all sharing the same monthly subscription fee
-• Each filiale has its OWN: address + GPS pin on /user_dashboard, phone, opening hours, gallery, filiale_label (e.g. "Pécs Pláza", "Berlin Mitte"), business_name (defaults to parent but editable)
+• Each filiale has its OWN: address + GPS pin on the user homepage map, phone, opening hours, gallery, filiale_label (e.g. "Pécs Pláza", "Berlin Mitte"), business_name (defaults to parent but editable)
 • ALL filialen share: company logo, social profiles, ad templates, follower base, push allowance
 • "Új fiók hozzáadása" button (handler dashboard) opens the form
 • Form has "Adatok átvétele másik filialéból" — copy fields (cím, telefon, postcode, country) from any sibling/parent to speed entry
 • Pin-too-close validation — system blocks creating a new filiale within ~50m of an existing one (prevents duplicate listings)
-• Each filiale gets its OWN orange pin on /user_dashboard (so a chain of 5 cafés appears as 5 separate searchable pins)
+• Each filiale gets its OWN orange pin on the user homepage map (so a chain of 5 cafés appears as 5 separate searchable pins) AND its own slug page /business/<filiale-slug>
 • Each filiale gets its OWN flyer with UNIQUE QR (so foot traffic at branch B doesn't get mixed with branch A in stats)
 • Switching between filialen: top-bar dropdown — admin sees all filialen, selects which one to manage. Stats can be filtered per filiale or aggregated.
 • Coupons + ads can be set "all filialen" (parent-level) OR specific to one branch (e.g. "Pécs only" reopening promo)
@@ -624,7 +660,7 @@ Trial: all features unlocked for 30 days. After trial expires → drops to BASIC
 === COUPON SYSTEM (NEW) ===
 
 Customer experience:
-• User sees coupon in /user_dashboard popup
+• User sees coupon on slug page or in user-homepage popup
 • "Beváltom most" button → server creates claim entry → UI flips to RED "FELHASZNÁLVA HH:MM" with hash signature
 • Cashier glances at customer's phone, sees the red animation = redeemed
 • Per-user limit prevents abuse (e.g. 1× lifetime, 1× weekly)
@@ -660,7 +696,7 @@ When a user taps "Folgen" (Follow) on the shop popup or detail page:
 === HÄNDLER / ADVERTISER ADVANTAGES ===
 
 Why a small business pays €10/month per filiale for PunktePass Business:
-• MAP VISIBILITY: orange megaphone pin on /user_dashboard — anyone searching nearby sees you
+• MAP VISIBILITY: orange megaphone pin on the user homepage map — anyone searching nearby sees you. Plus your dedicated slug page /business/<your-slug>
 • FREE COVERED RANGE: ~5-15 km organic discoverability (no Google Ads cost)
 • DIRECT FOLLOWER LIST: instead of renting Facebook/Instagram audience, you OWN the followers — push them anytime (4-16/month by tier)
 • COUPON REDEMPTION TRACKING: every "Beváltom most" creates an audit-traceable claim with hash+time — proof against fake redemptions
@@ -676,14 +712,14 @@ Why a small business pays €10/month per filiale for PunktePass Business:
 When a Händler asks "Wie bekomme ich mehr Follower?" or "Hogy hirdethetem magamat?":
 
 OFFLINE (high ROI, every shop should do these):
-• PRINT THE FLYER from Profil tab → "Flyer herunterladen" button (4 langs available). Each flyer has a UNIQUE QR pointing to YOUR shop on /user_dashboard. Hang it: window front, register counter, take-away bag. Print 50-100x.
+• PRINT THE FLYER from Profil tab → "Flyer herunterladen" button (4 langs available). Each flyer has a UNIQUE QR pointing to YOUR slug page (/business/<slug>) — where the customer taps Folgen and instantly becomes a follower without registering. Hang the flyer: window front, register counter, take-away bag. Print 50-100x.
 • ADD A "Folge uns auf PunktePass" line to your printed receipt or invoice
 • ASK guests at checkout: "Möchten Sie 10% Rabatt? Scannen Sie unseren QR" — frame it as instant value, not signup
 • PUT THE QR STICKER on table cards (restaurants), product packaging (retail), or appointment-card (service)
 
 ONLINE (low cost, fast):
 • SHARE THE PUBLIC LINK (Dashboard → "Public link" copy button) on your existing social media — Instagram bio, Facebook page about-section, WhatsApp status
-• POST a screenshot of your /user_dashboard popup with "Folgt uns für 15% Discount" caption
+• POST a screenshot of your slug page (/business/<slug>) with "Folgt uns für 15% Discount" caption
 • ADD the public URL to your Google Business Profile description
 • EVERY new ad you create — share that ad's deeplink, not just the homepage
 
@@ -704,7 +740,7 @@ NUMBERS TO WATCH:
 
 Profil tab → Flyer-Sektion (Flyer download):
 • 4 buttons (DE/HU/RO/EN flyer + social image pair per language)
-• Each flyer is a 1024×1492 PNG/PDF with your business name, ein einmaliger QR-code (UNIQUE per advertiser — points to your /user_dashboard popup), an URL footer
+• Each flyer is a 1024×1492 PNG/PDF with your business name, ein einmaliger QR-code (UNIQUE per advertiser/filiale — points DIRECTLY to your slug page /business/<slug>, NOT the general map), an URL footer
 • Auto-generated server-side via class-ppv-personalized-flyer.php — fonts, colors, QR position calibrated per language
 • "Flyer + Social-Bild" download → 2 files per language (printable A4 + Instagram/Facebook square version)
 • Social image variant: logo + business name + url + "Folgt uns" tagline + decorative SVG stars (perfect for Stories)
@@ -714,7 +750,7 @@ Profil tab → Flyer-Sektion (Flyer download):
 • For best results: upload a square 512×512 PNG logo (white background or transparent)
 
 When a user scans the flyer QR:
-• Mobile browser opens /user_dashboard and AUTO-PANS to your pin, opening the popup with your shop
+• Mobile browser opens /business/<your-slug> directly — your dedicated landing page with the big "Folgen" button. ONE TAP and the visitor is an anonymous follower, no email/password required (auto-anon-register, see ANONYMOUS FOLLOW FLOW above).
 • User can immediately follow + see all active ads/coupons
 • Track flyer effectiveness via Statistik → ad views increase right after print-distribution
 
