@@ -364,18 +364,6 @@ $wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
     </a>
   </div>
 
-  <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:10px; padding:14px; margin-bottom:14px;">
-    <div style="color:#fff; font-weight:700; margin-bottom:4px;"><i class="ri-instagram-line"></i> <?php echo esc_html($MT['social_title']); ?></div>
-    <div style="color:#fff; font-size:12px; opacity:.95; margin-bottom:10px;"><?php echo esc_html($MT['social_desc']); ?></div>
-    <div class="bz-grid">
-      <?php foreach (['de','hu','ro','en'] as $L): ?>
-      <a class="bz-btn" style="background:#fff; color:#4338ca;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=' . $L . '&slug=' . urlencode($adv_slug))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Social <?php echo strtoupper($L); ?>
-      </a>
-      <?php endforeach; ?>
-    </div>
-  </div>
-
   <details style="background:#fef3c7; border-radius:10px; padding:14px; cursor:pointer;">
     <summary style="font-weight:700; color:#92400e;"><i class="ri-lightbulb-line"></i> <?php echo esc_html($MT['tips_title']); ?></summary>
     <ul style="margin:10px 0 0; padding-left:22px; color:#78350f; font-size:13px; line-height:1.7;">
@@ -431,9 +419,14 @@ $wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
   <div style="padding:14px; background:linear-gradient(135deg,#f59e0b,#fbbf24); border-radius:10px;">
     <div class="bz-grid">
       <?php foreach (['de','hu','ro','en'] as $L): ?>
-      <a class="bz-btn" style="background:#fff; color:#92400e;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=' . $L . '&slug=' . urlencode($adv->slug ?? ''))); ?>" target="_blank" rel="noopener">
-        <i class="ri-download-line"></i> Flyer <?php echo strtoupper($L); ?>
-      </a>
+      <div style="display:flex; gap:6px;">
+        <a class="bz-btn" style="background:#fff; color:#92400e; flex:1;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/personalized-flyer?lang=' . $L . '&slug=' . urlencode($adv->slug ?? ''))); ?>" download>
+          <i class="ri-download-line"></i> Flyer <?php echo strtoupper($L); ?>
+        </a>
+        <a class="bz-btn" style="background:#fff; color:#4338ca; flex:1;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/social-image?lang=' . $L . '&slug=' . urlencode($adv->slug ?? ''))); ?>" download>
+          <i class="ri-instagram-line"></i> Social <?php echo strtoupper($L); ?>
+        </a>
+      </div>
       <?php endforeach; ?>
     </div>
   </div>

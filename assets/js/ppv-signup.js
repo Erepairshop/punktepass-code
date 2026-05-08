@@ -355,12 +355,6 @@
         var userType = $('#ppv-user-type').val() || 'user';
         var businessName = $('#ppv-business-name').val() || '';
 
-        if (userType === 'advertiser' && businessName.trim().length < 2) {
-            showAlert('Add meg a cégnevet előbb', 'error');
-            resetGoogleButton($btn);
-            return;
-        }
-
         $.ajax({
             url: ppvSignup.ajaxurl,
             type: 'POST',
@@ -463,11 +457,6 @@
             hideAlert();
 
             var businessName = $('#ppv-business-name').val() || '';
-            if (userType === 'advertiser' && businessName.trim().length < 2) {
-                showAlert('Add meg a cégnevet', 'error');
-                resetSubmitButton($btn, $btnText, $btnLoader);
-                return;
-            }
 
             $.ajax({
                 url: ppvSignup.ajaxurl,

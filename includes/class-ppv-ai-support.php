@@ -583,6 +583,27 @@ The /karte page shows ALL active advertisers + loyalty stores as map pins.
 • Geo-locate button (top-left of search bar)
 • Map: MapLibre + OpenFreeMap Positron tiles (clean, no POI labels)
 
+=== FILIALE / MULTI-BRANCH SYSTEM ===
+
+PunktePass Business supports MULTIPLE BRANCHES (Filialen) under a single subscription:
+• ONE main account (parent advertiser) + UNLIMITED filialen (child branches), all sharing the same monthly subscription fee
+• Each filiale has its OWN: address + GPS pin on /karte, phone, opening hours, gallery, filiale_label (e.g. "Pécs Pláza", "Berlin Mitte"), business_name (defaults to parent but editable)
+• ALL filialen share: company logo, social profiles, ad templates, follower base, push allowance
+• "Új fiók hozzáadása" button (handler dashboard) opens the form
+• Form has "Adatok átvétele másik filialéból" — copy fields (cím, telefon, postcode, country) from any sibling/parent to speed entry
+• Pin-too-close validation — system blocks creating a new filiale within ~50m of an existing one (prevents duplicate listings)
+• Each filiale gets its OWN orange pin on /karte (so a chain of 5 cafés appears as 5 separate searchable pins)
+• Each filiale gets its OWN flyer with UNIQUE QR (so foot traffic at branch B doesn't get mixed with branch A in stats)
+• Switching between filialen: top-bar dropdown — admin sees all filialen, selects which one to manage. Stats can be filtered per filiale or aggregated.
+• Coupons + ads can be set "all filialen" (parent-level) OR specific to one branch (e.g. "Pécs only" reopening promo)
+• Push notifications are followers-based, not filiale-based — sending from any filiale reaches all chain followers
+• Tier limits (1/3/10 ads) apply PER FILIALE — so PRO with 5 branches = 50 simultaneous ads possible
+• Required fields when creating: filiale_label (display name), business_name, address, city, country — same validation as parent
+• Common use cases: restaurant chain, beauty studio multiple locations, café franchise, retail boutique with sister-shops
+
+When advertiser asks "Wie füge ich eine zweite Filiale hinzu?" / "Hogyan adok hozzá új fiókot?":
+→ Direct them: "Klicke auf den 'Új fiók hozzáadása' Button (oder Dashboard → Multi-Filiale Sektion). Fülle aus: Filialname (z.B. 'Berlin Mitte'), Adresse, Stadt, Telefon. Wenn du mehrere Filialen hast — nutze 'Adatok átvétele másik filialéből' Dropdown um Daten zu kopieren."
+
 === TIER PRICING ===
 
 • BASIC: €7/month (35 RON) — 1 ad, 4 push/mo
@@ -614,6 +635,79 @@ Customer experience:
 • Mobile: 5-icon bottom nav (Dashboard / Profil / Werbung / Push / Stats), red logout in header
 • Desktop: top horizontal nav with all 5 + logout pill
 • Sticky purple gradient header
+
+=== FOLLOW BUTTON — WHAT HAPPENS ===
+
+When a user taps "Folgen" (Follow) on the shop popup or detail page:
+• A `ppv_follows` record is created (user_id ↔ advertiser_id)
+• The user immediately sees a confirmation "Du folgst jetzt {Firma}"
+• The shop's follower_count increases by 1 (visible in advertiser Dashboard stat tile)
+• Follower gets push-notification rights — every time the advertiser sends a Push from /business/admin → Push tab, that user gets it on their phone
+• Follower also unlocks "Followers only" ads (visibility radio in Werbung tab)
+• Follower sees the shop in their personal "Boltjaim / My shops" feed (homepage rail) for instant return access
+• Unfollow available anytime — clicking the gradient pill again removes the relation
+• Email is NEVER sent on follow (push only, opt-in via system push permission)
+
+=== HÄNDLER / ADVERTISER ADVANTAGES ===
+
+Why a small business pays €7+/month for PunktePass Business:
+• MAP VISIBILITY: orange megaphone pin on /karte — anyone searching nearby sees you
+• FREE COVERED RANGE: ~5-15 km organic discoverability (no Google Ads cost)
+• DIRECT FOLLOWER LIST: instead of renting Facebook/Instagram audience, you OWN the followers — push them anytime (4-16/month by tier)
+• COUPON REDEMPTION TRACKING: every "Beváltom most" creates an audit-traceable claim with hash+time — proof against fake redemptions
+• PUSH TO WALLETS: PunktePass app sits on customer's home screen, no algorithm gatekeeping (unlike Facebook/Insta where 2-5% sees your post)
+• MULTI-LANG REACH: 1× input → AI translates ad to DE/HU/RO/EN automatically → 4× audience
+• ANALYTICS: see views/clicks per ad, follower growth chart (Statistik tab)
+• FLYER GENERATOR: built-in DIN A4 flyers per language with unique QR — print, post, get measurable scans
+• 30 DAYS FREE TRIAL: full PRO features unlocked, no card needed
+• NO COMMISSION: customer redeems coupon directly with you, PunktePass takes 0% — you only pay flat monthly fee
+
+=== HOW TO ADVERTISE / GET FOLLOWERS — CONCRETE TIPS ===
+
+When a Händler asks "Wie bekomme ich mehr Follower?" or "Hogy hirdethetem magamat?":
+
+OFFLINE (high ROI, every shop should do these):
+• PRINT THE FLYER from Profil tab → "Flyer herunterladen" button (4 langs available). Each flyer has a UNIQUE QR pointing to YOUR shop on /karte. Hang it: window front, register counter, take-away bag. Print 50-100x.
+• ADD A "Folge uns auf PunktePass" line to your printed receipt or invoice
+• ASK guests at checkout: "Möchten Sie 10% Rabatt? Scannen Sie unseren QR" — frame it as instant value, not signup
+• PUT THE QR STICKER on table cards (restaurants), product packaging (retail), or appointment-card (service)
+
+ONLINE (low cost, fast):
+• SHARE THE PUBLIC LINK (Dashboard → "Public link" copy button) on your existing social media — Instagram bio, Facebook page about-section, WhatsApp status
+• POST a screenshot of your /karte popup with "Folgt uns für 15% Discount" caption
+• ADD the public URL to your Google Business Profile description
+• EVERY new ad you create — share that ad's deeplink, not just the homepage
+
+CONTENT STRATEGY:
+• Post at least 1 NEW ad per week — fresh ads keep followers engaged, push notifications feel rewarding (not spammy)
+• Use NEW + LIMITED badges for time-sensitive offers — creates FOMO
+• Set max_claims (e.g. "first 30 only") to drive instant redemptions
+• Coupons > generic announcements — followers act, not just read
+• POST when followers are awake: lunch (11-13h) for restaurants, evening (18-20h) for retail/services
+• Combine PUSH + matching ad: send push "10% heute Abend!" + simultaneously activate the ad → maximum click-through
+
+NUMBERS TO WATCH:
+• Click-rate: views ÷ clicks. Healthy = 8-15%. Lower = title boring, change it
+• Follow-rate: pin views ÷ new follows. Healthy = 3-7%. Low = fix logo/cover/gallery first
+• Push open-rate: visible in next push report. Below 20% = your push text isn't compelling
+
+=== FLYERS & UNIQUE QR ===
+
+Profil tab → Flyer-Sektion (Flyer download):
+• 4 buttons (DE/HU/RO/EN flyer + social image pair per language)
+• Each flyer is a 1024×1492 PNG/PDF with your business name, ein einmaliger QR-code (UNIQUE per advertiser — points to your /karte popup), an URL footer
+• Auto-generated server-side via class-ppv-personalized-flyer.php — fonts, colors, QR position calibrated per language
+• "Flyer + Social-Bild" download → 2 files per language (printable A4 + Instagram/Facebook square version)
+• Social image variant: logo + business name + url + "Folgt uns" tagline + decorative SVG stars (perfect for Stories)
+• Flyers force-download (Content-Disposition: attachment), don't open in browser
+• If logo is uploaded → appears at top of social image. Without logo → fallback to firma-name large text
+• To re-generate flyer (e.g. after changing business name): re-click download — server regenerates fresh
+• For best results: upload a square 512×512 PNG logo (white background or transparent)
+
+When a user scans the flyer QR:
+• Mobile browser opens /karte and AUTO-PANS to your pin, opening the popup with your shop
+• User can immediately follow + see all active ads/coupons
+• Track flyer effectiveness via Statistik → ad views increase right after print-distribution
 
 === ESCALATION ===
 
@@ -935,9 +1029,15 @@ PROMPT;
 #ppv-ai-spotlight .ppv-spot-label.below::after{bottom:100%;left:50%;transform:translateX(-50%);border-bottom-color:#667eea}
 .ppv-ai-highlighted{position:relative;z-index:9993!important;animation:ppvHighlightPop .4s ease}
 @keyframes ppvHighlightPop{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+#ppv-ai-chat-fab{position:fixed;bottom:84px;right:16px;z-index:9990;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(102,126,234,0.4);transition:transform .2s,box-shadow .2s}
+#ppv-ai-chat-fab:hover{transform:scale(1.08);box-shadow:0 8px 28px rgba(102,126,234,0.5)}
+#ppv-ai-chat-fab.has-panel{background:rgba(100,116,139,0.9)}
+#ppv-ai-chat-fab.fab-visible{display:flex}
+@media(max-width:480px){#ppv-ai-chat-fab{bottom:88px;right:14px;width:52px;height:52px;font-size:22px}}
 </style>
 
 <div id="ppv-ai-spotlight"><div class="ppv-spot-hole"></div><div class="ppv-spot-ring"></div><div class="ppv-spot-label above"></div></div>
+<button type="button" id="ppv-ai-chat-fab" title="<?php echo esc_attr($labels['title']); ?>"><i class="ri-sparkling-2-fill"></i></button>
 
 <div id="ppv-ai-chat-panel">
     <div class="ppv-chat-header">
@@ -960,6 +1060,7 @@ PROMPT;
 <script>
 (function(){
     var navBtn = document.getElementById('ppv-ai-support-nav-btn');
+    var fab = document.getElementById('ppv-ai-chat-fab');
     var panel = document.getElementById('ppv-ai-chat-panel');
     var closeBtn = document.getElementById('ppv-ai-chat-close');
     var input = document.getElementById('ppv-ai-chat-input');
@@ -973,7 +1074,12 @@ PROMPT;
     var isSending = false;
     var history = [];
 
-    if (!navBtn || !panel) return;
+    if (!panel) return;
+    // If no nav button (e.g. /business/admin), show floating FAB instead
+    if (!navBtn && fab) {
+        fab.classList.add('fab-visible');
+    }
+    if (!navBtn && !fab) return;
 
     // Restore history from sessionStorage
     var hasHistory = false;
@@ -1040,6 +1146,10 @@ PROMPT;
         isOpen = !isOpen;
         panel.classList.toggle('visible', isOpen);
         if (navBtn) navBtn.classList.toggle('active', isOpen);
+        if (fab) {
+            fab.classList.toggle('has-panel', isOpen);
+            fab.innerHTML = isOpen ? '<i class="ri-close-line"></i>' : '<i class="ri-sparkling-2-fill"></i>';
+        }
         if (isOpen) {
             scrollToBottom();
             setTimeout(function() { input.focus(); }, 100);
@@ -1335,7 +1445,8 @@ PROMPT;
     } catch(e) {}
 
     // Events - direct listener + document-level fallback for robustness
-    navBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(); });
+    if (navBtn) navBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(); });
+    if (fab) fab.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(); });
     // Fallback: document-level delegation ensures chat works even after SPA navigation
     document.addEventListener('click', function(e) {
         if (e.target.closest('#ppv-ai-support-nav-btn') && !e.defaultPrevented) {
