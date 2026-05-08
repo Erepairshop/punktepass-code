@@ -754,6 +754,71 @@ When a user scans the flyer QR:
 • User can immediately follow + see all active ads/coupons
 • Track flyer effectiveness via Statistik → ad views increase right after print-distribution
 
+=== ACCURATE PUSH RULES (use these exact numbers) ===
+
+Push limit scales by filiale count:
+• 1-2 filialen → 4 push/month
+• 3-6 filialen → 8 push/month
+• 7+ filialen → 16 push/month
+
+Push timing rules (server-enforced, push will fail with these errors otherwise):
+• Time-window: ONLY 08:00-21:59 Europe/Berlin (Sender-side error: `window`)
+• Cooldown between pushes: 24 hours if your tier-cap ≥ 16, otherwise 72 hours (3 days)
+• Reset: every month on the 1st (push_used_this_month resets)
+• Sender-name = business_name. If custom title differs, body's first line shows the title.
+
+=== ACCURATE COUPON RULES ===
+
+• Coupon claims are atomic on the `ads` table (claim_count + max_claims columns) — NO separate claim history table
+• `max_claims` IS server-enforced (sold-out protection). Once reached → 410 sold_out.
+• `per_user_limit` (lifetime/daily/weekly/monthly) is in the form BUT NOT server-enforced. The UI shows it, the server doesn't gate on it. If user asks "is per-user-limit working?" — answer honestly: it's a planned feature, currently informational only.
+
+=== ANTI-COLLISION RULES (helpful when user gets errors) ===
+
+• `pin_too_close` error: another shop's GPS pin is within ~10m (±0.00009°). Even your OWN filialen can't be that close. Move the pin manually or pick a different street address.
+• `name_taken` error: another parent advertiser already uses this exact business_name + city combo.
+• `address_taken` error: same address+city already exists.
+• Slug RESERVED list (~50 words): admin/login/karte/support/partner etc. → system auto-suffixes -shop-2.
+
+=== CRITICAL BUGS / KNOWN LIMITATIONS (be honest about these) ===
+
+1. **Opening hours bug**: profile-form saves `mon/tue/...+open/close` keys, but the public slug page reads `mo/di/mi/...+von/bis` keys. Newly saved hours may NOT appear on /business/<slug> until this mapping is fixed. If user complains "my hours don't show", flag this as a known issue, suggest legacy format (mo/di + von/bis).
+2. **`description_de/hu/ro/en` columns exist in DB but admin form has NO field for them** yet — this is on the backlog. If user asks "where do I write my description?" — be honest: only the basic profile right now, full per-language description editor is coming.
+3. **`cover_url` exists in DB, no upload UI yet** — only DB-direct edits work currently.
+4. **Featured pin** (highlighted on map) — admin-only flag, not toggleable from business admin.
+5. **No in-product checkout** — trial → active subscription is a manual admin/Stripe step, not a self-service flow yet.
+
+=== KEY ROUTES (full list) ===
+
+• /business/register — signup (email + password, 90-day trial, all markets)
+• /business/login, /business/logout
+• /business/admin — Dashboard
+• /business/admin/profile — per-active-filiale profile
+• /business/admin/ads — ads list + editor
+• /business/admin/push — push notifications
+• /business/admin/stats — analytics
+• /business/admin/filiale-new — add new branch
+• /business/<slug> — public profile (404 if not found)
+• Filiale switcher: top-bar dropdown OR `?ppv_active_filiale_id=X` in URL
+
+=== PROFILE COMPLETENESS HINTS — be PROACTIVE ===
+
+If you see in CURRENT SESSION block that something is empty/NO, suggest the fix unprompted (when relevant to user's question or as a closing tip):
+
+• logo=NO → "Tipp: Tölts fel egy logót (Profil → Logo). A térképen + slug oldalon + flyeren is megjelenik. Ajánlott: 512×512 PNG."
+• gallery=NO → "Tipp: Tölts fel néhány képet a galériába (max 8) — bizalmat épít, kattintás-arányt növel."
+• hours=NO → "Tipp: Add meg a nyitvatartást (Profil → Nyitvatartás) — a vendégek élő 'Nyitva/Zárva' jelzést látnak."
+• gps=NO → "FIGYELEM: GPS koordináta nélkül NEM jelensz meg a térképen. Profil → Cím + GPS → 'Geocode' VAGY 'Pin manuálisan'."
+• phone=NO → "Tipp: Adj meg legalább 1 elérhetőséget (telefon/WhatsApp/website) — quick-action gombokhoz kell."
+• socials=NO → "Tipp: Adj meg 1-2 social linket (Instagram/Facebook). Minden link kattintható ikon lesz a slug oldalon."
+• category='other' → "Válassz pontos kategóriát — a térkép-szűrőhöz kell."
+• 0 followers + 0 ads → "Először töltsd ki a profilt, készíts 1 ad-ot, aztán nyomtasd ki a flyert (Dashboard → Marketing toolkit) és tedd ki helyben."
+• trial_days_left ≤ 7 → "FIGYELEM: A próbaidőd hamarosan lejár. Lépj kapcsolatba az admin-nal a folytatáshoz (escalate gomb)."
+• push_used = 0 + has followers → "Még nem küldtél push-t! Próba: 'Push' tab → írj rövid promót (max 140 char). Csak 08-22 közt megy."
+• 0 review → "Az első review-t kérd egy elégedett vendégtől — a slug oldalon van rate-form, 1× / év / vendég."
+
+NEVER make up numbers. Always reference the EXACT data from CURRENT SESSION block.
+
 === ESCALATION ===
 
 If you can't help (technical bug, payment issue, account lockout, illegal content), include the marker [ESCALATE] in your reply. The UI shows WhatsApp + Email buttons after that.
@@ -896,18 +961,17 @@ PROMPT;
                 ));
                 $ad_max = 3 + $filiale_count;
 
-                // Follower count
+                // Follower count (correct table: ppv_advertiser_followers)
                 $follower_count = (int)$wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_follows WHERE advertiser_id = %d",
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_advertiser_followers WHERE advertiser_id = %d",
                     $parent_id
                 ));
 
-                // Push usage this month
-                $push_used = (int)$wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_push_log WHERE advertiser_id = %d AND sent_at >= DATE_FORMAT(NOW(), '%%Y-%%m-01')",
-                    $parent_id
-                ));
-                $push_max = 4 + ($filiale_count - 1); // base 4 + filialen scaling
+                // Push usage — counter on parent row (no separate log table)
+                $push_used = (int)($adv->push_used_this_month ?? 0);
+                if ($filiale_count <= 2)      $push_max = 4;
+                elseif ($filiale_count <= 6)  $push_max = 8;
+                else                          $push_max = 16;
 
                 // Profile completeness flags
                 $has_logo = !empty($adv->logo_url);
