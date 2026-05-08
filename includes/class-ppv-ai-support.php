@@ -542,7 +542,7 @@ RESPOND ONLY IN {$lang_name}. No markdown (no **, ##) — plain text only. Use b
 
 PunktePass Business is the ADVERTISING side of PunktePass — separate from the loyalty/points system.
 • Loyalty Händler = sells with QR scanner, gives points, runs reward programs (different system)
-• Business Advertiser = pays €7/month (35 RON for HU/RO users) to appear on the /user_dashboard map and run ads/coupons
+• Business Advertiser = pays €10/month per filiale (35 RON for HU/RO users) to appear on the /user_dashboard map and run ads/coupons
 • 30-day free trial — all features unlocked during trial
 
 === /business/admin OVERVIEW ===
@@ -578,7 +578,7 @@ Five sections (bottom nav on mobile, top nav on desktop):
    • Active toggle + CTA URL
    • List view: card per ad with image/icon, title, badge, type, impressions, clicks
 
-4. **Push** — Send push notifications to followers (limited per tier: 4/8/16 per month)
+4. **Push** — Send push notifications to followers (limit scales with filiale count, base 4/month)
 
 5. **Statistik** — Analytics: views, clicks, follower growth
 
@@ -606,7 +606,7 @@ PunktePass Business supports MULTIPLE BRANCHES (Filialen) under a single subscri
 • Switching between filialen: top-bar dropdown — admin sees all filialen, selects which one to manage. Stats can be filtered per filiale or aggregated.
 • Coupons + ads can be set "all filialen" (parent-level) OR specific to one branch (e.g. "Pécs only" reopening promo)
 • Push notifications are followers-based, not filiale-based — sending from any filiale reaches all chain followers
-• Tier limits (1/3/10 ads) apply PER FILIALE — so PRO with 5 branches = 50 simultaneous ads possible
+• Ad limit formula: 3 ads BASE + 1 extra per filiale (parent counts). So 1 location = 4 ads max, 2 filialen = 5 ads max, N filialen = 3 + N ads max.
 • Required fields when creating: filiale_label (display name), business_name, address, city, country — same validation as parent
 • Common use cases: restaurant chain, beauty studio multiple locations, café franchise, retail boutique with sister-shops
 
@@ -615,11 +615,11 @@ When advertiser asks "Wie füge ich eine zweite Filiale hinzu?" / "Hogyan adok h
 
 === TIER PRICING ===
 
-• BASIC: €7/month (35 RON) — 1 ad, 4 push/mo
-• PLUS: €12/month (60 RON) — 3 ads, 8 push/mo
-• PRO: €22/month (110 RON) — 10 ads, 16 push/mo, featured pin
+• Single tier (BASIC): €10/month per filiale (35 RON for HU/RO)
+• Ads: 3 base + 1 per filiale (parent counts). E.g. 1 location → 4 ads max, 3 locations → 6 ads max
+• Push: 4/month base, scales with filiale count
 
-Trial: all features unlocked for 30 days. After trial expires → drops to BASIC tier (or expired).
+Trial: all features unlocked for 30 days. After trial expires → drops to BASIC tier (or expired). 10+ filialen → custom pricing (manual negotiation).
 
 === COUPON SYSTEM (NEW) ===
 
@@ -659,7 +659,7 @@ When a user taps "Folgen" (Follow) on the shop popup or detail page:
 
 === HÄNDLER / ADVERTISER ADVANTAGES ===
 
-Why a small business pays €7+/month for PunktePass Business:
+Why a small business pays €10/month per filiale for PunktePass Business:
 • MAP VISIBILITY: orange megaphone pin on /user_dashboard — anyone searching nearby sees you
 • FREE COVERED RANGE: ~5-15 km organic discoverability (no Google Ads cost)
 • DIRECT FOLLOWER LIST: instead of renting Facebook/Instagram audience, you OWN the followers — push them anytime (4-16/month by tier)

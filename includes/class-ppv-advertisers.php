@@ -29,8 +29,9 @@ class PPV_Advertisers {
     //   10+ filialénál egyedi árazás (kézi tárgyalás).
     // TIER_PLUS / TIER_PRO eltávolítva — egyetlen tier marad.
     const TIERS = [
-        self::TIER_BASIC => ['price_eur' => 10, 'price_ron' => 35, 'ads' => 1, 'push_per_month' => 4, 'featured' => 0],
+        self::TIER_BASIC => ['price_eur' => 10, 'price_ron' => 35, 'ads' => 3, 'push_per_month' => 4, 'featured' => 0],
     ];
+    // 2026-05-08: ad limit = 3 base + 1 per filiale (incl. parent). So 1 location = 4 ads, 2 locations = 5 ads, N = 3 + N.
 
     public static function init() {
         add_action('init', [__CLASS__, 'register_routes']);
@@ -677,7 +678,7 @@ class PPV_Advertisers {
             // This is a simplified check. A more complex one might be needed.
             // For now, we assume the total number of ads for the parent account is limited.
             $max_filialen = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_advertisers WHERE (id = %d OR parent_advertiser_id = %d) AND is_active = 1", $parent_id, $parent_id));
-            $max = $max_filialen; // 1 ad per filiale/parent
+            $max = 3 + $max_filialen; // 3 ads base + 1 per filiale (incl. parent)
 
             if ($current_count >= $max) {
                 wp_redirect(home_url('/business/admin/ads?err=tier_limit'));
