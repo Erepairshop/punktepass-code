@@ -2266,12 +2266,13 @@ async function initUserDashboard() {
           <i class="ri-qr-code-line"></i> ${T.show_qr}
         </button>
 
-        <iframe class="ppv-dashboard-map" src="/karte/?embed=1" allow="geolocation" loading="lazy" style="display:block; width:100%; height:calc(100dvh - var(--pp-header-height,64px) - 90px - env(safe-area-inset-bottom,0px) - 60px); min-height:calc(100dvh - 220px); border:none; border-radius:14px; background:#f3f4f6; margin-bottom:0;"></iframe>
+        <iframe class="ppv-dashboard-map" src="/karte/?embed=1" allow="geolocation" loading="lazy" style="display:block; width:100%; height:calc(100dvh - 64px); border:none; border-radius:14px; background:#f3f4f6; margin-bottom:0;"></iframe>
         <style>
           /* Dashboard map: cancel parent paddings so iframe fills available space */
           body:has(.ppv-dashboard-map) .ppv-dashboard-netto { padding-bottom: 0 !important; }
-          body:has(.ppv-dashboard-map) .ppv-dashboard-inner { padding-bottom: 0 !important; }
+          body:has(.ppv-dashboard-map) .ppv-dashboard-inner { padding-bottom: 0 !important; padding-top: 0 !important; }
           body:has(.ppv-dashboard-map) .ppv-standalone-wrap { padding-bottom: 0 !important; }
+          .ppv-dashboard-map { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
         </style>
         <style>
           .ppv-btn-qr-floating { position:sticky; top:8px; z-index:30; display:inline-flex; align-items:center; gap:8px; padding:12px 22px; margin-bottom:10px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border:none; border-radius:999px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 6px 18px rgba(99,102,241,.35); transition:transform .15s; }
