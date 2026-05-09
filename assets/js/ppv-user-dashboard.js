@@ -2275,8 +2275,8 @@ async function initUserDashboard() {
           .ppv-dashboard-map { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
         </style>
         <style>
-          .ppv-btn-qr-floating { position:sticky; top:8px; z-index:30; display:inline-flex; align-items:center; gap:8px; padding:12px 22px; margin-bottom:10px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border:none; border-radius:999px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 6px 18px rgba(99,102,241,.35); transition:transform .15s; }
-          .ppv-btn-qr-floating:active { transform:scale(.96); }
+          .ppv-btn-qr-floating { position:fixed; top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px); left:50%; transform:translateX(-50%); z-index:200; display:inline-flex; align-items:center; gap:8px; padding:12px 22px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border:none; border-radius:999px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 8px 24px rgba(99,102,241,.45); transition:transform .15s; }
+          .ppv-btn-qr-floating:active { transform:translateX(-50%) scale(.96); }
           .ppv-btn-qr-floating i { font-size:18px; }
         </style>
 
