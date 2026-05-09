@@ -2266,7 +2266,7 @@ async function initUserDashboard() {
           <i class="ri-qr-code-line"></i> ${T.show_qr}
         </button>
 
-        <iframe class="ppv-dashboard-map" src="/karte/?embed=1" allow="geolocation" loading="lazy" style="width:100%; height:calc(100vh - 130px); min-height:560px; border:none; border-radius:14px; background:#f3f4f6;"></iframe>
+        <iframe class="ppv-dashboard-map" src="/karte/?embed=1" allow="geolocation" loading="lazy" style="width:100%; height:calc(100dvh - 80px); min-height:calc(100dvh - 80px); border:none; border-radius:14px; background:#f3f4f6;"></iframe>
         <style>
           .ppv-btn-qr-floating { position:sticky; top:8px; z-index:30; display:inline-flex; align-items:center; gap:8px; padding:12px 22px; margin-bottom:10px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border:none; border-radius:999px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 6px 18px rgba(99,102,241,.35); transition:transform .15s; }
           .ppv-btn-qr-floating:active { transform:scale(.96); }
