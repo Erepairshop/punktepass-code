@@ -2266,7 +2266,7 @@ async function initUserDashboard() {
           <i class="ri-qr-code-line"></i> ${T.show_qr}
         </button>
 
-        <iframe class="ppv-dashboard-map" src="/karte/?embed=1" allow="geolocation" loading="lazy" style="display:block; width:100%; height:calc(100dvh - 64px); border:none; border-radius:14px; background:#f3f4f6; margin-bottom:0;"></iframe>
+        <iframe class="ppv-dashboard-map" src="/karte/?embed=1" allow="geolocation" loading="lazy" style="display:block; width:100%; height:calc(100dvh - 14px); border:none; border-radius:14px; background:#f3f4f6; margin-bottom:0;"></iframe>
         <style>
           /* Dashboard map: cancel parent paddings so iframe fills available space */
           body:has(.ppv-dashboard-map) .ppv-dashboard-netto { padding-bottom: 0 !important; }
