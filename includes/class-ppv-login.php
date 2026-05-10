@@ -77,6 +77,21 @@ class PPV_Login {
     <link rel="stylesheet" href="<?php echo esc_url($plugin_url); ?>assets/css/ppv-login.css?ver=<?php echo esc_attr($css_ver); ?>">
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="<?php echo esc_url($plugin_url); ?>assets/js/ppv-debug.js?ver=<?php echo esc_attr($version); ?>"></script>
+    <!-- Google Analytics (loads only with consent) -->
+    <script>
+        (function(){
+            if (localStorage.getItem('cookie_consent') !== 'accepted') return;
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3';
+            document.head.appendChild(s);
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
+            gtag('js', new Date());
+            gtag('config', 'G-NDVQK1WSG3');
+        })();
+    </script>
 </head>
 <body>
 <?php echo $page_html; ?>

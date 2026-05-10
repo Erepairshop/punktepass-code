@@ -1171,6 +1171,21 @@ private static function get_today_hours($opening_hours, $country = null) {
     html{overscroll-behavior:auto !important;overscroll-behavior-y:auto !important}
     .ppv-standalone-wrap{max-width:768px;margin:0 auto;padding-left:0;padding-right:0;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px) + 32px);min-height:100vh;min-height:100dvh;padding-top:calc(var(--pp-header-height,64px) + env(safe-area-inset-top,0px) + 12px)}
     </style>
+    <!-- Google Analytics (loads only with consent) -->
+    <script>
+        (function(){
+            if (localStorage.getItem('cookie_consent') !== 'accepted') return;
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3';
+            document.head.appendChild(s);
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
+            gtag('js', new Date());
+            gtag('config', 'G-NDVQK1WSG3');
+        })();
+    </script>
 </head>
 <body class="<?php echo esc_attr($body_class); ?>">
 <?php echo $global_header; ?>
