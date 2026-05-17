@@ -64,6 +64,103 @@ class PPV_Personalized_Flyer {
                 'slug' => ['type' => 'string', 'required' => false],
             ],
         ]);
+        register_rest_route('ppv/v1', '/flyers-bundle-json', [
+            'methods'             => 'GET',
+            'callback'            => [__CLASS__, 'rest_flyers_bundle_json'],
+            'permission_callback' => '__return_true',
+            'args' => [
+                'slug' => ['type' => 'string', 'required' => false],
+                'embed' => ['type' => 'string', 'default' => '1'],
+            ],
+        ]);
+    }
+
+    /** REST: bundle all flyer + social images as a single JSON download.
+     *  GET /wp-json/ppv/v1/flyers-bundle-json?slug=foo[&embed=0]
+     *    embed=1 (default): base64-encoded image data inside JSON
+     *    embed=0: only metadata + URLs (small file, fetch images separately)
+     */
+    public static function rest_flyers_bundle_json($req) {
+        global $wpdb;
+        if (function_exists('ppv_maybe_start_session')) ppv_maybe_start_session();
+        $slug = sanitize_text_field((string) $req->get_param('slug'));
+        $embed = ($req->get_param('embed') !== '0');
+        $adv = null;
+        if ($slug) {
+            $adv = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, slug, business_name, logo_url FROM {$wpdb->prefix}ppv_advertisers WHERE slug = %s LIMIT 1",
+                $slug
+            ));
+        } elseif (!empty($_SESSION['ppv_advertiser_id'])) {
+            $adv = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, slug, business_name, logo_url FROM {$wpdb->prefix}ppv_advertisers WHERE id = %d LIMIT 1",
+                (int) $_SESSION['ppv_advertiser_id']
+            ));
+        }
+        if (!$adv || empty($adv->slug)) {
+            return new WP_REST_Response(['success' => false, 'msg' => 'advertiser slug missing'], 400);
+        }
+
+        $bundle = [
+            'success'       => true,
+            'generated_at'  => gmdate('c'),
+            'advertiser'    => [
+                'slug'          => $adv->slug,
+                'business_name' => $adv->business_name,
+                'qr_target_url' => home_url('/business/' . $adv->slug),
+            ],
+            'images'        => [],
+        ];
+
+        $langs = ['de', 'hu', 'ro', 'en'];
+        foreach ($langs as $lang) {
+            // Personalized flyer
+            $flyer_path = self::generate($adv, $lang);
+            if ($flyer_path && file_exists($flyer_path)) {
+                $item = [
+                    'type'     => 'flyer',
+                    'lang'     => $lang,
+                    'filename' => 'punktepass-flyer-' . $adv->slug . '-' . $lang . '.png',
+                    'mime'     => 'image/png',
+                    'bytes'    => filesize($flyer_path),
+                    'url'      => home_url('/wp-json/ppv/v1/personalized-flyer?lang=' . $lang . '&slug=' . rawurlencode($adv->slug)),
+                ];
+                if ($embed) {
+                    $item['data_uri'] = 'data:image/png;base64,' . base64_encode((string) file_get_contents($flyer_path));
+                }
+                $bundle['images'][] = $item;
+            }
+            // Social image — generate via cache (rest_social_image streams; we use same cache file).
+            $upload = wp_upload_dir();
+            $social_cache = trailingslashit($upload['basedir']) . 'punktepass_flyers/social-' . sanitize_file_name($adv->slug) . '-' . $lang . '.png';
+            if (!file_exists($social_cache) || (time() - filemtime($social_cache) > 86400)) {
+                // Warm cache by calling internal route. Easier: invoke the rest endpoint via a faux request handler
+                // For now, fall back to URL-only if cache missing and we don't want to regenerate inline.
+                // (Skipping inline generation keeps the JSON build fast; client can fetch via URL.)
+            }
+            $social_item = [
+                'type'     => 'social',
+                'lang'     => $lang,
+                'filename' => 'punktepass-social-' . $adv->slug . '-' . $lang . '.png',
+                'mime'     => 'image/png',
+                'url'      => home_url('/wp-json/ppv/v1/social-image?lang=' . $lang . '&slug=' . rawurlencode($adv->slug)),
+            ];
+            if (file_exists($social_cache)) {
+                $social_item['bytes'] = filesize($social_cache);
+                if ($embed) {
+                    $social_item['data_uri'] = 'data:image/png;base64,' . base64_encode((string) file_get_contents($social_cache));
+                }
+            }
+            $bundle['images'][] = $social_item;
+        }
+
+        $json = wp_json_encode($bundle, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $filename = 'punktepass-flyers-' . sanitize_file_name($adv->slug) . '.json';
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: private, no-store');
+        echo $json;
+        exit;
     }
 
     public static function rest_render($req) {

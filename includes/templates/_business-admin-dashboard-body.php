@@ -429,6 +429,11 @@ $wa_url   = 'https://wa.me/?text=' . urlencode($wa_text);
       </div>
       <?php endforeach; ?>
     </div>
+    <div style="margin-top:10px;">
+      <a class="bz-btn" style="background:#0f172a; color:#fff; width:100%; display:flex; align-items:center; justify-content:center; gap:8px;" href="<?php echo esc_url(home_url('/wp-json/ppv/v1/flyers-bundle-json?slug=' . urlencode($adv->slug ?? ''))); ?>" download>
+        <i class="ri-file-code-line"></i> Alle als JSON (4 Sprachen, embedded base64)
+      </a>
+    </div>
   </div>
 
   <form id="flyer-request-form" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid #e5e7eb;">
