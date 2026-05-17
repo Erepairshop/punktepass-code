@@ -284,6 +284,7 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/ppv/v1/advertiser-reviews',
             '/wp-json/ppv/v1/personalized-flyer',
             '/wp-json/ppv/v1/social-image',
+            '/wp-json/ppv/v1/flyers-bundle-json',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
@@ -355,6 +356,7 @@ $core_modules = [
     'includes/class-ppv-anon-users.php',
     'includes/class-ppv-anon-follow.php',
     'includes/class-ppv-advertiser-reviews.php',
+    'includes/class-ppv-first-reward.php',
     'includes/class-ppv-personalized-flyer.php',
     'includes/class-ppv-auth.php',
     'includes/class-ppv-lang.php',
