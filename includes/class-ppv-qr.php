@@ -162,9 +162,11 @@ class PPV_QR {
     private static function is_store_open_for_scan($store_id) {
         global $wpdb;
 
-        // Get opening_hours and enforce_opening_hours flag from store
+        // Get opening_hours, enforce flag AND country (country is needed for the
+        // timezone-correct current-time comparison; before the fix RO stores were
+        // checked against Europe/Berlin clock and rejected scans 1h too early).
         $store_data = $wpdb->get_row($wpdb->prepare(
-            "SELECT opening_hours, enforce_opening_hours FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            "SELECT opening_hours, enforce_opening_hours, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $store_id
         ));
 
@@ -185,8 +187,26 @@ class PPV_QR {
             return ['open' => true, 'hours' => null, 'reason' => 'invalid_json'];
         }
 
-        // Get current day and time
-        $now = current_time('timestamp');
+        // Store-country timezone (same fix as PPV_User_Dashboard::is_store_open).
+        // current_time('timestamp') would return the WP-configured TZ (Berlin) and
+        // mis-flag RO/HU/etc. stores as closed during the 1h tz offset window.
+        $country_to_tz = [
+            'DE' => 'Europe/Berlin', 'AT' => 'Europe/Vienna', 'CH' => 'Europe/Zurich',
+            'HU' => 'Europe/Budapest', 'RO' => 'Europe/Bucharest', 'SK' => 'Europe/Bratislava',
+            'CZ' => 'Europe/Prague', 'PL' => 'Europe/Warsaw', 'IT' => 'Europe/Rome',
+            'FR' => 'Europe/Paris', 'ES' => 'Europe/Madrid', 'NL' => 'Europe/Amsterdam',
+            'BE' => 'Europe/Brussels', 'SI' => 'Europe/Ljubljana', 'HR' => 'Europe/Zagreb',
+            'RS' => 'Europe/Belgrade', 'BG' => 'Europe/Sofia', 'GR' => 'Europe/Athens',
+            'UK' => 'Europe/London', 'IE' => 'Europe/Dublin',
+        ];
+        $country = strtoupper($store_data->country ?? 'DE');
+        $tz_name = $country_to_tz[$country] ?? 'Europe/Berlin';
+        try {
+            $dt = new DateTime('now', new DateTimeZone($tz_name));
+        } catch (Exception $e) {
+            $dt = new DateTime('now', new DateTimeZone('Europe/Berlin'));
+        }
+
         $day_map = [
             'monday' => 'mo',
             'tuesday' => 'di',
@@ -197,9 +217,9 @@ class PPV_QR {
             'sunday' => 'so'
         ];
 
-        $day_name = strtolower(date('l', $now));
+        $day_name = strtolower($dt->format('l'));
         $day = $day_map[$day_name] ?? 'mo';
-        $current_time = date('H:i', $now);
+        $current_time = $dt->format('H:i');
 
         // Check if day exists in schedule
         if (!isset($hours[$day])) {
@@ -1054,7 +1074,7 @@ class PPV_QR {
                 <i class="ri-gift-line"></i> <?php echo esc_html($strings['tab_rewards'] ?? 'Prämien'); ?>
             </button>
             <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
-                <i class="ri-team-line"></i> <?php echo esc_html($strings['tab_scanner_users'] ?? 'Scanner Benutzer'); ?>
+                <i class="ri-team-line"></i> <?php echo esc_html($strings['tab_scanner_users'] ?? 'Mitarbeiter'); ?>
             </button>
             <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
                 <i class="ri-vip-crown-line"></i> <?php echo esc_html($strings['tab_vip'] ?? 'VIP Einstellungen'); ?>
@@ -1213,7 +1233,7 @@ class PPV_QR {
                     <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
                 </button>
                 <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
-                    <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Benutzer'); ?>
+                    <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Mitarbeiter'); ?>
                 </button>
                 <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
                     <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Einstellungen'); ?>
