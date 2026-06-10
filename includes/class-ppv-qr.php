@@ -596,7 +596,7 @@ class PPV_QR {
             }
 
             // JS file version (cache busting)
-            $js_version = '6.5.1';
+            $js_version = PPV_Core::asset_version(); // dinamikus cache-bust (force_version) — ne hardcode-old, kulonben a userek regi JS-t kapnak
 
             // Modular QR Scanner JS files with proper dependencies
             wp_enqueue_script('ppv-qr-core', PPV_PLUGIN_URL . 'assets/js/ppv-qr-core.js', ['jquery'], $js_version, true);
@@ -780,7 +780,7 @@ class PPV_QR {
         $plugin_url = PPV_PLUGIN_URL;
         $version    = PPV_Core::asset_version();
         $site_url   = get_site_url();
-        $js_version = '6.5.1';
+        $js_version = PPV_Core::asset_version(); // dinamikus cache-bust (force_version) — ne hardcode-old, kulonben a userek regi JS-t kapnak
 
         // ─── Language detection (same as render_qr_center) ───
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
