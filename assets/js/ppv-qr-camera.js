@@ -87,6 +87,7 @@
         <div id="ppv-mini-status" style="display:none;"><span class="ppv-mini-icon">📷</span><span class="ppv-mini-text">${L.scanner_active || 'Scanner aktiv'}</span></div>
         <div class="ppv-mini-controls">
           <button id="ppv-mini-toggle" class="ppv-mini-toggle"><span class="ppv-toggle-icon">📷</span><span class="ppv-toggle-text">Start</span></button>
+          <button id="ppv-mini-home" class="ppv-mini-home" title="${L.reset_position || 'Grundposition'}"><span>↘</span></button>
         </div>
         <div class="ppv-mini-toolbar" style="display:none;">
           <button id="ppv-mini-fullscreen" class="ppv-mini-btn" title="Kiosk mód"><span>⛶</span></button>
@@ -128,6 +129,24 @@
       this.setupRefocus();
       this.setupFullscreen();
       this.setupMinimize();
+      this.setupHome();
+    }
+
+    // Vissza az alap (jobb-alsó) pozícióba — ha a kamera bárhova elcsúszott/beragadt.
+    setupHome() {
+      const btn = document.getElementById('ppv-mini-home');
+      if (!btn) return;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!this.miniContainer) return;
+        this.miniContainer.style.transition = 'all .25s ease';
+        this.miniContainer.style.left = 'auto';
+        this.miniContainer.style.top = 'auto';
+        this.miniContainer.style.bottom = '20px';
+        this.miniContainer.style.right = '20px';
+        try { localStorage.removeItem('ppv_scanner_position'); } catch (_) {}
+        setTimeout(() => { if (this.miniContainer) this.miniContainer.style.transition = ''; }, 300);
+      });
     }
 
     // ============================================================
