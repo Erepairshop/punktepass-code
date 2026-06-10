@@ -294,8 +294,8 @@
     }
 
     makeDraggable() {
-      const handle = document.getElementById('ppv-mini-drag-handle');
-      if (!handle) return;
+      if (!this.miniContainer) return;
+      const container = this.miniContainer;
 
       let isDragging = false, currentX = 0, currentY = 0, offsetX = 0, offsetY = 0;
 
@@ -324,20 +324,22 @@
       };
 
       const dragStart = e => {
-        if (!(e.target === handle || e.target.classList.contains('ppv-drag-icon'))) return;
-        const rect = this.miniContainer.getBoundingClientRect();
+        // Az EGÉSZ minikamera megfogható (bármely oldala/felülete), KIVÉVE a gombokat
+        // (minimize/start/fullscreen/torch/refocus) — azok kattintása ne indítson dragot.
+        if (e.target.closest('button')) return;
+        const rect = container.getBoundingClientRect();
         currentX = rect.left; currentY = rect.top;
         offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - currentX;
         offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - currentY;
         isDragging = true;
-        this.miniContainer.style.transition = 'none';
+        container.style.transition = 'none';
         document.addEventListener('touchmove', drag, { passive: false });
         document.addEventListener('mousemove', drag);
       };
 
-      handle.addEventListener('mousedown', dragStart);
+      container.addEventListener('mousedown', dragStart);
       document.addEventListener('mouseup', dragEnd);
-      handle.addEventListener('touchstart', dragStart, { passive: false });
+      container.addEventListener('touchstart', dragStart, { passive: false });
       document.addEventListener('touchend', dragEnd);
       // Critical: touchcancel edge-case (iOS gesture interrupt, multitouch, screen-edge swipe)
       // ha nem kezeljük → a touchmove listener bennragad és GLOBÁLISAN blokkolja a scroll-t
