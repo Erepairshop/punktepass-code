@@ -9,6 +9,10 @@
   if (window.PPV_QR_CAMERA_LOADED) return;
   window.PPV_QR_CAMERA_LOADED = true;
 
+  // A mini-szkenner nem mehet feljebb ennyinél (px a viewport tetejétől) — különben
+  // eltakarja a felső fejlécet és a teteje nem fogható meg a visszahúzáshoz.
+  const MINI_TOP_MARGIN = 72;
+
   const {
     log: ppvLog,
     warn: ppvWarn,
@@ -281,10 +285,15 @@
         const saved = localStorage.getItem('ppv_scanner_position');
         if (saved) {
           const pos = JSON.parse(saved);
+          // Clamp a mentett poziciot a viewportba + a fejlec-margo ala, hogy a korabban
+          // a tetejere/fejlec moge huzott (es ott beragadt) kamera visszajojjon.
+          const w = this.miniContainer.offsetWidth || 220, h = this.miniContainer.offsetHeight || 220;
+          const x = Math.max(0, Math.min(pos.x, window.innerWidth - w));
+          const y = Math.max(MINI_TOP_MARGIN, Math.min(pos.y, window.innerHeight - h));
           this.miniContainer.style.bottom = 'auto';
           this.miniContainer.style.right = 'auto';
-          this.miniContainer.style.left = pos.x + 'px';
-          this.miniContainer.style.top = pos.y + 'px';
+          this.miniContainer.style.left = x + 'px';
+          this.miniContainer.style.top = y + 'px';
         }
       } catch (e) {}
     }
@@ -306,7 +315,7 @@
         currentY = (e.touches ? e.touches[0].clientY : e.clientY) - offsetY;
         const rect = this.miniContainer.getBoundingClientRect();
         currentX = Math.max(0, Math.min(currentX, window.innerWidth - rect.width));
-        currentY = Math.max(0, Math.min(currentY, window.innerHeight - rect.height));
+        currentY = Math.max(MINI_TOP_MARGIN, Math.min(currentY, window.innerHeight - rect.height));
         this.miniContainer.style.bottom = 'auto';
         this.miniContainer.style.right = 'auto';
         this.miniContainer.style.left = currentX + 'px';
