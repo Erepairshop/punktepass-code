@@ -82,6 +82,10 @@ $samsungRows = array_values(array_filter($services, static function (array $serv
         ], true);
 }));
 $missingPrices = array_values(array_filter($samsungRows, static fn(array $service): bool => empty($service['price'])));
+$iphoneOriginalRows = array_values(array_filter($services, static function (array $service): bool {
+    return str_starts_with((string) ($service['name'] ?? ''), 'iPhone ')
+        && (string) ($service['category'] ?? '') === 'Displaytausch Original';
+}));
 $categoryCounts = [];
 foreach ($samsungRows as $service) {
     $category = (string) ($service['category'] ?? '');
@@ -95,5 +99,6 @@ echo wp_json_encode([
     'samsungManagedRows' => count($samsungRows),
     'samsungCategoryCounts' => $categoryCounts,
     'missingSamsungPrices' => count($missingPrices),
+    'iphoneOriginalDisplayRows' => count($iphoneOriginalRows),
     'backup' => $backupPath,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
