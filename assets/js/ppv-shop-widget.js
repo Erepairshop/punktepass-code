@@ -34,7 +34,8 @@
         position: currentScript.getAttribute('data-position') || 'bottom-right',
         color:    currentScript.getAttribute('data-color') || '#667eea',
         text:     currentScript.getAttribute('data-text') || '',
-        target:   currentScript.getAttribute('data-target') || ''
+        target:   currentScript.getAttribute('data-target') || '',
+        theme:    currentScript.getAttribute('data-theme') || 'default'
     };
 
     if (!config.store) return;
@@ -79,7 +80,9 @@
             cat_transition_title: 'Formular ausf\u00fcllen',
             cat_transition_text: 'Bitte f\u00fcllen Sie das folgende Formular aus \u2013 wir melden uns mit einem Termin, wann wir es erledigen k\u00f6nnen.',
             cat_transition_btn: 'Formular \u00f6ffnen',
-            cat_price_label: 'Preis', cat_time_label: 'Dauer'
+            cat_price_label: 'Preis', cat_time_label: 'Dauer', cat_all: 'Alle',
+            cat_choose_brand: 'Ger\u00e4t w\u00e4hlen', cat_choose_brand_hint: 'W\u00e4hlen Sie zuerst eine Marke oder suchen Sie direkt nach einem Modell.',
+            cat_model_search: 'Modell suchen...', cat_clear: 'Filter l\u00f6schen', cat_results: 'Leistungen'
         },
         en: {
             fab: 'Request repair', title: 'Submit a repair',
@@ -108,7 +111,9 @@
             cat_transition_title: 'Fill out the form',
             cat_transition_text: 'Please fill out the following form \u2013 we will get back to you with an appointment.',
             cat_transition_btn: 'Open form',
-            cat_price_label: 'Price', cat_time_label: 'Duration'
+            cat_price_label: 'Price', cat_time_label: 'Duration', cat_all: 'All',
+            cat_choose_brand: 'Choose device', cat_choose_brand_hint: 'Choose a brand first or search directly for a model.',
+            cat_model_search: 'Search model...', cat_clear: 'Clear filters', cat_results: 'services'
         },
         hu: {
             fab: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', title: 'Jav\u00edt\u00e1s bek\u00fcld\u00e9se',
@@ -137,7 +142,9 @@
             cat_transition_title: '\u0170rlap kit\u00f6lt\u00e9se',
             cat_transition_text: 'K\u00e9rj\u00fck t\u00f6ltse ki a k\u00f6vetkez\u0151 \u0171rlapot \u2013 jelentkez\u00fcnk egy id\u0151ponttal, amikor el tudjuk v\u00e9gezni.',
             cat_transition_btn: '\u0170rlap megnyit\u00e1sa',
-            cat_price_label: '\u00c1r', cat_time_label: 'Id\u0151tartam'
+            cat_price_label: '\u00c1r', cat_time_label: 'Id\u0151tartam', cat_all: '\u00d6sszes',
+            cat_choose_brand: 'V\u00e1lasszon k\u00e9sz\u00fcl\u00e9ket', cat_choose_brand_hint: 'El\u0151sz\u00f6r v\u00e1lasszon m\u00e1rk\u00e1t, vagy keressen k\u00f6zvetlen\u00fcl egy modellre.',
+            cat_model_search: 'Modell keres\u00e9se...', cat_clear: 'Sz\u0171r\u0151k t\u00f6rl\u00e9se', cat_results: 'szolg\u00e1ltat\u00e1s'
         },
         ro: {
             fab: 'Solicit\u0103 repara\u021bie', title: 'Trimite repara\u021bie',
@@ -166,7 +173,9 @@
             cat_transition_title: 'Completa\u021bi formularul',
             cat_transition_text: 'V\u0103 rug\u0103m completa\u021bi formularul \u2013 v\u0103 vom contacta cu o programare.',
             cat_transition_btn: 'Deschide formularul',
-            cat_price_label: 'Pre\u021b', cat_time_label: 'Durat\u0103'
+            cat_price_label: 'Pre\u021b', cat_time_label: 'Durat\u0103', cat_all: 'Toate',
+            cat_choose_brand: 'Alege\u021bi dispozitivul', cat_choose_brand_hint: 'Alege\u021bi mai \u00eent\u00e2i marca sau c\u0103uta\u021bi direct un model.',
+            cat_model_search: 'C\u0103utare model...', cat_clear: 'Reseta\u021bi filtrele', cat_results: 'servicii'
         },
         it: {
             fab: 'Richiedi riparazione', title: 'Invia riparazione',
@@ -195,7 +204,9 @@
             cat_transition_title: 'Compila il modulo',
             cat_transition_text: 'Compila il seguente modulo \u2013 ti contatteremo con un appuntamento.',
             cat_transition_btn: 'Apri modulo',
-            cat_price_label: 'Prezzo', cat_time_label: 'Durata'
+            cat_price_label: 'Prezzo', cat_time_label: 'Durata', cat_all: 'Tutti',
+            cat_choose_brand: 'Scegli dispositivo', cat_choose_brand_hint: 'Scegli prima una marca o cerca direttamente un modello.',
+            cat_model_search: 'Cerca modello...', cat_clear: 'Cancella filtri', cat_results: 'servizi'
         }
     };
     var lang = t[config.lang] || t.de;
@@ -454,13 +465,24 @@
         '.' + W + '-cat-brand-btn.sel{background:' + config.color + ';color:#fff;border-color:' + config.color + '}' +
         '.' + W + '-cat-brand-icon{font-size:15px;line-height:1}' +
 
-        /* Model chips row */
-        '.' + W + '-cat-models{display:flex;gap:6px;padding:6px 16px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:wrap}' +
-        '.' + W + '-cat-models::-webkit-scrollbar{display:none}' +
+        /* Active filter summary */
+        '.' + W + '-cat-filter-status{display:none;align-items:center;justify-content:space-between;gap:10px;margin:8px 16px 4px;padding:9px 12px;background:' + config.color + '10;border-left:3px solid ' + config.color + ';font-size:12px;color:#334155}' +
+        '.' + W + '-cat-filter-status.show{display:flex}' +
+        '.' + W + '-cat-filter-label{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+        '.' + W + '-cat-clear{border:0;background:transparent;color:' + config.color + ';font:700 11px/1 inherit;cursor:pointer;padding:4px;white-space:nowrap}' +
+
+        /* First-screen guidance */
+        '.' + W + '-cat-guide{padding:44px 24px;text-align:center;color:#64748b;background:#fff;border-top:1px solid #f1f5f9}' +
+        '.' + W + '-cat-guide-icon{width:52px;height:52px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:' + config.color + '10;color:' + config.color + ';border-radius:14px}' +
+        '.' + W + '-cat-guide-icon svg{width:27px;height:27px}' +
+        '.' + W + '-cat-guide strong{display:block;color:#1e293b;font-size:16px;margin-bottom:7px}' +
+        '.' + W + '-cat-guide span{display:block;font-size:13px;line-height:1.5;max-width:310px;margin:0 auto}' +
+
+        /* Searchable model selector */
+        '.' + W + '-cat-models{padding:7px 16px 10px}' +
         '.' + W + '-cat-models:empty{display:none}' +
-        '.' + W + '-cat-model-btn{padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:16px;background:#f8fafc;font-size:12px;font-weight:500;color:#475569;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;flex-shrink:0}' +
-        '.' + W + '-cat-model-btn:hover{border-color:' + config.color + ';color:' + config.color + '}' +
-        '.' + W + '-cat-model-btn.sel{background:' + config.color + '18;color:' + config.color + ';border-color:' + config.color + ';font-weight:600}' +
+        '.' + W + '-cat-model-input{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;color:#334155;font:500 13px/1 inherit;outline:none}' +
+        '.' + W + '-cat-model-input:focus{border-color:' + config.color + ';box-shadow:0 0 0 3px ' + config.color + '12}' +
 
         /* Category sections */
         '.' + W + '-cat-section{border-bottom:1px solid #f1f5f9}' +
@@ -491,9 +513,14 @@
         '.' + W + '-cat-arrow{width:18px;height:18px;color:#94a3b8;flex-shrink:0;transition:transform .2s,color .2s}' +
         '.' + W + '-cat-row:hover .' + W + '-cat-arrow{color:' + config.color + ';transform:translateX(2px)}' +
 
-        /* Hours section */
-        '#' + W + '-cat-hours{padding:16px;background:#fff;border-bottom:1px solid #f1f5f9}' +
-        '#' + W + '-cat-hours-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px}' +
+        /* Collapsible store information */
+        '.' + W + '-cat-info{background:#fff;border-bottom:1px solid #f1f5f9}' +
+        '.' + W + '-cat-info summary{display:flex;align-items:center;gap:8px;padding:14px 16px;cursor:pointer;list-style:none;font-size:14px;font-weight:700;color:#1e293b}' +
+        '.' + W + '-cat-info summary::-webkit-details-marker{display:none}' +
+        '.' + W + '-cat-info summary::after{content:"+";margin-left:auto;color:#94a3b8;font:600 18px/1 monospace}' +
+        '.' + W + '-cat-info[open] summary::after{content:"-"}' +
+        '.' + W + '-cat-info-content{padding:0 16px 16px}' +
+        '#' + W + '-cat-hours-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#1e293b}' +
         '.' + W + '-cat-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}' +
         '.' + W + '-cat-badge-open{background:#dcfce7;color:#166534}' +
         '.' + W + '-cat-badge-closed{background:#fee2e2;color:#991b1b}' +
@@ -507,8 +534,7 @@
         '.' + W + '-cat-day.today .' + W + '-cat-day-name{color:' + config.color + '}' +
 
         /* Contact section */
-        '#' + W + '-cat-contact{padding:16px;background:#fff;border-bottom:1px solid #f1f5f9}' +
-        '#' + W + '-cat-contact-title{font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px}' +
+        '#' + W + '-cat-contact-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#1e293b}' +
         '.' + W + '-cat-contact-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:#475569;text-decoration:none}' +
         'a.' + W + '-cat-contact-row:hover{color:' + config.color + '}' +
         '.' + W + '-cat-contact-icon{width:32px;height:32px;border-radius:10px;background:#f1f5f9;color:#64748b;display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
@@ -561,7 +587,41 @@
         '}' +
         '@media(max-width:768px){' +
             '#' + W + '-cat-row{padding-left:16px}' +
-        '}';
+        '}' +
+
+        /* Optional industrial Workshop theme */
+        (config.theme === 'workshop' ?
+            '#' + W + '-panel.theme-workshop{--ws-paper:#f3f0e8;--ws-light:#fbfaf6;--ws-ink:#171918;--ws-muted:#62665f;--ws-line:#c9c6bb;--ws-blue:#165ddb;--ws-orange:#ef5b36;font-family:"IBM Plex Sans",Arial,sans-serif;background:var(--ws-paper);color:var(--ws-ink)}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-hdr{background:var(--ws-paper);color:var(--ws-ink);border-bottom:1px solid var(--ws-ink);padding-bottom:15px}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-hdr-t{font-family:"Barlow Semi Condensed",Arial,sans-serif;font-size:20px;letter-spacing:-.02em}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-hdr-s{font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--ws-muted)}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-cls{border-radius:0;background:var(--ws-orange);border:1px solid var(--ws-ink);box-shadow:3px 3px 0 var(--ws-ink);color:#fff}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-cat-count{border-radius:0;background:var(--ws-blue);color:#fff;font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-cat-search-wrap{background:var(--ws-paper);border-color:var(--ws-ink)}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-cat-search{border-radius:0;border-color:var(--ws-line);background-color:var(--ws-light)}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-cat-search:focus{border-color:var(--ws-orange);box-shadow:inset 3px 0 0 var(--ws-orange)}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-cat-body{background:var(--ws-paper);background-image:linear-gradient(rgba(23,25,24,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(23,25,24,.025) 1px,transparent 1px);background-size:24px 24px}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-brand-btn{border-radius:0;border:1px solid var(--ws-ink);background:var(--ws-light);color:var(--ws-ink);font-family:"Barlow Semi Condensed",Arial,sans-serif;font-size:15px}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-brand-btn.sel{background:var(--ws-blue);color:#fff;box-shadow:3px 3px 0 var(--ws-ink)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-model-input{border-radius:0;border-color:var(--ws-line);background:var(--ws-light)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-filter-status{background:var(--ws-light);border:1px solid var(--ws-ink);border-left:4px solid var(--ws-orange);font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-clear{color:var(--ws-blue);font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-guide{background:var(--ws-light);border:1px solid var(--ws-ink);margin:12px 16px;box-shadow:5px 5px 0 var(--ws-ink)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-guide-icon{border-radius:0;background:var(--ws-orange);color:#fff;border:1px solid var(--ws-ink)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-guide strong,#' + W + '-panel.theme-workshop .' + W + '-cat-hdr-name{font-family:"Barlow Semi Condensed",Arial,sans-serif;color:var(--ws-ink)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-section{border-color:var(--ws-line)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-hdr{background:var(--ws-light);border-top:1px solid var(--ws-line)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-hdr-icon{border-radius:0;background:transparent;border:1px solid var(--ws-line);color:var(--ws-blue)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-hdr-cnt{border-radius:0;background:transparent;color:var(--ws-orange);font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-items{background:#eeeae0}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-row{border-color:var(--ws-line)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-price{border-radius:0;background:var(--ws-blue);color:#fff;font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-time{border-radius:0;background:transparent;border:1px solid var(--ws-line);font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-info{background:var(--ws-light);border-color:var(--ws-line)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-info summary{font-family:"Barlow Semi Condensed",Arial,sans-serif;font-size:16px}' +
+            '#' + W + '-panel.theme-workshop #' + W + '-ftr{background:var(--ws-paper);border-color:var(--ws-ink);font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-fab.theme-workshop{border-radius:0;background:var(--ws-blue,#165ddb);border:1px solid #171918;box-shadow:4px 4px 0 #171918;font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.04em}'
+        : '');
     document.head.appendChild(style);
 
     // ─── SVG icons ─────────────────────────────────────────
@@ -665,13 +725,14 @@
         // Create FAB
         var catFab = document.createElement('button');
         catFab.id = W + '-fab';
+        if (config.theme === 'workshop') catFab.className = 'theme-workshop';
         catFab.innerHTML = listSVG + '<span>' + fabText + '</span>';
         document.body.appendChild(catFab);
 
         // Create Panel (fullscreen mobile, side-sheet desktop)
         var catPanel = document.createElement('div');
         catPanel.id = W + '-panel';
-        catPanel.className = 'catalog-panel';
+        catPanel.className = 'catalog-panel' + (config.theme === 'workshop' ? ' theme-workshop' : '');
         var arrowBackSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>';
         var clipboardSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>';
 
@@ -880,6 +941,65 @@
             return { groups: groups, order: order };
         }
 
+        function normalizeBrand(brand) {
+            return brand === 'Apple' ? 'iPhone' : brand;
+        }
+
+        function brandTerms(brand) {
+            var normalized = normalizeBrand(brand);
+            var map = {
+                iPhone: ['iphone'],
+                Samsung: ['samsung', 'galaxy'],
+                Huawei: ['huawei'],
+                Xiaomi: ['xiaomi', 'redmi', 'poco']
+            };
+            return map[normalized] || [normalized.toLowerCase()];
+        }
+
+        function serviceMatchesBrand(svc, brand) {
+            if (!brand) return true;
+            var haystack = ((svc.name || '') + ' ' + (svc.category || '')).toLowerCase();
+            var terms = brandTerms(brand);
+            for (var i = 0; i < terms.length; i++) {
+                if (haystack.indexOf(terms[i]) !== -1) return true;
+            }
+            return false;
+        }
+
+        function extractModelName(svc, brand) {
+            if (!serviceMatchesBrand(svc, brand)) return '';
+            var name = (svc.name || '').trim();
+            var repairStart = name.search(/\s(?:Displaytausch|Akkutausch|Akkuwechsel|Ladebuchse|Hauptkamera|Backcover|Rückseite)\b/i);
+            if (repairStart > 0) name = name.slice(0, repairStart);
+            return name.replace(/\s+/g, ' ').trim();
+        }
+
+        function modelsForBrand(brand) {
+            var seen = {};
+            var models = [];
+            for (var i = 0; i < allServices.length; i++) {
+                var model = extractModelName(allServices[i], brand);
+                if (model && !seen[model.toLowerCase()]) {
+                    seen[model.toLowerCase()] = true;
+                    models.push(model);
+                }
+            }
+            models.sort(function(a, b) {
+                return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+            });
+            return models;
+        }
+
+        function modelForForm(model, brand) {
+            var value = (model || '').trim();
+            var normalized = normalizeBrand(brand);
+            if (normalized === 'iPhone') return value.replace(/^iPhone\s+/i, '');
+            if (normalized === 'Samsung') return value.replace(/^Samsung\s+/i, '');
+            if (normalized === 'Huawei') return value.replace(/^Huawei\s+/i, '');
+            if (normalized === 'Xiaomi') return value.replace(/^Xiaomi\s+/i, '');
+            return value;
+        }
+
         // Render catalog content
         function renderCatalog(data) {
             allServices = data.services || [];
@@ -903,12 +1023,15 @@
             var brandModelsMap = {};
             if (catBrands.length > 0) {
                 html += '<div class="' + W + '-cat-brands">';
+                html += '<button type="button" class="' + W + '-cat-brand-btn" data-brand="" data-all="1">' + escH(lang.cat_all) + '</button>';
                 for (var bi = 0; bi < catBrands.length; bi++) {
                     var b = catBrands[bi];
                     var bid = typeof b === 'string' ? b : (b.id || b.label || b);
                     var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
                     var bicon = (typeof b === 'object' && b.icon) ? b.icon : '';
                     var bmodels = (typeof b === 'object' && b.models && b.models.length) ? b.models : [];
+                    bid = normalizeBrand(bid);
+                    blabel = normalizeBrand(blabel);
                     if (bmodels.length > 0) brandModelsMap[bid] = bmodels;
                     html += '<button type="button" class="' + W + '-cat-brand-btn" data-brand="' + escH(bid) + '">' +
                         (bicon ? '<span class="' + W + '-cat-brand-icon">' + escH(bicon) + '</span>' : '') +
@@ -916,9 +1039,11 @@
                 }
                 html += '</div>';
                 html += '<div class="' + W + '-cat-models"></div>';
+                html += '<div class="' + W + '-cat-filter-status"><span class="' + W + '-cat-filter-label"></span><button type="button" class="' + W + '-cat-clear">' + escH(lang.cat_clear) + '</button></div>';
             }
 
             // Service categories
+            html += '<div class="' + W + '-cat-guide"><div class="' + W + '-cat-guide-icon">' + wrenchSVG + '</div><strong>' + escH(lang.cat_choose_brand) + '</strong><span>' + escH(lang.cat_choose_brand_hint) + '</span></div>';
             html += '<div id="' + W + '-cat-sections">';
             for (var ci = 0; ci < grouped.order.length; ci++) {
                 var catName = grouped.order[ci];
@@ -968,22 +1093,22 @@
                 var openStatus = isStoreOpen(data.store_hours);
                 var badgeCls = openStatus === true ? W + '-cat-badge-open' : W + '-cat-badge-closed';
                 var badgeText = openStatus === true ? lang.cat_open : lang.cat_closed;
-                html += '<div id="' + W + '-cat-hours">' +
-                    '<div id="' + W + '-cat-hours-title">' +
+                html += '<details id="' + W + '-cat-hours" class="' + W + '-cat-info">' +
+                    '<summary id="' + W + '-cat-hours-title">' +
                         svgClock + ' ' + lang.cat_hours +
                         (openStatus !== null ? ' <span class="' + W + '-cat-badge ' + badgeCls + '"><span class="' + W + '-cat-badge-dot"></span> ' + badgeText + '</span>' : '') +
-                    '</div>' +
-                    buildHoursHTML(data.store_hours) +
-                '</div>';
+                    '</summary>' +
+                    '<div class="' + W + '-cat-info-content">' + buildHoursHTML(data.store_hours) + '</div>' +
+                '</details>';
             }
 
             // Contact
             var contactHTML = buildContactHTML(data);
             if (contactHTML) {
-                html += '<div id="' + W + '-cat-contact">' +
-                    '<div id="' + W + '-cat-contact-title">' + svgPin + ' ' + lang.cat_contact + '</div>' +
-                    contactHTML +
-                '</div>';
+                html += '<details id="' + W + '-cat-contact" class="' + W + '-cat-info">' +
+                    '<summary id="' + W + '-cat-contact-title">' + svgPin + ' ' + lang.cat_contact + '</summary>' +
+                    '<div class="' + W + '-cat-info-content">' + contactHTML + '</div>' +
+                '</details>';
             }
 
             catBody.innerHTML = html;
@@ -999,6 +1124,7 @@
             // Bind brand filter clicks
             var brandBtns = catBody.querySelectorAll('.' + W + '-cat-brand-btn');
             var modelsContainer = catBody.querySelector('.' + W + '-cat-models');
+            var clearFilterBtn = catBody.querySelector('.' + W + '-cat-clear');
             for (var bri = 0; bri < brandBtns.length; bri++) {
                 brandBtns[bri].addEventListener('click', function() {
                     var wasActive = this.classList.contains('sel');
@@ -1006,43 +1132,50 @@
                     if (wasActive) {
                         selectedBrand = '';
                         selectedModel = '';
+                        showAllBrands = false;
                         if (modelsContainer) modelsContainer.innerHTML = '';
                     } else {
                         this.classList.add('sel');
                         selectedBrand = this.getAttribute('data-brand');
+                        showAllBrands = this.getAttribute('data-all') === '1';
                         selectedModel = '';
-                        renderModelChips(selectedBrand);
+                        renderModelSelector(selectedBrand);
                     }
+                    applyCatalogFilters();
                 });
             }
 
-            function renderModelChips(brand) {
+            function renderModelSelector(brand) {
                 if (!modelsContainer) return;
-                var models = brandModelsMap[brand];
+                var models = brandModelsMap[brand] || modelsForBrand(brand);
                 if (!models || models.length === 0) {
                     modelsContainer.innerHTML = '';
                     return;
                 }
-                var mhtml = '';
+                var listId = W + '-cat-model-list';
+                var mhtml = '<input type="text" class="' + W + '-cat-model-input" list="' + listId + '" placeholder="' + escH(lang.cat_model_search) + '" autocomplete="off"><datalist id="' + listId + '">';
                 for (var mi = 0; mi < models.length; mi++) {
-                    mhtml += '<button type="button" class="' + W + '-cat-model-btn" data-model="' + escH(models[mi]) + '">' + escH(models[mi]) + '</button>';
+                    mhtml += '<option value="' + escH(models[mi]) + '"></option>';
                 }
+                mhtml += '</datalist>';
                 modelsContainer.innerHTML = mhtml;
+                var modelInput = modelsContainer.querySelector('.' + W + '-cat-model-input');
+                modelInput.addEventListener('input', function() {
+                    selectedModel = this.value.trim();
+                    applyCatalogFilters();
+                });
+            }
 
-                // Bind model chip clicks
-                var modelBtns = modelsContainer.querySelectorAll('.' + W + '-cat-model-btn');
-                for (var mbi = 0; mbi < modelBtns.length; mbi++) {
-                    modelBtns[mbi].addEventListener('click', function() {
-                        var wasModelActive = this.classList.contains('sel');
-                        for (var mx = 0; mx < modelBtns.length; mx++) modelBtns[mx].classList.remove('sel');
-                        if (wasModelActive) {
-                            selectedModel = '';
-                        } else {
-                            this.classList.add('sel');
-                            selectedModel = this.getAttribute('data-model');
-                        }
-                    });
-                }
+            if (clearFilterBtn) {
+                clearFilterBtn.addEventListener('click', function() {
+                    selectedBrand = '';
+                    selectedModel = '';
+                    showAllBrands = false;
+                    searchInput.value = '';
+                    for (var x = 0; x < brandBtns.length; x++) brandBtns[x].classList.remove('sel');
+                    if (modelsContainer) modelsContainer.innerHTML = '';
+                    applyCatalogFilters();
+                });
             }
 
             // Bind service row clicks → confirm flow
@@ -1065,11 +1198,14 @@
                     showForm();
                 });
             }
+
+            applyCatalogFilters();
         }
 
         // ── Brand + Model selection state ──
         var selectedBrand = '';
         var selectedModel = '';
+        var showAllBrands = false;
 
         // ── Confirm / Transition / Form flow ──
         var confirmEl = catPanel.querySelector('#' + W + '-cat-confirm');
@@ -1089,7 +1225,7 @@
             confirmSvc.textContent = svc.name || '';
             var metaHTML = '';
             if (selectedBrand || selectedModel) {
-                var deviceText = selectedBrand + (selectedModel ? ' ' + selectedModel : '');
+                var deviceText = selectedModel || selectedBrand;
                 metaHTML += '<span style="background:' + config.color + '15;color:' + config.color + ';padding:2px 8px;border-radius:6px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> ' + escH(deviceText) + '</span>';
             }
             if (svc.price) metaHTML += '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ' + escH(svc.price) + '</span>';
@@ -1120,7 +1256,7 @@
                 if (selectedSvc.category) url += '&category=' + encodeURIComponent(selectedSvc.category);
             }
             if (selectedBrand) url += '&brand=' + encodeURIComponent(selectedBrand);
-            if (selectedModel) url += '&model=' + encodeURIComponent(selectedModel);
+            if (selectedModel) url += '&model=' + encodeURIComponent(modelForForm(selectedModel, selectedBrand));
             iframeEl.src = url;
             iframeWrapEl.classList.add('active');
         }
@@ -1143,43 +1279,90 @@
             resetFlow();
         });
 
-        // Search/filter
+        // Unified brand + model + text filtering
+        function applyCatalogFilters() {
+            var val = searchInput.value.trim().toLowerCase();
+            var modelVal = selectedModel.toLowerCase();
+            var hasFilter = showAllBrands || !!selectedBrand || !!modelVal || !!val;
+            var sectionsEl = catBody.querySelectorAll('.' + W + '-cat-section');
+            var sectionsWrap = catBody.querySelector('#' + W + '-cat-sections');
+            var guideEl = catBody.querySelector('.' + W + '-cat-guide');
+            var emptyEl = catBody.querySelector('#' + W + '-cat-empty');
+            var statusEl = catBody.querySelector('.' + W + '-cat-filter-status');
+            var statusLabel = catBody.querySelector('.' + W + '-cat-filter-label');
+            var totalVisible = 0;
+            var visibleSections = [];
+            var exactModelSelected = false;
+
+            if (modelVal && selectedBrand) {
+                var availableModels = modelsForBrand(selectedBrand);
+                for (var mi = 0; mi < availableModels.length; mi++) {
+                    if (availableModels[mi].toLowerCase() === modelVal) {
+                        exactModelSelected = true;
+                        break;
+                    }
+                }
+            }
+
+            if (guideEl) guideEl.style.display = hasFilter ? 'none' : '';
+            if (sectionsWrap) sectionsWrap.style.display = hasFilter ? '' : 'none';
+
+            for (var si = 0; si < sectionsEl.length; si++) {
+                var sec = sectionsEl[si];
+                var rows = sec.querySelectorAll('.' + W + '-cat-row');
+                var visibleInSection = 0;
+                for (var ri = 0; ri < rows.length; ri++) {
+                    var svcIdx = parseInt(rows[ri].getAttribute('data-svc-idx'));
+                    var svc = !isNaN(svcIdx) ? allServices[svcIdx] : null;
+                    var searchData = rows[ri].getAttribute('data-search') || '';
+                    var nameData = svc ? (svc.name || '').toLowerCase() : '';
+                    var serviceModel = svc && selectedBrand ? extractModelName(svc, selectedBrand).toLowerCase() : '';
+                    var match = !!svc &&
+                        (!selectedBrand || serviceMatchesBrand(svc, selectedBrand)) &&
+                        (!modelVal || (exactModelSelected ? serviceModel === modelVal : nameData.indexOf(modelVal) !== -1)) &&
+                        (!val || searchData.indexOf(val) !== -1);
+                    rows[ri].style.display = match ? '' : 'none';
+                    if (match) visibleInSection++;
+                }
+
+                sec.style.display = hasFilter && visibleInSection > 0 ? '' : 'none';
+                var cnt = sec.querySelector('.' + W + '-cat-hdr-cnt');
+                if (cnt) cnt.textContent = visibleInSection;
+                if (visibleInSection > 0) {
+                    totalVisible += visibleInSection;
+                    visibleSections.push({ element: sec, count: visibleInSection });
+                }
+                if (!val && !modelVal && visibleInSection !== 1) sec.classList.remove('open');
+                if ((val || modelVal || visibleInSection === 1) && visibleInSection > 0) sec.classList.add('open');
+            }
+
+            if (visibleSections.length === 1 && totalVisible <= 12) visibleSections[0].element.classList.add('open');
+            if (emptyEl) emptyEl.style.display = hasFilter && totalVisible === 0 ? 'block' : 'none';
+
+            var countBadge = catPanel.querySelector('#' + W + '-cat-count');
+            if (countBadge) countBadge.textContent = hasFilter ? totalVisible : allServices.length;
+
+            if (statusEl) {
+                if (hasFilter) {
+                    var parts = [];
+                    if (selectedBrand) parts.push(selectedBrand);
+                    else if (showAllBrands) parts.push(lang.cat_all);
+                    if (selectedModel) parts.push(selectedModel);
+                    if (val) parts.push('"' + searchInput.value.trim() + '"');
+                    parts.push(totalVisible + ' ' + lang.cat_results);
+                    if (statusLabel) statusLabel.textContent = parts.join(' · ');
+                    statusEl.classList.add('show');
+                } else {
+                    statusEl.classList.remove('show');
+                }
+            }
+        }
+
         var searchTimer = null;
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimer);
-            var val = this.value.trim().toLowerCase();
             searchTimer = setTimeout(function() {
-                var sectionsEl = catBody.querySelectorAll('.' + W + '-cat-section');
-                var emptyEl = catBody.querySelector('#' + W + '-cat-empty');
-                var hoursEl = catBody.querySelector('#' + W + '-cat-hours');
-                var contactEl = catBody.querySelector('#' + W + '-cat-contact');
-                var anyVisible = false;
-
-                for (var si = 0; si < sectionsEl.length; si++) {
-                    var sec = sectionsEl[si];
-                    var rows = sec.querySelectorAll('.' + W + '-cat-row');
-                    var visibleInSection = 0;
-                    for (var ri = 0; ri < rows.length; ri++) {
-                        var searchData = rows[ri].getAttribute('data-search') || '';
-                        var match = !val || searchData.indexOf(val) !== -1;
-                        rows[ri].style.display = match ? '' : 'none';
-                        if (match) visibleInSection++;
-                    }
-                    sec.style.display = visibleInSection > 0 ? '' : 'none';
-                    if (visibleInSection > 0) {
-                        anyVisible = true;
-                        // Update count badge
-                        var cnt = sec.querySelector('.' + W + '-cat-hdr-cnt');
-                        if (cnt) cnt.textContent = visibleInSection;
-                        // Auto-expand on search
-                        if (val) sec.classList.add('open');
-                    }
-                }
-
-                if (emptyEl) emptyEl.style.display = anyVisible ? 'none' : 'block';
-                // Hide hours/contact during search
-                if (hoursEl) hoursEl.style.display = val ? 'none' : '';
-                if (contactEl) contactEl.style.display = val ? 'none' : '';
+                applyCatalogFilters();
             }, 150);
         });
 
