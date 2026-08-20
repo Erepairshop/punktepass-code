@@ -82,7 +82,7 @@
             cat_transition_btn: 'Formular \u00f6ffnen',
             cat_price_label: 'Preis', cat_time_label: 'Dauer', cat_all: 'Alle',
             cat_choose_brand: 'Ger\u00e4t w\u00e4hlen', cat_choose_brand_hint: 'W\u00e4hlen Sie zuerst eine Marke oder suchen Sie direkt nach einem Modell.',
-            cat_model_search: 'Modell suchen...', cat_clear: 'Filter l\u00f6schen', cat_results: 'Leistungen'
+            cat_series: 'Serie w\u00e4hlen', cat_model_search: 'Modell suchen...', cat_clear: 'Filter l\u00f6schen', cat_results: 'Leistungen'
         },
         en: {
             fab: 'Request repair', title: 'Submit a repair',
@@ -113,7 +113,7 @@
             cat_transition_btn: 'Open form',
             cat_price_label: 'Price', cat_time_label: 'Duration', cat_all: 'All',
             cat_choose_brand: 'Choose device', cat_choose_brand_hint: 'Choose a brand first or search directly for a model.',
-            cat_model_search: 'Search model...', cat_clear: 'Clear filters', cat_results: 'services'
+            cat_series: 'Choose series', cat_model_search: 'Search model...', cat_clear: 'Clear filters', cat_results: 'services'
         },
         hu: {
             fab: 'Jav\u00edt\u00e1s k\u00e9r\u00e9se', title: 'Jav\u00edt\u00e1s bek\u00fcld\u00e9se',
@@ -144,7 +144,7 @@
             cat_transition_btn: '\u0170rlap megnyit\u00e1sa',
             cat_price_label: '\u00c1r', cat_time_label: 'Id\u0151tartam', cat_all: '\u00d6sszes',
             cat_choose_brand: 'V\u00e1lasszon k\u00e9sz\u00fcl\u00e9ket', cat_choose_brand_hint: 'El\u0151sz\u00f6r v\u00e1lasszon m\u00e1rk\u00e1t, vagy keressen k\u00f6zvetlen\u00fcl egy modellre.',
-            cat_model_search: 'Modell keres\u00e9se...', cat_clear: 'Sz\u0171r\u0151k t\u00f6rl\u00e9se', cat_results: 'szolg\u00e1ltat\u00e1s'
+            cat_series: 'Sorozat v\u00e1laszt\u00e1sa', cat_model_search: 'Modell keres\u00e9se...', cat_clear: 'Sz\u0171r\u0151k t\u00f6rl\u00e9se', cat_results: 'szolg\u00e1ltat\u00e1s'
         },
         ro: {
             fab: 'Solicit\u0103 repara\u021bie', title: 'Trimite repara\u021bie',
@@ -175,7 +175,7 @@
             cat_transition_btn: 'Deschide formularul',
             cat_price_label: 'Pre\u021b', cat_time_label: 'Durat\u0103', cat_all: 'Toate',
             cat_choose_brand: 'Alege\u021bi dispozitivul', cat_choose_brand_hint: 'Alege\u021bi mai \u00eent\u00e2i marca sau c\u0103uta\u021bi direct un model.',
-            cat_model_search: 'C\u0103utare model...', cat_clear: 'Reseta\u021bi filtrele', cat_results: 'servicii'
+            cat_series: 'Alege\u021bi seria', cat_model_search: 'C\u0103utare model...', cat_clear: 'Reseta\u021bi filtrele', cat_results: 'servicii'
         },
         it: {
             fab: 'Richiedi riparazione', title: 'Invia riparazione',
@@ -206,7 +206,7 @@
             cat_transition_btn: 'Apri modulo',
             cat_price_label: 'Prezzo', cat_time_label: 'Durata', cat_all: 'Tutti',
             cat_choose_brand: 'Scegli dispositivo', cat_choose_brand_hint: 'Scegli prima una marca o cerca direttamente un modello.',
-            cat_model_search: 'Cerca modello...', cat_clear: 'Cancella filtri', cat_results: 'servizi'
+            cat_series: 'Scegli serie', cat_model_search: 'Cerca modello...', cat_clear: 'Cancella filtri', cat_results: 'servizi'
         }
     };
     var lang = t[config.lang] || t.de;
@@ -481,6 +481,12 @@
         /* Searchable model selector */
         '.' + W + '-cat-models{padding:7px 16px 10px}' +
         '.' + W + '-cat-models:empty{display:none}' +
+        '.' + W + '-cat-series-label{display:block;margin:0 0 7px;color:#64748b;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}' +
+        '.' + W + '-cat-series{display:flex;gap:7px;margin:0 0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}' +
+        '.' + W + '-cat-series::-webkit-scrollbar{display:none}' +
+        '.' + W + '-cat-series-btn{flex:0 0 auto;padding:7px 11px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;color:#334155;font:700 12px/1 inherit;cursor:pointer;white-space:nowrap}' +
+        '.' + W + '-cat-series-btn:hover{border-color:' + config.color + ';color:' + config.color + '}' +
+        '.' + W + '-cat-series-btn.sel{border-color:' + config.color + ';background:' + config.color + ';color:#fff}' +
         '.' + W + '-cat-model-input{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;color:#334155;font:500 13px/1 inherit;outline:none}' +
         '.' + W + '-cat-model-input:focus{border-color:' + config.color + ';box-shadow:0 0 0 3px ' + config.color + '12}' +
 
@@ -603,6 +609,9 @@
             '#' + W + '-panel.theme-workshop #' + W + '-cat-body{background:var(--ws-paper);background-image:linear-gradient(rgba(23,25,24,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(23,25,24,.025) 1px,transparent 1px);background-size:24px 24px}' +
             '#' + W + '-panel.theme-workshop .' + W + '-cat-brand-btn{border-radius:0;border:1px solid var(--ws-ink);background:var(--ws-light);color:var(--ws-ink);font-family:"Barlow Semi Condensed",Arial,sans-serif;font-size:15px}' +
             '#' + W + '-panel.theme-workshop .' + W + '-cat-brand-btn.sel{background:var(--ws-blue);color:#fff;box-shadow:3px 3px 0 var(--ws-ink)}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-series-label{color:var(--ws-muted);font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-series-btn{border-radius:0;border:1px solid var(--ws-ink);background:var(--ws-light);color:var(--ws-ink);font-family:"IBM Plex Mono",monospace}' +
+            '#' + W + '-panel.theme-workshop .' + W + '-cat-series-btn.sel{background:var(--ws-orange);color:#fff;box-shadow:2px 2px 0 var(--ws-ink)}' +
             '#' + W + '-panel.theme-workshop .' + W + '-cat-model-input{border-radius:0;border-color:var(--ws-line);background:var(--ws-light)}' +
             '#' + W + '-panel.theme-workshop .' + W + '-cat-filter-status{background:var(--ws-light);border:1px solid var(--ws-ink);border-left:4px solid var(--ws-orange);font-family:"IBM Plex Mono",monospace}' +
             '#' + W + '-panel.theme-workshop .' + W + '-cat-clear{color:var(--ws-blue);font-family:"IBM Plex Mono",monospace}' +
@@ -969,7 +978,7 @@
         function extractModelName(svc, brand) {
             if (!serviceMatchesBrand(svc, brand)) return '';
             var name = (svc.name || '').trim();
-            var repairStart = name.search(/\s(?:Displaytausch|Akkutausch|Akkuwechsel|Ladebuchse|Hauptkamera|Backcover|Rückseite)\b/i);
+            var repairStart = name.search(/\s(?:Au(?:\u00df|ss)endisplaytausch|Displaytausch|Akkutausch|Akkuwechsel|Ladebuchse|Hauptkamera|Backcover|Rückseite)\b/i);
             if (repairStart > 0) name = name.slice(0, repairStart);
             return name.replace(/\s+/g, ' ').trim();
         }
@@ -988,6 +997,30 @@
                 return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
             });
             return models;
+        }
+
+        function samsungSeriesForModel(model) {
+            var value = (model || '').replace(/^Samsung\s+/i, '').trim();
+            if (/^Galaxy A/i.test(value)) return 'A';
+            if (/^Galaxy S\d/i.test(value)) return 'S';
+            if (/^Galaxy Z Flip/i.test(value)) return 'Z Flip';
+            if (/^Galaxy Z Fold/i.test(value)) return 'Z Fold';
+            if (/^Galaxy M/i.test(value)) return 'M';
+            if (/^Galaxy Note/i.test(value)) return 'Note';
+            if (/^Galaxy J/i.test(value)) return 'J';
+            if (/^Galaxy XCover/i.test(value)) return 'XCover';
+            return 'Other';
+        }
+
+        function samsungSeries(models) {
+            var order = ['A', 'S', 'Z Flip', 'Z Fold', 'M', 'Note', 'J', 'XCover', 'Other'];
+            var seen = {};
+            for (var i = 0; i < models.length; i++) seen[samsungSeriesForModel(models[i])] = true;
+            return order.filter(function(series) { return seen[series]; });
+        }
+
+        function seriesLabel(series) {
+            return /^[ASMJ]$/.test(series) ? series + '-Serie' : series;
         }
 
         function modelForForm(model, brand) {
@@ -1131,6 +1164,7 @@
                     for (var x = 0; x < brandBtns.length; x++) brandBtns[x].classList.remove('sel');
                     if (wasActive) {
                         selectedBrand = '';
+                        selectedSeries = '';
                         selectedModel = '';
                         showAllBrands = false;
                         if (modelsContainer) modelsContainer.innerHTML = '';
@@ -1138,6 +1172,7 @@
                         this.classList.add('sel');
                         selectedBrand = this.getAttribute('data-brand');
                         showAllBrands = this.getAttribute('data-all') === '1';
+                        selectedSeries = '';
                         selectedModel = '';
                         renderModelSelector(selectedBrand);
                     }
@@ -1152,13 +1187,39 @@
                     modelsContainer.innerHTML = '';
                     return;
                 }
+                var availableSeries = brand === 'Samsung' ? samsungSeries(models) : [];
+                var displayedModels = models;
+                if (selectedSeries) {
+                    displayedModels = models.filter(function(model) {
+                        return samsungSeriesForModel(model) === selectedSeries;
+                    });
+                }
                 var listId = W + '-cat-model-list';
-                var mhtml = '<input type="text" class="' + W + '-cat-model-input" list="' + listId + '" placeholder="' + escH(lang.cat_model_search) + '" autocomplete="off"><datalist id="' + listId + '">';
-                for (var mi = 0; mi < models.length; mi++) {
-                    mhtml += '<option value="' + escH(models[mi]) + '"></option>';
+                var mhtml = '';
+                if (availableSeries.length) {
+                    mhtml += '<span class="' + W + '-cat-series-label">' + escH(lang.cat_series) + '</span><div class="' + W + '-cat-series">';
+                    for (var sri = 0; sri < availableSeries.length; sri++) {
+                        var series = availableSeries[sri];
+                        mhtml += '<button type="button" class="' + W + '-cat-series-btn' + (series === selectedSeries ? ' sel' : '') + '" data-series="' + escH(series) + '">' + escH(seriesLabel(series)) + '</button>';
+                    }
+                    mhtml += '</div>';
+                }
+                mhtml += '<input type="text" class="' + W + '-cat-model-input" list="' + listId + '" placeholder="' + escH(lang.cat_model_search) + '" autocomplete="off"><datalist id="' + listId + '">';
+                for (var mi = 0; mi < displayedModels.length; mi++) {
+                    mhtml += '<option value="' + escH(displayedModels[mi]) + '"></option>';
                 }
                 mhtml += '</datalist>';
                 modelsContainer.innerHTML = mhtml;
+                var seriesBtns = modelsContainer.querySelectorAll('.' + W + '-cat-series-btn');
+                for (var sbi = 0; sbi < seriesBtns.length; sbi++) {
+                    seriesBtns[sbi].addEventListener('click', function() {
+                        var nextSeries = this.getAttribute('data-series');
+                        selectedSeries = selectedSeries === nextSeries ? '' : nextSeries;
+                        selectedModel = '';
+                        renderModelSelector(brand);
+                        applyCatalogFilters();
+                    });
+                }
                 var modelInput = modelsContainer.querySelector('.' + W + '-cat-model-input');
                 modelInput.addEventListener('input', function() {
                     selectedModel = this.value.trim();
@@ -1169,6 +1230,7 @@
             if (clearFilterBtn) {
                 clearFilterBtn.addEventListener('click', function() {
                     selectedBrand = '';
+                    selectedSeries = '';
                     selectedModel = '';
                     showAllBrands = false;
                     searchInput.value = '';
@@ -1204,6 +1266,7 @@
 
         // ── Brand + Model selection state ──
         var selectedBrand = '';
+        var selectedSeries = '';
         var selectedModel = '';
         var showAllBrands = false;
 
@@ -1283,7 +1346,7 @@
         function applyCatalogFilters() {
             var val = searchInput.value.trim().toLowerCase();
             var modelVal = selectedModel.toLowerCase();
-            var hasFilter = showAllBrands || !!selectedBrand || !!modelVal || !!val;
+            var hasFilter = showAllBrands || !!selectedBrand || !!selectedSeries || !!modelVal || !!val;
             var sectionsEl = catBody.querySelectorAll('.' + W + '-cat-section');
             var sectionsWrap = catBody.querySelector('#' + W + '-cat-sections');
             var guideEl = catBody.querySelector('.' + W + '-cat-guide');
@@ -1317,8 +1380,10 @@
                     var searchData = rows[ri].getAttribute('data-search') || '';
                     var nameData = svc ? (svc.name || '').toLowerCase() : '';
                     var serviceModel = svc && selectedBrand ? extractModelName(svc, selectedBrand).toLowerCase() : '';
+                    var serviceSeries = svc && selectedBrand === 'Samsung' ? samsungSeriesForModel(extractModelName(svc, selectedBrand)) : '';
                     var match = !!svc &&
                         (!selectedBrand || serviceMatchesBrand(svc, selectedBrand)) &&
+                        (!selectedSeries || serviceSeries === selectedSeries) &&
                         (!modelVal || (exactModelSelected ? serviceModel === modelVal : nameData.indexOf(modelVal) !== -1)) &&
                         (!val || searchData.indexOf(val) !== -1);
                     rows[ri].style.display = match ? '' : 'none';
@@ -1347,6 +1412,7 @@
                     var parts = [];
                     if (selectedBrand) parts.push(selectedBrand);
                     else if (showAllBrands) parts.push(lang.cat_all);
+                    if (selectedSeries) parts.push(seriesLabel(selectedSeries));
                     if (selectedModel) parts.push(selectedModel);
                     if (val) parts.push('"' + searchInput.value.trim() + '"');
                     parts.push(totalVisible + ' ' + lang.cat_results);
