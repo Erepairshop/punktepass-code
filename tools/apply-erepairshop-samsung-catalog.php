@@ -75,15 +75,24 @@ $samsungRows = array_values(array_filter($services, static function (array $serv
         && in_array((string) ($service['category'] ?? ''), [
             'Displaytausch Original',
             'Außendisplaytausch Original',
+            'Akku Original',
+            'Ladebuchse Austausch',
+            'Backcover/Rückseite Austausch',
         ], true);
 }));
 $missingPrices = array_values(array_filter($samsungRows, static fn(array $service): bool => empty($service['price'])));
+$categoryCounts = [];
+foreach ($samsungRows as $service) {
+    $category = (string) ($service['category'] ?? '');
+    $categoryCounts[$category] = ($categoryCounts[$category] ?? 0) + 1;
+}
 
 echo wp_json_encode([
     'ok' => true,
     'storeId' => (int) $row->id,
     'services' => count($services),
-    'samsungDisplayRows' => count($samsungRows),
+    'samsungManagedRows' => count($samsungRows),
+    'samsungCategoryCounts' => $categoryCounts,
     'missingSamsungPrices' => count($missingPrices),
     'backup' => $backupPath,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
