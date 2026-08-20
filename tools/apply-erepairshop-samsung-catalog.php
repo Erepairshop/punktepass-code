@@ -78,6 +78,7 @@ $samsungRows = array_values(array_filter($services, static function (array $serv
             'Akku Original',
             'Ladebuchse Austausch',
             'Backcover/Rückseite Austausch',
+            'Hauptkamera Austausch',
         ], true);
 }));
 $missingPrices = array_values(array_filter($samsungRows, static fn(array $service): bool => empty($service['price'])));
