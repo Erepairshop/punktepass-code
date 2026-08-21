@@ -55,6 +55,11 @@ function extractServiceModel(name) {
     .replace(/\s+Displaytausch\s*\(Original\).*$/i, ''));
 }
 
+function isHuaweiDisplay(service) {
+  return service.category === 'Displaytausch Original' &&
+    /^(?:Huawei|Honor)\s+/i.test(service.name || '');
+}
+
 function maxVariantPrice(product) {
   return Math.max(0, ...(product.variants || [])
     .map(variant => Number.parseFloat(variant.price))
@@ -130,9 +135,7 @@ async function main() {
   }
 
   if (candidates.size !== 82) throw new Error(`Expected 82 Huawei/Honor models, got ${candidates.size}`);
-  const currentRows = (config.services || []).filter(service =>
-    service.category === 'Displaytausch Original' && /^Huawei\s+/i.test(service.name || '')
-  );
+  const currentRows = (config.services || []).filter(isHuaweiDisplay);
   const generated = [...candidates.values()].map(item => ({
     name: `Huawei ${item.model} Displaytausch (Original)`,
     category: 'Displaytausch Original',
@@ -147,12 +150,10 @@ async function main() {
   });
 
   const services = config.services || [];
-  const firstIndex = services.findIndex(service => service.category === 'Displaytausch Original' && /^Huawei\s+/i.test(service.name || ''));
+  const firstIndex = services.findIndex(isHuaweiDisplay);
   const insertIndex = services.slice(0, firstIndex < 0 ? services.length : firstIndex)
-    .filter(service => !(service.category === 'Displaytausch Original' && /^Huawei\s+/i.test(service.name || ''))).length;
-  const updatedServices = services.filter(service =>
-    !(service.category === 'Displaytausch Original' && /^Huawei\s+/i.test(service.name || ''))
-  );
+    .filter(service => !isHuaweiDisplay(service)).length;
+  const updatedServices = services.filter(service => !isHuaweiDisplay(service));
   updatedServices.splice(insertIndex, 0, ...generated);
 
   const audit = [...candidates.values()]

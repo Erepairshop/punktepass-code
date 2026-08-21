@@ -56,8 +56,12 @@ function extractDisplayModel(name) {
     .replace(/\s+Displaytausch\s*\(Original\).*$/i, ''));
 }
 
+function isHuaweiName(name) {
+  return /^(?:Huawei|Honor)\s+/i.test(name || '');
+}
+
 function isHuaweiTarget(service) {
-  return TARGETS.has(service.category || '') && /^Huawei\s+/i.test(service.name || '');
+  return TARGETS.has(service.category || '') && isHuaweiName(service.name);
 }
 
 async function fetchCurrentConfig() {
@@ -135,7 +139,7 @@ async function main() {
       oldServiceCount: services.length,
       newServiceCount: updatedServices.length,
       categories: Object.fromEntries([...TARGETS.keys()].map(category => [category, {
-        oldRows: services.filter(service => service.category === category && /^Huawei\s+/i.test(service.name || '')).length,
+        oldRows: services.filter(service => service.category === category && isHuaweiName(service.name)).length,
         newRows: generatedByCategory.get(category).length,
         priceCounts: Object.fromEntries([...new Set(generatedByCategory.get(category).map(row => row.price))]
           .map(price => [price, generatedByCategory.get(category).filter(row => row.price === price).length]))
