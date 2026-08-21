@@ -959,7 +959,7 @@
             var map = {
                 iPhone: ['iphone'],
                 Samsung: ['samsung', 'galaxy'],
-                Huawei: ['huawei'],
+                Huawei: ['huawei', 'honor'],
                 Xiaomi: ['xiaomi', 'redmi', 'poco']
             };
             return map[normalized] || [normalized.toLowerCase()];
@@ -1019,8 +1019,34 @@
             return order.filter(function(series) { return seen[series]; });
         }
 
+        function huaweiSeriesForModel(model) {
+            var value = (model || '').replace(/^Huawei\s+/i, '').trim();
+            if (/^Honor\s/i.test(value)) return 'Honor';
+            if (/^P Smart\b/i.test(value)) return 'P Smart';
+            if (/^Pura\s/i.test(value)) return 'Pura';
+            if (/^P\d/i.test(value)) return 'P';
+            if (/^Mate\s/i.test(value)) return 'Mate';
+            if (/^Nova\s/i.test(value)) return 'Nova';
+            if (/^Y\d/i.test(value)) return 'Y';
+            if (/^Enjoy\s/i.test(value)) return 'Enjoy';
+            return 'Other';
+        }
+
+        function huaweiSeries(models) {
+            var order = ['Honor', 'P', 'P Smart', 'Mate', 'Nova', 'Pura', 'Y', 'Enjoy', 'Other'];
+            var seen = {};
+            for (var i = 0; i < models.length; i++) seen[huaweiSeriesForModel(models[i])] = true;
+            return order.filter(function(series) { return seen[series]; });
+        }
+
+        function seriesForModel(model, brand) {
+            if (brand === 'Samsung') return samsungSeriesForModel(model);
+            if (brand === 'Huawei') return huaweiSeriesForModel(model);
+            return '';
+        }
+
         function seriesLabel(series) {
-            return /^[ASMJ]$/.test(series) ? series + '-Serie' : series;
+            return /^[ASMJPY]$/.test(series) ? series + '-Serie' : series;
         }
 
         function modelForForm(model, brand) {
@@ -1187,11 +1213,11 @@
                     modelsContainer.innerHTML = '';
                     return;
                 }
-                var availableSeries = brand === 'Samsung' ? samsungSeries(models) : [];
+                var availableSeries = brand === 'Samsung' ? samsungSeries(models) : brand === 'Huawei' ? huaweiSeries(models) : [];
                 var displayedModels = models;
                 if (selectedSeries) {
                     displayedModels = models.filter(function(model) {
-                        return samsungSeriesForModel(model) === selectedSeries;
+                        return seriesForModel(model, brand) === selectedSeries;
                     });
                 }
                 var listId = W + '-cat-model-list';
@@ -1380,7 +1406,7 @@
                     var searchData = rows[ri].getAttribute('data-search') || '';
                     var nameData = svc ? (svc.name || '').toLowerCase() : '';
                     var serviceModel = svc && selectedBrand ? extractModelName(svc, selectedBrand).toLowerCase() : '';
-                    var serviceSeries = svc && selectedBrand === 'Samsung' ? samsungSeriesForModel(extractModelName(svc, selectedBrand)) : '';
+                    var serviceSeries = svc && selectedBrand ? seriesForModel(extractModelName(svc, selectedBrand), selectedBrand) : '';
                     var match = !!svc &&
                         (!selectedBrand || serviceMatchesBrand(svc, selectedBrand)) &&
                         (!selectedSeries || serviceSeries === selectedSeries) &&
