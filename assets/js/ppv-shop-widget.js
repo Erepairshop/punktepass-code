@@ -1055,9 +1055,30 @@
             return order.filter(function(series) { return seen[series]; });
         }
 
+        function xiaomiSeriesForModel(model) {
+            var value = (model || '').replace(/^Xiaomi\s+/i, '').trim();
+            if (/^Redmi Note\s/i.test(value)) return 'Redmi Note';
+            if (/^Redmi\s/i.test(value)) return 'Redmi';
+            if (/^Poco F/i.test(value)) return 'Poco F';
+            if (/^Poco X/i.test(value)) return 'Poco X';
+            if (/^Poco M/i.test(value)) return 'Poco M';
+            if (/^Poco C/i.test(value)) return 'Poco C';
+            if (/^(?:Poco|Pocophone)\s/i.test(value)) return 'Poco';
+            if (/^Mi\s/i.test(value)) return 'Mi';
+            return 'Xiaomi';
+        }
+
+        function xiaomiSeries(models) {
+            var order = ['Xiaomi', 'Mi', 'Redmi Note', 'Redmi', 'Poco F', 'Poco X', 'Poco M', 'Poco C', 'Poco'];
+            var seen = {};
+            for (var i = 0; i < models.length; i++) seen[xiaomiSeriesForModel(models[i])] = true;
+            return order.filter(function(series) { return seen[series]; });
+        }
+
         function seriesForModel(model, brand) {
             if (brand === 'Samsung') return samsungSeriesForModel(model);
             if (brand === 'Huawei') return huaweiSeriesForModel(model);
+            if (brand === 'Xiaomi') return xiaomiSeriesForModel(model);
             return '';
         }
 
@@ -1229,7 +1250,7 @@
                     modelsContainer.innerHTML = '';
                     return;
                 }
-                var availableSeries = brand === 'Samsung' ? samsungSeries(models) : brand === 'Huawei' ? huaweiSeries(models) : [];
+                var availableSeries = brand === 'Samsung' ? samsungSeries(models) : brand === 'Huawei' ? huaweiSeries(models) : brand === 'Xiaomi' ? xiaomiSeries(models) : [];
                 var displayedModels = models;
                 if (selectedSeries) {
                     displayedModels = models.filter(function(model) {
