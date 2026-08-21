@@ -1017,7 +1017,7 @@
 
         function samsungSeriesForModel(model) {
             var value = (model || '').replace(/^Samsung\s+/i, '').trim();
-            if (/^Galaxy A/i.test(value)) return 'A';
+            if (/^Galaxy A\d/i.test(value)) return 'A';
             if (/^Galaxy S\d/i.test(value)) return 'S';
             if (/^Galaxy Z Flip/i.test(value)) return 'Z Flip';
             if (/^Galaxy Z Fold/i.test(value)) return 'Z Fold';
