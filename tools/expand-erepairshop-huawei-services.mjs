@@ -1,7 +1,7 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
 const CONFIG_ENDPOINT = 'https://punktepass.de/wp-admin/admin-ajax.php';
-const EXPECTED_MODEL_COUNT = 138;
+const EXPECTED_MODEL_COUNT = 82;
 const TARGETS = new Map([
   ['Akku Original', { suffix: 'Akkutausch (Original)' }],
   ['Ladebuchse Austausch', { suffix: 'Ladebuchse Austausch' }]
@@ -91,7 +91,9 @@ function serviceRow(category, model) {
 async function main() {
   const outputArg = process.argv.indexOf('--output');
   const outputPath = outputArg >= 0 ? process.argv[outputArg + 1] : '';
-  const config = await fetchCurrentConfig();
+  const inputArg = process.argv.indexOf('--input');
+  const inputPath = inputArg >= 0 ? process.argv[inputArg + 1] : '';
+  const config = inputPath ? JSON.parse(await readFile(inputPath, 'utf8')) : await fetchCurrentConfig();
   const services = config.services || [];
   const models = [...new Set(services
     .filter(service => service.category === 'Displaytausch Original' && /^Huawei\s+/i.test(service.name || ''))
@@ -100,10 +102,6 @@ async function main() {
   if (models.length !== EXPECTED_MODEL_COUNT) {
     throw new Error(`Expected ${EXPECTED_MODEL_COUNT} Huawei/Honor display models, got ${models.length}`);
   }
-  for (const model of [...NEWER_MODELS.keys(), ...FOLDABLE_MODELS]) {
-    if (!models.includes(model)) throw new Error(`Pricing model is missing from display inventory: ${model}`);
-  }
-
   const generatedByCategory = new Map(
     [...TARGETS.keys()].map(category => [category, models.map(model => serviceRow(category, model))])
   );

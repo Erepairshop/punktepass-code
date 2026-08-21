@@ -130,7 +130,6 @@ async function main() {
   }
 
   if (candidates.size !== 82) throw new Error(`Expected 82 Huawei/Honor models, got ${candidates.size}`);
-  const sourceKeys = new Set(candidates.keys());
   const currentRows = (config.services || []).filter(service =>
     service.category === 'Displaytausch Original' && /^Huawei\s+/i.test(service.name || '')
   );
@@ -140,8 +139,6 @@ async function main() {
     price: `${roundCustomerPrice(item.purchasePrice)} EUR`,
     time: '1 Std'
   }));
-  const preserved = currentRows.filter(service => !sourceKeys.has(modelKey(extractServiceModel(service.name))));
-  generated.push(...preserved);
   generated.sort((left, right) => {
     const leftModel = extractServiceModel(left.name);
     const rightModel = extractServiceModel(right.name);
@@ -168,7 +165,7 @@ async function main() {
       sourceProducts: products.length,
       sourceModels: candidates.size,
       currentHuaweiRows: currentRows.length,
-      preservedExistingRows: preserved.length,
+      removedUnsupportedRows: currentRows.length - generated.length,
       generatedHuaweiRows: generated.length,
       qualityCounts: Object.fromEntries([...QUALITY_SCORE.keys()].map(quality => [quality, audit.filter(item => item.quality === quality).length])),
       missingPrices: generated.filter(service => !service.price).length,
