@@ -329,7 +329,8 @@
             'min-height:44px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}' +
         '.' + W + '-brand:hover{border-color:#cbd5e1;background:#f8fafc}' +
         '.' + W + '-brand.sel{border-color:' + config.color + ';background:' + config.color + '10;color:' + config.color + '}' +
-        '.' + W + '-brand-icon{font-size:26px}' +
+        '.' + W + '-brand-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:currentColor}' +
+        '.' + W + '-brand-icon svg{display:block;width:100%;height:100%}' +
 
         /* Model input */
         '.' + W + '-input{width:100%;padding:14px 16px;border:2px solid #e2e8f0;border-radius:12px;font-size:16px;' +
@@ -463,7 +464,8 @@
         '.' + W + '-cat-brand-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;font-size:13px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;flex-shrink:0}' +
         '.' + W + '-cat-brand-btn:hover{border-color:' + config.color + ';color:' + config.color + '}' +
         '.' + W + '-cat-brand-btn.sel{background:' + config.color + ';color:#fff;border-color:' + config.color + '}' +
-        '.' + W + '-cat-brand-icon{font-size:15px;line-height:1}' +
+        '.' + W + '-cat-brand-icon{width:19px;height:19px;display:inline-flex;align-items:center;justify-content:center;line-height:1;color:currentColor}' +
+        '.' + W + '-cat-brand-icon svg{display:block;width:100%;height:100%}' +
 
         /* Active filter summary */
         '.' + W + '-cat-filter-status{display:none;align-items:center;justify-content:space-between;gap:10px;margin:8px 16px 4px;padding:9px 12px;background:' + config.color + '10;border-left:3px solid ' + config.color + ';font-size:12px;color:#334155}' +
@@ -636,6 +638,20 @@
     // ─── SVG icons ─────────────────────────────────────────
     var wrenchSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>';
     var sparkSVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/></svg>';
+    var brandIconSVGs = {
+        iphone: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M16.7 12.76c-.02-2.19 1.79-3.25 1.87-3.3a4.02 4.02 0 0 0-3.17-1.72c-1.33-.14-2.62.8-3.3.8-.7 0-1.75-.78-2.89-.76a4.2 4.2 0 0 0-3.53 2.15c-1.53 2.65-.39 6.54 1.08 8.68.73 1.04 1.58 2.2 2.72 2.16 1.11-.05 1.52-.7 2.85-.7 1.32 0 1.7.7 2.86.67 1.2-.02 1.95-1.04 2.65-2.1a8.7 8.7 0 0 0 1.21-2.47 3.8 3.8 0 0 1-2.35-3.41ZM14.53 6.33a3.86 3.86 0 0 0 .88-2.78 3.94 3.94 0 0 0-2.55 1.32 3.7 3.7 0 0 0-.91 2.68 3.25 3.25 0 0 0 2.58-1.22Z"/></svg>',
+        samsung: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><ellipse cx="12" cy="12" rx="9.5" ry="6.25"/><path d="M15.2 8.7h-4.5c-1.2 0-2 .58-2 1.45 0 .94.82 1.36 2.16 1.6l2.3.42c1.35.25 2.15.67 2.15 1.62 0 .9-.82 1.5-2.1 1.5H8.8"/></svg>',
+        huawei: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M11.3 3c-1.7.17-3.05 1.48-3.05 3.1 0 1.83 1.7 4.14 3.05 5.6V3Zm1.4 0v8.7c1.35-1.46 3.05-3.77 3.05-5.6 0-1.62-1.35-2.93-3.05-3.1ZM7.28 5.4c-1.6-.45-3.2.34-3.69 1.82-.54 1.72.42 4.35 1.34 6.1l4.14-1.35C8.2 10.2 6.7 7.7 7.28 5.4Zm9.44 0c.58 2.3-.92 4.8-1.79 6.57l4.14 1.35c.92-1.75 1.88-4.38 1.34-6.1-.48-1.48-2.09-2.27-3.69-1.82ZM3.37 9.1c-1.36-.05-2.52.89-2.66 2.17-.17 1.54 1.25 3.55 2.5 4.78l3.42-2.49C5.2 12.12 3.9 10.5 3.37 9.1Zm17.26 0c-.53 1.4-1.83 3.02-3.26 4.46l3.42 2.49c1.25-1.23 2.67-3.24 2.5-4.78-.14-1.28-1.3-2.22-2.66-2.17ZM4 17l3.3-2.4c.83 1.25 1.48 2.35 1.85 3.4H5.2A3.8 3.8 0 0 1 4 17Zm16 0-3.3-2.4c-.83 1.25-1.48 2.35-1.85 3.4h3.95A3.8 3.8 0 0 0 20 17ZM9.8 14.2h4.4L12 20l-2.2-5.8Z"/></svg>',
+        xiaomi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M7.2 15.8V9.2h5.1c1.55 0 2.5.92 2.5 2.42v4.18M11.2 15.8v-6.6M17.3 9.2v6.6"/></svg>'
+    };
+
+    function brandIconSVG(brand, fallback) {
+        var key = String(brand || '').toLowerCase();
+        if (key === 'apple') key = 'iphone';
+        return brandIconSVGs[key] || String(fallback || '+').replace(/[&<>"']/g, function(character) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character];
+        });
+    }
 
     function buildFooter() {
         return lang.powered + ' <a href="' + BASE_URL + '/formular/partner" target="_blank" rel="noopener">PunktePass</a>';
@@ -1093,7 +1109,7 @@
                     blabel = normalizeBrand(blabel);
                     if (bmodels.length > 0) brandModelsMap[bid] = bmodels;
                     html += '<button type="button" class="' + W + '-cat-brand-btn" data-brand="' + escH(bid) + '">' +
-                        (bicon ? '<span class="' + W + '-cat-brand-icon">' + escH(bicon) + '</span>' : '') +
+                        '<span class="' + W + '-cat-brand-icon">' + brandIconSVG(bid, bicon) + '</span>' +
                         escH(blabel) + '</button>';
                 }
                 html += '</div>';
@@ -1484,12 +1500,11 @@
 
     // ─── AI MODE ───────────────────────────────────────────
     if (config.mode === 'ai') {
-        var svgApple = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>';
         var defaultBrands = [
-            { id: 'Apple',   icon: svgApple, label: 'Apple' },
-            { id: 'Samsung', icon: 'S', label: 'Samsung' },
-            { id: 'Huawei',  icon: 'H', label: 'Huawei' },
-            { id: 'Xiaomi',  icon: 'X', label: 'Xiaomi' },
+            { id: 'Apple',   icon: brandIconSVG('iPhone'), label: 'iPhone' },
+            { id: 'Samsung', icon: brandIconSVG('Samsung'), label: 'Samsung' },
+            { id: 'Huawei',  icon: brandIconSVG('Huawei'), label: 'Huawei' },
+            { id: 'Xiaomi',  icon: brandIconSVG('Xiaomi'), label: 'Xiaomi' },
             { id: 'Google',  icon: 'G', label: 'Google' },
             { id: 'Other',   icon: '+', label: lang.step1_model }
         ];
@@ -1522,16 +1537,16 @@
                         storeConfig = data.data;
                         // Override brands if custom ones provided
                         if (storeConfig.brands && storeConfig.brands.length > 0) {
-                            var brandIcons = {Apple:svgApple,Samsung:'S',Huawei:'H',Xiaomi:'X',Google:'G',Sony:'S',OnePlus:'1+',LG:'LG',Nokia:'N'};
                             brandModelsMap = {};
                             var newBrands = [];
                             for (var i = 0; i < storeConfig.brands.length; i++) {
                                 var b = storeConfig.brands[i];
                                 var bid = typeof b === 'string' ? b : (b.id || b.label || b);
                                 var blabel = typeof b === 'string' ? b : (b.label || b.id || b);
-                                var bicon = (typeof b === 'object' && b.icon) ? b.icon : (brandIcons[bid] || '+');
+                                var customIcon = (typeof b === 'object' && b.icon) ? b.icon : '+';
+                                var bicon = brandIconSVG(bid, customIcon);
                                 var bmodels = (typeof b === 'object' && b.models) ? b.models : [];
-                                newBrands.push({ id: bid, icon: bicon, label: blabel });
+                                newBrands.push({ id: bid, icon: bicon, label: normalizeBrand(blabel) });
                                 if (bmodels.length > 0) brandModelsMap[bid] = bmodels;
                             }
                             // Always add "Other" at the end
