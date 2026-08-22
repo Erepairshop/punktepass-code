@@ -8,12 +8,19 @@
 
 if (!defined('ABSPATH')) exit;
 
+require_once __DIR__ . '/traits/trait-ppv-password-reset.php';
+
 class PPV_Login {
+    use PPV_Password_Reset_Trait;
     
     /** ============================================================
      * 🔹 Hooks
      * ============================================================ */
     public static function hooks() {
+        // Standalone password reset pages. Direct URI matching also works when
+        // no WordPress page or rewrite rule exists for these routes.
+        add_action('template_redirect', [__CLASS__, 'intercept_password_reset_page'], 1);
+
         // Standalone: intercept login page before WP theme renders
         add_action('template_redirect', [__CLASS__, 'check_already_logged_in'], 1);
         add_action('template_redirect', [__CLASS__, 'intercept_login_page'], 2);
@@ -452,7 +459,7 @@ public static function render_landing_page($atts) {
                                     <input type="checkbox" name="remember" id="ppv-remember" checked>
                                     <span><?php echo PPV_Lang::t('login_remember_me'); ?></span>
                                 </label>
-                                <a href="/passwort-vergessen" class="lo-forgot"><?php echo PPV_Lang::t('login_forgot_password'); ?></a>
+                                <a href="<?php echo esc_url(add_query_arg('lang', self::get_current_lang(), home_url('/passwort-vergessen'))); ?>" class="lo-forgot"><?php echo PPV_Lang::t('login_forgot_password'); ?></a>
                             </div>
                             <button type="submit" class="lo-submit" id="ppv-submit-btn">
                                 <span class="ppv-btn-text"><?php echo PPV_Lang::t('login_button'); ?></span>
