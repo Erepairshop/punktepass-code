@@ -118,7 +118,12 @@ trait PPV_Password_Reset_Trait {
         return 'ppv_pw_throttle_' . hash('sha256', strtolower($email));
     }
 
-    private static function request_password_reset($email, $lang) {
+    private static function password_reset_context($value = null) {
+        if ($value === null) $value = $_REQUEST['context'] ?? '';
+        return sanitize_key(wp_unslash((string)$value)) === 'formular' ? 'formular' : '';
+    }
+
+    private static function request_password_reset($email, $lang, $context = '') {
         if (!is_email($email) || !self::password_reset_account_exists($email)) return;
         $email_key = self::password_reset_email_key($email);
         $throttle_key = self::password_reset_throttle_key($email);
@@ -136,12 +141,13 @@ trait PPV_Password_Reset_Trait {
         if (is_string($previous_hash) && preg_match('/^[a-f0-9]{64}$/', $previous_hash)) {
             delete_transient('ppv_pw_reset_' . $previous_hash);
         }
-        set_transient(self::password_reset_transient_key($token), ['email' => strtolower($email), 'lang' => $lang], HOUR_IN_SECONDS);
+        $context = self::password_reset_context($context);
+        set_transient(self::password_reset_transient_key($token), ['email' => strtolower($email), 'lang' => $lang, 'context' => $context], HOUR_IN_SECONDS);
         set_transient($email_key, $token_hash, HOUR_IN_SECONDS);
         set_transient($throttle_key, 1, MINUTE_IN_SECONDS);
 
         $copy = self::password_reset_copy($lang);
-        $reset_url = add_query_arg(['token' => $token, 'email' => $email, 'lang' => $lang], home_url('/passwort-zuruecksetzen'));
+        $reset_url = add_query_arg(['token' => $token, 'email' => $email, 'lang' => $lang, 'context' => $context], home_url('/passwort-zuruecksetzen'));
         $message = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#172033">'
             . '<h2 style="color:#165ddb">' . esc_html($copy['mail_heading']) . '</h2>'
             . '<p>' . esc_html($copy['mail_text']) . '</p>'
@@ -214,31 +220,34 @@ trait PPV_Password_Reset_Trait {
 
     private static function render_password_request_page() {
         $lang = self::get_current_lang();
+        $context = self::password_reset_context();
         $copy = self::password_reset_copy($lang);
         $message = '';
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $nonce = sanitize_text_field(wp_unslash($_POST['nonce'] ?? ''));
             if (wp_verify_nonce($nonce, 'ppv_password_reset_request')) {
                 $email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
-                if (self::password_reset_ip_allowed()) self::request_password_reset($email, $lang);
+                if (self::password_reset_ip_allowed()) self::request_password_reset($email, $lang, $context);
                 $message = $copy['generic'];
             }
         }
-        self::render_password_page_shell($lang, $copy['request_title'], function() use ($copy, $message) {
+        self::render_password_page_shell($lang, $copy['request_title'], function() use ($copy, $message, $context) {
             if ($message) {
                 echo '<div class="pr-alert pr-success">' . esc_html($message) . '</div>';
                 return;
             }
             echo '<p class="pr-intro">' . esc_html($copy['request_intro']) . '</p><form method="post" class="pr-form">';
             wp_nonce_field('ppv_password_reset_request', 'nonce');
+            echo '<input type="hidden" name="context" value="' . esc_attr($context) . '">';
             echo '<label for="pr-email">' . esc_html($copy['email']) . '</label>';
             echo '<input id="pr-email" type="email" name="email" autocomplete="email" required>';
             echo '<button type="submit">' . esc_html($copy['send']) . '</button></form>';
-        }, $copy['back']);
+        }, $copy['back'], $context);
     }
 
     private static function render_password_reset_page() {
         $lang = self::get_current_lang();
+        $context = self::password_reset_context();
         $copy = self::password_reset_copy($lang);
         $token = sanitize_text_field(wp_unslash($_REQUEST['token'] ?? ''));
         $email = sanitize_email(wp_unslash($_REQUEST['email'] ?? ''));
@@ -264,26 +273,26 @@ trait PPV_Password_Reset_Trait {
             $error = $copy['invalid'];
         }
 
-        self::render_password_page_shell($lang, $copy['reset_title'], function() use ($copy, $token, $email, $valid, $error, $changed) {
+        self::render_password_page_shell($lang, $copy['reset_title'], function() use ($copy, $token, $email, $valid, $error, $changed, $context) {
             if ($changed) {
                 echo '<div class="pr-alert pr-success">' . esc_html($copy['changed']) . '</div>';
                 return;
             }
             if ($error) echo '<div class="pr-alert pr-error">' . esc_html($error) . '</div>';
             if (!$valid) {
-                echo '<a class="pr-button" href="' . esc_url(add_query_arg('lang', self::get_current_lang(), home_url('/passwort-vergessen'))) . '">' . esc_html($copy['request_title']) . '</a>';
+                echo '<a class="pr-button" href="' . esc_url(add_query_arg(['lang' => self::get_current_lang(), 'context' => $context], home_url('/passwort-vergessen'))) . '">' . esc_html($copy['request_title']) . '</a>';
                 return;
             }
             echo '<form method="post" class="pr-form">';
             wp_nonce_field('ppv_password_reset_apply', 'nonce');
-            echo '<input type="hidden" name="token" value="' . esc_attr($token) . '"><input type="hidden" name="email" value="' . esc_attr($email) . '">';
+            echo '<input type="hidden" name="token" value="' . esc_attr($token) . '"><input type="hidden" name="email" value="' . esc_attr($email) . '"><input type="hidden" name="context" value="' . esc_attr($context) . '">';
             echo '<label for="pr-password">' . esc_html($copy['password']) . '</label><input id="pr-password" type="password" name="password" minlength="10" autocomplete="new-password" required>';
             echo '<label for="pr-password-confirm">' . esc_html($copy['confirm']) . '</label><input id="pr-password-confirm" type="password" name="password_confirm" minlength="10" autocomplete="new-password" required>';
             echo '<button type="submit">' . esc_html($copy['save']) . '</button></form>';
-        }, $copy['back']);
+        }, $copy['back'], $context);
     }
 
-    private static function render_password_page_shell($lang, $title, $content, $back_label) {
+    private static function render_password_page_shell($lang, $title, $content, $back_label, $context = '') {
         status_header(200);
         nocache_headers();
         header('Content-Type: text/html; charset=utf-8');
@@ -302,7 +311,8 @@ trait PPV_Password_Reset_Trait {
     <a class="pr-brand" href="<?php echo esc_url(home_url('/')); ?>"><img src="<?php echo esc_url(PPV_PLUGIN_URL); ?>assets/img/logo.webp?v=2" alt=""><span>PunktePass</span></a>
     <h1><?php echo esc_html($title); ?></h1>
     <?php call_user_func($content); ?>
-    <a class="pr-back" href="<?php echo esc_url(add_query_arg('lang', $lang, home_url('/login'))); ?>"><?php echo esc_html($back_label); ?></a>
+    <?php $back_url = self::password_reset_context($context) === 'formular' ? home_url('/formular/admin/login') : home_url('/login'); ?>
+    <a class="pr-back" href="<?php echo esc_url(add_query_arg('lang', $lang, $back_url)); ?>"><?php echo esc_html($back_label); ?></a>
 </main></body></html><?php
     }
 }

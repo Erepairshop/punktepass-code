@@ -52,6 +52,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .field input{width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;color:#1f2937;background:#fafafa;transition:border-color .2s,box-shadow .2s;outline:none}
 .field input:focus{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.15);background:#fff}
 .field input::placeholder{color:#9ca3af}
+.forgot-link{display:block;margin:-6px 0 14px;text-align:right;color:#667eea;text-decoration:none;font-size:13px;font-weight:600}
+.forgot-link:hover{text-decoration:underline}
 .btn-login{width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .2s,transform .15s;margin-top:4px}
 .btn-login:hover{opacity:.92}
 .btn-login:active{transform:scale(.98)}
@@ -120,6 +122,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
                 <label for="login-pass"><?php echo esc_html(PPV_Lang::t('repair_login_password')); ?></label>
                 <input type="password" id="login-pass" required placeholder="<?php echo esc_attr(PPV_Lang::t('repair_login_password_placeholder')); ?>" autocomplete="current-password">
             </div>
+            <a class="forgot-link" href="<?php echo esc_url(add_query_arg(['lang' => $lang, 'context' => 'formular'], home_url('/passwort-vergessen'))); ?>"><?php echo esc_html(PPV_Lang::t('login_forgot_password')); ?></a>
             <button type="submit" class="btn-login" id="login-btn">
                 <i class="ri-loader-4-line ri-spin spinner"></i>
                 <span class="label"><?php echo esc_html(PPV_Lang::t('repair_login_submit')); ?></span>
