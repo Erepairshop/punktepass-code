@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBay paid-order to PunktePass invoice bridge.
  *
@@ -14,6 +15,7 @@ final class PPV_Ebay_Invoice {
     const CONFIG_FILE = '/etc/punktepass/ebay-invoice.env';
     const API_BASE = 'https://api.ebay.com';
     const TABLE_SUFFIX = 'ppv_ebay_orders';
+    const GROUP_WINDOW_SECONDS = 900;
 
     private static $config = null;
 
@@ -44,6 +46,25 @@ final class PPV_Ebay_Invoice {
         if ($wpdb->last_error) {
             throw new RuntimeException('eBay queue schema failed: ' . $wpdb->last_error);
         }
+        $queue_columns = $wpdb->get_col("SHOW COLUMNS FROM {$table}", 0);
+        $queue_additions = [
+            'cancellation_status' => "ALTER TABLE {$table} ADD COLUMN cancellation_status varchar(32) NULL AFTER email_sent_at",
+            'cancellation_state' => "ALTER TABLE {$table} ADD COLUMN cancellation_state varchar(32) NULL AFTER cancellation_status",
+            'cancellation_checked_at' => "ALTER TABLE {$table} ADD COLUMN cancellation_checked_at datetime NULL AFTER cancellation_state",
+            'cancelled_at' => "ALTER TABLE {$table} ADD COLUMN cancelled_at datetime NULL AFTER cancellation_checked_at",
+            'cancellation_invoice_id' => "ALTER TABLE {$table} ADD COLUMN cancellation_invoice_id bigint(20) unsigned NULL AFTER cancelled_at",
+            'cancellation_email_sent_at' => "ALTER TABLE {$table} ADD COLUMN cancellation_email_sent_at datetime NULL AFTER cancellation_invoice_id",
+            'cancellation_attempts' => "ALTER TABLE {$table} ADD COLUMN cancellation_attempts int(10) unsigned NOT NULL DEFAULT 0 AFTER cancellation_email_sent_at",
+            'cancellation_last_error' => "ALTER TABLE {$table} ADD COLUMN cancellation_last_error text NULL AFTER cancellation_attempts",
+        ];
+        foreach ($queue_additions as $column => $sql) {
+            if (!in_array($column, $queue_columns, true)) $wpdb->query($sql);
+        }
+        $queue_indexes = $wpdb->get_col("SHOW INDEX FROM {$table}", 2);
+        if (!in_array('idx_cancellation_invoice', $queue_indexes, true)) {
+            $wpdb->query("ALTER TABLE {$table} ADD KEY idx_cancellation_invoice (cancellation_invoice_id)");
+        }
+        if ($wpdb->last_error) throw new RuntimeException('eBay cancellation schema failed: ' . $wpdb->last_error);
 
         $invoice_table = $wpdb->prefix . 'ppv_repair_invoices';
         $columns = $wpdb->get_col("SHOW COLUMNS FROM {$invoice_table}", 0);
@@ -142,6 +163,7 @@ final class PPV_Ebay_Invoice {
             $body = self::api_get($url, $token);
             foreach (($body['orders'] ?? []) as $order) {
                 if (($order['orderPaymentStatus'] ?? '') !== 'PAID') continue;
+                if (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED') continue;
                 $created = strtotime($order['creationDate'] ?? '');
                 if (!$created || $created < $start_ts || empty($order['orderId'])) continue;
                 self::enqueue_order($order['orderId'], null, self::mysql_time($order['creationDate']));
@@ -150,6 +172,30 @@ final class PPV_Ebay_Invoice {
             $url = !empty($body['next']) ? (string)$body['next'] : null;
         }
         return $queued;
+    }
+
+    /**
+     * Rendelések lekérése a belső eBay Cockpit számára.
+     * A hozzáférési tokent nem adja át a megjelenítési rétegnek.
+     */
+    public static function cockpit_orders($days = 120) {
+        $days = max(1, min(365, (int)$days));
+        $start_ts = time() - ($days * DAY_IN_SECONDS);
+        $token = self::access_token();
+        $filter = 'creationdate:[' . gmdate('Y-m-d\TH:i:s.000\Z', $start_ts) . '..' . gmdate('Y-m-d\TH:i:s.000\Z') . ']';
+        $url = self::API_BASE . '/sell/fulfillment/v1/order?' . http_build_query([
+            'limit' => 100,
+            'filter' => $filter,
+        ]);
+        $orders = [];
+        for ($page = 0; $url && $page < 30; $page++) {
+            $body = self::api_get($url, $token);
+            foreach (($body['orders'] ?? []) as $order) {
+                if (!empty($order['orderId'])) $orders[] = $order;
+            }
+            $url = !empty($body['next']) ? (string)$body['next'] : null;
+        }
+        return $orders;
     }
 
     public static function process_queue($limit = 20) {
@@ -169,6 +215,54 @@ final class PPV_Ebay_Invoice {
                 $result['completed']++;
             } catch (Throwable $e) {
                 self::mark_retry($row->id, $e->getMessage());
+                $result['retry']++;
+            }
+        }
+        return $result;
+    }
+
+    public static function process_cancellations($limit = 100, $dry_run = false) {
+        global $wpdb;
+        self::install_schema();
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$table}
+             WHERE status='completed' AND invoice_id IS NOT NULL
+               AND (cancellation_status IS NULL OR cancellation_status IN ('retry','awaiting_refund','detected','invoice_created'))
+               AND cancellation_attempts < 30
+             ORDER BY id ASC LIMIT %d", max(1, (int)$limit)
+        ));
+        $result = ['checked' => 0, 'cancelled' => 0, 'awaiting_refund' => 0, 'completed' => 0, 'retry' => 0, 'dry_run' => (bool)$dry_run];
+        foreach ($rows as $row) {
+            $result['checked']++;
+            try {
+                $order = self::get_order($row->order_id);
+                $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
+                if ($state !== 'CANCELED') {
+                    if (!$dry_run) $wpdb->update($table, [
+                        'cancellation_state' => $state,
+                        'cancellation_checked_at' => current_time('mysql'),
+                        'cancellation_last_error' => null,
+                    ], ['id' => $row->id]);
+                    continue;
+                }
+                $result['cancelled']++;
+                if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED') {
+                    $result['awaiting_refund']++;
+                    if (!$dry_run) $wpdb->update($table, [
+                        'cancellation_status' => 'awaiting_refund',
+                        'cancellation_state' => 'CANCELED',
+                        'cancellation_checked_at' => current_time('mysql'),
+                        'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
+                        'cancellation_last_error' => null,
+                    ], ['id' => $row->id]);
+                    continue;
+                }
+                if ($dry_run) continue;
+                self::process_cancelled_order($row, $order);
+                $result['completed']++;
+            } catch (Throwable $e) {
+                if (!$dry_run) self::mark_cancellation_retry($row->id, $e->getMessage());
                 $result['retry']++;
             }
         }
@@ -352,7 +446,9 @@ final class PPV_Ebay_Invoice {
     private static function process_order_row($row) {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_SUFFIX;
-        $lock_name = 'ppv_ebay_' . md5($row->order_id);
+        // A single lock also protects multi-order invoice grouping if the worker
+        // is ever started twice outside the systemd flock.
+        $lock_name = 'ppv_ebay_invoice_group';
         if ((int)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,10)', $lock_name)) !== 1) {
             throw new RuntimeException('Order lock timeout.');
         }
@@ -360,6 +456,18 @@ final class PPV_Ebay_Invoice {
             $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
             if (!$fresh || $fresh->status === 'completed') return;
             $order = self::get_order($fresh->order_id);
+            if (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED') {
+                $wpdb->update($table, [
+                    'status' => 'cancelled_before_invoice',
+                    'cancellation_status' => 'not_required',
+                    'cancellation_state' => 'CANCELED',
+                    'cancellation_checked_at' => current_time('mysql'),
+                    'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
+                    'last_error' => null,
+                    'updated_at' => current_time('mysql'),
+                ], ['id' => $fresh->id]);
+                return;
+            }
             if (($order['orderPaymentStatus'] ?? '') !== 'PAID') {
                 throw new RuntimeException('Order payment is not cleared.');
             }
@@ -368,36 +476,115 @@ final class PPV_Ebay_Invoice {
             if ($data['customer_email'] === '') throw new RuntimeException('Buyer email is not available yet.');
 
             $invoice_id = (int)$fresh->invoice_id;
+            $members = [['row' => $fresh, 'data' => $data]];
             if (!$invoice_id) {
-                $invoice_id = self::create_invoice($fresh, $data);
-                $wpdb->update($table, [
-                    'invoice_id' => $invoice_id,
-                    'status' => 'invoice_created',
-                    'last_error' => null,
-                    'updated_at' => current_time('mysql'),
-                ], ['id' => $fresh->id]);
+                $members = self::collect_invoice_group($fresh, $data);
+                $combined = self::combine_invoice_data($members);
+                $invoice_id = self::create_invoice($members, $combined);
+                foreach ($members as $member) {
+                    $wpdb->update($table, [
+                        'invoice_id' => $invoice_id,
+                        'status' => 'invoice_created',
+                        'last_error' => null,
+                        'updated_at' => current_time('mysql'),
+                    ], ['id' => $member['row']->id]);
+                }
             }
 
-            $wpdb->update($table, [
-                'status' => 'email_sending',
-                'updated_at' => current_time('mysql'),
-            ], ['id' => $fresh->id]);
+            foreach ($members as $member) {
+                $wpdb->update($table, [
+                    'status' => 'email_sending',
+                    'updated_at' => current_time('mysql'),
+                ], ['id' => $member['row']->id]);
+            }
             self::send_invoice($invoice_id);
-            $wpdb->update($table, [
-                'status' => 'completed',
-                'email_sent_at' => current_time('mysql'),
-                'last_error' => null,
-                'updated_at' => current_time('mysql'),
-            ], ['id' => $fresh->id]);
+            foreach ($members as $member) {
+                $wpdb->update($table, [
+                    'status' => 'completed',
+                    'email_sent_at' => current_time('mysql'),
+                    'last_error' => null,
+                    'updated_at' => current_time('mysql'),
+                ], ['id' => $member['row']->id]);
+            }
         } finally {
             $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock_name));
         }
     }
 
-    private static function create_invoice($queue_row, array $data) {
+    private static function collect_invoice_group($primary_row, array $primary_data) {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $members = [['row' => $primary_row, 'data' => $primary_data]];
+        $primary_time = strtotime($primary_data['created_at'] ?? '');
+        if (!$primary_time) return $members;
+        $identity = self::invoice_identity($primary_data);
+        $candidates = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$table}
+             WHERE id<>%d AND invoice_id IS NULL
+               AND status IN ('pending','retry') AND attempts < 30
+             ORDER BY id ASC LIMIT %d",
+            (int)$primary_row->id, 100
+        ));
+        foreach ($candidates as $candidate) {
+            try {
+                $order = self::get_order($candidate->order_id);
+                if (($order['orderPaymentStatus'] ?? '') !== 'PAID') continue;
+                if (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED') continue;
+                $data = self::invoice_data($order);
+                $created = strtotime($data['created_at'] ?? '');
+                if (!$created || abs($created - $primary_time) > self::GROUP_WINDOW_SECONDS) continue;
+                if ($data['currency'] !== 'EUR' || $data['customer_email'] === '') continue;
+                if (self::invoice_identity($data) !== $identity) continue;
+                $members[] = ['row' => $candidate, 'data' => $data];
+            } catch (Throwable $e) {
+                // A broken unrelated candidate must not block the current order.
+                continue;
+            }
+        }
+        usort($members, function($a, $b) {
+            return strtotime($a['data']['created_at']) <=> strtotime($b['data']['created_at']);
+        });
+        return $members;
+    }
+
+    private static function invoice_identity(array $data) {
+        $fields = [
+            'customer_email', 'customer_name', 'customer_company',
+            'customer_address', 'customer_plz', 'customer_city', 'customer_country',
+        ];
+        $values = [];
+        foreach ($fields as $field) {
+            $value = preg_replace('/\s+/u', ' ', trim((string)($data[$field] ?? '')));
+            $values[] = mb_strtolower($value, 'UTF-8');
+        }
+        return hash('sha256', implode("\n", $values));
+    }
+
+    private static function combine_invoice_data(array $members) {
+        $combined = $members[0]['data'];
+        $combined['gross_total'] = 0.0;
+        $combined['net_total'] = 0.0;
+        $combined['vat_amount'] = 0.0;
+        $combined['line_items'] = [];
+        $combined['order_ids'] = [];
+        foreach ($members as $member) {
+            $combined['gross_total'] += (float)$member['data']['gross_total'];
+            $combined['net_total'] += (float)$member['data']['net_total'];
+            $combined['vat_amount'] += (float)$member['data']['vat_amount'];
+            $combined['line_items'] = array_merge($combined['line_items'], $member['data']['line_items']);
+            $combined['order_ids'][] = (string)$member['row']->order_id;
+        }
+        $combined['gross_total'] = round($combined['gross_total'], 2);
+        $combined['net_total'] = round($combined['net_total'], 2);
+        $combined['vat_amount'] = round($combined['vat_amount'], 2);
+        return $combined;
+    }
+
+    private static function create_invoice(array $members, array $data) {
         global $wpdb;
         $invoice_table = $wpdb->prefix . 'ppv_repair_invoices';
         $store_table = $wpdb->prefix . 'ppv_stores';
+        $queue_row = $members[0]['row'];
         $lock = 'ppv_invoice_store_' . self::STORE_ID;
         if ((int)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,10)', $lock)) !== 1) {
             throw new RuntimeException('Invoice number lock timeout.');
@@ -421,7 +608,9 @@ final class PPV_Ebay_Invoice {
             }
             $invoice_number = $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
             $created_at = self::mysql_time($data['created_at']);
-            $notes = 'eBay-Bestellung: ' . $queue_row->order_id . "\n" .
+            $order_ids = $data['order_ids'] ?? [$queue_row->order_id];
+            $order_label = count($order_ids) > 1 ? 'eBay-Bestellungen: ' : 'eBay-Bestellung: ';
+            $notes = $order_label . implode(', ', $order_ids) . "\n" .
                 'Bestell- und Zahlungsdatum: ' . date('d.m.Y', strtotime($created_at)) . "\n" .
                 'Leistungsmonat: ' . date('m/Y', strtotime($created_at));
             $inserted = $wpdb->insert($invoice_table, [
@@ -462,6 +651,150 @@ final class PPV_Ebay_Invoice {
         } finally {
             $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
         }
+    }
+
+    private static function process_cancelled_order($row, array $order) {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $lock_name = 'ppv_ebay_cancel_' . md5($row->order_id);
+        if ((int)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,10)', $lock_name)) !== 1) {
+            throw new RuntimeException('Cancellation lock timeout.');
+        }
+        try {
+            $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
+            if (!$fresh || $fresh->cancellation_status === 'completed' || $fresh->cancellation_status === 'email_sending') return;
+            $cancelled_at = self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null);
+            $shared_invoice_orders = (int)$wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table} WHERE invoice_id=%d",
+                (int)$fresh->invoice_id
+            ));
+            if ($shared_invoice_orders > 1) {
+                // A full automatic storno would incorrectly cancel the other
+                // orders on the shared invoice. Keep it for manual correction.
+                $wpdb->update($table, [
+                    'cancellation_status' => 'manual_review',
+                    'cancellation_state' => 'CANCELED',
+                    'cancellation_checked_at' => current_time('mysql'),
+                    'cancelled_at' => $cancelled_at,
+                    'cancellation_last_error' => 'Grouped invoice requires a partial correction.',
+                    'updated_at' => current_time('mysql'),
+                ], ['id' => $fresh->id]);
+                return;
+            }
+            $wpdb->update($table, [
+                'cancellation_status' => 'detected',
+                'cancellation_state' => 'CANCELED',
+                'cancellation_checked_at' => current_time('mysql'),
+                'cancelled_at' => $cancelled_at,
+                'cancellation_last_error' => null,
+            ], ['id' => $fresh->id]);
+
+            $storno_id = self::create_cancellation_invoice($fresh, $cancelled_at);
+            $wpdb->update($table, [
+                'cancellation_invoice_id' => $storno_id,
+                'cancellation_status' => 'invoice_created',
+                'cancellation_last_error' => null,
+            ], ['id' => $fresh->id]);
+            $wpdb->update($table, ['cancellation_status' => 'email_sending'], ['id' => $fresh->id]);
+            self::send_cancellation_invoice($storno_id, (int)$fresh->invoice_id);
+            $wpdb->update($table, [
+                'cancellation_status' => 'completed',
+                'cancellation_email_sent_at' => current_time('mysql'),
+                'cancellation_last_error' => null,
+                'updated_at' => current_time('mysql'),
+            ], ['id' => $fresh->id]);
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock_name));
+        }
+    }
+
+    private static function create_cancellation_invoice($queue_row, $cancelled_at) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_invoices';
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$table} WHERE store_id=%d AND external_source='ebay_storno' AND external_order_id=%s LIMIT 1",
+            self::STORE_ID, $queue_row->order_id
+        ));
+        if ($existing) return (int)$existing;
+        $original = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE id=%d AND store_id=%d LIMIT 1",
+            (int)$queue_row->invoice_id, self::STORE_ID
+        ));
+        if (!$original) throw new RuntimeException('Original invoice for cancellation is missing.');
+        $items = json_decode($original->line_items ?: '[]', true);
+        if (!is_array($items)) $items = [];
+        foreach ($items as &$item) $item['amount'] = -abs((float)($item['amount'] ?? 0));
+        unset($item);
+        $number = 'ST-' . $original->invoice_number;
+        $notes = 'Storniert die Rechnung ' . $original->invoice_number . ' vom ' . date('d.m.Y', strtotime($original->created_at)) . ".\n" .
+            'eBay-Bestellung: ' . $queue_row->order_id . ".\n" .
+            'Vollständige Aufhebung wegen Bestellstornierung.';
+        $inserted = $wpdb->insert($table, [
+            'store_id' => self::STORE_ID,
+            'repair_id' => null,
+            'invoice_number' => $number,
+            'doc_type' => 'storno',
+            'customer_name' => $original->customer_name,
+            'customer_email' => $original->customer_email,
+            'customer_phone' => $original->customer_phone,
+            'customer_company' => $original->customer_company,
+            'customer_address' => $original->customer_address,
+            'customer_plz' => $original->customer_plz,
+            'customer_city' => $original->customer_city,
+            'device_info' => 'eBay-Bestellung',
+            'description' => 'Vollständige Stornierung der ursprünglichen Rechnung',
+            'line_items' => wp_json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'subtotal' => -abs((float)$original->subtotal),
+            'discount_type' => 'none',
+            'discount_value' => 0,
+            'net_amount' => -abs((float)$original->net_amount),
+            'vat_rate' => $original->vat_rate,
+            'vat_amount' => -abs((float)$original->vat_amount),
+            'total' => -abs((float)$original->total),
+            'is_kleinunternehmer' => (int)$original->is_kleinunternehmer,
+            'is_differenzbesteuerung' => (int)$original->is_differenzbesteuerung,
+            'notes' => $notes,
+            'status' => 'sent',
+            'created_at' => $cancelled_at,
+            'paid_at' => null,
+            'payment_method' => 'ebay-refund',
+            'external_source' => 'ebay_storno',
+            'external_order_id' => $queue_row->order_id,
+        ]);
+        if (!$inserted) throw new RuntimeException('Cancellation invoice insert failed: ' . $wpdb->last_error);
+        return (int)$wpdb->insert_id;
+    }
+
+    private static function send_cancellation_invoice($invoice_id, $original_invoice_id) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_repair_invoices';
+        $invoice = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d AND store_id=%d", $invoice_id, self::STORE_ID));
+        $original = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d AND store_id=%d", $original_invoice_id, self::STORE_ID));
+        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d", self::STORE_ID));
+        if (!$invoice || !$original || !$store || !is_email($invoice->customer_email)) throw new RuntimeException('Cancellation email data is missing.');
+        if (class_exists('PPV_Lang')) { PPV_Lang::$active = 'de'; PPV_Lang::load('de'); }
+        if (!class_exists('PPV_Repair_Invoice')) require_once PPV_PLUGIN_DIR . 'includes/class-ppv-repair-invoice.php';
+        $method = new ReflectionMethod('PPV_Repair_Invoice', 'build_invoice_html');
+        $method->setAccessible(true);
+        $html = $method->invoke(null, $store, $invoice);
+        require_once PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php';
+        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml($html); $dompdf->setPaper('A4', 'portrait'); $dompdf->render();
+        $temp = wp_tempnam(sanitize_file_name($invoice->invoice_number) . '.pdf');
+        if (!$temp || file_put_contents($temp, $dompdf->output()) === false) throw new RuntimeException('Temporary cancellation PDF could not be created.');
+        try {
+            $mail = self::new_mailer();
+            $mail->setFrom('info@erepairshop.de', 'eRepairShop');
+            $mail->addReplyTo('info@erepairshop.de', 'eRepairShop');
+            $mail->addAddress($invoice->customer_email, $invoice->customer_name);
+            $mail->Subject = 'Ihre Stornorechnung ' . $invoice->invoice_number . ' von eRepairShop';
+            $mail->Body = "Guten Tag " . $invoice->customer_name . ",\n\n" .
+                "Ihre eBay-Bestellung wurde vollständig storniert. Im Anhang erhalten Sie die Stornorechnung " . $invoice->invoice_number .
+                " zur ursprünglichen Rechnung " . $original->invoice_number . ".\n\n" .
+                "Freundliche Grüße\neRepairShop\nErik Borota";
+            $mail->addAttachment($temp, sanitize_file_name($invoice->invoice_number) . '.pdf');
+            $mail->send();
+        } finally { @unlink($temp); }
     }
 
     private static function send_invoice($invoice_id) {
@@ -590,6 +923,7 @@ final class PPV_Ebay_Invoice {
             'customer_address' => $street,
             'customer_plz' => sanitize_text_field($address['postalCode'] ?? ''),
             'customer_city' => sanitize_text_field($address['city'] ?? ''),
+            'customer_country' => strtoupper(sanitize_text_field($address['countryCode'] ?? '')),
         ];
     }
 
@@ -671,6 +1005,16 @@ final class PPV_Ebay_Invoice {
         $wpdb->query($wpdb->prepare(
             "UPDATE {$table} SET status='retry',attempts=attempts+1,last_error=%s,updated_at=%s WHERE id=%d",
             mb_substr($safe, 0, 1000), current_time('mysql'), (int)$row_id
+        ));
+    }
+
+    private static function mark_cancellation_retry($row_id, $message) {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $safe = preg_replace('/[\r\n]+/', ' ', (string)$message);
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} SET cancellation_status='retry',cancellation_attempts=cancellation_attempts+1,cancellation_last_error=%s,cancellation_checked_at=%s,updated_at=%s WHERE id=%d",
+            mb_substr($safe, 0, 1000), current_time('mysql'), current_time('mysql'), (int)$row_id
         ));
     }
 

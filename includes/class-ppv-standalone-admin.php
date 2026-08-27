@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PunktePass Standalone Admin Panel
  *
@@ -366,6 +367,18 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/device-diagnostics') {
             require_once __DIR__ . '/admin/standalone/device-diagnostics.php';
             PPV_Standalone_DeviceDiagnostics::render();
+        } elseif ($path === '/admin/ebay-cockpit/packing') {
+            require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
+            PPV_Standalone_Ebay_Cockpit::handle_packing();
+        } elseif ($path === '/admin/ebay-cockpit/settings') {
+            require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
+            PPV_Standalone_Ebay_Cockpit::handle_settings();
+        } elseif ($path === '/admin/ebay-cockpit/sync') {
+            require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
+            PPV_Standalone_Ebay_Cockpit::handle_manual_sync();
+        } elseif ($path === '/admin/ebay-cockpit') {
+            require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
+            PPV_Standalone_Ebay_Cockpit::render();
         } elseif ($path === '/admin/dev-settings') {
             self::render_dev_settings();
         } else {
@@ -1341,7 +1354,7 @@ class PPV_Standalone_Admin {
     /**
      * Admin fejléc HTML
      */
-    private static function get_admin_header($current_page = 'dashboard') {
+    public static function get_admin_header($current_page = 'dashboard') {
         global $wpdb;
         $admin_email = $_SESSION['ppv_admin_email'] ?? 'Admin';
 
@@ -1608,10 +1621,13 @@ class PPV_Standalone_Admin {
         </head>
         <body>
             <header class="admin-header">
-                <div class="admin-logo">PunktePass Admin</div>
+                <div class="admin-logo">PunktePass Admin <span style="background:#00aa44;color:#fff;padding:3px 10px;border-radius:4px;font-size:11px;margin-left:10px;font-weight:700;letter-spacing:0.5px;">VPS · Leaseweb Frankfurt</span></div>
                 <nav class="admin-nav">
                     <a href="/admin/dashboard" class="<?php echo $current_page === 'dashboard' ? 'active' : ''; ?>">
                         <i class="ri-dashboard-line"></i> Vezérlőpult
+                    </a>
+                    <a href="/admin/ebay-cockpit" class="<?php echo $current_page === 'ebay-cockpit' ? 'active' : ''; ?>">
+                        <i class="ri-shopping-bag-3-line"></i> eBay Cockpit
                     </a>
                     <a href="/admin/handlers" class="<?php echo $current_page === 'handlers' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Handlerek
@@ -1692,7 +1708,7 @@ class PPV_Standalone_Admin {
     /**
      * Admin lábléc HTML
      */
-    private static function get_admin_footer() {
+    public static function get_admin_footer() {
         ?>
             </main>
         </body>

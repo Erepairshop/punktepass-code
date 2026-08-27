@@ -1,0 +1,17 @@
+[Unit]
+Description=PunktePass eBay Cockpit order sync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+ExecStart=/usr/bin/flock -n /run/lock/punktepass-ebay-cockpit.lock /usr/bin/php /var/www/punktepass.de/wp-content/plugins/punktepass/tools/ppv-ebay-invoice-worker.php --sync-cockpit
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadOnlyPaths=/var/www/punktepass.de
+ReadWritePaths=/var/lib/punktepass
+

@@ -1,0 +1,11 @@
+[Unit]
+Description=Frissítse az eBay Cockpitot tízpercenként
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+Persistent=true
+Unit=punktepass-ebay-cockpit.service
+
+[Install]
+WantedBy=timers.target

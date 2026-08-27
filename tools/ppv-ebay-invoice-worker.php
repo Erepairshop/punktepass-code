@@ -1,4 +1,5 @@
 <?php
+
 /** CLI worker for the eRepairShop eBay invoice bridge. */
 
 if (PHP_SAPI !== 'cli') {
@@ -13,6 +14,7 @@ if (!is_file($wp_load)) {
 }
 require_once $wp_load;
 require_once dirname(__DIR__) . '/includes/class-ppv-ebay-invoice.php';
+require_once dirname(__DIR__) . '/includes/admin/standalone/ebay-cockpit.php';
 
 $command = $argv[1] ?? '--run';
 try {
@@ -53,6 +55,19 @@ try {
             $queued = PPV_Ebay_Invoice::reconcile_orders();
             $processed = PPV_Ebay_Invoice::process_queue(20);
             echo wp_json_encode(['reconciled' => $queued, 'queue' => $processed]) . "\n";
+            break;
+        case '--cancellations':
+            echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(100, false)) . "\n";
+            break;
+        case '--cancellations-dry-run':
+            echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(100, true)) . "\n";
+            break;
+        case '--sync-cockpit':
+            echo wp_json_encode(PPV_Standalone_Ebay_Cockpit::sync_orders()) . "\n";
+            break;
+        case '--import-cockpit-costs':
+            PPV_Standalone_Ebay_Cockpit::install_schema();
+            echo wp_json_encode(PPV_Standalone_Ebay_Cockpit::import_cost_file()) . "\n";
             break;
         default:
             throw new InvalidArgumentException('Unknown command.');
