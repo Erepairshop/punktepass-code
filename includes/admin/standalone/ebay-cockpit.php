@@ -556,6 +556,7 @@ final class PPV_Standalone_Ebay_Cockpit {
 
     private static function status_label($order) {
         if ($order->cancellation_state === 'CANCELED') return 'Törölve';
+        if ($order->fulfillment_status === 'FULFILLED' && (int)$order->packed === 1) return 'Feladva, becsomagolva';
         if ($order->fulfillment_status === 'FULFILLED') return 'Feladva';
         if ((int)$order->packed === 1) return 'Becsomagolva';
         if ($order->payment_status === 'PAID') return 'Fizetve';

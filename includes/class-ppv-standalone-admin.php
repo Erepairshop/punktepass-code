@@ -379,6 +379,15 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/ebay-cockpit') {
             require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
             PPV_Standalone_Ebay_Cockpit::render();
+        } elseif ($path === '/admin/webshop-orders/packing') {
+            require_once __DIR__ . '/admin/standalone/webshop-orders.php';
+            PPV_Standalone_Webshop_Orders::handle_packing();
+        } elseif ($path === '/admin/webshop-orders/refresh') {
+            require_once __DIR__ . '/admin/standalone/webshop-orders.php';
+            PPV_Standalone_Webshop_Orders::handle_refresh();
+        } elseif ($path === '/admin/webshop-orders') {
+            require_once __DIR__ . '/admin/standalone/webshop-orders.php';
+            PPV_Standalone_Webshop_Orders::render();
         } elseif ($path === '/admin/dev-settings') {
             self::render_dev_settings();
         } else {
@@ -1628,6 +1637,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/ebay-cockpit" class="<?php echo $current_page === 'ebay-cockpit' ? 'active' : ''; ?>">
                         <i class="ri-shopping-bag-3-line"></i> eBay Cockpit
+                    </a>
+                    <a href="/admin/webshop-orders" class="<?php echo $current_page === 'webshop-orders' ? 'active' : ''; ?>">
+                        <i class="ri-store-3-line"></i> Webshop rendelések
                     </a>
                     <a href="/admin/handlers" class="<?php echo $current_page === 'handlers' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Handlerek

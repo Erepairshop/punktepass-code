@@ -1,0 +1,11 @@
+[Unit]
+Description=Frissítse a webshop rendeléseit ötpercenként
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=punktepass-webshop-orders.service
+
+[Install]
+WantedBy=timers.target
