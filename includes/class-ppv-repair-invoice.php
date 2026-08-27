@@ -1198,7 +1198,15 @@ class PPV_Repair_Invoice {
         // Load repair translations for PDF
         PPV_Lang::load_extra('ppv-repair-lang');
 
-        $color = esc_attr($store->repair_color ?: '#667eea');
+        $is_erepairshop = intval($store->id) === 9;
+        $brand_blue = $is_erepairshop ? '#165ddb' : esc_attr($store->repair_color ?: '#667eea');
+        $brand_orange = $is_erepairshop ? '#ef5b36' : $brand_blue;
+        $brand_ink = $is_erepairshop ? '#171918' : '#0f172a';
+        $brand_paper = $is_erepairshop ? '#f3f0e8' : '#f8fafc';
+        $brand_paper_light = $is_erepairshop ? '#fbfaf6' : '#ffffff';
+        $brand_muted = $is_erepairshop ? '#62665f' : '#64748b';
+        $brand_line = $is_erepairshop ? '#c9c6bb' : '#e2e8f0';
+        $color = $brand_blue;
         $company = esc_html($store->repair_company_name ?: $store->name);
         $owner = esc_html($store->repair_owner_name ?: '');
         $addr = esc_html($store->address ?: '');
@@ -1225,6 +1233,7 @@ class PPV_Repair_Invoice {
         $inv_date = date('d.m.Y', strtotime($invoice->created_at));
         $doc_type = $invoice->doc_type ?? 'rechnung';
         $is_angebot = ($doc_type === 'angebot');
+        $doc_accent = $is_angebot ? $brand_orange : $brand_blue;
         $doc_type_label = $is_angebot ? PPV_Lang::t('repair_pdf_quote') : PPV_Lang::t('repair_pdf_invoice');
         $valid_until = ($is_angebot && !empty($invoice->valid_until)) ? date('d.m.Y', strtotime($invoice->valid_until)) : '';
         $warranty_date = !empty($invoice->warranty_date) ? date('d.m.Y', strtotime($invoice->warranty_date)) : '';
@@ -1369,93 +1378,99 @@ class PPV_Repair_Invoice {
             }
         }
 
+        $company_identity_html = (!$is_erepairshop || !$logo_url)
+            ? '<div class="company-name">' . $company . '</div>' . ($owner ? '<div class="company-owner">' . $owner . '</div>' : '')
+            : '<div class="brand-kicker">SMARTPHONE ERSATZTEILE &middot; REPARATUR MIT VERTRAUEN</div>';
+
         return '<!DOCTYPE html><html lang="' . $lang_code . '"><head><meta charset="UTF-8"><style>
-@page{margin:10mm 15mm 28mm 15mm;size:A4}
+@page{margin:12mm 15mm 31mm 15mm;size:A4}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-size:9.5pt;line-height:1.5}
-.invoice{padding:0 4mm;max-width:100%}
+body{font-family:"Segoe UI",Helvetica,Arial,sans-serif;color:' . $brand_ink . ';font-size:9.3pt;line-height:1.5;background:#fff}
+.invoice{padding:0 3mm;max-width:100%}
 
 /* Accent bar */
-.accent-bar{background:' . $color . ';height:4mm;margin:0 -15mm;margin-top:-10mm}
+.accent-bar{background:' . $brand_ink . ';height:5mm;margin:0 -15mm;margin-top:-12mm;border-left:48mm solid ' . $brand_blue . ';border-bottom:1.2mm solid ' . $brand_orange . '}
 
 /* Header */
-.header{display:table;width:100%;padding:6mm 0 5mm}
-.header-left{display:table-cell;vertical-align:middle;width:55%}
-.header-right{display:table-cell;vertical-align:middle;width:45%;text-align:right}
-.logo{display:block;width:88mm;max-width:100%;height:auto;max-height:22mm;object-fit:contain;margin-bottom:2mm;border-radius:2mm}
-.company-name{font-size:18pt;font-weight:700;color:' . $color . ';letter-spacing:-0.3px}
-.company-owner{font-size:9pt;color:#64748b;margin-top:1mm}
-.header-contact{font-size:8.5pt;color:#64748b;line-height:1.7;padding-right:1mm}
-.header-divider{height:0.5mm;background:#e2e8f0;margin-bottom:6mm}
+.header{display:table;width:100%;padding:5mm 0 4mm}
+.header-left{display:table-cell;vertical-align:middle;width:61%}
+.header-right{display:table-cell;vertical-align:middle;width:39%;text-align:right}
+.logo{display:block;width:88mm;max-width:100%;height:auto;max-height:22mm;object-fit:contain;margin-bottom:1mm;border-radius:1mm}
+.company-name{font-family:"Arial Narrow","Segoe UI",sans-serif;font-size:18pt;font-weight:800;color:' . $brand_blue . ';letter-spacing:-0.4px}
+.company-owner{font-size:8.5pt;color:' . $brand_muted . ';margin-top:1mm}
+.brand-kicker{font-family:"Arial Narrow","Segoe UI",sans-serif;font-size:7.2pt;font-weight:700;color:' . $brand_muted . ';letter-spacing:0.7px;text-transform:uppercase;margin-top:1mm}
+.header-contact{font-size:8.2pt;color:' . $brand_muted . ';line-height:1.65;padding-right:1mm}
+.header-divider{height:0.4mm;background:' . $brand_line . ';margin-bottom:5mm}
 
 /* Address Section */
-.address-section{display:table;width:100%;margin-bottom:6mm}
-.address-left{display:table-cell;vertical-align:top;width:55%}
-.address-right{display:table-cell;vertical-align:top;width:45%}
-.sender-line{font-size:6.5pt;color:#94a3b8;border-bottom:0.5px solid #cbd5e1;padding-bottom:1mm;margin-bottom:3mm;display:inline-block;text-transform:uppercase;letter-spacing:0.3px}
-.customer-address{font-size:10pt;line-height:1.7;color:#1e293b}
-.customer-name{font-weight:700;font-size:11pt;color:#0f172a}
+.address-section{display:table;width:100%;margin-bottom:5mm}
+.address-left{display:table-cell;vertical-align:top;width:56%;padding:4mm;background:' . $brand_paper_light . ';border:0.4mm solid ' . $brand_line . '}
+.address-right{display:table-cell;vertical-align:top;width:44%;padding-left:4mm}
+.sender-line{font-size:6.2pt;color:' . $brand_muted . ';border-bottom:0.3mm solid ' . $brand_line . ';padding-bottom:1mm;margin-bottom:2.5mm;display:inline-block;text-transform:uppercase;letter-spacing:0.35px}
+.customer-address{font-size:9.8pt;line-height:1.65;color:' . $brand_ink . '}
+.customer-name{font-weight:800;font-size:11pt;color:' . $brand_ink . '}
 
 /* Invoice Details Box */
-.invoice-details{background:#f8fafc;border-left:3px solid ' . $color . ';padding:4mm 5mm}
+.invoice-details{background:' . $brand_paper . ';border-top:1.2mm solid ' . $doc_accent . ';padding:3.5mm 4mm}
 .invoice-details table{width:100%;border-collapse:collapse}
-.invoice-details td{padding:1.5mm 0;font-size:9.5pt}
-.invoice-details td:first-child{color:#64748b;width:48%}
-.invoice-details td:last-child{text-align:right;font-weight:500;color:#1e293b}
-.invoice-number{font-size:14pt;font-weight:800;color:' . $color . ';letter-spacing:-0.5px}
+.invoice-details td{padding:1.25mm 0;font-size:9pt}
+.invoice-details td:first-child{color:' . $brand_muted . ';width:48%}
+.invoice-details td:last-child{text-align:right;font-weight:700;color:' . $brand_ink . '}
+.invoice-number{font-family:"Arial Narrow","Segoe UI",sans-serif;font-size:14pt;font-weight:800;color:' . $doc_accent . ';letter-spacing:-0.4px}
 
 /* Title & Intro */
-.doc-title{font-size:20pt;font-weight:700;color:#0f172a;margin:5mm 0 1mm;letter-spacing:-0.5px}
-.doc-title-line{width:30mm;height:1mm;background:' . $color . ';margin-bottom:4mm}
-.intro-text{font-size:9.5pt;color:#475569;margin-bottom:5mm;line-height:1.6}
+.doc-title{font-family:"Arial Narrow","Segoe UI",sans-serif;font-size:21pt;font-weight:800;color:' . $brand_ink . ';margin:4mm 0 0.8mm;letter-spacing:-0.55px;text-transform:uppercase}
+.doc-title-line{width:36mm;height:1.1mm;background:' . $doc_accent . ';margin-bottom:3.5mm}
+.intro-text{font-size:9.3pt;color:' . $brand_muted . ';margin-bottom:4.5mm;line-height:1.55}
 
 /* Items Table */
 .items-table{width:100%;border-collapse:collapse;margin-bottom:5mm}
-.items-table th{background:' . $color . ';color:#fff;padding:3mm 3mm;font-size:8pt;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;text-align:left}
+.items-table th{background:' . $brand_ink . ';color:#fff;padding:2.8mm 3mm;font-size:7.8pt;font-weight:700;text-transform:uppercase;letter-spacing:0.55px;text-align:left;border-bottom:1.1mm solid ' . $brand_orange . '}
 .items-table th:nth-child(1){width:7%;text-align:center}
 .items-table th:nth-child(2){width:51%}
 .items-table th:nth-child(3){width:12%;text-align:center}
 .items-table th:nth-child(4){width:15%;text-align:right}
 .items-table th:nth-child(5){width:15%;text-align:right;padding-right:4mm}
-.items-table td{padding:3.5mm 3mm;border-bottom:0.5px solid #e2e8f0;font-size:9.5pt;vertical-align:top;color:#334155}
-.items-table td:nth-child(1){text-align:center;color:#94a3b8}
+.items-table td{padding:3.3mm 3mm;border-bottom:0.3mm solid ' . $brand_line . ';font-size:9.2pt;vertical-align:top;color:' . $brand_ink . '}
+.items-table tr:nth-child(odd) td{background:' . $brand_paper_light . '}
+.items-table td:nth-child(1){text-align:center;color:' . $brand_muted . '}
 .items-table td:nth-child(3){text-align:center}
 .items-table td:nth-child(4),.items-table td:nth-child(5){text-align:right;font-weight:500;padding-right:4mm}
-.items-table tr:last-child td{border-bottom:2px solid ' . $color . '}
+.items-table tr:last-child td{border-bottom:0.8mm solid ' . $brand_blue . '}
 
 /* Summary */
 .summary-wrapper{display:table;width:100%;margin-top:3mm}
 .summary-spacer{display:table-cell;width:50%}
-.summary-section{display:table-cell;width:50%}
+.summary-section{display:table-cell;width:50%;background:' . $brand_paper . ';padding:3mm 4mm}
 .summary-row{display:table;width:100%;padding:1.5mm 0;font-size:9.5pt}
-.summary-row span:first-child{display:table-cell;text-align:left;color:#64748b}
-.summary-row span:last-child{display:table-cell;text-align:right;color:#1e293b;font-weight:500;padding-right:4mm}
-.summary-divider{border-top:0.5px solid #e2e8f0;margin:1mm 0}
-.summary-row.total{border-top:2px solid #0f172a;margin-top:2mm;padding-top:3mm;font-weight:800;font-size:13pt}
-.summary-row.total span:first-child{color:#0f172a}
-.summary-row.total span:last-child{color:' . $color . '}
+.summary-row span:first-child{display:table-cell;text-align:left;color:' . $brand_muted . '}
+.summary-row span:last-child{display:table-cell;text-align:right;color:' . $brand_ink . ';font-weight:600}
+.summary-divider{border-top:0.3mm solid ' . $brand_line . ';margin:1mm 0}
+.summary-row.total{border-top:0.8mm solid ' . $brand_ink . ';margin-top:2mm;padding-top:2.5mm;font-weight:800;font-size:13pt}
+.summary-row.total span:first-child{color:' . $brand_ink . '}
+.summary-row.total span:last-child{color:' . $doc_accent . '}
 
 /* Info Boxes */
 .info-box{padding:3mm 4mm;margin-top:4mm;margin-right:1mm;font-size:9pt}
-.info-box.payment{background:#f0f9ff;border-left:3px solid ' . $color . ';color:#0c4a6e}
+.info-box.payment{background:#eef4ff;border-left:1.2mm solid ' . $brand_blue . ';color:#12366f}
 .info-box.reward{background:#f0fdf4;border-left:3px solid #22c55e;color:#14532d}
 .info-box.warranty{background:#fefce8;border-left:3px solid #eab308;color:#713f12}
 .info-box strong{font-weight:700}
 .vat-notice{font-size:8pt;color:#94a3b8;margin-top:3mm;font-style:italic}
 
 /* Notes */
-.notes-section{margin-top:5mm;padding-top:3mm;border-top:0.5px solid #e2e8f0}
-.notes-label{font-size:8pt;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
-.notes-text{font-size:9pt;color:#475569;margin-top:1mm;line-height:1.5}
+.notes-section{margin-top:5mm;padding:3.5mm 4mm;background:' . $brand_paper_light . ';border-left:1.2mm solid ' . $brand_orange . '}
+.notes-label{font-size:7.8pt;color:' . $brand_muted . ';text-transform:uppercase;letter-spacing:0.55px;font-weight:700}
+.notes-text{font-size:9pt;color:' . $brand_ink . ';margin-top:1mm;line-height:1.5}
 
 /* Footer */
-.footer{position:fixed;bottom:0;left:0;right:0;padding:4mm 15mm;border-top:2px solid ' . $color . ';background:#f8fafc;font-size:7.5pt;color:#64748b}
+.footer{position:fixed;bottom:0;left:0;right:0;padding:4mm 15mm;border-top:1.2mm solid ' . $brand_orange . ';background:' . $brand_ink . ';font-size:7.2pt;color:#d7d8d4}
 .footer-grid{display:table;width:100%;table-layout:fixed}
 .footer-col{display:table-cell;vertical-align:top;padding:0 2mm;line-height:1.6}
 .footer-col:first-child{padding-left:0}
 .footer-col:last-child{padding-right:0}
-.footer-col strong{color:#1e293b;font-weight:700;font-size:7pt}
-.footer-label{color:#94a3b8;font-size:6pt;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:1mm}
+.footer-col strong{color:#fff;font-weight:800;font-size:7.2pt}
+.footer-label{color:#8fb4ff;font-size:6pt;text-transform:uppercase;letter-spacing:0.55px;font-weight:700;margin-bottom:1mm}
 </style></head><body>
 
 <div class="accent-bar"></div>
@@ -1468,8 +1483,7 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 ' . ($logo_url ? '<img src="' . $logo_url . '" class="logo" alt="">' : '') . '
 ' . $partner_logo_html . '
 </div>
-<div class="company-name">' . $company . '</div>
-' . ($owner ? '<div class="company-owner">' . $owner . '</div>' : '') . '
+' . $company_identity_html . '
 </div>
 <div class="header-right">
 <div class="header-contact">
