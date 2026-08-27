@@ -1208,7 +1208,9 @@ class PPV_Repair_Invoice {
         $phone = esc_html($store->phone ?: '');
         $email = esc_html($store->email ?: '');
         $tax = esc_html($store->repair_tax_id ?: '');
-        $logo_url = esc_url($store->logo ?: '');
+        // A dedicated print logo can be wider than the square admin logo.
+        $pdf_logo_url = get_option('ppv_repair_pdf_logo_url_' . intval($store->id), '');
+        $logo_url = esc_url($pdf_logo_url ?: ($store->logo ?: ''));
 
         // Additional store settings
         $steuernummer = esc_html($store->repair_steuernummer ?? '');
@@ -1380,7 +1382,7 @@ body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1a202c;font-
 .header{display:table;width:100%;padding:6mm 0 5mm}
 .header-left{display:table-cell;vertical-align:middle;width:55%}
 .header-right{display:table-cell;vertical-align:middle;width:45%;text-align:right}
-.logo{height:44px;margin-bottom:2mm}
+.logo{display:block;width:88mm;max-width:100%;height:auto;max-height:22mm;object-fit:contain;margin-bottom:2mm;border-radius:2mm}
 .company-name{font-size:18pt;font-weight:700;color:' . $color . ';letter-spacing:-0.3px}
 .company-owner{font-size:9pt;color:#64748b;margin-top:1mm}
 .header-contact{font-size:8.5pt;color:#64748b;line-height:1.7;padding-right:1mm}
