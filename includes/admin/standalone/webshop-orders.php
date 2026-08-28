@@ -228,43 +228,33 @@ final class PPV_Standalone_Webshop_Orders {
 
         while (ob_get_level()) ob_end_clean();
         nocache_headers();
-        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Type: text/csv; charset=windows-1252');
         header('Content-Disposition: attachment; filename="dhl-sendungen-' . wp_date('Y-m-d-His') . '.csv"');
         header('X-Content-Type-Options: nosniff');
         $output = fopen('php://output', 'wb');
-        fwrite($output, "\xEF\xBB\xBF");
-        fputcsv($output, [
-            'Sendungsreferenz', 'Name 1', 'Name 2', 'Straße', 'Hausnummer',
-            'Adresszusatz', 'PLZ', 'Ort', 'Ländercode', 'E-Mail', 'Telefon',
-            'Gewicht kg', 'DHL Produkt', 'Bestellinhalt'
-        ], ';');
+        fwrite($output, implode(';', [
+            'SEND_NAME1', 'SEND_NAME2', 'SEND_STREET', 'SEND_HOUSENUMBER',
+            'SEND_PLZ', 'SEND_CITY', 'SEND_COUNTRY', 'RECV_NAME1', 'RECV_NAME2',
+            'RECV_STREET', 'RECV_HOUSENUMBER', 'RECV_PLZ', 'RECV_CITY',
+            'RECV_COUNTRY', 'PRODUCT', 'COUPON', 'SEND_EMAIL', 'RECV_EMAIL'
+        ]) . "\r\n");
         foreach ($orders as $order) {
             [$street, $house_number] = self::split_street_and_house_number($order->ship_address1);
-            $items = json_decode((string)$order->items_json, true);
-            $contents = [];
-            foreach ((array)$items as $item) {
-                $label = !empty($item['sku']) ? $item['sku'] : ($item['name'] ?? 'Termék');
-                $contents[] = max(1, (int)($item['quantity'] ?? 1)) . 'x ' . (string)$label;
-            }
             $name1 = $order->ship_company ?: $order->ship_name;
             $name2 = $order->ship_company ? $order->ship_name : '';
             $row = [
-                'Shop ' . $order->order_number,
-                $name1,
-                $name2,
-                $street,
-                $house_number,
-                $order->ship_address2,
-                $order->ship_postal_code,
-                $order->ship_city,
-                strtoupper((string)$order->ship_country),
-                $order->ship_email,
-                $order->ship_phone,
-                '0,50',
-                '',
-                implode(', ', $contents),
+                'eRepairShop', 'Erik Borota', 'Siedlungsring', '51',
+                '89415', 'Lauingen (Donau)', 'DEU',
+                self::limit_csv_cell($name1, 35),
+                self::limit_csv_cell($name2, 35),
+                self::limit_csv_cell($street, 35),
+                self::limit_csv_cell($house_number, 10),
+                self::limit_csv_cell($order->ship_postal_code, 10),
+                self::limit_csv_cell($order->ship_city, 35),
+                self::dhl_country_code($order->ship_country),
+                '', '', 'info@erepairshop.de', $order->ship_email,
             ];
-            fputcsv($output, array_map([self::class, 'safe_csv_cell'], $row), ';');
+            fwrite($output, self::dhl_csv_line($row));
         }
         fclose($output);
         exit;
@@ -495,6 +485,33 @@ final class PPV_Standalone_Webshop_Orders {
         $value = preg_replace('/[\r\n]+/u', ' ', (string)$value);
         if ($value !== '' && preg_match('/^[=+\-@]/', $value)) $value = "'" . $value;
         return $value;
+    }
+
+    private static function limit_csv_cell($value, $length) {
+        return mb_substr(self::safe_csv_cell($value), 0, $length, 'UTF-8');
+    }
+
+    private static function dhl_csv_line($cells) {
+        $encoded = [];
+        foreach ((array)$cells as $cell) {
+            $value = self::safe_csv_cell($cell);
+            $value = iconv('UTF-8', 'Windows-1252//TRANSLIT', $value);
+            if ($value === false) $value = '';
+            $encoded[] = '"' . str_replace('"', '""', $value) . '"';
+        }
+        return implode(';', $encoded) . "\r\n";
+    }
+
+    private static function dhl_country_code($country) {
+        $codes = [
+            'AT'=>'AUT','BE'=>'BEL','BG'=>'BGR','HR'=>'HRV','CY'=>'CYP','CZ'=>'CZE',
+            'DE'=>'DEU','DK'=>'DNK','EE'=>'EST','ES'=>'ESP','FI'=>'FIN','FR'=>'FRA',
+            'GR'=>'GRC','HU'=>'HUN','IE'=>'IRL','IT'=>'ITA','LT'=>'LTU','LU'=>'LUX',
+            'LV'=>'LVA','MT'=>'MLT','NL'=>'NLD','PL'=>'POL','PT'=>'PRT','RO'=>'ROU',
+            'SE'=>'SWE','SI'=>'SVN','SK'=>'SVK',
+        ];
+        $country = strtoupper(trim((string)$country));
+        return $codes[$country] ?? $country;
     }
 
     private static function status_label($order) {
