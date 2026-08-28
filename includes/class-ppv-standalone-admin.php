@@ -385,6 +385,12 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/webshop-orders/refresh') {
             require_once __DIR__ . '/admin/standalone/webshop-orders.php';
             PPV_Standalone_Webshop_Orders::handle_refresh();
+        } elseif ($path === '/admin/webshop-orders/manage-update') {
+            require_once __DIR__ . '/admin/standalone/webshop-orders.php';
+            PPV_Standalone_Webshop_Orders::handle_management_update();
+        } elseif ($path === '/admin/webshop-orders/manage') {
+            require_once __DIR__ . '/admin/standalone/webshop-orders.php';
+            PPV_Standalone_Webshop_Orders::render('manage');
         } elseif ($path === '/admin/webshop-orders') {
             require_once __DIR__ . '/admin/standalone/webshop-orders.php';
             PPV_Standalone_Webshop_Orders::render();

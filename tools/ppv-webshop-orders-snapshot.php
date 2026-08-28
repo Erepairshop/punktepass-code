@@ -61,6 +61,9 @@ foreach ($orders as $order) {
         'status' => (string)$order->get_status(),
         'paymentMethod' => (string)$order->get_payment_method_title(),
         'shippingMethods' => $shipping_methods,
+        'trackingCarrier' => (string)$order->get_meta('_ers_tracking_carrier', true),
+        'trackingNumber' => (string)$order->get_meta('_ers_tracking_number', true),
+        'trackingUpdatedAt' => (string)$order->get_meta('_ers_tracking_updated_at', true),
         'customerNote' => (string)$order->get_customer_note(),
         'shipping' => [
             'firstName' => (string)$order->get_shipping_first_name(),
@@ -104,4 +107,3 @@ if (file_put_contents($temporary, $payload, LOCK_EX) === false || !rename($tempo
 }
 chmod($target, 0640);
 echo wp_json_encode(['orders' => count($rows), 'target' => $target]) . PHP_EOL;
-

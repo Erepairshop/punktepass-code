@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) exit;
 
 final class PPV_Standalone_Webshop_Orders {
     const TABLE_SUFFIX = 'ppv_webshop_orders';
-    const SCHEMA_VERSION = '1.0.0';
+    const SCHEMA_VERSION = '1.1.0';
     const SNAPSHOT_FILE = '/var/lib/punktepass/webshop-orders.json';
 
     public static function install_schema() {
@@ -26,6 +26,9 @@ final class PPV_Standalone_Webshop_Orders {
             order_status varchar(40) NOT NULL,
             payment_method varchar(160) NULL,
             shipping_methods varchar(255) NULL,
+            tracking_carrier varchar(80) NULL,
+            tracking_number varchar(160) NULL,
+            tracking_updated_at datetime NULL,
             ship_name varchar(255) NOT NULL,
             ship_company varchar(255) NULL,
             ship_address1 varchar(255) NULL,
@@ -82,6 +85,9 @@ final class PPV_Standalone_Webshop_Orders {
                 'order_status' => sanitize_key($order['status'] ?? 'pending'),
                 'payment_method' => sanitize_text_field($order['paymentMethod'] ?? ''),
                 'shipping_methods' => sanitize_text_field(implode(', ', array_map('sanitize_text_field', (array)($order['shippingMethods'] ?? [])))),
+                'tracking_carrier' => sanitize_text_field($order['trackingCarrier'] ?? ''),
+                'tracking_number' => sanitize_text_field($order['trackingNumber'] ?? ''),
+                'tracking_updated_at' => self::nullable_mysql_time($order['trackingUpdatedAt'] ?? null),
                 'ship_name' => $name,
                 'ship_company' => sanitize_text_field($shipping['company'] ?? ''),
                 'ship_address1' => sanitize_text_field($shipping['address1'] ?? ''),
@@ -128,6 +134,52 @@ final class PPV_Standalone_Webshop_Orders {
         self::json_success(['packed' => (bool)$packed]);
     }
 
+    public static function handle_management_update() {
+        self::require_valid_post();
+        $order_id = (int)($_POST['order_id'] ?? 0);
+        $status = sanitize_key($_POST['status'] ?? '');
+        $carrier = mb_substr(sanitize_text_field(wp_unslash($_POST['carrier'] ?? '')), 0, 80);
+        $tracking_number = mb_substr(sanitize_text_field(wp_unslash($_POST['tracking_number'] ?? '')), 0, 160);
+        $internal_note = mb_substr(sanitize_textarea_field(wp_unslash($_POST['internal_note'] ?? '')), 0, 1000);
+        $notify_customer = !empty($_POST['notify_customer']);
+        $allowed_statuses = ['pending', 'processing', 'on-hold', 'completed', 'cancelled', 'failed'];
+        if ($order_id <= 0 || !in_array($status, $allowed_statuses, true)) {
+            self::json_error('Érvénytelen rendelés vagy státusz.', 400);
+        }
+        if (($carrier === '') !== ($tracking_number === '')) {
+            self::json_error('A futárt és a nyomkövetési számot együtt add meg.', 400);
+        }
+
+        try {
+            $result = self::write_to_shop([
+                'orderId' => $order_id,
+                'status' => $status,
+                'carrier' => $carrier,
+                'trackingNumber' => $tracking_number,
+                'internalNote' => $internal_note,
+                'notifyCustomer' => $notify_customer,
+            ]);
+        } catch (Throwable $e) {
+            error_log('[Webshop Order Management] ' . preg_replace('/[\r\n]+/', ' ', $e->getMessage()));
+            self::json_error('A WooCommerce rendelés nem frissíthető.', 502);
+        }
+
+        global $wpdb;
+        $updated = $wpdb->update(
+            $wpdb->prefix . self::TABLE_SUFFIX,
+            [
+                'order_status' => sanitize_key($result['status'] ?? $status),
+                'tracking_carrier' => sanitize_text_field($result['carrier'] ?? $carrier),
+                'tracking_number' => sanitize_text_field($result['trackingNumber'] ?? $tracking_number),
+                'tracking_updated_at' => self::nullable_mysql_time($result['trackingUpdatedAt'] ?? null),
+                'modified_date' => current_time('mysql'),
+            ],
+            ['order_id' => $order_id]
+        );
+        if ($updated === false) self::json_error('A helyi rendelési nézet nem frissíthető.', 500);
+        self::json_success($result);
+    }
+
     public static function handle_refresh() {
         self::require_valid_post();
         try {
@@ -138,7 +190,7 @@ final class PPV_Standalone_Webshop_Orders {
         }
     }
 
-    public static function render() {
+    public static function render($view = 'packing') {
         try {
             self::import_snapshot();
         } catch (Throwable $e) {
@@ -155,13 +207,17 @@ final class PPV_Standalone_Webshop_Orders {
             </div>
             <button type="button" class="shop-refresh" id="shop-refresh"><i class="ri-refresh-line"></i> Frissítés</button>
         </div>
+        <nav class="shop-tabs">
+            <a href="/admin/webshop-orders" class="<?php echo $view === 'packing' ? 'active' : ''; ?>"><i class="ri-archive-line"></i> Csomagolás</a>
+            <a href="/admin/webshop-orders/manage" class="<?php echo $view === 'manage' ? 'active' : ''; ?>"><i class="ri-settings-3-line"></i> Rendeléskezelés</a>
+        </nav>
         <?php self::render_sync_state(); ?>
-        <?php self::render_orders(); ?>
+        <?php self::render_orders($view === 'manage'); ?>
         <?php self::render_scripts($csrf); ?>
         <?php PPV_Standalone_Admin::get_admin_footer();
     }
 
-    private static function render_orders() {
+    private static function render_orders($management = false) {
         global $wpdb;
         $filter = sanitize_key($_GET['status'] ?? 'open');
         $search = sanitize_text_field($_GET['q'] ?? '');
@@ -190,7 +246,7 @@ final class PPV_Standalone_Webshop_Orders {
             <div><strong><?php echo (int)($counts->completed_count ?? 0); ?></strong><span>Teljesítve</span></div>
             <div><strong><?php echo (int)($counts->total ?? 0); ?></strong><span>Összes rendelés</span></div>
         </div>
-        <form class="shop-filters" method="get" action="/admin/webshop-orders">
+        <form class="shop-filters" method="get" action="<?php echo $management ? '/admin/webshop-orders/manage' : '/admin/webshop-orders'; ?>">
             <select name="status">
                 <option value="open" <?php selected($filter, 'open'); ?>>Csomagolandó</option>
                 <option value="packed" <?php selected($filter, 'packed'); ?>>Becsomagolva</option>
@@ -244,6 +300,42 @@ final class PPV_Standalone_Webshop_Orders {
                 </div>
                 <?php if ($order->shipping_methods): ?><div class="order-detail"><i class="ri-truck-line"></i> <?php echo esc_html($order->shipping_methods); ?></div><?php endif; ?>
                 <?php if ($order->customer_note): ?><div class="customer-note"><strong>Vásárlói megjegyzés:</strong> <?php echo esc_html($order->customer_note); ?></div><?php endif; ?>
+                <?php if ($management): ?>
+                    <form class="management-panel">
+                        <div class="management-grid">
+                            <label>Rendelési státusz
+                                <select name="status">
+                                    <?php foreach (self::manageable_statuses() as $value => $label): ?>
+                                        <option value="<?php echo esc_attr($value); ?>" <?php selected($order->order_status, $value); ?>><?php echo esc_html($label); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label>Futár
+                                <select name="carrier">
+                                    <option value="">Nincs megadva</option>
+                                    <?php foreach (['DHL', 'DHL Express', 'UPS', 'DPD', 'GLS', 'Hermes', 'Egyéb'] as $carrier): ?>
+                                        <option value="<?php echo esc_attr($carrier); ?>" <?php selected($order->tracking_carrier, $carrier); ?>><?php echo esc_html($carrier); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label>Nyomkövetési szám
+                                <input type="text" name="tracking_number" maxlength="160" value="<?php echo esc_attr($order->tracking_number); ?>" autocomplete="off">
+                            </label>
+                            <label class="management-note">Belső megjegyzés
+                                <textarea name="internal_note" maxlength="1000" rows="2" placeholder="Csak a rendelés belső jegyzeteihez kerül"></textarea>
+                            </label>
+                        </div>
+                        <div class="management-actions">
+                            <label class="notify-check"><input type="checkbox" name="notify_customer" value="1"> A vásárló értesítése emailben az új nyomkövetésről</label>
+                            <button type="submit"><i class="ri-save-line"></i> Mentés a shopba</button>
+                        </div>
+                        <?php if ($order->tracking_number): ?>
+                            <div class="tracking-current"><strong><?php echo esc_html($order->tracking_carrier); ?>:</strong> <span><?php echo esc_html($order->tracking_number); ?></span><button type="button" class="copy-tracking">Másolás</button></div>
+                        <?php endif; ?>
+                        <?php if ($order->tracking_updated_at): ?><small class="tracking-time">Nyomkövetés frissítve: <?php echo esc_html(date_i18n('Y. m. d. H:i', strtotime($order->tracking_updated_at))); ?></small><?php endif; ?>
+                        <small class="management-warning">A Teljesítve vagy Törölve státusz WooCommerce emailt és kapcsolódó automatizmust indíthat.</small>
+                    </form>
+                <?php endif; ?>
                 <?php if ($order->packed_at): ?><div class="packed-at">Becsomagolva: <?php echo esc_html(date_i18n('Y. m. d. H:i', strtotime($order->packed_at))); ?></div><?php endif; ?>
             </article>
         <?php endforeach; ?>
@@ -260,8 +352,9 @@ final class PPV_Standalone_Webshop_Orders {
 
     private static function render_styles() { ?>
         <style>
+        .shop-tabs{display:flex;gap:8px;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,.1)}.shop-tabs a{padding:11px 14px;color:#91a0b8;text-decoration:none;font-weight:700;border-bottom:3px solid transparent}.shop-tabs a.active{color:#00e6ff;border-color:#00e6ff}.management-panel{margin-top:16px;padding:15px;border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.12);border-radius:12px}.management-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.management-grid label{display:flex;flex-direction:column;gap:5px;color:#aebbd0;font-size:12px;font-weight:700}.management-grid select,.management-grid input,.management-grid textarea{width:100%;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:#16213e;color:#fff;padding:10px;font:inherit}.management-note{grid-column:1/-1}.management-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.management-actions button,.copy-tracking{border:0;border-radius:9px;background:#00d4ea;color:#06161c;padding:10px 14px;font-weight:800;cursor:pointer}.notify-check{display:flex;align-items:center;gap:8px;color:#d5deea;font-size:12px}.tracking-current{display:flex;align-items:center;gap:8px;margin-top:12px;color:#dce7f3;overflow-wrap:anywhere}.copy-tracking{padding:6px 9px;font-size:11px}.tracking-time,.management-warning{display:block;margin-top:8px;color:#91a0b8}.management-warning{color:#ffc45c}.management-panel.is-saving{opacity:.65;pointer-events:none}
         .shop-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.shop-head .page-title{margin-bottom:4px}.shop-head p,.sync-state{color:#91a0b8;font-size:13px}.sync-state{margin:12px 0}.shop-refresh,.shop-filters button{border:0;border-radius:10px;background:#00d4ea;color:#06161c;padding:11px 16px;font-weight:700;cursor:pointer}.shop-refresh:disabled{opacity:.55}.sync-error{background:rgba(255,166,0,.12);border:1px solid rgba(255,166,0,.35);color:#ffc45c;padding:12px;border-radius:10px}.shop-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.shop-stats>div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px}.shop-stats strong{display:block;color:#00e6ff;font-size:26px}.shop-stats span{color:#91a0b8;font-size:13px}.shop-filters{display:flex;gap:10px;margin:18px 0}.shop-filters select,.shop-filters input{background:#16213e;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px}.shop-filters input{flex:1}.shop-order-list{display:grid;gap:12px}.shop-order{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px}.shop-order.is-packed{border-color:rgba(76,175,80,.5);background:rgba(76,175,80,.06)}.shop-order.is-closed{opacity:.55}.order-top,.order-body{display:flex;align-items:center;justify-content:space-between;gap:18px}.order-top{padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.08);color:#91a0b8;font-size:12px}.pack-check{display:flex;align-items:center;gap:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer}.pack-check input{position:absolute;opacity:0}.check-box{width:32px;height:32px;border:2px solid #70809a;border-radius:9px;display:grid;place-items:center;color:transparent;font-size:22px}.pack-check input:checked+.check-box{background:#24b47e;border-color:#24b47e;color:#fff}.order-body{align-items:flex-start;padding-top:16px}.customer{min-width:270px}.customer small,.items small,.money small,.packed-at{display:block;color:#91a0b8;font-size:12px}.customer h2{font-size:20px;margin:4px 0}.contact{margin-top:8px;color:#a9b4c7}.items{flex:1}.item{display:flex;gap:10px;margin-bottom:10px}.quantity{background:rgba(0,230,255,.12);color:#00e6ff;border-radius:8px;padding:5px 8px;height:max-content;white-space:nowrap}.money{text-align:right}.money>strong{display:block;font-size:20px;margin-bottom:8px}.status{display:inline-block;background:rgba(255,255,255,.08);border-radius:20px;padding:5px 9px;color:#aab5c8;font-size:11px;margin-bottom:5px}.order-detail,.customer-note{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07);color:#aab5c8;font-size:12px}.customer-note{color:#ffd489}.packed-at{text-align:right;margin-top:10px}.shop-empty{text-align:center;padding:60px 20px;color:#91a0b8}.shop-empty i{display:block;font-size:44px}.shop-flash{position:fixed;right:20px;bottom:20px;background:#13213a;border:1px solid #00d4ea;border-radius:12px;padding:13px 16px;z-index:9999}
-        @media(max-width:800px){.shop-stats{grid-template-columns:repeat(2,1fr)}.shop-filters{flex-wrap:wrap}.shop-filters input{min-width:100%}.order-body{display:block}.customer{min-width:0;margin-bottom:16px}.money{text-align:left;margin-top:12px}.admin-content{padding:16px 10px}.shop-order{padding:15px}.packed-at{text-align:left}}
+        @media(max-width:800px){.shop-stats{grid-template-columns:repeat(2,1fr)}.shop-filters{flex-wrap:wrap}.shop-filters input{min-width:100%}.order-body{display:block}.customer{min-width:0;margin-bottom:16px}.money{text-align:left;margin-top:12px}.admin-content{padding:16px 10px}.shop-order{padding:15px}.packed-at{text-align:left}.management-grid{grid-template-columns:1fr}.management-note{grid-column:auto}.management-actions{align-items:flex-start;flex-direction:column}.management-actions button{width:100%}}
         @media(max-width:480px){.shop-head{display:block}.shop-refresh{margin-top:12px;width:100%}.shop-stats{grid-template-columns:1fr}.customer h2{font-size:18px}}
         </style>
     <?php }
@@ -272,6 +365,8 @@ final class PPV_Standalone_Webshop_Orders {
             var csrf=<?php echo wp_json_encode($csrf); ?>;
             function flash(text){var n=document.createElement('div');n.className='shop-flash';n.textContent=text;document.body.appendChild(n);setTimeout(function(){n.remove();},2600);}
             document.querySelectorAll('.pack-check input').forEach(function(box){box.addEventListener('change',function(){var card=box.closest('.shop-order');var data=new URLSearchParams();data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);data.set('packed',box.checked?'1':'0');box.disabled=true;fetch('/admin/webshop-orders/packing',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){card.classList.toggle('is-packed',box.checked);flash(box.checked?'Becsomagolva elmentve':'Jelölés visszavonva');}).catch(function(){box.checked=!box.checked;flash('A mentés nem sikerült');}).finally(function(){box.disabled=false;});});});
+            document.querySelectorAll('.management-panel').forEach(function(form){form.addEventListener('submit',function(event){event.preventDefault();var card=form.closest('.shop-order'),data=new URLSearchParams(new FormData(form));data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);form.classList.add('is-saving');fetch('/admin/webshop-orders/manage-update',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error((j.data&&j.data.message)||'Hiba');return j;});}).then(function(){flash('A rendelés frissítve a shopban');setTimeout(function(){location.reload();},500);}).catch(function(error){flash(error.message||'A rendelés nem frissíthető');form.classList.remove('is-saving');});});});
+            document.querySelectorAll('.copy-tracking').forEach(function(button){button.addEventListener('click',function(){var value=button.parentElement.querySelector('span').textContent;navigator.clipboard.writeText(value).then(function(){flash('Nyomkövetési szám másolva');}).catch(function(){flash('A másolás nem sikerült');});});});
             var refresh=document.getElementById('shop-refresh');if(refresh)refresh.addEventListener('click',function(){var data=new URLSearchParams();data.set('csrf',csrf);refresh.disabled=true;refresh.textContent='Frissítés folyamatban';fetch('/admin/webshop-orders/refresh',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){location.reload();}).catch(function(){flash('A frissítés most nem sikerült');refresh.disabled=false;refresh.textContent='Frissítés';});});
         })();
         </script>
@@ -299,6 +394,41 @@ final class PPV_Standalone_Webshop_Orders {
         return $labels[$order->order_status] ?? ucfirst((string)$order->order_status);
     }
 
+    private static function manageable_statuses() {
+        return [
+            'pending' => 'Fizetésre vár',
+            'processing' => 'Feldolgozás alatt',
+            'on-hold' => 'Függőben',
+            'completed' => 'Teljesítve',
+            'cancelled' => 'Törölve',
+            'failed' => 'Sikertelen',
+        ];
+    }
+
+    private static function write_to_shop($payload) {
+        if (!defined('ERS_PPV_BRIDGE_SECRET') || strlen((string)ERS_PPV_BRIDGE_SECRET) < 32) {
+            throw new RuntimeException('A rendeléskezelő híd nincs beállítva.');
+        }
+        $body = wp_json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $timestamp = (string)time();
+        $response = wp_remote_post('https://shop.erepairshop.de/?ers-order-management=1', [
+            'timeout' => 20,
+            'headers' => [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'X-ERS-Timestamp' => $timestamp,
+                'X-ERS-Signature' => hash_hmac('sha256', $timestamp . "\n" . $body, (string)ERS_PPV_BRIDGE_SECRET),
+            ],
+            'body' => $body,
+        ]);
+        if (is_wp_error($response)) throw new RuntimeException($response->get_error_message());
+        $status = (int)wp_remote_retrieve_response_code($response);
+        $result = json_decode(wp_remote_retrieve_body($response), true);
+        if ($status !== 200 || empty($result['ok'])) {
+            throw new RuntimeException(sanitize_text_field($result['message'] ?? 'A shop elutasította a módosítást.'));
+        }
+        return $result;
+    }
+
     private static function money($value, $currency) {
         return number_format((float)$value, 2, ',', ' ') . ' ' . ($currency === 'EUR' ? '€' : sanitize_text_field($currency));
     }
@@ -306,6 +436,12 @@ final class PPV_Standalone_Webshop_Orders {
     private static function mysql_time($value) {
         $timestamp = $value ? strtotime((string)$value) : false;
         return $timestamp ? date('Y-m-d H:i:s', $timestamp) : current_time('mysql');
+    }
+
+    private static function nullable_mysql_time($value) {
+        if (!$value) return null;
+        $timestamp = strtotime((string)$value);
+        return $timestamp ? date('Y-m-d H:i:s', $timestamp) : null;
     }
 
     private static function csrf_token() {
