@@ -205,6 +205,71 @@ final class PPV_Standalone_Webshop_Orders {
         }
     }
 
+    public static function handle_dhl_csv_export() {
+        self::require_valid_post();
+        $requested = array_values(array_unique(array_filter(array_map('intval', (array)($_POST['order_ids'] ?? [])))));
+        if (!$requested) {
+            wp_die('Legalább egy rendelést ki kell választani.', 'DHL CSV export', ['response' => 400]);
+        }
+        if (count($requested) > 100) {
+            wp_die('Egyszerre legfeljebb 100 rendelés exportálható.', 'DHL CSV export', ['response' => 400]);
+        }
+
+        global $wpdb;
+        $placeholders = implode(',', array_fill(0, count($requested), '%d'));
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $orders = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE order_id IN ({$placeholders}) AND order_status NOT IN ('cancelled','refunded','failed') ORDER BY creation_date ASC",
+            ...$requested
+        ));
+        if (!$orders) {
+            wp_die('Nincs exportálható rendelés a kijelölésben.', 'DHL CSV export', ['response' => 400]);
+        }
+
+        while (ob_get_level()) ob_end_clean();
+        nocache_headers();
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="dhl-sendungen-' . wp_date('Y-m-d-His') . '.csv"');
+        header('X-Content-Type-Options: nosniff');
+        $output = fopen('php://output', 'wb');
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, [
+            'Sendungsreferenz', 'Name 1', 'Name 2', 'Straße', 'Hausnummer',
+            'Adresszusatz', 'PLZ', 'Ort', 'Ländercode', 'E-Mail', 'Telefon',
+            'Gewicht kg', 'DHL Produkt', 'Bestellinhalt'
+        ], ';');
+        foreach ($orders as $order) {
+            [$street, $house_number] = self::split_street_and_house_number($order->ship_address1);
+            $items = json_decode((string)$order->items_json, true);
+            $contents = [];
+            foreach ((array)$items as $item) {
+                $label = !empty($item['sku']) ? $item['sku'] : ($item['name'] ?? 'Termék');
+                $contents[] = max(1, (int)($item['quantity'] ?? 1)) . 'x ' . (string)$label;
+            }
+            $name1 = $order->ship_company ?: $order->ship_name;
+            $name2 = $order->ship_company ? $order->ship_name : '';
+            $row = [
+                'Shop ' . $order->order_number,
+                $name1,
+                $name2,
+                $street,
+                $house_number,
+                $order->ship_address2,
+                $order->ship_postal_code,
+                $order->ship_city,
+                strtoupper((string)$order->ship_country),
+                $order->ship_email,
+                $order->ship_phone,
+                '0,50',
+                '',
+                implode(', ', $contents),
+            ];
+            fputcsv($output, array_map([self::class, 'safe_csv_cell'], $row), ';');
+        }
+        fclose($output);
+        exit;
+    }
+
     public static function render($view = 'packing') {
         try {
             self::import_snapshot();
@@ -272,6 +337,15 @@ final class PPV_Standalone_Webshop_Orders {
             <input type="search" name="q" value="<?php echo esc_attr($search); ?>" placeholder="Név, rendelés, termék vagy SKU">
             <button type="submit">Keresés</button>
         </form>
+        <?php if ($management): ?>
+            <form class="dhl-export" id="dhl-export" method="post" action="/admin/webshop-orders/dhl-csv">
+                <input type="hidden" name="csrf" value="<?php echo esc_attr(self::csrf_token()); ?>">
+                <div class="dhl-export-bar">
+                    <label><input type="checkbox" id="dhl-select-all"> Minden látható rendelés kijelölése</label>
+                    <button type="submit" id="dhl-export-button" disabled><i class="ri-file-download-line"></i> DHL CSV letöltése</button>
+                </div>
+            </form>
+        <?php endif; ?>
         <div class="shop-order-list">
         <?php if (!$orders): ?><div class="shop-empty"><i class="ri-inbox-line"></i>Nincs a szűrésnek megfelelő rendelés.</div><?php endif; ?>
         <?php foreach ($orders as $order):
@@ -280,6 +354,9 @@ final class PPV_Standalone_Webshop_Orders {
         ?>
             <article class="shop-order <?php echo $order->packed ? 'is-packed' : ''; ?> <?php echo $closed ? 'is-closed' : ''; ?>" data-order-id="<?php echo (int)$order->order_id; ?>">
                 <div class="order-top">
+                    <?php if ($management && !$closed): ?>
+                        <label class="dhl-select"><input type="checkbox" name="order_ids[]" value="<?php echo (int)$order->order_id; ?>" form="dhl-export"> DHL CSV</label>
+                    <?php endif; ?>
                     <label class="pack-check">
                         <input type="checkbox" <?php checked((int)$order->packed, 1); ?> <?php disabled($closed); ?>>
                         <span class="check-box"><i class="ri-check-line"></i></span><span>Becsomagolva</span>
@@ -367,9 +444,9 @@ final class PPV_Standalone_Webshop_Orders {
 
     private static function render_styles() { ?>
         <style>
-        .shop-tabs{display:flex;gap:8px;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,.1)}.shop-tabs a{padding:11px 14px;color:#91a0b8;text-decoration:none;font-weight:700;border-bottom:3px solid transparent}.shop-tabs a.active{color:#00e6ff;border-color:#00e6ff}.management-panel{margin-top:16px;padding:15px;border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.12);border-radius:12px}.management-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.management-grid label{display:flex;flex-direction:column;gap:5px;color:#aebbd0;font-size:12px;font-weight:700}.management-grid select,.management-grid input,.management-grid textarea{width:100%;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:#16213e;color:#fff;padding:10px;font:inherit}.management-note{grid-column:1/-1}.management-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.management-actions button,.copy-tracking{border:0;border-radius:9px;background:#00d4ea;color:#06161c;padding:10px 14px;font-weight:800;cursor:pointer}.notify-check{display:flex;align-items:center;gap:8px;color:#d5deea;font-size:12px}.tracking-current{display:flex;align-items:center;gap:8px;margin-top:12px;color:#dce7f3;overflow-wrap:anywhere}.copy-tracking{padding:6px 9px;font-size:11px}.tracking-time,.management-warning{display:block;margin-top:8px;color:#91a0b8}.management-warning{color:#ffc45c}.management-panel.is-saving{opacity:.65;pointer-events:none}
+        .shop-tabs{display:flex;gap:8px;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,.1)}.shop-tabs a{padding:11px 14px;color:#91a0b8;text-decoration:none;font-weight:700;border-bottom:3px solid transparent}.shop-tabs a.active{color:#00e6ff;border-color:#00e6ff}.management-panel{margin-top:16px;padding:15px;border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.12);border-radius:12px}.management-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.management-grid label{display:flex;flex-direction:column;gap:5px;color:#aebbd0;font-size:12px;font-weight:700}.management-grid select,.management-grid input,.management-grid textarea{width:100%;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:#16213e;color:#fff;padding:10px;font:inherit}.management-note{grid-column:1/-1}.management-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.management-actions button,.copy-tracking{border:0;border-radius:9px;background:#00d4ea;color:#06161c;padding:10px 14px;font-weight:800;cursor:pointer}.notify-check{display:flex;align-items:center;gap:8px;color:#d5deea;font-size:12px}.tracking-current{display:flex;align-items:center;gap:8px;margin-top:12px;color:#dce7f3;overflow-wrap:anywhere}.copy-tracking{padding:6px 9px;font-size:11px}.tracking-time,.management-warning{display:block;margin-top:8px;color:#91a0b8}.management-warning{color:#ffc45c}.management-panel.is-saving{opacity:.65;pointer-events:none}.dhl-export-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid rgba(255,213,0,.35);background:rgba(255,213,0,.08);border-radius:12px}.dhl-export-bar label,.dhl-select{display:flex;align-items:center;gap:7px;color:#f4d55f;font-weight:700}.dhl-export-bar button{border:0;border-radius:9px;background:#ffd500;color:#231d00;padding:10px 14px;font-weight:800;cursor:pointer}.dhl-export-bar button:disabled{opacity:.45;cursor:not-allowed}.dhl-select{margin-right:auto;font-size:12px}
         .shop-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.shop-head .page-title{margin-bottom:4px}.shop-head p,.sync-state{color:#91a0b8;font-size:13px}.sync-state{margin:12px 0}.shop-refresh,.shop-filters button{border:0;border-radius:10px;background:#00d4ea;color:#06161c;padding:11px 16px;font-weight:700;cursor:pointer}.shop-refresh:disabled{opacity:.55}.sync-error{background:rgba(255,166,0,.12);border:1px solid rgba(255,166,0,.35);color:#ffc45c;padding:12px;border-radius:10px}.shop-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.shop-stats>div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px}.shop-stats strong{display:block;color:#00e6ff;font-size:26px}.shop-stats span{color:#91a0b8;font-size:13px}.shop-filters{display:flex;gap:10px;margin:18px 0}.shop-filters select,.shop-filters input{background:#16213e;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px}.shop-filters input{flex:1}.shop-order-list{display:grid;gap:12px}.shop-order{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px}.shop-order.is-packed{border-color:rgba(76,175,80,.5);background:rgba(76,175,80,.06)}.shop-order.is-closed{opacity:.55}.order-top,.order-body{display:flex;align-items:center;justify-content:space-between;gap:18px}.order-top{padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.08);color:#91a0b8;font-size:12px}.pack-check{display:flex;align-items:center;gap:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer}.pack-check input{position:absolute;opacity:0}.check-box{width:32px;height:32px;border:2px solid #70809a;border-radius:9px;display:grid;place-items:center;color:transparent;font-size:22px}.pack-check input:checked+.check-box{background:#24b47e;border-color:#24b47e;color:#fff}.order-body{align-items:flex-start;padding-top:16px}.customer{min-width:270px}.customer small,.items small,.money small,.packed-at{display:block;color:#91a0b8;font-size:12px}.customer h2{font-size:20px;margin:4px 0}.contact{margin-top:8px;color:#a9b4c7}.items{flex:1}.item{display:flex;gap:10px;margin-bottom:10px}.quantity{background:rgba(0,230,255,.12);color:#00e6ff;border-radius:8px;padding:5px 8px;height:max-content;white-space:nowrap}.money{text-align:right}.money>strong{display:block;font-size:20px;margin-bottom:8px}.status{display:inline-block;background:rgba(255,255,255,.08);border-radius:20px;padding:5px 9px;color:#aab5c8;font-size:11px;margin-bottom:5px}.order-detail,.customer-note{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07);color:#aab5c8;font-size:12px}.customer-note{color:#ffd489}.packed-at{text-align:right;margin-top:10px}.shop-empty{text-align:center;padding:60px 20px;color:#91a0b8}.shop-empty i{display:block;font-size:44px}.shop-flash{position:fixed;right:20px;bottom:20px;background:#13213a;border:1px solid #00d4ea;border-radius:12px;padding:13px 16px;z-index:9999}
-        @media(max-width:800px){.shop-stats{grid-template-columns:repeat(2,1fr)}.shop-filters{flex-wrap:wrap}.shop-filters input{min-width:100%}.order-body{display:block}.customer{min-width:0;margin-bottom:16px}.money{text-align:left;margin-top:12px}.admin-content{padding:16px 10px}.shop-order{padding:15px}.packed-at{text-align:left}.management-grid{grid-template-columns:1fr}.management-note{grid-column:auto}.management-actions{align-items:flex-start;flex-direction:column}.management-actions button{width:100%}}
+        @media(max-width:800px){.shop-stats{grid-template-columns:repeat(2,1fr)}.shop-filters{flex-wrap:wrap}.shop-filters input{min-width:100%}.order-body{display:block}.customer{min-width:0;margin-bottom:16px}.money{text-align:left;margin-top:12px}.admin-content{padding:16px 10px}.shop-order{padding:15px}.packed-at{text-align:left}.management-grid{grid-template-columns:1fr}.management-note{grid-column:auto}.management-actions{align-items:flex-start;flex-direction:column}.management-actions button{width:100%}.dhl-export-bar{align-items:stretch;flex-direction:column}.dhl-export-bar button{width:100%}}
         @media(max-width:480px){.shop-head{display:block}.shop-refresh{margin-top:12px;width:100%}.shop-stats{grid-template-columns:1fr}.customer h2{font-size:18px}}
         </style>
     <?php }
@@ -382,6 +459,10 @@ final class PPV_Standalone_Webshop_Orders {
             document.querySelectorAll('.pack-check input').forEach(function(box){box.addEventListener('change',function(){var card=box.closest('.shop-order');var data=new URLSearchParams();data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);data.set('packed',box.checked?'1':'0');box.disabled=true;fetch('/admin/webshop-orders/packing',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){card.classList.toggle('is-packed',box.checked);flash(box.checked?'Becsomagolva elmentve':'Jelölés visszavonva');}).catch(function(){box.checked=!box.checked;flash('A mentés nem sikerült');}).finally(function(){box.disabled=false;});});});
             document.querySelectorAll('.management-panel').forEach(function(form){form.addEventListener('submit',function(event){event.preventDefault();var card=form.closest('.shop-order'),data=new URLSearchParams(new FormData(form));data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);form.classList.add('is-saving');fetch('/admin/webshop-orders/manage-update',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error((j.data&&j.data.message)||'Hiba');return j;});}).then(function(){flash('A rendelés frissítve a shopban');setTimeout(function(){location.reload();},500);}).catch(function(error){flash(error.message||'A rendelés nem frissíthető');form.classList.remove('is-saving');});});});
             document.querySelectorAll('.copy-tracking').forEach(function(button){button.addEventListener('click',function(){var value=button.parentElement.querySelector('span').textContent;navigator.clipboard.writeText(value).then(function(){flash('Nyomkövetési szám másolva');}).catch(function(){flash('A másolás nem sikerült');});});});
+            var dhlAll=document.getElementById('dhl-select-all'),dhlButton=document.getElementById('dhl-export-button'),dhlBoxes=Array.prototype.slice.call(document.querySelectorAll('.dhl-select input'));
+            function updateDhlExport(){if(dhlButton)dhlButton.disabled=!dhlBoxes.some(function(box){return box.checked;});if(dhlAll)dhlAll.checked=dhlBoxes.length>0&&dhlBoxes.every(function(box){return box.checked;});}
+            dhlBoxes.forEach(function(box){box.addEventListener('change',updateDhlExport);});
+            if(dhlAll)dhlAll.addEventListener('change',function(){dhlBoxes.forEach(function(box){box.checked=dhlAll.checked;});updateDhlExport();});
             var refresh=document.getElementById('shop-refresh');if(refresh)refresh.addEventListener('click',function(){var data=new URLSearchParams();data.set('csrf',csrf);refresh.disabled=true;refresh.textContent='Frissítés folyamatban';fetch('/admin/webshop-orders/refresh',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){location.reload();}).catch(function(){flash('A frissítés most nem sikerült');refresh.disabled=false;refresh.textContent='Frissítés';});});
         })();
         </script>
@@ -400,6 +481,20 @@ final class PPV_Standalone_Webshop_Orders {
             ];
         }
         return $clean;
+    }
+
+    private static function split_street_and_house_number($address) {
+        $address = trim((string)$address);
+        if (preg_match('/^(.+?)\s+([0-9]+(?:\s*[a-zA-Z]|[\/-][0-9a-zA-Z]+)?)$/u', $address, $matches)) {
+            return [trim($matches[1]), preg_replace('/\s+/', '', trim($matches[2]))];
+        }
+        return [$address, ''];
+    }
+
+    private static function safe_csv_cell($value) {
+        $value = preg_replace('/[\r\n]+/u', ' ', (string)$value);
+        if ($value !== '' && preg_match('/^[=+\-@]/', $value)) $value = "'" . $value;
+        return $value;
     }
 
     private static function status_label($order) {
