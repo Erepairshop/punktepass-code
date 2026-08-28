@@ -16,6 +16,15 @@ final class PPV_Standalone_Shop_Chat {
         $table = $wpdb->prefix . PPV_Shop_Chat::CONVERSATIONS_SUFFIX;
         $conversation = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $conversation_id));
         if (!$conversation) self::json_error('A beszélgetés nem található.', 404);
+        $sent_by_email = $conversation->reply_channel === 'email';
+        if ($sent_by_email) {
+            try {
+                PPV_Shop_Chat::send_email_reply($conversation, $message);
+            } catch (Throwable $e) {
+                error_log('[Shop Chat Email] ' . preg_replace('/[\r\n]+/', ' ', $e->getMessage()));
+                self::json_error('Az email nem küldhető el, a válasz nem lett elmentve.', 502);
+            }
+        }
         $now = current_time('mysql');
         $ok = $wpdb->insert($wpdb->prefix . PPV_Shop_Chat::MESSAGES_SUFFIX, [
             'conversation_id' => $conversation_id,
@@ -31,7 +40,10 @@ final class PPV_Standalone_Shop_Chat {
             'last_message_at' => $now,
             'updated_at' => $now,
         ], ['id' => $conversation_id]);
-        self::json_success(['messages' => PPV_Shop_Chat::messages_for_conversation($conversation_id)]);
+        self::json_success([
+            'messages' => PPV_Shop_Chat::messages_for_conversation($conversation_id),
+            'sentByEmail' => $sent_by_email,
+        ]);
     }
 
     public static function handle_status() {
@@ -104,7 +116,7 @@ final class PPV_Standalone_Shop_Chat {
             <main class="conversation">
                 <?php if (!$selected): ?><div class="empty">Válassz egy beszélgetést.</div><?php else: ?>
                     <div class="customer-head">
-                        <div><strong><?php echo esc_html($selected->customer_name); ?></strong><a href="mailto:<?php echo esc_attr($selected->customer_email); ?>"><?php echo esc_html($selected->customer_email); ?></a></div>
+                        <div><strong><?php echo esc_html($selected->customer_name); ?></strong><a href="mailto:<?php echo esc_attr($selected->customer_email); ?>"><?php echo esc_html($selected->customer_email); ?></a><span class="channel <?php echo esc_attr($selected->reply_channel); ?>"><?php echo $selected->reply_channel === 'email' ? 'Válasz emailben' : 'Válasz a chatben'; ?></span></div>
                         <button type="button" id="status-button" data-status="<?php echo esc_attr($selected->status); ?>"><?php echo $selected->status === 'closed' ? 'Újranyitás' : 'Lezárás'; ?></button>
                     </div>
                     <div class="messages" id="messages">
@@ -114,7 +126,7 @@ final class PPV_Standalone_Shop_Chat {
                     </div>
                     <form class="reply" id="reply-form">
                         <textarea id="reply-message" maxlength="2000" required placeholder="Válasz a vásárlónak"></textarea>
-                        <button type="submit"><i class="ri-send-plane-fill"></i> Küldés</button>
+                        <button type="submit"><i class="ri-send-plane-fill"></i> <?php echo $selected->reply_channel === 'email' ? 'Email küldése' : 'Küldés'; ?></button>
                     </form>
                 <?php endif; ?>
             </main>
@@ -126,7 +138,7 @@ final class PPV_Standalone_Shop_Chat {
 
     private static function styles() { ?>
         <style>
-        .chat-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.chat-head .page-title{margin:0}.chat-head p{color:#91a0b8;font-size:13px}.refresh,.customer-head button,.reply button{border:0;border-radius:10px;background:#00a9c7;color:#fff;padding:10px 14px;font-weight:700;cursor:pointer}.chat-layout{display:grid;grid-template-columns:330px minmax(0,1fr);min-height:650px;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;background:rgba(8,18,36,.65)}.thread-list{border-right:1px solid rgba(255,255,255,.1);max-height:720px;overflow:auto}.thread{display:flex;gap:10px;align-items:center;padding:13px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.07)}.thread.active{background:rgba(0,230,255,.1)}.avatar{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:#00a9c7;font-weight:800}.thread-copy{min-width:0;display:flex;flex-direction:column;flex:1}.thread-copy strong,.thread-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.thread-copy small{color:#91a0b8;font-size:11px}.unread{background:#ff6a3d;border-radius:12px;min-width:23px;height:23px;display:grid;place-items:center;font-size:11px}.conversation{display:flex;min-width:0;flex-direction:column}.customer-head{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid rgba(255,255,255,.1)}.customer-head div{display:flex;flex-direction:column}.customer-head a{color:#8adff0;font-size:12px}.messages{padding:18px;display:flex;flex:1;flex-direction:column;gap:10px;overflow:auto;max-height:560px}.bubble{max-width:78%;padding:11px 13px;border-radius:14px;background:#243450;align-self:flex-start}.bubble.admin{background:#007f98;align-self:flex-end}.bubble p{white-space:normal;overflow-wrap:anywhere}.bubble small{display:block;margin-top:5px;color:#c1cedd;font-size:10px}.reply{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(255,255,255,.1)}.reply textarea{flex:1;min-height:74px;resize:vertical;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#111d33;color:#fff;padding:11px}.empty{padding:30px;color:#91a0b8;text-align:center}.toast{position:fixed;right:18px;bottom:18px;background:#101d32;padding:12px 16px;border:1px solid #00a9c7;border-radius:10px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}@media(max-width:800px){.chat-layout{grid-template-columns:1fr}.thread-list{max-height:235px;border-right:0;border-bottom:1px solid rgba(255,255,255,.1)}.conversation{min-height:520px}.messages{max-height:420px}.bubble{max-width:88%}.reply{align-items:stretch}.reply button{width:86px}.chat-head{align-items:flex-start}}
+        .chat-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.chat-head .page-title{margin:0}.chat-head p{color:#91a0b8;font-size:13px}.refresh,.customer-head button,.reply button{border:0;border-radius:10px;background:#00a9c7;color:#fff;padding:10px 14px;font-weight:700;cursor:pointer}.chat-layout{display:grid;grid-template-columns:330px minmax(0,1fr);min-height:650px;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;background:rgba(8,18,36,.65)}.thread-list{border-right:1px solid rgba(255,255,255,.1);max-height:720px;overflow:auto}.thread{display:flex;gap:10px;align-items:center;padding:13px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.07)}.thread.active{background:rgba(0,230,255,.1)}.avatar{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:#00a9c7;font-weight:800}.thread-copy{min-width:0;display:flex;flex-direction:column;flex:1}.thread-copy strong,.thread-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.thread-copy small{color:#91a0b8;font-size:11px}.unread{background:#ff6a3d;border-radius:12px;min-width:23px;height:23px;display:grid;place-items:center;font-size:11px}.conversation{display:flex;min-width:0;flex-direction:column}.customer-head{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid rgba(255,255,255,.1)}.customer-head div{display:flex;flex-direction:column}.customer-head a{color:#8adff0;font-size:12px}.channel{display:inline-block;width:max-content;margin-top:6px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(0,230,255,.13);color:#64eaff}.channel.email{background:rgba(255,152,0,.14);color:#ffb74d}.messages{padding:18px;display:flex;flex:1;flex-direction:column;gap:10px;overflow:auto;max-height:560px}.bubble{max-width:78%;padding:11px 13px;border-radius:14px;background:#243450;align-self:flex-start}.bubble.admin{background:#007f98;align-self:flex-end}.bubble p{white-space:normal;overflow-wrap:anywhere}.bubble small{display:block;margin-top:5px;color:#c1cedd;font-size:10px}.reply{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(255,255,255,.1)}.reply textarea{flex:1;min-height:74px;resize:vertical;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#111d33;color:#fff;padding:11px}.empty{padding:30px;color:#91a0b8;text-align:center}.toast{position:fixed;right:18px;bottom:18px;background:#101d32;padding:12px 16px;border:1px solid #00a9c7;border-radius:10px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}@media(max-width:800px){.chat-layout{grid-template-columns:1fr}.thread-list{max-height:235px;border-right:0;border-bottom:1px solid rgba(255,255,255,.1)}.conversation{min-height:520px}.messages{max-height:420px}.bubble{max-width:88%}.reply{align-items:stretch}.reply button{width:100px}.chat-head{align-items:flex-start}}
         </style>
     <?php }
 
@@ -138,7 +150,7 @@ final class PPV_Standalone_Shop_Chat {
             function post(url,data){data.set('csrf',csrf);data.set('conversation_id',id);return fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json()})}
             var read=new URLSearchParams();post('/admin/shop-chat/read',read).catch(function(){});
             var messages=document.getElementById('messages');if(messages)messages.scrollTop=messages.scrollHeight;
-            document.getElementById('reply-form').addEventListener('submit',function(e){e.preventDefault();var input=document.getElementById('reply-message'),button=e.currentTarget.querySelector('button'),data=new URLSearchParams();data.set('message',input.value);button.disabled=true;post('/admin/shop-chat/reply',data).then(function(){input.value='';flash('Válasz elküldve');setTimeout(function(){location.reload()},350)}).catch(function(){flash('A küldés nem sikerült')}).finally(function(){button.disabled=false})});
+            document.getElementById('reply-form').addEventListener('submit',function(e){e.preventDefault();var input=document.getElementById('reply-message'),button=e.currentTarget.querySelector('button'),data=new URLSearchParams();data.set('message',input.value);button.disabled=true;post('/admin/shop-chat/reply',data).then(function(result){input.value='';flash(result.data&&result.data.sentByEmail?'Email elküldve':'Válasz elküldve');setTimeout(function(){location.reload()},350)}).catch(function(){flash('A küldés nem sikerült')}).finally(function(){button.disabled=false})});
             document.getElementById('status-button').addEventListener('click',function(){var button=this,next=status==='closed'?'open':'closed',data=new URLSearchParams();data.set('status',next);button.disabled=true;post('/admin/shop-chat/status',data).then(function(){status=next;button.dataset.status=next;button.textContent=next==='closed'?'Újranyitás':'Lezárás';flash(next==='closed'?'Beszélgetés lezárva':'Beszélgetés újranyitva')}).catch(function(){flash('Az állapot nem menthető')}).finally(function(){button.disabled=false})});
         })();
         </script>
@@ -169,4 +181,3 @@ final class PPV_Standalone_Shop_Chat {
         exit;
     }
 }
-

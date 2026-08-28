@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
 final class PPV_Shop_Chat {
     const CONVERSATIONS_SUFFIX = 'ppv_shop_chat_conversations';
     const MESSAGES_SUFFIX = 'ppv_shop_chat_messages';
-    const SCHEMA_VERSION = '1.0.0';
+    const SCHEMA_VERSION = '1.1.0';
     const DEFAULT_ORIGIN = 'https://shop.erepairshop.de';
 
     public static function init() {
@@ -40,6 +40,7 @@ final class PPV_Shop_Chat {
             access_hash char(64) NOT NULL,
             customer_name varchar(160) NOT NULL,
             customer_email varchar(255) NOT NULL,
+            reply_channel varchar(20) NOT NULL DEFAULT 'chat',
             status varchar(20) NOT NULL DEFAULT 'open',
             unread_admin int(10) unsigned NOT NULL DEFAULT 0,
             last_message_at datetime NOT NULL,
@@ -78,7 +79,9 @@ final class PPV_Shop_Chat {
 
         try {
             self::install_schema();
-            if ($path === '/shop-chat-api/send' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            if ($path === '/shop-chat-api/status' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
+                self::public_status();
+            } elseif ($path === '/shop-chat-api/send' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 self::public_send();
             } elseif ($path === '/shop-chat-api/messages' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
                 self::public_messages();
@@ -113,11 +116,13 @@ final class PPV_Shop_Chat {
             $public_id = wp_generate_uuid4();
             $new_token = bin2hex(random_bytes(32));
             $now = current_time('mysql');
+            $reply_channel = self::is_online_now() ? 'chat' : 'email';
             $ok = $wpdb->insert($wpdb->prefix . self::CONVERSATIONS_SUFFIX, [
                 'public_id' => $public_id,
                 'access_hash' => hash('sha256', $new_token),
                 'customer_name' => mb_substr($name, 0, 160),
                 'customer_email' => mb_substr($email, 0, 255),
+                'reply_channel' => $reply_channel,
                 'status' => 'open',
                 'unread_admin' => 0,
                 'last_message_at' => $now,
@@ -131,6 +136,7 @@ final class PPV_Shop_Chat {
             ));
         }
 
+        $reply_channel = self::is_online_now() ? 'chat' : 'email';
         $page_url = esc_url_raw($payload['pageUrl'] ?? '');
         if ($page_url !== '' && strpos($page_url, self::allowed_origin()) !== 0) $page_url = '';
         $now = current_time('mysql');
@@ -145,8 +151,8 @@ final class PPV_Shop_Chat {
 
         $was_read = ((int)$conversation->unread_admin === 0);
         $wpdb->query($wpdb->prepare(
-            'UPDATE ' . $wpdb->prefix . self::CONVERSATIONS_SUFFIX . " SET unread_admin=unread_admin+1,status='open',last_message_at=%s,updated_at=%s WHERE id=%d",
-            $now, $now, (int)$conversation->id
+            'UPDATE ' . $wpdb->prefix . self::CONVERSATIONS_SUFFIX . " SET unread_admin=unread_admin+1,status='open',reply_channel=%s,last_message_at=%s,updated_at=%s WHERE id=%d",
+            $reply_channel, $now, $now, (int)$conversation->id
         ));
         if ($was_read) self::notify_admin($conversation, $text);
 
@@ -154,6 +160,8 @@ final class PPV_Shop_Chat {
             'ok' => true,
             'conversation' => $conversation->public_id,
             'token' => $new_token ?: null,
+            'online' => self::is_online_now(),
+            'replyChannel' => $reply_channel,
             'messages' => self::messages_for_conversation((int)$conversation->id),
         ]);
     }
@@ -164,8 +172,55 @@ final class PPV_Shop_Chat {
         self::json_response([
             'ok' => true,
             'status' => $conversation->status,
+            'online' => self::is_online_now(),
+            'replyChannel' => $conversation->reply_channel,
             'messages' => self::messages_for_conversation((int)$conversation->id),
         ]);
+    }
+
+    private static function public_status() {
+        self::json_response([
+            'ok' => true,
+            'online' => self::is_online_now(),
+            'timezone' => 'Europe/Berlin',
+            'onlineFrom' => '10:00',
+            'onlineUntil' => '18:00',
+        ]);
+    }
+
+    public static function is_online_now() {
+        $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Berlin'));
+        $minutes = ((int)$now->format('G') * 60) + (int)$now->format('i');
+        return $minutes >= 600 && $minutes < 1080;
+    }
+
+    public static function send_email_reply($conversation, $message) {
+        if (!defined('ERS_PPV_BRIDGE_SECRET') || strlen((string)ERS_PPV_BRIDGE_SECRET) < 32) {
+            throw new RuntimeException('A chat email híd nincs beállítva.');
+        }
+        $body = wp_json_encode([
+            'email' => $conversation->customer_email,
+            'name' => $conversation->customer_name,
+            'message' => $message,
+            'conversation' => $conversation->public_id,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $timestamp = (string)time();
+        $response = wp_remote_post('https://shop.erepairshop.de/?ers-shop-chat-email=1', [
+            'timeout' => 15,
+            'headers' => [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'X-ERS-Timestamp' => $timestamp,
+                'X-ERS-Signature' => hash_hmac('sha256', $timestamp . "\n" . $body, (string)ERS_PPV_BRIDGE_SECRET),
+            ],
+            'body' => $body,
+        ]);
+        if (is_wp_error($response)) throw new RuntimeException($response->get_error_message());
+        $status = (int)wp_remote_retrieve_response_code($response);
+        $payload = json_decode(wp_remote_retrieve_body($response), true);
+        if ($status !== 200 || empty($payload['ok'])) {
+            throw new RuntimeException('A chat válasz emailje nem küldhető el.');
+        }
+        return true;
     }
 
     public static function conversation_from_credentials($public_id, $token) {
