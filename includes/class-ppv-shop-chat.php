@@ -233,7 +233,8 @@ final class PPV_Shop_Chat {
     }
 
     private static function rate_limit() {
-        $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        $candidate = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        $ip = filter_var($candidate, FILTER_VALIDATE_IP) ? $candidate : 'unknown';
         $key = 'ppv_chat_rate_' . hash('sha256', $ip);
         $count = (int)get_transient($key);
         if ($count >= 12) self::json_response(['ok' => false, 'message' => 'Bitte warten Sie kurz und versuchen Sie es erneut.'], 429);
@@ -265,4 +266,3 @@ final class PPV_Shop_Chat {
         exit;
     }
 }
-
