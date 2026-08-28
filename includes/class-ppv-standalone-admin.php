@@ -388,6 +388,18 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/webshop-orders') {
             require_once __DIR__ . '/admin/standalone/webshop-orders.php';
             PPV_Standalone_Webshop_Orders::render();
+        } elseif ($path === '/admin/shop-chat/reply') {
+            require_once __DIR__ . '/admin/standalone/shop-chat.php';
+            PPV_Standalone_Shop_Chat::handle_reply();
+        } elseif ($path === '/admin/shop-chat/status') {
+            require_once __DIR__ . '/admin/standalone/shop-chat.php';
+            PPV_Standalone_Shop_Chat::handle_status();
+        } elseif ($path === '/admin/shop-chat/read') {
+            require_once __DIR__ . '/admin/standalone/shop-chat.php';
+            PPV_Standalone_Shop_Chat::handle_read();
+        } elseif ($path === '/admin/shop-chat') {
+            require_once __DIR__ . '/admin/standalone/shop-chat.php';
+            PPV_Standalone_Shop_Chat::render();
         } elseif ($path === '/admin/dev-settings') {
             self::render_dev_settings();
         } else {
@@ -1640,6 +1652,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/webshop-orders" class="<?php echo $current_page === 'webshop-orders' ? 'active' : ''; ?>">
                         <i class="ri-store-3-line"></i> Webshop rendelések
+                    </a>
+                    <a href="/admin/shop-chat" class="<?php echo $current_page === 'shop-chat' ? 'active' : ''; ?>">
+                        <i class="ri-chat-3-line"></i> Webshop chat
                     </a>
                     <a href="/admin/handlers" class="<?php echo $current_page === 'handlers' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Handlerek
