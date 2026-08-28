@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) exit;
 
 final class PPV_Standalone_Webshop_Orders {
     const TABLE_SUFFIX = 'ppv_webshop_orders';
-    const SCHEMA_VERSION = '1.1.0';
+    const SCHEMA_VERSION = '1.2.0';
     const SNAPSHOT_FILE = '/var/lib/punktepass/webshop-orders.json';
 
     public static function install_schema() {
@@ -29,6 +29,7 @@ final class PPV_Standalone_Webshop_Orders {
             tracking_carrier varchar(80) NULL,
             tracking_number varchar(160) NULL,
             tracking_updated_at datetime NULL,
+            management_updated_at datetime NULL,
             ship_name varchar(255) NOT NULL,
             ship_company varchar(255) NULL,
             ship_address1 varchar(255) NULL,
@@ -104,7 +105,20 @@ final class PPV_Standalone_Webshop_Orders {
                 'currency' => sanitize_text_field($order['currency'] ?? 'EUR'),
                 'synced_at' => current_time('mysql'),
             ];
-            $existing = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE order_id=%d", $order_id));
+            $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE order_id=%d", $order_id));
+            if ($existing && $existing->management_updated_at) {
+                $snapshot_modified = strtotime((string)$data['modified_date']);
+                $management_modified = strtotime((string)$existing->management_updated_at);
+                if ($snapshot_modified && $management_modified && $snapshot_modified < $management_modified) {
+                    $data['order_status'] = $existing->order_status;
+                    $data['tracking_carrier'] = $existing->tracking_carrier;
+                    $data['tracking_number'] = $existing->tracking_number;
+                    $data['tracking_updated_at'] = $existing->tracking_updated_at;
+                    $data['management_updated_at'] = $existing->management_updated_at;
+                } else {
+                    $data['management_updated_at'] = null;
+                }
+            }
             $ok = $existing
                 ? $wpdb->update($table, $data, ['order_id' => $order_id])
                 : $wpdb->insert($table, array_merge(['order_id' => $order_id, 'packed' => 0], $data));
@@ -173,6 +187,7 @@ final class PPV_Standalone_Webshop_Orders {
                 'tracking_number' => sanitize_text_field($result['trackingNumber'] ?? $tracking_number),
                 'tracking_updated_at' => self::nullable_mysql_time($result['trackingUpdatedAt'] ?? null),
                 'modified_date' => current_time('mysql'),
+                'management_updated_at' => current_time('mysql'),
             ],
             ['order_id' => $order_id]
         );
