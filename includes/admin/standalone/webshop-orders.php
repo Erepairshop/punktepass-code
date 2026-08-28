@@ -236,7 +236,7 @@ final class PPV_Standalone_Webshop_Orders {
             'SEND_NAME1', 'SEND_NAME2', 'SEND_STREET', 'SEND_HOUSENUMBER',
             'SEND_PLZ', 'SEND_CITY', 'SEND_COUNTRY', 'RECV_NAME1', 'RECV_NAME2',
             'RECV_STREET', 'RECV_HOUSENUMBER', 'RECV_PLZ', 'RECV_CITY',
-            'RECV_COUNTRY', 'PRODUCT', 'COUPON', 'SEND_EMAIL', 'RECV_EMAIL'
+            'RECV_COUNTRY', 'PRODUCT', 'COUPON', 'SEND_EMAIL'
         ]) . "\r\n");
         foreach ($orders as $order) {
             [$street, $house_number] = self::split_street_and_house_number($order->ship_address1);
@@ -252,7 +252,7 @@ final class PPV_Standalone_Webshop_Orders {
                 self::limit_csv_cell($order->ship_postal_code, 10),
                 self::limit_csv_cell($order->ship_city, 35),
                 self::dhl_country_code($order->ship_country),
-                '', '', 'info@erepairshop.de', $order->ship_email,
+                'V62KP', '', 'info@erepairshop.de',
             ];
             fwrite($output, self::dhl_csv_line($row));
         }
