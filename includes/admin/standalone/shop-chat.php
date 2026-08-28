@@ -4,6 +4,18 @@
 if (!defined('ABSPATH')) exit;
 
 final class PPV_Standalone_Shop_Chat {
+    public static function handle_availability() {
+        self::require_valid_post();
+        $mode = sanitize_key($_POST['mode'] ?? 'auto');
+        if (!PPV_Shop_Chat::set_availability_mode($mode)) {
+            self::json_error('Az elérhetőség nem menthető.', 400);
+        }
+        self::json_success([
+            'mode' => PPV_Shop_Chat::availability_mode(),
+            'online' => PPV_Shop_Chat::is_online_now(),
+        ]);
+    }
+
     public static function handle_reply() {
         self::require_valid_post();
         PPV_Shop_Chat::install_schema();
@@ -95,12 +107,24 @@ final class PPV_Standalone_Shop_Chat {
         }
         $messages = $selected ? PPV_Shop_Chat::messages_for_conversation($selected_id) : [];
         $csrf = self::csrf_token();
+        $availability_mode = PPV_Shop_Chat::availability_mode();
+        $is_online = PPV_Shop_Chat::is_online_now();
         PPV_Standalone_Admin::get_admin_header('shop-chat');
         self::styles();
         ?>
         <div class="chat-head">
             <div><h1 class="page-title"><i class="ri-chat-3-line"></i> Webshop chat</h1><p>Valódi ügyfélüzenetek, kézi válaszadással</p></div>
-            <button type="button" class="refresh" onclick="location.reload()"><i class="ri-refresh-line"></i> Frissítés</button>
+            <div class="chat-tools">
+                <div class="availability-control">
+                    <strong class="availability-state <?php echo $is_online ? 'online' : 'offline'; ?>"><?php echo $is_online ? 'ONLINE' : 'OFFLINE'; ?></strong>
+                    <div class="availability-buttons">
+                        <button type="button" data-availability="online" class="<?php echo $availability_mode === 'online' ? 'active' : ''; ?>">Online</button>
+                        <button type="button" data-availability="offline" class="<?php echo $availability_mode === 'offline' ? 'active' : ''; ?>">Offline</button>
+                        <button type="button" data-availability="auto" class="<?php echo $availability_mode === 'auto' ? 'active' : ''; ?>">Automatikus</button>
+                    </div>
+                </div>
+                <button type="button" class="refresh" onclick="location.reload()"><i class="ri-refresh-line"></i> Frissítés</button>
+            </div>
         </div>
         <div class="chat-layout">
             <aside class="thread-list">
@@ -132,12 +156,13 @@ final class PPV_Standalone_Shop_Chat {
             </main>
         </div>
         <div class="toast" id="toast"></div>
-        <?php if ($selected): self::scripts($csrf, $selected_id, $selected->status); endif; ?>
+        <?php self::scripts($csrf, $selected_id, $selected ? $selected->status : 'open'); ?>
         <?php PPV_Standalone_Admin::get_admin_footer();
     }
 
     private static function styles() { ?>
         <style>
+        .chat-tools{display:flex;align-items:center;gap:10px}.availability-control{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.availability-state{padding:6px 10px;border-radius:999px;font-size:11px;letter-spacing:.08em}.availability-state.online{color:#d6ffe4;background:#138a42}.availability-state.offline{color:#e1e7ef;background:#536174}.availability-buttons{display:flex;gap:4px;padding:3px;border-radius:10px;background:#17263d}.availability-buttons button{border:0;border-radius:7px;padding:7px 9px;background:transparent;color:#aebbd0;font-weight:700;cursor:pointer}.availability-buttons button.active{background:#00a9c7;color:#fff}@media(max-width:800px){.chat-tools{align-items:flex-start;flex-direction:column}.availability-control{justify-content:flex-start}}
         .chat-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.chat-head .page-title{margin:0}.chat-head p{color:#91a0b8;font-size:13px}.refresh,.customer-head button,.reply button{border:0;border-radius:10px;background:#00a9c7;color:#fff;padding:10px 14px;font-weight:700;cursor:pointer}.chat-layout{display:grid;grid-template-columns:330px minmax(0,1fr);min-height:650px;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;background:rgba(8,18,36,.65)}.thread-list{border-right:1px solid rgba(255,255,255,.1);max-height:720px;overflow:auto}.thread{display:flex;gap:10px;align-items:center;padding:13px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.07)}.thread.active{background:rgba(0,230,255,.1)}.avatar{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:#00a9c7;font-weight:800}.thread-copy{min-width:0;display:flex;flex-direction:column;flex:1}.thread-copy strong,.thread-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.thread-copy small{color:#91a0b8;font-size:11px}.unread{background:#ff6a3d;border-radius:12px;min-width:23px;height:23px;display:grid;place-items:center;font-size:11px}.conversation{display:flex;min-width:0;flex-direction:column}.customer-head{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid rgba(255,255,255,.1)}.customer-head div{display:flex;flex-direction:column}.customer-head a{color:#8adff0;font-size:12px}.channel{display:inline-block;width:max-content;margin-top:6px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(0,230,255,.13);color:#64eaff}.channel.email{background:rgba(255,152,0,.14);color:#ffb74d}.messages{padding:18px;display:flex;flex:1;flex-direction:column;gap:10px;overflow:auto;max-height:560px}.bubble{max-width:78%;padding:11px 13px;border-radius:14px;background:#243450;align-self:flex-start}.bubble.admin{background:#007f98;align-self:flex-end}.bubble p{white-space:normal;overflow-wrap:anywhere}.bubble small{display:block;margin-top:5px;color:#c1cedd;font-size:10px}.reply{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(255,255,255,.1)}.reply textarea{flex:1;min-height:74px;resize:vertical;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#111d33;color:#fff;padding:11px}.empty{padding:30px;color:#91a0b8;text-align:center}.toast{position:fixed;right:18px;bottom:18px;background:#101d32;padding:12px 16px;border:1px solid #00a9c7;border-radius:10px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}@media(max-width:800px){.chat-layout{grid-template-columns:1fr}.thread-list{max-height:235px;border-right:0;border-bottom:1px solid rgba(255,255,255,.1)}.conversation{min-height:520px}.messages{max-height:420px}.bubble{max-width:88%}.reply{align-items:stretch}.reply button{width:100px}.chat-head{align-items:flex-start}}
         </style>
     <?php }
@@ -147,7 +172,9 @@ final class PPV_Standalone_Shop_Chat {
         (function(){
             var csrf=<?php echo wp_json_encode($csrf); ?>,id=<?php echo (int)$conversation_id; ?>,status=<?php echo wp_json_encode($initial_status); ?>;
             var toast=document.getElementById('toast');function flash(t){toast.textContent=t;toast.classList.add('show');setTimeout(function(){toast.classList.remove('show')},2200)}
-            function post(url,data){data.set('csrf',csrf);data.set('conversation_id',id);return fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json()})}
+            function post(url,data){data.set('csrf',csrf);if(id)data.set('conversation_id',id);return fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json()})}
+            document.querySelectorAll('[data-availability]').forEach(function(button){button.addEventListener('click',function(){var data=new URLSearchParams(),clicked=this;data.set('mode',clicked.dataset.availability);document.querySelectorAll('[data-availability]').forEach(function(item){item.disabled=true});post('/admin/shop-chat/availability',data).then(function(){flash('Elérhetőség elmentve');setTimeout(function(){location.reload()},250)}).catch(function(){flash('Az elérhetőség nem menthető')}).finally(function(){document.querySelectorAll('[data-availability]').forEach(function(item){item.disabled=false})})})});
+            if(!id)return;
             var read=new URLSearchParams();post('/admin/shop-chat/read',read).catch(function(){});
             var messages=document.getElementById('messages');if(messages)messages.scrollTop=messages.scrollHeight;
             document.getElementById('reply-form').addEventListener('submit',function(e){e.preventDefault();var input=document.getElementById('reply-message'),button=e.currentTarget.querySelector('button'),data=new URLSearchParams();data.set('message',input.value);button.disabled=true;post('/admin/shop-chat/reply',data).then(function(result){input.value='';flash(result.data&&result.data.sentByEmail?'Email elküldve':'Válasz elküldve');setTimeout(function(){location.reload()},350)}).catch(function(){flash('A küldés nem sikerült')}).finally(function(){button.disabled=false})});

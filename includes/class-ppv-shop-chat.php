@@ -149,6 +149,19 @@ final class PPV_Shop_Chat {
         ]);
         if (!$ok) throw new RuntimeException('Message insert failed.');
 
+        if ($new_token !== null) {
+            $automatic_reply = $reply_channel === 'chat'
+                ? 'Vielen Dank für Ihre Nachricht. Wir verbinden Sie mit einem Mitarbeiter. Bitte haben Sie einen Moment Geduld.'
+                : 'Vielen Dank für Ihre Nachricht. Wir sind derzeit offline und antworten Ihnen per E Mail.';
+            $wpdb->insert($wpdb->prefix . self::MESSAGES_SUFFIX, [
+                'conversation_id' => (int)$conversation->id,
+                'sender' => 'admin',
+                'message' => $automatic_reply,
+                'page_url' => '',
+                'created_at' => $now,
+            ]);
+        }
+
         $was_read = ((int)$conversation->unread_admin === 0);
         $wpdb->query($wpdb->prepare(
             'UPDATE ' . $wpdb->prefix . self::CONVERSATIONS_SUFFIX . " SET unread_admin=unread_admin+1,status='open',reply_channel=%s,last_message_at=%s,updated_at=%s WHERE id=%d",
@@ -182,6 +195,7 @@ final class PPV_Shop_Chat {
         self::json_response([
             'ok' => true,
             'online' => self::is_online_now(),
+            'availabilityMode' => self::availability_mode(),
             'timezone' => 'Europe/Berlin',
             'onlineFrom' => '10:00',
             'onlineUntil' => '18:00',
@@ -189,9 +203,24 @@ final class PPV_Shop_Chat {
     }
 
     public static function is_online_now() {
+        $mode = self::availability_mode();
+        if ($mode === 'online') return true;
+        if ($mode === 'offline') return false;
         $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Berlin'));
         $minutes = ((int)$now->format('G') * 60) + (int)$now->format('i');
         return $minutes >= 600 && $minutes < 1080;
+    }
+
+    public static function availability_mode() {
+        $mode = sanitize_key((string)get_option('ppv_shop_chat_availability_mode', 'auto'));
+        return in_array($mode, ['auto', 'online', 'offline'], true) ? $mode : 'auto';
+    }
+
+    public static function set_availability_mode($mode) {
+        $mode = sanitize_key((string)$mode);
+        if (!in_array($mode, ['auto', 'online', 'offline'], true)) return false;
+        return update_option('ppv_shop_chat_availability_mode', $mode, false) !== false
+            || self::availability_mode() === $mode;
     }
 
     public static function send_email_reply($conversation, $message) {

@@ -391,6 +391,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/shop-chat/reply') {
             require_once __DIR__ . '/admin/standalone/shop-chat.php';
             PPV_Standalone_Shop_Chat::handle_reply();
+        } elseif ($path === '/admin/shop-chat/availability') {
+            require_once __DIR__ . '/admin/standalone/shop-chat.php';
+            PPV_Standalone_Shop_Chat::handle_availability();
         } elseif ($path === '/admin/shop-chat/status') {
             require_once __DIR__ . '/admin/standalone/shop-chat.php';
             PPV_Standalone_Shop_Chat::handle_status();
