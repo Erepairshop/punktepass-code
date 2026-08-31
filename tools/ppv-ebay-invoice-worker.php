@@ -56,6 +56,12 @@ try {
             $processed = PPV_Ebay_Invoice::process_queue(20);
             echo wp_json_encode(['reconciled' => $queued, 'queue' => $processed]) . "\n";
             break;
+        case '--buyer-notes':
+            echo wp_json_encode(PPV_Ebay_Invoice::process_note_notifications(100)) . "\n";
+            break;
+        case '--scan-buyer-notes':
+            echo wp_json_encode(PPV_Ebay_Invoice::scan_buyer_notes(7)) . "\n";
+            break;
         case '--cancellations':
             echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(100, false)) . "\n";
             break;

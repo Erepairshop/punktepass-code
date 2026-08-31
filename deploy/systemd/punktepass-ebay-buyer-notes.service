@@ -1,0 +1,16 @@
+[Unit]
+Description=Scan eBay buyer checkout notes for invoice routing and alerts
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+ExecStart=/usr/bin/flock -n /run/lock/punktepass-ebay-buyer-notes.lock /usr/bin/php /var/www/punktepass.de/wp-content/plugins/punktepass/tools/ppv-ebay-invoice-worker.php --scan-buyer-notes
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadOnlyPaths=/var/www/punktepass.de
+

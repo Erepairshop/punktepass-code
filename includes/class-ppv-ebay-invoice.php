@@ -56,6 +56,11 @@ final class PPV_Ebay_Invoice {
             'cancellation_email_sent_at' => "ALTER TABLE {$table} ADD COLUMN cancellation_email_sent_at datetime NULL AFTER cancellation_invoice_id",
             'cancellation_attempts' => "ALTER TABLE {$table} ADD COLUMN cancellation_attempts int(10) unsigned NOT NULL DEFAULT 0 AFTER cancellation_email_sent_at",
             'cancellation_last_error' => "ALTER TABLE {$table} ADD COLUMN cancellation_last_error text NULL AFTER cancellation_attempts",
+            'buyer_note' => "ALTER TABLE {$table} ADD COLUMN buyer_note text NULL AFTER email_sent_at",
+            'buyer_note_hash' => "ALTER TABLE {$table} ADD COLUMN buyer_note_hash char(64) NULL AFTER buyer_note",
+            'buyer_note_action' => "ALTER TABLE {$table} ADD COLUMN buyer_note_action varchar(32) NULL AFTER buyer_note_hash",
+            'buyer_note_email' => "ALTER TABLE {$table} ADD COLUMN buyer_note_email varchar(190) NULL AFTER buyer_note_action",
+            'buyer_note_notified_at' => "ALTER TABLE {$table} ADD COLUMN buyer_note_notified_at datetime NULL AFTER buyer_note_email",
         ];
         foreach ($queue_additions as $column => $sql) {
             if (!in_array($column, $queue_columns, true)) $wpdb->query($sql);
@@ -218,7 +223,59 @@ final class PPV_Ebay_Invoice {
                 $result['retry']++;
             }
         }
+        $result['buyer_notes'] = self::process_note_notifications(50);
         return $result;
+    }
+
+    public static function process_note_notifications($limit = 50) {
+        global $wpdb;
+        self::install_schema();
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT id,order_id,buyer_note FROM {$table}
+             WHERE buyer_note_action='notify_pending' AND buyer_note_notified_at IS NULL
+             ORDER BY id ASC LIMIT %d", max(1, (int)$limit)
+        ));
+        $result = ['pending' => count($rows), 'sent' => 0, 'failed' => 0];
+        foreach ($rows as $row) {
+            if (self::send_buyer_note_ntfy($row->order_id, $row->buyer_note)) {
+                $wpdb->update($table, [
+                    'buyer_note_action' => 'manual_notified',
+                    'buyer_note_notified_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql'),
+                ], ['id' => $row->id]);
+                $result['sent']++;
+            } else {
+                $result['failed']++;
+            }
+        }
+        return $result;
+    }
+
+    public static function scan_buyer_notes($days = 7) {
+        global $wpdb;
+        self::install_schema();
+        $days = max(1, min(30, (int)$days));
+        $start_ts = time() - ($days * DAY_IN_SECONDS);
+        $filter = 'creationdate:[' . gmdate('Y-m-d\TH:i:s.000\Z', $start_ts) . '..' . gmdate('Y-m-d\TH:i:s.000\Z') . ']';
+        $url = self::API_BASE . '/sell/fulfillment/v1/order?' . http_build_query(['limit' => 100, 'filter' => $filter]);
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $found = 0;
+        for ($page = 0; $url && $page < 5; $page++) {
+            $body = self::api_get($url, self::access_token());
+            foreach (($body['orders'] ?? []) as $order) {
+                $note = self::buyer_note_analysis($order);
+                if ($note['text'] === '' || empty($order['orderId'])) continue;
+                self::enqueue_order($order['orderId'], null, self::mysql_time($order['creationDate'] ?? null));
+                $row_id = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$table} WHERE order_id=%s LIMIT 1", (string)$order['orderId']
+                ));
+                if ($row_id) self::store_buyer_note($row_id, $note);
+                $found++;
+            }
+            $url = !empty($body['next']) ? (string)$body['next'] : null;
+        }
+        return ['notes_found' => $found, 'notifications' => self::process_note_notifications(100)];
     }
 
     public static function process_cancellations($limit = 100, $dry_run = false) {
@@ -272,6 +329,7 @@ final class PPV_Ebay_Invoice {
     public static function dry_run_order($order_id) {
         $order = self::get_order($order_id);
         $data = self::invoice_data($order);
+        $note = self::buyer_note_analysis($order);
         return [
             'paymentStatus' => $order['orderPaymentStatus'] ?? null,
             'fulfillmentStatus' => $order['orderFulfillmentStatus'] ?? null,
@@ -283,6 +341,8 @@ final class PPV_Ebay_Invoice {
             'hasCustomerName' => $data['customer_name'] !== '',
             'hasCustomerAddress' => $data['customer_address'] !== '',
             'hasCustomerEmail' => $data['customer_email'] !== '',
+            'buyerNoteAction' => $note['action'],
+            'buyerNoteEmailOverride' => $note['action'] === 'invoice_email',
         ];
     }
 
@@ -456,6 +516,8 @@ final class PPV_Ebay_Invoice {
             $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
             if (!$fresh || $fresh->status === 'completed') return;
             $order = self::get_order($fresh->order_id);
+            $note = self::buyer_note_analysis($order);
+            self::store_buyer_note($fresh->id, $note);
             if (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED') {
                 $wpdb->update($table, [
                     'status' => 'cancelled_before_invoice',
@@ -489,6 +551,13 @@ final class PPV_Ebay_Invoice {
                         'updated_at' => current_time('mysql'),
                     ], ['id' => $member['row']->id]);
                 }
+            } elseif ($note['action'] === 'invoice_email' && is_email($note['email'])) {
+                $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', [
+                    'customer_email' => $note['email'],
+                ], [
+                    'id' => $invoice_id,
+                    'store_id' => self::STORE_ID,
+                ]);
             }
 
             foreach ($members as $member) {
@@ -528,6 +597,8 @@ final class PPV_Ebay_Invoice {
         foreach ($candidates as $candidate) {
             try {
                 $order = self::get_order($candidate->order_id);
+                $candidate_note = self::buyer_note_analysis($order);
+                self::store_buyer_note($candidate->id, $candidate_note);
                 if (($order['orderPaymentStatus'] ?? '') !== 'PAID') continue;
                 if (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED') continue;
                 $data = self::invoice_data($order);
@@ -873,6 +944,10 @@ final class PPV_Ebay_Invoice {
         $contact = !empty($registration['contactAddress']['addressLine1']) ? $registration : $shipping;
         $address = $contact['contactAddress'] ?? [];
         $email = sanitize_email($registration['email'] ?? ($shipping['email'] ?? ''));
+        $note = self::buyer_note_analysis($order);
+        if ($note['action'] === 'invoice_email' && is_email($note['email'])) {
+            $email = $note['email'];
+        }
         $name = sanitize_text_field($contact['fullName'] ?? ($shipping['fullName'] ?? ($order['buyer']['username'] ?? 'eBay-Kunde')));
         $company = sanitize_text_field($contact['companyName'] ?? '');
         $currency = (string)($order['pricingSummary']['total']['currency'] ?? '');
@@ -925,6 +1000,66 @@ final class PPV_Ebay_Invoice {
             'customer_city' => sanitize_text_field($address['city'] ?? ''),
             'customer_country' => strtoupper(sanitize_text_field($address['countryCode'] ?? '')),
         ];
+    }
+
+    private static function buyer_note_analysis(array $order) {
+        $raw = trim((string)($order['buyerCheckoutNotes'] ?? ''));
+        if ($raw === '') {
+            return ['text' => '', 'hash' => null, 'action' => null, 'email' => null];
+        }
+        $text = sanitize_textarea_field($raw);
+        $emails = [];
+        if (preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/iu', $text, $matches)) {
+            foreach ($matches[0] as $candidate) {
+                $candidate = sanitize_email($candidate);
+                if ($candidate !== '' && is_email($candidate)) $emails[strtolower($candidate)] = $candidate;
+            }
+        }
+        $invoice_intent = preg_match('/\b(rechnung|invoice|sz[aá]mla)\b/iu', $text) === 1;
+        $action = ($invoice_intent && count($emails) === 1) ? 'invoice_email' : 'notify_pending';
+        return [
+            'text' => $text,
+            'hash' => hash('sha256', $text),
+            'action' => $action,
+            'email' => $action === 'invoice_email' ? reset($emails) : null,
+        ];
+    }
+
+    private static function store_buyer_note($row_id, array $note) {
+        global $wpdb;
+        if ($note['text'] === '') return;
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $current = $wpdb->get_row($wpdb->prepare(
+            "SELECT buyer_note_hash,buyer_note_action,buyer_note_notified_at FROM {$table} WHERE id=%d",
+            (int)$row_id
+        ));
+        if ($current && hash_equals((string)$current->buyer_note_hash, (string)$note['hash'])) return;
+        $wpdb->update($table, [
+            'buyer_note' => $note['text'],
+            'buyer_note_hash' => $note['hash'],
+            'buyer_note_action' => $note['action'],
+            'buyer_note_email' => $note['email'],
+            'buyer_note_notified_at' => null,
+            'updated_at' => current_time('mysql'),
+        ], ['id' => (int)$row_id]);
+    }
+
+    private static function send_buyer_note_ntfy($order_id, $note) {
+        $safe = trim(preg_replace('/\s+/u', ' ', (string)$note));
+        $safe = preg_replace('/([A-Z0-9._%+\-])[A-Z0-9._%+\-]*(@[A-Z0-9.\-]+\.[A-Z]{2,})/iu', '$1***$2', $safe);
+        $safe = mb_substr($safe, 0, 700);
+        $suffix = substr((string)$order_id, -8);
+        $response = wp_remote_post('https://ntfy.sh/plizio-borota25-alerts', [
+            'timeout' => 12,
+            'headers' => [
+                'Title' => 'eBay vevoi megjegyzes',
+                'Priority' => 'high',
+                'Tags' => 'package,memo',
+                'Content-Type' => 'text/plain; charset=utf-8',
+            ],
+            'body' => 'Rendeles ...' . $suffix . ': ' . $safe,
+        ]);
+        return !is_wp_error($response) && wp_remote_retrieve_response_code($response) >= 200 && wp_remote_retrieve_response_code($response) < 300;
     }
 
     private static function access_token() {
