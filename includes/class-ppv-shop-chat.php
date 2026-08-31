@@ -11,8 +11,12 @@ if (!defined('ABSPATH')) exit;
 final class PPV_Shop_Chat {
     const CONVERSATIONS_SUFFIX = 'ppv_shop_chat_conversations';
     const MESSAGES_SUFFIX = 'ppv_shop_chat_messages';
-    const SCHEMA_VERSION = '1.1.0';
+    const ATTACHMENTS_SUFFIX = 'ppv_shop_chat_attachments';
+    const SCHEMA_VERSION = '1.2.0';
     const DEFAULT_ORIGIN = 'https://shop.erepairshop.de';
+    const MAX_ATTACHMENT_BYTES = 5242880;
+    const MAX_ATTACHMENTS_PER_MESSAGE = 3;
+    const MAX_TOTAL_ATTACHMENT_BYTES = 10485760;
 
     public static function init() {
         add_action('init', [__CLASS__, 'dispatch_public_api'], 0);
@@ -26,9 +30,11 @@ final class PPV_Shop_Chat {
         global $wpdb;
         $conversations = $wpdb->prefix . self::CONVERSATIONS_SUFFIX;
         $messages = $wpdb->prefix . self::MESSAGES_SUFFIX;
+        $attachments = $wpdb->prefix . self::ATTACHMENTS_SUFFIX;
         if (get_option('ppv_shop_chat_schema_version') === self::SCHEMA_VERSION
             && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $conversations)) === $conversations
-            && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $messages)) === $messages) {
+            && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $messages)) === $messages
+            && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $attachments)) === $attachments) {
             return;
         }
 
@@ -61,6 +67,20 @@ final class PPV_Shop_Chat {
             PRIMARY KEY (id),
             KEY idx_conversation (conversation_id,id)
         ) {$charset};");
+        dbDelta("CREATE TABLE {$attachments} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            message_id bigint(20) unsigned NOT NULL,
+            conversation_id bigint(20) unsigned NOT NULL,
+            uploader varchar(20) NOT NULL,
+            file_name varchar(255) NOT NULL,
+            mime_type varchar(100) NOT NULL,
+            file_size bigint(20) unsigned NOT NULL,
+            file_content longblob NOT NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY (id),
+            KEY idx_message (message_id,id),
+            KEY idx_conversation (conversation_id,id)
+        ) {$charset};");
         if ($wpdb->last_error) {
             throw new RuntimeException('A webshop chat adatbázisa nem hozható létre.');
         }
@@ -85,6 +105,8 @@ final class PPV_Shop_Chat {
                 self::public_send();
             } elseif ($path === '/shop-chat-api/messages' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
                 self::public_messages();
+            } elseif ($path === '/shop-chat-api/attachment' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
+                self::public_attachment();
             } else {
                 self::json_response(['ok' => false, 'message' => 'Ismeretlen végpont.'], 404);
             }
@@ -100,8 +122,13 @@ final class PPV_Shop_Chat {
         if (!empty($payload['website'])) self::json_response(['ok' => true], 200);
 
         $text = trim(sanitize_textarea_field($payload['message'] ?? ''));
-        if ($text === '' || mb_strlen($text) > 2000) {
-            self::json_response(['ok' => false, 'message' => 'Bitte geben Sie eine Nachricht mit höchstens 2000 Zeichen ein.'], 400);
+        try {
+            $attachments = self::uploaded_attachments('attachments');
+        } catch (InvalidArgumentException $e) {
+            self::json_response(['ok' => false, 'message' => $e->getMessage()], 400);
+        }
+        if (($text === '' && !$attachments) || mb_strlen($text) > 2000) {
+            self::json_response(['ok' => false, 'message' => 'Bitte geben Sie eine Nachricht oder einen Anhang mit höchstens 2000 Zeichen ein.'], 400);
         }
 
         global $wpdb;
@@ -148,8 +175,15 @@ final class PPV_Shop_Chat {
             'created_at' => $now,
         ]);
         if (!$ok) throw new RuntimeException('Message insert failed.');
+        $message_id = (int)$wpdb->insert_id;
+        try {
+            self::store_attachments($message_id, (int)$conversation->id, 'customer', $attachments);
+        } catch (Throwable $e) {
+            $wpdb->delete($wpdb->prefix . self::MESSAGES_SUFFIX, ['id' => $message_id], ['%d']);
+            throw $e;
+        }
 
-        if ($new_token !== null) {
+        if ($new_token !== '') {
             $automatic_reply = $reply_channel === 'chat'
                 ? 'Vielen Dank für Ihre Nachricht. Wir verbinden Sie mit einem Mitarbeiter. Bitte haben Sie einen Moment Geduld.'
                 : 'Vielen Dank für Ihre Nachricht. Wir sind derzeit offline und antworten Ihnen per E Mail.';
@@ -167,7 +201,10 @@ final class PPV_Shop_Chat {
             'UPDATE ' . $wpdb->prefix . self::CONVERSATIONS_SUFFIX . " SET unread_admin=unread_admin+1,status='open',reply_channel=%s,last_message_at=%s,updated_at=%s WHERE id=%d",
             $reply_channel, $now, $now, (int)$conversation->id
         ));
-        if ($was_read) self::notify_admin($conversation, $text);
+        if ($was_read) {
+            $preview = $text !== '' ? $text : 'Csatolmány: ' . implode(', ', wp_list_pluck($attachments, 'name'));
+            self::notify_admin($conversation, $preview);
+        }
 
         self::json_response([
             'ok' => true,
@@ -189,6 +226,14 @@ final class PPV_Shop_Chat {
             'replyChannel' => $conversation->reply_channel,
             'messages' => self::messages_for_conversation((int)$conversation->id),
         ]);
+    }
+
+    private static function public_attachment() {
+        $conversation = self::conversation_from_credentials($_GET['conversation'] ?? '', $_GET['token'] ?? '');
+        $attachment_id = (int)($_GET['id'] ?? 0);
+        if (!$conversation || $attachment_id <= 0 || !self::stream_attachment($attachment_id, (int)$conversation->id)) {
+            self::json_response(['ok' => false, 'message' => 'Der Anhang wurde nicht gefunden.'], 404);
+        }
     }
 
     private static function public_status() {
@@ -223,7 +268,7 @@ final class PPV_Shop_Chat {
             || self::availability_mode() === $mode;
     }
 
-    public static function send_email_reply($conversation, $message) {
+    public static function send_email_reply($conversation, $message, array $attachments = []) {
         if (!defined('ERS_PPV_BRIDGE_SECRET') || strlen((string)ERS_PPV_BRIDGE_SECRET) < 32) {
             throw new RuntimeException('A chat email híd nincs beállítva.');
         }
@@ -232,6 +277,14 @@ final class PPV_Shop_Chat {
             'name' => $conversation->customer_name,
             'message' => $message,
             'conversation' => $conversation->public_id,
+            'attachments' => array_map(static function ($attachment) {
+                return [
+                    'name' => $attachment['name'],
+                    'mime' => $attachment['mime'],
+                    'size' => (int)$attachment['size'],
+                    'content' => base64_encode($attachment['content']),
+                ];
+            }, $attachments),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $timestamp = (string)time();
         $response = wp_remote_post('https://shop.erepairshop.de/?ers-shop-chat-email=1', [
@@ -265,17 +318,147 @@ final class PPV_Shop_Chat {
         return $row;
     }
 
+    public static function uploaded_attachments($field = 'attachments') {
+        if (empty($_FILES[$field]) || !isset($_FILES[$field]['name'])) return [];
+        $files = $_FILES[$field];
+        $names = is_array($files['name']) ? $files['name'] : [$files['name']];
+        $types = is_array($files['type']) ? $files['type'] : [$files['type']];
+        $temporary = is_array($files['tmp_name']) ? $files['tmp_name'] : [$files['tmp_name']];
+        $errors = is_array($files['error']) ? $files['error'] : [$files['error']];
+        $sizes = is_array($files['size']) ? $files['size'] : [$files['size']];
+        $count = count(array_filter($errors, static function ($error) { return (int)$error !== UPLOAD_ERR_NO_FILE; }));
+        if ($count > self::MAX_ATTACHMENTS_PER_MESSAGE) {
+            throw new InvalidArgumentException('Pro Nachricht sind höchstens drei Anhänge erlaubt.');
+        }
+
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'application/pdf' => 'pdf',
+        ];
+        $result = [];
+        $total = 0;
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if (!$finfo) throw new InvalidArgumentException('Der Dateityp konnte nicht geprüft werden.');
+        try {
+            foreach ($names as $index => $original_name) {
+                $error = (int)($errors[$index] ?? UPLOAD_ERR_NO_FILE);
+                if ($error === UPLOAD_ERR_NO_FILE) continue;
+                if ($error !== UPLOAD_ERR_OK) throw new InvalidArgumentException('Der Anhang konnte nicht hochgeladen werden.');
+                $tmp = (string)($temporary[$index] ?? '');
+                $size = (int)($sizes[$index] ?? 0);
+                if ($tmp === '' || !is_uploaded_file($tmp) || $size <= 0 || $size > self::MAX_ATTACHMENT_BYTES) {
+                    throw new InvalidArgumentException('Jeder Anhang darf höchstens 5 MB groß sein.');
+                }
+                $total += $size;
+                if ($total > self::MAX_TOTAL_ATTACHMENT_BYTES) {
+                    throw new InvalidArgumentException('Die Anhänge dürfen zusammen höchstens 10 MB groß sein.');
+                }
+                $mime = (string)finfo_file($finfo, $tmp);
+                if (!isset($allowed[$mime])) {
+                    throw new InvalidArgumentException('Erlaubt sind JPG, PNG, WEBP und PDF.');
+                }
+                if (strpos($mime, 'image/') === 0) {
+                    $image = @getimagesize($tmp);
+                    if (!$image || empty($image[0]) || empty($image[1]) || ((int)$image[0] * (int)$image[1]) > 40000000) {
+                        throw new InvalidArgumentException('Die Bilddatei ist ungültig oder zu groß.');
+                    }
+                } elseif (file_get_contents($tmp, false, null, 0, 5) !== '%PDF-') {
+                    throw new InvalidArgumentException('Die PDF Datei ist ungültig.');
+                }
+                $content = file_get_contents($tmp);
+                if ($content === false || strlen($content) !== $size) {
+                    throw new InvalidArgumentException('Der Anhang konnte nicht gelesen werden.');
+                }
+                $safe_name = sanitize_file_name(wp_unslash((string)$original_name));
+                $base = pathinfo($safe_name, PATHINFO_FILENAME);
+                if ($base === '') $base = $mime === 'application/pdf' ? 'Dokument' : 'Bild';
+                $result[] = [
+                    'name' => mb_substr($base, 0, 180) . '.' . $allowed[$mime],
+                    'mime' => $mime,
+                    'size' => $size,
+                    'content' => $content,
+                ];
+            }
+        } finally {
+            finfo_close($finfo);
+        }
+        return $result;
+    }
+
+    public static function store_attachments($message_id, $conversation_id, $uploader, array $attachments) {
+        if (!$attachments) return;
+        global $wpdb;
+        $table = $wpdb->prefix . self::ATTACHMENTS_SUFFIX;
+        $stored = [];
+        foreach ($attachments as $attachment) {
+            $ok = $wpdb->insert($table, [
+                'message_id' => (int)$message_id,
+                'conversation_id' => (int)$conversation_id,
+                'uploader' => $uploader === 'admin' ? 'admin' : 'customer',
+                'file_name' => (string)$attachment['name'],
+                'mime_type' => (string)$attachment['mime'],
+                'file_size' => (int)$attachment['size'],
+                'file_content' => $attachment['content'],
+                'created_at' => current_time('mysql'),
+            ]);
+            if (!$ok) {
+                if ($stored) $wpdb->query('DELETE FROM ' . $table . ' WHERE id IN (' . implode(',', array_map('intval', $stored)) . ')');
+                throw new RuntimeException('Attachment insert failed.');
+            }
+            $stored[] = (int)$wpdb->insert_id;
+        }
+    }
+
+    public static function stream_attachment($attachment_id, $conversation_id = 0) {
+        global $wpdb;
+        $row = $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . $wpdb->prefix . self::ATTACHMENTS_SUFFIX . ' WHERE id=%d',
+            (int)$attachment_id
+        ));
+        if (!$row || ($conversation_id > 0 && (int)$row->conversation_id !== (int)$conversation_id)) return false;
+        $allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        if (!in_array($row->mime_type, $allowed, true)) return false;
+        $fallback = preg_replace('/[^A-Za-z0-9._-]/', '_', (string)$row->file_name);
+        if ($fallback === '') $fallback = 'attachment';
+        nocache_headers();
+        header('Content-Type: ' . $row->mime_type);
+        header('Content-Length: ' . strlen($row->file_content));
+        header('X-Content-Type-Options: nosniff');
+        header('Referrer-Policy: no-referrer');
+        header("Content-Security-Policy: default-src 'none'; sandbox");
+        $disposition = strpos($row->mime_type, 'image/') === 0 ? 'inline' : 'attachment';
+        header('Content-Disposition: ' . $disposition . '; filename="' . $fallback . '"; filename*=UTF-8\'\'' . rawurlencode($row->file_name));
+        echo $row->file_content;
+        exit;
+    }
+
     public static function messages_for_conversation($conversation_id) {
         global $wpdb;
         $rows = $wpdb->get_results($wpdb->prepare(
             'SELECT id,sender,message,created_at FROM ' . $wpdb->prefix . self::MESSAGES_SUFFIX . ' WHERE conversation_id=%d ORDER BY id ASC LIMIT 300',
             (int)$conversation_id
         ));
-        return array_map(static function ($row) {
+        $attachment_rows = $wpdb->get_results($wpdb->prepare(
+            'SELECT id,message_id,file_name,mime_type,file_size FROM ' . $wpdb->prefix . self::ATTACHMENTS_SUFFIX . ' WHERE conversation_id=%d ORDER BY id ASC',
+            (int)$conversation_id
+        ));
+        $by_message = [];
+        foreach ($attachment_rows ?: [] as $attachment) {
+            $by_message[(int)$attachment->message_id][] = [
+                'id' => (int)$attachment->id,
+                'name' => $attachment->file_name,
+                'mime' => $attachment->mime_type,
+                'size' => (int)$attachment->file_size,
+            ];
+        }
+        return array_map(static function ($row) use ($by_message) {
             return [
                 'id' => (int)$row->id,
                 'sender' => $row->sender,
                 'message' => $row->message,
+                'attachments' => $by_message[(int)$row->id] ?? [],
                 'createdAt' => mysql_to_rfc3339($row->created_at),
             ];
         }, $rows ?: []);
@@ -302,10 +485,12 @@ final class PPV_Shop_Chat {
         global $wpdb;
         $conversations = $wpdb->prefix . self::CONVERSATIONS_SUFFIX;
         $messages = $wpdb->prefix . self::MESSAGES_SUFFIX;
+        $attachments = $wpdb->prefix . self::ATTACHMENTS_SUFFIX;
         $ids = $wpdb->get_col("SELECT id FROM {$conversations} WHERE status='closed' AND updated_at < DATE_SUB(NOW(), INTERVAL 180 DAY) LIMIT 500");
         if (!$ids) return;
         $ids = array_map('intval', $ids);
         $list = implode(',', $ids);
+        $wpdb->query("DELETE FROM {$attachments} WHERE conversation_id IN ({$list})");
         $wpdb->query("DELETE FROM {$messages} WHERE conversation_id IN ({$list})");
         $wpdb->query("DELETE FROM {$conversations} WHERE id IN ({$list})");
     }
