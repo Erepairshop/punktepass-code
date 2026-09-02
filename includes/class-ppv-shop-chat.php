@@ -242,8 +242,9 @@ final class PPV_Shop_Chat {
             'online' => self::is_online_now(),
             'availabilityMode' => self::availability_mode(),
             'timezone' => 'Europe/Berlin',
-            'onlineFrom' => '10:00',
-            'onlineUntil' => '18:00',
+            'onlineDays' => 'Mo-Fr',
+            'onlineFrom' => '09:00',
+            'onlineUntil' => '16:00',
         ]);
     }
 
@@ -252,8 +253,9 @@ final class PPV_Shop_Chat {
         if ($mode === 'online') return true;
         if ($mode === 'offline') return false;
         $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Berlin'));
+        if ((int)$now->format('N') > 5) return false;
         $minutes = ((int)$now->format('G') * 60) + (int)$now->format('i');
-        return $minutes >= 600 && $minutes < 1080;
+        return $minutes >= 540 && $minutes < 960;
     }
 
     public static function availability_mode() {
