@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) exit;
 
 final class PPV_Standalone_Webshop_Orders {
     const TABLE_SUFFIX = 'ppv_webshop_orders';
-    const SCHEMA_VERSION = '1.2.0';
+    const SCHEMA_VERSION = '1.3.0';
     const SNAPSHOT_FILE = '/var/lib/punktepass/webshop-orders.json';
 
     public static function install_schema() {
@@ -24,7 +24,10 @@ final class PPV_Standalone_Webshop_Orders {
             creation_date datetime NOT NULL,
             modified_date datetime NULL,
             order_status varchar(40) NOT NULL,
+            payment_method_id varchar(80) NULL,
             payment_method varchar(160) NULL,
+            paid_at datetime NULL,
+            bank_transfer_approved_at datetime NULL,
             shipping_methods varchar(255) NULL,
             tracking_carrier varchar(80) NULL,
             tracking_number varchar(160) NULL,
@@ -84,7 +87,10 @@ final class PPV_Standalone_Webshop_Orders {
                 'creation_date' => self::mysql_time($order['createdAt'] ?? null),
                 'modified_date' => self::mysql_time($order['modifiedAt'] ?? null),
                 'order_status' => sanitize_key($order['status'] ?? 'pending'),
+                'payment_method_id' => sanitize_key($order['paymentMethodId'] ?? ''),
                 'payment_method' => sanitize_text_field($order['paymentMethod'] ?? ''),
+                'paid_at' => self::nullable_mysql_time($order['paidAt'] ?? null),
+                'bank_transfer_approved_at' => self::nullable_mysql_time($order['bankTransferApprovedAt'] ?? null),
                 'shipping_methods' => sanitize_text_field(implode(', ', array_map('sanitize_text_field', (array)($order['shippingMethods'] ?? [])))),
                 'tracking_carrier' => sanitize_text_field($order['trackingCarrier'] ?? ''),
                 'tracking_number' => sanitize_text_field($order['trackingNumber'] ?? ''),
@@ -111,6 +117,8 @@ final class PPV_Standalone_Webshop_Orders {
                 $management_modified = strtotime((string)$existing->management_updated_at);
                 if ($snapshot_modified && $management_modified && $snapshot_modified < $management_modified) {
                     $data['order_status'] = $existing->order_status;
+                    $data['paid_at'] = $existing->paid_at;
+                    $data['bank_transfer_approved_at'] = $existing->bank_transfer_approved_at;
                     $data['tracking_carrier'] = $existing->tracking_carrier;
                     $data['tracking_number'] = $existing->tracking_number;
                     $data['tracking_updated_at'] = $existing->tracking_updated_at;
@@ -186,6 +194,47 @@ final class PPV_Standalone_Webshop_Orders {
                 'tracking_carrier' => sanitize_text_field($result['carrier'] ?? $carrier),
                 'tracking_number' => sanitize_text_field($result['trackingNumber'] ?? $tracking_number),
                 'tracking_updated_at' => self::nullable_mysql_time($result['trackingUpdatedAt'] ?? null),
+                'modified_date' => current_time('mysql'),
+                'management_updated_at' => current_time('mysql'),
+            ],
+            ['order_id' => $order_id]
+        );
+        if ($updated === false) self::json_error('A helyi rendelési nézet nem frissíthető.', 500);
+        self::json_success($result);
+    }
+
+    public static function handle_bank_transfer_approval() {
+        self::require_valid_post();
+        $order_id = (int)($_POST['order_id'] ?? 0);
+        if ($order_id <= 0) self::json_error('Hiányzó rendelésazonosító.', 400);
+
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $order = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE order_id=%d", $order_id));
+        if (!$order) self::json_error('A rendelés nem található.', 404);
+        $is_bank_transfer = $order->payment_method_id === 'bacs'
+            || preg_match('/banküberweisung|bank transfer|vorkasse/iu', (string)$order->payment_method);
+        if (!$is_bank_transfer) self::json_error('Ez nem banki átutalásos rendelés.', 409);
+        if (in_array($order->order_status, ['cancelled', 'refunded', 'failed'], true)) {
+            self::json_error('Lezárt rendelés fizetése nem hagyható jóvá.', 409);
+        }
+
+        try {
+            $result = self::write_to_shop([
+                'action' => 'confirm_bank_transfer',
+                'orderId' => $order_id,
+            ]);
+        } catch (Throwable $e) {
+            error_log('[Webshop Bank Transfer Approval] ' . preg_replace('/[\r\n]+/', ' ', $e->getMessage()));
+            self::json_error('A banki átutalás jóváhagyása nem sikerült.', 502);
+        }
+
+        $updated = $wpdb->update(
+            $table,
+            [
+                'order_status' => sanitize_key($result['status'] ?? $order->order_status),
+                'paid_at' => self::nullable_mysql_time($result['paidAt'] ?? null),
+                'bank_transfer_approved_at' => self::nullable_mysql_time($result['bankTransferApprovedAt'] ?? null),
                 'modified_date' => current_time('mysql'),
                 'management_updated_at' => current_time('mysql'),
             ],
@@ -341,6 +390,9 @@ final class PPV_Standalone_Webshop_Orders {
         <?php foreach ($orders as $order):
             $items = (array)json_decode($order->items_json, true);
             $closed = in_array($order->order_status, ['cancelled', 'refunded', 'failed'], true);
+            $is_bank_transfer = $order->payment_method_id === 'bacs'
+                || preg_match('/banküberweisung|bank transfer|vorkasse/iu', (string)$order->payment_method);
+            $bank_transfer_approved = !empty($order->bank_transfer_approved_at);
         ?>
             <article class="shop-order <?php echo $order->packed ? 'is-packed' : ''; ?> <?php echo $closed ? 'is-closed' : ''; ?>" data-order-id="<?php echo (int)$order->order_id; ?>">
                 <div class="order-top">
@@ -379,12 +431,31 @@ final class PPV_Standalone_Webshop_Orders {
                         <span class="status"><?php echo esc_html(self::status_label($order)); ?></span>
                         <small>#<?php echo esc_html($order->order_number); ?></small>
                         <?php if ($order->payment_method): ?><small><?php echo esc_html($order->payment_method); ?></small><?php endif; ?>
+                        <?php if ($is_bank_transfer): ?>
+                            <small class="payment-state <?php echo $bank_transfer_approved ? 'is-approved' : 'is-waiting'; ?>">
+                                <?php echo $bank_transfer_approved ? 'Fizetés jóváhagyva' : 'Átutalásra vár'; ?>
+                            </small>
+                        <?php endif; ?>
                     </section>
                 </div>
                 <?php if ($order->shipping_methods): ?><div class="order-detail"><i class="ri-truck-line"></i> <?php echo esc_html($order->shipping_methods); ?></div><?php endif; ?>
                 <?php if ($order->customer_note): ?><div class="customer-note"><strong>Vásárlói megjegyzés:</strong> <?php echo esc_html($order->customer_note); ?></div><?php endif; ?>
                 <?php if ($management): ?>
                     <form class="management-panel">
+                        <?php if ($is_bank_transfer): ?>
+                            <div class="bank-payment-card <?php echo $bank_transfer_approved ? 'is-approved' : 'is-waiting'; ?>">
+                                <span><i class="<?php echo $bank_transfer_approved ? 'ri-checkbox-circle-line' : 'ri-time-line'; ?>"></i>
+                                    <?php if ($bank_transfer_approved): ?>
+                                        Fizetés jóváhagyva: <?php echo esc_html(date_i18n('Y. m. d. H:i', strtotime($order->bank_transfer_approved_at))); ?>
+                                    <?php else: ?>
+                                        A beszállítói kosár a banki jóváhagyásig zárolva van.
+                                    <?php endif; ?>
+                                </span>
+                                <?php if (!$bank_transfer_approved && !$closed): ?>
+                                    <button type="button" class="approve-bank-payment"><i class="ri-bank-card-line"></i> Fizetés jóváhagyása</button>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                         <div class="management-grid">
                             <label>Rendelési státusz
                                 <select name="status">
@@ -435,9 +506,9 @@ final class PPV_Standalone_Webshop_Orders {
 
     private static function render_styles() { ?>
         <style>
-        .shop-tabs{display:flex;gap:8px;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,.1)}.shop-tabs a{padding:11px 14px;color:#91a0b8;text-decoration:none;font-weight:700;border-bottom:3px solid transparent}.shop-tabs a.active{color:#00e6ff;border-color:#00e6ff}.management-panel{margin-top:16px;padding:15px;border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.12);border-radius:12px}.management-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.management-grid label{display:flex;flex-direction:column;gap:5px;color:#aebbd0;font-size:12px;font-weight:700}.management-grid select,.management-grid input,.management-grid textarea{width:100%;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:#16213e;color:#fff;padding:10px;font:inherit}.management-note{grid-column:1/-1}.management-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.management-actions button,.copy-tracking{border:0;border-radius:9px;background:#00d4ea;color:#06161c;padding:10px 14px;font-weight:800;cursor:pointer}.notify-check{display:flex;align-items:center;gap:8px;color:#d5deea;font-size:12px}.tracking-current{display:flex;align-items:center;gap:8px;margin-top:12px;color:#dce7f3;overflow-wrap:anywhere}.copy-tracking{padding:6px 9px;font-size:11px}.tracking-time,.management-warning{display:block;margin-top:8px;color:#91a0b8}.management-warning{color:#ffc45c}.management-panel.is-saving{opacity:.65;pointer-events:none}.dhl-export-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid rgba(255,213,0,.35);background:rgba(255,213,0,.08);border-radius:12px}.dhl-export-bar label,.dhl-select{display:flex;align-items:center;gap:7px;color:#f4d55f;font-weight:700}.dhl-export-bar button{border:0;border-radius:9px;background:#ffd500;color:#231d00;padding:10px 14px;font-weight:800;cursor:pointer}.dhl-export-bar button:disabled{opacity:.45;cursor:not-allowed}.dhl-select{margin-right:auto;font-size:12px}
+        .shop-tabs{display:flex;gap:8px;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,.1)}.shop-tabs a{padding:11px 14px;color:#91a0b8;text-decoration:none;font-weight:700;border-bottom:3px solid transparent}.shop-tabs a.active{color:#00e6ff;border-color:#00e6ff}.management-panel{margin-top:16px;padding:15px;border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.12);border-radius:12px}.bank-payment-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:12px 14px;border-radius:11px;font-weight:700}.bank-payment-card.is-waiting{color:#ffd489;border:1px solid rgba(255,174,66,.4);background:rgba(255,174,66,.1)}.bank-payment-card.is-approved{color:#86e7bc;border:1px solid rgba(36,180,126,.45);background:rgba(36,180,126,.1)}.bank-payment-card button{border:0;border-radius:9px;background:#24b47e;color:#fff;padding:10px 14px;font-weight:800;cursor:pointer;white-space:nowrap}.payment-state{margin-top:6px!important;padding:5px 8px;border-radius:8px;font-weight:800}.payment-state.is-waiting{color:#ffd489;background:rgba(255,174,66,.12)}.payment-state.is-approved{color:#86e7bc;background:rgba(36,180,126,.12)}.management-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.management-grid label{display:flex;flex-direction:column;gap:5px;color:#aebbd0;font-size:12px;font-weight:700}.management-grid select,.management-grid input,.management-grid textarea{width:100%;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:#16213e;color:#fff;padding:10px;font:inherit}.management-note{grid-column:1/-1}.management-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.management-actions button,.copy-tracking{border:0;border-radius:9px;background:#00d4ea;color:#06161c;padding:10px 14px;font-weight:800;cursor:pointer}.notify-check{display:flex;align-items:center;gap:8px;color:#d5deea;font-size:12px}.tracking-current{display:flex;align-items:center;gap:8px;margin-top:12px;color:#dce7f3;overflow-wrap:anywhere}.copy-tracking{padding:6px 9px;font-size:11px}.tracking-time,.management-warning{display:block;margin-top:8px;color:#91a0b8}.management-warning{color:#ffc45c}.management-panel.is-saving{opacity:.65;pointer-events:none}.dhl-export-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid rgba(255,213,0,.35);background:rgba(255,213,0,.08);border-radius:12px}.dhl-export-bar label,.dhl-select{display:flex;align-items:center;gap:7px;color:#f4d55f;font-weight:700}.dhl-export-bar button{border:0;border-radius:9px;background:#ffd500;color:#231d00;padding:10px 14px;font-weight:800;cursor:pointer}.dhl-export-bar button:disabled{opacity:.45;cursor:not-allowed}.dhl-select{margin-right:auto;font-size:12px}
         .shop-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.shop-head .page-title{margin-bottom:4px}.shop-head p,.sync-state{color:#91a0b8;font-size:13px}.sync-state{margin:12px 0}.shop-refresh,.shop-filters button{border:0;border-radius:10px;background:#00d4ea;color:#06161c;padding:11px 16px;font-weight:700;cursor:pointer}.shop-refresh:disabled{opacity:.55}.sync-error{background:rgba(255,166,0,.12);border:1px solid rgba(255,166,0,.35);color:#ffc45c;padding:12px;border-radius:10px}.shop-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.shop-stats>div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px}.shop-stats strong{display:block;color:#00e6ff;font-size:26px}.shop-stats span{color:#91a0b8;font-size:13px}.shop-filters{display:flex;gap:10px;margin:18px 0}.shop-filters select,.shop-filters input{background:#16213e;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px}.shop-filters input{flex:1}.shop-order-list{display:grid;gap:12px}.shop-order{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px}.shop-order.is-packed{border-color:rgba(76,175,80,.5);background:rgba(76,175,80,.06)}.shop-order.is-closed{opacity:.55}.order-top,.order-body{display:flex;align-items:center;justify-content:space-between;gap:18px}.order-top{padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.08);color:#91a0b8;font-size:12px}.pack-check{display:flex;align-items:center;gap:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer}.pack-check input{position:absolute;opacity:0}.check-box{width:32px;height:32px;border:2px solid #70809a;border-radius:9px;display:grid;place-items:center;color:transparent;font-size:22px}.pack-check input:checked+.check-box{background:#24b47e;border-color:#24b47e;color:#fff}.order-body{align-items:flex-start;padding-top:16px}.customer{min-width:270px}.customer small,.items small,.money small,.packed-at{display:block;color:#91a0b8;font-size:12px}.customer h2{font-size:20px;margin:4px 0}.contact{margin-top:8px;color:#a9b4c7;overflow-wrap:anywhere}.contact a{color:#79e7f3;text-decoration:none}.contact a:hover{text-decoration:underline}.items{flex:1}.item{display:flex;gap:10px;margin-bottom:10px}.quantity{background:rgba(0,230,255,.12);color:#00e6ff;border-radius:8px;padding:5px 8px;height:max-content;white-space:nowrap}.money{text-align:right}.money>strong{display:block;font-size:20px;margin-bottom:8px}.status{display:inline-block;background:rgba(255,255,255,.08);border-radius:20px;padding:5px 9px;color:#aab5c8;font-size:11px;margin-bottom:5px}.order-detail,.customer-note{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07);color:#aab5c8;font-size:12px}.customer-note{color:#ffd489}.packed-at{text-align:right;margin-top:10px}.shop-empty{text-align:center;padding:60px 20px;color:#91a0b8}.shop-empty i{display:block;font-size:44px}.shop-flash{position:fixed;right:20px;bottom:20px;background:#13213a;border:1px solid #00d4ea;border-radius:12px;padding:13px 16px;z-index:9999}
-        @media(max-width:800px){.shop-stats{grid-template-columns:repeat(2,1fr)}.shop-filters{flex-wrap:wrap}.shop-filters input{min-width:100%}.order-body{display:block}.customer{min-width:0;margin-bottom:16px}.money{text-align:left;margin-top:12px}.admin-content{padding:16px 10px}.shop-order{padding:15px}.packed-at{text-align:left}.management-grid{grid-template-columns:1fr}.management-note{grid-column:auto}.management-actions{align-items:flex-start;flex-direction:column}.management-actions button{width:100%}.dhl-export-bar{align-items:stretch;flex-direction:column}.dhl-export-bar button{width:100%}}
+        @media(max-width:800px){.shop-stats{grid-template-columns:repeat(2,1fr)}.shop-filters{flex-wrap:wrap}.shop-filters input{min-width:100%}.order-body{display:block}.customer{min-width:0;margin-bottom:16px}.money{text-align:left;margin-top:12px}.admin-content{padding:16px 10px}.shop-order{padding:15px}.packed-at{text-align:left}.bank-payment-card{align-items:stretch;flex-direction:column}.bank-payment-card button{width:100%}.management-grid{grid-template-columns:1fr}.management-note{grid-column:auto}.management-actions{align-items:flex-start;flex-direction:column}.management-actions button{width:100%}.dhl-export-bar{align-items:stretch;flex-direction:column}.dhl-export-bar button{width:100%}}
         @media(max-width:480px){.shop-head{display:block}.shop-refresh{margin-top:12px;width:100%}.shop-stats{grid-template-columns:1fr}.customer h2{font-size:18px}}
         </style>
     <?php }
@@ -449,6 +520,7 @@ final class PPV_Standalone_Webshop_Orders {
             function flash(text){var n=document.createElement('div');n.className='shop-flash';n.textContent=text;document.body.appendChild(n);setTimeout(function(){n.remove();},2600);}
             document.querySelectorAll('.pack-check input').forEach(function(box){box.addEventListener('change',function(){var card=box.closest('.shop-order');var data=new URLSearchParams();data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);data.set('packed',box.checked?'1':'0');box.disabled=true;fetch('/admin/webshop-orders/packing',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){card.classList.toggle('is-packed',box.checked);flash(box.checked?'Becsomagolva elmentve':'Jelölés visszavonva');}).catch(function(){box.checked=!box.checked;flash('A mentés nem sikerült');}).finally(function(){box.disabled=false;});});});
             document.querySelectorAll('.management-panel').forEach(function(form){form.addEventListener('submit',function(event){event.preventDefault();var card=form.closest('.shop-order'),data=new URLSearchParams(new FormData(form));data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);form.classList.add('is-saving');fetch('/admin/webshop-orders/manage-update',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error((j.data&&j.data.message)||'Hiba');return j;});}).then(function(){flash('A rendelés frissítve a shopban');setTimeout(function(){location.reload();},500);}).catch(function(error){flash(error.message||'A rendelés nem frissíthető');form.classList.remove('is-saving');});});});
+            document.querySelectorAll('.approve-bank-payment').forEach(function(button){button.addEventListener('click',function(){if(!window.confirm('Biztosan beérkezett a banki átutalás? A jóváhagyás után a termék bekerülhet a beszállítói kosárba.'))return;var card=button.closest('.shop-order'),form=button.closest('.management-panel'),data=new URLSearchParams();data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);form.classList.add('is-saving');fetch('/admin/webshop-orders/approve-bank-transfer',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error((j.data&&j.data.message)||'Hiba');return j;});}).then(function(){flash('A banki fizetés jóváhagyva');setTimeout(function(){location.reload();},500);}).catch(function(error){flash(error.message||'A jóváhagyás nem sikerült');form.classList.remove('is-saving');});});});
             document.querySelectorAll('.copy-tracking').forEach(function(button){button.addEventListener('click',function(){var value=button.parentElement.querySelector('span').textContent;navigator.clipboard.writeText(value).then(function(){flash('Nyomkövetési szám másolva');}).catch(function(){flash('A másolás nem sikerült');});});});
             var dhlAll=document.getElementById('dhl-select-all'),dhlButton=document.getElementById('dhl-export-button'),dhlBoxes=Array.prototype.slice.call(document.querySelectorAll('.dhl-select input'));
             function updateDhlExport(){if(dhlButton)dhlButton.disabled=!dhlBoxes.some(function(box){return box.checked;});if(dhlAll)dhlAll.checked=dhlBoxes.length>0&&dhlBoxes.every(function(box){return box.checked;});}

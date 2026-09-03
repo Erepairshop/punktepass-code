@@ -388,6 +388,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/webshop-orders/manage-update') {
             require_once __DIR__ . '/admin/standalone/webshop-orders.php';
             PPV_Standalone_Webshop_Orders::handle_management_update();
+        } elseif ($path === '/admin/webshop-orders/approve-bank-transfer') {
+            require_once __DIR__ . '/admin/standalone/webshop-orders.php';
+            PPV_Standalone_Webshop_Orders::handle_bank_transfer_approval();
         } elseif ($path === '/admin/webshop-orders/dhl-csv') {
             require_once __DIR__ . '/admin/standalone/webshop-orders.php';
             PPV_Standalone_Webshop_Orders::handle_dhl_csv_export();
