@@ -12,6 +12,7 @@ final class PPV_Standalone_Ebay_Cockpit {
     const SCHEMA_VERSION = '1.0.0';
     const COST_FILE = '/var/lib/punktepass/ebay-cockpit-costs.json';
     const AGENT_ACTIONS_FILE = '/var/lib/punktepass/ebay-agent-actions.json';
+    const CONVERSATIONS_FILE = '/var/lib/punktepass/ebay-conversations.json';
 
     public static function install_schema() {
         global $wpdb;
@@ -314,9 +315,45 @@ final class PPV_Standalone_Ebay_Cockpit {
         }
     }
 
+    public static function handle_conversation_update() {
+        self::require_valid_post();
+        $conversation_id = sanitize_text_field($_POST['conversation_id'] ?? '');
+        if ($conversation_id === '') self::json_error('Hiányzó beszélgetésazonosító.', 400);
+        $document = self::load_conversation_document();
+        $found = false;
+        foreach ($document['items'] as &$row) {
+            if ((string)($row['conversationId'] ?? '') !== $conversation_id) continue;
+            $found = true;
+            $status = sanitize_key($_POST['status'] ?? 'open');
+            $case_type = sanitize_key($_POST['case_type'] ?? 'general');
+            $replacement_status = sanitize_key($_POST['replacement_status'] ?? '');
+            $row['status'] = in_array($status, ['open','closed'], true) ? $status : 'open';
+            $row['caseType'] = in_array($case_type, ['general','replacement','return','delivery','other'], true) ? $case_type : 'general';
+            $row['replacementStatus'] = in_array($replacement_status, ['','promised','packed','shipped','resolved'], true) ? $replacement_status : '';
+            $row['replacementTrackingNumber'] = preg_replace('/[^A-Za-z0-9]/', '', (string)($_POST['replacement_tracking'] ?? ''));
+            $row['internalNote'] = mb_substr(sanitize_textarea_field($_POST['internal_note'] ?? ''), 0, 2000);
+            $row['nextActionAtUtc'] = '';
+            $next = sanitize_text_field($_POST['next_action_at'] ?? '');
+            if ($next !== '') {
+                $timestamp = strtotime($next);
+                if ($timestamp) $row['nextActionAtUtc'] = gmdate('c', $timestamp);
+            }
+            $row['followUpRequired'] = $row['status'] === 'open'
+                && in_array($row['replacementStatus'], ['promised','packed'], true);
+            $row['adminUpdatedAtUtc'] = gmdate('c');
+            $row['updatedAtUtc'] = gmdate('c');
+            break;
+        }
+        unset($row);
+        if (!$found) self::json_error('A beszélgetés nem található.', 404);
+        self::write_conversation_document($document);
+        self::json_success(['conversationId' => $conversation_id]);
+    }
+
     public static function render() {
         self::install_schema();
-        $tab = ($_GET['tab'] ?? 'orders') === 'profit' ? 'profit' : 'orders';
+        $requested_tab = sanitize_key($_GET['tab'] ?? 'orders');
+        $tab = in_array($requested_tab, ['orders','messages','profit'], true) ? $requested_tab : 'orders';
         $csrf = self::csrf_token();
         PPV_Standalone_Admin::get_admin_header('ebay-cockpit');
         self::render_styles();
@@ -331,10 +368,12 @@ final class PPV_Standalone_Ebay_Cockpit {
         <?php self::render_sync_state(); ?>
         <div class="ebay-tabs">
             <a href="/admin/ebay-cockpit" class="<?php echo $tab === 'orders' ? 'active' : ''; ?>">Rendelések</a>
+            <a href="/admin/ebay-cockpit?tab=messages" class="<?php echo $tab === 'messages' ? 'active' : ''; ?>">Nyitott üzenetek</a>
             <a href="/admin/ebay-cockpit?tab=profit" class="<?php echo $tab === 'profit' ? 'active' : ''; ?>">Nyereség</a>
         </div>
         <?php
         if ($tab === 'profit') self::render_profit();
+        elseif ($tab === 'messages') self::render_conversations();
         else self::render_orders();
         self::render_scripts($csrf);
         PPV_Standalone_Admin::get_admin_footer();
@@ -443,6 +482,58 @@ final class PPV_Standalone_Ebay_Cockpit {
         <?php
     }
 
+    private static function render_conversations() {
+        $document = self::load_conversation_document(true);
+        $filter = sanitize_key($_GET['message_status'] ?? 'open');
+        if (!in_array($filter, ['open','closed','all'], true)) $filter = 'open';
+        $rows = array_values(array_filter($document['items'], function($row) use ($filter) {
+            return $filter === 'all' || (string)($row['status'] ?? 'open') === $filter;
+        }));
+        usort($rows, function($a, $b) { return strcmp((string)($b['lastActivityAtUtc'] ?? ''), (string)($a['lastActivityAtUtc'] ?? '')); });
+        $open_count = count(array_filter($document['items'], function($row) { return ($row['status'] ?? 'open') === 'open'; }));
+        $attention_count = count(array_filter($document['items'], function($row) { return ($row['status'] ?? 'open') === 'open' && !empty($row['followUpRequired']); }));
+        ?>
+        <div class="message-summary">
+            <div><strong><?php echo (int)$open_count; ?></strong><span>Nyitott ügy</span></div>
+            <div><strong><?php echo (int)$attention_count; ?></strong><span>Teendőt igényel</span></div>
+        </div>
+        <div class="message-filter">
+            <a class="<?php echo $filter === 'open' ? 'active' : ''; ?>" href="/admin/ebay-cockpit?tab=messages&amp;message_status=open">Nyitott</a>
+            <a class="<?php echo $filter === 'closed' ? 'active' : ''; ?>" href="/admin/ebay-cockpit?tab=messages&amp;message_status=closed">Lezárt</a>
+            <a class="<?php echo $filter === 'all' ? 'active' : ''; ?>" href="/admin/ebay-cockpit?tab=messages&amp;message_status=all">Mind</a>
+        </div>
+        <div class="conversation-list">
+        <?php if (!$rows): ?><div class="empty-state"><i class="ri-chat-check-line"></i>Nincs ilyen üzenetügy.</div><?php endif; ?>
+        <?php foreach ($rows as $row):
+            $id = (string)($row['conversationId'] ?? '');
+            $next_value = !empty($row['nextActionAtUtc']) ? date('Y-m-d\TH:i', strtotime($row['nextActionAtUtc'])) : '';
+            $last_activity = !empty($row['lastActivityAtUtc']) ? date_i18n('Y. m. d. H:i', strtotime($row['lastActivityAtUtc'])) : '';
+        ?>
+            <article class="conversation-card <?php echo !empty($row['followUpRequired']) ? 'needs-action' : ''; ?>" data-conversation-id="<?php echo esc_attr($id); ?>">
+                <div class="conversation-top">
+                    <div><span class="conversation-buyer"><?php echo esc_html($row['buyerId'] ?? 'eBay vevő'); ?></span><small><?php echo esc_html($row['itemId'] ?? ''); ?></small></div>
+                    <span class="conversation-state"><?php echo ($row['status'] ?? 'open') === 'open' ? 'Nyitott' : 'Lezárt'; ?></span>
+                </div>
+                <h2><?php echo esc_html($row['itemTitle'] ?? 'eBay termék'); ?></h2>
+                <?php if (!empty($row['latestBuyerMessage'])): ?><div class="latest-message"><strong>Utolsó vevői üzenet</strong><?php echo esc_html($row['latestBuyerMessage']); ?></div><?php endif; ?>
+                <form class="conversation-form">
+                    <input type="hidden" name="conversation_id" value="<?php echo esc_attr($id); ?>">
+                    <div class="conversation-fields">
+                        <label>Állapot<select name="status"><option value="open" <?php selected($row['status'] ?? '', 'open'); ?>>Nyitott</option><option value="closed" <?php selected($row['status'] ?? '', 'closed'); ?>>Lezárt</option></select></label>
+                        <label>Ügy típusa<select name="case_type"><option value="general" <?php selected($row['caseType'] ?? '', 'general'); ?>>Általános</option><option value="replacement" <?php selected($row['caseType'] ?? '', 'replacement'); ?>>Ersatzlieferung</option><option value="delivery" <?php selected($row['caseType'] ?? '', 'delivery'); ?>>Kézbesítés</option><option value="return" <?php selected($row['caseType'] ?? '', 'return'); ?>>Visszaküldés</option><option value="other" <?php selected($row['caseType'] ?? '', 'other'); ?>>Egyéb</option></select></label>
+                        <label>Ersatz állapot<select name="replacement_status"><option value="">Nincs</option><option value="promised" <?php selected($row['replacementStatus'] ?? '', 'promised'); ?>>Megígérve</option><option value="packed" <?php selected($row['replacementStatus'] ?? '', 'packed'); ?>>Becsomagolva</option><option value="shipped" <?php selected($row['replacementStatus'] ?? '', 'shipped'); ?>>Elküldve</option><option value="resolved" <?php selected($row['replacementStatus'] ?? '', 'resolved'); ?>>Rendezve</option></select></label>
+                        <label>Nyomkövetési szám<input name="replacement_tracking" value="<?php echo esc_attr($row['replacementTrackingNumber'] ?? ''); ?>" placeholder="Ersatzlieferung tracking"></label>
+                        <label>Következő teendő<input type="datetime-local" name="next_action_at" value="<?php echo esc_attr($next_value); ?>"></label>
+                    </div>
+                    <label class="conversation-note">Belső megjegyzés<textarea name="internal_note" rows="3" placeholder="Például: Ersatzlieferung elküldve, ezt egyeztettük a vevővel"><?php echo esc_textarea($row['internalNote'] ?? ''); ?></textarea></label>
+                    <div class="conversation-actions"><small>Utolsó aktivitás: <?php echo esc_html($last_activity); ?>. Teendő nélkül 7 nap után automatikusan lezárul.</small><button type="submit">Mentés</button></div>
+                </form>
+            </article>
+        <?php endforeach; ?>
+        </div>
+        <?php
+    }
+
     private static function render_profit() {
         global $wpdb;
         $period = sanitize_key($_GET['period'] ?? '30');
@@ -535,9 +626,9 @@ final class PPV_Standalone_Ebay_Cockpit {
 
     private static function render_styles() { ?>
         <style>
-            .ebay-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.ebay-head .page-title{margin-bottom:4px}.ebay-subtitle,.sync-state{color:#91a0b8;font-size:13px}.sync-state{margin:12px 0}.ebay-sync,.ebay-filters button,.profit-settings button{border:0;border-radius:10px;background:#00d4ea;color:#06161c;padding:11px 16px;font-weight:700;cursor:pointer}.ebay-sync:disabled{opacity:.55}.ebay-tabs{display:flex;gap:8px;margin:22px 0}.ebay-tabs a,.period-links a{color:#a9b4c7;text-decoration:none;padding:10px 16px;border:1px solid rgba(255,255,255,.1);border-radius:10px}.ebay-tabs a.active,.period-links a.active{color:#fff;background:rgba(0,230,255,.15);border-color:#00d4ea}.ebay-stats,.profit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.ebay-stats>div,.profit-summary>div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px}.ebay-stats strong,.profit-summary strong{display:block;color:#00e6ff;font-size:26px}.ebay-stats span,.profit-summary span{color:#91a0b8;font-size:13px}.profit-summary .profit-main{background:rgba(33,186,120,.12);border-color:rgba(33,186,120,.45)}.profit-summary .profit-main strong{color:#4dde9f}.ebay-filters{display:flex;gap:10px;margin:18px 0}.ebay-filters select,.ebay-filters input,.profit-settings input{background:#16213e;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px}.ebay-filters input{flex:1}.order-list{display:grid;gap:12px}.order-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px}.order-card.is-packed{border-color:rgba(76,175,80,.5);background:rgba(76,175,80,.06)}.order-card.is-cancelled{opacity:.55}.order-top,.order-grid{display:flex;align-items:center;justify-content:space-between;gap:18px}.order-top{padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.08)}.pack-check{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer}.pack-check input{position:absolute;opacity:0}.check-box{width:32px;height:32px;border:2px solid #70809a;border-radius:9px;display:grid;place-items:center;color:transparent;font-size:22px}.pack-check input:checked+.check-box{background:#24b47e;border-color:#24b47e;color:#fff}.order-date,.minor,.address-line,.order-id,.packed-time{color:#91a0b8;font-size:12px}.order-grid{align-items:flex-start;padding-top:16px}.customer-block{min-width:260px}.customer-block h2{font-size:20px;margin:4px 0}.items-block{flex:1}.item-line{display:flex;gap:10px;margin-bottom:10px}.item-line .qty{background:rgba(0,230,255,.12);color:#00e6ff;border-radius:8px;padding:5px 8px;height:max-content;white-space:nowrap}.item-line small,.profit-table small,.agent-action small{display:block;color:#8290a8;margin-top:4px}.item-line .variation-aspect{display:inline-block;margin:6px 6px 0 0;padding:4px 8px;border-radius:7px;background:rgba(255,213,0,.12);color:#ffe574}.order-money{text-align:right}.order-money>strong{display:block;font-size:20px;margin-bottom:8px}.status-pill{display:inline-block;background:rgba(255,255,255,.08);border-radius:20px;padding:5px 9px;color:#aab5c8;font-size:11px}.agent-actions{margin-top:14px;padding:13px;border:1px solid rgba(255,196,92,.4);border-radius:12px;background:rgba(255,166,0,.08)}.agent-actions-title{font-weight:800;color:#ffd074;margin-bottom:9px}.agent-action{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px}.agent-action-status{padding:5px 8px;border-radius:20px;background:rgba(255,196,92,.16);color:#ffd074;font-size:11px}.agent-action-price{font-weight:800}.agent-action a{color:#00e6ff}.packed-time{text-align:right;margin-top:10px}.period-links{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.notice-warn{background:rgba(255,166,0,.12);border:1px solid rgba(255,166,0,.35);color:#ffc45c;padding:13px 16px;border-radius:11px;margin:14px 0}.profit-table-wrap{overflow:auto;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px}.profit-table{min-width:980px}.profit-cell{color:#4dde9f;font-weight:700}.missing{color:#ffbd59}.profit-settings{margin-top:20px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px}.profit-settings summary{cursor:pointer;font-weight:700}.profit-settings form{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin:18px 0}.profit-settings label span{display:block;color:#a9b4c7;font-size:12px;margin-bottom:5px}.profit-settings input{width:100%}.profit-settings p{color:#91a0b8;font-size:12px}.sync-flash{position:fixed;right:20px;bottom:20px;background:#13213a;border:1px solid #00d4ea;border-radius:12px;padding:13px 16px;z-index:9999}
-            @media(max-width:800px){.ebay-head{align-items:flex-start}.ebay-stats,.profit-summary{grid-template-columns:repeat(2,1fr)}.ebay-filters{flex-wrap:wrap}.ebay-filters input{min-width:100%}.order-grid{display:block}.customer-block{min-width:0;margin-bottom:16px}.order-money{text-align:left;margin-top:12px}.profit-settings form{grid-template-columns:1fr 1fr}.admin-content{padding:16px 10px}.order-card{padding:15px}.order-top{align-items:flex-start}.order-date{text-align:right}.packed-time{text-align:left}}
-            @media(max-width:480px){.ebay-head{display:block}.ebay-sync{margin-top:12px;width:100%}.ebay-stats,.profit-summary,.profit-settings form{grid-template-columns:1fr}.ebay-tabs a{flex:1;text-align:center}.customer-block h2{font-size:18px}.agent-action{grid-template-columns:1fr}.agent-action-price{text-align:left}}
+            .ebay-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.ebay-head .page-title{margin-bottom:4px}.ebay-subtitle,.sync-state{color:#91a0b8;font-size:13px}.sync-state{margin:12px 0}.ebay-sync,.ebay-filters button,.profit-settings button,.conversation-actions button{border:0;border-radius:10px;background:#00d4ea;color:#06161c;padding:11px 16px;font-weight:700;cursor:pointer}.ebay-sync:disabled{opacity:.55}.ebay-tabs{display:flex;gap:8px;margin:22px 0;flex-wrap:wrap}.ebay-tabs a,.period-links a,.message-filter a{color:#a9b4c7;text-decoration:none;padding:10px 16px;border:1px solid rgba(255,255,255,.1);border-radius:10px}.ebay-tabs a.active,.period-links a.active,.message-filter a.active{color:#fff;background:rgba(0,230,255,.15);border-color:#00d4ea}.ebay-stats,.profit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.ebay-stats>div,.profit-summary>div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px}.ebay-stats strong,.profit-summary strong{display:block;color:#00e6ff;font-size:26px}.ebay-stats span,.profit-summary span{color:#91a0b8;font-size:13px}.profit-summary .profit-main{background:rgba(33,186,120,.12);border-color:rgba(33,186,120,.45)}.profit-summary .profit-main strong{color:#4dde9f}.ebay-filters{display:flex;gap:10px;margin:18px 0}.ebay-filters select,.ebay-filters input,.profit-settings input,.conversation-form input,.conversation-form select,.conversation-form textarea{background:#16213e;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px}.ebay-filters input{flex:1}.order-list{display:grid;gap:12px}.order-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px}.order-card.is-packed{border-color:rgba(76,175,80,.5);background:rgba(76,175,80,.06)}.order-card.is-cancelled{opacity:.55}.order-top,.order-grid{display:flex;align-items:center;justify-content:space-between;gap:18px}.order-top{padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.08)}.pack-check{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer}.pack-check input{position:absolute;opacity:0}.check-box{width:32px;height:32px;border:2px solid #70809a;border-radius:9px;display:grid;place-items:center;color:transparent;font-size:22px}.pack-check input:checked+.check-box{background:#24b47e;border-color:#24b47e;color:#fff}.order-date,.minor,.address-line,.order-id,.packed-time{color:#91a0b8;font-size:12px}.order-grid{align-items:flex-start;padding-top:16px}.customer-block{min-width:260px}.customer-block h2{font-size:20px;margin:4px 0}.items-block{flex:1}.item-line{display:flex;gap:10px;margin-bottom:10px}.item-line .qty{background:rgba(0,230,255,.12);color:#00e6ff;border-radius:8px;padding:5px 8px;height:max-content;white-space:nowrap}.item-line small,.profit-table small,.agent-action small{display:block;color:#8290a8;margin-top:4px}.item-line .variation-aspect{display:inline-block;margin:6px 6px 0 0;padding:4px 8px;border-radius:7px;background:rgba(255,213,0,.12);color:#ffe574}.order-money{text-align:right}.order-money>strong{display:block;font-size:20px;margin-bottom:8px}.status-pill{display:inline-block;background:rgba(255,255,255,.08);border-radius:20px;padding:5px 9px;color:#aab5c8;font-size:11px}.agent-actions{margin-top:14px;padding:13px;border:1px solid rgba(255,196,92,.4);border-radius:12px;background:rgba(255,166,0,.08)}.agent-actions-title{font-weight:800;color:#ffd074;margin-bottom:9px}.agent-action{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px}.agent-action-status{padding:5px 8px;border-radius:20px;background:rgba(255,196,92,.16);color:#ffd074;font-size:11px}.agent-action-price{font-weight:800}.agent-action a{color:#00e6ff}.packed-time{text-align:right;margin-top:10px}.period-links{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.notice-warn{background:rgba(255,166,0,.12);border:1px solid rgba(255,166,0,.35);color:#ffc45c;padding:13px 16px;border-radius:11px;margin:14px 0}.profit-table-wrap{overflow:auto;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px}.profit-table{min-width:980px}.profit-cell{color:#4dde9f;font-weight:700}.missing{color:#ffbd59}.profit-settings{margin-top:20px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px}.profit-settings summary{cursor:pointer;font-weight:700}.profit-settings form{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin:18px 0}.profit-settings label span{display:block;color:#a9b4c7;font-size:12px;margin-bottom:5px}.profit-settings input{width:100%}.profit-settings p{color:#91a0b8;font-size:12px}.message-summary{display:grid;grid-template-columns:repeat(2,minmax(0,220px));gap:12px;margin:18px 0}.message-summary>div{padding:18px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.04)}.message-summary strong{display:block;color:#00e6ff;font-size:26px}.message-summary span{color:#91a0b8;font-size:13px}.message-filter{display:flex;gap:8px;margin:16px 0}.conversation-list{display:grid;gap:14px}.conversation-card{padding:18px;border:1px solid rgba(255,255,255,.11);border-radius:16px;background:rgba(255,255,255,.04)}.conversation-card.needs-action{border-color:#ffbd59}.conversation-top,.conversation-actions{display:flex;justify-content:space-between;align-items:center;gap:12px}.conversation-buyer{font-size:18px;font-weight:800}.conversation-top small{display:block;color:#8290a8}.conversation-state{padding:5px 10px;border-radius:20px;background:rgba(0,230,255,.12);color:#00e6ff;font-size:12px}.conversation-card h2{font-size:17px;margin:14px 0}.latest-message{padding:12px;border-left:3px solid #00d4ea;background:rgba(0,230,255,.06);border-radius:0 9px 9px 0;margin-bottom:14px}.latest-message strong{display:block;color:#91a0b8;font-size:11px;margin-bottom:5px}.conversation-fields{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:10px}.conversation-form label{display:grid;gap:5px;color:#a9b4c7;font-size:12px}.conversation-note{margin-top:10px}.conversation-form textarea{resize:vertical}.conversation-actions{margin-top:12px}.conversation-actions small{color:#8290a8}.sync-flash{position:fixed;right:20px;bottom:20px;background:#13213a;border:1px solid #00d4ea;border-radius:12px;padding:13px 16px;z-index:9999}
+            @media(max-width:800px){.ebay-head{align-items:flex-start}.ebay-stats,.profit-summary{grid-template-columns:repeat(2,1fr)}.ebay-filters{flex-wrap:wrap}.ebay-filters input{min-width:100%}.order-grid{display:block}.customer-block{min-width:0;margin-bottom:16px}.order-money{text-align:left;margin-top:12px}.profit-settings form,.conversation-fields{grid-template-columns:1fr 1fr}.admin-content{padding:16px 10px}.order-card{padding:15px}.order-top{align-items:flex-start}.order-date{text-align:right}.packed-time{text-align:left}}
+            @media(max-width:480px){.ebay-head{display:block}.ebay-sync{margin-top:12px;width:100%}.ebay-stats,.profit-summary,.profit-settings form,.conversation-fields,.message-summary{grid-template-columns:1fr}.ebay-tabs a{flex:1;text-align:center;padding:9px 7px}.customer-block h2{font-size:18px}.agent-action{grid-template-columns:1fr}.agent-action-price{text-align:left}.conversation-actions{align-items:stretch;flex-direction:column}.conversation-actions button{width:100%}}
         </style>
     <?php }
 
@@ -547,6 +638,7 @@ final class PPV_Standalone_Ebay_Cockpit {
             var csrf=<?php echo wp_json_encode($csrf); ?>;
             function flash(text){var n=document.createElement('div');n.className='sync-flash';n.textContent=text;document.body.appendChild(n);setTimeout(function(){n.remove();},2600);}
             document.querySelectorAll('.pack-check input').forEach(function(box){box.addEventListener('change',function(){var card=box.closest('.order-card');var data=new URLSearchParams();data.set('csrf',csrf);data.set('order_id',card.dataset.orderId);data.set('packed',box.checked?'1':'0');box.disabled=true;fetch('/admin/ebay-cockpit/packing',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){card.classList.toggle('is-packed',box.checked);flash(box.checked?'Becsomagolva elmentve':'Jelölés visszavonva');}).catch(function(){box.checked=!box.checked;flash('A mentés nem sikerült');}).finally(function(){box.disabled=false;});});});
+            document.querySelectorAll('.conversation-form').forEach(function(form){form.addEventListener('submit',function(event){event.preventDefault();var button=form.querySelector('button[type="submit"]');var data=new URLSearchParams(new FormData(form));data.set('csrf',csrf);button.disabled=true;fetch('/admin/ebay-cockpit/conversation',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){flash('Üzenetügy elmentve');setTimeout(function(){location.reload();},500);}).catch(function(){flash('Az üzenetügy mentése nem sikerült');button.disabled=false;});});});
             var sync=document.getElementById('ebay-sync');if(sync)sync.addEventListener('click',function(){var data=new URLSearchParams();data.set('csrf',csrf);sync.disabled=true;sync.textContent='Frissítés folyamatban';fetch('/admin/ebay-cockpit/sync',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(){location.reload();}).catch(function(){flash('A frissítés most nem sikerült');sync.disabled=false;sync.textContent='Frissítés';});});
         })();
         </script>
@@ -565,6 +657,44 @@ final class PPV_Standalone_Ebay_Cockpit {
             $clean[] = ['name' => $name, 'value' => $value];
         }
         return $clean;
+    }
+
+    private static function load_conversation_document($apply_auto_close = false) {
+        $document = ['schemaVersion' => 1, 'items' => []];
+        if (is_readable(self::CONVERSATIONS_FILE)) {
+            $decoded = json_decode(file_get_contents(self::CONVERSATIONS_FILE), true);
+            if (is_array($decoded)) {
+                $document = isset($decoded['items']) ? $decoded : ['schemaVersion' => 1, 'items' => $decoded];
+            }
+        }
+        if (!isset($document['items']) || !is_array($document['items'])) $document['items'] = [];
+        if ($apply_auto_close) {
+            $changed = false;
+            foreach ($document['items'] as &$row) {
+                $close_at = strtotime((string)($row['autoCloseAfterUtc'] ?? ''));
+                if (($row['status'] ?? 'open') === 'open' && empty($row['followUpRequired'])
+                    && empty($row['nextActionAtUtc']) && $close_at && $close_at <= time()) {
+                    $row['status'] = 'closed';
+                    $row['updatedAtUtc'] = gmdate('c');
+                    $changed = true;
+                }
+            }
+            unset($row);
+            if ($changed) self::write_conversation_document($document);
+        }
+        return $document;
+    }
+
+    private static function write_conversation_document(array $document) {
+        $directory = dirname(self::CONVERSATIONS_FILE);
+        if (!is_dir($directory) || !is_writable($directory)) throw new RuntimeException('Az üzenetügyek tárhelye nem írható.');
+        $temporary = self::CONVERSATIONS_FILE . '.tmp.' . bin2hex(random_bytes(6));
+        $json = wp_json_encode($document, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        if (file_put_contents($temporary, $json, LOCK_EX) === false || !rename($temporary, self::CONVERSATIONS_FILE)) {
+            @unlink($temporary);
+            throw new RuntimeException('Az üzenetügy mentése sikertelen.');
+        }
+        @chmod(self::CONVERSATIONS_FILE, 0660);
     }
 
     private static function load_agent_actions() {

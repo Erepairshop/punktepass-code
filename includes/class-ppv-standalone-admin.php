@@ -376,6 +376,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/ebay-cockpit/sync') {
             require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
             PPV_Standalone_Ebay_Cockpit::handle_manual_sync();
+        } elseif ($path === '/admin/ebay-cockpit/conversation') {
+            require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
+            PPV_Standalone_Ebay_Cockpit::handle_conversation_update();
         } elseif ($path === '/admin/ebay-cockpit') {
             require_once __DIR__ . '/admin/standalone/ebay-cockpit.php';
             PPV_Standalone_Ebay_Cockpit::render();
