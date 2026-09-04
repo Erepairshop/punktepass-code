@@ -11,6 +11,7 @@ final class PPV_Standalone_Ebay_Cockpit {
     const COST_TABLE_SUFFIX = 'ppv_ebay_cockpit_costs';
     const SCHEMA_VERSION = '1.0.0';
     const COST_FILE = '/var/lib/punktepass/ebay-cockpit-costs.json';
+    const AGENT_ACTIONS_FILE = '/var/lib/punktepass/ebay-agent-actions.json';
 
     public static function install_schema() {
         global $wpdb;
@@ -360,6 +361,7 @@ final class PPV_Standalone_Ebay_Cockpit {
             SUM(packed=1) packed_count,
             SUM(fulfillment_status='FULFILLED') shipped_count
             FROM {$wpdb->prefix}" . self::ORDER_TABLE_SUFFIX);
+        $agent_actions = self::load_agent_actions();
         ?>
         <div class="ebay-stats">
             <div><strong><?php echo (int)($counts->open_count ?? 0); ?></strong><span>Csomagolandó</span></div>
@@ -384,6 +386,7 @@ final class PPV_Standalone_Ebay_Cockpit {
         <?php foreach ($orders as $order):
             $items = (array)json_decode($order->items_json, true);
             $cancelled = $order->cancellation_state === 'CANCELED';
+            $order_actions = self::agent_actions_for_order($order, $items, $agent_actions);
         ?>
             <article class="order-card <?php echo $order->packed ? 'is-packed' : ''; ?> <?php echo $cancelled ? 'is-cancelled' : ''; ?>" data-order-id="<?php echo esc_attr($order->order_id); ?>">
                 <div class="order-top">
@@ -419,6 +422,20 @@ final class PPV_Standalone_Ebay_Cockpit {
                         <span class="status-pill"><?php echo esc_html(self::status_label($order)); ?></span>
                     </div>
                 </div>
+                <?php if ($order_actions): ?>
+                    <div class="agent-actions">
+                        <div class="agent-actions-title"><i class="ri-sparkling-2-line"></i> Ügynöki ajánlat és csomagkiegészítő</div>
+                        <?php foreach ($order_actions as $action): ?>
+                            <div class="agent-action">
+                                <span class="agent-action-status"><?php echo esc_html(self::agent_action_status_label($action['status'] ?? '')); ?></span>
+                                <span><strong><?php echo esc_html($action['title'] ?? 'Egyedi tétel'); ?></strong>
+                                <?php if (!empty($action['supplierSku'])): ?><small>Beszerzési SKU: <?php echo esc_html($action['supplierSku']); ?></small><?php endif; ?></span>
+                                <span class="agent-action-price"><?php echo !empty($action['quotedPriceEur']) ? esc_html(self::money($action['quotedPriceEur'])) : 'Ingyenes'; ?></span>
+                                <?php if (!empty($action['listingUrl'])): ?><a href="<?php echo esc_url($action['listingUrl']); ?>" target="_blank" rel="noopener">Hirdetés</a><?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
                 <?php if ($order->packed_at): ?><div class="packed-time">Becsomagolva: <?php echo esc_html(date_i18n('Y. m. d. H:i', strtotime($order->packed_at))); ?></div><?php endif; ?>
             </article>
         <?php endforeach; ?>
@@ -518,9 +535,9 @@ final class PPV_Standalone_Ebay_Cockpit {
 
     private static function render_styles() { ?>
         <style>
-            .ebay-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.ebay-head .page-title{margin-bottom:4px}.ebay-subtitle,.sync-state{color:#91a0b8;font-size:13px}.sync-state{margin:12px 0}.ebay-sync,.ebay-filters button,.profit-settings button{border:0;border-radius:10px;background:#00d4ea;color:#06161c;padding:11px 16px;font-weight:700;cursor:pointer}.ebay-sync:disabled{opacity:.55}.ebay-tabs{display:flex;gap:8px;margin:22px 0}.ebay-tabs a,.period-links a{color:#a9b4c7;text-decoration:none;padding:10px 16px;border:1px solid rgba(255,255,255,.1);border-radius:10px}.ebay-tabs a.active,.period-links a.active{color:#fff;background:rgba(0,230,255,.15);border-color:#00d4ea}.ebay-stats,.profit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.ebay-stats>div,.profit-summary>div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px}.ebay-stats strong,.profit-summary strong{display:block;color:#00e6ff;font-size:26px}.ebay-stats span,.profit-summary span{color:#91a0b8;font-size:13px}.profit-summary .profit-main{background:rgba(33,186,120,.12);border-color:rgba(33,186,120,.45)}.profit-summary .profit-main strong{color:#4dde9f}.ebay-filters{display:flex;gap:10px;margin:18px 0}.ebay-filters select,.ebay-filters input,.profit-settings input{background:#16213e;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px}.ebay-filters input{flex:1}.order-list{display:grid;gap:12px}.order-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px}.order-card.is-packed{border-color:rgba(76,175,80,.5);background:rgba(76,175,80,.06)}.order-card.is-cancelled{opacity:.55}.order-top,.order-grid{display:flex;align-items:center;justify-content:space-between;gap:18px}.order-top{padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.08)}.pack-check{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer}.pack-check input{position:absolute;opacity:0}.check-box{width:32px;height:32px;border:2px solid #70809a;border-radius:9px;display:grid;place-items:center;color:transparent;font-size:22px}.pack-check input:checked+.check-box{background:#24b47e;border-color:#24b47e;color:#fff}.order-date,.minor,.address-line,.order-id,.packed-time{color:#91a0b8;font-size:12px}.order-grid{align-items:flex-start;padding-top:16px}.customer-block{min-width:260px}.customer-block h2{font-size:20px;margin:4px 0}.items-block{flex:1}.item-line{display:flex;gap:10px;margin-bottom:10px}.item-line .qty{background:rgba(0,230,255,.12);color:#00e6ff;border-radius:8px;padding:5px 8px;height:max-content;white-space:nowrap}.item-line small,.profit-table small{display:block;color:#8290a8;margin-top:4px}.item-line .variation-aspect{display:inline-block;margin:6px 6px 0 0;padding:4px 8px;border-radius:7px;background:rgba(255,213,0,.12);color:#ffe574}.order-money{text-align:right}.order-money>strong{display:block;font-size:20px;margin-bottom:8px}.status-pill{display:inline-block;background:rgba(255,255,255,.08);border-radius:20px;padding:5px 9px;color:#aab5c8;font-size:11px}.packed-time{text-align:right;margin-top:10px}.period-links{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.notice-warn{background:rgba(255,166,0,.12);border:1px solid rgba(255,166,0,.35);color:#ffc45c;padding:13px 16px;border-radius:11px;margin:14px 0}.profit-table-wrap{overflow:auto;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px}.profit-table{min-width:980px}.profit-cell{color:#4dde9f;font-weight:700}.missing{color:#ffbd59}.profit-settings{margin-top:20px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px}.profit-settings summary{cursor:pointer;font-weight:700}.profit-settings form{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin:18px 0}.profit-settings label span{display:block;color:#a9b4c7;font-size:12px;margin-bottom:5px}.profit-settings input{width:100%}.profit-settings p{color:#91a0b8;font-size:12px}.sync-flash{position:fixed;right:20px;bottom:20px;background:#13213a;border:1px solid #00d4ea;border-radius:12px;padding:13px 16px;z-index:9999}
+            .ebay-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.ebay-head .page-title{margin-bottom:4px}.ebay-subtitle,.sync-state{color:#91a0b8;font-size:13px}.sync-state{margin:12px 0}.ebay-sync,.ebay-filters button,.profit-settings button{border:0;border-radius:10px;background:#00d4ea;color:#06161c;padding:11px 16px;font-weight:700;cursor:pointer}.ebay-sync:disabled{opacity:.55}.ebay-tabs{display:flex;gap:8px;margin:22px 0}.ebay-tabs a,.period-links a{color:#a9b4c7;text-decoration:none;padding:10px 16px;border:1px solid rgba(255,255,255,.1);border-radius:10px}.ebay-tabs a.active,.period-links a.active{color:#fff;background:rgba(0,230,255,.15);border-color:#00d4ea}.ebay-stats,.profit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.ebay-stats>div,.profit-summary>div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px}.ebay-stats strong,.profit-summary strong{display:block;color:#00e6ff;font-size:26px}.ebay-stats span,.profit-summary span{color:#91a0b8;font-size:13px}.profit-summary .profit-main{background:rgba(33,186,120,.12);border-color:rgba(33,186,120,.45)}.profit-summary .profit-main strong{color:#4dde9f}.ebay-filters{display:flex;gap:10px;margin:18px 0}.ebay-filters select,.ebay-filters input,.profit-settings input{background:#16213e;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px}.ebay-filters input{flex:1}.order-list{display:grid;gap:12px}.order-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px}.order-card.is-packed{border-color:rgba(76,175,80,.5);background:rgba(76,175,80,.06)}.order-card.is-cancelled{opacity:.55}.order-top,.order-grid{display:flex;align-items:center;justify-content:space-between;gap:18px}.order-top{padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.08)}.pack-check{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer}.pack-check input{position:absolute;opacity:0}.check-box{width:32px;height:32px;border:2px solid #70809a;border-radius:9px;display:grid;place-items:center;color:transparent;font-size:22px}.pack-check input:checked+.check-box{background:#24b47e;border-color:#24b47e;color:#fff}.order-date,.minor,.address-line,.order-id,.packed-time{color:#91a0b8;font-size:12px}.order-grid{align-items:flex-start;padding-top:16px}.customer-block{min-width:260px}.customer-block h2{font-size:20px;margin:4px 0}.items-block{flex:1}.item-line{display:flex;gap:10px;margin-bottom:10px}.item-line .qty{background:rgba(0,230,255,.12);color:#00e6ff;border-radius:8px;padding:5px 8px;height:max-content;white-space:nowrap}.item-line small,.profit-table small,.agent-action small{display:block;color:#8290a8;margin-top:4px}.item-line .variation-aspect{display:inline-block;margin:6px 6px 0 0;padding:4px 8px;border-radius:7px;background:rgba(255,213,0,.12);color:#ffe574}.order-money{text-align:right}.order-money>strong{display:block;font-size:20px;margin-bottom:8px}.status-pill{display:inline-block;background:rgba(255,255,255,.08);border-radius:20px;padding:5px 9px;color:#aab5c8;font-size:11px}.agent-actions{margin-top:14px;padding:13px;border:1px solid rgba(255,196,92,.4);border-radius:12px;background:rgba(255,166,0,.08)}.agent-actions-title{font-weight:800;color:#ffd074;margin-bottom:9px}.agent-action{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px}.agent-action-status{padding:5px 8px;border-radius:20px;background:rgba(255,196,92,.16);color:#ffd074;font-size:11px}.agent-action-price{font-weight:800}.agent-action a{color:#00e6ff}.packed-time{text-align:right;margin-top:10px}.period-links{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.notice-warn{background:rgba(255,166,0,.12);border:1px solid rgba(255,166,0,.35);color:#ffc45c;padding:13px 16px;border-radius:11px;margin:14px 0}.profit-table-wrap{overflow:auto;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px}.profit-table{min-width:980px}.profit-cell{color:#4dde9f;font-weight:700}.missing{color:#ffbd59}.profit-settings{margin-top:20px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px}.profit-settings summary{cursor:pointer;font-weight:700}.profit-settings form{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin:18px 0}.profit-settings label span{display:block;color:#a9b4c7;font-size:12px;margin-bottom:5px}.profit-settings input{width:100%}.profit-settings p{color:#91a0b8;font-size:12px}.sync-flash{position:fixed;right:20px;bottom:20px;background:#13213a;border:1px solid #00d4ea;border-radius:12px;padding:13px 16px;z-index:9999}
             @media(max-width:800px){.ebay-head{align-items:flex-start}.ebay-stats,.profit-summary{grid-template-columns:repeat(2,1fr)}.ebay-filters{flex-wrap:wrap}.ebay-filters input{min-width:100%}.order-grid{display:block}.customer-block{min-width:0;margin-bottom:16px}.order-money{text-align:left;margin-top:12px}.profit-settings form{grid-template-columns:1fr 1fr}.admin-content{padding:16px 10px}.order-card{padding:15px}.order-top{align-items:flex-start}.order-date{text-align:right}.packed-time{text-align:left}}
-            @media(max-width:480px){.ebay-head{display:block}.ebay-sync{margin-top:12px;width:100%}.ebay-stats,.profit-summary,.profit-settings form{grid-template-columns:1fr}.ebay-tabs a{flex:1;text-align:center}.customer-block h2{font-size:18px}}
+            @media(max-width:480px){.ebay-head{display:block}.ebay-sync{margin-top:12px;width:100%}.ebay-stats,.profit-summary,.profit-settings form{grid-template-columns:1fr}.ebay-tabs a{flex:1;text-align:center}.customer-block h2{font-size:18px}.agent-action{grid-template-columns:1fr}.agent-action-price{text-align:left}}
         </style>
     <?php }
 
@@ -548,6 +565,35 @@ final class PPV_Standalone_Ebay_Cockpit {
             $clean[] = ['name' => $name, 'value' => $value];
         }
         return $clean;
+    }
+
+    private static function load_agent_actions() {
+        if (!is_readable(self::AGENT_ACTIONS_FILE)) return [];
+        $decoded = json_decode(file_get_contents(self::AGENT_ACTIONS_FILE), true);
+        $rows = is_array($decoded) && isset($decoded['items']) ? $decoded['items'] : $decoded;
+        return is_array($rows) ? $rows : [];
+    }
+
+    private static function agent_actions_for_order($order, array $items, array $actions) {
+        $item_ids = [];
+        foreach ($items as $item) {
+            if (!empty($item['itemId'])) $item_ids[] = (string)$item['itemId'];
+        }
+        $matches = [];
+        foreach ($actions as $action) {
+            if (!is_array($action)) continue;
+            $order_match = !empty($action['relatedOrderId']) && (string)$action['relatedOrderId'] === (string)$order->order_id;
+            $listing_match = !empty($action['listingItemId']) && in_array((string)$action['listingItemId'], $item_ids, true);
+            $main_match = !empty($action['mainItemId']) && in_array((string)$action['mainItemId'], $item_ids, true)
+                && (empty($action['buyerId']) || (string)$action['buyerId'] === (string)$order->buyer_username);
+            if ($order_match || $listing_match || $main_match) $matches[] = $action;
+        }
+        return $matches;
+    }
+
+    private static function agent_action_status_label($status) {
+        $labels = ['quoted'=>'Ajánlat elküldve','accepted'=>'Elfogadva','listing-created'=>'Egyszeri hirdetés','free-gift'=>'Ingyenes kiegészítő','unavailable'=>'Nem elérhető','closed'=>'Lezárva'];
+        return $labels[(string)$status] ?? 'Ügynöki művelet';
     }
 
     private static function settings() {
