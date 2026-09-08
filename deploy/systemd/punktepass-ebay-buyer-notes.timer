@@ -1,10 +1,11 @@
 [Unit]
-Description=Scan eBay buyer checkout notes every ten minutes
+Description=Scan eBay buyer checkout notes every 20 to 30 minutes
 
 [Timer]
-OnCalendar=*-*-* *:0/10:00 Europe/Berlin
-Persistent=true
-RandomizedDelaySec=90
+OnActiveSec=20min
+OnUnitInactiveSec=20min
+RandomizedDelaySec=10min
+AccuracySec=1s
 Unit=punktepass-ebay-buyer-notes.service
 
 [Install]
