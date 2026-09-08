@@ -342,7 +342,8 @@ final class PPV_Ebay_Invoice {
             'hasCustomerAddress' => $data['customer_address'] !== '',
             'hasCustomerEmail' => $data['customer_email'] !== '',
             'buyerNoteAction' => $note['action'],
-            'buyerNoteEmailOverride' => $note['action'] === 'invoice_email',
+            'buyerNoteEmailOverride' => is_email($note['email'] ?? ''),
+            'buyerNoteIdentityOverride' => $note['action'] === 'invoice_details',
         ];
     }
 
@@ -554,6 +555,18 @@ final class PPV_Ebay_Invoice {
             } elseif ($note['action'] === 'invoice_email' && is_email($note['email'])) {
                 $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', [
                     'customer_email' => $note['email'],
+                ], [
+                    'id' => $invoice_id,
+                    'store_id' => self::STORE_ID,
+                ]);
+            } elseif ($note['action'] === 'invoice_details') {
+                $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', [
+                    'customer_name' => $data['customer_name'],
+                    'customer_company' => $data['customer_company'],
+                    'customer_address' => $data['customer_address'],
+                    'customer_plz' => $data['customer_plz'],
+                    'customer_city' => $data['customer_city'],
+                    'customer_email' => $data['customer_email'],
                 ], [
                     'id' => $invoice_id,
                     'store_id' => self::STORE_ID,
@@ -945,11 +958,21 @@ final class PPV_Ebay_Invoice {
         $address = $contact['contactAddress'] ?? [];
         $email = sanitize_email($registration['email'] ?? ($shipping['email'] ?? ''));
         $note = self::buyer_note_analysis($order);
-        if ($note['action'] === 'invoice_email' && is_email($note['email'])) {
+        if (in_array($note['action'], ['invoice_email', 'invoice_details'], true) && is_email($note['email'] ?? '')) {
             $email = $note['email'];
         }
         $name = sanitize_text_field($contact['fullName'] ?? ($shipping['fullName'] ?? ($order['buyer']['username'] ?? 'eBay-Kunde')));
         $company = sanitize_text_field($contact['companyName'] ?? '');
+        if ($note['action'] === 'invoice_details') {
+            $name = $note['invoice_name'];
+            $company = '';
+            $address = [
+                'addressLine1' => $note['invoice_address'],
+                'postalCode' => $note['invoice_postal_code'],
+                'city' => $note['invoice_city'],
+                'countryCode' => 'DE',
+            ];
+        }
         $currency = (string)($order['pricingSummary']['total']['currency'] ?? '');
         $gross = round((float)($order['pricingSummary']['total']['value'] ?? 0), 2);
         if ($gross <= 0) throw new RuntimeException('Order total is invalid.');
@@ -1005,7 +1028,11 @@ final class PPV_Ebay_Invoice {
     private static function buyer_note_analysis(array $order) {
         $raw = trim((string)($order['buyerCheckoutNotes'] ?? ''));
         if ($raw === '') {
-            return ['text' => '', 'hash' => null, 'action' => null, 'email' => null];
+            return [
+                'text' => '', 'hash' => null, 'action' => null, 'email' => null,
+                'invoice_name' => null, 'invoice_address' => null,
+                'invoice_postal_code' => null, 'invoice_city' => null,
+            ];
         }
         $text = sanitize_textarea_field($raw);
         $emails = [];
@@ -1016,12 +1043,49 @@ final class PPV_Ebay_Invoice {
             }
         }
         $invoice_intent = preg_match('/\b(rechnung|invoice|sz[aá]mla)\b/iu', $text) === 1;
-        $action = ($invoice_intent && count($emails) === 1) ? 'invoice_email' : 'notify_pending';
+        $invoice_name = null;
+        $invoice_address = null;
+        $invoice_postal_code = null;
+        $invoice_city = null;
+
+        // eBay displays this structured buyer request as, for example:
+        // Rechnung Name / COMPANY / Location, Street 1, 12345 City.
+        // Only this narrow format is applied automatically. Free-form notes
+        // remain manual so that delivery instructions cannot alter invoices.
+        $lines = preg_split('/\R+/u', $text);
+        $lines = array_values(array_filter(array_map('trim', $lines), function($line) {
+            return $line !== '';
+        }));
+        if ($invoice_intent && count($lines) >= 3 && preg_match('/^rechnung\s+name\s*:?\s*(.*)$/iu', $lines[0], $header)) {
+            $name_index = 1;
+            $candidate_name = trim((string)($header[1] ?? ''));
+            if ($candidate_name === '') $candidate_name = $lines[$name_index++];
+            $candidate_address = trim(implode(', ', array_slice($lines, $name_index)));
+            if ($candidate_name !== '' && mb_strlen($candidate_name, 'UTF-8') <= 190 &&
+                preg_match('/^(.+?)[,\s]+([0-9]{5})\s+([^,]+)$/u', $candidate_address, $address_match)) {
+                $invoice_name = sanitize_text_field($candidate_name);
+                $invoice_address = sanitize_text_field(trim($address_match[1], " \t\n\r\0\x0B,"));
+                $invoice_postal_code = sanitize_text_field($address_match[2]);
+                $invoice_city = sanitize_text_field(trim($address_match[3]));
+            }
+        }
+
+        if ($invoice_name && $invoice_address && $invoice_postal_code && $invoice_city) {
+            $action = 'invoice_details';
+        } elseif ($invoice_intent && count($emails) === 1) {
+            $action = 'invoice_email';
+        } else {
+            $action = 'notify_pending';
+        }
         return [
             'text' => $text,
             'hash' => hash('sha256', $text),
             'action' => $action,
-            'email' => $action === 'invoice_email' ? reset($emails) : null,
+            'email' => count($emails) === 1 ? reset($emails) : null,
+            'invoice_name' => $invoice_name,
+            'invoice_address' => $invoice_address,
+            'invoice_postal_code' => $invoice_postal_code,
+            'invoice_city' => $invoice_city,
         ];
     }
 
@@ -1030,10 +1094,12 @@ final class PPV_Ebay_Invoice {
         if ($note['text'] === '') return;
         $table = $wpdb->prefix . self::TABLE_SUFFIX;
         $current = $wpdb->get_row($wpdb->prepare(
-            "SELECT buyer_note_hash,buyer_note_action,buyer_note_notified_at FROM {$table} WHERE id=%d",
+            "SELECT buyer_note_hash,buyer_note_action,buyer_note_email,buyer_note_notified_at FROM {$table} WHERE id=%d",
             (int)$row_id
         ));
-        if ($current && hash_equals((string)$current->buyer_note_hash, (string)$note['hash'])) return;
+        if ($current && hash_equals((string)$current->buyer_note_hash, (string)$note['hash']) &&
+            (string)$current->buyer_note_action === (string)$note['action'] &&
+            (string)$current->buyer_note_email === (string)($note['email'] ?? '')) return;
         $wpdb->update($table, [
             'buyer_note' => $note['text'],
             'buyer_note_hash' => $note['hash'],
