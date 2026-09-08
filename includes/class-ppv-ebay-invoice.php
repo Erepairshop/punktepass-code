@@ -1097,9 +1097,17 @@ final class PPV_Ebay_Invoice {
             "SELECT buyer_note_hash,buyer_note_action,buyer_note_email,buyer_note_notified_at FROM {$table} WHERE id=%d",
             (int)$row_id
         ));
-        if ($current && hash_equals((string)$current->buyer_note_hash, (string)$note['hash']) &&
-            (string)$current->buyer_note_action === (string)$note['action'] &&
-            (string)$current->buyer_note_email === (string)($note['email'] ?? '')) return;
+        $same_note = $current &&
+            hash_equals((string)$current->buyer_note_hash, (string)$note['hash']) &&
+            (string)$current->buyer_note_email === (string)($note['email'] ?? '');
+        $already_notified = $same_note &&
+            (string)$note['action'] === 'notify_pending' &&
+            (string)$current->buyer_note_action === 'manual_notified' &&
+            !empty($current->buyer_note_notified_at);
+        if ($same_note && (
+            (string)$current->buyer_note_action === (string)$note['action'] ||
+            $already_notified
+        )) return;
         $wpdb->update($table, [
             'buyer_note' => $note['text'],
             'buyer_note_hash' => $note['hash'],
