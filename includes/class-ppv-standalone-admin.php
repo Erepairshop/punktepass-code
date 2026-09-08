@@ -400,6 +400,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/webshop-orders') {
             require_once __DIR__ . '/admin/standalone/webshop-orders.php';
             PPV_Standalone_Webshop_Orders::render();
+        } elseif ($path === '/admin/webshop-rma') {
+            require_once __DIR__ . '/admin/standalone/webshop-rma.php';
+            PPV_Standalone_Webshop_RMA::render();
         } elseif ($path === '/admin/shop-chat/reply') {
             require_once __DIR__ . '/admin/standalone/shop-chat.php';
             PPV_Standalone_Shop_Chat::handle_reply();
@@ -1670,6 +1673,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/webshop-orders" class="<?php echo $current_page === 'webshop-orders' ? 'active' : ''; ?>">
                         <i class="ri-store-3-line"></i> Webshop rendelések
+                    </a>
+                    <a href="/admin/webshop-rma" class="<?php echo $current_page === 'webshop-rma' ? 'active' : ''; ?>">
+                        <i class="ri-arrow-go-back-line"></i> Webshop RMA
                     </a>
                     <a href="/admin/shop-chat" class="<?php echo $current_page === 'shop-chat' ? 'active' : ''; ?>">
                         <i class="ri-chat-3-line"></i> Webshop chat
