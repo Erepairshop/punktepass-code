@@ -61,6 +61,7 @@ final class PPV_Ebay_Invoice {
             'buyer_note_action' => "ALTER TABLE {$table} ADD COLUMN buyer_note_action varchar(32) NULL AFTER buyer_note_hash",
             'buyer_note_email' => "ALTER TABLE {$table} ADD COLUMN buyer_note_email varchar(190) NULL AFTER buyer_note_action",
             'buyer_note_notified_at' => "ALTER TABLE {$table} ADD COLUMN buyer_note_notified_at datetime NULL AFTER buyer_note_email",
+            'invoice_email_override' => "ALTER TABLE {$table} ADD COLUMN invoice_email_override varchar(190) NULL AFTER buyer_note_notified_at",
         ];
         foreach ($queue_additions as $column => $sql) {
             if (!in_array($column, $queue_columns, true)) $wpdb->query($sql);
@@ -154,6 +155,49 @@ final class PPV_Ebay_Invoice {
         );
         $wpdb->query($sql);
         if ($wpdb->last_error) throw new RuntimeException('Unable to queue eBay order.');
+    }
+
+    public static function set_invoice_email_override($order_id, $email) {
+        global $wpdb;
+        $order_id = trim((string)$order_id);
+        $email = sanitize_email((string)$email);
+        if ($order_id === '' || !is_email($email)) {
+            throw new InvalidArgumentException('A valid order ID and email address are required.');
+        }
+        self::install_schema();
+        self::enqueue_order($order_id);
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE store_id=%d AND order_id=%s LIMIT 1",
+            self::STORE_ID, $order_id
+        ));
+        if (!$row) throw new RuntimeException('The eBay invoice queue row is unavailable.');
+        if (!empty($row->email_sent_at) || $row->status === 'completed') {
+            throw new RuntimeException('The invoice email has already been sent.');
+        }
+        if ($row->status === 'email_sending') {
+            throw new RuntimeException('The invoice email is currently being sent.');
+        }
+        $updated = $wpdb->update($table, [
+            'invoice_email_override' => $email,
+            'updated_at' => current_time('mysql'),
+        ], ['id' => (int)$row->id]);
+        if ($updated === false) throw new RuntimeException('Unable to store the invoice email override.');
+        if (!empty($row->invoice_id)) {
+            $wpdb->update($wpdb->prefix . 'ppv_repair_invoices', [
+                'customer_email' => $email,
+            ], [
+                'id' => (int)$row->invoice_id,
+                'store_id' => self::STORE_ID,
+            ]);
+            if ($wpdb->last_error) throw new RuntimeException('Unable to update the prepared invoice email.');
+        }
+        return [
+            'order_id' => $order_id,
+            'email' => $email,
+            'status' => (string)$row->status,
+            'invoice_id' => (int)$row->invoice_id,
+        ];
     }
 
     public static function reconcile_orders() {
@@ -535,6 +579,9 @@ final class PPV_Ebay_Invoice {
                 throw new RuntimeException('Order payment is not cleared.');
             }
             $data = self::invoice_data($order);
+            if (is_email($fresh->invoice_email_override ?? '')) {
+                $data['customer_email'] = sanitize_email($fresh->invoice_email_override);
+            }
             if ($data['currency'] !== 'EUR') throw new RuntimeException('Unsupported order currency.');
             if ($data['customer_email'] === '') throw new RuntimeException('Buyer email is not available yet.');
 
@@ -615,6 +662,9 @@ final class PPV_Ebay_Invoice {
                 if (($order['orderPaymentStatus'] ?? '') !== 'PAID') continue;
                 if (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED') continue;
                 $data = self::invoice_data($order);
+                if (is_email($candidate->invoice_email_override ?? '')) {
+                    $data['customer_email'] = sanitize_email($candidate->invoice_email_override);
+                }
                 $created = strtotime($data['created_at'] ?? '');
                 if (!$created || abs($created - $primary_time) > self::GROUP_WINDOW_SECONDS) continue;
                 if ($data['currency'] !== 'EUR' || $data['customer_email'] === '') continue;
