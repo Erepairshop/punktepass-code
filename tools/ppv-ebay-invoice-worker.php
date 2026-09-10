@@ -51,6 +51,12 @@ try {
         case '--dry-run-latest':
             echo wp_json_encode(PPV_Ebay_Invoice::dry_run_latest_order(), JSON_PRETTY_PRINT) . "\n";
             break;
+        case '--set-invoice-email':
+            if (empty($argv[2]) || empty($argv[3])) {
+                throw new InvalidArgumentException('Order ID and email address required.');
+            }
+            echo wp_json_encode(PPV_Ebay_Invoice::set_invoice_email_override($argv[2], $argv[3])) . "\n";
+            break;
         case '--run':
             $queued = PPV_Ebay_Invoice::reconcile_orders();
             $processed = PPV_Ebay_Invoice::process_queue(20);
