@@ -1679,6 +1679,7 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/shop-chat" class="<?php echo $current_page === 'shop-chat' ? 'active' : ''; ?>">
                         <i class="ri-chat-3-line"></i> Webshop chat
+                        <?php if ($counts['shop_chat'] > 0): ?><span class="nav-badge"><?php echo $counts['shop_chat']; ?></span><?php endif; ?>
                     </a>
                     <a href="/admin/handlers" class="<?php echo $current_page === 'handlers' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Handlerek
@@ -1786,8 +1787,17 @@ class PPV_Standalone_Admin {
             'renewals' => 0,
             'suspicious' => 0,
             'pending' => 0,
+            'shop_chat' => 0,
             'agent_new' => 0
         ];
+
+        // Unread customer messages in the webshop chat
+        $shop_chat_table = $wpdb->prefix . 'ppv_shop_chat_conversations';
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($shop_chat_table))) === $shop_chat_table) {
+            $counts['shop_chat'] = intval($wpdb->get_var(
+                "SELECT COALESCE(SUM(unread_admin), 0) FROM {$shop_chat_table}"
+            ));
+        }
 
         // Pending device requests (new/pending status)
         $counts['device_requests'] = intval($wpdb->get_var(
