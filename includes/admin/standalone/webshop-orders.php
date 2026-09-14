@@ -281,27 +281,36 @@ final class PPV_Standalone_Webshop_Orders {
         header('Content-Disposition: attachment; filename="dhl-sendungen-' . wp_date('Y-m-d-His') . '.csv"');
         header('X-Content-Type-Options: nosniff');
         $output = fopen('php://output', 'wb');
-        fwrite($output, implode(';', [
-            'SEND_NAME1', 'SEND_NAME2', 'SEND_STREET', 'SEND_HOUSENUMBER',
-            'SEND_PLZ', 'SEND_CITY', 'SEND_COUNTRY', 'RECV_NAME1', 'RECV_NAME2',
-            'RECV_STREET', 'RECV_HOUSENUMBER', 'RECV_PLZ', 'RECV_CITY',
-            'RECV_COUNTRY', 'PRODUCT', 'COUPON', 'SEND_EMAIL'
-        ]) . "\r\n");
+        fwrite($output, self::dhl_csv_line([
+            'Sendungsreferenz', 'Name 1', 'Name 2', 'Straße', 'Hausnummer',
+            'Adresszusatz', 'PLZ', 'Ort', 'Ländercode', 'E-Mail', 'Telefon',
+            'Gewicht kg', 'DHL Produkt', 'Bestellinhalt',
+        ]));
         foreach ($orders as $order) {
             [$street, $house_number] = self::split_street_and_house_number($order->ship_address1);
+            $items = json_decode((string)$order->items_json, true);
+            $contents = [];
+            foreach ((array)$items as $item) {
+                $label = !empty($item['sku']) ? $item['sku'] : ($item['name'] ?? 'Artikel');
+                $contents[] = max(1, (int)($item['quantity'] ?? 1)) . 'x ' . (string)$label;
+            }
             $name1 = $order->ship_company ?: $order->ship_name;
             $name2 = $order->ship_company ? $order->ship_name : '';
             $row = [
-                'eRepairShop', 'Erik Borota', 'Siedlungsring', '51',
-                '89415', 'Lauingen (Donau)', 'DEU',
+                self::limit_csv_cell('Shop ' . $order->order_number, 35),
                 self::limit_csv_cell($name1, 35),
                 self::limit_csv_cell($name2, 35),
                 self::limit_csv_cell($street, 35),
                 self::limit_csv_cell($house_number, 10),
+                self::limit_csv_cell($order->ship_address2, 35),
                 self::limit_csv_cell($order->ship_postal_code, 10),
                 self::limit_csv_cell($order->ship_city, 35),
                 self::dhl_country_code($order->ship_country),
-                'V62KP', '', 'info@erepairshop.de',
+                self::limit_csv_cell($order->ship_email, 70),
+                self::limit_csv_cell($order->ship_phone, 30),
+                '0,50',
+                'V62KP',
+                self::limit_csv_cell(implode(', ', $contents), 100),
             ];
             fwrite($output, self::dhl_csv_line($row));
         }
