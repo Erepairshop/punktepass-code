@@ -330,8 +330,8 @@ final class PPV_Standalone_Webshop_Orders {
                 '',
                 '',
                 '',
-                'V01PAK',
-                '52555675400101',
+                'V62KP',
+                '52555675406201',
                 'PunktePass',
                 self::limit_csv_cell($order->ship_address2, 35),
             ];
