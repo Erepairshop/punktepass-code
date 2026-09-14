@@ -65,6 +65,7 @@ final class PPV_Standalone_Shop_Chat {
             'last_message_at' => $now,
             'updated_at' => $now,
         ], ['id' => $conversation_id]);
+        wp_cache_delete('ppv_admin_nav_counts');
         self::json_success([
             'messages' => PPV_Shop_Chat::messages_for_conversation($conversation_id),
             'sentByEmail' => $sent_by_email,
@@ -86,6 +87,7 @@ final class PPV_Standalone_Shop_Chat {
             ['id' => $conversation_id]
         );
         if ($ok === false) self::json_error('Az állapot nem menthető.', 500);
+        wp_cache_delete('ppv_admin_nav_counts');
         self::json_success(['status' => $status]);
     }
 
@@ -99,6 +101,7 @@ final class PPV_Standalone_Shop_Chat {
                 ['unread_admin' => 0, 'updated_at' => current_time('mysql')],
                 ['id' => $conversation_id]
             );
+            wp_cache_delete('ppv_admin_nav_counts');
         }
         self::json_success([]);
     }

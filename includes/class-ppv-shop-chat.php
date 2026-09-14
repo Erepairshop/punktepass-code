@@ -201,6 +201,7 @@ final class PPV_Shop_Chat {
             'UPDATE ' . $wpdb->prefix . self::CONVERSATIONS_SUFFIX . " SET unread_admin=unread_admin+1,status='open',reply_channel=%s,last_message_at=%s,updated_at=%s WHERE id=%d",
             $reply_channel, $now, $now, (int)$conversation->id
         ));
+        wp_cache_delete('ppv_admin_nav_counts');
         if ($was_read) {
             $preview = $text !== '' ? $text : 'Csatolmány: ' . implode(', ', wp_list_pluck($attachments, 'name'));
             self::notify_admin($conversation, $preview);
