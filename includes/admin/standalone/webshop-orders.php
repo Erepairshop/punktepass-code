@@ -282,24 +282,40 @@ final class PPV_Standalone_Webshop_Orders {
         header('X-Content-Type-Options: nosniff');
         $output = fopen('php://output', 'wb');
         fwrite($output, self::dhl_csv_line([
-            'Sendungsreferenz', 'Name 1', 'Name 2', 'Straße', 'Hausnummer',
-            'Adresszusatz', 'PLZ', 'Ort', 'Ländercode', 'E-Mail', 'Telefon',
-            'Gewicht kg', 'DHL Produkt', 'Bestellinhalt',
+            'Sendungsreferenz', 'Sendungsref. (für Belegretouren)',
+            'Voraussichtliches Abgabe-/Einlieferdatum', 'Creation-Software', 'Absenderreferenz',
+            'Name 1 (Absender)', 'Name 2 (Absender)', 'Name 3 (Absender)',
+            'Straße (Absender)', 'Hausnummer (Absender)', 'PLZ (Absender)', 'Ort (Absender)',
+            'Land (Absender)', 'E-Mail-Adresse (Absender)', 'Telefonnummer (Absender)',
+            'Name 1 (Empfänger)', 'Name 2 / Postnummer (Empfänger)', 'Name 3 (Empfänger)',
+            'Straße (Empfänger)', 'Hausnummer (Empfänger)', 'Adresszusatz 1 (Empfänger)',
+            'PLZ (Empfänger)', 'Ort (Empfänger)', 'Land (Empfänger)',
+            'E-Mail-Adresse (Empfänger)', 'Telefonnummer (Empfänger)',
+            'Gewicht', 'Produkt- und Servicekennzeichnung', 'Abrechnungsnummer',
         ]));
         foreach ($orders as $order) {
             [$street, $house_number] = self::split_street_and_house_number($order->ship_address1);
-            $items = json_decode((string)$order->items_json, true);
-            $contents = [];
-            foreach ((array)$items as $item) {
-                $label = !empty($item['sku']) ? $item['sku'] : ($item['name'] ?? 'Artikel');
-                $contents[] = max(1, (int)($item['quantity'] ?? 1)) . 'x ' . (string)$label;
-            }
             $name1 = $order->ship_company ?: $order->ship_name;
             $name2 = $order->ship_company ? $order->ship_name : '';
             $row = [
                 self::limit_csv_cell('Shop ' . $order->order_number, 35),
+                '',
+                '',
+                'PunktePass',
+                '',
+                'Shop.erepairshop.de',
+                'Erik Borota',
+                '',
+                'Siedlungsring',
+                '51',
+                '89415',
+                'Lauingen',
+                'DEU',
+                '',
+                '',
                 self::limit_csv_cell($name1, 35),
                 self::limit_csv_cell($name2, 35),
+                '',
                 self::limit_csv_cell($street, 35),
                 self::limit_csv_cell($house_number, 10),
                 self::limit_csv_cell($order->ship_address2, 35),
@@ -308,9 +324,9 @@ final class PPV_Standalone_Webshop_Orders {
                 self::dhl_country_code($order->ship_country),
                 self::limit_csv_cell($order->ship_email, 70),
                 self::limit_csv_cell($order->ship_phone, 30),
-                '0,50',
-                'V62KP',
-                self::limit_csv_cell(implode(', ', $contents), 100),
+                '1',
+                'V01PAK',
+                '52555675400101',
             ];
             fwrite($output, self::dhl_csv_line($row));
         }
