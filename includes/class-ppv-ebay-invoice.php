@@ -343,6 +343,7 @@ final class PPV_Ebay_Invoice {
                 $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
                 $payment_status = (string)($order['orderPaymentStatus'] ?? '');
                 $fully_refunded = $payment_status === 'FULLY_REFUNDED';
+                $refund_confirmed = self::has_confirmed_refund($order);
                 if ($state !== 'CANCELED' && !$fully_refunded) {
                     if (!$dry_run) $wpdb->update($table, [
                         'cancellation_state' => $state,
@@ -352,14 +353,16 @@ final class PPV_Ebay_Invoice {
                     continue;
                 }
                 $result['cancelled']++;
-                if (!$fully_refunded) {
+                if (!$fully_refunded || !$refund_confirmed) {
                     $result['awaiting_refund']++;
                     if (!$dry_run) $wpdb->update($table, [
                         'cancellation_status' => 'awaiting_refund',
-                        'cancellation_state' => 'CANCELED',
+                        'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : $state,
                         'cancellation_checked_at' => current_time('mysql'),
                         'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
-                        'cancellation_last_error' => null,
+                        'cancellation_last_error' => $fully_refunded
+                            ? 'eBay reports FULLY_REFUNDED without a completed refund transaction and zero seller balance.'
+                            : null,
                     ], ['id' => $row->id]);
                     continue;
                 }
@@ -399,8 +402,8 @@ final class PPV_Ebay_Invoice {
 
         $order = self::get_order($order_id);
         $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
-        if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED') {
-            throw new RuntimeException('Manual approval rejected because eBay does not report FULLY_REFUNDED.');
+        if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED' || !self::has_confirmed_refund($order)) {
+            throw new RuntimeException('Manual approval rejected because no completed eBay refund transaction with zero seller balance is present.');
         }
 
         $now = current_time('mysql');
@@ -837,6 +840,19 @@ final class PPV_Ebay_Invoice {
         } finally {
             $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
         }
+    }
+
+    private static function has_confirmed_refund(array $order) {
+        $summary = $order['paymentSummary'] ?? [];
+        $completed = false;
+        foreach (($summary['refunds'] ?? []) as $refund) {
+            if (($refund['refundStatus'] ?? '') === 'REFUNDED' && (float)($refund['amount']['value'] ?? 0) > 0) {
+                $completed = true;
+                break;
+            }
+        }
+        $seller_balance = (float)($summary['totalDueSeller']['value'] ?? PHP_FLOAT_MAX);
+        return $completed && $seller_balance <= 0.01;
     }
 
     private static function process_cancelled_order($row, array $order) {
