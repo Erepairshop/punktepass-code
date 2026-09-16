@@ -74,6 +74,12 @@ try {
         case '--cancellations-dry-run':
             echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(100, true)) . "\n";
             break;
+        case '--approve-cancellation':
+            if (empty($argv[2]) || empty($argv[3])) {
+                throw new InvalidArgumentException('Usage: --approve-cancellation ORDER_ID APPROVER');
+            }
+            echo wp_json_encode(PPV_Ebay_Invoice::approve_cancellation_order($argv[2], $argv[3]), JSON_PRETTY_PRINT) . "\n";
+            break;
         case '--sync-cockpit':
             echo wp_json_encode(PPV_Standalone_Ebay_Cockpit::sync_orders()) . "\n";
             break;

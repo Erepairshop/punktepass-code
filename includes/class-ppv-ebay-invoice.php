@@ -54,6 +54,8 @@ final class PPV_Ebay_Invoice {
             'cancelled_at' => "ALTER TABLE {$table} ADD COLUMN cancelled_at datetime NULL AFTER cancellation_checked_at",
             'cancellation_invoice_id' => "ALTER TABLE {$table} ADD COLUMN cancellation_invoice_id bigint(20) unsigned NULL AFTER cancelled_at",
             'cancellation_email_sent_at' => "ALTER TABLE {$table} ADD COLUMN cancellation_email_sent_at datetime NULL AFTER cancellation_invoice_id",
+            'cancellation_approved_at' => "ALTER TABLE {$table} ADD COLUMN cancellation_approved_at datetime NULL AFTER cancellation_email_sent_at",
+            'cancellation_approved_by' => "ALTER TABLE {$table} ADD COLUMN cancellation_approved_by varchar(128) NULL AFTER cancellation_approved_at",
             'cancellation_attempts' => "ALTER TABLE {$table} ADD COLUMN cancellation_attempts int(10) unsigned NOT NULL DEFAULT 0 AFTER cancellation_email_sent_at",
             'cancellation_last_error' => "ALTER TABLE {$table} ADD COLUMN cancellation_last_error text NULL AFTER cancellation_attempts",
             'buyer_note' => "ALTER TABLE {$table} ADD COLUMN buyer_note text NULL AFTER email_sent_at",
@@ -333,13 +335,15 @@ final class PPV_Ebay_Invoice {
                AND cancellation_attempts < 30
              ORDER BY id ASC LIMIT %d", max(1, (int)$limit)
         ));
-        $result = ['checked' => 0, 'cancelled' => 0, 'awaiting_refund' => 0, 'completed' => 0, 'retry' => 0, 'dry_run' => (bool)$dry_run];
+        $result = ['checked' => 0, 'cancelled' => 0, 'awaiting_refund' => 0, 'manual_review' => 0, 'completed' => 0, 'retry' => 0, 'dry_run' => (bool)$dry_run];
         foreach ($rows as $row) {
             $result['checked']++;
             try {
                 $order = self::get_order($row->order_id);
                 $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
-                if ($state !== 'CANCELED') {
+                $payment_status = (string)($order['orderPaymentStatus'] ?? '');
+                $fully_refunded = $payment_status === 'FULLY_REFUNDED';
+                if ($state !== 'CANCELED' && !$fully_refunded) {
                     if (!$dry_run) $wpdb->update($table, [
                         'cancellation_state' => $state,
                         'cancellation_checked_at' => current_time('mysql'),
@@ -348,7 +352,7 @@ final class PPV_Ebay_Invoice {
                     continue;
                 }
                 $result['cancelled']++;
-                if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED') {
+                if (!$fully_refunded) {
                     $result['awaiting_refund']++;
                     if (!$dry_run) $wpdb->update($table, [
                         'cancellation_status' => 'awaiting_refund',
@@ -359,15 +363,63 @@ final class PPV_Ebay_Invoice {
                     ], ['id' => $row->id]);
                     continue;
                 }
-                if ($dry_run) continue;
-                self::process_cancelled_order($row, $order);
-                $result['completed']++;
+                $result['manual_review']++;
+                if (!$dry_run) $wpdb->update($table, [
+                    'cancellation_status' => 'manual_review',
+                    'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : 'FULLY_REFUNDED',
+                    'cancellation_checked_at' => current_time('mysql'),
+                    'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
+                    'cancellation_last_error' => 'Manual approval is required before creating a storno invoice.',
+                ], ['id' => $row->id]);
             } catch (Throwable $e) {
                 if (!$dry_run) self::mark_cancellation_retry($row->id, $e->getMessage());
                 $result['retry']++;
             }
         }
         return $result;
+    }
+
+    public static function approve_cancellation_order($order_id, $approved_by) {
+        global $wpdb;
+        self::install_schema();
+        $order_id = trim((string)$order_id);
+        $approved_by = trim((string)$approved_by);
+        if ($order_id === '' || $approved_by === '') {
+            throw new InvalidArgumentException('Order ID and approver are required.');
+        }
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE order_id=%s AND status='completed' AND invoice_id IS NOT NULL LIMIT 1",
+            $order_id
+        ));
+        if (!$row) throw new RuntimeException('Completed invoiced eBay order is missing from the queue.');
+        if ($row->cancellation_status === 'completed' && $row->cancellation_invoice_id) {
+            return ['order_id' => $order_id, 'status' => 'already_completed', 'cancellation_invoice_id' => (int)$row->cancellation_invoice_id];
+        }
+
+        $order = self::get_order($order_id);
+        $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
+        if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED') {
+            throw new RuntimeException('Manual approval rejected because eBay does not report FULLY_REFUNDED.');
+        }
+
+        $now = current_time('mysql');
+        $wpdb->update($table, [
+            'cancellation_status' => 'manual_review',
+            'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : 'FULLY_REFUNDED',
+            'cancellation_checked_at' => $now,
+            'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
+            'cancellation_approved_at' => $now,
+            'cancellation_approved_by' => substr($approved_by, 0, 128),
+            'cancellation_last_error' => null,
+        ], ['id' => $row->id]);
+        $approved = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
+        self::process_cancelled_order($approved, $order);
+        $fresh = $wpdb->get_row($wpdb->prepare(
+            "SELECT cancellation_status,cancellation_invoice_id,cancellation_email_sent_at,cancellation_approved_at,cancellation_approved_by,cancellation_last_error FROM {$table} WHERE id=%d",
+            $row->id
+        ), ARRAY_A);
+        return ['order_id' => $order_id, 'status' => 'processed', 'cancellation' => $fresh];
     }
 
     public static function dry_run_order($order_id) {
@@ -797,6 +849,9 @@ final class PPV_Ebay_Invoice {
         try {
             $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
             if (!$fresh || $fresh->cancellation_status === 'completed' || $fresh->cancellation_status === 'email_sending') return;
+            if (empty($fresh->cancellation_approved_at) || trim((string)$fresh->cancellation_approved_by) === '') {
+                throw new RuntimeException('Manual approval is required before creating a storno invoice.');
+            }
             $cancelled_at = self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null);
             $shared_invoice_orders = (int)$wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$table} WHERE invoice_id=%d",
