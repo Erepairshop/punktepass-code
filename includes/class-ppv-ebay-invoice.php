@@ -490,6 +490,9 @@ final class PPV_Ebay_Invoice {
         if ($row->cancellation_status === 'completed' && $row->cancellation_invoice_id) {
             return ['order_id' => $order_id, 'status' => 'already_completed', 'cancellation_invoice_id' => (int)$row->cancellation_invoice_id];
         }
+        if ($row->cancellation_invoice_id) {
+            throw new RuntimeException('An unapproved storno document already exists and requires manual accounting correction.');
+        }
 
         $order = self::get_order($order_id);
         $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
