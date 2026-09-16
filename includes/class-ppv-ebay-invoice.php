@@ -366,14 +366,31 @@ final class PPV_Ebay_Invoice {
                     ], ['id' => $row->id]);
                     continue;
                 }
-                $result['manual_review']++;
-                if (!$dry_run) $wpdb->update($table, [
-                    'cancellation_status' => 'manual_review',
+                if ($dry_run) {
+                    $result['completed']++;
+                    continue;
+                }
+                $now = current_time('mysql');
+                $wpdb->update($table, [
+                    'cancellation_status' => 'detected',
                     'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : 'FULLY_REFUNDED',
-                    'cancellation_checked_at' => current_time('mysql'),
+                    'cancellation_checked_at' => $now,
                     'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
-                    'cancellation_last_error' => 'Manual approval is required before creating a storno invoice.',
+                    'cancellation_approved_at' => $now,
+                    'cancellation_approved_by' => 'automatic-verified-refund',
+                    'cancellation_last_error' => null,
                 ], ['id' => $row->id]);
+                $approved = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
+                self::process_cancelled_order($approved, $order);
+                $final_status = (string)$wpdb->get_var($wpdb->prepare(
+                    "SELECT cancellation_status FROM {$table} WHERE id=%d",
+                    $row->id
+                ));
+                if ($final_status === 'completed') {
+                    $result['completed']++;
+                } elseif ($final_status === 'manual_review') {
+                    $result['manual_review']++;
+                }
             } catch (Throwable $e) {
                 if (!$dry_run) self::mark_cancellation_retry($row->id, $e->getMessage());
                 $result['retry']++;
@@ -868,6 +885,9 @@ final class PPV_Ebay_Invoice {
         try {
             $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
             if (!$fresh || $fresh->cancellation_status === 'completed' || $fresh->cancellation_status === 'email_sending') return;
+            if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED' || !self::has_confirmed_refund($order)) {
+                throw new RuntimeException('Storno invoice blocked because no completed eBay refund transaction with zero seller balance is present.');
+            }
             if (empty($fresh->cancellation_approved_at) || trim((string)$fresh->cancellation_approved_by) === '') {
                 throw new RuntimeException('Manual approval is required before creating a storno invoice.');
             }
