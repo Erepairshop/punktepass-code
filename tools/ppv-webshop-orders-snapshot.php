@@ -67,7 +67,6 @@ foreach ($orders as $order) {
         'trackingCarrier' => (string)$order->get_meta('_ers_tracking_carrier', true),
         'trackingNumber' => (string)$order->get_meta('_ers_tracking_number', true),
         'trackingUpdatedAt' => (string)$order->get_meta('_ers_tracking_updated_at', true),
-        'shippingChangedAt' => (string)$order->get_meta('_ers_customer_shipping_changed_at', true),
         'customerNote' => (string)$order->get_customer_note(),
         'shipping' => [
             'firstName' => (string)$order->get_shipping_first_name(),
