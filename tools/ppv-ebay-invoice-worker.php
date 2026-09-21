@@ -75,7 +75,8 @@ try {
             echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(100, true)) . "\n";
             break;
         case '--sync-cockpit':
-            echo wp_json_encode(PPV_Standalone_Ebay_Cockpit::sync_orders()) . "\n";
+            $days = isset($argv[2]) ? max(1, min(365, (int)$argv[2])) : null;
+            echo wp_json_encode(PPV_Standalone_Ebay_Cockpit::sync_orders($days)) . "\n";
             break;
         case '--import-cockpit-costs':
             PPV_Standalone_Ebay_Cockpit::install_schema();
