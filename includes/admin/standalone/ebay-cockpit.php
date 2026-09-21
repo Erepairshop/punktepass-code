@@ -254,9 +254,13 @@ final class PPV_Standalone_Ebay_Cockpit {
         $packaging_cost = $existing && $existing->packaging_cost !== null
             ? (float)$existing->packaging_cost
             : $settings['packaging_cost'];
+        $creation_ts = strtotime((string)($order['creationDate'] ?? ''));
+        $ad_fee_settled = !$sold_via_any_ad
+            || !empty($actual_fee['hasAdCharge'])
+            || ($creation_ts && $creation_ts < time() - (7 * DAY_IN_SECONDS));
         $has_actual_fee = is_array($actual_fee)
             && !empty($actual_fee['hasSale'])
-            && (!$sold_via_any_ad || !empty($actual_fee['hasAdCharge']));
+            && $ad_fee_settled;
         $preserve_actual_fee = !$has_actual_fee && $existing && $existing->fee_status === 'actual';
         if ($has_actual_fee) {
             $ebay_fee = round(max(0, (float)($actual_fee['ebayFee'] ?? 0)), 2);
