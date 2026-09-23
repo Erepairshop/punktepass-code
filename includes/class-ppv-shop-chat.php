@@ -202,6 +202,8 @@ final class PPV_Shop_Chat {
             $reply_channel, $now, $now, (int)$conversation->id
         ));
         wp_cache_delete('ppv_admin_nav_counts');
+        $email_preview = $text !== '' ? $text : 'Csatolmány: ' . implode(', ', wp_list_pluck($attachments, 'name'));
+        self::notify_admin_email($conversation, $email_preview);
         if ($was_read) {
             $preview = $text !== '' ? $text : 'Csatolmány: ' . implode(', ', wp_list_pluck($attachments, 'name'));
             self::notify_admin($conversation, $preview);
@@ -481,6 +483,29 @@ final class PPV_Shop_Chat {
             ],
             'body' => $conversation->customer_name . ': ' . $preview,
         ]);
+    }
+
+    private static function notify_admin_email($conversation, $text) {
+        $recipient = defined('PPV_SHOP_CHAT_NOTIFICATION_EMAIL')
+            ? sanitize_email((string)PPV_SHOP_CHAT_NOTIFICATION_EMAIL)
+            : 'borota25@gmail.com';
+        if (!$recipient || !is_email($recipient)) {
+            error_log('[Shop Chat] Invalid admin notification email address.');
+            return;
+        }
+
+        $preview = mb_substr(preg_replace('/\s+/', ' ', (string)$text), 0, 1000);
+        $admin_url = 'https://punktepass.de/admin/shop-chat?id=' . (int)$conversation->id;
+        $subject = 'Új eRepairShop chatüzenet: ' . sanitize_text_field((string)$conversation->customer_name);
+        $body = "Új vásárlói üzenet érkezett a webshop csetjén.\n\n"
+            . 'Név: ' . sanitize_text_field((string)$conversation->customer_name) . "\n"
+            . 'Email: ' . sanitize_email((string)$conversation->customer_email) . "\n\n"
+            . "Üzenet:\n" . $preview . "\n\n"
+            . "Megnyitás az adminban:\n" . $admin_url;
+
+        if (!wp_mail($recipient, $subject, $body, ['Content-Type: text/plain; charset=UTF-8'])) {
+            error_log('[Shop Chat] Admin email notification failed for conversation ' . (int)$conversation->id . '.');
+        }
     }
 
     public static function cleanup_old_conversations() {
