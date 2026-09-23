@@ -94,10 +94,32 @@ final class PPV_Standalone_Ebay_Cockpit {
             $days = $known_orders > 0 ? 14 : 120;
         }
         $orders = PPV_Ebay_Invoice::cockpit_orders(max(1, min(365, (int)$days)));
-        $result = ['fetched' => count($orders), 'saved' => 0, 'failed' => 0];
+        $fee_map = [];
+        $fee_transactions = 0;
+        $fee_error = '';
+        try {
+            $fee_result = PPV_Ebay_Invoice::cockpit_fee_map(max(1, min(90, (int)$days)));
+            $fee_map = is_array($fee_result['orders'] ?? null) ? $fee_result['orders'] : [];
+            $fee_transactions = (int)($fee_result['transactions'] ?? 0);
+        } catch (Throwable $e) {
+            $fee_error = preg_replace('/[\r\n]+/', ' ', $e->getMessage());
+            ppv_log('[eBay Cockpit] A tényleges eBay díjak lekérése sikertelen: ' . $fee_error);
+        }
+        $result = [
+            'fetched' => count($orders),
+            'saved' => 0,
+            'failed' => 0,
+            'actualFees' => 0,
+            'estimatedFees' => 0,
+            'feeTransactions' => $fee_transactions,
+        ];
+        if ($fee_error !== '') $result['feeError'] = $fee_error;
         foreach ($orders as $order) {
             try {
-                self::upsert_order($order);
+                $order_id = trim((string)($order['orderId'] ?? ''));
+                $fee_status = self::upsert_order($order, $fee_map[$order_id] ?? null);
+                if ($fee_status === 'actual') $result['actualFees']++;
+                else $result['estimatedFees']++;
                 $result['saved']++;
             } catch (Throwable $e) {
                 $result['failed']++;
@@ -148,7 +170,7 @@ final class PPV_Standalone_Ebay_Cockpit {
         return ['imported' => $count, 'missing' => false];
     }
 
-    public static function upsert_order(array $order) {
+    public static function upsert_order(array $order, $actual_fee = null) {
         global $wpdb;
         $order_id = trim((string)($order['orderId'] ?? ''));
         if ($order_id === '') throw new InvalidArgumentException('Hiányzó eBay rendelésazonosító.');
@@ -169,6 +191,7 @@ final class PPV_Standalone_Ebay_Cockpit {
         $purchase_cost = 0.0;
         $missing_costs = 0;
         $ad_fee = 0.0;
+        $sold_via_any_ad = false;
         $settings = self::settings();
 
         foreach (($order['lineItems'] ?? []) as $line) {
@@ -202,6 +225,7 @@ final class PPV_Standalone_Ebay_Cockpit {
             $sold_via_ad = !empty($line['properties']['soldViaAdCampaign'])
                 || !empty($line['lineItemProperties']['soldViaAdCampaign']);
             if ($sold_via_ad) {
+                $sold_via_any_ad = true;
                 $unit_gross = $qty > 0 ? $line_gross / $qty : $line_gross;
                 $rate = $unit_gross >= 200 ? $settings['ad_high_rate'] : $settings['ad_low_rate'];
                 $ad_fee += $line_gross * ($rate / 100);
@@ -230,12 +254,27 @@ final class PPV_Standalone_Ebay_Cockpit {
         $packaging_cost = $existing && $existing->packaging_cost !== null
             ? (float)$existing->packaging_cost
             : $settings['packaging_cost'];
-        $ebay_fee = $existing && $existing->fee_status === 'actual' && $existing->ebay_fee_cost !== null
-            ? (float)$existing->ebay_fee_cost
-            : round($gross * ($settings['ebay_fee_rate'] / 100), 2);
-        $ad_fee_value = $existing && $existing->fee_status === 'actual' && $existing->ad_fee_cost !== null
-            ? (float)$existing->ad_fee_cost
-            : round($ad_fee, 2);
+        $creation_ts = strtotime((string)($order['creationDate'] ?? ''));
+        $ad_fee_settled = !$sold_via_any_ad
+            || !empty($actual_fee['hasAdCharge'])
+            || ($creation_ts && $creation_ts < time() - (7 * DAY_IN_SECONDS));
+        $has_actual_fee = is_array($actual_fee)
+            && !empty($actual_fee['hasSale'])
+            && $ad_fee_settled;
+        $preserve_actual_fee = !$has_actual_fee && $existing && $existing->fee_status === 'actual';
+        if ($has_actual_fee) {
+            $ebay_fee = round(max(0, (float)($actual_fee['ebayFee'] ?? 0)), 2);
+            $ad_fee_value = round(max(0, (float)($actual_fee['adFee'] ?? 0)), 2);
+            $fee_status = 'actual';
+        } elseif ($preserve_actual_fee) {
+            $ebay_fee = (float)$existing->ebay_fee_cost;
+            $ad_fee_value = (float)$existing->ad_fee_cost;
+            $fee_status = 'actual';
+        } else {
+            $ebay_fee = round($gross * ($settings['ebay_fee_rate'] / 100), 2);
+            $ad_fee_value = round($ad_fee, 2);
+            $fee_status = 'estimated';
+        }
 
         $data = [
             'order_id' => $order_id,
@@ -262,7 +301,7 @@ final class PPV_Standalone_Ebay_Cockpit {
             'shipping_cost' => round($shipping_cost, 2),
             'packaging_cost' => round($packaging_cost, 2),
             'cost_status' => $missing_costs === 0 && count($items) > 0 ? 'complete' : ($purchase_cost > 0 ? 'partial' : 'missing'),
-            'fee_status' => $existing && $existing->fee_status === 'actual' ? 'actual' : 'estimated',
+            'fee_status' => $fee_status,
             'synced_at' => current_time('mysql'),
         ];
 
@@ -274,6 +313,7 @@ final class PPV_Standalone_Ebay_Cockpit {
             $ok = $wpdb->insert($table, $data);
         }
         if ($ok === false) throw new RuntimeException('A rendelés mentése sikertelen: ' . $wpdb->last_error);
+        return $fee_status;
     }
 
     public static function handle_packing() {
@@ -362,7 +402,7 @@ final class PPV_Standalone_Ebay_Cockpit {
         <div class="ebay-head">
             <div>
                 <h1 class="page-title"><i class="ri-shopping-bag-3-line"></i> eBay Cockpit</h1>
-                <p class="ebay-subtitle">Rendelések, csomagolás és becsült nyereség egy helyen</p>
+                <p class="ebay-subtitle">Rendelések, csomagolás és tényleges eBay díjakkal számolt nyereség egy helyen</p>
             </div>
             <button type="button" class="ebay-sync" id="ebay-sync"><i class="ri-refresh-line"></i> Frissítés</button>
         </div>
@@ -545,7 +585,7 @@ final class PPV_Standalone_Ebay_Cockpit {
              WHERE creation_date>=%s AND currency='EUR'
              ORDER BY creation_date DESC", $from
         ));
-        $summary = ['gross' => 0.0, 'net' => 0.0, 'costs' => 0.0, 'profit' => 0.0, 'complete' => 0, 'incomplete' => 0, 'reversed' => 0];
+        $summary = ['gross' => 0.0, 'net' => 0.0, 'costs' => 0.0, 'profit' => 0.0, 'complete' => 0, 'incomplete' => 0, 'estimated_fees' => 0, 'reversed' => 0];
         foreach ($rows as $row) {
             if (self::is_reversed_order($row)) {
                 $summary['costs'] += self::REVERSED_ORDER_POSTAGE_LOSS;
@@ -555,6 +595,7 @@ final class PPV_Standalone_Ebay_Cockpit {
             }
             $summary['gross'] += (float)$row->gross_total;
             $summary['net'] += (float)$row->gross_total / 1.19;
+            if ($row->fee_status !== 'actual') $summary['estimated_fees']++;
             if ($row->cost_status !== 'complete') {
                 $summary['incomplete']++;
                 continue;
@@ -575,10 +616,13 @@ final class PPV_Standalone_Ebay_Cockpit {
             <div><span>Bruttó forgalom</span><strong><?php echo esc_html(self::money($summary['gross'])); ?></strong></div>
             <div><span>Nettó bevétel</span><strong><?php echo esc_html(self::money($summary['net'])); ?></strong></div>
             <div><span>Levonható költségek</span><strong><?php echo esc_html(self::money($summary['costs'])); ?></strong></div>
-            <div class="profit-main"><span>Becsült nyereség</span><strong><?php echo esc_html(self::money($summary['profit'])); ?></strong></div>
+            <div class="profit-main"><span><?php echo $summary['estimated_fees'] ? 'Részben becsült nyereség' : 'Nyereség'; ?></span><strong><?php echo esc_html(self::money($summary['profit'])); ?></strong></div>
         </div>
         <?php if ($summary['incomplete']): ?>
             <div class="notice-warn"><?php echo (int)$summary['incomplete']; ?> rendelésnél még hiányzik legalább egy beszerzési ár. Ezek nem kerültek bele a nyereség összegébe.</div>
+        <?php endif; ?>
+        <?php if ($summary['estimated_fees']): ?>
+            <div class="notice-warn"><?php echo (int)$summary['estimated_fees']; ?> friss rendelésnél az eBay még nem közölte az összes végleges levonást. Ezeknél átmenetileg becslés látszik, a következő szinkron automatikusan pontosítja.</div>
         <?php endif; ?>
         <?php if ($summary['reversed']): ?>
             <div class="notice-warn"><?php echo (int)$summary['reversed']; ?> sztornózott vagy teljesen visszatérített rendelés bevétele visszavonva, rendelésenként 4,00 € postaköltség levonva.</div>
@@ -593,8 +637,8 @@ final class PPV_Standalone_Ebay_Cockpit {
                         <td><?php echo esc_html($row->ship_name); ?><small><?php echo esc_html($row->order_id); ?><?php if ($reversed): ?> · Sztornó vagy visszatérítés<?php endif; ?></small></td>
                         <td><?php echo esc_html(self::money($reversed ? 0 : $row->gross_total)); ?></td>
                         <td><?php echo $reversed ? esc_html(self::money(0)) : ($complete ? esc_html(self::money($row->purchase_cost)) : '<span class="missing">Hiányos</span>'); ?></td>
-                        <td><?php echo esc_html(self::money($reversed ? 0 : $row->ebay_fee_cost)); ?></td>
-                        <td><?php echo esc_html(self::money($reversed ? 0 : $row->ad_fee_cost)); ?></td>
+                        <td><?php echo esc_html(self::money($reversed ? 0 : $row->ebay_fee_cost)); ?><?php if (!$reversed): ?><small><?php echo $row->fee_status === 'actual' ? 'Pontos levonás' : 'Becslés'; ?></small><?php endif; ?></td>
+                        <td><?php echo esc_html(self::money($reversed ? 0 : $row->ad_fee_cost)); ?><?php if (!$reversed): ?><small><?php echo $row->fee_status === 'actual' ? 'Pontos levonás' : 'Becslés'; ?></small><?php endif; ?></td>
                         <td><?php echo esc_html(self::money($reversed ? self::REVERSED_ORDER_POSTAGE_LOSS : (float)$row->shipping_cost + (float)$row->packaging_cost)); ?></td>
                         <td class="profit-cell"><?php echo $profit === null ? '<span class="missing">Nem számítható</span>' : esc_html(self::money($profit)); ?></td>
                     </tr>
@@ -609,9 +653,9 @@ final class PPV_Standalone_Ebay_Cockpit {
                 <input type="hidden" name="csrf" value="<?php echo esc_attr(self::csrf_token()); ?>">
                 <?php
                 $labels = [
-                    'ebay_fee_rate' => 'eBay díj százaléka',
-                    'ad_low_rate' => 'Hirdetési díj 200 euró alatt',
-                    'ad_high_rate' => 'Hirdetési díj 200 eurótól',
+                    'ebay_fee_rate' => 'Tartalék eBay díj százaléka',
+                    'ad_low_rate' => 'Tartalék hirdetési díj 200 euró alatt',
+                    'ad_high_rate' => 'Tartalék hirdetési díj 200 eurótól',
                     'domestic_shipping_cost' => 'Németországi postaköltség',
                     'eu_shipping_cost' => 'EU postaköltség',
                     'packaging_cost' => 'Csomagolási költség',
@@ -621,7 +665,7 @@ final class PPV_Standalone_Ebay_Cockpit {
                 <?php endforeach; ?>
                 <button type="submit">Beállítások mentése</button>
             </form>
-            <p>A díjak jelenleg becslések. A beszerzési ár a rendelés első feldolgozásakor rögzül, ezért a későbbi beszállítói árváltozás nem írja át a régi rendelést.</p>
+            <p>A százalékok csak addig használatosak, amíg az eBay még nem közölte a rendelés végleges díjait. A beszerzési ár a rendelés első feldolgozásakor rögzül.</p>
         </details>
         <?php
     }

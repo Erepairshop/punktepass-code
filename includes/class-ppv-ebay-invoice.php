@@ -14,6 +14,8 @@ final class PPV_Ebay_Invoice {
     const STORE_ID = 9;
     const CONFIG_FILE = '/etc/punktepass/ebay-invoice.env';
     const API_BASE = 'https://api.ebay.com';
+    const FINANCES_API_BASE = 'https://apiz.ebay.com';
+    const SIGNING_KEY_FILE = '/var/lib/punktepass/ebay-signing-key.json';
     const TABLE_SUFFIX = 'ppv_ebay_orders';
     const GROUP_WINDOW_SECONDS = 900;
 
@@ -245,6 +247,95 @@ final class PPV_Ebay_Invoice {
             $url = !empty($body['next']) ? (string)$body['next'] : null;
         }
         return $orders;
+    }
+
+    /**
+     * Tényleges eBay értékesítési és Promoted Listings díjak rendelésenként.
+     * A Finances API EU-s eladóknál RFC 9421 szerinti digitális aláírást kér.
+     */
+    public static function cockpit_fee_map($days = 14) {
+        $days = max(1, min(90, (int)$days));
+        $start_ts = time() - ($days * DAY_IN_SECONDS);
+        $end_ts = time();
+        $token = self::access_token();
+        $filter = 'transactionDate:[' . gmdate('Y-m-d\TH:i:s.000\Z', $start_ts) . '..' . gmdate('Y-m-d\TH:i:s.000\Z', $end_ts) . ']';
+        $orders = [];
+        $transaction_count = 0;
+        $offset = 0;
+        $limit = 1000;
+
+        for ($page = 0; $page < 100; $page++) {
+            $url = self::FINANCES_API_BASE . '/sell/finances/v1/transaction?' . http_build_query([
+                'filter' => $filter,
+                'limit' => $limit,
+                'offset' => $offset,
+            ]);
+            $body = self::signed_api_get($url, $token);
+            $transactions = $body['transactions'] ?? [];
+            if (!is_array($transactions)) $transactions = [];
+            $transaction_count += count($transactions);
+
+            foreach ($transactions as $transaction) {
+                $type = strtoupper((string)($transaction['transactionType'] ?? ''));
+                $currency = strtoupper((string)($transaction['amount']['currency'] ?? 'EUR'));
+                if ($currency !== 'EUR') continue;
+
+                if ($type === 'SALE') {
+                    $order_id = trim((string)($transaction['orderId'] ?? ''));
+                    if ($order_id === '') continue;
+                    if (!isset($orders[$order_id])) {
+                        $orders[$order_id] = ['ebayFee' => 0.0, 'adFee' => 0.0, 'hasSale' => false, 'hasAdCharge' => false];
+                    }
+                    $fee = 0.0;
+                    if (isset($transaction['totalFeeAmount']['value'])) {
+                        $fee = (float)$transaction['totalFeeAmount']['value'];
+                    } else {
+                        foreach (($transaction['orderLineItems'] ?? []) as $line) {
+                            foreach (($line['marketplaceFees'] ?? []) as $marketplace_fee) {
+                                if (strtoupper((string)($marketplace_fee['amount']['currency'] ?? 'EUR')) === 'EUR') {
+                                    $fee += (float)($marketplace_fee['amount']['value'] ?? 0);
+                                }
+                            }
+                        }
+                    }
+                    $orders[$order_id]['ebayFee'] += $fee;
+                    $orders[$order_id]['hasSale'] = true;
+                    continue;
+                }
+
+                $fee_type = strtoupper((string)($transaction['feeType'] ?? ''));
+                $memo = (string)($transaction['transactionMemo'] ?? '');
+                $is_ad_fee = $fee_type === 'AD_FEE' || stripos($memo, 'Promoted Listings') !== false;
+                if (!$is_ad_fee) continue;
+
+                $order_id = '';
+                foreach (($transaction['references'] ?? []) as $reference) {
+                    if (strtoupper((string)($reference['referenceType'] ?? '')) === 'ORDER_ID') {
+                        $order_id = trim((string)($reference['referenceId'] ?? ''));
+                        break;
+                    }
+                }
+                if ($order_id === '') continue;
+                if (!isset($orders[$order_id])) {
+                    $orders[$order_id] = ['ebayFee' => 0.0, 'adFee' => 0.0, 'hasSale' => false, 'hasAdCharge' => false];
+                }
+                $amount = abs((float)($transaction['amount']['value'] ?? 0));
+                $sign = strtoupper((string)($transaction['bookingEntry'] ?? 'DEBIT')) === 'CREDIT' ? -1 : 1;
+                $orders[$order_id]['adFee'] += $amount * $sign;
+                $orders[$order_id]['hasAdCharge'] = true;
+            }
+
+            $offset += count($transactions);
+            $total = (int)($body['total'] ?? 0);
+            if (!$transactions || ($total > 0 && $offset >= $total) || empty($body['next'])) break;
+        }
+
+        foreach ($orders as &$fees) {
+            $fees['ebayFee'] = round(max(0, (float)$fees['ebayFee']), 2);
+            $fees['adFee'] = round(max(0, (float)$fees['adFee']), 2);
+        }
+        unset($fees);
+        return ['orders' => $orders, 'transactions' => $transaction_count];
     }
 
     public static function process_queue($limit = 20) {
@@ -1187,7 +1278,7 @@ final class PPV_Ebay_Invoice {
     }
 
     private static function access_token() {
-        $cached = get_transient('ppv_ebay_invoice_access');
+        $cached = get_transient('ppv_ebay_invoice_access_v2');
         if ($cached) return $cached;
         $client_id = self::config('EBAY_CLIENT_ID');
         $client_secret = self::config('EBAY_CLIENT_SECRET');
@@ -1205,6 +1296,7 @@ final class PPV_Ebay_Invoice {
                     'https://api.ebay.com/oauth/api_scope',
                     'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
                     'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
+                    'https://api.ebay.com/oauth/api_scope/sell.finances',
                     'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription',
                 ]),
             ]),
@@ -1215,8 +1307,66 @@ final class PPV_Ebay_Invoice {
         $body = json_decode(wp_remote_retrieve_body($response), true);
         if (empty($body['access_token'])) throw new RuntimeException('eBay token response is incomplete.');
         $ttl = max(60, ((int)($body['expires_in'] ?? 7200)) - 300);
-        set_transient('ppv_ebay_invoice_access', $body['access_token'], $ttl);
+        set_transient('ppv_ebay_invoice_access_v2', $body['access_token'], $ttl);
         return $body['access_token'];
+    }
+
+    private static function signed_api_get($url, $token) {
+        $config = self::signing_key_config();
+        $created = time();
+        $parts = parse_url($url);
+        if (empty($parts['host']) || empty($parts['path'])) {
+            throw new RuntimeException('Invalid signed eBay API URL.');
+        }
+        $jwe = (string)$config['jwe'];
+        $signature_params = '("x-ebay-signature-key" "@method" "@path" "@authority");created=' . $created;
+        $signature_base = '"x-ebay-signature-key": ' . $jwe . "\n"
+            . '"@method": GET' . "\n"
+            . '"@path": ' . $parts['path'] . "\n"
+            . '"@authority": ' . $parts['host'] . "\n"
+            . '"@signature-params": ' . $signature_params;
+
+        $der = base64_decode((string)$config['privateKey'], true);
+        if (!is_string($der) || strlen($der) < SODIUM_CRYPTO_SIGN_SEEDBYTES) {
+            throw new RuntimeException('Invalid eBay signing private key.');
+        }
+        $seed = substr($der, -SODIUM_CRYPTO_SIGN_SEEDBYTES);
+        $keypair = sodium_crypto_sign_seed_keypair($seed);
+        $secret_key = sodium_crypto_sign_secretkey($keypair);
+        $signature = sodium_crypto_sign_detached($signature_base, $secret_key);
+        sodium_memzero($secret_key);
+        sodium_memzero($seed);
+        sodium_memzero($der);
+
+        $response = wp_remote_get($url, [
+            'timeout' => 35,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+                'x-ebay-signature-key' => $jwe,
+                'Signature-Input' => 'sig1=' . $signature_params,
+                'Signature' => 'sig1=:' . base64_encode($signature) . ':',
+            ],
+        ]);
+        $status = is_wp_error($response) ? 0 : wp_remote_retrieve_response_code($response);
+        if (is_wp_error($response) || $status < 200 || $status >= 300) {
+            $details = is_wp_error($response) ? $response->get_error_message() : wp_remote_retrieve_body($response);
+            $details = preg_replace('/[\r\n]+/', ' ', (string)$details);
+            throw new RuntimeException('eBay Finances API failed with HTTP ' . $status . ': ' . mb_substr($details, 0, 500));
+        }
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        if (!is_array($body)) throw new RuntimeException('eBay Finances API returned invalid JSON.');
+        return $body;
+    }
+
+    private static function signing_key_config() {
+        if (!extension_loaded('sodium')) throw new RuntimeException('PHP sodium extension is required for eBay signatures.');
+        if (!is_readable(self::SIGNING_KEY_FILE)) throw new RuntimeException('eBay signing key file is unavailable.');
+        $config = json_decode(file_get_contents(self::SIGNING_KEY_FILE), true);
+        if (!is_array($config) || empty($config['privateKey']) || empty($config['jwe'])) {
+            throw new RuntimeException('eBay signing key file is incomplete.');
+        }
+        return $config;
     }
 
     private static function api_get($url, $token) {
