@@ -69,10 +69,10 @@ try {
             echo wp_json_encode(PPV_Ebay_Invoice::scan_buyer_notes(7)) . "\n";
             break;
         case '--cancellations':
-            echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(100, false)) . "\n";
+            echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(1000, false)) . "\n";
             break;
         case '--cancellations-dry-run':
-            echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(100, true)) . "\n";
+            echo wp_json_encode(PPV_Ebay_Invoice::process_cancellations(1000, true)) . "\n";
             break;
         case '--approve-cancellation':
             if (empty($argv[2]) || empty($argv[3])) {

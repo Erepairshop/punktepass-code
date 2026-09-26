@@ -415,7 +415,7 @@ final class PPV_Ebay_Invoice {
         return ['notes_found' => $found, 'notifications' => self::process_note_notifications(100)];
     }
 
-    public static function process_cancellations($limit = 100, $dry_run = false) {
+    public static function process_cancellations($limit = 1000, $dry_run = false) {
         global $wpdb;
         self::install_schema();
         $table = $wpdb->prefix . self::TABLE_SUFFIX;
@@ -435,6 +435,9 @@ final class PPV_Ebay_Invoice {
                 $payment_status = (string)($order['orderPaymentStatus'] ?? '');
                 $fully_refunded = $payment_status === 'FULLY_REFUNDED';
                 $refund_confirmed = self::has_confirmed_refund($order);
+                $effective_cancelled_at = self::mysql_time(
+                    $order['cancelStatus']['cancelledDate'] ?? ($order['lastModifiedDate'] ?? null)
+                );
                 if ($state !== 'CANCELED' && !$fully_refunded) {
                     if (!$dry_run) $wpdb->update($table, [
                         'cancellation_state' => $state,
@@ -450,7 +453,7 @@ final class PPV_Ebay_Invoice {
                         'cancellation_status' => 'awaiting_refund',
                         'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : $state,
                         'cancellation_checked_at' => current_time('mysql'),
-                        'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
+                        'cancelled_at' => $effective_cancelled_at,
                         'cancellation_last_error' => $fully_refunded
                             ? 'eBay reports FULLY_REFUNDED without a completed refund transaction and zero seller balance.'
                             : null,
@@ -466,7 +469,7 @@ final class PPV_Ebay_Invoice {
                     'cancellation_status' => 'detected',
                     'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : 'FULLY_REFUNDED',
                     'cancellation_checked_at' => $now,
-                    'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
+                    'cancelled_at' => $effective_cancelled_at,
                     'cancellation_approved_at' => $now,
                     'cancellation_approved_by' => 'automatic-verified-refund',
                     'cancellation_last_error' => null,
@@ -982,7 +985,12 @@ final class PPV_Ebay_Invoice {
             if (empty($fresh->cancellation_approved_at) || trim((string)$fresh->cancellation_approved_by) === '') {
                 throw new RuntimeException('Manual approval is required before creating a storno invoice.');
             }
-            $cancelled_at = self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null);
+            $cancelled_at = self::mysql_time(
+                $order['cancelStatus']['cancelledDate'] ?? ($order['lastModifiedDate'] ?? null)
+            );
+            $cancellation_state = (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED')
+                ? 'CANCELED'
+                : 'FULLY_REFUNDED';
             $shared_invoice_orders = (int)$wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$table} WHERE invoice_id=%d",
                 (int)$fresh->invoice_id
@@ -992,7 +1000,7 @@ final class PPV_Ebay_Invoice {
                 // orders on the shared invoice. Keep it for manual correction.
                 $wpdb->update($table, [
                     'cancellation_status' => 'manual_review',
-                    'cancellation_state' => 'CANCELED',
+                    'cancellation_state' => $cancellation_state,
                     'cancellation_checked_at' => current_time('mysql'),
                     'cancelled_at' => $cancelled_at,
                     'cancellation_last_error' => 'Grouped invoice requires a partial correction.',
@@ -1002,7 +1010,7 @@ final class PPV_Ebay_Invoice {
             }
             $wpdb->update($table, [
                 'cancellation_status' => 'detected',
-                'cancellation_state' => 'CANCELED',
+                'cancellation_state' => $cancellation_state,
                 'cancellation_checked_at' => current_time('mysql'),
                 'cancelled_at' => $cancelled_at,
                 'cancellation_last_error' => null,
