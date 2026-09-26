@@ -56,6 +56,8 @@ final class PPV_Ebay_Invoice {
             'cancelled_at' => "ALTER TABLE {$table} ADD COLUMN cancelled_at datetime NULL AFTER cancellation_checked_at",
             'cancellation_invoice_id' => "ALTER TABLE {$table} ADD COLUMN cancellation_invoice_id bigint(20) unsigned NULL AFTER cancelled_at",
             'cancellation_email_sent_at' => "ALTER TABLE {$table} ADD COLUMN cancellation_email_sent_at datetime NULL AFTER cancellation_invoice_id",
+            'cancellation_approved_at' => "ALTER TABLE {$table} ADD COLUMN cancellation_approved_at datetime NULL AFTER cancellation_email_sent_at",
+            'cancellation_approved_by' => "ALTER TABLE {$table} ADD COLUMN cancellation_approved_by varchar(128) NULL AFTER cancellation_approved_at",
             'cancellation_attempts' => "ALTER TABLE {$table} ADD COLUMN cancellation_attempts int(10) unsigned NOT NULL DEFAULT 0 AFTER cancellation_email_sent_at",
             'cancellation_last_error' => "ALTER TABLE {$table} ADD COLUMN cancellation_last_error text NULL AFTER cancellation_attempts",
             'buyer_note' => "ALTER TABLE {$table} ADD COLUMN buyer_note text NULL AFTER email_sent_at",
@@ -413,25 +415,39 @@ final class PPV_Ebay_Invoice {
         return ['notes_found' => $found, 'notifications' => self::process_note_notifications(100)];
     }
 
-    public static function process_cancellations($limit = 100, $dry_run = false) {
+    public static function process_cancellations($limit = 1000, $dry_run = false) {
         global $wpdb;
         self::install_schema();
         $table = $wpdb->prefix . self::TABLE_SUFFIX;
         $rows = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$table}
              WHERE status='completed' AND invoice_id IS NOT NULL
-               AND (cancellation_status IS NULL OR cancellation_status IN ('retry','awaiting_refund','detected','invoice_created'))
+               AND (
+                    cancellation_status IN ('retry','awaiting_refund','detected','invoice_created')
+                    OR (cancellation_status IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY))
+               )
                AND cancellation_attempts < 30
-             ORDER BY id ASC LIMIT %d", max(1, (int)$limit)
+             ORDER BY
+               CASE WHEN cancellation_status IS NULL THEN 1 ELSE 0 END ASC,
+               COALESCE(cancellation_checked_at, '1970-01-01 00:00:00') ASC,
+               id DESC
+             LIMIT %d", max(1, (int)$limit)
         ));
-        $result = ['checked' => 0, 'cancelled' => 0, 'awaiting_refund' => 0, 'completed' => 0, 'retry' => 0, 'dry_run' => (bool)$dry_run];
+        $result = ['checked' => 0, 'cancelled' => 0, 'awaiting_refund' => 0, 'manual_review' => 0, 'completed' => 0, 'retry' => 0, 'dry_run' => (bool)$dry_run];
         foreach ($rows as $row) {
             $result['checked']++;
             try {
                 $order = self::get_order($row->order_id);
                 $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
-                if ($state !== 'CANCELED') {
+                $payment_status = (string)($order['orderPaymentStatus'] ?? '');
+                $fully_refunded = $payment_status === 'FULLY_REFUNDED';
+                $refund_confirmed = self::has_confirmed_refund($order);
+                $effective_cancelled_at = self::mysql_time(
+                    $order['cancelStatus']['cancelledDate'] ?? ($order['lastModifiedDate'] ?? null)
+                );
+                if ($state !== 'CANCELED' && !$fully_refunded) {
                     if (!$dry_run) $wpdb->update($table, [
+                        'cancellation_status' => null,
                         'cancellation_state' => $state,
                         'cancellation_checked_at' => current_time('mysql'),
                         'cancellation_last_error' => null,
@@ -439,26 +455,96 @@ final class PPV_Ebay_Invoice {
                     continue;
                 }
                 $result['cancelled']++;
-                if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED') {
+                if (!$fully_refunded || !$refund_confirmed) {
                     $result['awaiting_refund']++;
                     if (!$dry_run) $wpdb->update($table, [
                         'cancellation_status' => 'awaiting_refund',
-                        'cancellation_state' => 'CANCELED',
+                        'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : $state,
                         'cancellation_checked_at' => current_time('mysql'),
-                        'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
-                        'cancellation_last_error' => null,
+                        'cancelled_at' => $effective_cancelled_at,
+                        'cancellation_last_error' => $fully_refunded
+                            ? 'eBay reports FULLY_REFUNDED without a completed refund transaction and zero seller balance.'
+                            : null,
                     ], ['id' => $row->id]);
                     continue;
                 }
-                if ($dry_run) continue;
-                self::process_cancelled_order($row, $order);
-                $result['completed']++;
+                if ($dry_run) {
+                    $result['completed']++;
+                    continue;
+                }
+                $now = current_time('mysql');
+                $wpdb->update($table, [
+                    'cancellation_status' => 'detected',
+                    'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : 'FULLY_REFUNDED',
+                    'cancellation_checked_at' => $now,
+                    'cancelled_at' => $effective_cancelled_at,
+                    'cancellation_approved_at' => $now,
+                    'cancellation_approved_by' => 'automatic-verified-refund',
+                    'cancellation_last_error' => null,
+                ], ['id' => $row->id]);
+                $approved = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
+                self::process_cancelled_order($approved, $order);
+                $final_status = (string)$wpdb->get_var($wpdb->prepare(
+                    "SELECT cancellation_status FROM {$table} WHERE id=%d",
+                    $row->id
+                ));
+                if ($final_status === 'completed') {
+                    $result['completed']++;
+                } elseif ($final_status === 'manual_review') {
+                    $result['manual_review']++;
+                }
             } catch (Throwable $e) {
                 if (!$dry_run) self::mark_cancellation_retry($row->id, $e->getMessage());
                 $result['retry']++;
             }
         }
         return $result;
+    }
+
+    public static function approve_cancellation_order($order_id, $approved_by) {
+        global $wpdb;
+        self::install_schema();
+        $order_id = trim((string)$order_id);
+        $approved_by = trim((string)$approved_by);
+        if ($order_id === '' || $approved_by === '') {
+            throw new InvalidArgumentException('Order ID and approver are required.');
+        }
+        $table = $wpdb->prefix . self::TABLE_SUFFIX;
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE order_id=%s AND status='completed' AND invoice_id IS NOT NULL LIMIT 1",
+            $order_id
+        ));
+        if (!$row) throw new RuntimeException('Completed invoiced eBay order is missing from the queue.');
+        if ($row->cancellation_status === 'completed' && $row->cancellation_invoice_id) {
+            return ['order_id' => $order_id, 'status' => 'already_completed', 'cancellation_invoice_id' => (int)$row->cancellation_invoice_id];
+        }
+        if ($row->cancellation_invoice_id) {
+            throw new RuntimeException('An unapproved storno document already exists and requires manual accounting correction.');
+        }
+
+        $order = self::get_order($order_id);
+        $state = (string)($order['cancelStatus']['cancelState'] ?? 'NONE_REQUESTED');
+        if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED' || !self::has_confirmed_refund($order)) {
+            throw new RuntimeException('Manual approval rejected because no completed eBay refund transaction with zero seller balance is present.');
+        }
+
+        $now = current_time('mysql');
+        $wpdb->update($table, [
+            'cancellation_status' => 'manual_review',
+            'cancellation_state' => $state === 'CANCELED' ? 'CANCELED' : 'FULLY_REFUNDED',
+            'cancellation_checked_at' => $now,
+            'cancelled_at' => self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null),
+            'cancellation_approved_at' => $now,
+            'cancellation_approved_by' => substr($approved_by, 0, 128),
+            'cancellation_last_error' => null,
+        ], ['id' => $row->id]);
+        $approved = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
+        self::process_cancelled_order($approved, $order);
+        $fresh = $wpdb->get_row($wpdb->prepare(
+            "SELECT cancellation_status,cancellation_invoice_id,cancellation_email_sent_at,cancellation_approved_at,cancellation_approved_by,cancellation_last_error FROM {$table} WHERE id=%d",
+            $row->id
+        ), ARRAY_A);
+        return ['order_id' => $order_id, 'status' => 'processed', 'cancellation' => $fresh];
     }
 
     public static function dry_run_order($order_id) {
@@ -878,6 +964,19 @@ final class PPV_Ebay_Invoice {
         }
     }
 
+    private static function has_confirmed_refund(array $order) {
+        $summary = $order['paymentSummary'] ?? [];
+        $completed = false;
+        foreach (($summary['refunds'] ?? []) as $refund) {
+            if (($refund['refundStatus'] ?? '') === 'REFUNDED' && (float)($refund['amount']['value'] ?? 0) > 0) {
+                $completed = true;
+                break;
+            }
+        }
+        $seller_balance = (float)($summary['totalDueSeller']['value'] ?? PHP_FLOAT_MAX);
+        return $completed && $seller_balance <= 0.01;
+    }
+
     private static function process_cancelled_order($row, array $order) {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_SUFFIX;
@@ -888,7 +987,18 @@ final class PPV_Ebay_Invoice {
         try {
             $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d", $row->id));
             if (!$fresh || $fresh->cancellation_status === 'completed' || $fresh->cancellation_status === 'email_sending') return;
-            $cancelled_at = self::mysql_time($order['cancelStatus']['cancelledDate'] ?? null);
+            if (($order['orderPaymentStatus'] ?? '') !== 'FULLY_REFUNDED' || !self::has_confirmed_refund($order)) {
+                throw new RuntimeException('Storno invoice blocked because no completed eBay refund transaction with zero seller balance is present.');
+            }
+            if (empty($fresh->cancellation_approved_at) || trim((string)$fresh->cancellation_approved_by) === '') {
+                throw new RuntimeException('Manual approval is required before creating a storno invoice.');
+            }
+            $cancelled_at = self::mysql_time(
+                $order['cancelStatus']['cancelledDate'] ?? ($order['lastModifiedDate'] ?? null)
+            );
+            $cancellation_state = (($order['cancelStatus']['cancelState'] ?? '') === 'CANCELED')
+                ? 'CANCELED'
+                : 'FULLY_REFUNDED';
             $shared_invoice_orders = (int)$wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$table} WHERE invoice_id=%d",
                 (int)$fresh->invoice_id
@@ -898,7 +1008,7 @@ final class PPV_Ebay_Invoice {
                 // orders on the shared invoice. Keep it for manual correction.
                 $wpdb->update($table, [
                     'cancellation_status' => 'manual_review',
-                    'cancellation_state' => 'CANCELED',
+                    'cancellation_state' => $cancellation_state,
                     'cancellation_checked_at' => current_time('mysql'),
                     'cancelled_at' => $cancelled_at,
                     'cancellation_last_error' => 'Grouped invoice requires a partial correction.',
@@ -908,7 +1018,7 @@ final class PPV_Ebay_Invoice {
             }
             $wpdb->update($table, [
                 'cancellation_status' => 'detected',
-                'cancellation_state' => 'CANCELED',
+                'cancellation_state' => $cancellation_state,
                 'cancellation_checked_at' => current_time('mysql'),
                 'cancelled_at' => $cancelled_at,
                 'cancellation_last_error' => null,
