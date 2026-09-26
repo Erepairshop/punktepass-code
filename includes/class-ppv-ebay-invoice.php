@@ -422,9 +422,16 @@ final class PPV_Ebay_Invoice {
         $rows = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$table}
              WHERE status='completed' AND invoice_id IS NOT NULL
-               AND (cancellation_status IS NULL OR cancellation_status IN ('retry','awaiting_refund','detected','invoice_created'))
+               AND (
+                    cancellation_status IN ('retry','awaiting_refund','detected','invoice_created')
+                    OR (cancellation_status IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY))
+               )
                AND cancellation_attempts < 30
-             ORDER BY id ASC LIMIT %d", max(1, (int)$limit)
+             ORDER BY
+               CASE WHEN cancellation_status IS NULL THEN 1 ELSE 0 END ASC,
+               COALESCE(cancellation_checked_at, '1970-01-01 00:00:00') ASC,
+               id DESC
+             LIMIT %d", max(1, (int)$limit)
         ));
         $result = ['checked' => 0, 'cancelled' => 0, 'awaiting_refund' => 0, 'manual_review' => 0, 'completed' => 0, 'retry' => 0, 'dry_run' => (bool)$dry_run];
         foreach ($rows as $row) {
@@ -440,6 +447,7 @@ final class PPV_Ebay_Invoice {
                 );
                 if ($state !== 'CANCELED' && !$fully_refunded) {
                     if (!$dry_run) $wpdb->update($table, [
+                        'cancellation_status' => null,
                         'cancellation_state' => $state,
                         'cancellation_checked_at' => current_time('mysql'),
                         'cancellation_last_error' => null,
